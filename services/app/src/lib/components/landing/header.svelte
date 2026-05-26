@@ -29,8 +29,8 @@
     { label: m.nav_testimonials(), href: localizeHref("/#testimonials") },
     { label: m.nav_casestudies(), href: localizeHref("/#resources") },
     { label: m.nav_pricing(), href: localizeHref("/#pricing") },
-    { label: "FAQ", href: localizeHref("/#faq") },
     { label: m.nav_team(), href: localizeHref("/#team") },
+    { label: "FAQ", href: localizeHref("/#faq") },
   ]);
 
   const resourceNavLinks = $derived([
@@ -38,8 +38,8 @@
     { label: m.nav_citizens(), href: localizeHref("/#citizens") },
     { label: m.nav_usecases(), href: localizeHref("/#usecases") },
     { label: m.nav_testimonials(), href: localizeHref("/#testimonials") },
-    { label: "FAQ", href: localizeHref("/#faq") },
     { label: m.nav_casestudies(), href: localizeHref("/resources") },
+    { label: "FAQ", href: localizeHref("/#faq") },
   ]);
 
   const navLinks = $derived(

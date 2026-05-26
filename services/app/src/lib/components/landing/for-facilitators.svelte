@@ -35,7 +35,7 @@
       chip: () => m.facilitators_chip_plural_voting(),
       text: () => m.facilitators_feature_plural_voting(),
       source: () => m.facilitators_feature_plural_voting_source(),
-      sourceUrl: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4311507",
+      sourceUrl: "https://solidago.tournesol.app/",
     },
     {
       id: "auth",
@@ -161,7 +161,8 @@
         href={localizeHref("/resources/facilitation-guide")}
         variant="soft"
         size="sm"
-        class="shrink-0 self-start"
+        trailingIcon="icon-[lucide--arrow-right] size-4"
+        class="shrink-0 self-start gap-2"
       >
         Read the guide
       </GradientButton>

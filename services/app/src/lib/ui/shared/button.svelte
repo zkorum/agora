@@ -16,6 +16,7 @@
     rel?: string;
     type?: "button" | "submit" | "reset";
     onclick?: (event: MouseEvent) => void;
+    trailingIcon?: string;
   }
 
   let {
@@ -27,6 +28,7 @@
     rel,
     type = "button",
     onclick,
+    trailingIcon,
     class: className = "",
     children,
   }: Props = $props();
@@ -37,7 +39,7 @@
   const variantClasses: Record<ButtonVariant, string> = {
     primary: "gradient-primary text-sky-white border-none",
     secondary: "bg-white text-primary-base border-none hover:bg-black/5",
-    soft: "gradient-secondary text-primary-base border-none",
+    soft: "gradient-secondary border border-gradient-border-light-purple text-primary-base shadow-md hover:shadow-card",
     outline:
       "bg-transparent text-primary-base border border-primary-base hover:bg-primary-lightest",
     ghost:
@@ -72,9 +74,15 @@
     {onclick}
   >
     {@render children()}
+    {#if trailingIcon}
+      <span class={trailingIcon} aria-hidden="true"></span>
+    {/if}
   </a>
 {:else}
   <Button.Root {disabled} {type} class={computedClass} {onclick}>
     {@render children()}
+    {#if trailingIcon}
+      <span class={trailingIcon} aria-hidden="true"></span>
+    {/if}
   </Button.Root>
 {/if}

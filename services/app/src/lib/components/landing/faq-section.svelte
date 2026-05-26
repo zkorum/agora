@@ -50,43 +50,44 @@
 <section
   id="faq"
   class="
-    px-4 py-14
+    px-4 py-20
     sm:px-8
   "
 >
   <div class="mx-auto max-w-[1120px]">
-    <div class="mb-8 max-w-[640px]">
+    <div class="mb-12 max-w-[720px]">
       <Text size="base" weight="bold">
         <GradientText>FAQ</GradientText>
       </Text>
     </div>
 
-    <div class="max-w-[920px] border-y border-border">
+    <div class="max-w-[1040px] border-y border-border">
       {#each faqGroups as group (group.title)}
         <details
           class="
-            border-b border-border
+            border-b border-border py-2
             last:border-b-0
           "
         >
           <summary
             class="
               flex cursor-pointer list-none items-center justify-between gap-4
-              py-5
+              rounded-lg bg-gradient-light-purple/20 p-5
+              sm:px-6
             "
           >
             <div>
-              <Text size="base" weight="bold" element="span">
-                {group.title}
+              <Text size="xl" weight="bold" element="span">
+                <GradientText>{group.title}</GradientText>
               </Text>
-              <Text size="xs" class="mt-1 text-secondary-foreground">
+              <Text size="xs" weight="bold" class="mt-1 text-muted-foreground">
                 {group.items.length}
                 {faqContent.questionCountLabel}
               </Text>
             </div>
             <span
               class="
-                inline-flex size-7 shrink-0 items-center justify-center
+                inline-flex size-8 shrink-0 items-center justify-center
                 rounded-full border border-border text-lg leading-none
                 text-brand-purple
               "
@@ -96,9 +97,19 @@
             </span>
           </summary>
 
-          <div class="pb-5">
+          <div
+            class="
+            px-5 pb-5
+            sm:px-6
+          "
+          >
             {#each group.items as item (item.question)}
-              <details class="border-t border-border py-4">
+              <details
+                class="
+                border-t border-border py-5
+                first:border-t-0
+              "
+              >
                 <summary
                   class="
                     flex cursor-pointer list-none items-start justify-between
@@ -110,9 +121,9 @@
                   </Text>
                   <span
                     class="
-                      mt-1 inline-flex size-6 shrink-0 items-center
+                      mt-1 inline-flex size-7 shrink-0 items-center
                       justify-center rounded-full border border-border text-base
-                      leading-none text-brand-purple
+                      leading-none text-primary-base
                     "
                     aria-hidden="true"
                   >
@@ -120,8 +131,8 @@
                   </span>
                 </summary>
                 <Text
-                  size="sm"
-                  class="mt-3 max-w-[760px] text-secondary-foreground"
+                  size="base"
+                  class="mt-4 max-w-[820px] text-secondary-foreground"
                 >
                   {#each parseAnswer(item.answer) as segment, segmentIndex (segmentIndex)}
                     {#if segment.href}

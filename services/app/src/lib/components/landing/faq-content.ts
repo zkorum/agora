@@ -84,7 +84,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "What is Plural Voting?",
             answer:
-              "Plural Voting is used when a group needs to prioritize proposals, not just map opinions. It helps produce a ranked list while accounting for diversity within the group. Instead of only rewarding the largest bloc, it looks for priorities that can hold legitimacy across differences.",
+              "Plural Voting is used when a group needs to prioritize proposals, not just map opinions. It helps produce a ranked list while accounting for diversity within the group. Instead of only rewarding the largest bloc, it looks for priorities that can hold legitimacy across differences. Learn more about [COCM](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4311507).",
           },
         ],
       },
@@ -182,7 +182,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Qu'est-ce que le vote plural ?",
             answer:
-              "Le vote plural est utilise lorsqu'un groupe doit prioriser des propositions, et pas seulement cartographier des opinions. Il aide a produire une liste classee tout en tenant compte de la diversite du groupe. Au lieu de recompenser uniquement le bloc le plus nombreux, il recherche des priorites qui peuvent conserver leur legitimite a travers les differences.",
+              "Le vote plural est utilise lorsqu'un groupe doit prioriser des propositions, et pas seulement cartographier des opinions. Il aide a produire une liste classee tout en tenant compte de la diversite du groupe. Au lieu de recompenser uniquement le bloc le plus nombreux, il recherche des priorites qui peuvent conserver leur legitimite a travers les differences. En savoir plus sur [COCM](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4311507).",
           },
         ],
       },
@@ -280,7 +280,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Que es Plural Voting?",
             answer:
-              "Plural Voting se usa cuando un grupo necesita priorizar propuestas, no solo mapear opiniones. Ayuda a producir una lista ordenada teniendo en cuenta la diversidad del grupo. En vez de premiar solo al bloque mas grande, busca prioridades que puedan mantener legitimidad a traves de las diferencias.",
+              "Plural Voting se usa cuando un grupo necesita priorizar propuestas, no solo mapear opiniones. Ayuda a producir una lista ordenada teniendo en cuenta la diversidad del grupo. En vez de premiar solo al bloque mas grande, busca prioridades que puedan mantener legitimidad a traves de las diferencias. Mas informacion sobre [COCM](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4311507).",
           },
         ],
       },
@@ -376,7 +376,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "ما هو Plural Voting؟",
             answer:
-              "يستخدم Plural Voting عندما تحتاج مجموعة إلى ترتيب المقترحات حسب الأولوية، وليس فقط رسم خريطة الآراء. يساعد على إنتاج قائمة مرتبة مع أخذ التنوع داخل المجموعة في الاعتبار. وبدلا من مكافأة الكتلة الأكبر فقط، يبحث عن أولويات يمكن أن تحتفظ بشرعيتها عبر الاختلافات.",
+              "يستخدم Plural Voting عندما تحتاج مجموعة إلى ترتيب المقترحات حسب الأولوية، وليس فقط رسم خريطة الآراء. يساعد على إنتاج قائمة مرتبة مع أخذ التنوع داخل المجموعة في الاعتبار. وبدلا من مكافأة الكتلة الأكبر فقط، يبحث عن أولويات يمكن أن تحتفظ بشرعيتها عبر الاختلافات. تعرّف على المزيد حول [COCM](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4311507).",
           },
         ],
       },
@@ -472,7 +472,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Plural Voting چیست؟",
             answer:
-              "Plural Voting زمانی استفاده می‌شود که یک گروه باید پیشنهادها را اولویت‌بندی کند، نه فقط نظرها را نقشه‌برداری کند. این روش کمک می‌کند فهرستی رتبه‌بندی‌شده تولید شود و در عین حال تنوع درون گروه لحاظ شود. به جای پاداش‌دادن فقط به بزرگ‌ترین بلوک، به دنبال اولویت‌هایی می‌گردد که بتوانند در میان تفاوت‌ها مشروعیت داشته باشند.",
+              "Plural Voting زمانی استفاده می‌شود که یک گروه باید پیشنهادها را اولویت‌بندی کند، نه فقط نظرها را نقشه‌برداری کند. این روش کمک می‌کند فهرستی رتبه‌بندی‌شده تولید شود و در عین حال تنوع درون گروه لحاظ شود. به جای پاداش‌دادن فقط به بزرگ‌ترین بلوک، به دنبال اولویت‌هایی می‌گردد که بتوانند در میان تفاوت‌ها مشروعیت داشته باشند. درباره [COCM](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4311507) بیشتر بخوانید.",
           },
         ],
       },
@@ -568,7 +568,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "מהו Plural Voting?",
             answer:
-              "Plural Voting משמש כאשר קבוצה צריכה לתעדף הצעות, ולא רק למפות דעות. הוא עוזר לייצר רשימה מדורגת תוך התחשבות במגוון בתוך הקבוצה. במקום לתגמל רק את הגוש הגדול ביותר, הוא מחפש סדרי עדיפויות שיכולים לשמור על לגיטימיות בין ההבדלים.",
+              "Plural Voting משמש כאשר קבוצה צריכה לתעדף הצעות, ולא רק למפות דעות. הוא עוזר לייצר רשימה מדורגת תוך התחשבות במגוון בתוך הקבוצה. במקום לתגמל רק את הגוש הגדול ביותר, הוא מחפש סדרי עדיפויות שיכולים לשמור על לגיטימיות בין ההבדלים. למידע נוסף על [COCM](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4311507).",
           },
         ],
       },
@@ -664,7 +664,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Plural Votingとは何ですか？",
             answer:
-              "Plural Votingは、意見をマッピングするだけでなく、グループが提案を優先順位づけする必要があるときに使われます。グループ内の多様性を考慮しながら、順位づけされたリストを作るのに役立ちます。最大勢力だけを有利にするのではなく、違いを越えて正当性を保てる優先事項を探します。",
+              "Plural Votingは、意見をマッピングするだけでなく、グループが提案を優先順位づけする必要があるときに使われます。グループ内の多様性を考慮しながら、順位づけされたリストを作るのに役立ちます。最大勢力だけを有利にするのではなく、違いを越えて正当性を保てる優先事項を探します。[COCM](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4311507)について詳しく読む。",
           },
         ],
       },
@@ -760,7 +760,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "什么是 Plural Voting？",
             answer:
-              "Plural Voting 用于群体需要对提案排序时，而不仅仅是绘制意见地图。它在考虑群体内部多样性的同时，帮助生成一个排序列表。它不是只奖励最大的阵营，而是寻找能够在差异之间保持正当性的优先事项。",
+              "Plural Voting 用于群体需要对提案排序时，而不仅仅是绘制意见地图。它在考虑群体内部多样性的同时，帮助生成一个排序列表。它不是只奖励最大的阵营，而是寻找能够在差异之间保持正当性的优先事项。了解更多：[COCM](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4311507)。",
           },
         ],
       },
@@ -855,7 +855,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "什麼是 Plural Voting？",
             answer:
-              "Plural Voting 用於群體需要對提案排序時，而不僅僅是繪製意見地圖。它在考慮群體內部多樣性的同時，幫助生成一個排序列表。它不是只獎勵最大的陣營，而是尋找能夠在差異之間保持正當性的優先事項。",
+              "Plural Voting 用於群體需要對提案排序時，而不僅僅是繪製意見地圖。它在考慮群體內部多樣性的同時，幫助生成一個排序列表。它不是只獎勵最大的陣營，而是尋找能夠在差異之間保持正當性的優先事項。了解更多：[COCM](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4311507)。",
           },
         ],
       },
@@ -951,7 +951,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Plural Voting деген эмне?",
             answer:
-              "Plural Voting топ пикирлерди гана картага түшүрбөй, сунуштарды артыкчылык боюнча иреттеши керек болгондо колдонулат. Ал топ ичиндеги ар түрдүүлүктү эске алуу менен рейтинг түзүүгө жардам берет. Эң чоң блокту гана сыйлоонун ордуна, айырмачылыктар арасында мыйзамдуулугун сактай алган артыкчылыктарды издейт.",
+              "Plural Voting топ пикирлерди гана картага түшүрбөй, сунуштарды артыкчылык боюнча иреттеши керек болгондо колдонулат. Ал топ ичиндеги ар түрдүүлүктү эске алуу менен рейтинг түзүүгө жардам берет. Эң чоң блокту гана сыйлоонун ордуна, айырмачылыктар арасында мыйзамдуулугун сактай алган артыкчылыктарды издейт. [COCM](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4311507) тууралуу көбүрөөк билиңиз.",
           },
         ],
       },
@@ -1048,7 +1048,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Что такое Plural Voting?",
             answer:
-              "Plural Voting используется, когда группе нужно приоритизировать предложения, а не только картировать мнения. Он помогает сформировать ранжированный список с учетом разнообразия внутри группы. Вместо того чтобы вознаграждать только самый большой блок, он ищет приоритеты, которые могут сохранять легитимность при наличии различий.",
+              "Plural Voting используется, когда группе нужно приоритизировать предложения, а не только картировать мнения. Он помогает сформировать ранжированный список с учетом разнообразия внутри группы. Вместо того чтобы вознаграждать только самый большой блок, он ищет приоритеты, которые могут сохранять легитимность при наличии различий. Подробнее о [COCM](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4311507).",
           },
         ],
       },
