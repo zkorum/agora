@@ -55,8 +55,8 @@
   "
 >
   <div class="mx-auto max-w-[1120px]">
-    <div class="mb-10 max-w-[720px]">
-      <Text size="xl" weight="bold">
+    <div class="mb-12 max-w-[720px]">
+      <Text size="base" weight="bold">
         <GradientText>FAQ</GradientText>
       </Text>
     </div>
@@ -71,20 +71,16 @@
         >
           <summary
             class="
-              flex cursor-pointer list-none items-center justify-between gap-4 rounded-lg
-              bg-gradient-light-purple/20 px-5 py-5
+              flex cursor-pointer list-none items-center justify-between gap-4
+              rounded-lg bg-gradient-light-purple/20 p-5
               sm:px-6
             "
           >
             <div>
-              <Text
-                size="xl"
-                weight="bold"
-                element="span"
-              >
+              <Text size="xl" weight="bold" element="span">
                 <GradientText>{group.title}</GradientText>
               </Text>
-              <Text size="xs" class="mt-1 text-secondary-foreground">
+              <Text size="xs" weight="bold" class="mt-1 text-muted-foreground">
                 {group.items.length}
                 {faqContent.questionCountLabel}
               </Text>
@@ -101,21 +97,26 @@
             </span>
           </summary>
 
-          <div class="px-5 pb-5 sm:px-6">
+          <div
+            class="
+            px-5 pb-5
+            sm:px-6
+          "
+          >
             {#each group.items as item (item.question)}
-              <details class="border-t border-border py-5 first:border-t-0">
+              <details
+                class="
+                border-t border-border py-5
+                first:border-t-0
+              "
+              >
                 <summary
                   class="
                     flex cursor-pointer list-none items-start justify-between
                     gap-4
                   "
                 >
-                  <Text
-                    size="lg"
-                    weight="semibold"
-                    element="span"
-                    class="text-primary-base"
-                  >
+                  <Text size="base" weight="semibold" element="span">
                     {item.question}
                   </Text>
                   <span
