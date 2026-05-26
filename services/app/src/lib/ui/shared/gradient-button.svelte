@@ -12,6 +12,7 @@
     size?: "sm" | "md" | "lg" | "block";
     disabled?: boolean;
     class?: string;
+    trailingIcon?: string;
     children: Snippet;
   }
 
@@ -23,6 +24,7 @@
     size = "md",
     disabled = false,
     class: className = "",
+    trailingIcon,
     children,
   }: Props = $props();
 
@@ -42,6 +44,7 @@
   variant={buttonVariant}
   {size}
   {disabled}
+  {trailingIcon}
   class={className}
 >
   {#if variant === "secondary" || variant === "soft"}

@@ -159,9 +159,10 @@
       </Text>
       <GradientButton
         href={localizeHref("/resources/facilitation-guide")}
-        variant="primary"
+        variant="soft"
         size="sm"
-        class="shrink-0 self-start"
+        trailingIcon="icon-[lucide--arrow-right] size-4"
+        class="shrink-0 self-start gap-2"
       >
         Read the guide
       </GradientButton>
