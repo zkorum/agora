@@ -351,6 +351,14 @@ import {
 } from "src/utils/analysis/analysisRoute";
 import type { AnalysisData } from "src/utils/api/comment/comment";
 import {
+  getAnalysisViewGroupCount,
+  getDisplayedAnalysisView,
+  getFacilitatorPreferenceCaption as getFacilitatorPreferenceCaptionState,
+  isAnalysisViewOptionMuted,
+  isAnalysisViewOptionSelectable as getIsAnalysisViewOptionSelectable,
+  shouldShowAnalysisViewOptionStats,
+} from "src/utils/component/analysis/analysisViewPicker";
+import {
   type ShortcutItem,
   shortcutItemSchema,
 } from "src/utils/component/analysis/shortcutBar";
@@ -502,6 +510,10 @@ const selectedRouteAnalysisView = computed(() =>
   parseAnalysisViewQuery({ query: route.query })
 );
 
+const hasInvalidRouteAnalysisView = computed(
+  () => route.query.analysisView !== undefined && selectedRouteAnalysisView.value === undefined
+);
+
 const selectedRouteCheckpoint = computed(() =>
   parseCheckpointQuery({ query: route.query })
 );
@@ -584,14 +596,67 @@ const analysisFrameKey = computed(() => {
   ].join(":");
 });
 
-const analysisViewOptions = computed(
-  () => analysisViewState.value?.options ?? []
-);
+const noAnalysisViewOptions = computed<AnalysisViewOption[]>(() => {
+  const variantsEnabled = analysisViewState.value?.variantsEnabled === true;
+  const options: AnalysisViewOption[] = [];
+
+  if (variantsEnabled) {
+    options.push({
+      view: "facilitator_preference",
+      status: "unavailable",
+      reason: "recommended_default_unavailable",
+      resolvesToView: "auto",
+    });
+  } else {
+    options.push({
+      view: "facilitator_preference",
+      status: "locked",
+      reason: "analysis_variants_not_available",
+      resolvesToView: "auto",
+    });
+  }
+
+  options.push({
+    view: "auto",
+    status: "unavailable",
+    reason: "recommended_default_unavailable",
+  });
+
+  for (const view of ["2", "3", "4", "5", "6"] as const) {
+    options.push(
+      variantsEnabled
+        ? {
+            view,
+            status: "unavailable",
+            reason: "fixed_group_count_unavailable",
+            groupCount: Number(view),
+          }
+        : {
+            view,
+            status: "locked",
+            reason: "analysis_variants_not_available",
+          }
+    );
+  }
+
+  return options;
+});
+
+const analysisViewOptions = computed(() => {
+  const options = analysisViewState.value?.options ?? [];
+  if (options.length > 0) {
+    return options;
+  }
+
+  return analysisViewState.value?.resolvedBy === "no_analysis"
+    ? noAnalysisViewOptions.value
+    : options;
+});
 
 const modeAnalysisViewOptions = computed(() =>
   analysisViewOptions.value.filter(
     (option) =>
-      option.view === "facilitator_preference" || option.view === "system_default"
+      option.view === "facilitator_preference" || option.view === "auto"
   )
 );
 
@@ -650,10 +715,10 @@ const analysisViewLearnMoreItems = computed(() => [
 ]);
 
 const selectedAnalysisView = computed(
-  () =>
-    selectedRouteAnalysisView.value ??
-    analysisViewState.value?.requestedView ??
-    "facilitator_preference"
+  () => getDisplayedAnalysisView({
+    routeView: selectedRouteAnalysisView.value,
+    viewState: analysisViewState.value,
+  })
 );
 
 const selectedAnalysisViewLabel = computed(() =>
@@ -688,9 +753,32 @@ function formatCheckpointReason(
 }
 
 watch(
+  hasInvalidRouteAnalysisView,
+  async (hasInvalidAnalysisView) => {
+    if (!hasInvalidAnalysisView) {
+      return;
+    }
+
+    await replaceAnalysisRoutePreservingScroll({
+      analysisView: undefined,
+      checkpointViewSnapshotId: selectedRouteCheckpoint.value,
+    });
+  },
+  { immediate: true }
+);
+
+watch(
   () => analysisViewState.value,
   async (state) => {
-    if (state?.resolvedBy !== "locked_fallback") {
+    if (state === undefined) {
+      return;
+    }
+
+    const shouldUseCanonicalView =
+      state.resolvedBy === "locked_fallback" ||
+      (!state.variantsEnabled && state.requestedView !== state.canonicalView);
+
+    if (!shouldUseCanonicalView) {
       return;
     }
 
@@ -767,7 +855,7 @@ function getAnalysisViewLabel(view: AnalysisView): string {
   switch (view) {
     case "facilitator_preference":
       return t("facilitatorPreference");
-    case "system_default":
+    case "auto":
       return t("recommendedDefault");
     case "2":
     case "3":
@@ -778,30 +866,32 @@ function getAnalysisViewLabel(view: AnalysisView): string {
   }
 }
 
-function getAnalysisViewGroupCount(view: AnalysisView): string | undefined {
-  switch (view) {
-    case "2":
-    case "3":
-    case "4":
-    case "5":
-    case "6":
-      return view;
-    case "facilitator_preference":
-    case "system_default":
-      return undefined;
-  }
-}
-
 function getAnalysisViewReasonCaption(
   option: AnalysisViewOption
 ): string | undefined {
+  if (
+    "reason" in option &&
+    option.reason === "analysis_variants_not_available"
+  ) {
+    return t("analysisVariantsNotAvailable");
+  }
+
+  if (getAnalysisViewGroupCount(option.view) === undefined) {
+    return undefined;
+  }
+
   if (!("reason" in option)) {
     return undefined;
   }
 
+  if (
+    analysisViewState.value?.resolvedBy === "no_analysis" &&
+    option.reason === "recommended_default_unavailable"
+  ) {
+    return activeAnalysisData.value?.emptyReason ?? t("recommendedDefaultUnavailable");
+  }
+
   switch (option.reason) {
-    case "analysis_variants_not_available":
-      return t("analysisVariantsNotAvailable");
     case "fixed_group_count_unavailable":
       return t("fixedGroupCountUnavailable", { count: option.groupCount });
     case "recommended_default_unavailable":
@@ -812,19 +902,15 @@ function getAnalysisViewReasonCaption(
 function getFacilitatorPreferenceCaption(
   option: AnalysisViewOption
 ): string | undefined {
-  const resolvesToView = option.resolvesToView;
-  if (resolvesToView === undefined) {
-    return undefined;
+  const caption = getFacilitatorPreferenceCaptionState({ option });
+  switch (caption.kind) {
+    case "none":
+      return undefined;
+    case "sameAsAuto":
+      return t("sameAsRecommendedDefault");
+    case "usesGroups":
+      return t("usesGroups", { count: caption.groupCount });
   }
-
-  if (resolvesToView === "system_default") {
-    return t("sameAsRecommendedDefault");
-  }
-
-  const groupCount = getAnalysisViewGroupCount(resolvesToView);
-  return groupCount === undefined
-    ? undefined
-    : t("usesGroups", { count: groupCount });
 }
 
 function getAnalysisViewCaption(
@@ -839,7 +925,7 @@ function getAnalysisViewCaption(
     return getFacilitatorPreferenceCaption(option) ?? t("facilitatorPreferenceCaption");
   }
 
-  if (option.view === "system_default") {
+  if (option.view === "auto") {
     return t("systemDefaultCaption");
   }
 
@@ -847,15 +933,10 @@ function getAnalysisViewCaption(
 }
 
 function isAnalysisViewOptionSelectable(option: AnalysisViewOption): boolean {
-  if (option.status === "locked") {
-    return false;
-  }
-
-  return !(
-    option.status === "unavailable" &&
-    "reason" in option &&
-    option.reason === "recommended_default_unavailable"
-  );
+  return getIsAnalysisViewOptionSelectable({
+    option,
+    variantsEnabled: analysisViewState.value?.variantsEnabled,
+  });
 }
 
 function getAnalysisViewOptionClasses(
@@ -864,11 +945,11 @@ function getAnalysisViewOptionClasses(
   return {
     "analysis-view-drawer-option--selected": option.view === selectedAnalysisView.value,
     "analysis-view-drawer-option--recommended":
-      option.status === "recommended" && getAnalysisViewGroupCount(option.view) !== undefined,
-    "analysis-view-drawer-option--muted":
-      option.status === "discouraged" ||
-      option.status === "unavailable" ||
-      option.status === "locked",
+      option.status === "recommended" && shouldShowAnalysisViewOptionStats(option),
+    "analysis-view-drawer-option--muted": isAnalysisViewOptionMuted({
+      option,
+      variantsEnabled: analysisViewState.value?.variantsEnabled,
+    }),
   };
 }
 
@@ -888,8 +969,9 @@ function formatClarityScore(score: number | null): string | undefined {
 
 function getAnalysisViewOptionChips(option: AnalysisViewOption): string[] {
   const chips: string[] = [];
+  const showStats = shouldShowAnalysisViewOptionStats(option);
 
-  if (getAnalysisViewGroupCount(option.view) !== undefined) {
+  if (showStats) {
     switch (option.status) {
       case "recommended":
         chips.push(t("recommendedOption"));
@@ -910,7 +992,7 @@ function getAnalysisViewOptionChips(option: AnalysisViewOption): string[] {
     chips.push(t("lockedOption"));
   }
 
-  if (!("candidate" in option)) {
+  if (!showStats || !("candidate" in option)) {
     return chips;
   }
 
@@ -943,6 +1025,7 @@ function getAnalysisViewChipColor(
     case "discouraged":
       return "warning";
     case "unavailable":
+      return "warning";
     case "locked":
       return "muted";
     case "available":

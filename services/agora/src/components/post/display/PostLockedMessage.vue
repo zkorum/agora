@@ -38,7 +38,7 @@
       </div>
     </div>
 
-    <!-- Closed by owner message -->
+    <!-- Closed by facilitator message -->
     <div v-if="isClosed" class="container moderationFont">
       <div class="coreMessage">
         <div class="title">

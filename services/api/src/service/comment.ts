@@ -1043,7 +1043,7 @@ async function fetchSnapshotAnalysisByConversationSlugId({
     conversationSlugId: string;
     personalizationUserId?: string;
     displayLanguage: string;
-    analysisView: AnalysisView;
+    analysisView?: AnalysisView;
     checkpointViewSnapshotId?: number;
     hasVotedOnAllAvailableOpinions: boolean | undefined;
 }): Promise<ConversationAnalysis> {
@@ -1116,7 +1116,7 @@ export async function fetchAnalysisByConversationSlugId({
     conversationSlugId,
     personalizationUserId,
     displayLanguage = "en",
-    analysisView = "facilitator_preference",
+    analysisView,
     checkpointViewSnapshotId,
 }: {
     db: PostgresJsDatabase;

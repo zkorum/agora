@@ -40,6 +40,7 @@ import {
 import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
 import { isConversationOwner } from "@/service/conversationAccess.js";
 import { createConversationViewSnapshotsFromCurrentState } from "@/service/conversationViewSnapshot.js";
+import { queueConversationSettingsUpdatedEvent } from "@/service/realtimeEventOutbox.js";
 
 const MAX_CONVERSATION_SEED_ITEMS = 50;
 
@@ -470,6 +471,12 @@ export async function closeConversation({
             conversationId: conversationTable.id,
             authorId: conversationTable.authorId,
             isClosed: conversationTable.isClosed,
+            isIndexed: conversationTable.isIndexed,
+            participationMode: conversationTable.participationMode,
+            requiresEventTicket: conversationTable.requiresEventTicket,
+            aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+            preferredOpinionGroupCount:
+                conversationTable.preferredOpinionGroupCount,
             organizationId: conversationTable.organizationId,
         })
         .from(conversationTable)
@@ -515,6 +522,20 @@ export async function closeConversation({
             conversationId: conversation[0].conversationId,
             log,
         });
+
+        await queueConversationSettingsUpdatedEvent({
+            db: tx,
+            conversationSlugId,
+            settings: {
+                isIndexed: conversation[0].isIndexed,
+                participationMode: conversation[0].participationMode,
+                requiresEventTicket: conversation[0].requiresEventTicket,
+                aiLabelingEnabled: conversation[0].aiLabelingEnabled,
+                preferredOpinionGroupCount:
+                    conversation[0].preferredOpinionGroupCount,
+                isClosed: true,
+            },
+        });
     });
 
     return { success: true };
@@ -537,6 +558,12 @@ export async function openConversation({
             conversationId: conversationTable.id,
             authorId: conversationTable.authorId,
             isClosed: conversationTable.isClosed,
+            isIndexed: conversationTable.isIndexed,
+            participationMode: conversationTable.participationMode,
+            requiresEventTicket: conversationTable.requiresEventTicket,
+            aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+            preferredOpinionGroupCount:
+                conversationTable.preferredOpinionGroupCount,
             organizationId: conversationTable.organizationId,
         })
         .from(conversationTable)
@@ -573,6 +600,20 @@ export async function openConversation({
             db: tx,
             conversationId: conversation[0].conversationId,
             log,
+        });
+
+        await queueConversationSettingsUpdatedEvent({
+            db: tx,
+            conversationSlugId,
+            settings: {
+                isIndexed: conversation[0].isIndexed,
+                participationMode: conversation[0].participationMode,
+                requiresEventTicket: conversation[0].requiresEventTicket,
+                aiLabelingEnabled: conversation[0].aiLabelingEnabled,
+                preferredOpinionGroupCount:
+                    conversation[0].preferredOpinionGroupCount,
+                isClosed: false,
+            },
         });
     });
 

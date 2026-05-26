@@ -236,6 +236,8 @@ export function useCommonPost() {
                 organizationDescription: organizationTable.description,
                 isIndexed: conversationTable.isIndexed,
                 aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+                preferredOpinionGroupCount:
+                    conversationTable.preferredOpinionGroupCount,
                 participationMode: conversationTable.participationMode,
                 conversationType: conversationTable.conversationType,
                 isClosed: conversationTable.isClosed,
@@ -371,6 +373,7 @@ export function useCommonPost() {
                 authorUsername: postItem.authorName,
                 isIndexed: postItem.isIndexed,
                 aiLabelingEnabled: postItem.aiLabelingEnabled,
+                preferredOpinionGroupCount: postItem.preferredOpinionGroupCount,
                 participationMode: postItem.participationMode,
                 conversationType: postItem.conversationType,
                 isClosed: postItem.isClosed,

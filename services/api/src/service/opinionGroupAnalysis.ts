@@ -25,6 +25,7 @@ import type {
     AnalysisViewState,
 } from "@/shared/types/dto.js";
 import type { AnalysisView } from "@/shared/types/zod.js";
+import { hasPremiumAnalysisVariantsAccess } from "./premiumEntitlement.js";
 
 export type { AnalysisViewState };
 
@@ -146,6 +147,12 @@ type GetSelectedOpinionGroupCandidateParams = {
 
 const FIXED_ANALYSIS_VIEWS: AnalysisView[] = ["2", "3", "4", "5", "6"];
 
+interface EmptyAnalysisSelectionContext {
+    variantsEnabled: boolean;
+    preferredGroupCount: number | null;
+    conversationFound: boolean;
+}
+
 function getFixedGroupCount(view: AnalysisView): number | undefined {
     switch (view) {
         case "2":
@@ -159,7 +166,7 @@ function getFixedGroupCount(view: AnalysisView): number | undefined {
         case "6":
             return 6;
         case "facilitator_preference":
-        case "system_default":
+        case "auto":
             return undefined;
     }
 }
@@ -183,6 +190,104 @@ function getAnalysisViewForGroupCount(
         default:
             return undefined;
     }
+}
+
+export function getRequestedAnalysisView({
+    analysisView,
+}: {
+    analysisView: AnalysisView | undefined;
+}): AnalysisView {
+    return analysisView ?? "facilitator_preference";
+}
+
+export function getCanonicalAnalysisView({
+    requestedView,
+    variantsEnabled,
+}: {
+    requestedView: AnalysisView;
+    variantsEnabled: boolean;
+}): AnalysisView {
+    return variantsEnabled ? requestedView : "auto";
+}
+
+export function shouldFallbackToAuto({
+    requestedView,
+    variantsEnabled,
+}: {
+    requestedView: AnalysisView;
+    variantsEnabled: boolean;
+}): boolean {
+    return !variantsEnabled && requestedView !== "auto";
+}
+
+async function getEmptyAnalysisSelectionContext({
+    db,
+    checkpointViewSnapshotId,
+    ...selector
+}: {
+    db: PostgresJsDatabase;
+    checkpointViewSnapshotId?: number;
+} & ConversationSelector): Promise<EmptyAnalysisSelectionContext> {
+    const conversationFilter =
+        selector.conversationId !== undefined
+            ? eq(conversationTable.id, selector.conversationId)
+            : eq(conversationTable.slugId, selector.conversationSlugId);
+
+    const rows =
+        checkpointViewSnapshotId === undefined
+            ? await db
+                  .select({
+                      authorId: conversationTable.authorId,
+                      organizationId: conversationTable.organizationId,
+                      preferredGroupCount:
+                          conversationTable.preferredOpinionGroupCount,
+                  })
+                  .from(conversationTable)
+                  .where(conversationFilter)
+                  .limit(1)
+            : await db
+                  .select({
+                      authorId: conversationTable.authorId,
+                      organizationId: conversationTable.organizationId,
+                      preferredGroupCount:
+                          conversationViewSnapshotTable.preferredOpinionGroupCount,
+                  })
+                  .from(conversationTable)
+                  .innerJoin(
+                      conversationViewSnapshotTable,
+                      and(
+                          eq(
+                              conversationViewSnapshotTable.conversationId,
+                              conversationTable.id,
+                          ),
+                          eq(
+                              conversationViewSnapshotTable.id,
+                              checkpointViewSnapshotId,
+                          ),
+                          isNotNull(conversationViewSnapshotTable.activatedAt),
+                      ),
+                  )
+                  .where(conversationFilter)
+                  .limit(1);
+
+    const conversation = rows.at(0);
+    if (conversation === undefined) {
+        return {
+            variantsEnabled: false,
+            preferredGroupCount: null,
+            conversationFound: false,
+        };
+    }
+
+    return {
+        variantsEnabled: await hasPremiumAnalysisVariantsAccess({
+            db,
+            conversation,
+            now: new Date(),
+        }),
+        preferredGroupCount: conversation.preferredGroupCount,
+        conversationFound: true,
+    };
 }
 
 function createAnalysisConversationViewSnapshot(
@@ -480,7 +585,7 @@ export async function getDescriptionTextsByGroupId({
 export async function getSelectedOpinionGroupCandidate({
     db,
     displayLanguage = "en",
-    analysisView = "facilitator_preference",
+    analysisView,
     checkpointViewSnapshotId,
     ...selector
 }: GetSelectedOpinionGroupCandidateParams): Promise<
@@ -499,7 +604,7 @@ export async function getSelectedOpinionGroupCandidate({
 export async function getOpinionGroupAnalysisSelection({
     db,
     displayLanguage = "en",
-    analysisView = "facilitator_preference",
+    analysisView,
     checkpointViewSnapshotId,
     ...selector
 }: GetSelectedOpinionGroupCandidateParams): Promise<OpinionGroupAnalysisSelection> {
@@ -531,10 +636,17 @@ export async function getOpinionGroupAnalysisSelection({
             .limit(1);
 
         if (checkpointRows.length === 0) {
+            const variantsEnabled = false;
+            const requestedView = getRequestedAnalysisView({
+                analysisView,
+            });
             return createEmptyAnalysisViewSelection({
-                requestedView: analysisView,
-                canonicalView: "system_default",
-                variantsEnabled: false,
+                requestedView,
+                canonicalView: getCanonicalAnalysisView({
+                    requestedView,
+                    variantsEnabled,
+                }),
+                variantsEnabled,
                 resolvedBy: "no_analysis",
                 emptyReason: "Checkpoint is not available.",
             });
@@ -657,12 +769,32 @@ export async function getOpinionGroupAnalysisSelection({
         .limit(1);
 
     if (latestResultRows.length === 0) {
+        const emptyContext = await getEmptyAnalysisSelectionContext({
+            db,
+            checkpointViewSnapshotId,
+            ...selector,
+        });
+        const variantsEnabled = emptyContext.variantsEnabled;
+        const requestedView = getRequestedAnalysisView({
+            analysisView,
+        });
         return createEmptyAnalysisViewSelection({
-            requestedView: analysisView,
-            canonicalView: "system_default",
-            variantsEnabled: false,
+            requestedView,
+            canonicalView: getCanonicalAnalysisView({
+                requestedView,
+                variantsEnabled,
+            }),
+            variantsEnabled,
             resolvedBy: "no_analysis",
             emptyReason: "No analysis is available yet.",
+            options: emptyContext.conversationFound
+                ? buildAnalysisViewOptions({
+                      variantsEnabled,
+                      preferredGroupCount: emptyContext.preferredGroupCount,
+                      candidates: [],
+                      systemCandidate: undefined,
+                  })
+                : [],
         });
     }
 
@@ -672,10 +804,17 @@ export async function getOpinionGroupAnalysisSelection({
     });
     if (displaySelection === undefined) {
         const latestResult = latestResultRows[0];
+        const variantsEnabled = latestResult.variantsEnabled;
+        const requestedView = getRequestedAnalysisView({
+            analysisView,
+        });
         return createEmptyAnalysisViewSelection({
-            requestedView: analysisView,
-            canonicalView: "system_default",
-            variantsEnabled: false,
+            requestedView,
+            canonicalView: getCanonicalAnalysisView({
+                requestedView,
+                variantsEnabled,
+            }),
+            variantsEnabled,
             resolvedBy: "no_analysis",
             conversationViewSnapshot:
                 createAnalysisConversationViewSnapshot(latestResult),
@@ -688,6 +827,9 @@ export async function getOpinionGroupAnalysisSelection({
         latestResult,
     );
     const variantsEnabled = latestResult.variantsEnabled;
+    const requestedView = getRequestedAnalysisView({
+        analysisView,
+    });
 
     const candidateRows = await db
         .select({
@@ -729,32 +871,37 @@ export async function getOpinionGroupAnalysisSelection({
     const candidatesByGroupCount = new Map(
         selectableCandidates.map((candidate) => [candidate.groupCount, candidate]),
     );
-    const fixedGroupCount = getFixedGroupCount(analysisView);
-    const canonicalView: AnalysisView = variantsEnabled
-        ? analysisView
-        : "system_default";
+    const fixedGroupCount = getFixedGroupCount(requestedView);
+    const canonicalView = getCanonicalAnalysisView({
+        requestedView,
+        variantsEnabled,
+    });
     const preferredGroupCount = latestResult.preferredOpinionGroupCount;
     const facilitatorCandidate =
         preferredGroupCount === null
             ? undefined
             : candidatesByGroupCount.get(preferredGroupCount);
+    const facilitatorResolvesToView: AnalysisView =
+        preferredGroupCount === null
+            ? "auto"
+            : (getAnalysisViewForGroupCount(preferredGroupCount) ?? "auto");
     const fixedCandidate =
         fixedGroupCount === undefined
             ? undefined
             : candidatesByGroupCount.get(fixedGroupCount);
 
     const resolved = (() => {
-        if (!variantsEnabled && analysisView !== "system_default") {
+        if (shouldFallbackToAuto({ requestedView, variantsEnabled })) {
             return {
                 candidate: selectedCandidate,
                 resolvedBy: "locked_fallback" as const,
             };
         }
 
-        if (canonicalView === "system_default") {
+        if (canonicalView === "auto") {
             return {
                 candidate: selectedCandidate,
-                resolvedBy: "system_default" as const,
+                resolvedBy: "auto" as const,
             };
         }
 
@@ -786,7 +933,7 @@ export async function getOpinionGroupAnalysisSelection({
     })();
 
     const viewState: AnalysisViewState = {
-        requestedView: analysisView,
+        requestedView,
         canonicalView,
         resolvedGroupCount: resolved.candidate?.groupCount ?? null,
         resolvedCandidateId: resolved.candidate?.candidateId ?? null,
@@ -797,6 +944,7 @@ export async function getOpinionGroupAnalysisSelection({
             preferredGroupCount,
             candidates: candidateRows,
             systemCandidate: selectedCandidate,
+            facilitatorResolvesToView,
         }),
     };
 
@@ -834,6 +982,7 @@ function createEmptyAnalysisViewSelection({
     resolvedBy,
     conversationViewSnapshot,
     emptyReason,
+    options = [],
 }: {
     requestedView: AnalysisView;
     canonicalView: AnalysisView;
@@ -841,6 +990,7 @@ function createEmptyAnalysisViewSelection({
     resolvedBy: AnalysisViewState["resolvedBy"];
     conversationViewSnapshot?: AnalysisConversationViewSnapshot;
     emptyReason: string;
+    options?: AnalysisViewOption[];
 }): OpinionGroupAnalysisSelection {
     return {
         candidate: undefined,
@@ -853,7 +1003,7 @@ function createEmptyAnalysisViewSelection({
             resolvedCandidateId: null,
             resolvedBy,
             variantsEnabled,
-            options: [],
+            options,
         },
     };
 }
@@ -863,11 +1013,13 @@ export function buildAnalysisViewOptions({
     preferredGroupCount,
     candidates,
     systemCandidate,
+    facilitatorResolvesToView,
 }: {
     variantsEnabled: boolean;
     preferredGroupCount: number | null;
     candidates: SnapshotCandidateOption[];
     systemCandidate: SnapshotCandidateOption | undefined;
+    facilitatorResolvesToView?: AnalysisView;
 }): AnalysisViewOption[] {
     const selectableCandidates = candidates.filter(isSelectableCandidate);
     const selectableSystemCandidate =
@@ -881,13 +1033,10 @@ export function buildAnalysisViewOptions({
         preferredGroupCount === null
             ? undefined
             : candidatesByGroupCount.get(preferredGroupCount);
-    const facilitatorResolvesToView: AnalysisView =
-        !variantsEnabled ||
-        facilitatorCandidate === undefined ||
-        facilitatorCandidate.candidateId === selectableSystemCandidate?.candidateId
-            ? "system_default"
-            : (getAnalysisViewForGroupCount(facilitatorCandidate.groupCount) ??
-              "system_default");
+    const resolvedFacilitatorView = facilitatorResolvesToView ??
+        (preferredGroupCount === null
+            ? "auto"
+            : (getAnalysisViewForGroupCount(preferredGroupCount) ?? "auto"));
 
     const facilitatorOption: AnalysisViewOption = (() => {
         if (!variantsEnabled) {
@@ -895,7 +1044,17 @@ export function buildAnalysisViewOptions({
                 view: "facilitator_preference",
                 status: "locked",
                 reason: "analysis_variants_not_available",
-                resolvesToView: "system_default",
+                resolvesToView: "auto",
+            };
+        }
+
+        if (preferredGroupCount !== null && facilitatorCandidate === undefined) {
+            return {
+                view: "facilitator_preference",
+                status: "unavailable",
+                reason: "fixed_group_count_unavailable",
+                groupCount: preferredGroupCount,
+                resolvesToView: resolvedFacilitatorView,
             };
         }
 
@@ -905,7 +1064,7 @@ export function buildAnalysisViewOptions({
                 view: "facilitator_preference",
                 status: "unavailable",
                 reason: "recommended_default_unavailable",
-                resolvesToView: "system_default",
+                resolvesToView: "auto",
             };
         }
 
@@ -919,19 +1078,19 @@ export function buildAnalysisViewOptions({
                           systemCandidate: selectableSystemCandidate,
                       }),
             candidate,
-            resolvesToView: facilitatorResolvesToView,
+            resolvesToView: resolvedFacilitatorView,
         });
     })();
 
     const recommendedDefaultOption: AnalysisViewOption =
         selectableSystemCandidate === undefined
             ? {
-                  view: "system_default",
+                  view: "auto",
                   status: "unavailable",
                   reason: "recommended_default_unavailable",
               }
             : createCandidateBackedAnalysisViewOption({
-                  view: "system_default",
+                  view: "auto",
                   status: "recommended",
                   candidate: selectableSystemCandidate,
               });

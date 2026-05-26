@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
     buildAnalysisViewOptions,
+    getCanonicalAnalysisView,
+    getRequestedAnalysisView,
     selectLatestOpinionGroupResultForDisplay,
+    shouldFallbackToAuto,
     type LatestOpinionGroupResultRow,
     type SnapshotCandidateOption,
 } from "./opinionGroupAnalysis.js";
@@ -63,6 +66,45 @@ function select({
         displayLanguage,
     });
 }
+
+describe("analysis view snapshot defaults", () => {
+    it("defaults omitted view to facilitator preference", () => {
+        expect(
+            getRequestedAnalysisView({
+                analysisView: undefined,
+            }),
+        ).toBe("facilitator_preference");
+    });
+
+    it("preserves explicit requests before canonical snapshot fallback", () => {
+        expect(
+            getRequestedAnalysisView({
+                analysisView: "3",
+            }),
+        ).toBe("3");
+    });
+
+    it("canonicalizes every non-auto view to auto when variants are disabled", () => {
+        expect(
+            getCanonicalAnalysisView({
+                requestedView: "facilitator_preference",
+                variantsEnabled: false,
+            }),
+        ).toBe("auto");
+        expect(
+            getCanonicalAnalysisView({ requestedView: "3", variantsEnabled: false }),
+        ).toBe("auto");
+        expect(
+            shouldFallbackToAuto({
+                requestedView: "facilitator_preference",
+                variantsEnabled: false,
+            }),
+        ).toBe(true);
+        expect(
+            shouldFallbackToAuto({ requestedView: "auto", variantsEnabled: false }),
+        ).toBe(false);
+    });
+});
 
 describe("selectLatestOpinionGroupResultForDisplay", () => {
     it("waits on latest pending labels when AI generation is expected", () => {
@@ -220,7 +262,7 @@ describe("buildAnalysisViewOptions", () => {
         });
 
         const systemDefault = options.find(
-            (option) => option.view === "system_default",
+            (option) => option.view === "auto",
         );
         const facilitatorPreference = options.find(
             (option) => option.view === "facilitator_preference",
@@ -241,7 +283,7 @@ describe("buildAnalysisViewOptions", () => {
         expect(facilitatorPreference).toMatchObject({
             status: "locked",
             reason: "analysis_variants_not_available",
-            resolvesToView: "system_default",
+            resolvesToView: "auto",
         });
         expect(fixedOptions).toHaveLength(5);
         expect(fixedOptions.every((option) => option.status === "locked")).toBe(
@@ -295,7 +337,7 @@ describe("buildAnalysisViewOptions", () => {
 
         expect(options.map((option) => option.view)).toEqual([
             "facilitator_preference",
-            "system_default",
+            "auto",
             "2",
             "3",
             "4",
@@ -313,6 +355,30 @@ describe("buildAnalysisViewOptions", () => {
                 },
             },
         });
+    });
+
+    it("keeps facilitator preference pointing to preferred count when unavailable", () => {
+        const systemCandidate = candidate({
+            candidateId: 33,
+            groupCount: 3,
+            selectionScore: 0.95,
+        });
+
+        const options = buildAnalysisViewOptions({
+            variantsEnabled: true,
+            preferredGroupCount: 5,
+            candidates: [systemCandidate],
+            systemCandidate,
+        });
+
+        expect(options.find((option) => option.view === "facilitator_preference"))
+            .toMatchObject({
+                view: "facilitator_preference",
+                status: "unavailable",
+                reason: "fixed_group_count_unavailable",
+                groupCount: 5,
+                resolvesToView: "5",
+            });
     });
 
     it("uses discouraged only for candidate-backed options", () => {

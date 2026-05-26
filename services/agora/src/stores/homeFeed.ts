@@ -49,6 +49,7 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       participationMode: "account_required",
       conversationType: "polis",
       aiLabelingEnabled: false,
+      preferredOpinionGroupCount: null,
       isIndexed: true,
       conversationSlugId: "",
       isClosed: false,

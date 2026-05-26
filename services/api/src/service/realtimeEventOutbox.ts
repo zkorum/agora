@@ -11,6 +11,11 @@ import {
     realtimeEventOutboxTable,
 } from "@/shared-backend/schema.js";
 import type { SSEEventDataByType, SSEEventType } from "@/shared/types/dto.js";
+import {
+    zodEventSlug,
+    zodParticipationMode,
+    zodPreferredOpinionGroupCount,
+} from "@/shared/types/zod.js";
 import type { RealtimeSSEManager } from "./realtimeSSE.js";
 
 const REALTIME_EVENT_OUTBOX_CHANNEL = "realtime_event_outbox";
@@ -30,6 +35,21 @@ const zodConversationAnalysisUpdatedData = z.object({
     moderatedOpinionCount: z.number().int().nonnegative().optional(),
     hiddenOpinionCount: z.number().int().nonnegative().optional(),
     isClosed: z.boolean().optional(),
+    timestamp: z.number().int().nonnegative(),
+});
+
+const zodConversationSettingsUpdatedData = z.object({
+    conversationSlugId: z.string().min(1),
+    settings: z
+        .object({
+            isIndexed: z.boolean(),
+            participationMode: zodParticipationMode,
+            requiresEventTicket: zodEventSlug.nullable(),
+            aiLabelingEnabled: z.boolean(),
+            preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
+            isClosed: z.boolean(),
+        })
+        .strict(),
     timestamp: z.number().int().nonnegative(),
 });
 
@@ -73,6 +93,30 @@ interface QueueConversationAnalysisUpdatedEventsForViewSnapshotsProps {
 interface QueueConversationAnalysisUpdatedEventsForLatestViewSnapshotsProps {
     db: PostgresJsDatabase;
     conversationIds: number[];
+}
+
+interface QueueConversationSettingsUpdatedEventProps {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    settings: SSEEventDataByType["conversation_settings_updated"]["settings"];
+}
+
+export async function queueConversationSettingsUpdatedEvent({
+    db,
+    conversationSlugId,
+    settings,
+}: QueueConversationSettingsUpdatedEventProps): Promise<void> {
+    const primaryDb = getPrimaryDb(db);
+    const payload: SSEEventDataByType["conversation_settings_updated"] = {
+        conversationSlugId,
+        settings,
+        timestamp: Date.now(),
+    };
+
+    await primaryDb.insert(realtimeEventOutboxTable).values({
+        eventType: "conversation_settings_updated",
+        payload,
+    });
 }
 
 export async function queueConversationAnalysisUpdatedEventsForViewSnapshots({
@@ -268,11 +312,26 @@ function parseRealtimeEventOutboxRow({
           event: "conversation_analysis_updated";
           data: SSEEventDataByType["conversation_analysis_updated"];
       }
+    | {
+          event: "conversation_settings_updated";
+          data: SSEEventDataByType["conversation_settings_updated"];
+      }
     | undefined {
     switch (eventType) {
         case "conversation_analysis_updated": {
             const result =
                 zodConversationAnalysisUpdatedData.safeParse(payload);
+            if (!result.success) {
+                return undefined;
+            }
+            return {
+                event: eventType,
+                data: result.data,
+            };
+        }
+        case "conversation_settings_updated": {
+            const result =
+                zodConversationSettingsUpdatedData.safeParse(payload);
             if (!result.success) {
                 return undefined;
             }

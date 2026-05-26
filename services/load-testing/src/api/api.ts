@@ -1193,6 +1193,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
     'conversationType': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum;
     'isIndexed': boolean;
     'aiLabelingEnabled': boolean;
+    'preferredOpinionGroupCount': number | null;
     'isClosed': boolean;
     'isEdited': boolean;
     'organization'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization;
@@ -2120,7 +2121,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
     _5: '5',
     _6: '6',
     FacilitatorPreference: 'facilitator_preference',
-    SystemDefault: 'system_default',
+    Auto: 'auto',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateRequestedViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateRequestedViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateRequestedViewEnum];
@@ -2131,12 +2132,12 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
     _5: '5',
     _6: '6',
     FacilitatorPreference: 'facilitator_preference',
-    SystemDefault: 'system_default',
+    Auto: 'auto',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateCanonicalViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateCanonicalViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateCanonicalViewEnum];
 export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateResolvedByEnum = {
-    SystemDefault: 'system_default',
+    Auto: 'auto',
     FacilitatorPreference: 'facilitator_preference',
     FacilitatorFallback: 'facilitator_fallback',
     FixedCount: 'fixed_count',
@@ -2163,7 +2164,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
     _5: '5',
     _6: '6',
     FacilitatorPreference: 'facilitator_preference',
-    SystemDefault: 'system_default',
+    Auto: 'auto',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerViewEnum];
@@ -2174,7 +2175,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
     _5: '5',
     _6: '6',
     FacilitatorPreference: 'facilitator_preference',
-    SystemDefault: 'system_default',
+    Auto: 'auto',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerResolvesToViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerResolvesToViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerResolvesToViewEnum];
@@ -2203,7 +2204,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
     _5: '5',
     _6: '6',
     FacilitatorPreference: 'facilitator_preference',
-    SystemDefault: 'system_default',
+    Auto: 'auto',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfViewEnum];
@@ -2214,7 +2215,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
     _5: '5',
     _6: '6',
     FacilitatorPreference: 'facilitator_preference',
-    SystemDefault: 'system_default',
+    Auto: 'auto',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfResolvesToViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfResolvesToViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfResolvesToViewEnum];
@@ -2238,7 +2239,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
     _5: '5',
     _6: '6',
     FacilitatorPreference: 'facilitator_preference',
-    SystemDefault: 'system_default',
+    Auto: 'auto',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf1ViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf1ViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf1ViewEnum];
@@ -2249,7 +2250,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
     _5: '5',
     _6: '6',
     FacilitatorPreference: 'facilitator_preference',
-    SystemDefault: 'system_default',
+    Auto: 'auto',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf1ResolvesToViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf1ResolvesToViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf1ResolvesToViewEnum];
@@ -2273,7 +2274,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
     _5: '5',
     _6: '6',
     FacilitatorPreference: 'facilitator_preference',
-    SystemDefault: 'system_default',
+    Auto: 'auto',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2ViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2ViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2ViewEnum];
@@ -2284,7 +2285,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
     _5: '5',
     _6: '6',
     FacilitatorPreference: 'facilitator_preference',
-    SystemDefault: 'system_default',
+    Auto: 'auto',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2ResolvesToViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2ResolvesToViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2ResolvesToViewEnum];
@@ -2308,7 +2309,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
     _5: '5',
     _6: '6',
     FacilitatorPreference: 'facilitator_preference',
-    SystemDefault: 'system_default',
+    Auto: 'auto',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3ViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3ViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3ViewEnum];
@@ -2319,7 +2320,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
     _5: '5',
     _6: '6',
     FacilitatorPreference: 'facilitator_preference',
-    SystemDefault: 'system_default',
+    Auto: 'auto',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3ResolvesToViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3ResolvesToViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3ResolvesToViewEnum];
@@ -2349,7 +2350,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
     _5: '5',
     _6: '6',
     FacilitatorPreference: 'facilitator_preference',
-    SystemDefault: 'system_default',
+    Auto: 'auto',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4ViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4ViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4ViewEnum];
@@ -2360,7 +2361,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
     _5: '5',
     _6: '6',
     FacilitatorPreference: 'facilitator_preference',
-    SystemDefault: 'system_default',
+    Auto: 'auto',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4ResolvesToViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4ResolvesToViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4ResolvesToViewEnum];
@@ -2389,7 +2390,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
     _5: '5',
     _6: '6',
     FacilitatorPreference: 'facilitator_preference',
-    SystemDefault: 'system_default',
+    Auto: 'auto',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ViewEnum];
@@ -2400,7 +2401,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
     _5: '5',
     _6: '6',
     FacilitatorPreference: 'facilitator_preference',
-    SystemDefault: 'system_default',
+    Auto: 'auto',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ResolvesToViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ResolvesToViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ResolvesToViewEnum];
@@ -2508,7 +2509,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPostRequestAnalysisViewEnum 
     _5: '5',
     _6: '6',
     FacilitatorPreference: 'facilitator_preference',
-    SystemDefault: 'system_default',
+    Auto: 'auto',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPostRequestAnalysisViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPostRequestAnalysisViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPostRequestAnalysisViewEnum];

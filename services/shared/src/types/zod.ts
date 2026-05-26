@@ -804,6 +804,13 @@ export const zodSurveyRouteResolution = z.discriminatedUnion("kind", [
         .strict(),
 ]);
 
+export const zodPreferredOpinionGroupCount = z
+    .number()
+    .int()
+    .min(2)
+    .max(6)
+    .nullable();
+
 export const zodConversationMetadata = z
     .object({
         conversationSlugId: zodSlugId,
@@ -824,6 +831,7 @@ export const zodConversationMetadata = z
         conversationType: zodConversationType,
         isIndexed: z.boolean(),
         aiLabelingEnabled: z.boolean(),
+        preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
         isClosed: z.boolean(),
         isEdited: z.boolean(),
         organization: zodOrganization.optional(),
@@ -854,6 +862,7 @@ export const zodConversationMetadataWithId = z
         conversationType: zodConversationType,
         isIndexed: z.boolean(),
         aiLabelingEnabled: z.boolean(),
+        preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
         isClosed: z.boolean(),
         isEdited: z.boolean(),
         organization: zodOrganization.optional(),
@@ -875,19 +884,13 @@ export const zodConversationMetadataWithId = z
 export const zodPolisKey = z.enum(["0", "1", "2", "3", "4", "5"]);
 export const zodAnalysisView = z.enum([
     "facilitator_preference",
-    "system_default",
+    "auto",
     "2",
     "3",
     "4",
     "5",
     "6",
 ]);
-export const zodPreferredOpinionGroupCount = z
-    .number()
-    .int()
-    .min(2)
-    .max(6)
-    .nullable();
 export const zodAnalysisViewOptionStatus = z.enum([
     "recommended",
     "available",

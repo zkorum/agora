@@ -190,6 +190,10 @@ export function useUpdateConversationMutation() {
             isIndexed: variables.isIndexed,
             aiLabelingEnabled:
               variables.aiLabelingEnabled ?? oldData.metadata.aiLabelingEnabled,
+            preferredOpinionGroupCount:
+              variables.preferredOpinionGroupCount === undefined
+                ? oldData.metadata.preferredOpinionGroupCount
+                : variables.preferredOpinionGroupCount,
             participationMode: variables.participationMode,
             requiresEventTicket: variables.requiresEventTicket,
           },

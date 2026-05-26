@@ -1121,6 +1121,12 @@
                                                             "aiLabelingEnabled": {
                                                                 "type": "boolean"
                                                             },
+                                                            "preferredOpinionGroupCount": {
+                                                                "nullable": true,
+                                                                "type": "integer",
+                                                                "minimum": 2,
+                                                                "maximum": 6
+                                                            },
                                                             "isClosed": {
                                                                 "type": "boolean"
                                                             },
@@ -1304,6 +1310,7 @@
                                                             "conversationType",
                                                             "isIndexed",
                                                             "aiLabelingEnabled",
+                                                            "preferredOpinionGroupCount",
                                                             "isClosed",
                                                             "isEdited",
                                                             "moderation",
@@ -2111,6 +2118,12 @@
                                                     "aiLabelingEnabled": {
                                                         "type": "boolean"
                                                     },
+                                                    "preferredOpinionGroupCount": {
+                                                        "nullable": true,
+                                                        "type": "integer",
+                                                        "minimum": 2,
+                                                        "maximum": 6
+                                                    },
                                                     "isClosed": {
                                                         "type": "boolean"
                                                     },
@@ -2294,6 +2307,7 @@
                                                     "conversationType",
                                                     "isIndexed",
                                                     "aiLabelingEnabled",
+                                                    "preferredOpinionGroupCount",
                                                     "isClosed",
                                                     "isEdited",
                                                     "moderation",
@@ -2504,6 +2518,12 @@
                                                             "aiLabelingEnabled": {
                                                                 "type": "boolean"
                                                             },
+                                                            "preferredOpinionGroupCount": {
+                                                                "nullable": true,
+                                                                "type": "integer",
+                                                                "minimum": 2,
+                                                                "maximum": 6
+                                                            },
                                                             "isClosed": {
                                                                 "type": "boolean"
                                                             },
@@ -2687,6 +2707,7 @@
                                                             "conversationType",
                                                             "isIndexed",
                                                             "aiLabelingEnabled",
+                                                            "preferredOpinionGroupCount",
                                                             "isClosed",
                                                             "isEdited",
                                                             "moderation",
@@ -4183,7 +4204,7 @@
                                             "5",
                                             "6",
                                             "facilitator_preference",
-                                            "system_default"
+                                            "auto"
                                         ]
                                     },
                                     "checkpointViewSnapshotId": {
@@ -4310,7 +4331,7 @@
                                                         "5",
                                                         "6",
                                                         "facilitator_preference",
-                                                        "system_default"
+                                                        "auto"
                                                     ]
                                                 },
                                                 "canonicalView": {
@@ -4322,7 +4343,7 @@
                                                         "5",
                                                         "6",
                                                         "facilitator_preference",
-                                                        "system_default"
+                                                        "auto"
                                                     ]
                                                 },
                                                 "resolvedGroupCount": {
@@ -4340,7 +4361,7 @@
                                                 "resolvedBy": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "system_default",
+                                                        "auto",
                                                         "facilitator_preference",
                                                         "facilitator_fallback",
                                                         "fixed_count",
@@ -4368,7 +4389,7 @@
                                                                             "5",
                                                                             "6",
                                                                             "facilitator_preference",
-                                                                            "system_default"
+                                                                            "auto"
                                                                         ]
                                                                     },
                                                                     "resolvesToView": {
@@ -4380,7 +4401,7 @@
                                                                             "5",
                                                                             "6",
                                                                             "facilitator_preference",
-                                                                            "system_default"
+                                                                            "auto"
                                                                         ]
                                                                     },
                                                                     "status": {
@@ -4452,7 +4473,7 @@
                                                                             "5",
                                                                             "6",
                                                                             "facilitator_preference",
-                                                                            "system_default"
+                                                                            "auto"
                                                                         ]
                                                                     },
                                                                     "resolvesToView": {
@@ -4464,7 +4485,7 @@
                                                                             "5",
                                                                             "6",
                                                                             "facilitator_preference",
-                                                                            "system_default"
+                                                                            "auto"
                                                                         ]
                                                                     },
                                                                     "status": {
@@ -4536,7 +4557,7 @@
                                                                             "5",
                                                                             "6",
                                                                             "facilitator_preference",
-                                                                            "system_default"
+                                                                            "auto"
                                                                         ]
                                                                     },
                                                                     "resolvesToView": {
@@ -4548,7 +4569,7 @@
                                                                             "5",
                                                                             "6",
                                                                             "facilitator_preference",
-                                                                            "system_default"
+                                                                            "auto"
                                                                         ]
                                                                     },
                                                                     "status": {
@@ -4620,7 +4641,7 @@
                                                                             "5",
                                                                             "6",
                                                                             "facilitator_preference",
-                                                                            "system_default"
+                                                                            "auto"
                                                                         ]
                                                                     },
                                                                     "resolvesToView": {
@@ -4632,7 +4653,7 @@
                                                                             "5",
                                                                             "6",
                                                                             "facilitator_preference",
-                                                                            "system_default"
+                                                                            "auto"
                                                                         ]
                                                                     },
                                                                     "status": {
@@ -4667,7 +4688,7 @@
                                                                             "5",
                                                                             "6",
                                                                             "facilitator_preference",
-                                                                            "system_default"
+                                                                            "auto"
                                                                         ]
                                                                     },
                                                                     "resolvesToView": {
@@ -4679,7 +4700,7 @@
                                                                             "5",
                                                                             "6",
                                                                             "facilitator_preference",
-                                                                            "system_default"
+                                                                            "auto"
                                                                         ]
                                                                     },
                                                                     "status": {
@@ -4720,7 +4741,7 @@
                                                                             "5",
                                                                             "6",
                                                                             "facilitator_preference",
-                                                                            "system_default"
+                                                                            "auto"
                                                                         ]
                                                                     },
                                                                     "resolvesToView": {
@@ -4732,7 +4753,7 @@
                                                                             "5",
                                                                             "6",
                                                                             "facilitator_preference",
-                                                                            "system_default"
+                                                                            "auto"
                                                                         ]
                                                                     },
                                                                     "status": {
@@ -7156,6 +7177,12 @@
                                                         "aiLabelingEnabled": {
                                                             "type": "boolean"
                                                         },
+                                                        "preferredOpinionGroupCount": {
+                                                            "nullable": true,
+                                                            "type": "integer",
+                                                            "minimum": 2,
+                                                            "maximum": 6
+                                                        },
                                                         "isClosed": {
                                                             "type": "boolean"
                                                         },
@@ -7339,6 +7366,7 @@
                                                         "conversationType",
                                                         "isIndexed",
                                                         "aiLabelingEnabled",
+                                                        "preferredOpinionGroupCount",
                                                         "isClosed",
                                                         "isEdited",
                                                         "moderation",

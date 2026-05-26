@@ -42,6 +42,20 @@
           </div>
 
           <div class="control-item">
+            <label for="analysis-availability" class="control-label">
+              Analysis availability
+            </label>
+            <PrimeSelect
+              id="analysis-availability"
+              v-model="analysisAvailabilityMode"
+              :options="analysisAvailabilityOptions"
+              option-label="label"
+              option-value="value"
+              class="control-select"
+            />
+          </div>
+
+          <div class="control-item">
             <label for="recommended-variant" class="control-label">
               Recommended default
             </label>
@@ -439,6 +453,21 @@
           @click="simulateRecommendedDefaultEvent"
         />
         <PrimeButton
+          label="Discourage variant"
+          size="small"
+          @click="simulateDiscourageGroupEvent"
+        />
+        <PrimeButton
+          label="Unavailable variant"
+          size="small"
+          @click="simulateUnavailableGroupEvent"
+        />
+        <PrimeButton
+          label="Clear variant state"
+          size="small"
+          @click="simulateClearGroupStateEvent"
+        />
+        <PrimeButton
           label="Shuffle agreements"
           size="small"
           @click="simulateAgreementOrderEvent"
@@ -564,6 +593,7 @@ type GroupStateOverride =
   | `discouraged-${VariantGroupCount}`
   | `unavailable-${VariantGroupCount}`;
 type AnalysisVariantsMode = "enabled" | "locked";
+type AnalysisAvailabilityMode = "available" | "noAnalysis";
 type AiFeatureMode = "enabled" | "disabled";
 type DistributionMode = "balanced" | "imbalanced" | "singleton";
 type ScoreProfileMode = "balanced" | "smallBest" | "largeBest" | "flat";
@@ -585,6 +615,9 @@ type LiveEventKind =
   | "participants"
   | "aiLabels"
   | "recommendedDefault"
+  | "discourageGroup"
+  | "unavailableGroup"
+  | "clearGroupState"
   | "agreementOrder"
   | "disagreementOrder"
   | "divisiveOrder"
@@ -622,6 +655,9 @@ const autoLiveEventKinds: LiveEventKind[] = [
   "participants",
   "aiLabels",
   "recommendedDefault",
+  "discourageGroup",
+  "unavailableGroup",
+  "clearGroupState",
   "agreementOrder",
   "disagreementOrder",
   "divisiveOrder",
@@ -663,6 +699,7 @@ const { reveal: headerRevealed } = storeToRefs(useLayoutHeaderStore());
 
 const selectedClusterCount = ref<ClusterCount>(3);
 const analysisVariantsMode = ref<AnalysisVariantsMode>("enabled");
+const analysisAvailabilityMode = ref<AnalysisAvailabilityMode>("available");
 const recommendedDefaultMode = ref<VariantSelectionMode>("auto");
 const facilitatorPreferenceMode = ref<VariantSelectionMode>(5);
 const groupStateOverride = ref<GroupStateOverride>("none");
@@ -879,6 +916,11 @@ const analysisVariantsOptions = [
   { label: "No variants entitlement", value: "locked" },
 ] satisfies Array<{ label: string; value: AnalysisVariantsMode }>;
 
+const analysisAvailabilityOptions = [
+  { label: "Analysis available", value: "available" },
+  { label: "No analysis yet", value: "noAnalysis" },
+] satisfies Array<{ label: string; value: AnalysisAvailabilityMode }>;
+
 const variantSelectionOptions = [
   { label: "Auto", value: "auto" },
   { label: "None", value: "none" },
@@ -1062,6 +1104,12 @@ function getLiveEventKindLabel(kind: LiveEventKind): string {
       return "AI labels";
     case "recommendedDefault":
       return "variant scores";
+    case "discourageGroup":
+      return "discourage variant";
+    case "unavailableGroup":
+      return "unavailable variant";
+    case "clearGroupState":
+      return "clear variant state";
     case "agreementOrder":
       return "agreement order";
     case "disagreementOrder":
@@ -1165,7 +1213,7 @@ function getFixedGroupCount(view: AnalysisView): VariantGroupCount | undefined {
     case "6":
       return 6;
     case "facilitator_preference":
-    case "system_default":
+    case "auto":
       return undefined;
   }
 }
@@ -1297,7 +1345,7 @@ function createLockedOption(view: AnalysisView): AnalysisViewOption {
     status: "locked",
     reason: "analysis_variants_not_available",
     ...(view === "facilitator_preference"
-      ? { resolvesToView: "system_default" }
+      ? { resolvesToView: "auto" }
       : {}),
   };
 }
@@ -1310,7 +1358,7 @@ function createRecommendedUnavailableOption(
     status: "unavailable",
     reason: "recommended_default_unavailable",
     ...(view === "facilitator_preference"
-      ? { resolvesToView: "system_default" }
+      ? { resolvesToView: "auto" }
       : {}),
   };
 }
@@ -1384,13 +1432,27 @@ function buildAnalysisViewOptions({
   defaultGroupCount: VariantGroupCount | undefined;
   facilitatorGroupCount: VariantGroupCount | undefined;
 }): AnalysisViewOption[] {
+  if (analysisAvailabilityMode.value === "noAnalysis") {
+    return [
+      analysisVariantsEnabled.value
+        ? createRecommendedUnavailableOption("facilitator_preference")
+        : createLockedOption("facilitator_preference"),
+      createRecommendedUnavailableOption("auto"),
+      ...variantGroupCounts.map((groupCount) =>
+        analysisVariantsEnabled.value
+          ? createFixedUnavailableOption(groupCount)
+          : createLockedOption(getAnalysisViewForGroupCount(groupCount))
+      ),
+    ];
+  }
+
   if (!analysisVariantsEnabled.value) {
     return [
       createLockedOption("facilitator_preference"),
       defaultGroupCount === undefined
-        ? createRecommendedUnavailableOption("system_default")
+        ? createRecommendedUnavailableOption("auto")
         : createCandidateBackedOption({
-            view: "system_default",
+            view: "auto",
             groupCount: defaultGroupCount,
             status: "recommended",
           }),
@@ -1413,9 +1475,9 @@ function buildAnalysisViewOptions({
           resolvesToView: getAnalysisViewForGroupCount(facilitatorGroupCount),
         }),
     defaultGroupCount === undefined
-      ? createRecommendedUnavailableOption("system_default")
+      ? createRecommendedUnavailableOption("auto")
       : createCandidateBackedOption({
-          view: "system_default",
+          view: "auto",
           groupCount: defaultGroupCount,
           status: "recommended",
         }),
@@ -1443,21 +1505,21 @@ const mockAnalysisViewState = computed<AnalysisViewState>(() => {
   const facilitatorGroupCount = getFacilitatorGroupCount(defaultGroupCount);
   const canonicalView = analysisVariantsEnabled.value
     ? requestedView
-    : "system_default";
+    : "auto";
 
   const resolved: MockResolvedAnalysisView = (() => {
-    if (!analysisVariantsEnabled.value && requestedView !== "system_default") {
+    if (!analysisVariantsEnabled.value && requestedView !== "auto") {
       return {
         groupCount: defaultGroupCount,
         resolvedBy: "locked_fallback",
       };
     }
 
-    if (canonicalView === "system_default") {
+    if (canonicalView === "auto") {
       return {
         groupCount: defaultGroupCount,
         resolvedBy:
-          defaultGroupCount === undefined ? "no_analysis" : "system_default",
+          defaultGroupCount === undefined ? "no_analysis" : "auto",
       };
     }
 
@@ -1511,12 +1573,29 @@ const mockAnalysisViewState = computed<AnalysisViewState>(() => {
   };
 });
 
-const activeClusterCount = computed<ClusterCount>(
-  () =>
-    getVariantGroupCountFromResolvedGroupCount(
-      mockAnalysisViewState.value.resolvedGroupCount
-    ) ?? selectedClusterCount.value
-);
+const activeClusterCount = computed<ClusterCount>(() => {
+  const resolvedGroupCount = getVariantGroupCountFromResolvedGroupCount(
+    mockAnalysisViewState.value.resolvedGroupCount
+  );
+
+  if (resolvedGroupCount !== undefined) {
+    return resolvedGroupCount;
+  }
+
+  switch (mockAnalysisViewState.value.resolvedBy) {
+    case "no_analysis":
+    case "unavailable_fixed_count":
+      return 0;
+    case "facilitator_fallback":
+    case "facilitator_preference":
+    case "fixed_count":
+    case "locked_fallback":
+    case "auto":
+      return selectedClusterCount.value;
+  }
+
+  return selectedClusterCount.value;
+});
 
 function getDeterministicRatio(seed: number): number {
   return ((seed * 9301 + 49297) % 233280) / 233280;
@@ -2003,6 +2082,7 @@ const analysisQuery = useQuery<AnalysisData, Error>({
     selectedRouteCheckpoint.value,
     selectedClusterCount.value,
     analysisVariantsMode.value,
+    analysisAvailabilityMode.value,
     recommendedDefaultMode.value,
     facilitatorPreferenceMode.value,
     groupStateOverride.value,
@@ -2224,6 +2304,15 @@ function simulateSelectedLiveEvent({ kind }: { kind: LiveEventKind }): void {
     case "recommendedDefault":
       simulateRecommendedDefaultEvent();
       return;
+    case "discourageGroup":
+      simulateDiscourageGroupEvent();
+      return;
+    case "unavailableGroup":
+      simulateUnavailableGroupEvent();
+      return;
+    case "clearGroupState":
+      simulateClearGroupStateEvent();
+      return;
     case "agreementOrder":
       simulateAgreementOrderEvent();
       return;
@@ -2282,6 +2371,37 @@ function simulateRecommendedDefaultEvent(): void {
   lastLiveEventLabel.value = `Variant scores changed: default ${String(
     defaultVariantGroupCount.value ?? "none"
   )}`;
+  commitLiveEvent();
+}
+
+function getLiveVariantGroupCount(): VariantGroupCount {
+  const selectedGroupCount = getFixedGroupCount(requestedAnalysisView.value);
+  if (selectedGroupCount !== undefined) {
+    return selectedGroupCount;
+  }
+
+  return (
+    variantGroupCounts[liveEventSerial.value % variantGroupCounts.length] ?? 2
+  );
+}
+
+function simulateDiscourageGroupEvent(): void {
+  const groupCount = getLiveVariantGroupCount();
+  groupStateOverride.value = `discouraged-${groupCount}`;
+  lastLiveEventLabel.value = `${String(groupCount)} groups discouraged for selected snapshot`;
+  commitLiveEvent();
+}
+
+function simulateUnavailableGroupEvent(): void {
+  const groupCount = getLiveVariantGroupCount();
+  groupStateOverride.value = `unavailable-${groupCount}`;
+  lastLiveEventLabel.value = `${String(groupCount)} groups unavailable for selected snapshot`;
+  commitLiveEvent();
+}
+
+function simulateClearGroupStateEvent(): void {
+  groupStateOverride.value = "none";
+  lastLiveEventLabel.value = "Variant override cleared";
   commitLiveEvent();
 }
 

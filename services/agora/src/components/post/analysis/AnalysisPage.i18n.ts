@@ -89,9 +89,9 @@ const analysisViewHelpFallbackTranslations = {
     "Shows exactly that many groups for the current snapshot, or an empty state if unavailable.",
   unavailableOption: "Unavailable",
   unavailableOptionDescription:
-    "Agora could not form meaningful groups for this group count at this checkpoint.",
+    "Agora could not form meaningful groups for this group count in the selected snapshot.",
   discouragedOptionDescription:
-    "This group count has an analysis result, but the result is weaker than the alternatives.",
+    "This group count has an analysis result, but the result is weaker than the alternatives in the selected snapshot.",
   overallScoreLabel: "Overall {score}/100",
   clarityScoreLabel: "Clarity {score}/100",
   balanceScoreLabel: "Balance {score}/100",
@@ -144,18 +144,19 @@ export const analysisPageTranslations: Record<
     generateReport: "Generate report",
     report: "Report",
     analysisViewTitle: "Analysis view",
-    analysisViewSortingCaption: "Choose how opinion groups are shown.",
+    analysisViewSortingCaption:
+      "Choose how opinion groups are shown. Scores are only for the selected snapshot and may change.",
     facilitatorPreference: "Facilitator preference",
     recommendedDefault: "Auto",
     groupsLabel: "{count} groups",
     systemDefaultCaption:
       "Uses the highest-scoring available group count for each snapshot.",
-    analysisVariantsNotAvailable: "This is not supported on your current plan.",
+    analysisVariantsNotAvailable: "This snapshot does not include variants.",
     fixedGroupCountUnavailable:
-      "Agora could not form {count} meaningful groups for this checkpoint.",
+      "Agora could not form {count} meaningful groups in the selected snapshot.",
     recommendedDefaultUnavailable: "Auto is not available yet.",
     sameAsRecommendedDefault: "Same as Auto",
-    usesGroups: "Uses {count} groups",
+    usesGroups: "Uses {count} groups. Falls back to Auto if unavailable.",
     recommendedOptionCaption: "Recommended",
     liveSnapshot: "Live",
     checkpointSnapshot: "Checkpoint",
@@ -187,9 +188,9 @@ export const analysisPageTranslations: Record<
       "Shows exactly that many groups for the current snapshot, or an empty state if unavailable.",
     unavailableOption: "Unavailable",
     unavailableOptionDescription:
-      "Agora could not form meaningful groups for this group count at this checkpoint.",
+      "Agora could not form meaningful groups for this group count in the selected snapshot.",
     discouragedOptionDescription:
-      "This group count has an analysis result, but the result is weaker than the alternatives.",
+      "This group count has an analysis result, but the result is weaker than the alternatives in the selected snapshot.",
     overallScoreLabel: "Overall {score}/100",
     clarityScoreLabel: "Clarity {score}/100",
     balanceScoreLabel: "Balance {score}/100",
@@ -232,7 +233,7 @@ export const analysisPageTranslations: Record<
     recommendedDefault: "الافتراضي الموصى به",
     groupsLabel: "{count} مجموعات",
     systemDefaultCaption: "يختار أفضل متغير لكل لقطة جديدة.",
-    analysisVariantsNotAvailable: "هذا غير مدعوم في خطتك الحالية.",
+    analysisVariantsNotAvailable: "لا تتضمن هذه اللقطة متغيرات.",
     fixedGroupCountUnavailable:
       "تعذر على Agora تشكيل {count} مجموعات ذات معنى لنقطة التحقق هذه.",
     recommendedDefaultUnavailable: "لا يوجد متغير موصى به متاح بعد.",
@@ -288,7 +289,7 @@ export const analysisPageTranslations: Record<
     groupsLabel: "{count} grupos",
     systemDefaultCaption:
       "Elige la variante con mejor puntuación para cada nueva instantánea.",
-    analysisVariantsNotAvailable: "Esto no está disponible en tu plan actual.",
+    analysisVariantsNotAvailable: "Esta instantánea no incluye variantes.",
     fixedGroupCountUnavailable:
       "Agora no pudo formar {count} grupos significativos para este punto de control.",
     recommendedDefaultUnavailable:
@@ -343,7 +344,7 @@ export const analysisPageTranslations: Record<
     recommendedDefault: "پیش‌فرض پیشنهادی",
     groupsLabel: "{count} گروه",
     systemDefaultCaption: "بهترین متغیر را برای هر نمای جدید انتخاب می‌کند.",
-    analysisVariantsNotAvailable: "این در طرح فعلی شما پشتیبانی نمی‌شود.",
+    analysisVariantsNotAvailable: "این نما شامل حالت‌های جایگزین نیست.",
     fixedGroupCountUnavailable:
       "Agora نتوانست برای این نقطه بررسی {count} گروه معنادار تشکیل دهد.",
     recommendedDefaultUnavailable: "هنوز متغیر پیشنهادی در دسترس نیست.",
@@ -399,8 +400,7 @@ export const analysisPageTranslations: Record<
     groupsLabel: "{count} groupes",
     systemDefaultCaption:
       "Choisit la variante la mieux notée pour chaque nouvel instantané.",
-    analysisVariantsNotAvailable:
-      "Ce n'est pas pris en charge par votre forfait actuel.",
+    analysisVariantsNotAvailable: "Cet instantané n'inclut pas de variantes.",
     fixedGroupCountUnavailable:
       "Agora n'a pas pu former {count} groupes significatifs pour ce point de contrôle.",
     recommendedDefaultUnavailable:
@@ -453,7 +453,7 @@ export const analysisPageTranslations: Record<
     recommendedDefault: "推荐默认",
     groupsLabel: "{count} 个群组",
     systemDefaultCaption: "为每个新快照选择评分最高的变体。",
-    analysisVariantsNotAvailable: "你当前的方案不支持此功能。",
+    analysisVariantsNotAvailable: "此快照不包含变体。",
     fixedGroupCountUnavailable:
       "Agora 无法为此检查点形成 {count} 个有意义的群组。",
     recommendedDefaultUnavailable: "尚无可用的推荐变体。",
@@ -505,7 +505,7 @@ export const analysisPageTranslations: Record<
     recommendedDefault: "推薦預設",
     groupsLabel: "{count} 個群組",
     systemDefaultCaption: "為每個新快照選擇評分最高的變體。",
-    analysisVariantsNotAvailable: "你目前的方案不支援此功能。",
+    analysisVariantsNotAvailable: "此快照不包含變體。",
     fixedGroupCountUnavailable:
       "Agora 無法為此檢查點形成 {count} 個有意義的群組。",
     recommendedDefaultUnavailable: "尚無可用的推薦變體。",
@@ -558,7 +558,7 @@ export const analysisPageTranslations: Record<
     groupsLabel: "{count} קבוצות",
     systemDefaultCaption:
       "בוחרת את הווריאנט בעל הציון הגבוה ביותר לכל תמונת מצב חדשה.",
-    analysisVariantsNotAvailable: "האפשרות הזו אינה נתמכת בתוכנית הנוכחית שלך.",
+    analysisVariantsNotAvailable: "תמונת המצב הזו לא כוללת וריאנטים.",
     fixedGroupCountUnavailable:
       "Agora לא הצליחה ליצור {count} קבוצות משמעותיות עבור נקודת ביקורת זו.",
     recommendedDefaultUnavailable: "עדיין אין וריאנט מומלץ זמין.",
@@ -612,7 +612,8 @@ export const analysisPageTranslations: Record<
     groupsLabel: "{count} グループ",
     systemDefaultCaption:
       "新しいスナップショットごとに最もスコアの高いバリアントを選択します。",
-    analysisVariantsNotAvailable: "現在のプランではサポートされていません。",
+    analysisVariantsNotAvailable:
+      "このスナップショットにはバリアントが含まれていません。",
     fixedGroupCountUnavailable:
       "Agora はこのチェックポイントで意味のある {count} グループを形成できませんでした。",
     recommendedDefaultUnavailable: "推奨バリアントはまだ利用できません。",
@@ -666,7 +667,7 @@ export const analysisPageTranslations: Record<
     groupsLabel: "{count} топ",
     systemDefaultCaption:
       "Ар бир жаңы сүрөт үчүн эң жогорку упай алган вариантты тандайт.",
-    analysisVariantsNotAvailable: "Бул учурдагы планыңызда колдоого алынбайт.",
+    analysisVariantsNotAvailable: "Бул сүрөттө варианттар жок.",
     fixedGroupCountUnavailable:
       "Agora бул текшерүү чекити үчүн {count} маанилүү топ түзө алган жок.",
     recommendedDefaultUnavailable:
@@ -722,8 +723,7 @@ export const analysisPageTranslations: Record<
     groupsLabel: "{count} групп",
     systemDefaultCaption:
       "Выбирает вариант с лучшей оценкой для каждого нового снимка.",
-    analysisVariantsNotAvailable:
-      "Это не поддерживается в вашем текущем плане.",
+    analysisVariantsNotAvailable: "Этот снимок не содержит вариантов.",
     fixedGroupCountUnavailable:
       "Agora не смогла сформировать {count} значимых групп для этой контрольной точки.",
     recommendedDefaultUnavailable: "Рекомендуемый вариант пока недоступен.",

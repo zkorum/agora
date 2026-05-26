@@ -181,7 +181,7 @@ export class Dto {
             resolvedGroupCount: z.number().int().min(2).max(6).nullable(),
             resolvedCandidateId: z.number().int().positive().nullable(),
             resolvedBy: z.enum([
-                "system_default",
+                "auto",
                 "facilitator_preference",
                 "facilitator_fallback",
                 "fixed_count",

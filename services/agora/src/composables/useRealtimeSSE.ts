@@ -1,12 +1,18 @@
 import { useQueryClient } from "@tanstack/vue-query";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   SSEConnectedData,
   SSEConversationAnalysisUpdatedData,
+  SSEConversationSettingsUpdatedData,
   SSEHeartbeatData,
   SSENewOpinionData,
   SSENotificationData,
   SSEPopularConversationData,
 } from "src/shared/types/dto";
+import type {
+  ExtendedConversation,
+  ParticipationMode,
+} from "src/shared/types/zod";
 import { zodNotificationItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
@@ -16,9 +22,14 @@ import { useCommonApi } from "src/utils/api/common";
 import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { processEnv } from "src/utils/processEnv";
+import { useNotify } from "src/utils/ui/notify";
 import { onUnmounted, ref, watch } from "vue";
 
 import { setNetworkOffline } from "./useNetworkStatus";
+import {
+  type RealtimeSSETranslations,
+  realtimeSSETranslations,
+} from "./useRealtimeSSE.i18n";
 
 const SSE_CONNECTION_TIMEOUT_MS = 15_000;
 const SSE_RETRY_DELAY_MS = 1_000;
@@ -56,6 +67,46 @@ function isLiveAnalysisQueryKey({
   );
 }
 
+function isFacilitatorPreferenceLiveAnalysisQueryKey({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return (
+    isLiveAnalysisQueryKey({ queryKey, conversationSlugId }) &&
+    (queryKey[2] === undefined || queryKey[2] === "facilitator_preference")
+  );
+}
+
+function shouldRefetchLiveAnalysisForSettingsUpdate({
+  queryKey,
+  conversationSlugId,
+  preferredOpinionGroupCountChanged,
+  aiLabelingEnabledChanged,
+  aiLabelingEnabled,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+  preferredOpinionGroupCountChanged: boolean;
+  aiLabelingEnabledChanged: boolean;
+  aiLabelingEnabled: boolean;
+}): boolean {
+  if (!isLiveAnalysisQueryKey({ queryKey, conversationSlugId })) {
+    return false;
+  }
+
+  if (preferredOpinionGroupCountChanged) {
+    return isFacilitatorPreferenceLiveAnalysisQueryKey({
+      queryKey,
+      conversationSlugId,
+    });
+  }
+
+  return aiLabelingEnabledChanged && aiLabelingEnabled;
+}
+
 function isCheckpointAnalysisQueryKey({
   queryKey,
   conversationSlugId,
@@ -86,6 +137,10 @@ export function useRealtimeSSE() {
   const opinionUpdatesStore = useOpinionUpdatesStore();
   const authStore = useAuthenticationStore();
   const queryClient = useQueryClient();
+  const { showNotifyMessage } = useNotify();
+  const { t } = useComponentI18n<RealtimeSSETranslations>(
+    realtimeSSETranslations
+  );
 
   const isConnected = ref(false);
   const isConnecting = ref(false);
@@ -97,6 +152,10 @@ export function useRealtimeSSE() {
   let offlineTimer: ReturnType<typeof setTimeout> | null = null;
   let heartbeatWatchdog: ReturnType<typeof setTimeout> | null = null;
   const latestAnalysisEventTimestampByConversationSlugId = new Map<
+    string,
+    number
+  >();
+  const latestSettingsEventTimestampByConversationSlugId = new Map<
     string,
     number
   >();
@@ -234,6 +293,103 @@ export function useRealtimeSSE() {
     return { event, data };
   }
 
+  function getParticipationModeMessage(
+    participationMode: ParticipationMode
+  ): string {
+    switch (participationMode) {
+      case "guest": {
+        return t("participationGuestAllowed");
+      }
+      case "account_required": {
+        return t("participationAccountRequired");
+      }
+      case "email_verification": {
+        return t("participationEmailVerificationRequired");
+      }
+      case "strong_verification": {
+        return t("participationStrongVerificationRequired");
+      }
+    }
+  }
+
+  function notifyConversationSettingsUpdated({
+    previousMetadata,
+    data,
+  }: {
+    previousMetadata: ExtendedConversation["metadata"] | undefined;
+    data: SSEConversationSettingsUpdatedData;
+  }): void {
+    if (previousMetadata === undefined) {
+      return;
+    }
+
+    const messages: string[] = [];
+    const isClosedChanged = previousMetadata.isClosed !== data.settings.isClosed;
+
+    if (isClosedChanged) {
+      messages.push(
+        data.settings.isClosed
+          ? t("conversationClosed")
+          : t("conversationOpened")
+      );
+    }
+
+    if (previousMetadata.isIndexed !== data.settings.isIndexed) {
+      messages.push(
+        data.settings.isIndexed
+          ? t("conversationPublic")
+          : t("conversationPrivate")
+      );
+    }
+
+    if (previousMetadata.participationMode !== data.settings.participationMode) {
+      messages.push(getParticipationModeMessage(data.settings.participationMode));
+    }
+
+    if (
+      (previousMetadata.requiresEventTicket ?? null) !==
+      data.settings.requiresEventTicket
+    ) {
+      messages.push(
+        data.settings.requiresEventTicket === null
+          ? t("eventTicketNotRequired")
+          : t("eventTicketRequired")
+      );
+    }
+
+    if (previousMetadata.aiLabelingEnabled !== data.settings.aiLabelingEnabled) {
+      messages.push(
+        data.settings.aiLabelingEnabled
+          ? t("llmTurnedOnByFacilitator")
+          : t("llmTurnedOffByFacilitator")
+      );
+    }
+
+    if (
+      previousMetadata.preferredOpinionGroupCount !==
+      data.settings.preferredOpinionGroupCount
+    ) {
+      messages.push(t("facilitatorGroupCountPreferenceChanged"));
+    }
+
+    if (messages.length === 0) {
+      return;
+    }
+
+    const isOnlyClosedChange = messages.length === 1 && isClosedChanged;
+    showNotifyMessage({
+      message:
+        messages.length === 1 ? messages[0] : t("conversationSettingsUpdated"),
+      caption: messages.length > 1 ? messages.join(" · ") : undefined,
+      icon: isOnlyClosedChange
+        ? data.settings.isClosed
+          ? "mdi-lock-outline"
+          : "mdi-lock-open-outline"
+        : "mdi-cog-outline",
+      group: `conversation-settings-${data.conversationSlugId}`,
+    });
+  }
+
   function handleSSEEvent(event: string, rawData: string): void {
     try {
       switch (event) {
@@ -299,6 +455,72 @@ export function useRealtimeSSE() {
               queryKey: ["analysisCheckpoints", data.conversationSlugId],
             });
           }
+          break;
+        }
+        case "conversation_settings_updated": {
+          const data: SSEConversationSettingsUpdatedData = JSON.parse(rawData);
+          const previousTimestamp =
+            latestSettingsEventTimestampByConversationSlugId.get(
+              data.conversationSlugId
+            );
+          if (
+            previousTimestamp !== undefined &&
+            previousTimestamp > data.timestamp
+          ) {
+            break;
+          }
+
+          latestSettingsEventTimestampByConversationSlugId.set(
+            data.conversationSlugId,
+            data.timestamp
+          );
+
+          const previousConversation =
+            queryClient.getQueryData<ExtendedConversation>([
+              "conversation",
+              data.conversationSlugId,
+            ]);
+          const previousMetadata = previousConversation?.metadata;
+          const preferredOpinionGroupCountChanged =
+            previousMetadata === undefined ||
+            previousMetadata.preferredOpinionGroupCount !==
+              data.settings.preferredOpinionGroupCount;
+          const aiLabelingEnabledChanged =
+            previousMetadata === undefined ||
+            previousMetadata.aiLabelingEnabled !==
+              data.settings.aiLabelingEnabled;
+
+          updateConversationQueryCache({
+            queryClient,
+            conversationSlugId: data.conversationSlugId,
+            updateConversation: (conversation) => ({
+              ...conversation,
+              metadata: {
+                ...conversation.metadata,
+                isIndexed: data.settings.isIndexed,
+                participationMode: data.settings.participationMode,
+                requiresEventTicket:
+                  data.settings.requiresEventTicket ?? undefined,
+                aiLabelingEnabled: data.settings.aiLabelingEnabled,
+                preferredOpinionGroupCount:
+                  data.settings.preferredOpinionGroupCount,
+                isClosed: data.settings.isClosed,
+              },
+            }),
+          });
+
+          notifyConversationSettingsUpdated({ previousMetadata, data });
+
+          void queryClient.invalidateQueries({
+            predicate: (query) =>
+              shouldRefetchLiveAnalysisForSettingsUpdate({
+                queryKey: query.queryKey,
+                conversationSlugId: data.conversationSlugId,
+                preferredOpinionGroupCountChanged,
+                aiLabelingEnabledChanged,
+                aiLabelingEnabled: data.settings.aiLabelingEnabled,
+              }),
+          });
           break;
         }
         case "heartbeat": {

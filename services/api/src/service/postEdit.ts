@@ -36,7 +36,7 @@ import {
     createConversationViewSnapshotsFromCurrentState,
     ensureAiDescriptionLocaleStatusesForLatestAnalysisSnapshots,
 } from "@/service/conversationViewSnapshot.js";
-import { queueConversationAnalysisUpdatedEventsForLatestViewSnapshots } from "@/service/realtimeEventOutbox.js";
+import { queueConversationSettingsUpdatedEvent } from "@/service/realtimeEventOutbox.js";
 
 interface GetConversationForEditProps {
     db: PostgresDatabase;
@@ -207,8 +207,11 @@ export async function updateConversation({
                 organizationName: organizationTable.name,
                 currentContentId: conversationTable.currentContentId,
                 conversationType: conversationTable.conversationType,
+                isIndexed: conversationTable.isIndexed,
+                participationMode: conversationTable.participationMode,
                 requiresEventTicket: conversationTable.requiresEventTicket,
                 aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+                isClosed: conversationTable.isClosed,
                 currentPreferredOpinionGroupCount:
                     conversationTable.preferredOpinionGroupCount,
                 currentTitle: conversationContentTable.title,
@@ -342,10 +345,21 @@ export async function updateConversation({
             }
         }
 
+        const updatedPreferredOpinionGroupCount =
+            preferredOpinionGroupCount === undefined
+                ? conversation.currentPreferredOpinionGroupCount
+                : preferredOpinionGroupCount;
         const preferredOpinionGroupCountChanged =
-            preferredOpinionGroupCount !== undefined &&
-            preferredOpinionGroupCount !==
-                conversation.currentPreferredOpinionGroupCount;
+            updatedPreferredOpinionGroupCount !==
+            conversation.currentPreferredOpinionGroupCount;
+        const updatedAiLabelingEnabled =
+            aiLabelingEnabled ?? conversation.aiLabelingEnabled;
+        const conversationSettingsChanged =
+            isIndexed !== conversation.isIndexed ||
+            participationMode !== conversation.participationMode ||
+            (requiresEventTicket ?? null) !== conversation.requiresEventTicket ||
+            updatedAiLabelingEnabled !== conversation.aiLabelingEnabled ||
+            preferredOpinionGroupCountChanged;
 
         if (
             preferredOpinionGroupCount !== undefined &&
@@ -396,8 +410,7 @@ export async function updateConversation({
             isIndexed: isIndexed,
             participationMode: participationMode,
             requiresEventTicket: requiresEventTicket ?? null,
-            aiLabelingEnabled:
-                aiLabelingEnabled ?? conversation.aiLabelingEnabled,
+            aiLabelingEnabled: updatedAiLabelingEnabled,
             updatedAt: new Date(),
         };
 
@@ -408,7 +421,7 @@ export async function updateConversation({
 
         if (preferredOpinionGroupCountChanged) {
             conversationUpdateValues.preferredOpinionGroupCount =
-                preferredOpinionGroupCount;
+                updatedPreferredOpinionGroupCount;
         }
 
         // Update conversation with new content and settings
@@ -439,9 +452,17 @@ export async function updateConversation({
         return {
             success: true,
             conversationId,
+            conversationSlugId,
             didEnableAiLabeling,
-            didUpdatePreferredOpinionGroupCount:
-                preferredOpinionGroupCountChanged,
+            didUpdateConversationSettings: conversationSettingsChanged,
+            conversationSettings: {
+                isIndexed,
+                participationMode,
+                requiresEventTicket: requiresEventTicket ?? null,
+                aiLabelingEnabled: updatedAiLabelingEnabled,
+                preferredOpinionGroupCount: updatedPreferredOpinionGroupCount,
+                isClosed: conversation.isClosed,
+            },
         } as const;
     });
 
@@ -458,10 +479,11 @@ export async function updateConversation({
         }
     }
 
-    if (result.success && result.didUpdatePreferredOpinionGroupCount) {
-        await queueConversationAnalysisUpdatedEventsForLatestViewSnapshots({
+    if (result.success && result.didUpdateConversationSettings) {
+        await queueConversationSettingsUpdatedEvent({
             db,
-            conversationIds: [result.conversationId],
+            conversationSlugId: result.conversationSlugId,
+            settings: result.conversationSettings,
         });
     }
 

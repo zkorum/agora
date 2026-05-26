@@ -1,15 +1,17 @@
 <template>
   <div class="checkpoint-timeline">
     <div class="checkpoint-timeline__body">
-      <button
-        type="button"
-        class="checkpoint-timeline__step-button"
-        :disabled="!canStepBackward"
-        :aria-label="props.previousLabel"
-        @click="selectTimelineStepByOffset(-1)"
-      >
-        <q-icon :name="previousIcon" size="1.15rem" />
-      </button>
+      <div class="checkpoint-timeline__step-button-rail">
+        <button
+          type="button"
+          class="checkpoint-timeline__step-button"
+          :disabled="!canStepBackward"
+          :aria-label="props.previousLabel"
+          @click="selectTimelineStepByOffset(-1)"
+        >
+          <q-icon :name="previousIcon" size="1.15rem" />
+        </button>
+      </div>
 
       <div
         ref="timelineRef"
@@ -103,15 +105,17 @@
         </div>
       </div>
 
-      <button
-        type="button"
-        class="checkpoint-timeline__step-button"
-        :disabled="!canStepForward"
-        :aria-label="props.nextLabel"
-        @click="selectTimelineStepByOffset(1)"
-      >
-        <q-icon :name="nextIcon" size="1.15rem" />
-      </button>
+      <div class="checkpoint-timeline__step-button-rail">
+        <button
+          type="button"
+          class="checkpoint-timeline__step-button"
+          :disabled="!canStepForward"
+          :aria-label="props.nextLabel"
+          @click="selectTimelineStepByOffset(1)"
+        >
+          <q-icon :name="nextIcon" size="1.15rem" />
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -450,6 +454,15 @@ onMounted(async () => {
 
 <style lang="scss" scoped>
 .checkpoint-timeline {
+  --checkpoint-live-pulse-headroom: 1rem;
+  --checkpoint-scroller-top-padding: calc(
+    0.25rem + var(--checkpoint-live-pulse-headroom)
+  );
+  --checkpoint-dot-size: 0.9rem;
+  --checkpoint-dot-center-offset: 0.45rem;
+  --checkpoint-track-line-size: 2px;
+  --checkpoint-track-line-half-size: 1px;
+
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
@@ -462,6 +475,14 @@ onMounted(async () => {
   gap: 0.4rem;
 }
 
+.checkpoint-timeline__step-button-rail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--checkpoint-dot-size);
+  margin-top: var(--checkpoint-scroller-top-padding);
+}
+
 .checkpoint-timeline__step-button {
   z-index: 2;
   display: flex;
@@ -469,7 +490,6 @@ onMounted(async () => {
   justify-content: center;
   width: 1.8rem;
   height: 1.8rem;
-  margin-top: 0.35rem;
   border: 1px solid #d8d6de;
   border-radius: 999px;
   background: white;
@@ -494,7 +514,7 @@ onMounted(async () => {
   direction: ltr;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
-  padding: 0.25rem 0 0.35rem;
+  padding: var(--checkpoint-scroller-top-padding) 0 0.35rem;
 
   &::-webkit-scrollbar {
     display: none;
@@ -516,9 +536,12 @@ onMounted(async () => {
   &::before {
     content: "";
     position: absolute;
-    top: 0.45rem;
+    top: calc(
+      var(--checkpoint-dot-center-offset) -
+        var(--checkpoint-track-line-half-size)
+    );
     inset-inline: 1.1rem;
-    height: 2px;
+    height: var(--checkpoint-track-line-size);
     background: #d8d6de;
   }
 }
@@ -552,8 +575,8 @@ onMounted(async () => {
 
 .checkpoint-timeline__dot {
   position: relative;
-  width: 0.9rem;
-  height: 0.9rem;
+  width: var(--checkpoint-dot-size);
+  height: var(--checkpoint-dot-size);
   border: 2px solid #d8d6de;
   border-radius: 999px;
   background: white;

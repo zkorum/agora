@@ -1,4 +1,9 @@
-import type { NotificationItem } from "./zod.js";
+import type {
+    EventSlug,
+    NotificationItem,
+    ParticipationMode,
+    PreferredOpinionGroupCount,
+} from "./zod.js";
 
 /**
  * Server-Sent Events (SSE) type definitions
@@ -73,6 +78,24 @@ export interface SSEConversationAnalysisUpdatedData {
 }
 
 /**
+ * Data sent when conversation settings that affect live views change.
+ */
+export interface SSEConversationSettingsData {
+    isIndexed: boolean;
+    participationMode: ParticipationMode;
+    requiresEventTicket: EventSlug | null;
+    aiLabelingEnabled: boolean;
+    preferredOpinionGroupCount: PreferredOpinionGroupCount;
+    isClosed: boolean;
+}
+
+export interface SSEConversationSettingsUpdatedData {
+    conversationSlugId: string;
+    settings: SSEConversationSettingsData;
+    timestamp: number;
+}
+
+/**
  * Data sent when the server is shutting down
  */
 export interface SSEShutdownData {
@@ -86,6 +109,7 @@ export interface SSEEventDataByType {
     new_opinion: SSENewOpinionData;
     popular_conversation: SSEPopularConversationData;
     conversation_analysis_updated: SSEConversationAnalysisUpdatedData;
+    conversation_settings_updated: SSEConversationSettingsUpdatedData;
     heartbeat: SSEHeartbeatData;
     shutdown: SSEShutdownData;
 }
@@ -108,6 +132,8 @@ export type SSENewOpinionEvent = SSEEvent<"new_opinion">;
 export type SSEPopularConversationEvent = SSEEvent<"popular_conversation">;
 export type SSEConversationAnalysisUpdatedEvent =
     SSEEvent<"conversation_analysis_updated">;
+export type SSEConversationSettingsUpdatedEvent =
+    SSEEvent<"conversation_settings_updated">;
 export type SSEHeartbeatEvent = SSEEvent<"heartbeat">;
 export type SSEShutdownEvent = SSEEvent<"shutdown">;
 
@@ -121,5 +147,6 @@ export type AnySSEEvent =
     | SSENewOpinionEvent
     | SSEPopularConversationEvent
     | SSEConversationAnalysisUpdatedEvent
+    | SSEConversationSettingsUpdatedEvent
     | SSEHeartbeatEvent
     | SSEShutdownEvent;
