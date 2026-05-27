@@ -357,7 +357,8 @@ export async function updateConversation({
         const conversationSettingsChanged =
             isIndexed !== conversation.isIndexed ||
             participationMode !== conversation.participationMode ||
-            (requiresEventTicket ?? null) !== conversation.requiresEventTicket ||
+            (requiresEventTicket ?? null) !==
+                conversation.requiresEventTicket ||
             updatedAiLabelingEnabled !== conversation.aiLabelingEnabled ||
             preferredOpinionGroupCountChanged;
 
@@ -473,9 +474,28 @@ export async function updateConversation({
                 conversationId: result.conversationId,
             });
         if (didCreateAiLocaleStatuses && valkey !== undefined) {
-            void valkey.zadd(VALKEY_QUEUE_KEYS.AI_DESCRIPTION_DIRTY, {
-                [String(result.conversationId)]: Date.now(),
-            });
+            void (async () => {
+                const dueAtMs = Date.now();
+                try {
+                    log.info(
+                        `[PostEdit] ZADD ${VALKEY_QUEUE_KEYS.AI_DESCRIPTION_DIRTY} conversationId=${String(result.conversationId)} conversationSlugId=${result.conversationSlugId} dueAtMs=${String(dueAtMs)}`,
+                    );
+                    const resultCount = await valkey.zadd(
+                        VALKEY_QUEUE_KEYS.AI_DESCRIPTION_DIRTY,
+                        {
+                            [String(result.conversationId)]: dueAtMs,
+                        },
+                    );
+                    log.info(
+                        `[PostEdit] ZADD ${VALKEY_QUEUE_KEYS.AI_DESCRIPTION_DIRTY} succeeded conversationId=${String(result.conversationId)} conversationSlugId=${result.conversationSlugId} result=${String(resultCount)}`,
+                    );
+                } catch (error: unknown) {
+                    log.error(
+                        error,
+                        `[PostEdit] Failed to ZADD ${VALKEY_QUEUE_KEYS.AI_DESCRIPTION_DIRTY} for conversationId=${String(result.conversationId)} conversationSlugId=${result.conversationSlugId}`,
+                    );
+                }
+            })();
         }
     }
 

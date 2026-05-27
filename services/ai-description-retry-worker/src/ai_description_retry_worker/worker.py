@@ -25,6 +25,7 @@ from agora_worker_shared.simulation_providers import (
 )
 from agora_worker_shared.valkey_client import (
     ai_description_queue_depth,
+    format_queue_lag_ms,
     now_ms,
     pop_due_ai_description_conversations,
     requeue_ai_description_conversations,
@@ -202,9 +203,11 @@ def main() -> None:
                 log.exception("%s Running-work recovery failed", LOG_PREFIX)
             last_recover = monotonic_now
 
+        pop_current_ms = now_ms()
         due_items, next_due_at_ms = pop_due_ai_description_conversations(
             vk,
             count=settings.valkey_pop_batch_size,
+            current_time_ms=pop_current_ms,
         )
         if not due_items:
             if next_due_at_ms is None:
@@ -215,11 +218,13 @@ def main() -> None:
             continue
 
         log.info(
-            "%s Popped %d due lineage conversation(s)",
+            "%s Popped %d due lineage conversation(s) queue_lag_ms=%s",
             LOG_PREFIX,
             len(due_items),
+            format_queue_lag_ms(due_items, current_time_ms=pop_current_ms),
         )
 
+        batch_started_at = time.perf_counter()
         claimable_due_items = due_items[: settings.db_claim_batch_size]
         overflow_due_items = due_items[settings.db_claim_batch_size :]
         requeue_ai_description_conversations(vk, conversations=overflow_due_items)
@@ -247,7 +252,19 @@ def main() -> None:
             log_prefix=LOG_PREFIX,
         )
         if processed_count:
-            log.info("%s Processed %d lineage work item(s)", LOG_PREFIX, processed_count)
+            log.info(
+                "%s Processed %d lineage work item(s) batch_ms=%.1f",
+                LOG_PREFIX,
+                processed_count,
+                (time.perf_counter() - batch_started_at) * 1000,
+            )
+        else:
+            log.info(
+                "%s No lineage work item processed conversation_count=%d batch_ms=%.1f",
+                LOG_PREFIX,
+                len(claimable_due_items),
+                (time.perf_counter() - batch_started_at) * 1000,
+            )
 
     primary_engine.dispose()
     read_engine.dispose()

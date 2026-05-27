@@ -85,8 +85,8 @@ def maybe_raise_simulated_claim_error(
     if mode == "retryable_error_then_success":
         if claim.attempt_count > runtime.retryable_failure_attempts:
             log.info(
-                "%s %s outcome=success_after_retry conversation_slug_id=%s "
-                "locale=%s attempt_count=%d threshold=%d",
+                "%s %s outcome=success_after_retry conversationSlugId=%s "
+                "locale=%s attemptCount=%d threshold=%d",
                 SIMULATION_LOG_PREFIX,
                 action,
                 claim.conversation_slug_id,
@@ -268,7 +268,7 @@ def _log_simulated_failure(
     metadata: dict[str, str | int | bool | None],
 ) -> None:
     log.info(
-        "%s %s outcome=%s conversation_slug_id=%s locale=%s attempt_count=%d",
+        "%s %s outcome=%s conversationSlugId=%s locale=%s attemptCount=%d",
         SIMULATION_LOG_PREFIX,
         action,
         outcome,

@@ -460,8 +460,7 @@ def _claim_work_items_batch(
             select(running_work_state.id)
             .where(
                 and_(
-                    running_work_state.conversation_id
-                    == AnalysisWorkState.conversation_id,
+                    running_work_state.conversation_id == AnalysisWorkState.conversation_id,
                     running_work_state.running_data_generation.is_not(None),
                 )
             )
@@ -480,8 +479,7 @@ def _claim_work_items_batch(
             ~running_work_exists,
             or_(
                 AnalysisWorkState.non_retryable_generation.is_(None),
-                Conversation.analysis_data_generation
-                > AnalysisWorkState.non_retryable_generation,
+                Conversation.analysis_data_generation > AnalysisWorkState.non_retryable_generation,
                 analysis_engine_epoch
                 > func.coalesce(
                     AnalysisWorkState.non_retryable_analysis_engine_epoch,
@@ -559,9 +557,7 @@ def _claim_work_items_batch(
         data_generation = conversation.analysis_data_generation
         lease_token = f"{worker_id}:{uuid.uuid4()}"
         attempt_count = (
-            work_state.attempt_count + 1
-            if work_state.attempt_generation == data_generation
-            else 1
+            work_state.attempt_count + 1 if work_state.attempt_generation == data_generation else 1
         )
         work_state.running_data_generation = data_generation
         work_state.persisted_analysis_snapshot_id = None
@@ -1784,9 +1780,7 @@ def _persist_conversation_view_snapshots(
                 "moderated_opinion_count": counters.moderated_opinion_count,
                 "hidden_opinion_count": counters.hidden_opinion_count,
                 "activated_at": None
-                if state.ai_labeling_enabled
-                and ai_generation_expected
-                and selected is not None
+                if state.ai_labeling_enabled and ai_generation_expected and selected is not None
                 else func.now(),
             }
         )
@@ -2951,6 +2945,13 @@ def persist_empty_vote_matrix_results_batch(
         completed_rows = session.execute(work_state_update).all()
         session.commit()
 
+    immediate_rerun_count = sum(1 for row in completed_rows if row.next_run_at is not None)
+    if immediate_rerun_count:
+        log.info(
+            "[MathUpdaterDB] Empty-matrix completion scheduled immediate rerun rows=%d claims=%s",
+            immediate_rerun_count,
+            _format_claims_for_log(claims),
+        )
     return [
         WorkStateSchedule(
             conversation_id=row.conversation_id,
@@ -3558,9 +3559,12 @@ def complete_computed_analysis_work_items_batch(
         completed_rows = session.execute(work_state_update).all()
         session.commit()
 
+    immediate_rerun_count = sum(1 for row in completed_rows if row.next_run_at is not None)
     log.info(
-        "[MathUpdaterDB] Completed computed analysis work rows=%d",
+        "[MathUpdaterDB] Completed computed analysis work rows=%d immediate_rerun=%d claims=%s",
         len(completed_rows),
+        immediate_rerun_count,
+        _format_claims_for_log(claims),
     )
     return [
         WorkStateSchedule(
@@ -3636,6 +3640,16 @@ def retry_scheduled_work_items_batch(
         rows = session.execute(query).all()
         session.commit()
 
+    immediate_rerun_count = sum(1 for row in rows if row.next_run_at is not None)
+    if rows:
+        log.info(
+            "[MathUpdaterDB] Retry scheduled analysis work rows=%d immediate_rerun=%d "
+            "error_code=%s claims=%s",
+            len(rows),
+            immediate_rerun_count,
+            error_code,
+            _format_claims_for_log(claims),
+        )
     return [
         WorkStateSchedule(
             conversation_id=row.conversation_id,
@@ -3710,6 +3724,16 @@ def mark_non_retryable_work_items_batch(
         rows = session.execute(query).all()
         session.commit()
 
+    immediate_rerun_count = sum(1 for row in rows if row.next_run_at is not None)
+    if rows:
+        log.info(
+            "[MathUpdaterDB] Marked analysis work non-retryable rows=%d "
+            "immediate_rerun=%d error_code=%s claims=%s",
+            len(rows),
+            immediate_rerun_count,
+            error_code,
+            _format_claims_for_log(claims),
+        )
     return [
         WorkStateSchedule(
             conversation_id=row.conversation_id,

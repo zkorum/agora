@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
     from sqlalchemy.orm import Session, sessionmaker
 
-    from import_worker.importer import ImportProcessResult
+    from import_worker.importer import AnalysisQueueSchedule, ImportProcessResult
     from import_worker.queue import ImportNotificationEvent, ImportRequest, InvalidImportItem
 
 ANALYSIS_DIRTY_KEY = "analysis:dirty"
@@ -148,12 +148,17 @@ def _connect_to_valkey_with_retry(*, url: str) -> ConnectedImportQueue | None:
 def _schedule_analysis(
     vk: ImportValkeyClient,
     *,
-    conversation_id: int | None,
-    due_at_ms: int | None,
+    schedule: AnalysisQueueSchedule | None,
 ) -> None:
-    if conversation_id is None or due_at_ms is None:
+    if schedule is None:
         return
-    vk.zadd(ANALYSIS_DIRTY_KEY, {str(conversation_id): due_at_ms})
+    LOGGER.info(
+        "Scheduling analysis after import conversationId=%s conversationSlugId=%s dueAtMs=%s",
+        schedule.conversation_id,
+        schedule.conversation_slug_id,
+        schedule.due_at_ms,
+    )
+    vk.zadd(ANALYSIS_DIRTY_KEY, {str(schedule.conversation_id): schedule.due_at_ms})
 
 
 def _push_result_events(vk: ImportValkeyClient, *, processed: ProcessedImport) -> None:
@@ -162,8 +167,7 @@ def _push_result_events(vk: ImportValkeyClient, *, processed: ProcessedImport) -
             push_import_event(vk, event=processed.result.event)
         _schedule_analysis(
             vk,
-            conversation_id=processed.result.analysis_conversation_id,
-            due_at_ms=processed.result.analysis_due_at_ms,
+            schedule=processed.result.analysis_schedule,
         )
     if processed.failure_event is not None:
         push_import_event(vk, event=processed.failure_event)

@@ -13,6 +13,7 @@ import { nowZeroMs } from "./util.js";
 
 export interface AnalysisSchedule {
     conversationId: number;
+    conversationSlugId: string;
     dataGeneration: number;
     nextRunAt: Date | null;
     scheduledSpecCount: number;
@@ -26,7 +27,10 @@ interface ScheduleAnalysisUpdateParams {
 
 interface WakeAnalysisWorkerParams {
     valkey: Valkey | undefined;
-    schedule: Pick<AnalysisSchedule, "conversationId" | "nextRunAt">;
+    schedule: Pick<
+        AnalysisSchedule,
+        "conversationId" | "conversationSlugId" | "nextRunAt"
+    >;
     log: AnalysisSchedulerLogger;
 }
 
@@ -83,19 +87,14 @@ export async function scheduleAnalysisUpdate({
     conversationId,
     log,
 }: ScheduleAnalysisUpdateParams): Promise<AnalysisSchedule> {
-    log.info(
-        `[AnalysisScheduler] Scheduling analysis start conversation=${String(conversationId)}`,
-    );
     return await db.transaction(async (tx) => {
         const now = nowZeroMs();
 
-        log.info(
-            `[AnalysisScheduler] Locking conversation for analysis schedule conversation=${String(conversationId)}`,
-        );
         const conversations = await tx
             .select({
                 analysisDataGeneration:
                     conversationTable.analysisDataGeneration,
+                conversationSlugId: conversationTable.slugId,
                 conversationType: conversationTable.conversationType,
                 currentContentId: conversationTable.currentContentId,
             })
@@ -110,6 +109,9 @@ export async function scheduleAnalysisUpdate({
         }
 
         const conversation = conversations[0];
+        log.info(
+            `[AnalysisScheduler] Scheduling analysis start conversationId=${String(conversationId)} conversationSlugId=${conversation.conversationSlugId}`,
+        );
 
         let skipReason: string | null = null;
         if (conversation.currentContentId === null) {
@@ -120,10 +122,11 @@ export async function scheduleAnalysisUpdate({
 
         if (skipReason !== null) {
             log.info(
-                `[AnalysisScheduler] Skipping analysis schedule conversation=${String(conversationId)} reason=${skipReason}`,
+                `[AnalysisScheduler] Skipping analysis schedule conversationId=${String(conversationId)} conversationSlugId=${conversation.conversationSlugId} reason=${skipReason}`,
             );
             return {
                 conversationId,
+                conversationSlugId: conversation.conversationSlugId,
                 dataGeneration: conversation.analysisDataGeneration,
                 nextRunAt: null,
                 scheduledSpecCount: 0,
@@ -132,14 +135,16 @@ export async function scheduleAnalysisUpdate({
 
         const dataGeneration = conversation.analysisDataGeneration + 1;
         log.info(
-            `[AnalysisScheduler] Incrementing analysis generation conversation=${String(conversationId)} from=${String(conversation.analysisDataGeneration)} to=${String(dataGeneration)}`,
+            `[AnalysisScheduler] Incrementing analysis generation conversationId=${String(conversationId)} conversationSlugId=${conversation.conversationSlugId} from=${String(conversation.analysisDataGeneration)} to=${String(dataGeneration)}`,
         );
         await tx
             .update(conversationTable)
             .set({ analysisDataGeneration: dataGeneration })
             .where(eq(conversationTable.id, conversationId));
 
-        log.info("[AnalysisScheduler] Fetching current opinion-group specs");
+        log.info(
+            `[AnalysisScheduler] Fetching current opinion-group specs conversationId=${String(conversationId)} conversationSlugId=${conversation.conversationSlugId}`,
+        );
         const specRows = await tx
             .select({
                 id: opinionGroupSpecTable.id,
@@ -152,12 +157,13 @@ export async function scheduleAnalysisUpdate({
             );
         const currentSpecIds = getCurrentOpinionGroupSpecIds(specRows);
         log.info(
-            `[AnalysisScheduler] Current opinion-group specs count=${String(currentSpecIds.length)} ids=${currentSpecIds.join(",")}`,
+            `[AnalysisScheduler] Current opinion-group specs conversationId=${String(conversationId)} conversationSlugId=${conversation.conversationSlugId} count=${String(currentSpecIds.length)} ids=${currentSpecIds.join(",")}`,
         );
 
         if (currentSpecIds.length === 0) {
             return {
                 conversationId,
+                conversationSlugId: conversation.conversationSlugId,
                 dataGeneration,
                 nextRunAt: null,
                 scheduledSpecCount: 0,
@@ -165,7 +171,7 @@ export async function scheduleAnalysisUpdate({
         }
 
         log.info(
-            `[AnalysisScheduler] Ensuring analysis work-state rows conversation=${String(conversationId)} specs=${String(currentSpecIds.length)}`,
+            `[AnalysisScheduler] Ensuring analysis work-state rows conversationId=${String(conversationId)} conversationSlugId=${conversation.conversationSlugId} specs=${String(currentSpecIds.length)}`,
         );
         await tx
             .insert(analysisWorkStateTable)
@@ -186,7 +192,7 @@ export async function scheduleAnalysisUpdate({
             });
 
         log.info(
-            `[AnalysisScheduler] Loading analysis work-state rows conversation=${String(conversationId)}`,
+            `[AnalysisScheduler] Loading analysis work-state rows conversationId=${String(conversationId)} conversationSlugId=${conversation.conversationSlugId}`,
         );
         const workStateRows = await tx
             .select({
@@ -209,7 +215,7 @@ export async function scheduleAnalysisUpdate({
             .for("update");
         const nextRunAtValues: (Date | null)[] = [];
         log.info(
-            `[AnalysisScheduler] Updating analysis work-state rows conversation=${String(conversationId)} rows=${String(workStateRows.length)}`,
+            `[AnalysisScheduler] Updating analysis work-state rows conversationId=${String(conversationId)} conversationSlugId=${conversation.conversationSlugId} rows=${String(workStateRows.length)}`,
         );
 
         for (const row of workStateRows) {
@@ -230,10 +236,11 @@ export async function scheduleAnalysisUpdate({
 
         const nextRunAt = getEarliestDate(nextRunAtValues);
         log.info(
-            `[AnalysisScheduler] Scheduling analysis complete conversation=${String(conversationId)} generation=${String(dataGeneration)} rows=${String(workStateRows.length)} nextRunAt=${formatScheduleTime(nextRunAt)}`,
+            `[AnalysisScheduler] Scheduling analysis complete conversationId=${String(conversationId)} conversationSlugId=${conversation.conversationSlugId} generation=${String(dataGeneration)} rows=${String(workStateRows.length)} nextRunAt=${formatScheduleTime(nextRunAt)}`,
         );
         return {
             conversationId,
+            conversationSlugId: conversation.conversationSlugId,
             dataGeneration,
             nextRunAt,
             scheduledSpecCount: currentSpecIds.length,
@@ -247,14 +254,34 @@ export async function getAnalysisWakeSchedule({
 }: {
     db: PostgresJsDatabase;
     conversationId: number;
-}): Promise<Pick<AnalysisSchedule, "conversationId" | "nextRunAt">> {
+}): Promise<
+    Pick<
+        AnalysisSchedule,
+        "conversationId" | "conversationSlugId" | "nextRunAt"
+    >
+> {
     const rows = await db
-        .select({ nextRunAt: analysisWorkStateTable.nextRunAt })
-        .from(analysisWorkStateTable)
-        .where(eq(analysisWorkStateTable.conversationId, conversationId));
+        .select({
+            conversationSlugId: conversationTable.slugId,
+            nextRunAt: analysisWorkStateTable.nextRunAt,
+        })
+        .from(conversationTable)
+        .leftJoin(
+            analysisWorkStateTable,
+            eq(analysisWorkStateTable.conversationId, conversationTable.id),
+        )
+        .where(eq(conversationTable.id, conversationId))
+        .orderBy(analysisWorkStateTable.nextRunAt);
+
+    if (rows.length === 0) {
+        throw new Error(
+            `Cannot wake analysis update for missing conversation ${String(conversationId)}`,
+        );
+    }
 
     return {
         conversationId,
+        conversationSlugId: rows[0].conversationSlugId,
         nextRunAt: getEarliestDate(rows.map((row) => row.nextRunAt)),
     };
 }
@@ -267,20 +294,20 @@ export function wakeAnalysisWorker({
     const member = String(schedule.conversationId);
     if (valkey === undefined) {
         log.info(
-            `[AnalysisScheduler] Skipped Valkey ZADD ${VALKEY_QUEUE_KEYS.ANALYSIS_DIRTY} for conversation ${member}: valkey not configured`,
+            `[AnalysisScheduler] Skipped Valkey ZADD ${VALKEY_QUEUE_KEYS.ANALYSIS_DIRTY} for conversationId=${member} conversationSlugId=${schedule.conversationSlugId}: valkey not configured`,
         );
         return;
     }
     if (schedule.nextRunAt === null) {
         log.info(
-            `[AnalysisScheduler] Skipped Valkey ZADD ${VALKEY_QUEUE_KEYS.ANALYSIS_DIRTY} for conversation ${member}: nextRunAt is null`,
+            `[AnalysisScheduler] Skipped Valkey ZADD ${VALKEY_QUEUE_KEYS.ANALYSIS_DIRTY} for conversationId=${member} conversationSlugId=${schedule.conversationSlugId}: nextRunAt is null`,
         );
         return;
     }
 
     const score = schedule.nextRunAt.getTime();
     log.info(
-        `[AnalysisScheduler] ZADD ${VALKEY_QUEUE_KEYS.ANALYSIS_DIRTY} conversation=${member} score=${String(score)} nextRunAt=${formatScheduleTime(schedule.nextRunAt)}`,
+        `[AnalysisScheduler] ZADD ${VALKEY_QUEUE_KEYS.ANALYSIS_DIRTY} conversationId=${member} conversationSlugId=${schedule.conversationSlugId} score=${String(score)} nextRunAt=${formatScheduleTime(schedule.nextRunAt)}`,
     );
     void (async () => {
         try {
@@ -288,12 +315,12 @@ export function wakeAnalysisWorker({
                 [member]: score,
             });
             log.info(
-                `[AnalysisScheduler] ZADD ${VALKEY_QUEUE_KEYS.ANALYSIS_DIRTY} succeeded conversation=${member} result=${String(result)}`,
+                `[AnalysisScheduler] ZADD ${VALKEY_QUEUE_KEYS.ANALYSIS_DIRTY} succeeded conversationId=${member} conversationSlugId=${schedule.conversationSlugId} result=${String(result)}`,
             );
         } catch (error: unknown) {
             log.error(
                 error,
-                `[AnalysisScheduler] Failed to ZADD ${VALKEY_QUEUE_KEYS.ANALYSIS_DIRTY} for conversation ${member}`,
+                `[AnalysisScheduler] Failed to ZADD ${VALKEY_QUEUE_KEYS.ANALYSIS_DIRTY} for conversationId=${member} conversationSlugId=${schedule.conversationSlugId}`,
             );
         }
     })();
@@ -305,13 +332,13 @@ export async function wakeScheduledAnalysisForConversation({
     conversationId,
     log,
 }: WakeScheduledAnalysisForConversationParams): Promise<void> {
+    const schedule = await getAnalysisWakeSchedule({ db, conversationId });
     if (valkey === undefined) {
         log.info(
-            `[AnalysisScheduler] Skipped scheduled analysis wake for conversation ${String(conversationId)}: valkey not configured`,
+            `[AnalysisScheduler] Skipped scheduled analysis wake for conversationId=${String(conversationId)} conversationSlugId=${schedule.conversationSlugId}: valkey not configured`,
         );
         return;
     }
 
-    const schedule = await getAnalysisWakeSchedule({ db, conversationId });
     wakeAnalysisWorker({ valkey, schedule, log });
 }

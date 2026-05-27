@@ -36,6 +36,12 @@ interface AllConversationCounters {
     totalParticipantCount: number;
 }
 
+type AnalysisWakeStrategy = "caller_will_wake" | "db_reconciliation_only";
+
+function formatScheduleTime(nextRunAt: Date | null): string {
+    return nextRunAt?.toISOString() ?? "none";
+}
+
 /**
  * Reconcile all conversation counters from actual database records (internal helper).
  * Returns both unmoderated and total counts using FILTER clauses — 3 queries total.
@@ -231,11 +237,13 @@ export async function scheduleConversationAnalysisRefresh({
     conversationId,
     log,
     doUpdateLastReactedAt = false,
+    wakeStrategy = "db_reconciliation_only",
 }: {
     db: PostgresJsDatabase;
     conversationId: number;
     log: Pick<BaseLogger, "info" | "error">;
     doUpdateLastReactedAt?: boolean;
+    wakeStrategy?: AnalysisWakeStrategy;
 }): Promise<void> {
     // MaxDiff counters are owned by the scoring worker (Python).
     // Skip here -- the worker updates counters alongside scoring.
@@ -255,5 +263,8 @@ export async function scheduleConversationAnalysisRefresh({
             .where(eq(conversationTable.id, conversationId));
     }
 
-    await scheduleAnalysisUpdate({ db, conversationId, log });
+    const schedule = await scheduleAnalysisUpdate({ db, conversationId, log });
+    log.info(
+        `[ConversationCounters] Scheduled analysis refresh conversationId=${String(conversationId)} conversationSlugId=${schedule.conversationSlugId} generation=${String(schedule.dataGeneration)} specs=${String(schedule.scheduledSpecCount)} nextRunAt=${formatScheduleTime(schedule.nextRunAt)} wakeStrategy=${wakeStrategy}`,
+    );
 }

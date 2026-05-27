@@ -123,7 +123,7 @@ def build_description_translator(settings: Settings) -> DescriptionTranslatorBun
                     "[DescriptionTranslator] Bedrock translation exhausted; falling back to Google",
                     exc_info=True,
                 )
-                return _retry_translation_provider(
+                translations = _retry_translation_provider(
                     provider_name="Google",
                     attempts=2,
                     call=lambda: _generate_google_translations(
@@ -132,6 +132,14 @@ def build_description_translator(settings: Settings) -> DescriptionTranslatorBun
                         target_language_codes=target_language_codes,
                     ),
                 )
+                log.info(
+                    "[DescriptionTranslator] Google fallback translation succeeded "
+                    "description_count=%d locale_count=%d output_count=%d",
+                    len(descriptions),
+                    len(target_language_codes),
+                    len(translations),
+                )
+                return translations
 
         return DescriptionTranslatorBundle(
             mode="bedrock_with_google_fallback",

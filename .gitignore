@@ -4,6 +4,7 @@ TODO
 emailrecovery
 .env*
 *.env
+!services/*/scenarios/env.simulated-*
 
 # ide
 .lvimrc

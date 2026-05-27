@@ -134,11 +134,23 @@ dev-math-updater:
 dev-math-updater-raw:
 	cd services/math-updater && AGORA_DEV_MODE=true PYTHONUNBUFFERED=1 uv run python -m math_updater.worker
 
+dev-math-updater-scenario:
+	$(LOG_RUNNER) --service math-updater -- $(MAKE) dev-math-updater-scenario-raw
+
+dev-math-updater-scenario-raw:
+	scripts/run-worker-scenario.sh math-updater "$(SCENARIO)"
+
 dev-ai-description-retry-worker:
 	$(LOG_RUNNER) --service ai-description-retry-worker -- $(MAKE) dev-ai-description-retry-worker-raw
 
 dev-ai-description-retry-worker-raw:
 	cd services/ai-description-retry-worker && $(MAKE) dev
+
+dev-ai-description-retry-worker-scenario:
+	$(LOG_RUNNER) --service ai-description-retry-worker -- $(MAKE) dev-ai-description-retry-worker-scenario-raw
+
+dev-ai-description-retry-worker-scenario-raw:
+	scripts/run-worker-scenario.sh ai-description-retry-worker "$(SCENARIO)"
 
 dev-ai-description-worker: dev-ai-description-retry-worker
 
@@ -147,6 +159,12 @@ dev-description-translation-retry-worker:
 
 dev-description-translation-retry-worker-raw:
 	cd services/description-translation-retry-worker && $(MAKE) dev
+
+dev-description-translation-retry-worker-scenario:
+	$(LOG_RUNNER) --service description-translation-retry-worker -- $(MAKE) dev-description-translation-retry-worker-scenario-raw
+
+dev-description-translation-retry-worker-scenario-raw:
+	scripts/run-worker-scenario.sh description-translation-retry-worker "$(SCENARIO)"
 
 dev-description-translation-worker: dev-description-translation-retry-worker
 

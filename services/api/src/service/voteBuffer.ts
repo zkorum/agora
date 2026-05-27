@@ -785,7 +785,7 @@ export function createVoteBuffer({
 
                     // Schedule opinion-group analysis once per affected conversation.
                     log.info(
-                        `[VoteBuffer] Scheduling analysis for ${String(conversationIds.size)} affected conversation(s): ${Array.from(conversationIds).join(",")}`,
+                        `[VoteBuffer] Scheduling analysis for ${String(conversationIds.size)} affected conversation(s)`,
                     );
                     for (const conversationId of conversationIds) {
                         const analysisSchedule = await scheduleAnalysisUpdate({
@@ -796,7 +796,7 @@ export function createVoteBuffer({
                         const nextRunAt =
                             analysisSchedule.nextRunAt?.toISOString() ?? "none";
                         log.info(
-                            `[VoteBuffer] Scheduled analysis for conversationId=${String(conversationId)} dataGeneration=${String(analysisSchedule.dataGeneration)} specs=${String(analysisSchedule.scheduledSpecCount)} nextRunAt=${nextRunAt}`,
+                            `[VoteBuffer] Scheduled analysis for conversationId=${String(conversationId)} conversationSlugId=${analysisSchedule.conversationSlugId} dataGeneration=${String(analysisSchedule.dataGeneration)} specs=${String(analysisSchedule.scheduledSpecCount)} nextRunAt=${nextRunAt}`,
                         );
                         analysisSchedules.push(analysisSchedule);
                     }
@@ -837,7 +837,7 @@ export function createVoteBuffer({
                 const nextRunAt = schedule.nextRunAt?.toISOString() ?? "none";
                 const valkey = getValkey();
                 log.info(
-                    `[VoteBuffer] Waking analysis worker for conversationId=${String(schedule.conversationId)} nextRunAt=${nextRunAt} valkey=${valkey === undefined ? "missing" : "connected"}`,
+                    `[VoteBuffer] Waking analysis worker for conversationId=${String(schedule.conversationId)} conversationSlugId=${schedule.conversationSlugId} nextRunAt=${nextRunAt} valkey=${valkey === undefined ? "missing" : "connected"}`,
                 );
                 wakeAnalysisWorker({
                     valkey,

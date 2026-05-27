@@ -178,6 +178,7 @@ async function refreshConversationAnalysisForSurveyChange({
         db,
         conversationId: conversation.conversationId,
         log,
+        wakeStrategy: "caller_will_wake",
     });
     await wakeScheduledAnalysisForConversation({
         db,

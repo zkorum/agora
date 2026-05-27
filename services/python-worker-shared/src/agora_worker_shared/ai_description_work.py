@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import time
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -48,6 +50,8 @@ from agora_worker_shared.generated_models import (
 )
 from agora_worker_shared.generated_shared_types import SUPPORTED_DISPLAY_LANGUAGE_CODES
 from agora_worker_shared.retry_policy import RetryPolicy, next_cooldown_retry_at, next_retry_at
+
+log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
@@ -112,6 +116,13 @@ class DueAiDescriptionWorkConversationRow:
 class AiDescriptionQueueSchedules:
     lineage_descriptions: list[WorkStateSchedule]
     translations: list[WorkStateSchedule]
+
+
+def _format_ids_for_log(ids: Sequence[int]) -> str:
+    limit = 20
+    head = list(ids[:limit])
+    suffix = "" if len(ids) <= limit else f", ... +{len(ids) - limit}"
+    return ", ".join(str(item_id) for item_id in head) + suffix
 
 
 @dataclass(frozen=True)
@@ -855,13 +866,19 @@ def _activate_display_safe_view_snapshots(
         )
         .exists()
     )
-    filters: list[ColumnElement[bool]] = [
+    candidate_filters: list[ColumnElement[bool]] = [
         ConversationViewSnapshot.conversation_id.in_(sorted(set(conversation_ids))),
         ConversationViewSnapshot.activated_at.is_(None),
-        ~blocking_status_exists,
     ]
     if conversation_view_snapshot_ids is not None:
-        filters.append(ConversationViewSnapshot.id.in_(sorted(set(conversation_view_snapshot_ids))))
+        candidate_filters.append(
+            ConversationViewSnapshot.id.in_(sorted(set(conversation_view_snapshot_ids)))
+        )
+
+    candidate_count = session.execute(
+        select(func.count(ConversationViewSnapshot.id)).where(and_(*candidate_filters))
+    ).scalar_one()
+    filters = [*candidate_filters, ~blocking_status_exists]
 
     rows = session.execute(
         update(ConversationViewSnapshot)
@@ -870,6 +887,15 @@ def _activate_display_safe_view_snapshots(
         .returning(ConversationViewSnapshot.id)
     ).all()
     activated_view_snapshot_ids = [row.id for row in rows]
+    if candidate_count > 0 or activated_view_snapshot_ids:
+        log.info(
+            "[AiDescriptionWorkDB] Checked display-safe snapshot activation "
+            "candidates=%d activated=%d blocked_or_pending=%d conversation_ids=%s",
+            candidate_count,
+            len(activated_view_snapshot_ids),
+            candidate_count - len(activated_view_snapshot_ids),
+            _format_ids_for_log(conversation_ids),
+        )
     _queue_conversation_analysis_updated_events_for_view_snapshots(
         session,
         conversation_view_snapshot_ids=activated_view_snapshot_ids,
@@ -1597,8 +1623,16 @@ def process_ai_description_locale_work_item(
     translate_descriptions: DescriptionTranslator | None,
 ) -> WorkStateSchedule:
     if isinstance(claim, ClaimedLineageDescriptionWorkItem):
+        started_at = time.perf_counter()
         with Session(engine) as session:
             if not _ai_description_claim_is_active(session, claim=claim):
+                log.info(
+                    "[AiDescriptionWorkDB] Skipping inactive lineage claim "
+                    "conversationSlugId=%s lineageId=%d attemptCount=%d",
+                    claim.conversation_slug_id,
+                    claim.lineage_id,
+                    claim.attempt_count,
+                )
                 schedule = _get_conversation_schedule(
                     session,
                     conversation_id=claim.conversation_id,
@@ -1618,14 +1652,23 @@ def process_ai_description_locale_work_item(
             )
             session.commit()
 
+        provider_started_at = time.perf_counter()
         generated_descriptions = (
             generate_descriptions(lineage_request.conversation)
             if lineage_request is not None
             else None
         )
+        provider_ms = (time.perf_counter() - provider_started_at) * 1000
 
         with Session(engine) as session:
             if not _ai_description_claim_is_active(session, claim=claim):
+                log.info(
+                    "[AiDescriptionWorkDB] Skipping inactive lineage claim after provider "
+                    "conversationSlugId=%s lineageId=%d attemptCount=%d",
+                    claim.conversation_slug_id,
+                    claim.lineage_id,
+                    claim.attempt_count,
+                )
                 schedule = _get_conversation_schedule(
                     session,
                     conversation_id=claim.conversation_id,
@@ -1661,14 +1704,37 @@ def process_ai_description_locale_work_item(
             )
             schedule = _get_conversation_schedule(session, conversation_id=claim.conversation_id)
             session.commit()
+            log.info(
+                "[AiDescriptionWorkDB] Completed lineage description work "
+                "conversationSlugId=%s conversationId=%d lineageId=%d "
+                "attemptCount=%d providerMs=%.1f totalMs=%.1f generated=%s "
+                "nextRunAt=%s",
+                claim.conversation_slug_id,
+                claim.conversation_id,
+                claim.lineage_id,
+                claim.attempt_count,
+                provider_ms,
+                (time.perf_counter() - started_at) * 1000,
+                lineage_request is not None,
+                schedule.next_run_at.isoformat() if schedule.next_run_at is not None else "none",
+            )
             return schedule
 
     if translate_descriptions is None:
         msg = f"translation service unavailable for locale {claim.locale}"
         raise DescriptionInputError(msg)
 
+    started_at = time.perf_counter()
     with Session(engine) as session:
         if not _ai_description_claim_is_active(session, claim=claim):
+            log.info(
+                "[AiDescriptionWorkDB] Skipping inactive translation claim "
+                "conversationSlugId=%s descriptionId=%d locale=%s attemptCount=%d",
+                claim.conversation_slug_id,
+                claim.description_id,
+                claim.locale,
+                claim.attempt_count,
+            )
             schedule = _get_conversation_schedule(session, conversation_id=claim.conversation_id)
             session.commit()
             return schedule
@@ -1685,14 +1751,24 @@ def process_ai_description_locale_work_item(
         )
         session.commit()
 
+    provider_started_at = time.perf_counter()
     translations = (
         translate_descriptions([description_request], [claim.locale])
         if description_request is not None
         else []
     )
+    provider_ms = (time.perf_counter() - provider_started_at) * 1000
 
     with Session(engine) as session:
         if not _ai_description_claim_is_active(session, claim=claim):
+            log.info(
+                "[AiDescriptionWorkDB] Skipping inactive translation claim after provider "
+                "conversationSlugId=%s descriptionId=%d locale=%s attemptCount=%d",
+                claim.conversation_slug_id,
+                claim.description_id,
+                claim.locale,
+                claim.attempt_count,
+            )
             schedule = _get_conversation_schedule(session, conversation_id=claim.conversation_id)
             session.commit()
             return schedule
@@ -1721,6 +1797,20 @@ def process_ai_description_locale_work_item(
         )
         schedule = _get_conversation_schedule(session, conversation_id=claim.conversation_id)
         session.commit()
+        log.info(
+            "[AiDescriptionWorkDB] Completed translation work conversationSlugId=%s "
+            "conversationId=%d descriptionId=%d locale=%s attemptCount=%d "
+            "providerMs=%.1f totalMs=%.1f translated=%s nextRunAt=%s",
+            claim.conversation_slug_id,
+            claim.conversation_id,
+            claim.description_id,
+            claim.locale,
+            claim.attempt_count,
+            provider_ms,
+            (time.perf_counter() - started_at) * 1000,
+            description_request is not None,
+            schedule.next_run_at.isoformat() if schedule.next_run_at is not None else "none",
+        )
         return schedule
 
 
@@ -1820,17 +1910,19 @@ def retry_ai_description_locale_work_item(
     retry_immediately_without_fallback: bool = False,
     force_cooldown: bool = False,
 ) -> WorkStateSchedule:
+    now = datetime.now(UTC)
     retry_at = (
-        datetime.now(UTC)
+        now
         if retry_immediately_without_fallback
-        else next_cooldown_retry_at(now=datetime.now(UTC), policy=retry_policy)
+        else next_cooldown_retry_at(now=now, policy=retry_policy)
         if force_cooldown
         else next_retry_at(
-            now=datetime.now(UTC),
+            now=now,
             attempt_count=claim.attempt_count,
             policy=retry_policy,
         )
     )
+    delay_seconds = max(0.0, (retry_at - now).total_seconds())
     with Session(engine) as session:
         if isinstance(claim, ClaimedLineageDescriptionWorkItem):
             if not retry_immediately_without_fallback:
@@ -1883,6 +1975,20 @@ def retry_ai_description_locale_work_item(
             conversation_ids=[claim.conversation_id],
         )
         session.commit()
+        log.info(
+            "[AiDescriptionWorkDB] Scheduled AI description retry kind=%s "
+            "conversationSlugId=%s conversationId=%d locale=%s attemptCount=%d "
+            "retryAt=%s delaySeconds=%.1f immediate=%s forceCooldown=%s",
+            "lineage" if isinstance(claim, ClaimedLineageDescriptionWorkItem) else "translation",
+            claim.conversation_slug_id,
+            claim.conversation_id,
+            claim.locale,
+            claim.attempt_count,
+            retry_at.isoformat(),
+            delay_seconds,
+            retry_immediately_without_fallback,
+            force_cooldown,
+        )
         return schedule
 
 

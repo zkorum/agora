@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from valkey import Valkey
 
 ANALYSIS_DIRTY_KEY = "analysis:dirty"
@@ -20,6 +22,14 @@ class DueConversation:
 
 def now_ms() -> int:
     return int(time.time() * 1000)
+
+
+def format_queue_lag_ms(conversations: Sequence[DueConversation], *, current_time_ms: int) -> str:
+    if not conversations:
+        return "min=0 avg=0.0 max=0"
+    lag_values = [max(0, current_time_ms - item.due_at_ms) for item in conversations]
+    average_lag_ms = sum(lag_values) / len(lag_values)
+    return f"min={min(lag_values)} avg={average_lag_ms:.1f} max={max(lag_values)}"
 
 
 def _schedule_conversation(

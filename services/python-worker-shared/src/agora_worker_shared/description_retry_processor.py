@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import TYPE_CHECKING
 
@@ -50,6 +51,13 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
+def _format_ids_for_log(conversation_ids: list[int]) -> str:
+    limit = 20
+    head = conversation_ids[:limit]
+    suffix = "" if len(conversation_ids) <= limit else f", ... +{len(conversation_ids) - limit}"
+    return ", ".join(str(conversation_id) for conversation_id in head) + suffix
+
+
 def enqueue_ai_description_queue_schedules(
     vk: valkey_lib.Valkey,
     *,
@@ -68,7 +76,8 @@ def enqueue_ai_description_queue_schedules(
     )
     if ai_enqueued_count or translation_enqueued_count:
         log.info(
-            "%s Enqueued AI description schedules ai=%d translation=%d",
+            "%s Enqueued AI description schedules ai=%d translation=%d "
+            "queues=analysis:ai-description:dirty,analysis:description-translation:dirty",
             log_prefix,
             ai_enqueued_count,
             translation_enqueued_count,
@@ -117,6 +126,7 @@ def process_ai_description_conversation_ids(
     if not claimable_conversation_ids:
         return 0
 
+    claim_started_at = time.perf_counter()
     claims = claim_ai_description_locale_work_items_batch(
         primary_engine,
         worker_id=worker_id,
@@ -130,8 +140,21 @@ def process_ai_description_conversation_ids(
         claim_translations=claim_translations,
     )
     if not claims:
+        log.info(
+            "%s No claimable AI description locale work conversation_count=%d ids=%s claim_ms=%.1f",
+            log_prefix,
+            len(claimable_conversation_ids),
+            _format_ids_for_log(claimable_conversation_ids),
+            (time.perf_counter() - claim_started_at) * 1000,
+        )
         return 0
-    log.info("%s Claimed %d AI description locale work item(s)", log_prefix, len(claims))
+    log.info(
+        "%s Claimed %d AI description locale work item(s) claim_ms=%.1f conversationSlugIds=%s",
+        log_prefix,
+        len(claims),
+        (time.perf_counter() - claim_started_at) * 1000,
+        ",".join(sorted({claim.conversation_slug_id for claim in claims})),
+    )
 
     def process_claim(claim: ClaimedAiDescriptionLocaleWorkItem) -> WorkStateSchedule:
         try:
@@ -149,7 +172,7 @@ def process_ai_description_conversation_ids(
         except Exception as error:
             if isinstance(error, DescriptionInputError):
                 log.exception(
-                    "%s Non-retryable AI description failure conversation_slug_id=%s locale=%s",
+                    "%s Non-retryable AI description failure conversationSlugId=%s locale=%s",
                     log_prefix,
                     claim.conversation_slug_id,
                     claim.locale,
@@ -163,7 +186,7 @@ def process_ai_description_conversation_ids(
                 )
 
             log.exception(
-                "%s Retryable AI description failure conversation_slug_id=%s locale=%s",
+                "%s Retryable AI description failure conversationSlugId=%s locale=%s",
                 log_prefix,
                 claim.conversation_slug_id,
                 claim.locale,
@@ -183,6 +206,7 @@ def process_ai_description_conversation_ids(
                 force_cooldown=retry_first_pass_once and not should_retry_immediately,
             )
 
+    processing_started_at = time.perf_counter()
     with ThreadPoolExecutor(max_workers=min(max_workers, len(claims))) as executor:
         future_by_claim = {executor.submit(process_claim, claim): claim for claim in claims}
         for future in as_completed(future_by_claim):
@@ -204,12 +228,19 @@ def process_ai_description_conversation_ids(
                     )
             except Exception:
                 log.exception(
-                    "%s Failed to finalize retry state conversation_slug_id=%s locale=%s",
+                    "%s Failed to finalize retry state conversationSlugId=%s locale=%s",
                     log_prefix,
                     claim.conversation_slug_id,
                     claim.locale,
                 )
 
+    log.info(
+        "%s Finished AI description locale work count=%d process_ms=%.1f conversationSlugIds=%s",
+        log_prefix,
+        len(claims),
+        (time.perf_counter() - processing_started_at) * 1000,
+        ",".join(sorted({claim.conversation_slug_id for claim in claims})),
+    )
     enqueue_ai_description_queue_schedules(
         vk,
         schedules=fetch_ai_description_queue_schedules(

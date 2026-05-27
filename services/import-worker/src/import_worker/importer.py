@@ -107,10 +107,16 @@ CHUNK_SIZE = 1000
 
 
 @dataclass(frozen=True)
+class AnalysisQueueSchedule:
+    conversation_id: int
+    conversation_slug_id: str
+    due_at_ms: int
+
+
+@dataclass(frozen=True)
 class ImportProcessResult:
     event: ImportNotificationEvent | None
-    analysis_conversation_id: int | None
-    analysis_due_at_ms: int | None
+    analysis_schedule: AnalysisQueueSchedule | None
 
 
 @dataclass(frozen=True)
@@ -1013,10 +1019,18 @@ def process_import_request(session: Session, *, request: ImportRequest) -> Impor
             if schedule.next_run_at is not None
             else None
         )
+        analysis_queue_schedule = (
+            AnalysisQueueSchedule(
+                conversation_id=conversation_ids.conversation_id,
+                conversation_slug_id=conversation_ids.conversation_slug_id,
+                due_at_ms=next_run_at_ms,
+            )
+            if next_run_at_ms is not None
+            else None
+        )
         return ImportProcessResult(
             event=None,
-            analysis_conversation_id=conversation_ids.conversation_id,
-            analysis_due_at_ms=next_run_at_ms,
+            analysis_schedule=analysis_queue_schedule,
         )
     except Exception:
         session.rollback()
