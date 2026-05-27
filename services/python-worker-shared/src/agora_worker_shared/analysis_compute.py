@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
 JsonValue = None | bool | int | float | str | list["JsonValue"] | dict[str, "JsonValue"]
 JsonObject = dict[str, JsonValue]
+type _RepresentativeOpinionMatchKey = frozenset[tuple[int, VoteEnumSimple]]
 
 
 @dataclass(frozen=True)
@@ -560,6 +561,7 @@ def _build_groups(
         participants_by_external_id.setdefault(cluster_id, []).append(participant_id)
 
     groups: list[ComputedOpinionGroup] = []
+    external_id_by_representative_key: dict[_RepresentativeOpinionMatchKey, int] = {}
     for key_index, external_id in enumerate(sorted(participants_by_external_id)):
         representative_opinions = _representative_opinions_for_group(
             repness.get(external_id, []),
@@ -567,6 +569,16 @@ def _build_groups(
         if not representative_opinions:
             msg = f"red-dwarf success result missing repness for group {external_id}"
             raise RedDwarfContractError(msg)
+        representative_key = _representative_opinion_match_key(representative_opinions)
+        previous_external_id = external_id_by_representative_key.get(representative_key)
+        if previous_external_id is not None:
+            msg = (
+                "red-dwarf success result has duplicate representative-opinion set "
+                f"for groups {previous_external_id} and {external_id}: "
+                f"{_format_representative_opinion_match_key(representative_key)}"
+            )
+            raise RedDwarfContractError(msg)
+        external_id_by_representative_key[representative_key] = external_id
         groups.append(
             ComputedOpinionGroup(
                 key=str(key_index),
@@ -581,6 +593,24 @@ def _build_groups(
             )
         )
     return groups
+
+
+def _representative_opinion_match_key(
+    representative_opinions: Sequence[ComputedRepresentativeOpinion],
+) -> _RepresentativeOpinionMatchKey:
+    return frozenset(
+        (representative.local_opinion_index, representative.agreement_type)
+        for representative in representative_opinions
+    )
+
+
+def _format_representative_opinion_match_key(
+    representative_key: _RepresentativeOpinionMatchKey,
+) -> str:
+    return ",".join(
+        f"{local_opinion_index}:{agreement_type.value}"
+        for local_opinion_index, agreement_type in sorted(representative_key)
+    )
 
 
 def _group_opinion_stats(

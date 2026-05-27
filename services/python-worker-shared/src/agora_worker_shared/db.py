@@ -5,7 +5,7 @@ import uuid
 from collections import Counter
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, Literal, TypedDict
 
 from pydantic import TypeAdapter, ValidationError
 from sqlalchemy import and_, case, func, or_, select, tuple_, update
@@ -74,6 +74,7 @@ from agora_worker_shared.lineage_matching import (
     NewLineageGroup,
     PreviousLineageGroup,
     RepresentativeOpinionKey,
+    exact_matching_lineage_ids,
     match_lineages_by_representative_opinions,
 )
 from agora_worker_shared.retry_policy import RetryPolicy, next_retry_at
@@ -96,6 +97,12 @@ PREMIUM_ANALYSIS_FEATURE = PremiumFeatureEnum.analysis_variants
 VOTE_MILESTONE_SEEDS: tuple[int, ...] = ()
 MILESTONE_MULTIPLIERS = ((1, 1), (25, 10), (5, 1))
 log = logging.getLogger(__name__)
+type _LineageDecisionAction = Literal["reuse", "create"]
+type _LineageDecisionReason = Literal[
+    "exact_representative_opinion_match",
+    "no_previous_lineage_groups",
+    "no_exact_representative_opinion_match",
+]
 
 if TYPE_CHECKING:
     from sqlalchemy import Engine
@@ -150,6 +157,10 @@ class PersistComputedAnalysisResult:
 
 
 class AnalysisWorkStatePersistenceError(RuntimeError):
+    pass
+
+
+class LineageAssignmentInvariantError(AnalysisWorkStatePersistenceError):
     pass
 
 
@@ -225,6 +236,38 @@ def _format_claims_for_log(claims: list[ClaimedWorkItem]) -> str:
         f"{claim.conversation_slug_id}(id={claim.conversation_id},spec={claim.opinion_group_spec_id},gen={claim.data_generation})"
         for claim in claims
     )
+
+
+def _format_representative_opinions_for_log(
+    representative_opinions: frozenset[RepresentativeOpinionKey],
+) -> str:
+    limit = 12
+    values = sorted(representative_opinions)
+    head = values[:limit]
+    suffix = "" if len(values) <= limit else f", ... +{len(values) - limit}"
+    return (
+        ",".join(f"{opinion_id}:{agreement_type}" for opinion_id, agreement_type in head)
+        + suffix
+    )
+
+
+def _format_lineage_ids_for_log(lineage_ids: tuple[int, ...]) -> str:
+    if not lineage_ids:
+        return "none"
+    return ",".join(str(lineage_id) for lineage_id in lineage_ids)
+
+
+def _format_previous_candidate_ids_for_log(previous_groups: list[PreviousLineageGroup]) -> str:
+    candidate_ids = sorted(
+        {
+            previous_group.candidate_id
+            for previous_group in previous_groups
+            if previous_group.candidate_id is not None
+        }
+    )
+    if not candidate_ids:
+        return "none"
+    return ",".join(str(candidate_id) for candidate_id in candidate_ids)
 
 
 def _duplicate_group_opinion_stat_keys(
@@ -379,7 +422,10 @@ class OpinionGroupConfigRecord:
 
 @dataclass(frozen=True)
 class _NewGroupForLineage:
+    conversation_id: int
+    conversation_slug_id: str
     candidate_id: int
+    opinion_group_variant_id: int
     scope_id: int
     key: str
     representative_opinions: frozenset[RepresentativeOpinionKey]
@@ -1077,18 +1123,43 @@ def _assign_lineages_for_groups(
         }
         bundle = bundles_by_conversation_id[claim.conversation_id]
         for candidate in bundle.candidates:
-            if candidate.outcome != AnalysisResultOutcomeEnum.success:
-                continue
-            if candidate.assessment is not None and candidate.assessment.hidden_reason is not None:
-                continue
             candidate_id = candidate_id_by_conversation_variant[
                 (claim.conversation_id, candidate.opinion_group_variant_id)
             ]
+            if candidate.outcome != AnalysisResultOutcomeEnum.success:
+                log.info(
+                    "[MathUpdaterDB] Skipping lineage assignment reason=non_success_candidate "
+                    "conversationId=%d conversationSlugId=%s candidateId=%d variantId=%d "
+                    "outcome=%s outcomeReason=%s",
+                    claim.conversation_id,
+                    claim.conversation_slug_id,
+                    candidate_id,
+                    candidate.opinion_group_variant_id,
+                    candidate.outcome,
+                    candidate.outcome_reason,
+                )
+                continue
+            if candidate.assessment is not None and candidate.assessment.hidden_reason is not None:
+                log.info(
+                    "[MathUpdaterDB] Skipping lineage assignment reason=hidden_candidate "
+                    "conversationId=%d conversationSlugId=%s candidateId=%d variantId=%d "
+                    "hiddenReason=%s groupCount=%d",
+                    claim.conversation_id,
+                    claim.conversation_slug_id,
+                    candidate_id,
+                    candidate.opinion_group_variant_id,
+                    candidate.assessment.hidden_reason,
+                    len(candidate.groups),
+                )
+                continue
             scope_id = scope_id_by_pair[(claim.conversation_id, candidate.opinion_group_variant_id)]
             for group in candidate.groups:
                 new_groups_by_scope.setdefault(scope_id, []).append(
                     _NewGroupForLineage(
+                        conversation_id=claim.conversation_id,
+                        conversation_slug_id=claim.conversation_slug_id,
                         candidate_id=candidate_id,
+                        opinion_group_variant_id=candidate.opinion_group_variant_id,
                         scope_id=scope_id,
                         key=group.key,
                         representative_opinions=_representative_opinion_keys(
@@ -1104,21 +1175,44 @@ def _assign_lineages_for_groups(
     )
     lineage_id_by_candidate_group_key: dict[tuple[int, str], int] = {}
     for scope_id, new_groups in new_groups_by_scope.items():
+        previous_groups = previous_groups_by_scope.get(scope_id, [])
+        lineage_match_groups = [
+            NewLineageGroup(
+                key=_lineage_match_key(group),
+                representative_opinions=group.representative_opinions,
+            )
+            for group in new_groups
+        ]
         lineage_id_by_match_key = match_lineages_by_representative_opinions(
-            new_groups=[
-                NewLineageGroup(
-                    key=_lineage_match_key(group),
-                    representative_opinions=group.representative_opinions,
-                )
-                for group in new_groups
-            ],
-            previous_groups=previous_groups_by_scope.get(scope_id, []),
+            new_groups=lineage_match_groups,
+            previous_groups=previous_groups,
         )
+        exact_match_lineage_ids_by_key = {
+            group.key: tuple(
+                sorted(
+                    exact_matching_lineage_ids(
+                        new_group=group,
+                        previous_groups=previous_groups,
+                    )
+                )
+            )
+            for group in lineage_match_groups
+        }
         unmatched_groups = [
             group
             for group in new_groups
             if _lineage_match_key(group) not in lineage_id_by_match_key
         ]
+        log.info(
+            "[MathUpdaterDB] Lineage scope decision summary scopeId=%d newGroups=%d "
+            "previousGroups=%d previousCandidateIds=%s reused=%d created=%d",
+            scope_id,
+            len(new_groups),
+            len(previous_groups),
+            _format_previous_candidate_ids_for_log(previous_groups),
+            len(lineage_id_by_match_key),
+            len(unmatched_groups),
+        )
         new_lineage_ids = _create_lineages(
             session,
             scope_id=scope_id,
@@ -1130,11 +1224,131 @@ def _assign_lineages_for_groups(
         }
         for group in new_groups:
             match_key = _lineage_match_key(group)
-            lineage_id_by_candidate_group_key[(group.candidate_id, group.key)] = (
-                lineage_id_by_match_key.get(match_key) or lineage_id_by_unmatched_key[match_key]
+            exact_match_lineage_ids = exact_match_lineage_ids_by_key[match_key]
+            _raise_for_invalid_lineage_match_state(
+                group=group,
+                exact_match_lineage_ids=exact_match_lineage_ids,
+            )
+            reused_lineage_id = lineage_id_by_match_key.get(match_key)
+            if reused_lineage_id is not None:
+                action: _LineageDecisionAction = "reuse"
+                lineage_id = reused_lineage_id
+            elif match_key in lineage_id_by_unmatched_key:
+                if exact_match_lineage_ids:
+                    msg = (
+                        "lineage exact representative-opinion match was not reused; "
+                        "another current group likely claimed the same prior lineage "
+                        f"conversationSlugId={group.conversation_slug_id} "
+                        f"scopeId={group.scope_id} candidateId={group.candidate_id} "
+                        f"variantId={group.opinion_group_variant_id} groupKey={group.key} "
+                        "exactMatchLineageIds="
+                        f"{_format_lineage_ids_for_log(exact_match_lineage_ids)} "
+                        "representativeOpinions="
+                        f"{_format_representative_opinions_for_log(group.representative_opinions)}"
+                    )
+                    raise LineageAssignmentInvariantError(msg)
+                action = "create"
+                lineage_id = lineage_id_by_unmatched_key[match_key]
+            else:
+                msg = f"missing lineage assignment for candidate group {match_key}"
+                raise RuntimeError(msg)
+            lineage_id_by_candidate_group_key[(group.candidate_id, group.key)] = lineage_id
+            _log_lineage_assignment_decision(
+                group=group,
+                action=action,
+                reason=_lineage_decision_reason(
+                    action=action,
+                    group=group,
+                    previous_groups=previous_groups,
+                    exact_match_lineage_ids=exact_match_lineage_ids,
+                ),
+                lineage_id=lineage_id,
+                previous_groups=previous_groups,
+                exact_match_lineage_ids=exact_match_lineage_ids,
             )
 
     return lineage_id_by_candidate_group_key
+
+
+def _raise_for_invalid_lineage_match_state(
+    *,
+    group: _NewGroupForLineage,
+    exact_match_lineage_ids: tuple[int, ...],
+) -> None:
+    if not group.representative_opinions:
+        msg = (
+            "lineage assignment received a visible successful group without representative "
+            f"opinions conversationSlugId={group.conversation_slug_id} "
+            f"scopeId={group.scope_id} candidateId={group.candidate_id} "
+            f"variantId={group.opinion_group_variant_id} groupKey={group.key}"
+        )
+        raise LineageAssignmentInvariantError(msg)
+    if len(exact_match_lineage_ids) <= 1:
+        return
+    msg = (
+        "lineage assignment found multiple previous lineages with the same exact "
+        "representative-opinion set "
+        f"conversationSlugId={group.conversation_slug_id} scopeId={group.scope_id} "
+        f"candidateId={group.candidate_id} variantId={group.opinion_group_variant_id} "
+        f"groupKey={group.key} "
+        f"exactMatchLineageIds={_format_lineage_ids_for_log(exact_match_lineage_ids)} "
+        f"representativeOpinions={_format_representative_opinions_for_log(group.representative_opinions)}"
+    )
+    raise LineageAssignmentInvariantError(msg)
+
+
+def _log_lineage_assignment_decision(
+    *,
+    group: _NewGroupForLineage,
+    action: _LineageDecisionAction,
+    reason: _LineageDecisionReason,
+    lineage_id: int,
+    previous_groups: list[PreviousLineageGroup],
+    exact_match_lineage_ids: tuple[int, ...],
+) -> None:
+    log.info(
+        "[MathUpdaterDB] Lineage decision action=%s reason=%s conversationId=%d "
+        "conversationSlugId=%s scopeId=%d candidateId=%d variantId=%d groupKey=%s "
+        "lineageId=%d representativeOpinionCount=%d representativeOpinions=%s "
+        "previousGroupCount=%d previousCandidateIds=%s exactMatchLineageIds=%s",
+        action,
+        reason,
+        group.conversation_id,
+        group.conversation_slug_id,
+        group.scope_id,
+        group.candidate_id,
+        group.opinion_group_variant_id,
+        group.key,
+        lineage_id,
+        len(group.representative_opinions),
+        _format_representative_opinions_for_log(group.representative_opinions),
+        len(previous_groups),
+        _format_previous_candidate_ids_for_log(previous_groups),
+        _format_lineage_ids_for_log(exact_match_lineage_ids),
+    )
+
+
+def _lineage_decision_reason(
+    *,
+    action: _LineageDecisionAction,
+    group: _NewGroupForLineage,
+    previous_groups: list[PreviousLineageGroup],
+    exact_match_lineage_ids: tuple[int, ...],
+) -> _LineageDecisionReason:
+    if action == "reuse":
+        return "exact_representative_opinion_match"
+    if not previous_groups:
+        return "no_previous_lineage_groups"
+    if exact_match_lineage_ids:
+        msg = (
+            "lineage create decision received an exact representative-opinion match "
+            f"conversationSlugId={group.conversation_slug_id} scopeId={group.scope_id} "
+            f"candidateId={group.candidate_id} variantId={group.opinion_group_variant_id} "
+            f"groupKey={group.key} "
+            f"exactMatchLineageIds={_format_lineage_ids_for_log(exact_match_lineage_ids)}"
+        )
+        raise LineageAssignmentInvariantError(msg)
+    return "no_exact_representative_opinion_match"
 
 
 def _representative_opinion_keys(
@@ -1197,6 +1411,7 @@ def _fetch_latest_lineage_groups_by_scope(
     lineage_rows = session.execute(
         select(
             OpinionGroup.scope_id,
+            OpinionGroup.candidate_id,
             OpinionGroup.lineage_id,
             AnalysisSnapshotOpinion.opinion_id,
             OpinionGroupOpinionStats.representative_agreement_type,
@@ -1225,12 +1440,15 @@ def _fetch_latest_lineage_groups_by_scope(
     ).all()
 
     keys_by_scope_lineage: dict[tuple[int, int], set[RepresentativeOpinionKey]] = {}
+    candidate_id_by_scope_lineage: dict[tuple[int, int], int] = {}
     for row in lineage_rows:
         if row.lineage_id is None or row.representative_agreement_type is None:
             continue
-        keys_by_scope_lineage.setdefault((row.scope_id, row.lineage_id), set()).add(
+        scope_lineage_key = (row.scope_id, row.lineage_id)
+        keys_by_scope_lineage.setdefault(scope_lineage_key, set()).add(
             (row.opinion_id, row.representative_agreement_type.value)
         )
+        candidate_id_by_scope_lineage[scope_lineage_key] = row.candidate_id
 
     previous_groups_by_scope: dict[int, list[PreviousLineageGroup]] = {}
     for (scope_id, lineage_id), representative_opinions in keys_by_scope_lineage.items():
@@ -1238,6 +1456,7 @@ def _fetch_latest_lineage_groups_by_scope(
             PreviousLineageGroup(
                 lineage_id=lineage_id,
                 representative_opinions=frozenset(representative_opinions),
+                candidate_id=candidate_id_by_scope_lineage[(scope_id, lineage_id)],
             )
         )
     return previous_groups_by_scope

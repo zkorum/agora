@@ -30,6 +30,7 @@ from agora_worker_shared.config import (
 )
 from agora_worker_shared.db import (
     AnalysisWorkStatePersistenceError,
+    LineageAssignmentInvariantError,
     WorkStateSchedule,
     claim_work_items_and_fetch_inputs_batch,
     complete_computed_analysis_work_items_batch,
@@ -1142,6 +1143,7 @@ def _run_worker_once() -> None:
                             )
                     else:
                         isolated_failed_claims: list[ClaimedWorkItem] = []
+                        lineage_invariant_failed_claims: list[ClaimedWorkItem] = []
                         for claim in completed_claims:
                             try:
                                 isolated_result = persist_computed_analysis_results_batch(
@@ -1211,6 +1213,14 @@ def _run_worker_once() -> None:
                                     claims=[claim],
                                 )
                                 _enqueue_schedules(vk, schedules=completed_schedules)
+                            except LineageAssignmentInvariantError:
+                                log.exception(
+                                    "[MathUpdater] Non-retryable lineage assignment invariant "
+                                    "failure conversationSlugId=%s conversationId=%d",
+                                    claim.conversation_slug_id,
+                                    claim.conversation_id,
+                                )
+                                lineage_invariant_failed_claims.append(claim)
                             except (
                                 SQLAlchemyError,
                                 AnalysisWorkStatePersistenceError,
@@ -1222,6 +1232,27 @@ def _run_worker_once() -> None:
                                     context={"claim": _format_claim(claim)},
                                 )
                                 isolated_failed_claims.append(claim)
+
+                        if lineage_invariant_failed_claims:
+                            blocked_schedules = mark_non_retryable_work_items_batch(
+                                primary_engine,
+                                claims=lineage_invariant_failed_claims,
+                                analysis_engine_epoch=settings.analysis_engine_epoch,
+                                error_code="lineage_assignment_invariant_error",
+                                error_message=(
+                                    "lineage assignment invariant failed; see worker logs"
+                                ),
+                            )
+                            _enqueue_schedules(vk, schedules=blocked_schedules)
+                            log.info(
+                                "[MathUpdater] Marked %d lineage-invariant-failed "
+                                "conversation(s) non-retryable: %s",
+                                len(blocked_schedules),
+                                _format_schedules(
+                                    schedules=blocked_schedules,
+                                    claims=lineage_invariant_failed_claims,
+                                ),
+                            )
 
                         if isolated_failed_claims:
                             requeued_schedules = retry_scheduled_work_items_batch(

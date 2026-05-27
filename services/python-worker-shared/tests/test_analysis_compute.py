@@ -68,6 +68,18 @@ def _config() -> OpinionGroupConfigRecord:
     )
 
 
+def _single_variant_config() -> OpinionGroupConfigRecord:
+    return OpinionGroupConfigRecord(
+        spec=OpinionGroupSpecRecord(
+            id=1,
+            min_clusterable_participants=2,
+            min_votes_per_participant=2,
+            max_group_count=2,
+        ),
+        variants=[OpinionGroupVariantRecord(id=20, opinion_group_spec_id=1, group_count=2)],
+    )
+
+
 def _snapshot_rows() -> list[VoteInputRow]:
     rows: list[VoteInputRow] = []
     participant_votes = [
@@ -160,6 +172,19 @@ def _fake_result(group_count: int) -> FakeRedDwarfResult:
     )
 
 
+def _fake_result_with_repness(
+    repness: dict[int, list[dict[str, object]]],
+) -> FakeRedDwarfResult:
+    result = _fake_result(2)
+    return FakeRedDwarfResult(
+        participants_df=result.participants_df,
+        statements_df=result.statements_df,
+        group_comment_stats=result.group_comment_stats,
+        repness=repness,
+        consensus=result.consensus,
+    )
+
+
 def _result_with_groups(*, cluster_ids: list[int]) -> FakeRedDwarfResult:
     result = _fake_result(len(set(cluster_ids)))
     x_values = [float(cluster_id * 10) for cluster_id in cluster_ids]
@@ -238,6 +263,95 @@ def test_compute_analysis_bundle_is_testable_with_injected_runner() -> None:
     representative_opinion = bundle.candidates[0].groups[0].opinion_stats[0].representative_opinion
     assert representative_opinion is not None
     assert representative_opinion.agreement_type == "agree"
+
+
+def test_duplicate_representative_sets_raise_even_when_order_differs() -> None:
+    snapshot = prepare_input_snapshot(
+        conversation_id=10,
+        data_generation=3,
+        rows=_snapshot_rows(),
+    )
+
+    def fake_runner(
+        *,
+        votes: list[dict[str, int]],
+        min_user_vote_threshold: int,
+        max_group_count: int,
+        force_group_count: int | None = None,
+        candidate_group_counts: list[int] | None = None,
+    ) -> FakeRedDwarfSuccess:
+        return FakeRedDwarfSuccess(
+            _fake_result_with_repness(
+                {
+                    0: [
+                        {"tid": 0, "repful-for": "agree", "p-success": 0.75, "n-success": 2},
+                        {
+                            "tid": 1,
+                            "repful-for": "disagree",
+                            "p-success": 0.75,
+                            "n-success": 2,
+                        },
+                    ],
+                    1: [
+                        {
+                            "tid": 1,
+                            "repful-for": "disagree",
+                            "p-success": 0.75,
+                            "n-success": 2,
+                        },
+                        {"tid": 0, "repful-for": "agree", "p-success": 0.75, "n-success": 2},
+                    ],
+                }
+            )
+        )
+
+    with pytest.raises(RedDwarfContractError, match="duplicate representative-opinion set"):
+        compute_analysis_bundle(
+            snapshot=snapshot,
+            config=_single_variant_config(),
+            run_red_dwarf_pipeline=fake_runner,
+        )
+
+
+def test_same_representative_statement_with_different_stance_is_allowed() -> None:
+    snapshot = prepare_input_snapshot(
+        conversation_id=10,
+        data_generation=3,
+        rows=_snapshot_rows(),
+    )
+
+    def fake_runner(
+        *,
+        votes: list[dict[str, int]],
+        min_user_vote_threshold: int,
+        max_group_count: int,
+        force_group_count: int | None = None,
+        candidate_group_counts: list[int] | None = None,
+    ) -> FakeRedDwarfSuccess:
+        return FakeRedDwarfSuccess(
+            _fake_result_with_repness(
+                {
+                    0: [{"tid": 0, "repful-for": "agree", "p-success": 0.75, "n-success": 2}],
+                    1: [
+                        {
+                            "tid": 0,
+                            "repful-for": "disagree",
+                            "p-success": 0.75,
+                            "n-success": 2,
+                        }
+                    ],
+                }
+            )
+        )
+
+    bundle = compute_analysis_bundle(
+        snapshot=snapshot,
+        config=_single_variant_config(),
+        run_red_dwarf_pipeline=fake_runner,
+    )
+
+    assert bundle.outcome == AnalysisResultOutcomeEnum.success
+    assert len(bundle.candidates[0].groups) == 2
 
 
 def test_compute_analysis_bundle_short_circuits_insufficient_data() -> None:
@@ -481,22 +595,22 @@ def test_group_comment_stats_ns_is_total_votes_not_passes() -> None:
         )
         statements_df = pd.DataFrame(
             {
-                "priority": [0.9],
-                "extremity": [0.1],
-                "group-aware-consensus-agree": [0.8],
-                "group-aware-consensus-disagree": [0.2],
+                "priority": [0.9, 0.7],
+                "extremity": [0.1, 0.2],
+                "group-aware-consensus-agree": [0.8, 0.6],
+                "group-aware-consensus-disagree": [0.2, 0.4],
             },
-            index=pd.Index([0], name="statement_id"),
+            index=pd.Index([0, 1], name="statement_id"),
         )
         group_comment_stats = pd.DataFrame(
             {
-                "na": [0, 10, 14],
-                "nd": [10, 10, 3],
-                "ns": [10, 26, 20],
-                "pa": [0.75, 0.75, 0.75],
+                "na": [0, 10, 14, 10],
+                "nd": [10, 10, 3, 5],
+                "ns": [10, 26, 20, 20],
+                "pa": [0.75, 0.75, 0.75, 0.75],
             },
             index=pd.MultiIndex.from_tuples(
-                [(0, 0), (1, 0), (2, 0)],
+                [(0, 0), (1, 0), (2, 0), (2, 1)],
                 names=["group_id", "statement_id"],
             ),
         )
@@ -519,10 +633,10 @@ def test_group_comment_stats_ns_is_total_votes_not_passes() -> None:
             ],
             2: [
                 {
-                    "tid": 0,
+                    "tid": 1,
                     "repful-for": "agree",
                     "p-success": 0.75,
-                    "n-success": 14,
+                    "n-success": 10,
                 }
             ],
         }

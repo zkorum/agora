@@ -15,6 +15,7 @@ class NewLineageGroup:
 class PreviousLineageGroup:
     lineage_id: int
     representative_opinions: frozenset[RepresentativeOpinionKey]
+    candidate_id: int | None = None
 
 
 def match_lineages_by_representative_opinions(
@@ -24,7 +25,7 @@ def match_lineages_by_representative_opinions(
 ) -> dict[str, int]:
     potential_matches: dict[str, int] = {}
     for new_group in new_groups:
-        matching_lineages = _exact_matching_lineage_ids(
+        matching_lineages = exact_matching_lineage_ids(
             new_group=new_group,
             previous_groups=previous_groups,
         )
@@ -43,7 +44,7 @@ def match_lineages_by_representative_opinions(
     return lineage_id_by_new_key
 
 
-def _exact_matching_lineage_ids(
+def exact_matching_lineage_ids(
     *,
     new_group: NewLineageGroup,
     previous_groups: list[PreviousLineageGroup],
