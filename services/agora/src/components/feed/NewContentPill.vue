@@ -70,7 +70,7 @@
 import { useElementBounding } from "@vueuse/core";
 import { TouchPan, type TouchPanValue } from "quasar";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { computed, ref } from "vue";
+import { computed, type CSSProperties, ref } from "vue";
 
 const props = withDefaults(defineProps<{
   label: string;
@@ -100,11 +100,12 @@ const dragOffsetX = ref(0);
 const anchorElement = ref<HTMLElement | null>(null);
 const { left: anchorLeft, width: anchorWidth } = useElementBounding(anchorElement);
 
-const fixedPillStyle = computed(() => ({
+const fixedPillStyle = computed<CSSProperties>(() => ({
   left: `${String(anchorLeft.value + anchorWidth.value / 2)}px`,
+  visibility: anchorWidth.value > 0 ? "visible" : "hidden",
 }));
 
-const pillMotionStyle = computed(() => {
+const pillMotionStyle = computed<CSSProperties>(() => {
   const scale = isDragging.value ? 0.98 : 1;
   return {
     opacity: isDismissing.value ? "0" : "1",
