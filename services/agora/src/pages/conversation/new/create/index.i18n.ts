@@ -22,7 +22,7 @@ export const createConversationTranslations: Record<
   en: {
     importButton: "Import",
     nextButton: "Next",
-    titlePlaceholder: "What do you want to ask? (required)",
+    titlePlaceholder: "Title (required)",
     titleRequired: "Title is required to continue",
     bodyPlaceholder:
       "Body text. Provide context or relevant resources. Make sure it's aligned with the main question!",
@@ -38,7 +38,7 @@ export const createConversationTranslations: Record<
   ar: {
     importButton: "استيراد",
     nextButton: "التالي",
-    titlePlaceholder: "ماذا تريد أن تسأل؟ (مطلوب)",
+    titlePlaceholder: "العنوان (مطلوب)",
     titleRequired: "العنوان مطلوب للمتابعة",
     bodyPlaceholder:
       "نص المحتوى. قدم سياقاً أو موارد ذات صلة. تأكد من أنه متماشٍ مع السؤال الرئيسي!",
@@ -54,7 +54,7 @@ export const createConversationTranslations: Record<
   es: {
     importButton: "Importar",
     nextButton: "Siguiente",
-    titlePlaceholder: "¿Qué quiere preguntar? (obligatorio)",
+    titlePlaceholder: "Título (obligatorio)",
     titleRequired: "Se requiere título para continuar",
     bodyPlaceholder: "Agregue contexto o enlaces útiles",
     activeImportMessage:
@@ -69,7 +69,7 @@ export const createConversationTranslations: Record<
   fa: {
     importButton: "وارد کردن",
     nextButton: "بعدی",
-    titlePlaceholder: "چه چیزی می‌خواهید بپرسید؟ (الزامی)",
+    titlePlaceholder: "عنوان (الزامی)",
     titleRequired: "عنوان برای ادامه الزامی است",
     bodyPlaceholder:
       "متن بدنه. زمینه یا منابع مرتبط ارائه دهید. مطمئن شوید با سؤال اصلی هم‌راستاست!",
@@ -85,7 +85,7 @@ export const createConversationTranslations: Record<
   he: {
     importButton: "ייבוא",
     nextButton: "הבא",
-    titlePlaceholder: "מה ברצונכם לשאול? (חובה)",
+    titlePlaceholder: "כותרת (חובה)",
     titleRequired: "נדרשת כותרת כדי להמשיך",
     bodyPlaceholder:
       "טקסט גוף. ספקו הקשר או משאבים רלוונטיים. וודאו שהוא מתאים לשאלה המרכזית!",
@@ -101,7 +101,7 @@ export const createConversationTranslations: Record<
   fr: {
     importButton: "Importer",
     nextButton: "Suivant",
-    titlePlaceholder: "Que voulez-vous demander ? (obligatoire)",
+    titlePlaceholder: "Titre (obligatoire)",
     titleRequired: "Le titre est requis pour continuer",
     bodyPlaceholder: "Ajoutez du contexte ou des liens utiles",
     activeImportMessage:
@@ -116,7 +116,7 @@ export const createConversationTranslations: Record<
   "zh-Hans": {
     importButton: "导入",
     nextButton: "下一步",
-    titlePlaceholder: "您想问什么？（必填）",
+    titlePlaceholder: "标题（必填）",
     titleRequired: "需要标题才能继续",
     bodyPlaceholder: "正文内容。提供背景或相关资源。确保与主要问题保持一致！",
     activeImportMessage: "您有一个正在进行的导入。请等待完成后再开始新的导入。",
@@ -130,7 +130,7 @@ export const createConversationTranslations: Record<
   "zh-Hant": {
     importButton: "匯入",
     nextButton: "下一步",
-    titlePlaceholder: "您想問什麼？（必填）",
+    titlePlaceholder: "標題（必填）",
     titleRequired: "需要標題才能繼續",
     bodyPlaceholder: "正文內容。提供背景或相關資源。確保與主要問題保持一致！",
     activeImportMessage: "您有一個正在進行的匯入。請等待完成後再開始新的匯入。",
@@ -144,7 +144,7 @@ export const createConversationTranslations: Record<
   ja: {
     importButton: "インポート",
     nextButton: "次へ",
-    titlePlaceholder: "何を聞きたいですか？（必須）",
+    titlePlaceholder: "タイトル（必須）",
     titleRequired: "続行するにはタイトルが必要です",
     bodyPlaceholder:
       "本文テキスト。背景や関連リソースを提供してください。メインの質問と一致していることを確認してください！",
@@ -160,7 +160,7 @@ export const createConversationTranslations: Record<
   ky: {
     importButton: "Импорттоо",
     nextButton: "Кийинки",
-    titlePlaceholder: "Эмнени сурагыңыз келет? (милдеттүү)",
+    titlePlaceholder: "Аталыш (милдеттүү)",
     titleRequired: "Улантуу үчүн аталыш талап кылынат",
     bodyPlaceholder:
       "Негизги текст. Контекст же тиешелүү ресурстарды бериңиз. Негизги суроого шайкеш экенин текшериңиз!",
@@ -176,7 +176,7 @@ export const createConversationTranslations: Record<
   ru: {
     importButton: "Импорт",
     nextButton: "Далее",
-    titlePlaceholder: "Что вы хотите спросить? (обязательно)",
+    titlePlaceholder: "Заголовок (обязательно)",
     titleRequired: "Для продолжения необходим заголовок",
     bodyPlaceholder:
       "Основной текст. Предоставьте контекст или полезные ресурсы. Убедитесь, что он соответствует главному вопросу!",
