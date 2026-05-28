@@ -5,8 +5,12 @@ import { z } from "zod";
 import { generateRandomSlugId } from "@/crypto.js";
 import {
     conversationTable,
+    maxdiffComparisonTable,
+    maxdiffResultTable,
+    opinionModerationTable,
     opinionGroupLineageTable,
     opinionGroupTable,
+    opinionTable,
     organizationTable,
     surveyAggregateOptionTable,
     surveyAggregateOwnerCurrentTable,
@@ -23,6 +27,7 @@ import {
     surveyQuestionOptionTable,
     surveyQuestionTable,
     surveyResponseTable,
+    voteTable,
 } from "@/shared-backend/schema.js";
 import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
 import { wakeScheduledAnalysisForConversation } from "@/shared-backend/analysisScheduler.js";
@@ -185,6 +190,96 @@ async function refreshConversationAnalysisForSurveyChange({
         valkey,
         conversationId: conversation.conversationId,
         log,
+    });
+}
+
+async function hasParticipantAnalysisInput({
+    db,
+    conversation,
+    participantId,
+}: {
+    db: PostgresJsDatabase;
+    conversation: SurveyAnalysisRefreshContext;
+    participantId: string;
+}): Promise<boolean> {
+    if (conversation.conversationType === "maxdiff") {
+        const rows = await db
+            .select({ id: maxdiffResultTable.id })
+            .from(maxdiffResultTable)
+            .innerJoin(
+                maxdiffComparisonTable,
+                eq(maxdiffComparisonTable.maxdiffResultId, maxdiffResultTable.id),
+            )
+            .where(
+                and(
+                    eq(
+                        maxdiffResultTable.conversationId,
+                        conversation.conversationId,
+                    ),
+                    eq(maxdiffResultTable.participantId, participantId),
+                    isNull(maxdiffComparisonTable.deletedAt),
+                ),
+            )
+            .limit(1);
+        return rows.length > 0;
+    }
+
+    const rows = await db
+        .select({ id: voteTable.id })
+        .from(voteTable)
+        .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
+        .leftJoin(
+            opinionModerationTable,
+            eq(opinionModerationTable.opinionId, opinionTable.id),
+        )
+        .where(
+            and(
+                eq(opinionTable.conversationId, conversation.conversationId),
+                eq(voteTable.authorId, participantId),
+                isNotNull(voteTable.currentContentId),
+                isNotNull(opinionTable.currentContentId),
+                isNull(opinionModerationTable.id),
+            ),
+        )
+        .limit(1);
+    return rows.length > 0;
+}
+
+async function refreshConversationAnalysisForParticipantSurveyTransition({
+    db,
+    conversation,
+    participantId,
+    previousSurveyGateStatus,
+    nextSurveyGateStatus,
+    valkey,
+}: {
+    db: PostgresJsDatabase;
+    conversation: SurveyAnalysisRefreshContext;
+    participantId: string;
+    previousSurveyGateStatus: InternalSurveyGateStatus;
+    nextSurveyGateStatus: InternalSurveyGateStatus;
+    valkey: Valkey | undefined;
+}): Promise<void> {
+    const hasAnalysisInput = await hasParticipantAnalysisInput({
+        db,
+        conversation,
+        participantId,
+    });
+
+    if (!hasAnalysisInput) {
+        log.info(
+            `[Survey] Skipped analysis refresh for survey transition without participant input conversationId=${String(conversation.conversationId)} conversationSlugId=${conversation.slugId} conversationType=${conversation.conversationType} participantId=${participantId} previousSurveyGateStatus=${previousSurveyGateStatus} nextSurveyGateStatus=${nextSurveyGateStatus}`,
+        );
+        return;
+    }
+
+    log.info(
+        `[Survey] Scheduling analysis refresh for participant survey transition conversationId=${String(conversation.conversationId)} conversationSlugId=${conversation.slugId} conversationType=${conversation.conversationType} participantId=${participantId} previousSurveyGateStatus=${previousSurveyGateStatus} nextSurveyGateStatus=${nextSurveyGateStatus}`,
+    );
+    await refreshConversationAnalysisForSurveyChange({
+        db,
+        conversation,
+        valkey,
     });
 }
 
@@ -3074,9 +3169,12 @@ export async function saveSurveyAnswer({
             isOptional: activeSurveyConfig.isOptional,
         })
     ) {
-        await refreshConversationAnalysisForSurveyChange({
+        await refreshConversationAnalysisForParticipantSurveyTransition({
             db,
             conversation,
+            participantId,
+            previousSurveyGateStatus: previousSurveyGate.status,
+            nextSurveyGateStatus: nextSurveyGate.status,
             valkey,
         });
     }
@@ -3181,9 +3279,12 @@ export async function withdrawSurveyResponse({
             isOptional: previousSurveyState.activeSurveyConfig.isOptional,
         })
     ) {
-        await refreshConversationAnalysisForSurveyChange({
+        await refreshConversationAnalysisForParticipantSurveyTransition({
             db,
             conversation,
+            participantId,
+            previousSurveyGateStatus: previousSurveyGate.status,
+            nextSurveyGateStatus: nextSurveyGate.status,
             valkey,
         });
     }
