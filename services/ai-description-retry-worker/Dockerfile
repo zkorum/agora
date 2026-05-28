@@ -33,5 +33,6 @@ RUN groupadd --system --gid 1000 appuser && \
     chown -R appuser:appuser /app
 USER appuser
 
+STOPSIGNAL SIGTERM
 ENTRYPOINT ["tini", "--"]
 CMD ["python", "-m", "ai_description_retry_worker.worker"]

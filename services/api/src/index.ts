@@ -22,7 +22,11 @@ import fastifySSE from "@fastify/sse";
 import fastifySwagger from "@fastify/swagger";
 import * as ucans from "@ucans/ucans";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { type FastifyRequest, type FastifyError } from "fastify";
+import {
+    type FastifyRequest,
+    type FastifyError,
+    type FastifyReply,
+} from "fastify";
 import {
     jsonSchemaTransform,
     serializerCompiler,
@@ -134,9 +138,15 @@ import { initializeValkey } from "./shared-backend/valkey.js";
 import { createVoteBuffer } from "./service/voteBuffer.js";
 import { createImportBuffer } from "./service/importBuffer.js";
 import { createImportWorkerEventBridge } from "./service/importWorkerEventBridge.js";
-import { createRealtimeEventOutboxBridge } from "./service/realtimeEventOutbox.js";
+import {
+    createRealtimeEventOutboxBridge,
+    fetchConversationAnalysisUpdatedEventForLatestViewSnapshot,
+} from "./service/realtimeEventOutbox.js";
 import { createUcanReplayGuard } from "./service/ucanReplayGuard.js";
-import { RealtimeSSEManager } from "./service/realtimeSSE.js";
+import {
+    parseRealtimeSubscribedConversationSlugId,
+    RealtimeSSEManager,
+} from "./service/realtimeSSE.js";
 import {
     addUserOrganizationMapping,
     createOrganization,
@@ -917,6 +927,15 @@ type VerifyUcanOptionalAuthReturn =
           deviceStatus: Extract<DeviceLoginStatusInternal, { isKnown: false }>;
       };
 
+function canUseAuthenticatedRealtimeStream(
+    deviceStatus: DeviceLoginStatusInternal,
+): deviceStatus is Extract<DeviceLoginStatusInternal, { isKnown: true }> {
+    return (
+        deviceStatus.isKnown &&
+        (!deviceStatus.isRegistered || deviceStatus.isLoggedIn)
+    );
+}
+
 async function verifyUcanOptionalAuth(
     db: PostgresDatabase,
     request: FastifyRequest,
@@ -936,6 +955,40 @@ async function verifyUcanOptionalAuth(
     return await verifyUcanAndDeviceStatus(db, request, {
         expectedDeviceStatus: undefined,
     });
+}
+
+async function sendLatestSubscribedConversationAnalysisEvent({
+    reply,
+    conversationSlugId,
+}: {
+    reply: FastifyReply;
+    conversationSlugId: string | undefined;
+}): Promise<void> {
+    if (conversationSlugId === undefined) {
+        return;
+    }
+
+    try {
+        const data =
+            await fetchConversationAnalysisUpdatedEventForLatestViewSnapshot({
+                db,
+                conversationSlugId,
+            });
+        if (data === undefined) {
+            return;
+        }
+
+        await realtimeSSEManager.sendToConnection({
+            reply,
+            event: "conversation_analysis_updated",
+            data,
+        });
+    } catch (error) {
+        log.error(
+            error,
+            `[RealtimeSSE] Failed to send latest analysis event conversationSlugId=${conversationSlugId}`,
+        );
+    }
 }
 
 // always return userId !== undefined
@@ -3775,30 +3828,34 @@ server.after(() => {
         url: `/api/${apiVersion}/realtime/stream`,
         sse: true, // Enable SSE mode - provides reply.sse.* methods
         handler: async (request, reply) => {
-            const authHeader = request.headers.authorization;
+            let subscribedConversationSlugId: string | undefined;
+            try {
+                subscribedConversationSlugId =
+                    parseRealtimeSubscribedConversationSlugId(request.query);
+            } catch (error) {
+                log.warn(error, "Invalid realtime stream query");
+                return reply.code(400).send("Invalid realtime stream query");
+            }
+            let authResult: VerifyUcanOptionalAuthReturn;
+            try {
+                authResult = await verifyUcanOptionalAuth(db, request);
+            } catch (error) {
+                log.error(error, "Realtime stream authentication failed");
+                return reply.code(401).send("Authentication failed");
+            }
 
-            if (authHeader !== undefined) {
-                // Authenticated connection — validate UCAN, register by userId
-                let deviceStatus;
-                try {
-                    const result = await verifyUcanAndKnownDeviceStatus(
-                        db,
-                        request,
-                        {
-                            expectedKnownDeviceStatus: {
-                                isGuestOrLoggedIn: true,
-                            },
-                        },
-                    );
-                    deviceStatus = result.deviceStatus;
-                } catch (error) {
-                    log.error(error, "Realtime stream authentication failed");
-                    return reply.code(401).send("Authentication failed");
-                }
-
+            if (canUseAuthenticatedRealtimeStream(authResult.deviceStatus)) {
                 try {
                     reply.sse.keepAlive();
-                    realtimeSSEManager.connect(deviceStatus.userId, reply);
+                    realtimeSSEManager.connect({
+                        userId: authResult.deviceStatus.userId,
+                        reply,
+                        subscribedConversationSlugId,
+                    });
+                    await sendLatestSubscribedConversationAnalysisEvent({
+                        reply,
+                        conversationSlugId: subscribedConversationSlugId,
+                    });
 
                     await new Promise<void>((resolve) => {
                         request.raw.on("close", () => {
@@ -3812,10 +3869,17 @@ server.after(() => {
                     );
                 }
             } else {
-                // Anonymous connection — no auth required
+                // Unknown or logged-out devices still get the public stream.
                 try {
                     reply.sse.keepAlive();
-                    realtimeSSEManager.connectAnonymous(reply);
+                    realtimeSSEManager.connectAnonymous({
+                        reply,
+                        subscribedConversationSlugId,
+                    });
+                    await sendLatestSubscribedConversationAnalysisEvent({
+                        reply,
+                        conversationSlugId: subscribedConversationSlugId,
+                    });
 
                     await new Promise<void>((resolve) => {
                         request.raw.on("close", () => {

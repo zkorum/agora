@@ -30,14 +30,14 @@ Environment variables use the `MATH_UPDATER_` prefix.
 | `MATH_UPDATER_DB_CLAIM_BATCH_SIZE`               | `8`                       | Max DB work items claimed per cycle  |
 | `MATH_UPDATER_DB_WRITE_BATCH_SIZE`               | `10`                      | Max results persisted per DB batch   |
 | `MATH_UPDATER_MAX_COMPUTE_CONCURRENCY`           | `4`                       | Max concurrent analysis computations |
-| `MATH_UPDATER_LEASE_TTL_SECONDS`                 | `600`                     | DB work lease TTL                    |
+| `MATH_UPDATER_LEASE_TTL_SECONDS`                 | `120`                     | DB work lease TTL                    |
 | `MATH_UPDATER_HEARTBEAT_INTERVAL_SECONDS`        | `30`                      | Lease heartbeat cadence              |
 | `MATH_UPDATER_WORKER_POLL_IDLE_SLEEP_SECONDS`    | `0.5`                     | Idle sleep between poll cycles       |
 | `MATH_UPDATER_DEFAULT_DEBOUNCE_SECONDS`          | `5`                       | Default dirty-work debounce          |
 | `MATH_UPDATER_RECONCILIATION_INTERVAL_SECONDS`   | `60`                      | DB-to-Valkey reconciliation cadence  |
 | `MATH_UPDATER_RUNNING_RECOVERY_INTERVAL_SECONDS` | `60`                      | Expired lease recovery cadence       |
 
-AI label and summary generation is disabled by default and configured with `MATH_UPDATER_AWS_AI_LABEL_SUMMARY_*` variables. Translation is configured with `MATH_UPDATER_GOOGLE_*` variables and optional AWS Secrets Manager credentials. Translation requires AI label/summary generation to be enabled.
+AI label and summary generation is disabled by default and configured with `MATH_UPDATER_AWS_AI_LABEL_SUMMARY_*` variables. Translation is configured with `MATH_UPDATER_AWS_DESCRIPTION_TRANSLATION_*`, `MATH_UPDATER_GOOGLE_*`, and optional AWS Secrets Manager credential variables. Translation requires AI label/summary generation to be enabled.
 
 ### Dev-only AI simulation
 
@@ -97,6 +97,10 @@ make dev-math-updater
 ```
 
 The root target runs the worker with unbuffered Python output and writes `.local/logs/latest/math-updater.log`.
+
+## Shutdown
+
+The container runs under `tini` and handles `SIGTERM` by finishing the in-flight batch before exiting. During that drain period, active analysis leases keep heartbeating; successful completion clears the lease normally. Docker deployments should provide a stop grace period long enough for the current batch to finish. The production Compose template sets `stop_grace_period: 10m` for the worker containers.
 
 The dedicated [`ai-description-retry-worker`](../ai-description-retry-worker) and [`description-translation-retry-worker`](../description-translation-retry-worker) services process retry/backlog queues. This service owns red-dwarf analysis and immediate first-pass AI description/translation work.
 

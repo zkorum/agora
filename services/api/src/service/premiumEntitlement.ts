@@ -290,7 +290,7 @@ async function refreshPremiumAnalysisForSubject({
                 isNotNull(conversationTable.currentContentId),
             ),
         )
-        .orderBy(desc(conversationTable.lastReactedAt));
+        .orderBy(desc(conversationTable.createdAt));
 
     for (const row of conversationRows) {
         await scheduleAnalysisUpdate({

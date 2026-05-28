@@ -377,6 +377,7 @@
           conversation-organization-name=""
           :analysis-query="analysisQuery"
           :analysis-checkpoints-query="analysisCheckpointsQuery"
+          :live-conversation-view-snapshot-id="liveSnapshotId"
           :survey-query="surveyResultsQuery"
           :has-survey="hasMockSurvey"
           :survey-gate="mockSurveyGate"

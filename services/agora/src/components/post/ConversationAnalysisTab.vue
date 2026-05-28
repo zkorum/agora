@@ -9,6 +9,9 @@
       "
       :analysis-query="analysisQuery"
       :analysis-checkpoints-query="analysisCheckpointsQuery"
+      :live-conversation-view-snapshot-id="
+        conversationData.metadata.conversationViewSnapshotId
+      "
       :survey-query="surveyResultsQuery"
       :has-survey="hasSurvey"
       :survey-gate="conversationData.interaction.surveyGate"

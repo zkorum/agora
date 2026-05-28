@@ -1,29 +1,33 @@
 import { useQueryClient } from "@tanstack/vue-query";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type {
-  SSEConnectedData,
-  SSEConversationAnalysisUpdatedData,
-  SSEConversationSettingsUpdatedData,
-  SSEHeartbeatData,
-  SSENewOpinionData,
-  SSENotificationData,
-  SSEPopularConversationData,
+import {
+  type AnySSEEvent,
+  type SSEConversationAnalysisUpdatedData,
+  type SSEConversationSettingsUpdatedData,
+  zodSSEEventDataByType,
 } from "src/shared/types/dto";
 import type {
   ExtendedConversation,
   ParticipationMode,
 } from "src/shared/types/zod";
-import { zodNotificationItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useNotificationStore } from "src/stores/notification";
 import { useOpinionUpdatesStore } from "src/stores/opinionUpdates";
+import { useBackendAuthApi } from "src/utils/api/auth";
+import type { AnalysisData } from "src/utils/api/comment/comment";
 import { useCommonApi } from "src/utils/api/common";
 import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { processEnv } from "src/utils/processEnv";
 import { useNotify } from "src/utils/ui/notify";
-import { onUnmounted, ref, watch } from "vue";
+import {
+  type MaybeRefOrGetter,
+  onUnmounted,
+  ref,
+  toValue,
+  watch,
+} from "vue";
 
 import { setNetworkOffline } from "./useNetworkStatus";
 import {
@@ -43,6 +47,7 @@ const SSE_RETRY_DELAY_MS = 1_000;
 // - RabbitMQ heartbeat: https://www.rabbitmq.com/docs/heartbeats
 // - Python websockets keepalive: https://websockets.readthedocs.io/en/stable/topics/keepalive.html
 const SSE_HEARTBEAT_TIMEOUT_MS = 45_000;
+const LIVE_ANALYSIS_CATCH_UP_DELAYS_MS = [250, 500, 1000, 2000] as const;
 
 function isAnalysisQueryKeyForConversation({
   queryKey,
@@ -122,6 +127,31 @@ function isCheckpointAnalysisQueryKey({
   );
 }
 
+function isAnalysisCheckpointsQueryKey({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return (
+    queryKey[0] === "analysisCheckpoints" && queryKey[1] === conversationSlugId
+  );
+}
+
+function isConversationCommentsQueryKey({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return (
+    (queryKey[0] === "comments" || queryKey[0] === "hiddenComments") &&
+    queryKey[1] === conversationSlugId
+  );
+}
+
 /**
  * Single composable for ALL real-time server events.
  * Always maintains an SSE connection regardless of auth state:
@@ -130,13 +160,18 @@ function isCheckpointAnalysisQueryKey({
  * - Anonymous: connects without auth → receives only global events
  * On auth state change: disconnects from old mode → reconnects with new headers.
  */
-export function useRealtimeSSE() {
+export function useRealtimeSSE({
+  subscribedConversationSlugId,
+}: {
+  subscribedConversationSlugId?: MaybeRefOrGetter<string | undefined>;
+} = {}) {
   const { buildEncodedUcan } = useCommonApi();
   const notificationStore = useNotificationStore();
   const homeFeedStore = useHomeFeedStore();
   const opinionUpdatesStore = useOpinionUpdatesStore();
   const authStore = useAuthenticationStore();
   const queryClient = useQueryClient();
+  const { refreshAuthState } = useBackendAuthApi();
   const { showNotifyMessage } = useNotify();
   const { t } = useComponentI18n<RealtimeSSETranslations>(
     realtimeSSETranslations
@@ -151,6 +186,18 @@ export function useRealtimeSSE() {
   let connectionId = 0;
   let offlineTimer: ReturnType<typeof setTimeout> | null = null;
   let heartbeatWatchdog: ReturnType<typeof setTimeout> | null = null;
+  const latestExpectedLiveSnapshotByConversationSlugId = new Map<
+    string,
+    number
+  >();
+  const liveAnalysisCatchUpGenerationByConversationSlugId = new Map<
+    string,
+    number
+  >();
+  const liveAnalysisCatchUpTimeoutByConversationSlugId = new Map<
+    string,
+    ReturnType<typeof setTimeout>
+  >();
   const latestAnalysisEventTimestampByConversationSlugId = new Map<
     string,
     number
@@ -159,6 +206,22 @@ export function useRealtimeSSE() {
     string,
     number
   >();
+
+  function getSubscribedConversationSlugId(): string | undefined {
+    return toValue(subscribedConversationSlugId);
+  }
+
+  function buildRealtimeStreamUrl(): string {
+    const baseUrl = processEnv.VITE_API_BASE_URL || "";
+    const path = "/api/v1/realtime/stream";
+    const conversationSlugId = getSubscribedConversationSlugId();
+    if (conversationSlugId === undefined) {
+      return `${baseUrl}${path}`;
+    }
+
+    const params = new URLSearchParams({ conversationSlugId });
+    return `${baseUrl}${path}?${params.toString()}`;
+  }
 
   async function connect() {
     if (isConnecting.value || isConnected.value) {
@@ -183,8 +246,7 @@ export function useRealtimeSSE() {
         abortController?.abort();
       }, SSE_CONNECTION_TIMEOUT_MS);
 
-      const baseUrl = processEnv.VITE_API_BASE_URL || "";
-      const url = `${baseUrl}/api/v1/realtime/stream`;
+      const url = buildRealtimeStreamUrl();
       const headers: Record<string, string> = {
         Accept: "text/event-stream",
       };
@@ -209,6 +271,18 @@ export function useRealtimeSSE() {
       connectionTimeout = null;
 
       if (!response.ok) {
+        if (response.status === 401) {
+          const didRefreshAuthState = await refreshAuthStateAfterSSEUnauthorized();
+          if (didRefreshAuthState) {
+            isConnecting.value = false;
+            isConnected.value = false;
+            setNetworkOffline(false);
+            if (thisConnectionId === connectionId && shouldReconnect) {
+              scheduleReconnect();
+            }
+            return;
+          }
+        }
         throw new Error(`SSE connection failed: ${String(response.status)}`);
       }
 
@@ -227,6 +301,9 @@ export function useRealtimeSSE() {
       }
 
       setNetworkOffline(false);
+      refreshActiveConversationQueriesAfterReconnect({
+        conversationSlugId: getSubscribedConversationSlugId(),
+      });
 
       // Read and parse SSE stream
       const reader = response.body.getReader();
@@ -247,7 +324,9 @@ export function useRealtimeSSE() {
         for (const part of parts) {
           if (!part.trim()) continue;
           const parsed = parseSSEEvent(part);
-          handleSSEEvent(parsed.event, parsed.data);
+          if (parsed !== undefined) {
+            handleSSEEvent(parsed);
+          }
         }
       }
 
@@ -280,17 +359,145 @@ export function useRealtimeSSE() {
     }
   }
 
-  function parseSSEEvent(raw: string): { event: string; data: string } {
+  function normalizeSSELine(rawLine: string): string {
+    return rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
+  }
+
+  function parseRawSSEFrame(raw: string): { event: string; data: string } {
     let event = "";
-    let data = "";
-    for (const line of raw.split("\n")) {
-      if (line.startsWith("event: ")) {
-        event = line.slice(7);
-      } else if (line.startsWith("data: ")) {
-        data = line.slice(6);
+    const dataLines: string[] = [];
+    for (const rawLine of raw.split("\n")) {
+      const line = normalizeSSELine(rawLine);
+      if (line.startsWith(":")) {
+        continue;
+      }
+
+      if (line.startsWith("event:")) {
+        event = line.slice("event:".length).trimStart();
+      } else if (line.startsWith("data:")) {
+        dataLines.push(line.slice("data:".length).trimStart());
       }
     }
-    return { event, data };
+    return { event, data: dataLines.join("\n") };
+  }
+
+  function parseSSEEvent(raw: string): AnySSEEvent | undefined {
+    const frame = parseRawSSEFrame(raw);
+    if (frame.event === "" && frame.data === "") {
+      return undefined;
+    }
+
+    if (frame.data === "") {
+      console.error(`SSE event ${frame.event || "<unknown>"} had no data`);
+      return undefined;
+    }
+
+    let rawData: unknown;
+
+    try {
+      rawData = JSON.parse(frame.data);
+    } catch (error) {
+      console.error("Failed to parse SSE event JSON", error);
+      return undefined;
+    }
+
+    switch (frame.event) {
+      case "connected": {
+        const result = zodSSEEventDataByType.connected.safeParse(rawData);
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { event: frame.event, data: result.data };
+      }
+      case "notification": {
+        const result = zodSSEEventDataByType.notification.safeParse(rawData);
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { event: frame.event, data: result.data };
+      }
+      case "new_conversation": {
+        const result = zodSSEEventDataByType.new_conversation.safeParse(rawData);
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { event: frame.event, data: result.data };
+      }
+      case "new_opinion": {
+        const result = zodSSEEventDataByType.new_opinion.safeParse(rawData);
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { event: frame.event, data: result.data };
+      }
+      case "popular_conversation": {
+        const result = zodSSEEventDataByType.popular_conversation.safeParse(rawData);
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { event: frame.event, data: result.data };
+      }
+      case "conversation_analysis_updated": {
+        const result = zodSSEEventDataByType.conversation_analysis_updated.safeParse(rawData);
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { event: frame.event, data: result.data };
+      }
+      case "conversation_settings_updated": {
+        const result = zodSSEEventDataByType.conversation_settings_updated.safeParse(rawData);
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { event: frame.event, data: result.data };
+      }
+      case "heartbeat": {
+        const result = zodSSEEventDataByType.heartbeat.safeParse(rawData);
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { event: frame.event, data: result.data };
+      }
+      case "shutdown": {
+        const result = zodSSEEventDataByType.shutdown.safeParse(rawData);
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { event: frame.event, data: result.data };
+      }
+      default:
+        console.error(`Unknown SSE event: ${frame.event}`);
+        return undefined;
+    }
+  }
+
+  function logInvalidSSEPayload({
+    event,
+    error,
+  }: {
+    event: string;
+    error: unknown;
+  }): void {
+    console.error(`Invalid SSE payload for event ${event}`, error);
+  }
+
+  async function refreshAuthStateAfterSSEUnauthorized(): Promise<boolean> {
+    try {
+      const result = await refreshAuthState();
+      return result.authStateChanged || result.needsCacheRefresh;
+    } catch (error) {
+      console.error("Failed to refresh auth state after SSE 401", error);
+      return false;
+    }
   }
 
   function getParticipationModeMessage(
@@ -390,23 +597,17 @@ export function useRealtimeSSE() {
     });
   }
 
-  function handleSSEEvent(event: string, rawData: string): void {
+  function handleSSEEvent(sseEvent: AnySSEEvent): void {
     try {
-      switch (event) {
+      switch (sseEvent.event) {
         case "connected": {
-          const data: SSEConnectedData = JSON.parse(rawData);
+          const data = sseEvent.data;
           lastHeartbeat.value = data.timestamp;
           break;
         }
         case "notification": {
-          const data: SSENotificationData = JSON.parse(rawData);
-          const parsedNotification = zodNotificationItem.safeParse({
-            ...data.notification,
-            createdAt: new Date(data.notification.createdAt),
-          });
-          if (parsedNotification.success) {
-            notificationStore.addNewNotification(parsedNotification.data);
-          }
+          const data = sseEvent.data;
+          notificationStore.addNewNotification(data.notification);
           break;
         }
         case "new_conversation": {
@@ -414,7 +615,7 @@ export function useRealtimeSSE() {
           break;
         }
         case "new_opinion": {
-          const data: SSENewOpinionData = JSON.parse(rawData);
+          const data = sseEvent.data;
           opinionUpdatesStore.markNewOpinion(data.conversationSlugId);
           void queryClient.invalidateQueries({
             queryKey: ["comments", data.conversationSlugId],
@@ -423,14 +624,14 @@ export function useRealtimeSSE() {
           break;
         }
         case "popular_conversation": {
-          const data: SSEPopularConversationData = JSON.parse(rawData);
+          const data = sseEvent.data;
           homeFeedStore.onPopularConversationUpdate(
             data.topConversationSlugIdList
           );
           break;
         }
         case "conversation_analysis_updated": {
-          const data: SSEConversationAnalysisUpdatedData = JSON.parse(rawData);
+          const data = sseEvent.data;
           const checkpointChanged = data.checkpointChanged === true;
           updateConversationCountsFromAnalysisEvent(data);
           void queryClient.invalidateQueries({
@@ -455,10 +656,11 @@ export function useRealtimeSSE() {
               queryKey: ["analysisCheckpoints", data.conversationSlugId],
             });
           }
+          requestLiveAnalysisCatchUp(data);
           break;
         }
         case "conversation_settings_updated": {
-          const data: SSEConversationSettingsUpdatedData = JSON.parse(rawData);
+          const data = sseEvent.data;
           const previousTimestamp =
             latestSettingsEventTimestampByConversationSlugId.get(
               data.conversationSlugId
@@ -524,7 +726,7 @@ export function useRealtimeSSE() {
           break;
         }
         case "heartbeat": {
-          const data: SSEHeartbeatData = JSON.parse(rawData);
+          const data = sseEvent.data;
           lastHeartbeat.value = data.timestamp;
           break;
         }
@@ -593,6 +795,250 @@ export function useRealtimeSSE() {
           },
         };
       },
+    });
+  }
+
+  function getLiveAnalysisCatchUpDelay(attemptIndex: number): number {
+    const delay =
+      LIVE_ANALYSIS_CATCH_UP_DELAYS_MS[
+        Math.min(attemptIndex, LIVE_ANALYSIS_CATCH_UP_DELAYS_MS.length - 1)
+      ];
+    return delay ?? 2000;
+  }
+
+  function getLatestCachedLiveAnalysisSnapshotId({
+    conversationSlugId,
+  }: {
+    conversationSlugId: string;
+  }): number | undefined {
+    let latestSnapshotId: number | undefined;
+    const queryData = queryClient.getQueriesData<AnalysisData>({
+      predicate: (query) =>
+        isLiveAnalysisQueryKey({
+          queryKey: query.queryKey,
+          conversationSlugId,
+        }),
+    });
+
+    for (const [_queryKey, data] of queryData) {
+      const snapshotId = data?.conversationViewSnapshotId;
+      if (snapshotId === undefined) {
+        continue;
+      }
+      latestSnapshotId = Math.max(latestSnapshotId ?? 0, snapshotId);
+    }
+
+    return latestSnapshotId;
+  }
+
+  function hasActiveLiveAnalysisQuery({
+    conversationSlugId,
+  }: {
+    conversationSlugId: string;
+  }): boolean {
+    return queryClient
+      .getQueryCache()
+      .findAll({
+        predicate: (query) =>
+          isLiveAnalysisQueryKey({
+            queryKey: query.queryKey,
+            conversationSlugId,
+          }),
+      })
+      .some((query) => query.isActive());
+  }
+
+  function clearLiveAnalysisCatchUp({
+    conversationSlugId,
+  }: {
+    conversationSlugId: string;
+  }): void {
+    const timeout = liveAnalysisCatchUpTimeoutByConversationSlugId.get(
+      conversationSlugId
+    );
+    if (timeout !== undefined) {
+      clearTimeout(timeout);
+      liveAnalysisCatchUpTimeoutByConversationSlugId.delete(conversationSlugId);
+    }
+    latestExpectedLiveSnapshotByConversationSlugId.delete(conversationSlugId);
+    liveAnalysisCatchUpGenerationByConversationSlugId.set(
+      conversationSlugId,
+      (liveAnalysisCatchUpGenerationByConversationSlugId.get(
+        conversationSlugId
+      ) ?? 0) + 1
+    );
+  }
+
+  function clearAllLiveAnalysisCatchUps(): void {
+    for (const timeout of liveAnalysisCatchUpTimeoutByConversationSlugId.values()) {
+      clearTimeout(timeout);
+    }
+    liveAnalysisCatchUpTimeoutByConversationSlugId.clear();
+    latestExpectedLiveSnapshotByConversationSlugId.clear();
+    liveAnalysisCatchUpGenerationByConversationSlugId.clear();
+  }
+
+  function requestLiveAnalysisCatchUp(
+    data: SSEConversationAnalysisUpdatedData
+  ): void {
+    const previousExpectedSnapshotId =
+      latestExpectedLiveSnapshotByConversationSlugId.get(data.conversationSlugId);
+    clearLiveAnalysisCatchUp({
+      conversationSlugId: data.conversationSlugId,
+    });
+    latestExpectedLiveSnapshotByConversationSlugId.set(
+      data.conversationSlugId,
+      Math.max(previousExpectedSnapshotId ?? 0, data.conversationViewSnapshotId)
+    );
+    const generation =
+      (liveAnalysisCatchUpGenerationByConversationSlugId.get(
+        data.conversationSlugId
+      ) ?? 0) + 1;
+    liveAnalysisCatchUpGenerationByConversationSlugId.set(
+      data.conversationSlugId,
+      generation
+    );
+    void catchUpLiveAnalysis({
+      conversationSlugId: data.conversationSlugId,
+      generation,
+      attemptIndex: 0,
+    });
+  }
+
+  async function catchUpLiveAnalysis({
+    conversationSlugId,
+    generation,
+    attemptIndex,
+  }: {
+    conversationSlugId: string;
+    generation: number;
+    attemptIndex: number;
+  }): Promise<void> {
+    if (
+      liveAnalysisCatchUpGenerationByConversationSlugId.get(conversationSlugId) !==
+      generation
+    ) {
+      return;
+    }
+
+    const expectedSnapshotId =
+      latestExpectedLiveSnapshotByConversationSlugId.get(conversationSlugId);
+    if (expectedSnapshotId === undefined) {
+      return;
+    }
+
+    const cachedSnapshotId = getLatestCachedLiveAnalysisSnapshotId({
+      conversationSlugId,
+    });
+    if (
+      cachedSnapshotId !== undefined &&
+      cachedSnapshotId >= expectedSnapshotId
+    ) {
+      console.info("[RealtimeSSE] Live analysis caught up", {
+        conversationSlugId,
+        expectedSnapshotId,
+        cachedSnapshotId,
+        attemptIndex,
+      });
+      return;
+    }
+
+    if (!hasActiveLiveAnalysisQuery({ conversationSlugId })) {
+      console.info("[RealtimeSSE] No active live analysis query to catch up", {
+        conversationSlugId,
+        expectedSnapshotId,
+        cachedSnapshotId,
+      });
+      return;
+    }
+
+    try {
+      await queryClient.refetchQueries({
+        predicate: (query) =>
+          query.isActive() &&
+          isLiveAnalysisQueryKey({
+            queryKey: query.queryKey,
+            conversationSlugId,
+          }),
+      });
+    } catch (error) {
+      console.warn("[RealtimeSSE] Live analysis catch-up refetch failed", {
+        conversationSlugId,
+        expectedSnapshotId,
+        cachedSnapshotId,
+        attemptIndex,
+        error,
+      });
+    }
+
+    if (
+      liveAnalysisCatchUpGenerationByConversationSlugId.get(conversationSlugId) !==
+      generation
+    ) {
+      return;
+    }
+
+    const refreshedSnapshotId = getLatestCachedLiveAnalysisSnapshotId({
+      conversationSlugId,
+    });
+    if (
+      refreshedSnapshotId !== undefined &&
+      refreshedSnapshotId >= expectedSnapshotId
+    ) {
+      console.info("[RealtimeSSE] Live analysis caught up after refetch", {
+        conversationSlugId,
+        expectedSnapshotId,
+        refreshedSnapshotId,
+        attemptIndex,
+      });
+      return;
+    }
+
+    const delay = getLiveAnalysisCatchUpDelay(attemptIndex);
+    console.info("[RealtimeSSE] Live analysis still behind; scheduling retry", {
+      conversationSlugId,
+      expectedSnapshotId,
+      refreshedSnapshotId,
+      attemptIndex,
+      delay,
+    });
+    const timeout = setTimeout(() => {
+      void catchUpLiveAnalysis({
+        conversationSlugId,
+        generation,
+        attemptIndex: attemptIndex + 1,
+      });
+    }, delay);
+    liveAnalysisCatchUpTimeoutByConversationSlugId.set(
+      conversationSlugId,
+      timeout
+    );
+  }
+
+  function refreshActiveConversationQueriesAfterReconnect({
+    conversationSlugId,
+  }: {
+    conversationSlugId: string | undefined;
+  }): void {
+    if (conversationSlugId === undefined) {
+      return;
+    }
+
+    void queryClient.refetchQueries({
+      predicate: (query) =>
+        query.isActive() &&
+        (isLiveAnalysisQueryKey({
+          queryKey: query.queryKey,
+          conversationSlugId,
+        }) ||
+          isAnalysisCheckpointsQueryKey({
+            queryKey: query.queryKey,
+            conversationSlugId,
+          }) ||
+          isConversationCommentsQueryKey({
+            queryKey: query.queryKey,
+            conversationSlugId,
+          })),
     });
   }
 
@@ -698,6 +1144,29 @@ export function useRealtimeSSE() {
 
   document.addEventListener("visibilitychange", onVisibilityChange);
 
+  watch(
+    () => getSubscribedConversationSlugId(),
+    (conversationSlugId, previousConversationSlugId) => {
+      if (previousConversationSlugId !== undefined) {
+        clearLiveAnalysisCatchUp({
+          conversationSlugId: previousConversationSlugId,
+        });
+      }
+
+      if (conversationSlugId === previousConversationSlugId) {
+        return;
+      }
+
+      if (document.hidden) {
+        disconnect();
+        shouldReconnect = true;
+        return;
+      }
+
+      forceReconnect();
+    }
+  );
+
   // Watch for authentication state changes — reconnect to switch auth mode.
   // Always connected: authenticated users get personal notifications + global
   // events; anonymous users get only global events.
@@ -717,6 +1186,7 @@ export function useRealtimeSSE() {
   // Cleanup on unmount
   onUnmounted(() => {
     document.removeEventListener("visibilitychange", onVisibilityChange);
+    clearAllLiveAnalysisCatchUps();
     disconnect();
   });
 

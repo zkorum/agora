@@ -32,7 +32,7 @@
     </q-infinite-scroll>
 
     <NewContentPill
-      v-if="hasPendingNewOpinion && !isShowingInitialCommentsLoading"
+      v-if="isCommentTabActive && hasPendingNewOpinion && !isShowingInitialCommentsLoading"
       :label="t('newStatementButton')"
       dismissible
       @click="showNewOpinions"
@@ -62,7 +62,7 @@ import { useUserStore } from "src/stores/user";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, inject, onActivated, onMounted, ref, watch } from "vue";
+import { computed, inject, onActivated, onDeactivated, onMounted, ref, watch } from "vue";
 
 import {
   type CommentSectionTranslations,
@@ -97,6 +97,7 @@ const emit = defineEmits<{
 }>();
 
 const isComponentMounted = ref(false);
+const isCommentTabActive = ref(true);
 const isInitialActivation = ref(true);
 
 const { t } = useComponentI18n<CommentSectionTranslations>(
@@ -220,12 +221,17 @@ onMounted(async (): Promise<void> => {
 });
 
 onActivated(async (): Promise<void> => {
+  isCommentTabActive.value = true;
   if (isInitialActivation.value) {
     isInitialActivation.value = false;
     return;
   }
   await setupHighlightFromRoute();
   await clearRouteQueryParameters();
+});
+
+onDeactivated((): void => {
+  isCommentTabActive.value = false;
 });
 
 // Watch for postSlugId changes to refetch user votes when navigating between conversations

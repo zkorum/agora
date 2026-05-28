@@ -85,6 +85,7 @@ export async function buildUcan({
     })
     .toAudience(backendDid)
     .withLifetimeInSeconds(30)
+    .withNonce()
     .claimCapability({
       with: resourcePointer,
       can: ability,

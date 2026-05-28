@@ -58,6 +58,24 @@ def _format_ids_for_log(conversation_ids: list[int]) -> str:
     return ", ".join(str(conversation_id) for conversation_id in head) + suffix
 
 
+def _claim_kind(claim: ClaimedAiDescriptionLocaleWorkItem) -> str:
+    if isinstance(claim, ClaimedLineageDescriptionWorkItem):
+        return "lineage-description"
+    return "translation"
+
+
+def _claim_target_log(claim: ClaimedAiDescriptionLocaleWorkItem) -> str:
+    if isinstance(claim, ClaimedLineageDescriptionWorkItem):
+        return f"lineageId={claim.lineage_id}"
+    return f"descriptionId={claim.description_id}"
+
+
+def _claim_target_metadata(claim: ClaimedAiDescriptionLocaleWorkItem) -> dict[str, int]:
+    if isinstance(claim, ClaimedLineageDescriptionWorkItem):
+        return {"lineageId": claim.lineage_id}
+    return {"descriptionId": claim.description_id}
+
+
 def enqueue_ai_description_queue_schedules(
     vk: valkey_lib.Valkey,
     *,
@@ -109,6 +127,7 @@ def process_ai_description_conversation_ids(
         conversation_ids=conversation_ids,
         include_lineage_descriptions=claim_lineage_descriptions,
         include_translations=claim_translations,
+        require_activated_view_snapshot=True,
     )
     if completed_conversation_ids:
         log.info(
@@ -133,11 +152,12 @@ def process_ai_description_conversation_ids(
         conversation_ids=claimable_conversation_ids,
         conversation_view_snapshot_ids=conversation_view_snapshot_ids,
         lease_ttl_seconds=lease_ttl_seconds,
-        limit=claim_limit,
+        limit=min(claim_limit, max_workers),
         ai_description_epoch=ai_description_epoch,
         translation_enabled=description_translator is not None,
         claim_lineage_descriptions=claim_lineage_descriptions,
         claim_translations=claim_translations,
+        require_activated_view_snapshot=True,
     )
     if not claims:
         log.info(
@@ -168,14 +188,17 @@ def process_ai_description_conversation_ids(
                 claim=claim,
                 generate_descriptions=description_generator,
                 translate_descriptions=description_translator,
+                require_activated_view_snapshot=True,
             )
         except Exception as error:
             if isinstance(error, DescriptionInputError):
                 log.exception(
-                    "%s Non-retryable AI description failure conversationSlugId=%s locale=%s",
+                    "%s Non-retryable %s failure conversationSlugId=%s locale=%s %s",
                     log_prefix,
+                    _claim_kind(claim),
                     claim.conversation_slug_id,
                     claim.locale,
+                    _claim_target_log(claim),
                 )
                 return mark_non_retryable_ai_description_locale_work_item(
                     primary_engine,
@@ -183,18 +206,21 @@ def process_ai_description_conversation_ids(
                     ai_description_epoch=ai_description_epoch,
                     error_code="ai_description_non_retryable",
                     error_message=str(error),
+                    require_activated_view_snapshot=True,
                 )
 
             log.exception(
-                "%s Retryable AI description failure conversationSlugId=%s locale=%s",
+                "%s Retryable %s failure conversationSlugId=%s locale=%s %s",
                 log_prefix,
+                _claim_kind(claim),
                 claim.conversation_slug_id,
                 claim.locale,
+                _claim_target_log(claim),
             )
             should_retry_immediately = (
                 retry_first_pass_once
-                and isinstance(claim, ClaimedLineageDescriptionWorkItem)
                 and claim.attempt_count == 1
+                and isinstance(claim, ClaimedLineageDescriptionWorkItem)
             )
             return retry_ai_description_locale_work_item(
                 primary_engine,
@@ -204,6 +230,7 @@ def process_ai_description_conversation_ids(
                 error_message=str(error),
                 retry_immediately_without_fallback=should_retry_immediately,
                 force_cooldown=retry_first_pass_once and not should_retry_immediately,
+                require_activated_view_snapshot=True,
             )
 
     processing_started_at = time.perf_counter()
@@ -213,7 +240,7 @@ def process_ai_description_conversation_ids(
             claim = future_by_claim[future]
             try:
                 schedule = future.result()
-                if schedule.next_run_at is not None:
+                if schedule.retry_scheduled_at is not None:
                     emit_load_event(
                         phase=log_prefix.strip("[]").lower(),
                         action="retry-scheduled",
@@ -223,15 +250,17 @@ def process_ai_description_conversation_ids(
                             "conversationId": schedule.conversation_id,
                             "locale": claim.locale,
                             "attemptCount": claim.attempt_count,
-                            "nextRunAt": schedule.next_run_at.isoformat(),
+                            "nextRunAt": schedule.retry_scheduled_at.isoformat(),
+                            **_claim_target_metadata(claim),
                         },
                     )
             except Exception:
                 log.exception(
-                    "%s Failed to finalize retry state conversationSlugId=%s locale=%s",
+                    "%s Failed to finalize retry state conversationSlugId=%s locale=%s %s",
                     log_prefix,
                     claim.conversation_slug_id,
                     claim.locale,
+                    _claim_target_log(claim),
                 )
 
     log.info(
@@ -246,6 +275,7 @@ def process_ai_description_conversation_ids(
         schedules=fetch_ai_description_queue_schedules(
             primary_engine,
             conversation_ids=conversation_ids,
+            require_activated_view_snapshot=True,
         ),
         log_prefix=log_prefix,
     )

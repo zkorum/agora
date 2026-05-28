@@ -1364,13 +1364,6 @@ export async function postNewOpinion({
             })
             .where(eq(userTable.id, participationContext.participantId));
 
-        await transactionDb
-            .update(conversationTable)
-            .set({ lastReactedAt: now })
-            .where(
-                eq(conversationTable.id, participationContext.conversationId),
-            );
-
         const participantUsername =
             conversationMetadata?.conversationAuthorUsername ??
             (await (async (): Promise<string> => {
@@ -1454,7 +1447,8 @@ export async function postNewOpinion({
             });
         }
 
-        realtimeSSEManager?.broadcastToAllExcept({
+        realtimeSSEManager?.broadcastToConversationSubscribersExcept({
+            conversationSlugId,
             event: "new_opinion",
             data: {
                 conversationSlugId,

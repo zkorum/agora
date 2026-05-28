@@ -1,8 +1,10 @@
-import type {
-    EventSlug,
-    NotificationItem,
-    ParticipationMode,
-    PreferredOpinionGroupCount,
+import { z } from "zod";
+import {
+    zodEventSlug,
+    zodNotificationItem,
+    zodParticipationMode,
+    zodPreferredOpinionGroupCount,
+    zodSlugId,
 } from "./zod.js";
 
 /**
@@ -10,112 +12,156 @@ import type {
  * Defines the structure of all SSE events sent from backend to frontend
  */
 
-// Event-specific data types
+// Event-specific data schemas and types
 
 /**
  * Data sent when a client successfully connects to the SSE stream
  */
-export interface SSEConnectedData {
-    userId?: string;
-    timestamp: number;
-}
+export const zodSSEConnectedData = z
+    .object({
+        userId: z.string().optional(),
+        timestamp: z.number(),
+    })
+    .strict();
+export type SSEConnectedData = z.infer<typeof zodSSEConnectedData>;
 
 /**
  * Data sent when a new notification is created
  */
-export interface SSENotificationData {
-    notification: NotificationItem;
-}
+export const zodSSENotificationData = z
+    .object({
+        notification: zodNotificationItem,
+    })
+    .strict();
+export type SSENotificationData = z.infer<typeof zodSSENotificationData>;
 
 /**
  * Data sent when a new conversation should appear in feeds.
  */
-export interface SSENewConversationData {
-    timestamp: number;
-}
+export const zodSSENewConversationData = z
+    .object({
+        timestamp: z.number(),
+    })
+    .strict();
+export type SSENewConversationData = z.infer<typeof zodSSENewConversationData>;
 
 /**
  * Data sent when a new opinion should appear in a conversation.
  */
-export interface SSENewOpinionData {
-    conversationSlugId: string;
-    opinionSlugId: string;
-    timestamp: number;
-}
+export const zodSSENewOpinionData = z
+    .object({
+        conversationSlugId: zodSlugId,
+        opinionSlugId: zodSlugId,
+        timestamp: z.number(),
+    })
+    .strict();
+export type SSENewOpinionData = z.infer<typeof zodSSENewOpinionData>;
 
 /**
  * Data sent periodically to keep the connection alive
  */
-export interface SSEHeartbeatData {
-    timestamp: number;
-}
+export const zodSSEHeartbeatData = z
+    .object({
+        timestamp: z.number(),
+    })
+    .strict();
+export type SSEHeartbeatData = z.infer<typeof zodSSEHeartbeatData>;
 
 /**
  * Data sent when engagement rankings change on the "Following" feed
  */
-export interface SSEPopularConversationData {
-    topConversationSlugIdList: string[];
-}
+export const zodSSEPopularConversationData = z
+    .object({
+        topConversationSlugIdList: z.array(zodSlugId),
+    })
+    .strict();
+export type SSEPopularConversationData = z.infer<
+    typeof zodSSEPopularConversationData
+>;
 
 /**
  * Data sent when a conversation has a newer analysis snapshot available.
  */
-export interface SSEConversationAnalysisUpdatedData {
-    conversationSlugId: string;
-    conversationViewSnapshotId: number;
-    analysisSnapshotId: number;
-    checkpointChanged: boolean;
-    opinionCount?: number;
-    voteCount?: number;
-    participantCount?: number;
-    totalOpinionCount?: number;
-    totalVoteCount?: number;
-    totalParticipantCount?: number;
-    moderatedOpinionCount?: number;
-    hiddenOpinionCount?: number;
-    isClosed?: boolean;
-    timestamp: number;
-}
+export const zodSSEConversationAnalysisUpdatedData = z
+    .object({
+        conversationSlugId: zodSlugId,
+        conversationViewSnapshotId: z.number().int().positive(),
+        analysisSnapshotId: z.number().int().positive(),
+        checkpointChanged: z.boolean(),
+        opinionCount: z.number().int().nonnegative().optional(),
+        voteCount: z.number().int().nonnegative().optional(),
+        participantCount: z.number().int().nonnegative().optional(),
+        totalOpinionCount: z.number().int().nonnegative().optional(),
+        totalVoteCount: z.number().int().nonnegative().optional(),
+        totalParticipantCount: z.number().int().nonnegative().optional(),
+        moderatedOpinionCount: z.number().int().nonnegative().optional(),
+        hiddenOpinionCount: z.number().int().nonnegative().optional(),
+        isClosed: z.boolean().optional(),
+        timestamp: z.number(),
+    })
+    .strict();
+export type SSEConversationAnalysisUpdatedData = z.infer<
+    typeof zodSSEConversationAnalysisUpdatedData
+>;
 
 /**
  * Data sent when conversation settings that affect live views change.
  */
-export interface SSEConversationSettingsData {
-    isIndexed: boolean;
-    participationMode: ParticipationMode;
-    requiresEventTicket: EventSlug | null;
-    aiLabelingEnabled: boolean;
-    preferredOpinionGroupCount: PreferredOpinionGroupCount;
-    isClosed: boolean;
-}
+export const zodSSEConversationSettingsData = z
+    .object({
+        isIndexed: z.boolean(),
+        participationMode: zodParticipationMode,
+        requiresEventTicket: zodEventSlug.nullable(),
+        aiLabelingEnabled: z.boolean(),
+        preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
+        isClosed: z.boolean(),
+    })
+    .strict();
+export type SSEConversationSettingsData = z.infer<
+    typeof zodSSEConversationSettingsData
+>;
 
-export interface SSEConversationSettingsUpdatedData {
-    conversationSlugId: string;
-    settings: SSEConversationSettingsData;
-    timestamp: number;
-}
+export const zodSSEConversationSettingsUpdatedData = z
+    .object({
+        conversationSlugId: zodSlugId,
+        settings: zodSSEConversationSettingsData,
+        timestamp: z.number(),
+    })
+    .strict();
+export type SSEConversationSettingsUpdatedData = z.infer<
+    typeof zodSSEConversationSettingsUpdatedData
+>;
 
 /**
  * Data sent when the server is shutting down
  */
-export interface SSEShutdownData {
-    message: string;
-}
+export const zodSSEShutdownData = z
+    .object({
+        message: z.string(),
+    })
+    .strict();
+export type SSEShutdownData = z.infer<typeof zodSSEShutdownData>;
 
-export interface SSEEventDataByType {
-    connected: SSEConnectedData;
-    notification: SSENotificationData;
-    new_conversation: SSENewConversationData;
-    new_opinion: SSENewOpinionData;
-    popular_conversation: SSEPopularConversationData;
-    conversation_analysis_updated: SSEConversationAnalysisUpdatedData;
-    conversation_settings_updated: SSEConversationSettingsUpdatedData;
-    heartbeat: SSEHeartbeatData;
-    shutdown: SSEShutdownData;
-}
+export const zodSSEEventDataByType = {
+    connected: zodSSEConnectedData,
+    notification: zodSSENotificationData,
+    new_conversation: zodSSENewConversationData,
+    new_opinion: zodSSENewOpinionData,
+    popular_conversation: zodSSEPopularConversationData,
+    conversation_analysis_updated: zodSSEConversationAnalysisUpdatedData,
+    conversation_settings_updated: zodSSEConversationSettingsUpdatedData,
+    heartbeat: zodSSEHeartbeatData,
+    shutdown: zodSSEShutdownData,
+} as const;
+
+export type SSEEventDataByType = {
+    [TEvent in keyof typeof zodSSEEventDataByType]: z.infer<
+        (typeof zodSSEEventDataByType)[TEvent]
+    >;
+};
 
 // SSE Event Types
-export type SSEEventType = keyof SSEEventDataByType;
+export type SSEEventType = keyof typeof zodSSEEventDataByType;
 
 // Base SSE Event structure
 export interface SSEEvent<TEvent extends SSEEventType = SSEEventType> {

@@ -96,6 +96,7 @@ PARTICIPANT_MILESTONE_SEEDS = (2,)
 PREMIUM_ANALYSIS_FEATURE = PremiumFeatureEnum.analysis_variants
 VOTE_MILESTONE_SEEDS: tuple[int, ...] = ()
 MILESTONE_MULTIPLIERS = ((1, 1), (25, 10), (5, 1))
+POSTGRES_INSERT_BIND_PARAM_LIMIT = 60_000
 log = logging.getLogger(__name__)
 type _LineageDecisionAction = Literal["reuse", "create"]
 type _LineageDecisionReason = Literal[
@@ -105,6 +106,8 @@ type _LineageDecisionReason = Literal[
 ]
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from sqlalchemy import Engine
     from sqlalchemy.sql.elements import ColumnElement
 
@@ -154,6 +157,7 @@ class PersistComputedAnalysisResult:
     analysis_schedules: list[WorkStateSchedule]
     ai_description_due_conversation_ids: list[int]
     ai_description_due_view_snapshot_ids: list[int]
+    checkpoint_activation_context: CheckpointActivationContext | None
 
 
 class AnalysisWorkStatePersistenceError(RuntimeError):
@@ -202,6 +206,16 @@ class _CheckpointReasonInsertValue(TypedDict):
     participant_milestone: int | None
     vote_count: int | None
     vote_milestone: int | None
+    created_at: datetime
+
+
+def _max_rows_per_insert(*, column_count: int) -> int:
+    return max(1, POSTGRES_INSERT_BIND_PARAM_LIMIT // column_count)
+
+
+def _iter_chunks[T](values: list[T], *, chunk_size: int) -> Iterator[list[T]]:
+    for start in range(0, len(values), chunk_size):
+        yield values[start : start + chunk_size]
 
 
 def _checkpoint_reason_insert_value(
@@ -228,6 +242,7 @@ def _checkpoint_reason_insert_value(
         "participant_milestone": participant_milestone,
         "vote_count": vote_count,
         "vote_milestone": vote_milestone,
+        "created_at": datetime.now(UTC),
     }
 
 
@@ -398,12 +413,21 @@ class _PersistedConversationViewSnapshot:
 
 @dataclass(frozen=True)
 class _ExistingCheckpointReason:
+    conversation_view_snapshot_id: int
     conversation_id: int
     opinion_group_spec_id: int
     reason: ConversationViewSnapshotCheckpointReasonEnum
     group_count: int | None
     participant_milestone: int | None
     vote_milestone: int | None
+
+
+@dataclass(frozen=True)
+class CheckpointActivationContext:
+    persisted_view_snapshots_by_pair: dict[
+        tuple[int, int], _PersistedConversationViewSnapshot
+    ]
+    current_options_by_pair: dict[tuple[int, int], list[_CheckpointCandidateOption]]
 
 
 @dataclass(frozen=True)
@@ -715,9 +739,9 @@ def extend_postgres_leases(
     *,
     claims: list[ClaimedWorkItem],
     lease_ttl_seconds: int,
-) -> None:
+) -> int:
     if not claims:
-        return
+        return 0
 
     work_state_ids = [claim.id for claim in claims]
     lease_pairs = [(claim.id, claim.lease_token) for claim in claims]
@@ -732,11 +756,13 @@ def extend_postgres_leases(
             )
         )
         .values(lease_expires_at=lease_expires_at, updated_at=func.now())
+        .returning(AnalysisWorkState.id)
     )
 
     with Session(engine) as session:
-        session.execute(query)
+        rows = session.execute(query).all()
         session.commit()
+    return len(rows)
 
 
 def recover_expired_running_work(engine: Engine) -> list[int]:
@@ -1792,56 +1818,31 @@ def _fetch_previous_selected_view_snapshots_by_pair(
     *,
     pairs: list[tuple[int, int]],
     current_view_snapshot_ids: list[int],
+    checkpoint_only: bool = False,
 ) -> dict[tuple[int, int], _PreviousSelectedViewSnapshot]:
     if not pairs:
         return {}
 
-    latest_view_snapshot_rows = session.execute(
-        select(ConversationViewSnapshot)
-        .join(
-            AnalysisSnapshotResult,
-            and_(
-                AnalysisSnapshotResult.analysis_snapshot_id
-                == ConversationViewSnapshot.analysis_snapshot_id,
-                AnalysisSnapshotResult.opinion_group_spec_id
-                == ConversationViewSnapshot.opinion_group_spec_id,
-            ),
-        )
-        .join(
-            OpinionGroupCandidate,
-            OpinionGroupCandidate.snapshot_result_id == AnalysisSnapshotResult.id,
-        )
-        .outerjoin(
-            OpinionGroupCandidateAssessment,
-            OpinionGroupCandidateAssessment.candidate_id == OpinionGroupCandidate.id,
-        )
-        .where(
-            and_(
-                tuple_(
-                    ConversationViewSnapshot.conversation_id,
-                    ConversationViewSnapshot.opinion_group_spec_id,
-                ).in_(pairs),
-                ConversationViewSnapshot.id.not_in(current_view_snapshot_ids),
-                ConversationViewSnapshot.activated_at.is_not(None),
-                AnalysisSnapshotResult.outcome == AnalysisResultOutcomeEnum.success,
-                OpinionGroupCandidate.outcome == AnalysisResultOutcomeEnum.success,
-                OpinionGroupCandidateAssessment.hidden_reason.is_(None),
+    conditions = [
+        tuple_(
+            ConversationViewSnapshot.conversation_id,
+            ConversationViewSnapshot.opinion_group_spec_id,
+        ).in_(pairs),
+        ConversationViewSnapshot.id.not_in(current_view_snapshot_ids),
+        ConversationViewSnapshot.activated_at.is_not(None),
+        AnalysisSnapshotResult.outcome == AnalysisResultOutcomeEnum.success,
+        OpinionGroupCandidate.outcome == AnalysisResultOutcomeEnum.success,
+        OpinionGroupCandidateAssessment.hidden_reason.is_(None),
+    ]
+    if checkpoint_only:
+        conditions.append(
+            select(ConversationViewSnapshotCheckpointReason.id)
+            .where(
+                ConversationViewSnapshotCheckpointReason.conversation_view_snapshot_id
+                == ConversationViewSnapshot.id
             )
+            .exists()
         )
-        .distinct(
-            ConversationViewSnapshot.conversation_id,
-            ConversationViewSnapshot.opinion_group_spec_id,
-        )
-        .order_by(
-            ConversationViewSnapshot.conversation_id,
-            ConversationViewSnapshot.opinion_group_spec_id,
-            ConversationViewSnapshot.created_at.desc(),
-            ConversationViewSnapshot.id.desc(),
-        )
-    ).scalars()
-    latest_view_snapshot_ids = [row.id for row in latest_view_snapshot_rows]
-    if not latest_view_snapshot_ids:
-        return {}
 
     rows = session.execute(
         select(
@@ -1877,12 +1878,7 @@ def _fetch_previous_selected_view_snapshots_by_pair(
             OpinionGroupCandidateAssessment.candidate_id == OpinionGroupCandidate.id,
         )
         .where(
-            and_(
-                ConversationViewSnapshot.id.in_(sorted(latest_view_snapshot_ids)),
-                AnalysisSnapshotResult.outcome == AnalysisResultOutcomeEnum.success,
-                OpinionGroupCandidate.outcome == AnalysisResultOutcomeEnum.success,
-                OpinionGroupCandidateAssessment.hidden_reason.is_(None),
-            )
+            and_(*conditions)
         )
     ).all()
 
@@ -2265,21 +2261,32 @@ def _fetch_existing_checkpoint_reason_rows(
 
     rows = session.execute(
         select(
+            ConversationViewSnapshotCheckpointReason.conversation_view_snapshot_id,
             ConversationViewSnapshotCheckpointReason.conversation_id,
             ConversationViewSnapshotCheckpointReason.opinion_group_spec_id,
             ConversationViewSnapshotCheckpointReason.reason,
             ConversationViewSnapshotCheckpointReason.group_count,
             ConversationViewSnapshotCheckpointReason.participant_milestone,
             ConversationViewSnapshotCheckpointReason.vote_milestone,
-        ).where(
-            tuple_(
-                ConversationViewSnapshotCheckpointReason.conversation_id,
-                ConversationViewSnapshotCheckpointReason.opinion_group_spec_id,
-            ).in_(pairs)
+        )
+        .join(
+            ConversationViewSnapshot,
+            ConversationViewSnapshot.id
+            == ConversationViewSnapshotCheckpointReason.conversation_view_snapshot_id,
+        )
+        .where(
+            and_(
+                tuple_(
+                    ConversationViewSnapshotCheckpointReason.conversation_id,
+                    ConversationViewSnapshotCheckpointReason.opinion_group_spec_id,
+                ).in_(pairs),
+                ConversationViewSnapshot.activated_at.is_not(None),
+            )
         )
     ).all()
     return [
         _ExistingCheckpointReason(
+            conversation_view_snapshot_id=row.conversation_view_snapshot_id,
             conversation_id=row.conversation_id,
             opinion_group_spec_id=row.opinion_group_spec_id,
             reason=row.reason,
@@ -2291,14 +2298,14 @@ def _fetch_existing_checkpoint_reason_rows(
     ]
 
 
-def _persist_checkpoint_reasons(
+def _checkpoint_reason_values(
     session: Session,
     *,
     persisted_view_snapshots_by_pair: dict[tuple[int, int], _PersistedConversationViewSnapshot],
     current_options_by_pair: dict[tuple[int, int], list[_CheckpointCandidateOption]],
-) -> None:
+) -> list[_CheckpointReasonInsertValue]:
     if not persisted_view_snapshots_by_pair:
-        return
+        return []
 
     pairs = sorted(persisted_view_snapshots_by_pair)
     existing_rows = _fetch_existing_checkpoint_reason_rows(session, pairs=pairs)
@@ -2323,13 +2330,30 @@ def _persist_checkpoint_reasons(
         for row in existing_rows
         if row.reason == ConversationViewSnapshotCheckpointReasonEnum.major_vote_milestone
     }
+    existing_default_change_view_snapshot_ids = {
+        row.conversation_view_snapshot_id
+        for row in existing_rows
+        if row.reason == ConversationViewSnapshotCheckpointReasonEnum.default_group_count_changed
+    }
+    existing_closed_view_snapshot_ids = {
+        row.conversation_view_snapshot_id
+        for row in existing_rows
+        if row.reason == ConversationViewSnapshotCheckpointReasonEnum.conversation_closed
+    }
+    current_view_snapshot_ids = [
+        view_snapshot.view_snapshot_id
+        for view_snapshot in persisted_view_snapshots_by_pair.values()
+    ]
     previous_selected_by_pair = _fetch_previous_selected_view_snapshots_by_pair(
         session,
         pairs=pairs,
-        current_view_snapshot_ids=[
-            view_snapshot.view_snapshot_id
-            for view_snapshot in persisted_view_snapshots_by_pair.values()
-        ],
+        current_view_snapshot_ids=current_view_snapshot_ids,
+    )
+    previous_checkpoint_selected_by_pair = _fetch_previous_selected_view_snapshots_by_pair(
+        session,
+        pairs=pairs,
+        current_view_snapshot_ids=current_view_snapshot_ids,
+        checkpoint_only=True,
     )
     previous_group_count_pairs = {
         (row.conversation_id, row.opinion_group_spec_id, row.group_count)
@@ -2344,6 +2368,7 @@ def _persist_checkpoint_reasons(
         selected = persisted.selected_candidate
         if selected is None:
             continue
+        previous_selected = previous_selected_by_pair.get(pair)
 
         if pair not in existing_first_displayable_pairs and pair not in previous_selected_by_pair:
             reason_values.append(
@@ -2371,8 +2396,12 @@ def _persist_checkpoint_reasons(
                     )
                 )
 
-        previous_selected = previous_selected_by_pair.get(pair)
-        if previous_selected is not None and previous_selected.group_count != selected.group_count:
+        previous_checkpoint_selected = previous_checkpoint_selected_by_pair.get(pair)
+        if (
+            previous_checkpoint_selected is not None
+            and previous_checkpoint_selected.group_count != selected.group_count
+            and persisted.view_snapshot_id not in existing_default_change_view_snapshot_ids
+        ):
             reason_values.append(
                 _checkpoint_reason_insert_value(
                     conversation_view_snapshot_id=persisted.view_snapshot_id,
@@ -2380,7 +2409,7 @@ def _persist_checkpoint_reasons(
                     opinion_group_spec_id=opinion_group_spec_id,
                     reason=ConversationViewSnapshotCheckpointReasonEnum.default_group_count_changed,
                     group_count=selected.group_count,
-                    previous_group_count=previous_selected.group_count,
+                    previous_group_count=previous_checkpoint_selected.group_count,
                 )
             )
 
@@ -2427,6 +2456,8 @@ def _persist_checkpoint_reasons(
             lifecycle_reason = ConversationViewSnapshotCheckpointReasonEnum.conversation_closed
 
         if lifecycle_reason is not None:
+            if persisted.view_snapshot_id in existing_closed_view_snapshot_ids:
+                continue
             reason_values.append(
                 _checkpoint_reason_insert_value(
                     conversation_view_snapshot_id=persisted.view_snapshot_id,
@@ -2436,10 +2467,187 @@ def _persist_checkpoint_reasons(
                 )
             )
 
-    if reason_values:
-        session.execute(
-            sqlalchemy_insert(ConversationViewSnapshotCheckpointReason).values(reason_values)
+    return reason_values
+
+
+def _persist_checkpoint_reasons(
+    session: Session,
+    *,
+    persisted_view_snapshots_by_pair: dict[tuple[int, int], _PersistedConversationViewSnapshot],
+    current_options_by_pair: dict[tuple[int, int], list[_CheckpointCandidateOption]],
+) -> None:
+    reason_values = _checkpoint_reason_values(
+        session,
+        persisted_view_snapshots_by_pair=persisted_view_snapshots_by_pair,
+        current_options_by_pair=current_options_by_pair,
+    )
+    if not reason_values:
+        return
+
+    session.execute(sqlalchemy_insert(ConversationViewSnapshotCheckpointReason).values(reason_values))
+
+
+def _checkpoint_context_for_activated_view_snapshots(
+    session: Session,
+    *,
+    conversation_view_snapshot_ids: list[int],
+) -> tuple[
+    dict[tuple[int, int], _PersistedConversationViewSnapshot],
+    dict[tuple[int, int], list[_CheckpointCandidateOption]],
+]:
+    if not conversation_view_snapshot_ids:
+        return {}, {}
+
+    unique_view_snapshot_ids = sorted(set(conversation_view_snapshot_ids))
+    rows = session.execute(
+        select(
+            ConversationViewSnapshot.id.label("view_snapshot_id"),
+            ConversationViewSnapshot.conversation_id,
+            ConversationViewSnapshot.opinion_group_spec_id,
+            ConversationViewSnapshot.analysis_snapshot_id,
+            ConversationViewSnapshot.conversation_content_id,
+            ConversationViewSnapshot.is_closed,
+            ConversationViewSnapshot.opinion_count,
+            ConversationViewSnapshot.vote_count,
+            ConversationViewSnapshot.participant_count,
+            ConversationViewSnapshot.created_at,
+            OpinionGroupCandidate.id.label("candidate_id"),
+            OpinionGroupVariant.group_count,
+            OpinionGroupCandidateAssessment.selection_score,
         )
+        .select_from(ConversationViewSnapshot)
+        .join(
+            AnalysisSnapshotResult,
+            and_(
+                AnalysisSnapshotResult.analysis_snapshot_id
+                == ConversationViewSnapshot.analysis_snapshot_id,
+                AnalysisSnapshotResult.opinion_group_spec_id
+                == ConversationViewSnapshot.opinion_group_spec_id,
+            ),
+        )
+        .join(
+            OpinionGroupCandidate,
+            OpinionGroupCandidate.snapshot_result_id == AnalysisSnapshotResult.id,
+        )
+        .join(
+            OpinionGroupVariant,
+            OpinionGroupVariant.id == OpinionGroupCandidate.opinion_group_variant_id,
+        )
+        .outerjoin(
+            OpinionGroupCandidateAssessment,
+            OpinionGroupCandidateAssessment.candidate_id == OpinionGroupCandidate.id,
+        )
+        .where(
+            and_(
+                ConversationViewSnapshot.id.in_(unique_view_snapshot_ids),
+                ConversationViewSnapshot.activated_at.is_not(None),
+                ConversationViewSnapshot.analysis_snapshot_id.is_not(None),
+                AnalysisSnapshotResult.outcome == AnalysisResultOutcomeEnum.success,
+                OpinionGroupCandidate.outcome == AnalysisResultOutcomeEnum.success,
+                OpinionGroupCandidateAssessment.hidden_reason.is_(None),
+            )
+        )
+    ).all()
+
+    metadata_by_pair: dict[
+        tuple[int, int],
+        tuple[int, _ConversationViewSnapshotState, int, int, int],
+    ] = {}
+    current_options_by_pair: dict[tuple[int, int], list[_CheckpointCandidateOption]] = {}
+    for row in rows:
+        if row.analysis_snapshot_id is None:
+            continue
+        pair = (row.conversation_id, row.opinion_group_spec_id)
+        metadata_by_pair[pair] = (
+            row.view_snapshot_id,
+            _ConversationViewSnapshotState(
+                conversation_content_id=row.conversation_content_id,
+                ai_labeling_enabled=True,
+                is_closed=row.is_closed,
+                preferred_opinion_group_count=None,
+            ),
+            row.opinion_count,
+            row.vote_count,
+            row.participant_count,
+        )
+        current_options_by_pair.setdefault(pair, []).append(
+            _CheckpointCandidateOption(
+                conversation_id=row.conversation_id,
+                opinion_group_spec_id=row.opinion_group_spec_id,
+                snapshot_id=row.analysis_snapshot_id,
+                candidate_id=row.candidate_id,
+                group_count=row.group_count,
+                selection_score=row.selection_score,
+                data_generation=0,
+                created_at=row.created_at,
+            )
+        )
+
+    persisted_view_snapshots_by_pair: dict[
+        tuple[int, int], _PersistedConversationViewSnapshot
+    ] = {}
+    for pair, options in current_options_by_pair.items():
+        metadata = metadata_by_pair.get(pair)
+        if metadata is None:
+            continue
+        view_snapshot_id, state, opinion_count, vote_count, participant_count = metadata
+        persisted_view_snapshots_by_pair[pair] = _PersistedConversationViewSnapshot(
+            view_snapshot_id=view_snapshot_id,
+            selected_candidate=_select_checkpoint_candidate(options),
+            conversation_state=state,
+            opinion_count=opinion_count,
+            vote_count=vote_count,
+            participant_count=participant_count,
+        )
+
+    return persisted_view_snapshots_by_pair, current_options_by_pair
+
+
+def materialize_checkpoint_reasons_for_activated_view_snapshots(
+    session: Session,
+    *,
+    conversation_view_snapshot_ids: list[int],
+    checkpoint_activation_context: CheckpointActivationContext | None = None,
+) -> None:
+    if checkpoint_activation_context is None:
+        persisted_view_snapshots_by_pair, current_options_by_pair = (
+            _checkpoint_context_for_activated_view_snapshots(
+                session,
+                conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+            )
+        )
+    else:
+        activated_view_snapshot_ids = set(conversation_view_snapshot_ids)
+        persisted_view_snapshots_by_pair = {
+            pair: persisted
+            for pair, persisted in (
+                checkpoint_activation_context.persisted_view_snapshots_by_pair.items()
+            )
+            if persisted.view_snapshot_id in activated_view_snapshot_ids
+        }
+        current_options_by_pair = {
+            pair: checkpoint_activation_context.current_options_by_pair.get(pair, [])
+            for pair in persisted_view_snapshots_by_pair
+        }
+        missing_view_snapshot_ids = activated_view_snapshot_ids - {
+            persisted.view_snapshot_id
+            for persisted in persisted_view_snapshots_by_pair.values()
+        }
+        if missing_view_snapshot_ids:
+            db_persisted_view_snapshots_by_pair, db_current_options_by_pair = (
+                _checkpoint_context_for_activated_view_snapshots(
+                    session,
+                    conversation_view_snapshot_ids=sorted(missing_view_snapshot_ids),
+                )
+            )
+            persisted_view_snapshots_by_pair.update(db_persisted_view_snapshots_by_pair)
+            current_options_by_pair.update(db_current_options_by_pair)
+
+    _persist_checkpoint_reasons(
+        session,
+        persisted_view_snapshots_by_pair=persisted_view_snapshots_by_pair,
+        current_options_by_pair=current_options_by_pair,
+    )
 
 
 def _fetch_conversation_content_id_by_conversation_id(
@@ -2711,7 +2919,7 @@ def _persist_survey_aggregate_snapshots(
         for row in option_rows
     }
 
-    result_values = [
+    result_values: list[dict[str, object]] = [
         {
             "survey_aggregate_snapshot_id": aggregate_snapshot_id_by_conversation_id[
                 conversation_id
@@ -2734,7 +2942,16 @@ def _persist_survey_aggregate_snapshots(
         for result in aggregate.results
     ]
     if result_values:
-        session.execute(sqlalchemy_insert(SurveyAggregateResult).values(result_values))
+        chunk_size = _max_rows_per_insert(column_count=10)
+        if len(result_values) > chunk_size:
+            log.info(
+                "[MathUpdaterDB] Chunking survey aggregate results rows=%d "
+                "max_rows_per_chunk=%d",
+                len(result_values),
+                chunk_size,
+            )
+        for chunk in _iter_chunks(result_values, chunk_size=chunk_size):
+            session.execute(sqlalchemy_insert(SurveyAggregateResult).values(chunk))
 
     _persist_owner_current_survey_aggregates(
         session,
@@ -3195,6 +3412,7 @@ def persist_computed_analysis_results_batch(
             analysis_schedules=[],
             ai_description_due_conversation_ids=[],
             ai_description_due_view_snapshot_ids=[],
+            checkpoint_activation_context=None,
         )
 
     computed_at = datetime.now(UTC)
@@ -3279,25 +3497,39 @@ def persist_computed_analysis_results_batch(
                 "[MathUpdaterDB] Inserting analysis_snapshot_opinion rows=%d",
                 len(snapshot_opinion_values),
             )
-            snapshot_opinion_rows = session.execute(
-                sqlalchemy_insert(AnalysisSnapshotOpinion)
-                .values(snapshot_opinion_values)
-                .returning(
-                    AnalysisSnapshotOpinion.id,
-                    AnalysisSnapshotOpinion.analysis_snapshot_id,
-                    AnalysisSnapshotOpinion.local_opinion_index,
+            chunk_size = _max_rows_per_insert(column_count=8)
+            if len(snapshot_opinion_values) > chunk_size:
+                log.info(
+                    "[MathUpdaterDB] Chunking analysis_snapshot_opinion rows=%d "
+                    "max_rows_per_chunk=%d",
+                    len(snapshot_opinion_values),
+                    chunk_size,
                 )
-            ).all()
-            snapshot_opinion_id_by_conversation_local_index = {
-                (
-                    snapshot_id_to_conversation_id[row.analysis_snapshot_id],
-                    row.local_opinion_index,
-                ): row.id
-                for row in snapshot_opinion_rows
-            }
+            inserted_snapshot_opinion_count = 0
+            for chunk in _iter_chunks(snapshot_opinion_values, chunk_size=chunk_size):
+                chunk_insert = (
+                    sqlalchemy_insert(AnalysisSnapshotOpinion)
+                    .values(chunk)
+                    .returning(
+                        AnalysisSnapshotOpinion.id,
+                        AnalysisSnapshotOpinion.analysis_snapshot_id,
+                        AnalysisSnapshotOpinion.local_opinion_index,
+                    )
+                )
+                chunk_rows = session.execute(chunk_insert).all()
+                inserted_snapshot_opinion_count += len(chunk_rows)
+                snapshot_opinion_id_by_conversation_local_index.update(
+                    {
+                        (
+                            snapshot_id_to_conversation_id[row.analysis_snapshot_id],
+                            row.local_opinion_index,
+                        ): row.id
+                        for row in chunk_rows
+                    }
+                )
             log.info(
                 "[MathUpdaterDB] Inserted analysis_snapshot_opinion rows=%d",
-                len(snapshot_opinion_rows),
+                inserted_snapshot_opinion_count,
             )
 
         result_insert = (
@@ -3433,11 +3665,18 @@ def persist_computed_analysis_results_batch(
                 "[MathUpdaterDB] Inserting opinion_group_candidate_opinion_metrics rows=%d",
                 len(candidate_opinion_metric_values),
             )
-            session.execute(
-                sqlalchemy_insert(OpinionGroupCandidateOpinionMetrics).values(
-                    candidate_opinion_metric_values,
+            chunk_size = _max_rows_per_insert(column_count=10)
+            if len(candidate_opinion_metric_values) > chunk_size:
+                log.info(
+                    "[MathUpdaterDB] Chunking opinion_group_candidate_opinion_metrics "
+                    "rows=%d max_rows_per_chunk=%d",
+                    len(candidate_opinion_metric_values),
+                    chunk_size,
                 )
-            )
+            for chunk in _iter_chunks(candidate_opinion_metric_values, chunk_size=chunk_size):
+                session.execute(
+                    sqlalchemy_insert(OpinionGroupCandidateOpinionMetrics).values(chunk)
+                )
 
         assessment_values: list[dict[str, object]] = []
         for claim in claims:
@@ -3572,7 +3811,16 @@ def persist_computed_analysis_results_batch(
                 "[MathUpdaterDB] Inserting opinion_group_user rows=%d",
                 len(group_user_values),
             )
-            session.execute(sqlalchemy_insert(OpinionGroupUser).values(group_user_values))
+            chunk_size = _max_rows_per_insert(column_count=3)
+            if len(group_user_values) > chunk_size:
+                log.info(
+                    "[MathUpdaterDB] Chunking opinion_group_user rows=%d "
+                    "max_rows_per_chunk=%d",
+                    len(group_user_values),
+                    chunk_size,
+                )
+            for chunk in _iter_chunks(group_user_values, chunk_size=chunk_size):
+                session.execute(sqlalchemy_insert(OpinionGroupUser).values(chunk))
         if group_opinion_values:
             duplicates = _duplicate_group_opinion_stat_keys(group_opinion_values)
             invalid_representative_count = _invalid_representative_group_opinion_stat_count(
@@ -3595,11 +3843,20 @@ def persist_computed_analysis_results_batch(
                 len(duplicates),
                 invalid_representative_count,
             )
-            session.execute(
-                sqlalchemy_insert(OpinionGroupOpinionStats).values(
-                    [dict(value) for value in group_opinion_values]
+            chunk_size = _max_rows_per_insert(column_count=9)
+            if len(group_opinion_values) > chunk_size:
+                log.info(
+                    "[MathUpdaterDB] Chunking opinion_group_opinion_stats rows=%d "
+                    "max_rows_per_chunk=%d",
+                    len(group_opinion_values),
+                    chunk_size,
                 )
-            )
+            for chunk in _iter_chunks(group_opinion_values, chunk_size=chunk_size):
+                session.execute(
+                    sqlalchemy_insert(OpinionGroupOpinionStats).values(
+                        [dict(value) for value in chunk]
+                    )
+                )
             log.info(
                 "[MathUpdaterDB] Inserted opinion_group_opinion_stats rows=%d",
                 len(group_opinion_values),
@@ -3642,9 +3899,23 @@ def persist_computed_analysis_results_batch(
             len(persisted_view_snapshots_by_pair),
             len(current_options_by_pair),
         )
+        immediate_checkpoint_view_snapshots_by_pair = {
+            pair: persisted
+            for pair, persisted in persisted_view_snapshots_by_pair.items()
+            if not (
+                persisted.conversation_state.ai_labeling_enabled
+                and ai_generation_expected
+                and persisted.selected_candidate is not None
+            )
+        }
+        first_pass_checkpoint_view_snapshots_by_pair = {
+            pair: persisted
+            for pair, persisted in persisted_view_snapshots_by_pair.items()
+            if pair not in immediate_checkpoint_view_snapshots_by_pair
+        }
         _persist_checkpoint_reasons(
             session,
-            persisted_view_snapshots_by_pair=persisted_view_snapshots_by_pair,
+            persisted_view_snapshots_by_pair=immediate_checkpoint_view_snapshots_by_pair,
             current_options_by_pair=current_options_by_pair,
         )
         log.info("[MathUpdaterDB] Persisted checkpoint reasons")
@@ -3715,6 +3986,12 @@ def persist_computed_analysis_results_batch(
             for persisted in persisted_view_snapshots_by_pair.values()
             if persisted.conversation_state.ai_labeling_enabled
         ],
+        checkpoint_activation_context=CheckpointActivationContext(
+            persisted_view_snapshots_by_pair=first_pass_checkpoint_view_snapshots_by_pair,
+            current_options_by_pair=current_options_by_pair,
+        )
+        if first_pass_checkpoint_view_snapshots_by_pair
+        else None,
     )
 
 
@@ -3722,6 +3999,7 @@ def complete_computed_analysis_work_items_batch(
     engine: Engine,
     *,
     claims: list[ClaimedWorkItem],
+    require_display_safe_activation: bool = False,
 ) -> list[WorkStateSchedule]:
     if not claims:
         return []
@@ -3739,21 +4017,50 @@ def complete_computed_analysis_work_items_batch(
         (current_generation > completed_generation, func.now()),
         else_=None,
     )
-    work_state_update = (
-        update(AnalysisWorkState)
-        .where(
-            and_(
-                AnalysisWorkState.id.in_([claim.id for claim in claims]),
-                tuple_(AnalysisWorkState.id, AnalysisWorkState.lease_token).in_(
-                    [(claim.id, claim.lease_token) for claim in claims]
-                ),
-                AnalysisWorkState.running_data_generation == completed_generation,
+    completion_filters: list[ColumnElement[bool]] = [
+        AnalysisWorkState.id.in_([claim.id for claim in claims]),
+        tuple_(AnalysisWorkState.id, AnalysisWorkState.lease_token).in_(
+            [(claim.id, claim.lease_token) for claim in claims]
+        ),
+        AnalysisWorkState.running_data_generation == completed_generation,
+    ]
+    if require_display_safe_activation:
+        unactivated_current_generation_snapshot_exists = (
+            select(ConversationViewSnapshot.id)
+            .join(
+                AnalysisSnapshot,
+                AnalysisSnapshot.id == ConversationViewSnapshot.analysis_snapshot_id,
+            )
+            .where(
+                and_(
+                    ConversationViewSnapshot.analysis_snapshot_id
+                    == AnalysisWorkState.persisted_analysis_snapshot_id,
+                    ConversationViewSnapshot.opinion_group_spec_id
+                    == AnalysisWorkState.opinion_group_spec_id,
+                    ConversationViewSnapshot.view_reason
+                    == ConversationViewSnapshotReasonEnum.analysis_completed,
+                    ConversationViewSnapshot.activated_at.is_(None),
+                    AnalysisSnapshot.data_generation == completed_generation,
+                )
+            )
+            .exists()
+        )
+        completion_filters.append(
+            or_(
+                current_generation > completed_generation,
+                ~unactivated_current_generation_snapshot_exists,
             )
         )
+    work_state_update = (
+        update(AnalysisWorkState)
+        .where(and_(*completion_filters))
         .values(
-            last_completed_data_generation=func.greatest(
-                AnalysisWorkState.last_completed_data_generation,
-                completed_generation,
+            last_completed_data_generation=case(
+                (
+                    AnalysisWorkState.last_completed_data_generation > completed_generation,
+                    AnalysisWorkState.last_completed_data_generation,
+                ),
+                else_=completed_generation,
             ),
             running_data_generation=None,
             persisted_analysis_snapshot_id=None,

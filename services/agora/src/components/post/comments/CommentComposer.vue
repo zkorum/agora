@@ -99,10 +99,7 @@ import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useUserStore } from "src/stores/user";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
-import {
-  updateConversationQueryCache,
-  useInvalidateConversationQuery,
-} from "src/utils/api/post/useConversationQuery";
+import { useInvalidateConversationQuery } from "src/utils/api/post/useConversationQuery";
 import {
   type RouteGuardDestination,
   useRouteGuard,
@@ -247,47 +244,18 @@ type UserVoteCacheItem = {
   votingAction: string;
 };
 
-function incrementConversationCountsForCreatedOpinion({
-  becameParticipant,
-}: {
-  becameParticipant: boolean;
-}): void {
-  updateConversationQueryCache({
-    queryClient,
-    conversationSlugId: props.postSlugId,
-    updateConversation: (conversation) => ({
-      ...conversation,
-      metadata: {
-        ...conversation.metadata,
-        opinionCount: conversation.metadata.opinionCount + 1,
-        totalOpinionCount: conversation.metadata.totalOpinionCount + 1,
-        voteCount: conversation.metadata.voteCount + 1,
-        totalVoteCount: conversation.metadata.totalVoteCount + 1,
-        participantCount:
-          conversation.metadata.participantCount + (becameParticipant ? 1 : 0),
-        totalParticipantCount:
-          conversation.metadata.totalParticipantCount +
-          (becameParticipant ? 1 : 0),
-      },
-    }),
-  });
-}
-
 function addCreatedOpinionVoteToCache({
   opinionSlugId,
 }: {
   opinionSlugId: string;
-}): { becameParticipant: boolean } {
+}): void {
   const userVotesKey = ["userVotes", props.postSlugId];
-  const previousVotes = queryClient.getQueryData<UserVoteCacheItem[]>(userVotesKey);
 
   queryClient.setQueryData<UserVoteCacheItem[]>(userVotesKey, (oldData) => {
     const filteredVotes =
       oldData?.filter((vote) => vote.opinionSlugId !== opinionSlugId) ?? [];
     return [...filteredVotes, { opinionSlugId, votingAction: "agree" }];
   });
-
-  return { becameParticipant: previousVotes?.length === 0 };
 }
 
 // Check if user needs login/verification based on participation mode
@@ -565,10 +533,9 @@ async function submitPostClicked() {
     );
 
     if (response.success) {
-      const { becameParticipant } = addCreatedOpinionVoteToCache({
+      addCreatedOpinionVoteToCache({
         opinionSlugId: response.opinionSlugId,
       });
-      incrementConversationCountsForCreatedOpinion({ becameParticipant });
 
       // Emit to parent to refresh and highlight the opinion
       emit("submittedComment", {

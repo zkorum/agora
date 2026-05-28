@@ -99,14 +99,16 @@ def main() -> None:
     signal.signal(signal.SIGTERM, _handle_signal)
     signal.signal(signal.SIGINT, _handle_signal)
 
-    worker_id = f"ai-description-retry-worker:{uuid.uuid4()}"
+    worker_id = f"ai-desc:{uuid.uuid4()}"
     log.info(
-        "%s Starting worker_id=%s pop_batch=%d claim_batch=%d ai=%d",
+        "%s Starting worker_id=%s pop_batch=%d claim_batch=%d ai=%d lease_ttl=%ds recovery=%ds",
         LOG_PREFIX,
         worker_id,
         settings.valkey_pop_batch_size,
         settings.db_claim_batch_size,
         settings.max_ai_description_concurrency,
+        settings.lease_ttl_seconds,
+        settings.running_recovery_interval_seconds,
     )
 
     try:
@@ -153,8 +155,9 @@ def main() -> None:
         cooldown_seconds=settings.retry_cooldown_seconds,
     )
 
-    last_reconcile = time.monotonic()
-    last_recover = time.monotonic()
+    monotonic_start = time.monotonic()
+    last_reconcile = monotonic_start - settings.reconciliation_interval_seconds
+    last_recover = monotonic_start - settings.running_recovery_interval_seconds
 
     while _running:
         monotonic_now = time.monotonic()
@@ -168,6 +171,7 @@ def main() -> None:
                     translation_enabled=False,
                     include_lineage_descriptions=True,
                     include_translations=False,
+                    require_activated_view_snapshot=True,
                 )
                 _enqueue_conversation_ids(
                     vk,
@@ -187,6 +191,7 @@ def main() -> None:
                     translation_enabled=False,
                     include_lineage_descriptions=True,
                     include_translations=False,
+                    require_activated_view_snapshot=True,
                 )
                 _enqueue_conversation_ids(
                     vk,

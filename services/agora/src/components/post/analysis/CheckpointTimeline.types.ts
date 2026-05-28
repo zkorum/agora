@@ -8,3 +8,7 @@ export type CheckpointTimelineReasonPayload = AnalysisCheckpoint["reasons"][numb
 export type CheckpointTimelineReasonFormatter = (
   reason: CheckpointTimelineReasonPayload
 ) => string | undefined;
+
+export type CheckpointTimelineReasonsFormatter = (
+  reasons: AnalysisCheckpoint["reasons"]
+) => string[];

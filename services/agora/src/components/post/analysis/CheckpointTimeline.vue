@@ -141,7 +141,10 @@ import {
   watch,
 } from "vue";
 
-import type { CheckpointTimelineReasonFormatter } from "./CheckpointTimeline.types";
+import type {
+  CheckpointTimelineReasonFormatter,
+  CheckpointTimelineReasonsFormatter,
+} from "./CheckpointTimeline.types";
 
 type CheckpointMarkerKey = number | "live";
 type TimelineDragState = {
@@ -164,9 +167,11 @@ const props = withDefaults(
     previousLabel: string;
     nextLabel: string;
     formatReason: CheckpointTimelineReasonFormatter;
+    formatReasons?: CheckpointTimelineReasonsFormatter;
     maxReasonCount?: number;
   }>(),
   {
+    formatReasons: undefined,
     maxReasonCount: 3,
   }
 );
@@ -287,6 +292,10 @@ function isCheckpointSelected(checkpoint: AnalysisCheckpoint): boolean {
 }
 
 function getCheckpointReasonLabels(checkpoint: AnalysisCheckpoint): string[] {
+  if (props.formatReasons !== undefined) {
+    return props.formatReasons(checkpoint.reasons).slice(0, props.maxReasonCount);
+  }
+
   const labels = new Set<string>();
   for (const reason of checkpoint.reasons) {
     const formattedReason = props.formatReason(reason);

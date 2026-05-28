@@ -12,6 +12,8 @@
       :previous-label="t('previousCheckpoint')"
       :next-label="t('nextCheckpoint')"
       :format-reason="formatCheckpointReason"
+      :format-reasons="formatCheckpointReasons"
+      :max-reason-count="6"
       @select-checkpoint="setCheckpointRoute"
       @select-live="goLive"
     />
@@ -393,6 +395,7 @@ const props = defineProps<{
     FetchAnalysisCheckpointsResponse,
     Error
   >;
+  liveConversationViewSnapshotId: number | undefined;
   surveyQuery: UseQueryReturnType<SurveyResultsAggregatedResponse, Error>;
   hasSurvey: boolean;
   surveyGate: SurveyGateSummary | undefined;
@@ -411,7 +414,7 @@ type AnalysisViewOption = NonNullable<
   AnalysisData["analysisViewState"]
 >["options"][number];
 
-const { t } = useComponentI18n<AnalysisPageTranslations>(
+const { t, locale: displayLocale } = useComponentI18n<AnalysisPageTranslations>(
   analysisPageTranslations
 );
 const { t: tShortcut } = useComponentI18n<ShortcutBarTranslations>(
@@ -555,16 +558,12 @@ const isLiveAnalysis = computed(
 
 const isLatestCheckpointLive = computed(() => {
   const checkpoint = latestCheckpoint.value;
-  const liveViewSnapshotId =
-    activeAnalysisData.value?.conversationViewSnapshotId;
+  const liveViewSnapshotId = props.liveConversationViewSnapshotId;
   if (checkpoint === undefined || liveViewSnapshotId === undefined) {
     return false;
   }
 
-  return (
-    isLiveAnalysis.value &&
-    checkpoint.conversationViewSnapshotId === liveViewSnapshotId
-  );
+  return checkpoint.conversationViewSnapshotId === liveViewSnapshotId;
 });
 
 const analysisPlaybackIcon = computed(() =>
@@ -732,24 +731,151 @@ function formatCheckpointReason(
     case "first_displayable_analysis":
       return t("checkpointReasonFirstDisplayableAnalysis");
     case "first_group_count_available":
-      return undefined;
+      return reason.groupCount === null
+        ? undefined
+        : t("checkpointReasonFirstGroupCountAvailable", {
+            count: String(reason.groupCount),
+          });
     case "default_group_count_changed":
       return reason.groupCount === null
         ? undefined
-        : t("groupsLabel", { count: reason.groupCount });
+        : t("checkpointReasonDefaultGroupCountChanged", {
+            count: String(reason.groupCount),
+          });
     case "major_participation_milestone":
-      return reason.participantCount === null
+      return reason.participantMilestone === null
         ? undefined
-        : t("checkpointReasonParticipantCount", {
-            count: String(reason.participantCount),
+        : t("checkpointReasonParticipationMilestone", {
+            count: formatCheckpointNumber(reason.participantMilestone),
           });
     case "major_vote_milestone":
-      return reason.voteCount === null
+      return reason.voteMilestone === null
         ? undefined
-        : t("checkpointReasonVoteCount", { count: String(reason.voteCount) });
+        : t("checkpointReasonVoteMilestone", {
+            count: formatCheckpointNumber(reason.voteMilestone),
+          });
     case "conversation_closed":
       return t("checkpointReasonConversationClosed");
   }
+}
+
+function formatCheckpointReasons(
+  reasons: AnalysisCheckpoint["reasons"]
+): string[] {
+  if (reasons.some((reason) => reason.reason === "first_displayable_analysis")) {
+    return [t("checkpointReasonFirstDisplayableAnalysis")];
+  }
+
+  const autoGroupCounts = groupCountsForReasons({
+    reasons,
+    reasonType: "default_group_count_changed",
+  });
+  const availableGroupCounts = groupCountsForReasons({
+    reasons,
+    reasonType: "first_group_count_available",
+  }).filter((groupCount) => !autoGroupCounts.includes(groupCount));
+  const participantMilestones = milestoneCountsForReasons({
+    reasons,
+    reasonType: "major_participation_milestone",
+    field: "participantMilestone",
+  });
+  const voteMilestones = milestoneCountsForReasons({
+    reasons,
+    reasonType: "major_vote_milestone",
+    field: "voteMilestone",
+  });
+
+  const labels: string[] = [];
+  labels.push(
+    ...autoGroupCounts.map((groupCount) =>
+      t("checkpointReasonDefaultGroupCountChanged", {
+        count: String(groupCount),
+      })
+    )
+  );
+  if (availableGroupCounts.length > 0) {
+    labels.push(
+      t("checkpointReasonFirstGroupCountAvailable", {
+        count: formatGroupCountSummary(availableGroupCounts),
+      })
+    );
+  }
+  labels.push(
+    ...participantMilestones.map((milestone) =>
+      t("checkpointReasonParticipationMilestone", {
+        count: formatCheckpointNumber(milestone),
+      })
+    )
+  );
+  labels.push(
+    ...voteMilestones.map((milestone) =>
+      t("checkpointReasonVoteMilestone", {
+        count: formatCheckpointNumber(milestone),
+      })
+    )
+  );
+  if (reasons.some((reason) => reason.reason === "conversation_closed")) {
+    labels.push(t("checkpointReasonConversationClosed"));
+  }
+
+  return labels;
+}
+
+function groupCountsForReasons({
+  reasons,
+  reasonType,
+}: {
+  reasons: AnalysisCheckpoint["reasons"];
+  reasonType: "default_group_count_changed" | "first_group_count_available";
+}): number[] {
+  return sortedUniqueNumbers(
+    reasons
+      .filter((reason) => reason.reason === reasonType)
+      .map((reason) => reason.groupCount)
+      .filter((groupCount) => groupCount !== null)
+  );
+}
+
+function milestoneCountsForReasons({
+  reasons,
+  reasonType,
+  field,
+}: {
+  reasons: AnalysisCheckpoint["reasons"];
+  reasonType: "major_participation_milestone" | "major_vote_milestone";
+  field: "participantMilestone" | "voteMilestone";
+}): number[] {
+  return sortedUniqueNumbers(
+    reasons
+      .filter((reason) => reason.reason === reasonType)
+      .map((reason) => reason[field])
+      .filter((milestone) => milestone !== null)
+  );
+}
+
+function sortedUniqueNumbers(values: number[]): number[] {
+  return Array.from(new Set(values)).sort((left, right) => left - right);
+}
+
+function formatGroupCountSummary(groupCounts: number[]): string {
+  const firstGroupCount = groupCounts[0];
+  const lastGroupCount = groupCounts[groupCounts.length - 1];
+  if (firstGroupCount === undefined || lastGroupCount === undefined) {
+    return "";
+  }
+  const isConsecutiveRange = groupCounts.every(
+    (groupCount, index) => groupCount === firstGroupCount + index
+  );
+  if (groupCounts.length > 1 && isConsecutiveRange) {
+    const separator = displayLocale.value === "fr" ? " à " : "-";
+    return `${String(firstGroupCount)}${separator}${String(lastGroupCount)}`;
+  }
+
+  return groupCounts.map((groupCount) => String(groupCount)).join(", ");
+}
+
+function formatCheckpointNumber(value: number): string {
+  return new Intl.NumberFormat(displayLocale.value).format(value);
 }
 
 watch(

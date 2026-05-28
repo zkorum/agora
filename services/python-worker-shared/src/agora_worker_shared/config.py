@@ -1,7 +1,7 @@
 import logging
-from typing import ClassVar, Literal
+from typing import ClassVar, Literal, Self
 
-from pydantic import AliasChoices, AnyUrl, Field, TypeAdapter, field_validator
+from pydantic import AliasChoices, AnyUrl, Field, TypeAdapter, field_validator, model_validator
 from pydantic_settings import (
     BaseSettings,
     DotEnvSettingsSource,
@@ -193,7 +193,7 @@ class Settings(BaseSettings):
     db_write_batch_size: int = Field(default=10, ge=1)
     max_compute_concurrency: int = Field(default=4, ge=1)
     max_ai_description_concurrency: int = Field(default=4, ge=1)
-    lease_ttl_seconds: int = Field(default=600, ge=1)
+    lease_ttl_seconds: int = Field(default=120, ge=1)
     heartbeat_interval_seconds: int = Field(default=30, ge=1)
     worker_poll_idle_sleep_seconds: float = Field(default=0.5, gt=0)
     default_debounce_seconds: int = Field(default=5, ge=0)
@@ -239,6 +239,7 @@ class Settings(BaseSettings):
     )
     aws_client_connect_timeout_seconds: float = Field(default=2.0, gt=0)
     aws_ai_label_summary_read_timeout_seconds: float = Field(default=12.0, gt=0)
+    aws_description_translation_read_timeout_seconds: float = Field(default=12.0, gt=0)
     aws_secret_read_timeout_seconds: float = Field(default=5.0, gt=0)
 
     aws_secret_region: str | None = Field(default=None, min_length=1)
@@ -247,7 +248,7 @@ class Settings(BaseSettings):
         default="translate.googleapis.com",
         min_length=1,
     )
-    google_cloud_translation_timeout_seconds: float = Field(default=5.0, gt=0)
+    google_cloud_translation_timeout_seconds: float = Field(default=10.0, gt=0)
     google_cloud_service_account_aws_secret_key: str | None = Field(default=None, min_length=1)
     google_application_credentials: str | None = Field(default=None, min_length=1)
 
@@ -267,6 +268,13 @@ class Settings(BaseSettings):
             msg = "MATH_UPDATER_VALKEY_URL must use valkey://, valkeys://, redis://, or rediss://"
             raise ValueError(msg)
         return value
+
+    @model_validator(mode="after")
+    def validate_lease_heartbeat_interval(self) -> Self:
+        if self.heartbeat_interval_seconds >= self.lease_ttl_seconds:
+            msg = "HEARTBEAT_INTERVAL_SECONDS must be shorter than LEASE_TTL_SECONDS"
+            raise ValueError(msg)
+        return self
 
     @property
     def read_dsn(self) -> str:

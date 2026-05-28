@@ -1,5 +1,6 @@
 import type { FastifyReply } from "fastify";
 import type { NotificationItem } from "@/shared/types/zod.js";
+import { zodSlugId } from "@/shared/types/zod.js";
 import type {
     SSEConnectedData,
     SSENotificationData,
@@ -9,6 +10,38 @@ import type {
     SSEEventType,
 } from "@/shared/types/dto.js";
 import { log } from "@/app.js";
+import { z } from "zod";
+
+const zodRealtimeStreamQuery = z
+    .object({
+        conversationSlugId: zodSlugId.min(1).optional(),
+    })
+    .loose();
+
+export function parseRealtimeSubscribedConversationSlugId(
+    rawQuery: unknown,
+): string | undefined {
+    const query = zodRealtimeStreamQuery.parse(rawQuery);
+    return query.conversationSlugId;
+}
+
+type ConversationSubscriptionEvent =
+    | {
+          event: "conversation_analysis_updated";
+          data: SSEEventDataByType["conversation_analysis_updated"];
+      }
+    | {
+          event: "conversation_settings_updated";
+          data: SSEEventDataByType["conversation_settings_updated"];
+      }
+    | {
+          event: "new_opinion";
+          data: SSEEventDataByType["new_opinion"];
+      };
+
+interface RealtimeConnectionOptions {
+    subscribedConversationSlugId: string | undefined;
+}
 
 /**
  * Server-Sent Events (SSE) Connection Manager for real-time events.
@@ -22,6 +55,7 @@ export class RealtimeSSEManager {
     // Anonymous connections (no userId)
     private anonymousConnections: Set<FastifyReply>;
     private connectionTimestamps: Map<FastifyReply, number>;
+    private connectionConversationSubscriptions: Map<FastifyReply, string>;
     private heartbeatInterval: NodeJS.Timeout | null;
     private cleanupInterval: NodeJS.Timeout | null;
     private isShuttingDown: boolean;
@@ -31,6 +65,7 @@ export class RealtimeSSEManager {
         this.connections = new Map();
         this.anonymousConnections = new Set();
         this.connectionTimestamps = new Map();
+        this.connectionConversationSubscriptions = new Map();
         this.heartbeatInterval = null;
         this.cleanupInterval = null;
         this.isShuttingDown = false;
@@ -58,7 +93,14 @@ export class RealtimeSSEManager {
     /**
      * Register a new authenticated SSE connection for a user
      */
-    public connect(userId: string, reply: FastifyReply): void {
+    public connect({
+        userId,
+        reply,
+        subscribedConversationSlugId,
+    }: {
+        userId: string;
+        reply: FastifyReply;
+    } & RealtimeConnectionOptions): void {
         if (this.isShuttingDown) {
             reply.code(503).send({ error: "Server is shutting down" });
             return;
@@ -75,10 +117,14 @@ export class RealtimeSSEManager {
         }
         userConnections.add(reply);
         this.connectionTimestamps.set(reply, Date.now());
+        this.setConnectionConversationSubscriptions({
+            reply,
+            subscribedConversationSlugId,
+        });
 
         // Setup cleanup on connection close using @fastify/sse plugin's onClose method
         reply.sse.onClose(() => {
-            this.disconnect(userId, reply);
+            this.disconnect({ userId, reply });
         });
 
         // Send initial connection confirmation using plugin
@@ -102,7 +148,12 @@ export class RealtimeSSEManager {
     /**
      * Register a new anonymous SSE connection (no userId)
      */
-    public connectAnonymous(reply: FastifyReply): void {
+    public connectAnonymous({
+        reply,
+        subscribedConversationSlugId,
+    }: {
+        reply: FastifyReply;
+    } & RealtimeConnectionOptions): void {
         if (this.isShuttingDown) {
             reply.code(503).send({ error: "Server is shutting down" });
             return;
@@ -110,6 +161,10 @@ export class RealtimeSSEManager {
 
         this.anonymousConnections.add(reply);
         this.connectionTimestamps.set(reply, Date.now());
+        this.setConnectionConversationSubscriptions({
+            reply,
+            subscribedConversationSlugId,
+        });
 
         reply.sse.onClose(() => {
             this.disconnectAnonymous(reply);
@@ -131,17 +186,24 @@ export class RealtimeSSEManager {
     /**
      * Unregister an authenticated SSE connection for a user
      */
-    public disconnect(userId: string, reply: FastifyReply): void {
+    public disconnect({
+        userId,
+        reply,
+    }: {
+        userId: string;
+        reply: FastifyReply;
+    }): void {
         const userConnections = this.connections.get(userId);
         if (userConnections) {
             userConnections.delete(reply);
-            this.connectionTimestamps.delete(reply);
 
             // Clean up empty connection sets
             if (userConnections.size === 0) {
                 this.connections.delete(userId);
             }
         }
+        this.connectionTimestamps.delete(reply);
+        this.connectionConversationSubscriptions.delete(reply);
     }
 
     /**
@@ -150,6 +212,120 @@ export class RealtimeSSEManager {
     public disconnectAnonymous(reply: FastifyReply): void {
         this.anonymousConnections.delete(reply);
         this.connectionTimestamps.delete(reply);
+        this.connectionConversationSubscriptions.delete(reply);
+    }
+
+    public async sendToConnection<TEvent extends SSEEventType>({
+        reply,
+        event,
+        data,
+    }: {
+        reply: FastifyReply;
+        event: TEvent;
+        data: SSEEventDataByType[TEvent];
+    }): Promise<void> {
+        await reply.sse.send({ event, data });
+    }
+
+    public broadcastToConversationSubscribers({
+        conversationSlugId,
+        event,
+        data,
+    }: ConversationSubscriptionEvent & {
+        conversationSlugId: string;
+    }): void {
+        const deadAuthenticated: { userId: string; reply: FastifyReply }[] = [];
+        const deadAnonymous: FastifyReply[] = [];
+
+        for (const [userId, userConnections] of this.connections) {
+            for (const reply of userConnections) {
+                if (
+                    !this.isSubscribedToConversation({
+                        reply,
+                        conversationSlugId,
+                    })
+                ) {
+                    continue;
+                }
+                reply.sse.send({ event, data }).catch(() => {
+                    deadAuthenticated.push({ userId, reply });
+                });
+            }
+        }
+
+        for (const reply of this.anonymousConnections) {
+            if (
+                !this.isSubscribedToConversation({
+                    reply,
+                    conversationSlugId,
+                })
+            ) {
+                continue;
+            }
+            reply.sse.send({ event, data }).catch(() => {
+                deadAnonymous.push(reply);
+            });
+        }
+
+        for (const { userId, reply } of deadAuthenticated) {
+            this.disconnect({ userId, reply });
+        }
+        for (const deadReply of deadAnonymous) {
+            this.disconnectAnonymous(deadReply);
+        }
+    }
+
+    public broadcastToConversationSubscribersExcept({
+        conversationSlugId,
+        event,
+        data,
+        excludeUserId,
+    }: ConversationSubscriptionEvent & {
+        conversationSlugId: string;
+        excludeUserId: string;
+    }): void {
+        const deadAuthenticated: { userId: string; reply: FastifyReply }[] = [];
+        const deadAnonymous: FastifyReply[] = [];
+
+        for (const [userId, userConnections] of this.connections) {
+            if (userId === excludeUserId) {
+                continue;
+            }
+            for (const reply of userConnections) {
+                if (
+                    !this.isSubscribedToConversation({
+                        reply,
+                        conversationSlugId,
+                    })
+                ) {
+                    continue;
+                }
+                reply.sse.send({ event, data }).catch(() => {
+                    deadAuthenticated.push({ userId, reply });
+                });
+            }
+        }
+
+        for (const reply of this.anonymousConnections) {
+            if (
+                !this.isSubscribedToConversation({
+                    reply,
+                    conversationSlugId,
+                })
+            ) {
+                continue;
+            }
+            reply.sse.send({ event, data }).catch(() => {
+                deadAnonymous.push(reply);
+            });
+        }
+
+        for (const { userId, reply } of deadAuthenticated) {
+            this.disconnect({ userId, reply });
+        }
+        for (const deadReply of deadAnonymous) {
+            this.disconnectAnonymous(deadReply);
+        }
     }
 
     /**
@@ -188,7 +364,7 @@ export class RealtimeSSEManager {
 
         // Clean up dead connections
         for (const deadReply of deadConnections) {
-            this.disconnect(userId, deadReply);
+            this.disconnect({ userId, reply: deadReply });
         }
     }
 
@@ -223,7 +399,7 @@ export class RealtimeSSEManager {
 
         // Clean up dead connections
         for (const { userId, reply } of deadAuthenticated) {
-            this.disconnect(userId, reply);
+            this.disconnect({ userId, reply });
         }
         for (const deadReply of deadAnonymous) {
             this.disconnectAnonymous(deadReply);
@@ -266,7 +442,7 @@ export class RealtimeSSEManager {
 
         // Clean up dead connections
         for (const { userId, reply } of deadAuthenticated) {
-            this.disconnect(userId, reply);
+            this.disconnect({ userId, reply });
         }
         for (const deadReply of deadAnonymous) {
             this.disconnectAnonymous(deadReply);
@@ -299,7 +475,7 @@ export class RealtimeSSEManager {
         }
 
         for (const { userId, reply } of staleAuthenticated) {
-            this.disconnect(userId, reply);
+            this.disconnect({ userId, reply });
             try {
                 reply.sse.close();
             } catch (error: unknown) {
@@ -358,7 +534,7 @@ export class RealtimeSSEManager {
             }
 
             for (const deadReply of deadConnections) {
-                this.disconnect(userId, deadReply);
+                this.disconnect({ userId, reply: deadReply });
             }
         }
 
@@ -450,5 +626,35 @@ export class RealtimeSSEManager {
 
         this.connections.clear();
         this.anonymousConnections.clear();
+        this.connectionTimestamps.clear();
+        this.connectionConversationSubscriptions.clear();
+    }
+
+    private setConnectionConversationSubscriptions({
+        reply,
+        subscribedConversationSlugId,
+    }: {
+        reply: FastifyReply;
+        subscribedConversationSlugId: string | undefined;
+    }): void {
+        if (subscribedConversationSlugId === undefined) {
+            this.connectionConversationSubscriptions.delete(reply);
+            return;
+        }
+
+        this.connectionConversationSubscriptions.set(reply, subscribedConversationSlugId);
+    }
+
+    private isSubscribedToConversation({
+        reply,
+        conversationSlugId,
+    }: {
+        reply: FastifyReply;
+        conversationSlugId: string;
+    }): boolean {
+        return (
+            this.connectionConversationSubscriptions.get(reply) ===
+            conversationSlugId
+        );
     }
 }

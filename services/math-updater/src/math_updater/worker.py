@@ -5,6 +5,7 @@ import signal
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Event, Lock, Thread
 from typing import TYPE_CHECKING, cast
 
 import valkey as valkey_lib
@@ -17,6 +18,7 @@ from agora_worker_shared.ai_description_work import (
     fetch_ai_description_view_snapshot_ids_for_analysis_snapshots,
     mark_non_retryable_ai_description_locale_work_item,
     process_ai_description_locale_work_item,
+    recover_expired_ai_description_work,
     retry_ai_description_locale_work_item,
 )
 from agora_worker_shared.ai_description_work import (
@@ -30,6 +32,7 @@ from agora_worker_shared.config import (
 )
 from agora_worker_shared.db import (
     AnalysisWorkStatePersistenceError,
+    CheckpointActivationContext,
     LineageAssignmentInvariantError,
     WorkStateSchedule,
     claim_work_items_and_fetch_inputs_batch,
@@ -69,6 +72,9 @@ from agora_worker_shared.valkey_client import (
     schedule_conversation,
     schedule_description_translation_conversation,
 )
+from botocore.exceptions import ConnectTimeoutError, ReadTimeoutError
+from google.api_core.exceptions import DeadlineExceeded
+from google.api_core.exceptions import RetryError as GoogleRetryError
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -100,6 +106,8 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 _running = True
+_lease_heartbeat_stoppers: list[Callable[[], None]] = []
+_lease_heartbeat_stoppers_lock = Lock()
 STARTUP_RETRY_INTERVAL_SECONDS = 5.0
 
 
@@ -107,6 +115,14 @@ def _handle_signal(signum: int, frame: object) -> None:
     global _running
     log.info("[MathUpdater] Received signal %d, shutting down", signum)
     _running = False
+
+
+def _stop_lease_heartbeats() -> None:
+    with _lease_heartbeat_stoppers_lock:
+        stoppers = list(_lease_heartbeat_stoppers)
+        _lease_heartbeat_stoppers.clear()
+    for stop_heartbeat in stoppers:
+        stop_heartbeat()
 
 
 def _connect_to_valkey_with_retry(settings: Settings) -> valkey_lib.Valkey | None:
@@ -317,6 +333,86 @@ def _format_claims(claims: list[ClaimedWorkItem]) -> str:
     return ", ".join(_format_claim(claim) for claim in claims)
 
 
+def _ai_description_claim_kind(claim: ClaimedAiDescriptionLocaleWorkItem) -> str:
+    if isinstance(claim, ClaimedLineageDescriptionWorkItem):
+        return "lineage-description"
+    return "translation"
+
+
+def _ai_description_claim_target_log(claim: ClaimedAiDescriptionLocaleWorkItem) -> str:
+    if isinstance(claim, ClaimedLineageDescriptionWorkItem):
+        return f"lineageId={claim.lineage_id}"
+    return f"descriptionId={claim.description_id}"
+
+
+def _ai_description_claim_target_metadata(
+    claim: ClaimedAiDescriptionLocaleWorkItem,
+) -> dict[str, int]:
+    if isinstance(claim, ClaimedLineageDescriptionWorkItem):
+        return {"lineageId": claim.lineage_id}
+    return {"descriptionId": claim.description_id}
+
+
+def _start_lease_heartbeat(
+    *,
+    primary_engine: Engine,
+    lease_ttl_seconds: int,
+    interval_seconds: int,
+) -> tuple[Callable[[list[ClaimedWorkItem]], None], Callable[[], None]]:
+    active_claims: list[ClaimedWorkItem] = []
+    active_claims_lock = Lock()
+    stop_event = Event()
+
+    def set_active_claims(claims: list[ClaimedWorkItem]) -> None:
+        with active_claims_lock:
+            active_claims.clear()
+            active_claims.extend(claims)
+
+    def run_heartbeat() -> None:
+        while not stop_event.wait(interval_seconds):
+            with active_claims_lock:
+                claims = list(active_claims)
+            if not claims:
+                continue
+            try:
+                extended_count = extend_postgres_leases(
+                    primary_engine,
+                    claims=claims,
+                    lease_ttl_seconds=lease_ttl_seconds,
+                )
+                log.info(
+                    "[MathUpdater] Lease heartbeat extended rows=%d claims=%d: %s",
+                    extended_count,
+                    len(claims),
+                    _format_claims(claims),
+                )
+            except Exception:
+                log.exception(
+                    "[MathUpdater] Lease heartbeat failed claims=%s",
+                    _format_claims(claims),
+                )
+
+    heartbeat_thread = Thread(
+        target=run_heartbeat,
+        name="math-updater-lease-heartbeat",
+        daemon=True,
+    )
+    heartbeat_thread.start()
+
+    def stop_heartbeat() -> None:
+        set_active_claims([])
+        stop_event.set()
+        heartbeat_thread.join(timeout=interval_seconds)
+        with _lease_heartbeat_stoppers_lock:
+            if stop_heartbeat in _lease_heartbeat_stoppers:
+                _lease_heartbeat_stoppers.remove(stop_heartbeat)
+
+    with _lease_heartbeat_stoppers_lock:
+        _lease_heartbeat_stoppers.append(stop_heartbeat)
+
+    return set_active_claims, stop_heartbeat
+
+
 def _format_schedules(
     *,
     schedules: list[WorkStateSchedule],
@@ -347,6 +443,8 @@ def _process_ai_description_conversation_ids(
     description_translator: DescriptionTranslator | None,
     simulation_runtime: SimulationRuntime | None = None,
     retry_first_pass_once: bool = False,
+    enqueue_retry_schedules: bool = True,
+    checkpoint_activation_context: CheckpointActivationContext | None = None,
 ) -> int:
     completed_non_processable_ids = complete_non_processable_ai_description_work_batch(
         primary_engine,
@@ -377,9 +475,11 @@ def _process_ai_description_conversation_ids(
         conversation_ids=processable_conversation_ids,
         conversation_view_snapshot_ids=conversation_view_snapshot_ids,
         lease_ttl_seconds=lease_ttl_seconds,
-        limit=claim_limit,
+        limit=min(claim_limit, max_workers),
         ai_description_epoch=ai_description_epoch,
         translation_enabled=description_translator is not None,
+        block_pending_translations_for_activation=retry_first_pass_once,
+        checkpoint_activation_context=checkpoint_activation_context,
     )
     if not ai_claims:
         log.info(
@@ -398,7 +498,7 @@ def _process_ai_description_conversation_ids(
 
     def process_claim(
         claim: ClaimedAiDescriptionLocaleWorkItem,
-    ) -> WorkStateSchedule | AiDescriptionWorkStateSchedule:
+    ) -> AiDescriptionWorkStateSchedule:
         try:
             maybe_raise_simulated_claim_error(
                 runtime=simulation_runtime,
@@ -410,14 +510,18 @@ def _process_ai_description_conversation_ids(
                 claim=claim,
                 generate_descriptions=description_generator,
                 translate_descriptions=description_translator,
+                block_pending_translations_for_activation=retry_first_pass_once,
+                checkpoint_activation_context=checkpoint_activation_context,
             )
         except Exception as error:
             if _is_non_retryable_ai_description_error(error):
                 log.exception(
-                    "[MathUpdater] Non-retryable AI description failure for "
-                    "conversationSlugId=%s locale=%s",
+                    "[MathUpdater] Non-retryable %s failure for "
+                    "conversationSlugId=%s locale=%s %s",
+                    _ai_description_claim_kind(claim),
                     claim.conversation_slug_id,
                     claim.locale,
+                    _ai_description_claim_target_log(claim),
                 )
                 return mark_non_retryable_ai_description_locale_work_item(
                     primary_engine,
@@ -425,28 +529,55 @@ def _process_ai_description_conversation_ids(
                     ai_description_epoch=ai_description_epoch,
                     error_code="ai_description_non_retryable",
                     error_message=str(error),
+                    block_pending_translations_for_activation=retry_first_pass_once,
+                    checkpoint_activation_context=checkpoint_activation_context,
                 )
 
             log.exception(
-                "[MathUpdater] Retryable AI description failure for "
-                "conversationSlugId=%s locale=%s",
+                "[MathUpdater] Retryable %s failure for "
+                "conversationSlugId=%s locale=%s %s",
+                _ai_description_claim_kind(claim),
                 claim.conversation_slug_id,
                 claim.locale,
+                _ai_description_claim_target_log(claim),
             )
+            is_timeout = _is_timeout_error(error)
             should_retry_immediately = (
                 retry_first_pass_once
-                and isinstance(claim, ClaimedLineageDescriptionWorkItem)
                 and claim.attempt_count == 1
+                and isinstance(claim, ClaimedLineageDescriptionWorkItem)
+                and not is_timeout
             )
-            return retry_ai_description_locale_work_item(
+            is_first_pass_timeout = retry_first_pass_once and is_timeout
+            schedule = retry_ai_description_locale_work_item(
                 primary_engine,
                 claim=claim,
                 retry_policy=retry_policy,
-                error_code="ai_description_retryable",
+                error_code="ai_description_timeout"
+                if is_first_pass_timeout
+                else "ai_description_retryable",
                 error_message=str(error),
                 retry_immediately_without_fallback=should_retry_immediately,
                 force_cooldown=retry_first_pass_once and not should_retry_immediately,
+                block_pending_translations_for_activation=retry_first_pass_once,
+                checkpoint_activation_context=checkpoint_activation_context,
             )
+            if is_first_pass_timeout:
+                log.warning(
+                    "[MathUpdater] First-pass timeout fallback scheduled "
+                    "kind=%s conversationSlugId=%s conversationId=%d locale=%s %s "
+                    "attemptCount=%d retryWorkerAt=%s",
+                    _ai_description_claim_kind(claim),
+                    claim.conversation_slug_id,
+                    claim.conversation_id,
+                    claim.locale,
+                    _ai_description_claim_target_log(claim),
+                    claim.attempt_count,
+                    schedule.retry_scheduled_at.isoformat()
+                    if schedule.retry_scheduled_at is not None
+                    else "none",
+                )
+            return schedule
 
     processing_started_at = time.perf_counter()
     with ThreadPoolExecutor(max_workers=min(max_workers, len(ai_claims))) as executor:
@@ -455,7 +586,7 @@ def _process_ai_description_conversation_ids(
             claim = future_by_claim[future]
             try:
                 schedule = future.result()
-                if schedule.next_run_at is not None:
+                if schedule.retry_scheduled_at is not None:
                     emit_load_event(
                         phase="math-updater",
                         action="retry-scheduled",
@@ -465,15 +596,17 @@ def _process_ai_description_conversation_ids(
                             "conversationId": schedule.conversation_id,
                             "locale": claim.locale,
                             "attemptCount": claim.attempt_count,
-                            "nextRunAt": schedule.next_run_at.isoformat(),
+                            "nextRunAt": schedule.retry_scheduled_at.isoformat(),
+                            **_ai_description_claim_target_metadata(claim),
                         },
                     )
             except Exception:
                 log.exception(
                     "[MathUpdater] Failed to finalize AI description retry state for "
-                    "conversationSlugId=%s locale=%s",
+                    "conversationSlugId=%s locale=%s %s",
                     claim.conversation_slug_id,
                     claim.locale,
+                    _ai_description_claim_target_log(claim),
                 )
 
     log.info(
@@ -481,13 +614,14 @@ def _process_ai_description_conversation_ids(
         len(ai_claims),
         (time.perf_counter() - processing_started_at) * 1000,
     )
-    _enqueue_ai_description_queue_schedules(
-        vk,
-        schedules=fetch_ai_description_queue_schedules(
-            primary_engine,
-            conversation_ids=conversation_ids,
-        ),
-    )
+    if enqueue_retry_schedules:
+        _enqueue_ai_description_queue_schedules(
+            vk,
+            schedules=fetch_ai_description_queue_schedules(
+                primary_engine,
+                conversation_ids=conversation_ids,
+            ),
+        )
     return len(ai_claims)
 
 
@@ -507,6 +641,7 @@ def _process_ai_description_first_pass(
     description_generator: DescriptionGenerator,
     description_translator: DescriptionTranslator | None,
     simulation_runtime: SimulationRuntime | None,
+    checkpoint_activation_context: CheckpointActivationContext | None = None,
 ) -> None:
     first_pass_started_at = time.perf_counter()
     emit_load_event(
@@ -517,6 +652,21 @@ def _process_ai_description_first_pass(
         metadata={"conversationCount": len(conversation_ids)},
     )
     while True:
+        recovered_conversation_ids = recover_expired_ai_description_work(
+            primary_engine,
+            translation_enabled=description_translator is not None,
+            conversation_ids=conversation_ids,
+            conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+            include_lineage_descriptions=True,
+            include_translations=description_translator is not None,
+            require_unactivated_view_snapshot=True,
+        )
+        if recovered_conversation_ids:
+            log.info(
+                "[MathUpdater] first_pass recovered %d expired AI description lease(s) ids=%s",
+                len(recovered_conversation_ids),
+                _format_ids(recovered_conversation_ids),
+            )
         processed_count = _process_ai_description_conversation_ids(
             primary_engine=primary_engine,
             vk=vk,
@@ -532,6 +682,8 @@ def _process_ai_description_first_pass(
             description_translator=description_translator,
             simulation_runtime=simulation_runtime,
             retry_first_pass_once=True,
+            enqueue_retry_schedules=False,
+            checkpoint_activation_context=checkpoint_activation_context,
         )
         log.info(
             "[MathUpdater] first_pass processed count=%d conversation_count=%d "
@@ -547,6 +699,13 @@ def _process_ai_description_first_pass(
             claims=analysis_claims,
             lease_ttl_seconds=lease_ttl_seconds,
         )
+    _enqueue_ai_description_queue_schedules(
+        vk,
+        schedules=fetch_ai_description_queue_schedules(
+            primary_engine,
+            conversation_ids=conversation_ids,
+        ),
+    )
     emit_load_event(
         phase="math-updater",
         action="first-pass-complete",
@@ -578,6 +737,35 @@ def _is_non_retryable_ai_description_error(error: Exception) -> bool:
     return isinstance(error, DescriptionInputError)
 
 
+def _is_timeout_error(error: BaseException) -> bool:
+    seen: set[int] = set()
+    stack: list[BaseException] = [error]
+    while stack:
+        current = stack.pop()
+        current_id = id(current)
+        if current_id in seen:
+            continue
+        seen.add(current_id)
+
+        if isinstance(
+            current,
+            TimeoutError | ConnectTimeoutError | DeadlineExceeded | ReadTimeoutError,
+        ):
+            return True
+
+        if isinstance(current, GoogleRetryError):
+            cause = current.cause
+            if isinstance(cause, BaseException):
+                stack.append(cause)
+
+        if current.__cause__ is not None:
+            stack.append(current.__cause__)
+        if current.__context__ is not None:
+            stack.append(current.__context__)
+
+    return False
+
+
 def _run_worker_once() -> None:
     settings = Settings()
 
@@ -586,12 +774,16 @@ def _run_worker_once() -> None:
 
     worker_id = f"math-updater:{uuid.uuid4()}"
     log.info(
-        "[MathUpdater] Starting worker_id=%s pop_batch=%d claim_batch=%d compute=%d ai=%d",
+        "[MathUpdater] Starting worker_id=%s pop_batch=%d claim_batch=%d compute=%d ai=%d "
+        "lease_ttl=%ds heartbeat=%ds recovery=%ds",
         worker_id,
         settings.valkey_pop_batch_size,
         settings.db_claim_batch_size,
         settings.max_compute_concurrency,
         settings.max_ai_description_concurrency,
+        settings.lease_ttl_seconds,
+        settings.heartbeat_interval_seconds,
+        settings.running_recovery_interval_seconds,
     )
 
     try:
@@ -659,11 +851,18 @@ def _run_worker_once() -> None:
         burst_interval_seconds=settings.retry_burst_seconds,
         cooldown_seconds=settings.retry_cooldown_seconds,
     )
+    set_active_analysis_claims, stop_lease_heartbeat = _start_lease_heartbeat(
+        primary_engine=primary_engine,
+        lease_ttl_seconds=settings.lease_ttl_seconds,
+        interval_seconds=settings.heartbeat_interval_seconds,
+    )
 
-    last_reconcile = time.monotonic()
-    last_recover = time.monotonic()
+    monotonic_start = time.monotonic()
+    last_reconcile = monotonic_start - settings.reconciliation_interval_seconds
+    last_recover = monotonic_start - settings.running_recovery_interval_seconds
 
     while _running:
+        set_active_analysis_claims([])
         monotonic_now = time.monotonic()
 
         if monotonic_now - last_reconcile >= settings.reconciliation_interval_seconds:
@@ -688,6 +887,14 @@ def _run_worker_once() -> None:
         if monotonic_now - last_recover >= settings.running_recovery_interval_seconds:
             try:
                 recovered_ids = recover_expired_running_work(primary_engine)
+                recovered_ai_description_ids = recover_expired_ai_description_work(
+                    primary_engine,
+                    translation_enabled=description_translator is not None,
+                    include_lineage_descriptions=True,
+                    include_translations=description_translator is not None,
+                    require_unactivated_view_snapshot=True,
+                )
+                recovered_ids = sorted({*recovered_ids, *recovered_ai_description_ids})
                 current_ms = now_ms()
                 _enqueue_conversation_ids(
                     vk,
@@ -695,7 +902,10 @@ def _run_worker_once() -> None:
                     due_at_ms=current_ms,
                 )
                 if recovered_ids:
-                    log.info("[MathUpdater] Recovered %d expired running items", len(recovered_ids))
+                    log.info(
+                        "[MathUpdater] Recovered %d expired running/first-pass items",
+                        len(recovered_ids),
+                    )
             except Exception:
                 log.exception("[MathUpdater] Running-work recovery failed")
             last_recover = monotonic_now
@@ -791,11 +1001,13 @@ def _run_worker_once() -> None:
             _format_claims(claims),
             (time.perf_counter() - claim_started_at) * 1000,
         )
+        set_active_analysis_claims(claims)
 
         persisted_claims = [
             claim for claim in claims if claim.persisted_analysis_snapshot_id is not None
         ]
         if persisted_claims:
+            ready_to_complete_persisted_claims = True
             if description_generator is not None:
                 try:
                     persisted_view_snapshot_ids = (
@@ -826,6 +1038,7 @@ def _run_worker_once() -> None:
                     )
                 except Exception:
                     log.exception("[MathUpdater] Resumed AI description first pass failed")
+                    ready_to_complete_persisted_claims = False
                     _enqueue_ai_description_queue_schedules(
                         vk,
                         schedules=fetch_ai_description_queue_schedules(
@@ -839,19 +1052,21 @@ def _run_worker_once() -> None:
                     vk,
                     conversation_ids=[claim.conversation_id for claim in persisted_claims],
                 )
-            try:
-                completed_schedules = complete_computed_analysis_work_items_batch(
-                    primary_engine,
-                    claims=persisted_claims,
-                )
-                _enqueue_schedules(vk, schedules=completed_schedules)
-            except SQLAlchemyError as error:
-                log_database_error(
-                    logger=log,
-                    message="[MathUpdater] Failed to complete resumed persisted analysis",
-                    error=error,
-                    context={"claims": _format_claims(persisted_claims)},
-                )
+            if ready_to_complete_persisted_claims:
+                try:
+                    completed_schedules = complete_computed_analysis_work_items_batch(
+                        primary_engine,
+                        claims=persisted_claims,
+                        require_display_safe_activation=True,
+                    )
+                    _enqueue_schedules(vk, schedules=completed_schedules)
+                except SQLAlchemyError as error:
+                    log_database_error(
+                        logger=log,
+                        message="[MathUpdater] Failed to complete resumed persisted analysis",
+                        error=error,
+                        context={"claims": _format_claims(persisted_claims)},
+                    )
 
         active_analysis_claims = [
             claim for claim in claims if claim.persisted_analysis_snapshot_id is None
@@ -1034,6 +1249,7 @@ def _run_worker_once() -> None:
                         len(completed_result.ai_description_due_view_snapshot_ids),
                         (time.perf_counter() - persist_started_at) * 1000,
                     )
+                    ready_to_complete_computed_claims = True
                     if (
                         description_generator is not None
                         and completed_result.ai_description_due_conversation_ids
@@ -1059,6 +1275,9 @@ def _run_worker_once() -> None:
                                 description_generator=description_generator,
                                 description_translator=description_translator,
                                 simulation_runtime=simulation_runtime,
+                                checkpoint_activation_context=(
+                                    completed_result.checkpoint_activation_context
+                                ),
                             )
                             extend_postgres_leases(
                                 primary_engine,
@@ -1069,6 +1288,7 @@ def _run_worker_once() -> None:
                             log.exception(
                                 "[MathUpdater] AI description first pass failed after math persist"
                             )
+                            ready_to_complete_computed_claims = False
                             _enqueue_ai_description_queue_schedules(
                                 vk,
                                 schedules=fetch_ai_description_queue_schedules(
@@ -1084,19 +1304,22 @@ def _run_worker_once() -> None:
                             vk,
                             conversation_ids=completed_result.ai_description_due_conversation_ids,
                         )
-                    completed_schedules = complete_computed_analysis_work_items_batch(
-                        primary_engine,
-                        claims=completed_claims,
-                    )
-                    _enqueue_schedules(vk, schedules=completed_schedules)
-                    log.info(
-                        "[MathUpdater] Completed %d non-empty conversation(s): %s",
-                        len(completed_schedules),
-                        _format_schedules(
-                            schedules=completed_schedules,
+                    computed_completed_schedules: list[WorkStateSchedule] = []
+                    if ready_to_complete_computed_claims:
+                        computed_completed_schedules = complete_computed_analysis_work_items_batch(
+                            primary_engine,
                             claims=completed_claims,
-                        ),
-                    )
+                            require_display_safe_activation=True,
+                        )
+                        _enqueue_schedules(vk, schedules=computed_completed_schedules)
+                        log.info(
+                            "[MathUpdater] Completed %d non-empty conversation(s): %s",
+                            len(computed_completed_schedules),
+                            _format_schedules(
+                                schedules=computed_completed_schedules,
+                                claims=completed_claims,
+                            ),
+                        )
                     log.info(
                         "[MathUpdater] Batch complete claimed=%d completed=%d failed=%d "
                         "non_retryable=%d batch_ms=%.1f",
@@ -1122,6 +1345,7 @@ def _run_worker_once() -> None:
                                 completed_schedules = complete_computed_analysis_work_items_batch(
                                     primary_engine,
                                     claims=[claim],
+                                    require_display_safe_activation=True,
                                 )
                                 _enqueue_schedules(vk, schedules=completed_schedules)
                             except SQLAlchemyError as isolated_error:
@@ -1155,6 +1379,7 @@ def _run_worker_once() -> None:
                                     ai_generation_expected=True,
                                     translation_expected=True,
                                 )
+                                ready_to_complete_isolated_claim = True
                                 if (
                                     description_generator is not None
                                     and isolated_result.ai_description_due_conversation_ids
@@ -1180,6 +1405,9 @@ def _run_worker_once() -> None:
                                             description_generator=description_generator,
                                             description_translator=description_translator,
                                             simulation_runtime=simulation_runtime,
+                                            checkpoint_activation_context=(
+                                                isolated_result.checkpoint_activation_context
+                                            ),
                                         )
                                         extend_postgres_leases(
                                             primary_engine,
@@ -1191,6 +1419,7 @@ def _run_worker_once() -> None:
                                             "[MathUpdater] Isolated AI description first pass "
                                             "failed after math persist"
                                         )
+                                        ready_to_complete_isolated_claim = False
                                         _enqueue_ai_description_queue_schedules(
                                             vk,
                                             schedules=fetch_ai_description_queue_schedules(
@@ -1208,11 +1437,18 @@ def _run_worker_once() -> None:
                                             isolated_result.ai_description_due_conversation_ids
                                         ),
                                     )
-                                completed_schedules = complete_computed_analysis_work_items_batch(
-                                    primary_engine,
-                                    claims=[claim],
-                                )
-                                _enqueue_schedules(vk, schedules=completed_schedules)
+                                if ready_to_complete_isolated_claim:
+                                    isolated_completed_schedules = (
+                                        complete_computed_analysis_work_items_batch(
+                                            primary_engine,
+                                            claims=[claim],
+                                            require_display_safe_activation=True,
+                                        )
+                                    )
+                                    _enqueue_schedules(
+                                        vk,
+                                        schedules=isolated_completed_schedules,
+                                    )
                             except LineageAssignmentInvariantError:
                                 log.exception(
                                     "[MathUpdater] Non-retryable lineage assignment invariant "
@@ -1305,6 +1541,7 @@ def _run_worker_once() -> None:
                     ),
                 )
 
+    stop_lease_heartbeat()
     primary_engine.dispose()
     read_engine.dispose()
     vk.close()
@@ -1317,6 +1554,7 @@ def main() -> None:
             _run_worker_once()
             return
         except Exception:
+            _stop_lease_heartbeats()
             log.exception(
                 "[MathUpdater] Worker crashed; restarting in %.1fs",
                 STARTUP_RETRY_INTERVAL_SECONDS,

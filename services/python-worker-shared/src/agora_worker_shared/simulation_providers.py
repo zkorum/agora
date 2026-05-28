@@ -84,13 +84,16 @@ def maybe_raise_simulated_claim_error(
 
     if mode == "retryable_error_then_success":
         if claim.attempt_count > runtime.retryable_failure_attempts:
+            target_name, target_id = _claim_target_for_log(claim)
             log.info(
                 "%s %s outcome=success_after_retry conversationSlugId=%s "
-                "locale=%s attemptCount=%d threshold=%d",
+                "locale=%s %s=%d attemptCount=%d threshold=%d",
                 SIMULATION_LOG_PREFIX,
                 action,
                 claim.conversation_slug_id,
                 claim.locale,
+                target_name,
+                target_id,
                 claim.attempt_count,
                 runtime.retryable_failure_attempts,
             )
@@ -259,6 +262,12 @@ def _claim_metadata(
     return metadata
 
 
+def _claim_target_for_log(claim: ClaimedAiDescriptionLocaleWorkItem) -> tuple[str, int]:
+    if isinstance(claim, ClaimedLineageDescriptionWorkItem):
+        return "lineageId", claim.lineage_id
+    return "descriptionId", claim.description_id
+
+
 def _log_simulated_failure(
     *,
     phase: str,
@@ -267,13 +276,16 @@ def _log_simulated_failure(
     claim: ClaimedAiDescriptionLocaleWorkItem,
     metadata: dict[str, str | int | bool | None],
 ) -> None:
+    target_name, target_id = _claim_target_for_log(claim)
     log.info(
-        "%s %s outcome=%s conversationSlugId=%s locale=%s attemptCount=%d",
+        "%s %s outcome=%s conversationSlugId=%s locale=%s %s=%d attemptCount=%d",
         SIMULATION_LOG_PREFIX,
         action,
         outcome,
         claim.conversation_slug_id,
         claim.locale,
+        target_name,
+        target_id,
         claim.attempt_count,
     )
     emit_load_event(

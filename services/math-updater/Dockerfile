@@ -38,5 +38,6 @@ RUN groupadd --system --gid 1000 appuser && \
     chown -R appuser:appuser /app
 USER appuser
 
+STOPSIGNAL SIGTERM
 ENTRYPOINT ["tini", "--"]
 CMD ["python", "-m", "math_updater.worker"]

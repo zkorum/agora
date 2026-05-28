@@ -92,7 +92,7 @@ def build_description_translator(settings: Settings) -> DescriptionTranslatorBun
             max_tokens=settings.aws_description_translation_max_tokens,
             prompt=settings.aws_description_translation_prompt,
             connect_timeout_seconds=settings.aws_client_connect_timeout_seconds,
-            read_timeout_seconds=settings.aws_ai_label_summary_read_timeout_seconds,
+            read_timeout_seconds=settings.aws_description_translation_read_timeout_seconds,
         )
         if settings.aws_description_translation_enable
         else None

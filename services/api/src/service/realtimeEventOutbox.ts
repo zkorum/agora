@@ -10,7 +10,7 @@ import {
     conversationViewSnapshotTable,
     realtimeEventOutboxTable,
 } from "@/shared-backend/schema.js";
-import type { SSEEventDataByType, SSEEventType } from "@/shared/types/dto.js";
+import type { SSEEventDataByType } from "@/shared/types/dto.js";
 import {
     zodEventSlug,
     zodParticipationMode,
@@ -301,6 +301,94 @@ export async function queueConversationAnalysisUpdatedEventsForLatestViewSnapsho
     await primaryDb.insert(realtimeEventOutboxTable).values(values);
 }
 
+export async function fetchConversationAnalysisUpdatedEventForLatestViewSnapshot({
+    db,
+    conversationSlugId,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+}): Promise<
+    SSEEventDataByType["conversation_analysis_updated"] | undefined
+> {
+    const primaryDb = getPrimaryDb(db);
+    const rows = await primaryDb
+        .selectDistinctOn([conversationViewSnapshotTable.conversationId], {
+            conversationSlugId: conversationTable.slugId,
+            conversationViewSnapshotId: conversationViewSnapshotTable.id,
+            analysisSnapshotId:
+                conversationViewSnapshotTable.analysisSnapshotId,
+            opinionCount: conversationViewSnapshotTable.opinionCount,
+            voteCount: conversationViewSnapshotTable.voteCount,
+            participantCount: conversationViewSnapshotTable.participantCount,
+            totalOpinionCount: conversationViewSnapshotTable.totalOpinionCount,
+            totalVoteCount: conversationViewSnapshotTable.totalVoteCount,
+            totalParticipantCount:
+                conversationViewSnapshotTable.totalParticipantCount,
+            moderatedOpinionCount:
+                conversationViewSnapshotTable.moderatedOpinionCount,
+            hiddenOpinionCount:
+                conversationViewSnapshotTable.hiddenOpinionCount,
+            isClosed: conversationViewSnapshotTable.isClosed,
+        })
+        .from(conversationViewSnapshotTable)
+        .innerJoin(
+            conversationTable,
+            eq(
+                conversationTable.id,
+                conversationViewSnapshotTable.conversationId,
+            ),
+        )
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                isNotNull(conversationViewSnapshotTable.activatedAt),
+                isNotNull(conversationViewSnapshotTable.analysisSnapshotId),
+            ),
+        )
+        .orderBy(
+            conversationViewSnapshotTable.conversationId,
+            desc(conversationViewSnapshotTable.createdAt),
+            desc(conversationViewSnapshotTable.id),
+        )
+        .limit(1);
+
+    const row = rows.at(0);
+    if (row?.analysisSnapshotId === undefined || row.analysisSnapshotId === null) {
+        return undefined;
+    }
+
+    const checkpointRows = await primaryDb
+        .select({
+            conversationViewSnapshotId:
+                conversationViewSnapshotCheckpointReasonTable.conversationViewSnapshotId,
+        })
+        .from(conversationViewSnapshotCheckpointReasonTable)
+        .where(
+            eq(
+                conversationViewSnapshotCheckpointReasonTable.conversationViewSnapshotId,
+                row.conversationViewSnapshotId,
+            ),
+        )
+        .limit(1);
+
+    return {
+        conversationSlugId: row.conversationSlugId,
+        conversationViewSnapshotId: row.conversationViewSnapshotId,
+        analysisSnapshotId: row.analysisSnapshotId,
+        checkpointChanged: checkpointRows.length > 0,
+        opinionCount: row.opinionCount,
+        voteCount: row.voteCount,
+        participantCount: row.participantCount,
+        totalOpinionCount: row.totalOpinionCount,
+        totalVoteCount: row.totalVoteCount,
+        totalParticipantCount: row.totalParticipantCount,
+        moderatedOpinionCount: row.moderatedOpinionCount,
+        hiddenOpinionCount: row.hiddenOpinionCount,
+        isClosed: row.isClosed,
+        timestamp: Date.now(),
+    };
+}
+
 function parseRealtimeEventOutboxRow({
     eventType,
     payload,
@@ -383,11 +471,24 @@ export function createRealtimeEventOutboxBridge({
             return;
         }
 
-        broadcastTypedEvent({
-            realtimeSSEManager,
-            event: realtimeEvent.event,
-            data: realtimeEvent.data,
-        });
+        switch (realtimeEvent.event) {
+            case "conversation_analysis_updated": {
+                realtimeSSEManager.broadcastToConversationSubscribers({
+                    conversationSlugId: realtimeEvent.data.conversationSlugId,
+                    event: realtimeEvent.event,
+                    data: realtimeEvent.data,
+                });
+                break;
+            }
+            case "conversation_settings_updated": {
+                realtimeSSEManager.broadcastToConversationSubscribers({
+                    conversationSlugId: realtimeEvent.data.conversationSlugId,
+                    event: realtimeEvent.event,
+                    data: realtimeEvent.data,
+                });
+                break;
+            }
+        }
     };
 
     const processOutboxRow = (row: RealtimeEventOutboxRow): void => {
@@ -607,16 +708,4 @@ export function createRealtimeEventOutboxBridge({
             isStarted = false;
         },
     };
-}
-
-function broadcastTypedEvent<TEvent extends SSEEventType>({
-    realtimeSSEManager,
-    event,
-    data,
-}: {
-    realtimeSSEManager: RealtimeSSEManager;
-    event: TEvent;
-    data: SSEEventDataByType[TEvent];
-}): void {
-    realtimeSSEManager.broadcastToAll({ event, data });
 }
