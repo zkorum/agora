@@ -19,8 +19,16 @@
         :class="{
           'checkpoint-timeline__scroller--with-detail':
             hasSelectedCheckpointDetail,
+          'checkpoint-timeline__scroller--dragging': isTimelineDragging,
         }"
         :aria-label="props.title"
+        @wheel="handleTimelineWheel"
+        @pointerdown="handleTimelinePointerDown"
+        @pointermove="handleTimelinePointerMove"
+        @pointerup="finishTimelinePointerDrag"
+        @pointercancel="finishTimelinePointerDrag"
+        @lostpointercapture="finishTimelinePointerDrag"
+        @click.capture="handleTimelineClickCapture"
       >
         <div class="checkpoint-timeline__track">
           <button
@@ -127,6 +135,7 @@ import {
   type ComponentPublicInstance,
   computed,
   nextTick,
+  onBeforeUnmount,
   onMounted,
   ref,
   watch,
@@ -135,6 +144,12 @@ import {
 import type { CheckpointTimelineReasonFormatter } from "./CheckpointTimeline.types";
 
 type CheckpointMarkerKey = number | "live";
+type TimelineDragState = {
+  pointerId: number;
+  startClientX: number;
+  startScrollLeft: number;
+  hasMoved: boolean;
+};
 
 const props = withDefaults(
   defineProps<{
@@ -161,9 +176,14 @@ const emit = defineEmits<{
   selectLive: [];
 }>();
 
+const timelineDragThresholdPx = 4;
+
 const $q = useQuasar();
 const timelineRef = ref<HTMLElement | null>(null);
+const timelineDragState = ref<TimelineDragState | undefined>(undefined);
+const shouldSuppressTimelineClick = ref(false);
 const markerElements = new Map<CheckpointMarkerKey, HTMLElement>();
+let suppressTimelineClickTimeout: number | undefined;
 
 const hasRequestedUnavailableCheckpoint = computed(() => {
   if (props.selectedCheckpointId === undefined || props.isLiveSelected) {
@@ -233,6 +253,10 @@ const canStepBackward = computed(() => selectedTimelineStepIndex.value > 0);
 
 const canStepForward = computed(
   () => selectedTimelineStepIndex.value < timelineStepKeys.value.length - 1
+);
+
+const isTimelineDragging = computed(
+  () => timelineDragState.value?.hasMoved === true
 );
 
 const hasSelectedCheckpointDetail = computed(() => {
@@ -431,6 +455,155 @@ function scrollSelectedCheckpointIntoView(): void {
   scrollTimelineMarkerIntoView({ timeline, marker: selectedMarker });
 }
 
+function getTimelineMaxScrollLeft(timeline: HTMLElement): number {
+  return Math.max(0, timeline.scrollWidth - timeline.clientWidth);
+}
+
+function getWheelDeltaPixels({
+  event,
+  timeline,
+}: {
+  event: WheelEvent;
+  timeline: HTMLElement;
+}): number {
+  const rawDelta =
+    Math.abs(event.deltaX) > Math.abs(event.deltaY)
+      ? event.deltaX
+      : event.deltaY;
+
+  if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+    return rawDelta * 16;
+  }
+
+  if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+    return rawDelta * timeline.clientWidth;
+  }
+
+  return rawDelta;
+}
+
+function canScrollTimelineBy({
+  timeline,
+  delta,
+}: {
+  timeline: HTMLElement;
+  delta: number;
+}): boolean {
+  const maxScrollLeft = getTimelineMaxScrollLeft(timeline);
+  if (maxScrollLeft === 0 || delta === 0) {
+    return false;
+  }
+
+  if (delta < 0) {
+    return timeline.scrollLeft > 0;
+  }
+
+  return timeline.scrollLeft < maxScrollLeft;
+}
+
+function handleTimelineWheel(event: WheelEvent): void {
+  if (event.ctrlKey) {
+    return;
+  }
+
+  const timeline = timelineRef.value;
+  if (timeline === null) {
+    return;
+  }
+
+  const delta = getWheelDeltaPixels({ event, timeline });
+  if (!canScrollTimelineBy({ timeline, delta })) {
+    return;
+  }
+
+  event.preventDefault();
+  timeline.scrollLeft += delta;
+}
+
+function handleTimelinePointerDown(event: PointerEvent): void {
+  if (event.pointerType !== "mouse" || event.button !== 0) {
+    return;
+  }
+
+  const timeline = timelineRef.value;
+  if (timeline === null || getTimelineMaxScrollLeft(timeline) === 0) {
+    return;
+  }
+
+  timelineDragState.value = {
+    pointerId: event.pointerId,
+    startClientX: event.clientX,
+    startScrollLeft: timeline.scrollLeft,
+    hasMoved: false,
+  };
+}
+
+function handleTimelinePointerMove(event: PointerEvent): void {
+  const dragState = timelineDragState.value;
+  if (dragState === undefined || dragState.pointerId !== event.pointerId) {
+    return;
+  }
+
+  const timeline = timelineRef.value;
+  if (timeline === null) {
+    return;
+  }
+
+  const deltaX = event.clientX - dragState.startClientX;
+  const hasMoved =
+    dragState.hasMoved || Math.abs(deltaX) >= timelineDragThresholdPx;
+  if (!hasMoved) {
+    return;
+  }
+
+  event.preventDefault();
+  if (!timeline.hasPointerCapture(event.pointerId)) {
+    timeline.setPointerCapture(event.pointerId);
+  }
+
+  timelineDragState.value = { ...dragState, hasMoved };
+  timeline.scrollLeft = dragState.startScrollLeft - deltaX;
+}
+
+function suppressNextTimelineClick(): void {
+  shouldSuppressTimelineClick.value = true;
+  if (suppressTimelineClickTimeout !== undefined) {
+    window.clearTimeout(suppressTimelineClickTimeout);
+  }
+
+  suppressTimelineClickTimeout = window.setTimeout(() => {
+    shouldSuppressTimelineClick.value = false;
+    suppressTimelineClickTimeout = undefined;
+  }, 0);
+}
+
+function finishTimelinePointerDrag(event: PointerEvent): void {
+  const dragState = timelineDragState.value;
+  if (dragState === undefined || dragState.pointerId !== event.pointerId) {
+    return;
+  }
+
+  const timeline = timelineRef.value;
+  if (timeline !== null && timeline.hasPointerCapture(event.pointerId)) {
+    timeline.releasePointerCapture(event.pointerId);
+  }
+
+  timelineDragState.value = undefined;
+  if (dragState.hasMoved) {
+    suppressNextTimelineClick();
+  }
+}
+
+function handleTimelineClickCapture(event: MouseEvent): void {
+  if (!shouldSuppressTimelineClick.value) {
+    return;
+  }
+
+  shouldSuppressTimelineClick.value = false;
+  event.preventDefault();
+  event.stopPropagation();
+}
+
 watch(
   () => ({
     checkpoint: props.selectedCheckpointId,
@@ -449,6 +622,12 @@ watch(
 onMounted(async () => {
   await nextTick();
   scrollSelectedCheckpointIntoView();
+});
+
+onBeforeUnmount(() => {
+  if (suppressTimelineClickTimeout !== undefined) {
+    window.clearTimeout(suppressTimelineClickTimeout);
+  }
 });
 </script>
 
@@ -514,10 +693,20 @@ onMounted(async () => {
   direction: ltr;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
+  cursor: grab;
   padding: var(--checkpoint-scroller-top-padding) 0 0.35rem;
 
   &::-webkit-scrollbar {
     display: none;
+  }
+}
+
+.checkpoint-timeline__scroller--dragging {
+  cursor: grabbing;
+  user-select: none;
+
+  .checkpoint-timeline__marker {
+    cursor: grabbing;
   }
 }
 
