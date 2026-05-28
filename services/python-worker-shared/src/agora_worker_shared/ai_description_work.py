@@ -57,9 +57,19 @@ from agora_worker_shared.generated_shared_types import SUPPORTED_DISPLAY_LANGUAG
 from agora_worker_shared.retry_policy import RetryPolicy, next_cooldown_retry_at, next_retry_at
 
 log = logging.getLogger(__name__)
+POSTGRES_INSERT_BIND_PARAM_LIMIT = 60_000
+
+
+def _max_rows_per_insert(*, column_count: int) -> int:
+    return max(1, POSTGRES_INSERT_BIND_PARAM_LIMIT // column_count)
+
+
+def _iter_chunks[T](values: list[T], *, chunk_size: int) -> Iterator[list[T]]:
+    for start in range(0, len(values), chunk_size):
+        yield values[start : start + chunk_size]
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping, Sequence
+    from collections.abc import Callable, Iterator, Mapping, Sequence
 
     from sqlalchemy import Engine
     from sqlalchemy.sql.elements import ColumnElement
@@ -1350,32 +1360,32 @@ def _ensure_lineage_description_work_for_pending_statuses(
     if not demands:
         return
 
-    insert_query = pg_insert(OpinionGroupLineageDescriptionWork).values(
-        [
-            {
-                "lineage_id": demand.lineage_id,
-                "conversation_id": demand.conversation_id,
-                "source_candidate_id": demand.source_candidate_id,
-                "next_run_at": demand.next_run_at or func.now(),
-            }
-            for demand in demands
-        ]
-    )
-    session.execute(
-        insert_query.on_conflict_do_update(
-            index_elements=[OpinionGroupLineageDescriptionWork.lineage_id],
-            set_={
-                "conversation_id": insert_query.excluded.conversation_id,
-                "source_candidate_id": insert_query.excluded.source_candidate_id,
-                "next_run_at": func.coalesce(
-                    OpinionGroupLineageDescriptionWork.next_run_at,
-                    insert_query.excluded.next_run_at,
-                ),
-                "updated_at": func.now(),
-            },
-            where=OpinionGroupLineageDescriptionWork.lease_token.is_(None),
+    values: list[dict[str, object]] = [
+        {
+            "lineage_id": demand.lineage_id,
+            "conversation_id": demand.conversation_id,
+            "source_candidate_id": demand.source_candidate_id,
+            "next_run_at": demand.next_run_at or func.now(),
+        }
+        for demand in demands
+    ]
+    for chunk in _iter_chunks(values, chunk_size=_max_rows_per_insert(column_count=4)):
+        insert_query = pg_insert(OpinionGroupLineageDescriptionWork).values(chunk)
+        session.execute(
+            insert_query.on_conflict_do_update(
+                index_elements=[OpinionGroupLineageDescriptionWork.lineage_id],
+                set_={
+                    "conversation_id": insert_query.excluded.conversation_id,
+                    "source_candidate_id": insert_query.excluded.source_candidate_id,
+                    "next_run_at": func.coalesce(
+                        OpinionGroupLineageDescriptionWork.next_run_at,
+                        insert_query.excluded.next_run_at,
+                    ),
+                    "updated_at": func.now(),
+                },
+                where=OpinionGroupLineageDescriptionWork.lease_token.is_(None),
+            )
         )
-    )
 
 
 def _ensure_translation_work_for_pending_statuses(
@@ -1423,34 +1433,34 @@ def _ensure_translation_work_for_pending_statuses(
     if not demands:
         return
 
-    insert_query = pg_insert(OpinionGroupDescriptionTranslationWork).values(
-        [
-            {
-                "description_id": demand.description_id,
-                "conversation_id": demand.conversation_id,
-                "locale": demand.locale,
-                "next_run_at": demand.next_run_at or func.now(),
-            }
-            for demand in demands
-        ]
-    )
-    session.execute(
-        insert_query.on_conflict_do_update(
-            index_elements=[
-                OpinionGroupDescriptionTranslationWork.description_id,
-                OpinionGroupDescriptionTranslationWork.locale,
-            ],
-            set_={
-                "conversation_id": insert_query.excluded.conversation_id,
-                "next_run_at": func.coalesce(
-                    OpinionGroupDescriptionTranslationWork.next_run_at,
-                    insert_query.excluded.next_run_at,
-                ),
-                "updated_at": func.now(),
-            },
-            where=OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
+    values: list[dict[str, object]] = [
+        {
+            "description_id": demand.description_id,
+            "conversation_id": demand.conversation_id,
+            "locale": demand.locale,
+            "next_run_at": demand.next_run_at or func.now(),
+        }
+        for demand in demands
+    ]
+    for chunk in _iter_chunks(values, chunk_size=_max_rows_per_insert(column_count=4)):
+        insert_query = pg_insert(OpinionGroupDescriptionTranslationWork).values(chunk)
+        session.execute(
+            insert_query.on_conflict_do_update(
+                index_elements=[
+                    OpinionGroupDescriptionTranslationWork.description_id,
+                    OpinionGroupDescriptionTranslationWork.locale,
+                ],
+                set_={
+                    "conversation_id": insert_query.excluded.conversation_id,
+                    "next_run_at": func.coalesce(
+                        OpinionGroupDescriptionTranslationWork.next_run_at,
+                        insert_query.excluded.next_run_at,
+                    ),
+                    "updated_at": func.now(),
+                },
+                where=OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
+            )
         )
-    )
 
 
 def _lineage_work_relevant_status_filter(

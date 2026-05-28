@@ -383,19 +383,19 @@ export function useRealtimeSSE({
 
   function parseSSEEvent(raw: string): AnySSEEvent | undefined {
     const frame = parseRawSSEFrame(raw);
-    if (frame.event === "" && frame.data === "") {
+    const data = frame.data.trim();
+    if (frame.event === "" && data === "") {
       return undefined;
     }
 
-    if (frame.data === "") {
-      console.error(`SSE event ${frame.event || "<unknown>"} had no data`);
+    if (data === "") {
       return undefined;
     }
 
     let rawData: unknown;
 
     try {
-      rawData = JSON.parse(frame.data);
+      rawData = JSON.parse(data);
     } catch (error) {
       console.error("Failed to parse SSE event JSON", error);
       return undefined;

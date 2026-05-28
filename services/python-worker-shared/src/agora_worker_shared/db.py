@@ -539,7 +539,10 @@ def _claim_work_items_batch(
         resume_condition = and_(
             AnalysisWorkState.running_data_generation.is_not(None),
             AnalysisWorkState.persisted_analysis_snapshot_id.is_not(None),
-            AnalysisWorkState.lease_token.is_(None),
+            or_(
+                AnalysisWorkState.lease_token.is_(None),
+                AnalysisWorkState.lease_expires_at < func.now(),
+            ),
         )
         fresh_condition = and_(
             AnalysisWorkState.running_data_generation.is_(None),
@@ -743,53 +746,50 @@ def extend_postgres_leases(
     if not claims:
         return 0
 
-    work_state_ids = [claim.id for claim in claims]
-    lease_pairs = [(claim.id, claim.lease_token) for claim in claims]
     lease_expires_at = datetime.now(UTC) + timedelta(seconds=lease_ttl_seconds)
-    query = (
-        update(AnalysisWorkState)
-        .where(
-            and_(
-                AnalysisWorkState.id.in_(work_state_ids),
-                tuple_(AnalysisWorkState.id, AnalysisWorkState.lease_token).in_(lease_pairs),
-                AnalysisWorkState.running_data_generation.is_not(None),
-            )
-        )
-        .values(lease_expires_at=lease_expires_at, updated_at=func.now())
-        .returning(AnalysisWorkState.id)
-    )
 
     with Session(engine) as session:
-        rows = session.execute(query).all()
+        extended_count = 0
+        for claim in sorted(claims, key=lambda item: item.id):
+            row = session.execute(
+                update(AnalysisWorkState)
+                .where(
+                    and_(
+                        AnalysisWorkState.id == claim.id,
+                        AnalysisWorkState.lease_token == claim.lease_token,
+                        AnalysisWorkState.running_data_generation.is_not(None),
+                    )
+                )
+                .values(lease_expires_at=lease_expires_at, updated_at=func.now())
+                .returning(AnalysisWorkState.id)
+            ).first()
+            if row is not None:
+                extended_count += 1
         session.commit()
-    return len(rows)
+    return extended_count
 
 
 def recover_expired_running_work(engine: Engine) -> list[int]:
-    query = (
+    persisted_query = select(AnalysisWorkState.conversation_id).where(
+        and_(
+            AnalysisWorkState.running_data_generation.is_not(None),
+            AnalysisWorkState.persisted_analysis_snapshot_id.is_not(None),
+            AnalysisWorkState.lease_expires_at < func.now(),
+        )
+    )
+    non_persisted_query = (
         update(AnalysisWorkState)
         .where(
             and_(
                 AnalysisWorkState.running_data_generation.is_not(None),
+                AnalysisWorkState.persisted_analysis_snapshot_id.is_(None),
                 AnalysisWorkState.lease_expires_at < func.now(),
             )
         )
         .values(
-            running_data_generation=case(
-                (
-                    AnalysisWorkState.persisted_analysis_snapshot_id.is_not(None),
-                    AnalysisWorkState.running_data_generation,
-                ),
-                else_=None,
-            ),
+            running_data_generation=None,
             next_run_at=func.now(),
-            persisted_analysis_snapshot_id=case(
-                (
-                    AnalysisWorkState.persisted_analysis_snapshot_id.is_not(None),
-                    AnalysisWorkState.persisted_analysis_snapshot_id,
-                ),
-                else_=None,
-            ),
+            persisted_analysis_snapshot_id=None,
             lease_owner=None,
             lease_token=None,
             lease_expires_at=None,
@@ -799,9 +799,13 @@ def recover_expired_running_work(engine: Engine) -> list[int]:
     )
 
     with Session(engine) as session:
-        rows = session.execute(query).all()
+        persisted_rows = session.execute(persisted_query).all()
+        rows = session.execute(non_persisted_query).all()
         session.commit()
-    return [row.conversation_id for row in rows]
+    return sorted(
+        {row.conversation_id for row in rows}
+        | {row.conversation_id for row in persisted_rows}
+    )
 
 
 def fetch_due_work_conversation_ids(

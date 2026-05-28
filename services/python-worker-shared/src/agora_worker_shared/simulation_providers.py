@@ -31,6 +31,10 @@ class SimulationRuntime:
     retryable_failure_attempts: int
 
 
+class SimulatedRetryableError(RuntimeError):
+    pass
+
+
 def build_simulation_runtime(settings: Settings) -> SimulationRuntime | None:
     if not settings.simulation_providers_enable:
         return None
@@ -113,7 +117,7 @@ def maybe_raise_simulated_claim_error(
             metadata=metadata,
         )
         msg = f"simulated retryable {action} failure"
-        raise RuntimeError(msg)
+        raise SimulatedRetryableError(msg)
 
     if mode == "retryable_error":
         _log_simulated_failure(
@@ -124,7 +128,7 @@ def maybe_raise_simulated_claim_error(
             metadata=metadata,
         )
         msg = f"simulated retryable {action} failure"
-        raise RuntimeError(msg)
+        raise SimulatedRetryableError(msg)
 
     _log_simulated_failure(
         phase=phase,

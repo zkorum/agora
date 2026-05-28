@@ -57,6 +57,7 @@ from agora_worker_shared.input_snapshot import PreparedInputSnapshot, prepare_in
 from agora_worker_shared.logging_utils import log_database_error
 from agora_worker_shared.retry_policy import RetryPolicy
 from agora_worker_shared.simulation_providers import (
+    SimulatedRetryableError,
     build_simulation_runtime,
     emit_load_event,
     log_simulation_startup,
@@ -533,14 +534,25 @@ def _process_ai_description_conversation_ids(
                     checkpoint_activation_context=checkpoint_activation_context,
                 )
 
-            log.exception(
-                "[MathUpdater] Retryable %s failure for "
-                "conversationSlugId=%s locale=%s %s",
-                _ai_description_claim_kind(claim),
-                claim.conversation_slug_id,
-                claim.locale,
-                _ai_description_claim_target_log(claim),
-            )
+            if _is_expected_simulated_retryable_error(error):
+                log.warning(
+                    "[MathUpdater] Expected simulated retryable %s failure for "
+                    "conversationSlugId=%s locale=%s %s: %s",
+                    _ai_description_claim_kind(claim),
+                    claim.conversation_slug_id,
+                    claim.locale,
+                    _ai_description_claim_target_log(claim),
+                    error,
+                )
+            else:
+                log.exception(
+                    "[MathUpdater] Retryable %s failure for "
+                    "conversationSlugId=%s locale=%s %s",
+                    _ai_description_claim_kind(claim),
+                    claim.conversation_slug_id,
+                    claim.locale,
+                    _ai_description_claim_target_log(claim),
+                )
             is_timeout = _is_timeout_error(error)
             should_retry_immediately = (
                 retry_first_pass_once
@@ -694,11 +706,6 @@ def _process_ai_description_first_pass(
         )
         if processed_count == 0:
             break
-        extend_postgres_leases(
-            primary_engine,
-            claims=analysis_claims,
-            lease_ttl_seconds=lease_ttl_seconds,
-        )
     _enqueue_ai_description_queue_schedules(
         vk,
         schedules=fetch_ai_description_queue_schedules(
@@ -764,6 +771,10 @@ def _is_timeout_error(error: BaseException) -> bool:
             stack.append(current.__context__)
 
     return False
+
+
+def _is_expected_simulated_retryable_error(error: BaseException) -> bool:
+    return isinstance(error, SimulatedRetryableError)
 
 
 def _run_worker_once() -> None:
@@ -1255,11 +1266,6 @@ def _run_worker_once() -> None:
                         and completed_result.ai_description_due_conversation_ids
                     ):
                         try:
-                            extend_postgres_leases(
-                                primary_engine,
-                                claims=completed_claims,
-                                lease_ttl_seconds=settings.lease_ttl_seconds,
-                            )
                             _process_ai_description_first_pass(
                                 primary_engine=primary_engine,
                                 vk=vk,
@@ -1278,11 +1284,6 @@ def _run_worker_once() -> None:
                                 checkpoint_activation_context=(
                                     completed_result.checkpoint_activation_context
                                 ),
-                            )
-                            extend_postgres_leases(
-                                primary_engine,
-                                claims=completed_claims,
-                                lease_ttl_seconds=settings.lease_ttl_seconds,
                             )
                         except Exception:
                             log.exception(
@@ -1385,11 +1386,6 @@ def _run_worker_once() -> None:
                                     and isolated_result.ai_description_due_conversation_ids
                                 ):
                                     try:
-                                        extend_postgres_leases(
-                                            primary_engine,
-                                            claims=[claim],
-                                            lease_ttl_seconds=settings.lease_ttl_seconds,
-                                        )
                                         _process_ai_description_first_pass(
                                             primary_engine=primary_engine,
                                             vk=vk,
@@ -1408,11 +1404,6 @@ def _run_worker_once() -> None:
                                             checkpoint_activation_context=(
                                                 isolated_result.checkpoint_activation_context
                                             ),
-                                        )
-                                        extend_postgres_leases(
-                                            primary_engine,
-                                            claims=[claim],
-                                            lease_ttl_seconds=settings.lease_ttl_seconds,
                                         )
                                     except Exception:
                                         log.exception(

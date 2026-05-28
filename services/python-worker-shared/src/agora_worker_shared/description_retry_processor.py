@@ -18,6 +18,7 @@ from agora_worker_shared.ai_description_work import (
 )
 from agora_worker_shared.description_input import DescriptionInputError
 from agora_worker_shared.simulation_providers import (
+    SimulatedRetryableError,
     emit_load_event,
     maybe_raise_simulated_claim_error,
 )
@@ -74,6 +75,10 @@ def _claim_target_metadata(claim: ClaimedAiDescriptionLocaleWorkItem) -> dict[st
     if isinstance(claim, ClaimedLineageDescriptionWorkItem):
         return {"lineageId": claim.lineage_id}
     return {"descriptionId": claim.description_id}
+
+
+def _is_expected_simulated_retryable_error(error: BaseException) -> bool:
+    return isinstance(error, SimulatedRetryableError)
 
 
 def enqueue_ai_description_queue_schedules(
@@ -209,14 +214,26 @@ def process_ai_description_conversation_ids(
                     require_activated_view_snapshot=True,
                 )
 
-            log.exception(
-                "%s Retryable %s failure conversationSlugId=%s locale=%s %s",
-                log_prefix,
-                _claim_kind(claim),
-                claim.conversation_slug_id,
-                claim.locale,
-                _claim_target_log(claim),
-            )
+            if _is_expected_simulated_retryable_error(error):
+                log.warning(
+                    "%s Expected simulated retryable %s failure conversationSlugId=%s "
+                    "locale=%s %s: %s",
+                    log_prefix,
+                    _claim_kind(claim),
+                    claim.conversation_slug_id,
+                    claim.locale,
+                    _claim_target_log(claim),
+                    error,
+                )
+            else:
+                log.exception(
+                    "%s Retryable %s failure conversationSlugId=%s locale=%s %s",
+                    log_prefix,
+                    _claim_kind(claim),
+                    claim.conversation_slug_id,
+                    claim.locale,
+                    _claim_target_log(claim),
+                )
             should_retry_immediately = (
                 retry_first_pass_once
                 and claim.attempt_count == 1

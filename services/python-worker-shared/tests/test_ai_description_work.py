@@ -29,6 +29,7 @@ from agora_worker_shared.ai_description_work import (
 from agora_worker_shared.db import (
     ClaimedWorkItem,
     complete_computed_analysis_work_items_batch,
+    recover_expired_running_work,
 )
 from agora_worker_shared.generated_models import (
     AiDescriptionLocaleStatusEnum,
@@ -874,6 +875,49 @@ def test_completion_waits_for_current_unactivated_first_pass() -> None:
     assert stale_last_completed_generation == 1
     assert stale_running_generation is None
     assert stale_persisted_snapshot_id is None
+
+
+def test_recover_expired_persisted_analysis_work_keeps_resume_state() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        session.add(
+            AnalysisWorkState(
+                id=901,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                last_completed_data_generation=0,
+                running_data_generation=1,
+                persisted_analysis_snapshot_id=30,
+                dirty_since=None,
+                next_run_at=None,
+                attempt_generation=1,
+                attempt_count=1,
+                non_retryable_generation=None,
+                non_retryable_analysis_engine_epoch=None,
+                lease_owner="math-updater",
+                lease_token="analysis-token",
+                lease_expires_at=NOW - timedelta(seconds=1),
+                last_error_kind=None,
+                last_error_code=None,
+                last_error_message=None,
+                last_error_stack_hash=None,
+                created_at=NOW,
+                updated_at=NOW,
+            )
+        )
+        session.commit()
+
+    recovered_ids = recover_expired_running_work(engine)
+
+    with Session(engine) as session:
+        recovered_state = session.execute(select(AnalysisWorkState)).scalar_one()
+
+    assert recovered_ids == [10]
+    assert recovered_state.running_data_generation == 1
+    assert recovered_state.persisted_analysis_snapshot_id == 30
+    assert recovered_state.lease_token == "analysis-token"
+    assert recovered_state.next_run_at is None
 
 
 def test_claimed_non_processable_lineage_work_does_not_call_generator() -> None:
