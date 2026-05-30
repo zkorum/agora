@@ -6,6 +6,9 @@ SIMULATED_WORKERS=""
 
 export AGORA_LOG_RUN_ID=${AGORA_LOG_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}
 
+print "AGORA_LOG_RUN_ID=$AGORA_LOG_RUN_ID"
+print "Logs: $BASE_DIR/.local/logs/runs/$AGORA_LOG_RUN_ID"
+
 usage() {
   print "Usage: $SCRIPT_NAME [--simulate-workers <worker=scenario,...>]" >&2
   print "" >&2
@@ -66,6 +69,20 @@ scenario_for_worker() {
   return 1
 }
 
+launch_tab() {
+  local title="$1"
+  local command="$2"
+  local shell_command="export AGORA_LOG_RUN_ID=${(q)AGORA_LOG_RUN_ID}; $command"
+  local -a env_args
+
+  env_args=(--env "AGORA_LOG_RUN_ID=$AGORA_LOG_RUN_ID")
+  if [[ -n "${AGORA_LOG_DIR:-}" ]]; then
+    env_args+=(--env "AGORA_LOG_DIR=$AGORA_LOG_DIR")
+  fi
+
+  kitty @ launch --type=tab --title "$title" --cwd="$BASE_DIR" "${env_args[@]}" zsh -ic "$shell_command" > /dev/null
+}
+
 launch_worker_tab() {
   local worker="$1"
   local title="$2"
@@ -81,19 +98,19 @@ launch_worker_tab() {
     tab_title="$title:$scenario"
   fi
 
-  kitty @ launch --type=tab --title "$tab_title" --cwd="$BASE_DIR" zsh -ic "$command" > /dev/null
+  launch_tab "$tab_title" "$command"
 }
 
 # Make sure remote control is enabled: allow_remote_control yes
 # kitty --session kitty_openapi_session.conf
-kitty @ launch --type=tab --title "App" --cwd="$BASE_DIR" zsh -ic "make dev-app" > /dev/null
-kitty @ launch --type=tab --title "API" --cwd="$BASE_DIR" zsh -ic "make dev-api" > /dev/null
+launch_tab "App" "make dev-app"
+launch_tab "API" "make dev-api"
 launch_worker_tab "math-updater" "Math-Updater" "dev-math-updater" "dev-math-updater-scenario"
 launch_worker_tab "ai-description-retry-worker" "AI-Description-Retry" "dev-ai-description-retry-worker" "dev-ai-description-retry-worker-scenario"
 launch_worker_tab "description-translation-retry-worker" "Description-Translation-Retry" "dev-description-translation-retry-worker" "dev-description-translation-retry-worker-scenario"
-kitty @ launch --type=tab --title "Import-Worker" --cwd="$BASE_DIR" zsh -ic "make dev-import-worker" > /dev/null
-kitty @ launch --type=tab --title "Scoring-Worker" --cwd="$BASE_DIR" zsh -ic "make dev-scoring-worker" > /dev/null
-kitty @ launch --type=tab --title "OpenAPI" --cwd="$BASE_DIR" zsh -ic "make dev-generate" > /dev/null
-kitty @ launch --type=tab --title "Shared" --cwd="$BASE_DIR" zsh -ic "make dev-sync" > /dev/null
-kitty @ launch --type=tab --title "Shared-App-API" --cwd="$BASE_DIR" zsh -ic "make dev-sync-app-api" > /dev/null
-kitty @ launch --type=tab --title "Shared-Backend" --cwd="$BASE_DIR" zsh -ic "make dev-sync-ts-backend" > /dev/null
+launch_tab "Import-Worker" "make dev-import-worker"
+launch_tab "Scoring-Worker" "make dev-scoring-worker"
+launch_tab "OpenAPI" "make dev-generate"
+launch_tab "Shared" "make dev-sync"
+launch_tab "Shared-App-API" "make dev-sync-app-api"
+launch_tab "Shared-Backend" "make dev-sync-ts-backend"
