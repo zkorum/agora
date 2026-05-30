@@ -193,6 +193,7 @@
             :conversation-slug-id="props.conversationSlugId"
             :survey-gate="props.surveyGate"
             :survey-query="props.surveyQuery"
+            :survey-results-override="pausedLiveSurveyResults"
             :clusters="polisClusters"
             :total-participant-count="analysisParticipantCount"
             :compact-mode="currentTab === 'Summary'"
@@ -338,6 +339,7 @@ import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKChip from "src/components/ui-library/ZKChip.vue";
 import ZKDropdownSelectorButton from "src/components/ui-library/ZKDropdownSelectorButton.vue";
+import type { ConversationActionBarStats } from "src/composables/conversation/useConversationActionBarStats";
 import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTabNavigation } from "src/composables/ui/useTabNavigation";
@@ -416,6 +418,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   "update:liveAnalysisPaused": [paused: boolean];
+  livePauseStats: [stats: ConversationActionBarStats | undefined];
 }>();
 
 type AnalysisViewOption = NonNullable<
@@ -436,6 +439,7 @@ const showAnalysisViewDrawer = ref(false);
 const showAnalysisViewLearnMoreDrawer = ref(false);
 const pausedLiveAnalysisData = ref<AnalysisData | undefined>();
 const pausedLiveCheckpoints = ref<AnalysisCheckpoint[] | undefined>();
+const pausedLiveSurveyResults = ref<SurveyResultsAggregatedResponse | undefined>();
 
 const { currentTab, handleSameTabClick } = useTabNavigation({
   schema: shortcutItemSchema,
@@ -993,6 +997,8 @@ watch(
 
     pausedLiveAnalysisData.value = undefined;
     pausedLiveCheckpoints.value = undefined;
+    pausedLiveSurveyResults.value = undefined;
+    emit("livePauseStats", undefined);
   }
 );
 
@@ -1312,16 +1318,37 @@ async function toggleAnalysisPlayback(): Promise<void> {
 function pauseLiveAtCurrentFrame(): void {
   pausedLiveAnalysisData.value = analysisQuery.data.value;
   pausedLiveCheckpoints.value = analysisCheckpoints.value;
+  pausedLiveSurveyResults.value = props.surveyQuery.data.value;
   emit("update:liveAnalysisPaused", true);
+  emit("livePauseStats", actionBarStatsFromAnalysis(analysisQuery.data.value));
 }
 
 function clearLivePause(): void {
   pausedLiveAnalysisData.value = undefined;
   pausedLiveCheckpoints.value = undefined;
+  pausedLiveSurveyResults.value = undefined;
+  emit("livePauseStats", undefined);
 
   if (props.isLiveAnalysisPaused) {
     emit("update:liveAnalysisPaused", false);
   }
+}
+
+function actionBarStatsFromAnalysis(
+  analysis: AnalysisData | undefined
+): ConversationActionBarStats | undefined {
+  const snapshot = analysis?.conversationViewSnapshot;
+  if (snapshot === undefined) {
+    return undefined;
+  }
+
+  return {
+    opinionCount: snapshot.opinionCount,
+    participantCount: snapshot.participantCount,
+    voteCount: snapshot.voteCount,
+    totalParticipantCount: snapshot.totalParticipantCount,
+    totalVoteCount: snapshot.totalVoteCount,
+  };
 }
 
 const polisClusters = computed<Partial<PolisClusters>>(() =>

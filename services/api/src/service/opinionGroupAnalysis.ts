@@ -5,19 +5,19 @@ import {
     conversationViewSnapshotCheckpointReasonTable,
     analysisSpecTable,
     conversationTable,
-    opinionGroupDescriptionLocaleStatusTable,
     opinionGroupCandidateAssessmentTable,
     opinionGroupCandidateTable,
     opinionGroupDescriptionTable,
     opinionGroupDescriptionTranslationTable,
+    opinionGroupDescriptionTranslationWorkTable,
     opinionGroupLineageTable,
+    opinionGroupLineageDescriptionWorkTable,
     opinionGroupSpecTable,
     opinionGroupTable,
     opinionGroupUserTable,
     opinionGroupVariantTable,
 } from "@/shared-backend/schema.js";
 import { and, asc, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type {
     AnalysisDescriptionReadiness,
@@ -37,15 +37,6 @@ import {
 import { hasPremiumAnalysisVariantsAccess } from "./premiumEntitlement.js";
 
 export type { AnalysisViewState };
-
-const englishLocaleStatusTable = alias(
-    opinionGroupDescriptionLocaleStatusTable,
-    "english_locale_status",
-);
-const requestedLocaleStatusTable = alias(
-    opinionGroupDescriptionLocaleStatusTable,
-    "requested_locale_status",
-);
 
 type AiDescriptionLocaleStatus = "pending" | "ready" | "fallback";
 
@@ -118,16 +109,6 @@ export interface LatestOpinionGroupResultRow {
     snapshotId: number;
     resultId: number;
     outcome: "success" | "insufficient_data";
-    englishLocaleStatus: AiDescriptionLocaleStatus | null;
-    englishAiGenerationExpected: boolean | null;
-    requestedLocaleStatus: AiDescriptionLocaleStatus | null;
-    requestedTranslationExpected: boolean | null;
-}
-
-export interface OpinionGroupResultDisplaySelection {
-    latestResult: LatestOpinionGroupResultRow;
-    useSystemDescriptions: boolean;
-    descriptionReadiness: AnalysisDescriptionReadiness;
 }
 
 export interface DescriptionText {
@@ -416,6 +397,120 @@ function selectCandidate({
     })[0];
 }
 
+export function getRequiredDescriptionCandidateIds({
+    candidates,
+    variantsEnabled,
+}: {
+    candidates: SnapshotCandidateOption[];
+    variantsEnabled: boolean;
+}): number[] {
+    if (variantsEnabled) {
+        return candidates.map((candidate) => candidate.candidateId);
+    }
+
+    const selectedCandidate = selectCandidate({ candidates });
+    return selectedCandidate === undefined ? [] : [selectedCandidate.candidateId];
+}
+
+export async function buildDerivedAnalysisDescriptionReadiness({
+    db,
+    aiLabelingEnabled,
+    requestedLocale,
+    requiredCandidateIds,
+}: {
+    db: PostgresJsDatabase;
+    aiLabelingEnabled: boolean;
+    requestedLocale: SupportedDisplayLanguageCodes;
+    requiredCandidateIds: number[];
+}): Promise<AnalysisDescriptionReadiness> {
+    if (!aiLabelingEnabled || requiredCandidateIds.length === 0) {
+        return buildAnalysisDescriptionReadiness({
+            aiLabelingEnabled,
+            requestedLocale,
+            englishStatus: null,
+            englishExpected: false,
+            requestedStatus: null,
+            requestedExpected: false,
+        });
+    }
+
+    const rows = await db
+        .select({
+            lineageId: opinionGroupLineageTable.id,
+            systemDescriptionId: opinionGroupLineageTable.systemDescriptionId,
+            translationId: opinionGroupDescriptionTranslationTable.id,
+        })
+        .from(opinionGroupCandidateTable)
+        .innerJoin(
+            opinionGroupTable,
+            eq(opinionGroupTable.candidateId, opinionGroupCandidateTable.id),
+        )
+        .innerJoin(
+            opinionGroupLineageTable,
+            eq(opinionGroupLineageTable.id, opinionGroupTable.lineageId),
+        )
+        .leftJoin(
+            opinionGroupLineageDescriptionWorkTable,
+            eq(
+                opinionGroupLineageDescriptionWorkTable.lineageId,
+                opinionGroupLineageTable.id,
+            ),
+        )
+        .leftJoin(
+            opinionGroupDescriptionTranslationTable,
+            and(
+                eq(
+                    opinionGroupDescriptionTranslationTable.descriptionId,
+                    opinionGroupLineageTable.systemDescriptionId,
+                ),
+                eq(opinionGroupDescriptionTranslationTable.locale, requestedLocale),
+            ),
+        )
+        .leftJoin(
+            opinionGroupDescriptionTranslationWorkTable,
+            and(
+                eq(
+                    opinionGroupDescriptionTranslationWorkTable.descriptionId,
+                    opinionGroupLineageTable.systemDescriptionId,
+                ),
+                eq(opinionGroupDescriptionTranslationWorkTable.locale, requestedLocale),
+            ),
+        )
+        .where(inArray(opinionGroupCandidateTable.id, requiredCandidateIds));
+
+    const uniqueLineageRows = Array.from(
+        new Map(rows.map((row) => [row.lineageId, row])).values(),
+    );
+    const englishExpected = uniqueLineageRows.length > 0;
+    const englishReady =
+        englishExpected &&
+        uniqueLineageRows.every((row) => row.systemDescriptionId !== null);
+    const englishStatus: AiDescriptionLocaleStatus | null = englishExpected
+        ? englishReady
+            ? "ready"
+            : "fallback"
+        : null;
+
+    const requestedExpected =
+        requestedLocale !== "en" && englishReady && uniqueLineageRows.length > 0;
+    const requestedReady =
+        requestedExpected && uniqueLineageRows.every((row) => row.translationId !== null);
+    const requestedStatus: AiDescriptionLocaleStatus | null = requestedExpected
+        ? requestedReady
+            ? "ready"
+            : "fallback"
+        : null;
+
+    return buildAnalysisDescriptionReadiness({
+        aiLabelingEnabled,
+        requestedLocale,
+        englishStatus,
+        englishExpected,
+        requestedStatus,
+        requestedExpected,
+    });
+}
+
 function getDefinedIds(ids: (number | null)[]): number[] {
     return Array.from(new Set(ids.filter((id): id is number => id !== null)));
 }
@@ -427,58 +522,45 @@ function getSupportedDisplayLanguage(
     return parsed.success ? parsed.data : "en";
 }
 
-export function getUseSystemDescriptions({
-    row,
-    requestedLocale,
+export async function fetchSnapshotCandidateOptions({
+    db,
+    resultId,
 }: {
-    row: LatestOpinionGroupResultRow;
-    requestedLocale: SupportedDisplayLanguageCodes;
-}): boolean {
-    return shouldUseSystemDescriptions({
-        aiLabelingEnabled: row.aiLabelingEnabled,
-        requestedLocale,
-        englishStatus: row.englishLocaleStatus,
-        englishExpected: row.englishAiGenerationExpected,
-        requestedStatus: row.requestedLocaleStatus,
-        requestedExpected: row.requestedTranslationExpected,
-    });
-}
-
-export function selectLatestOpinionGroupResultForDisplay({
-    rows,
-    displayLanguage,
-}: {
-    rows: LatestOpinionGroupResultRow[];
-    displayLanguage: string;
-}): OpinionGroupResultDisplaySelection | undefined {
-    const requestedLocale = getSupportedDisplayLanguage(displayLanguage);
-    for (const row of rows) {
-        if (row.outcome !== "success") {
-            return undefined;
-        }
-
-        const descriptionReadiness = buildAnalysisDescriptionReadiness({
-            aiLabelingEnabled: row.aiLabelingEnabled,
-            requestedLocale,
-            englishStatus: row.englishLocaleStatus,
-            englishExpected: row.englishAiGenerationExpected,
-            requestedStatus: row.requestedLocaleStatus,
-            requestedExpected: row.requestedTranslationExpected,
-        });
-
-        const useSystemDescriptions = getUseSystemDescriptions({
-            row,
-            requestedLocale,
-        });
-
-        return {
-            latestResult: row,
-            useSystemDescriptions,
-            descriptionReadiness,
-        };
-    }
-
-    return undefined;
+    db: PostgresJsDatabase;
+    resultId: number;
+}): Promise<SnapshotCandidateOption[]> {
+    return db
+        .select({
+            candidateId: opinionGroupCandidateTable.id,
+            groupCount: opinionGroupVariantTable.groupCount,
+            selectionScore: opinionGroupCandidateAssessmentTable.selectionScore,
+            silhouetteScore:
+                opinionGroupCandidateAssessmentTable.silhouetteScore,
+            balanceScore: opinionGroupCandidateAssessmentTable.balanceScore,
+        })
+        .from(opinionGroupCandidateTable)
+        .innerJoin(
+            opinionGroupVariantTable,
+            eq(
+                opinionGroupVariantTable.id,
+                opinionGroupCandidateTable.opinionGroupVariantId,
+            ),
+        )
+        .leftJoin(
+            opinionGroupCandidateAssessmentTable,
+            eq(
+                opinionGroupCandidateAssessmentTable.candidateId,
+                opinionGroupCandidateTable.id,
+            ),
+        )
+        .where(
+            and(
+                eq(opinionGroupCandidateTable.snapshotResultId, resultId),
+                eq(opinionGroupCandidateTable.outcome, "success"),
+                isNull(opinionGroupCandidateAssessmentTable.hiddenReason),
+            ),
+        )
+        .orderBy(asc(opinionGroupVariantTable.groupCount));
 }
 
 function resolveDescriptionText({
@@ -707,12 +789,6 @@ export async function getOpinionGroupAnalysisSelection({
             resultId: analysisSnapshotResultTable.id,
             outcome: analysisSnapshotResultTable.outcome,
             variantsEnabled: analysisSnapshotResultTable.variantsEnabled,
-            englishLocaleStatus: englishLocaleStatusTable.status,
-            englishAiGenerationExpected:
-                englishLocaleStatusTable.aiGenerationExpected,
-            requestedLocaleStatus: requestedLocaleStatusTable.status,
-            requestedTranslationExpected:
-                requestedLocaleStatusTable.translationExpected,
         })
         .from(conversationTable)
         .innerJoin(
@@ -752,26 +828,6 @@ export async function getOpinionGroupAnalysisSelection({
         .innerJoin(
             analysisSpecTable,
             eq(analysisSpecTable.id, opinionGroupSpecTable.analysisSpecId),
-        )
-        .leftJoin(
-            englishLocaleStatusTable,
-            and(
-                eq(
-                    englishLocaleStatusTable.conversationViewSnapshotId,
-                    conversationViewSnapshotTable.id,
-                ),
-                eq(englishLocaleStatusTable.locale, "en"),
-            ),
-        )
-        .leftJoin(
-            requestedLocaleStatusTable,
-            and(
-                eq(
-                    requestedLocaleStatusTable.conversationViewSnapshotId,
-                    conversationViewSnapshotTable.id,
-                ),
-                eq(requestedLocaleStatusTable.locale, displayLanguage),
-            ),
         )
         .where(
             and(
@@ -816,12 +872,9 @@ export async function getOpinionGroupAnalysisSelection({
         });
     }
 
-    const displaySelection = selectLatestOpinionGroupResultForDisplay({
-        rows: latestResultRows,
-        displayLanguage,
-    });
-    if (displaySelection === undefined) {
-        const latestResult = latestResultRows[0];
+    const requestedLocale = getSupportedDisplayLanguage(displayLanguage);
+    const latestResult = latestResultRows[0];
+    if (latestResult.outcome !== "success") {
         const variantsEnabled = latestResult.variantsEnabled;
         const requestedView = getRequestedAnalysisView({
             analysisView,
@@ -840,7 +893,6 @@ export async function getOpinionGroupAnalysisSelection({
         });
     }
 
-    const latestResult = displaySelection.latestResult;
     const conversationViewSnapshot =
         createAnalysisConversationViewSnapshot(latestResult);
     const variantsEnabled = latestResult.variantsEnabled;
@@ -848,46 +900,32 @@ export async function getOpinionGroupAnalysisSelection({
         analysisView,
     });
 
-    const candidateRows = await db
-        .select({
-            candidateId: opinionGroupCandidateTable.id,
-            groupCount: opinionGroupVariantTable.groupCount,
-            selectionScore: opinionGroupCandidateAssessmentTable.selectionScore,
-            silhouetteScore:
-                opinionGroupCandidateAssessmentTable.silhouetteScore,
-            balanceScore: opinionGroupCandidateAssessmentTable.balanceScore,
-        })
-        .from(opinionGroupCandidateTable)
-        .innerJoin(
-            opinionGroupVariantTable,
-            eq(
-                opinionGroupVariantTable.id,
-                opinionGroupCandidateTable.opinionGroupVariantId,
-            ),
-        )
-        .leftJoin(
-            opinionGroupCandidateAssessmentTable,
-            eq(
-                opinionGroupCandidateAssessmentTable.candidateId,
-                opinionGroupCandidateTable.id,
-            ),
-        )
-        .where(
-            and(
-                eq(
-                    opinionGroupCandidateTable.snapshotResultId,
-                    latestResult.resultId,
-                ),
-                eq(opinionGroupCandidateTable.outcome, "success"),
-                isNull(opinionGroupCandidateAssessmentTable.hiddenReason),
-            ),
-        )
-        .orderBy(asc(opinionGroupVariantTable.groupCount));
+    const candidateRows = await fetchSnapshotCandidateOptions({
+        db,
+        resultId: latestResult.resultId,
+    });
 
     const selectedCandidate = selectCandidate({ candidates: candidateRows });
     const selectableCandidates = candidateRows.filter(isSelectableCandidate);
     const displayableGroupCounts = getDisplayableGroupCounts({
         candidates: candidateRows,
+    });
+    const descriptionReadiness = await buildDerivedAnalysisDescriptionReadiness({
+        db,
+        aiLabelingEnabled: latestResult.aiLabelingEnabled,
+        requestedLocale,
+        requiredCandidateIds: getRequiredDescriptionCandidateIds({
+            candidates: candidateRows,
+            variantsEnabled,
+        }),
+    });
+    const useSystemDescriptions = shouldUseSystemDescriptions({
+        aiLabelingEnabled: latestResult.aiLabelingEnabled,
+        requestedLocale,
+        englishStatus: descriptionReadiness.english.status,
+        englishExpected: descriptionReadiness.english.expected,
+        requestedStatus: descriptionReadiness.requested.status,
+        requestedExpected: descriptionReadiness.requested.expected,
     });
     const candidatesByGroupCount = new Map(
         selectableCandidates.map((candidate) => [
@@ -979,7 +1017,7 @@ export async function getOpinionGroupAnalysisSelection({
             viewState,
             displayableGroupCounts,
             conversationViewSnapshot,
-            descriptionReadiness: displaySelection.descriptionReadiness,
+            descriptionReadiness,
             emptyReason: `Agora could not form ${groupCount} meaningful groups for this checkpoint.`,
         };
     }
@@ -994,11 +1032,11 @@ export async function getOpinionGroupAnalysisSelection({
             resultId: latestResult.resultId,
             candidateId: resolved.candidate.candidateId,
             groupCount: resolved.candidate.groupCount,
-            useSystemDescriptions: displaySelection.useSystemDescriptions,
-            descriptionReadiness: displaySelection.descriptionReadiness,
+            useSystemDescriptions,
+            descriptionReadiness,
         },
         conversationViewSnapshot,
-        descriptionReadiness: displaySelection.descriptionReadiness,
+        descriptionReadiness,
         viewState,
         displayableGroupCounts,
     };

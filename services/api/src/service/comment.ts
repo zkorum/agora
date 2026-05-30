@@ -6,7 +6,6 @@ import {
     opinionGroupCandidateAssessmentTable,
     opinionGroupCandidateTable,
     opinionGroupCandidateOpinionMetricsTable,
-    opinionGroupDescriptionLocaleStatusTable,
     opinionGroupLineageTable,
     opinionGroupOpinionStatsTable,
     opinionGroupTable,
@@ -82,19 +81,22 @@ import type {
 import { nowZeroMs } from "@/shared/util.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import {
+    buildDerivedAnalysisDescriptionReadiness,
+    fetchSnapshotCandidateOptions,
     getDescriptionTextsByGroupId,
     getOpinionGroupAnalysisSelection,
     getSelectedOpinionGroupCandidate,
+    getRequiredDescriptionCandidateIds,
     type AnalysisViewState,
     type SelectedOpinionGroupCandidate,
 } from "./opinionGroupAnalysis.js";
+import { ensureAiDescriptionLocaleExpectationForConversationViewSnapshot } from "./conversationViewSnapshot.js";
 import { alias } from "drizzle-orm/pg-core";
 import {
     type SupportedDisplayLanguageCodes,
     ZodSupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
 import {
-    buildAnalysisDescriptionReadiness,
     isDescriptionReadinessFreshForExpectedLocales,
     shouldUseSystemDescriptions,
 } from "./analysisDescriptionReadiness.js";
@@ -104,15 +106,6 @@ interface PrimaryReplicaDb extends PostgresJsDatabase {
 }
 
 export type AnalysisFreshnessOptions = AnalysisFreshnessRequest;
-
-const englishLocaleStatusTable = alias(
-    opinionGroupDescriptionLocaleStatusTable,
-    "english_locale_status",
-);
-const requestedLocaleStatusTable = alias(
-    opinionGroupDescriptionLocaleStatusTable,
-    "requested_locale_status",
-);
 
 interface LatestConversationOpinionCountSnapshot {
     participantCount: number;
@@ -1258,15 +1251,10 @@ async function fetchSelectedOpinionGroupCandidateById({
             participantCount: conversationViewSnapshotTable.participantCount,
             snapshotId: conversationViewSnapshotTable.analysisSnapshotId,
             resultId: analysisSnapshotResultTable.id,
+            variantsEnabled: analysisSnapshotResultTable.variantsEnabled,
             candidateId: opinionGroupCandidateTable.id,
             groupCount: opinionGroupVariantTable.groupCount,
             aiLabelingEnabled: conversationTable.aiLabelingEnabled,
-            englishLocaleStatus: englishLocaleStatusTable.status,
-            englishAiGenerationExpected:
-                englishLocaleStatusTable.aiGenerationExpected,
-            requestedLocaleStatus: requestedLocaleStatusTable.status,
-            requestedTranslationExpected:
-                requestedLocaleStatusTable.translationExpected,
         })
         .from(conversationTable)
         .innerJoin(
@@ -1319,26 +1307,6 @@ async function fetchSelectedOpinionGroupCandidateById({
                 opinionGroupCandidateTable.id,
             ),
         )
-        .leftJoin(
-            englishLocaleStatusTable,
-            and(
-                eq(
-                    englishLocaleStatusTable.conversationViewSnapshotId,
-                    conversationViewSnapshotTable.id,
-                ),
-                eq(englishLocaleStatusTable.locale, "en"),
-            ),
-        )
-        .leftJoin(
-            requestedLocaleStatusTable,
-            and(
-                eq(
-                    requestedLocaleStatusTable.conversationViewSnapshotId,
-                    conversationViewSnapshotTable.id,
-                ),
-                eq(requestedLocaleStatusTable.locale, requestedLocale),
-            ),
-        )
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
@@ -1357,13 +1325,18 @@ async function fetchSelectedOpinionGroupCandidateById({
         return undefined;
     }
 
-    const descriptionReadiness = buildAnalysisDescriptionReadiness({
+    const candidateRows = await fetchSnapshotCandidateOptions({
+        db,
+        resultId: row.resultId,
+    });
+    const descriptionReadiness = await buildDerivedAnalysisDescriptionReadiness({
+        db,
         aiLabelingEnabled: row.aiLabelingEnabled,
         requestedLocale,
-        englishStatus: row.englishLocaleStatus,
-        englishExpected: row.englishAiGenerationExpected,
-        requestedStatus: row.requestedLocaleStatus,
-        requestedExpected: row.requestedTranslationExpected,
+        requiredCandidateIds: getRequiredDescriptionCandidateIds({
+            candidates: candidateRows,
+            variantsEnabled: row.variantsEnabled,
+        }),
     });
 
     return {
@@ -1378,10 +1351,10 @@ async function fetchSelectedOpinionGroupCandidateById({
         useSystemDescriptions: shouldUseSystemDescriptions({
             aiLabelingEnabled: row.aiLabelingEnabled,
             requestedLocale,
-            englishStatus: row.englishLocaleStatus,
-            englishExpected: row.englishAiGenerationExpected,
-            requestedStatus: row.requestedLocaleStatus,
-            requestedExpected: row.requestedTranslationExpected,
+            englishStatus: descriptionReadiness.english.status,
+            englishExpected: descriptionReadiness.english.expected,
+            requestedStatus: descriptionReadiness.requested.status,
+            requestedExpected: descriptionReadiness.requested.expected,
         }),
         descriptionReadiness,
     };
@@ -1404,6 +1377,16 @@ export async function fetchAnalysisMetadataByConversationSlugId({
     checkpointViewSnapshotId?: number;
     freshnessOptions: AnalysisFreshnessOptions | null;
 }): Promise<ConversationAnalysisMetadata> {
+    const requestedLocale = getSupportedDisplayLanguage(displayLanguage);
+    if (checkpointViewSnapshotId !== undefined) {
+        await ensureAiDescriptionLocaleExpectationForConversationViewSnapshot({
+            db: getPrimaryDb(db),
+            conversationSlugId,
+            conversationViewSnapshotId: checkpointViewSnapshotId,
+            requestedLocale,
+        });
+    }
+
     const metadata = await fetchAnalysisMetadataByConversationSlugIdFromDb({
         db,
         conversationSlugId,

@@ -13,11 +13,11 @@ from agora_worker_shared.ai_description_work import (
     DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE,
     ClaimedDescriptionTranslationWorkItem,
     ClaimedLineageDescriptionWorkItem,
-    FirstPassPendingStatusError,
     LineageDescriptionWorkDemand,
     PendingLocaleStatusRow,
     RequiredLineageDescriptionRow,
     TranslationWorkDemand,
+    activate_pending_translation_expectations,
     claim_ai_description_locale_work_items_batch,
     claimable_immediate_retry_at,
     complete_non_processable_ai_description_work_batch,
@@ -44,7 +44,7 @@ from agora_worker_shared.description_translation import (
     DescriptionTranslation,
 )
 from agora_worker_shared.generated_models import (
-    AiDescriptionLocaleStatusEnum,
+    AiDescriptionLocaleExpectationKindEnum,
     AnalysisResultOutcomeEnum,
     AnalysisSnapshot,
     AnalysisSnapshotResult,
@@ -59,7 +59,7 @@ from agora_worker_shared.generated_models import (
     OpinionGroup,
     OpinionGroupCandidate,
     OpinionGroupDescription,
-    OpinionGroupDescriptionLocaleStatus,
+    OpinionGroupDescriptionLocaleExpectation,
     OpinionGroupDescriptionTranslation,
     OpinionGroupDescriptionTranslationWork,
     OpinionGroupLineage,
@@ -210,45 +210,27 @@ def _insert_non_processable_ai_work_state(
     )
     session.add_all(
         [
-            OpinionGroupDescriptionLocaleStatus(
+            OpinionGroupDescriptionLocaleExpectation(
                 id=101,
                 conversation_view_snapshot_id=20,
                 conversation_id=10,
                 opinion_group_spec_id=1,
                 analysis_snapshot_result_id=50,
                 locale="en",
-                status=AiDescriptionLocaleStatusEnum.pending,
-                ai_generation_expected=True,
-                translation_expected=False,
-                attempt_count=0,
-                next_run_at=NOW,
-                lease_owner=None,
-                lease_token=None,
-                lease_expires_at=None,
-                non_retryable_ai_description_epoch=None,
-                last_error_code=None,
-                last_error_message=None,
+                expectation_kind=AiDescriptionLocaleExpectationKindEnum.english_description,
+                retry_demand_due_at=NOW,
                 created_at=NOW,
                 updated_at=NOW,
             ),
-            OpinionGroupDescriptionLocaleStatus(
+            OpinionGroupDescriptionLocaleExpectation(
                 id=102,
                 conversation_view_snapshot_id=20,
                 conversation_id=10,
                 opinion_group_spec_id=1,
                 analysis_snapshot_result_id=50,
                 locale="fr",
-                status=AiDescriptionLocaleStatusEnum.pending,
-                ai_generation_expected=True,
-                translation_expected=True,
-                attempt_count=0,
-                next_run_at=None,
-                lease_owner=None,
-                lease_token=None,
-                lease_expires_at=None,
-                non_retryable_ai_description_epoch=None,
-                last_error_code=None,
-                last_error_message=None,
+                expectation_kind=AiDescriptionLocaleExpectationKindEnum.translation,
+                retry_demand_due_at=None,
                 created_at=NOW,
                 updated_at=NOW,
             ),
@@ -587,24 +569,15 @@ def test_content_update_events_coalesce_locales_per_snapshot() -> None:
         view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
         view_snapshot.activated_at = NOW
         session.add(
-            OpinionGroupDescriptionLocaleStatus(
+            OpinionGroupDescriptionLocaleExpectation(
                 id=103,
                 conversation_view_snapshot_id=20,
                 conversation_id=10,
                 opinion_group_spec_id=1,
                 analysis_snapshot_result_id=50,
                 locale="es",
-                status=AiDescriptionLocaleStatusEnum.fallback,
-                ai_generation_expected=True,
-                translation_expected=True,
-                attempt_count=0,
-                next_run_at=None,
-                lease_owner=None,
-                lease_token=None,
-                lease_expires_at=None,
-                non_retryable_ai_description_epoch=None,
-                last_error_code=None,
-                last_error_message=None,
+                expectation_kind=AiDescriptionLocaleExpectationKindEnum.translation,
+                retry_demand_due_at=None,
                 created_at=NOW,
                 updated_at=NOW,
             )
@@ -704,10 +677,10 @@ def test_non_processable_ai_cleanup_fallbacks_statuses_without_activation() -> N
     )
 
     with Session(engine) as session:
-        statuses = (
+        expectations = (
             session.execute(
-                select(OpinionGroupDescriptionLocaleStatus).order_by(
-                    OpinionGroupDescriptionLocaleStatus.locale
+                select(OpinionGroupDescriptionLocaleExpectation).order_by(
+                    OpinionGroupDescriptionLocaleExpectation.locale
                 )
             )
             .scalars()
@@ -720,10 +693,7 @@ def test_non_processable_ai_cleanup_fallbacks_statuses_without_activation() -> N
         ).scalar_one()
 
     assert completed_ids == [10]
-    assert [status.status for status in statuses] == [
-        AiDescriptionLocaleStatusEnum.fallback,
-        AiDescriptionLocaleStatusEnum.fallback,
-    ]
+    assert [expectation.retry_demand_due_at for expectation in expectations] == [None, None]
     assert view_snapshot.activated_at is None
     assert lineage_work.next_run_at is None
     assert translation_work.next_run_at is None
@@ -735,30 +705,20 @@ def test_pending_translation_blocks_snapshot_activation() -> None:
         _insert_non_processable_ai_work_state(session)
         conversation = session.execute(select(Conversation)).scalar_one()
         conversation.current_content_id = 40
-        english_status = session.execute(
-            select(OpinionGroupDescriptionLocaleStatus).where(
-                OpinionGroupDescriptionLocaleStatus.locale == "en"
-            )
-        ).scalar_one()
-        english_status.status = AiDescriptionLocaleStatusEnum.fallback
         session.commit()
 
-    with pytest.raises(FirstPassPendingStatusError):
-        finalize_first_pass_ai_description_work_batch(
-            engine,
-            conversation_ids=[10],
-            conversation_view_snapshot_ids=[20],
-            translation_enabled=True,
-        )
+    result = finalize_first_pass_ai_description_work_batch(
+        engine,
+        conversation_ids=[10],
+        conversation_view_snapshot_ids=[20],
+        translation_enabled=True,
+    )
 
     with Session(engine) as session:
         view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
-        checkpoint_reasons = session.execute(
-            select(ConversationViewSnapshotCheckpointReason)
-        ).scalars().all()
 
-    assert view_snapshot.activated_at is None
-    assert checkpoint_reasons == []
+    assert result.activated_view_snapshot_ids == [20]
+    assert view_snapshot.activated_at is not None
 
 
 def test_claiming_first_pass_work_does_not_activate_snapshot() -> None:
@@ -767,12 +727,6 @@ def test_claiming_first_pass_work_does_not_activate_snapshot() -> None:
         _insert_non_processable_ai_work_state(session)
         conversation = session.execute(select(Conversation)).scalar_one()
         conversation.current_content_id = 40
-        english_status = session.execute(
-            select(OpinionGroupDescriptionLocaleStatus).where(
-                OpinionGroupDescriptionLocaleStatus.locale == "en"
-            )
-        ).scalar_one()
-        english_status.status = AiDescriptionLocaleStatusEnum.ready
         session.commit()
 
     claims = claim_ai_description_locale_work_items_batch(
@@ -806,12 +760,14 @@ def test_first_pass_claiming_treats_fallback_statuses_as_terminal() -> None:
         conversation.current_content_id = 40
         lineage = session.execute(select(OpinionGroupLineage)).scalar_one()
         lineage.system_description_id = None
-        english_status = session.execute(
-            select(OpinionGroupDescriptionLocaleStatus).where(
-                OpinionGroupDescriptionLocaleStatus.locale == "en"
+        lineage_work = session.execute(select(OpinionGroupLineageDescriptionWork)).scalar_one()
+        lineage_work.next_run_at = None
+        english_expectation = session.execute(
+            select(OpinionGroupDescriptionLocaleExpectation).where(
+                OpinionGroupDescriptionLocaleExpectation.locale == "en"
             )
         ).scalar_one()
-        english_status.status = AiDescriptionLocaleStatusEnum.fallback
+        english_expectation.retry_demand_due_at = None
         session.commit()
 
     claims = claim_ai_description_locale_work_items_batch(
@@ -829,77 +785,59 @@ def test_first_pass_claiming_treats_fallback_statuses_as_terminal() -> None:
     assert claims == []
 
 
-def test_first_pass_finalization_rejects_pending_translation() -> None:
+def test_first_pass_finalization_warns_and_activates_pending_translation() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
-        english_status = session.execute(
-            select(OpinionGroupDescriptionLocaleStatus).where(
-                OpinionGroupDescriptionLocaleStatus.locale == "en"
-            )
+        translation_work = session.execute(
+            select(OpinionGroupDescriptionTranslationWork)
         ).scalar_one()
-        english_status.status = AiDescriptionLocaleStatusEnum.ready
-        english_status.next_run_at = None
+        translation_work.attempt_count = 0
         session.commit()
 
-    with pytest.raises(FirstPassPendingStatusError):
-        finalize_first_pass_ai_description_work_batch(
-            engine,
-            conversation_ids=[10],
-            conversation_view_snapshot_ids=[20],
-            translation_enabled=True,
-        )
+    result = finalize_first_pass_ai_description_work_batch(
+        engine,
+        conversation_ids=[10],
+        conversation_view_snapshot_ids=[20],
+        translation_enabled=True,
+    )
 
     with Session(engine) as session:
-        statuses = (
-            session.execute(
-                select(OpinionGroupDescriptionLocaleStatus).order_by(
-                    OpinionGroupDescriptionLocaleStatus.locale
-                )
-            )
-            .scalars()
-            .all()
-        )
         view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
 
-    assert [status.status for status in statuses] == [
-        AiDescriptionLocaleStatusEnum.ready,
-        AiDescriptionLocaleStatusEnum.pending,
-    ]
-    assert all(status.next_run_at is None for status in statuses)
-    assert view_snapshot.activated_at is None
+    assert result.fallback_status_count == 1
+    assert result.activated_view_snapshot_ids == [20]
+    assert view_snapshot.activated_at is not None
 
 
-def test_first_pass_finalization_requires_terminal_translation_after_generation_advances() -> None:
+def test_first_pass_finalization_activates_pending_translation_after_generation_advances() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
         conversation = session.execute(select(Conversation)).scalar_one()
         conversation.analysis_data_generation = 2
-        english_status = session.execute(
-            select(OpinionGroupDescriptionLocaleStatus).where(
-                OpinionGroupDescriptionLocaleStatus.locale == "en"
-            )
+        translation_work = session.execute(
+            select(OpinionGroupDescriptionTranslationWork)
         ).scalar_one()
-        english_status.status = AiDescriptionLocaleStatusEnum.ready
-        english_status.next_run_at = None
+        translation_work.attempt_count = 0
         session.commit()
 
-    with pytest.raises(FirstPassPendingStatusError):
-        finalize_first_pass_ai_description_work_batch(
-            engine,
-            conversation_ids=[10],
-            conversation_view_snapshot_ids=[20],
-            translation_enabled=True,
-        )
+    result = finalize_first_pass_ai_description_work_batch(
+        engine,
+        conversation_ids=[10],
+        conversation_view_snapshot_ids=[20],
+        translation_enabled=True,
+    )
 
     with Session(engine) as session:
         view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
 
-    assert view_snapshot.activated_at is None
+    assert result.fallback_status_count == 1
+    assert result.activated_view_snapshot_ids == [20]
+    assert view_snapshot.activated_at is not None
 
 
-def test_first_pass_finalization_rejects_pending_english() -> None:
+def test_first_pass_finalization_warns_and_activates_pending_english() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
@@ -907,42 +845,89 @@ def test_first_pass_finalization_rejects_pending_english() -> None:
         conversation.current_content_id = 40
         lineage = session.execute(select(OpinionGroupLineage)).scalar_one()
         lineage.system_description_id = None
+        lineage_work = session.execute(select(OpinionGroupLineageDescriptionWork)).scalar_one()
+        lineage_work.attempt_count = 0
         session.commit()
 
-    with pytest.raises(FirstPassPendingStatusError):
-        finalize_first_pass_ai_description_work_batch(
-            engine,
-            conversation_ids=[10],
-            conversation_view_snapshot_ids=[20],
-            translation_enabled=True,
-        )
+    result = finalize_first_pass_ai_description_work_batch(
+        engine,
+        conversation_ids=[10],
+        conversation_view_snapshot_ids=[20],
+        translation_enabled=True,
+    )
 
     with Session(engine) as session:
-        statuses = (
-            session.execute(
-                select(OpinionGroupDescriptionLocaleStatus).order_by(
-                    OpinionGroupDescriptionLocaleStatus.locale
-                )
-            )
-            .scalars()
-            .all()
-        )
         view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
 
-    assert [status.status for status in statuses] == [
-        AiDescriptionLocaleStatusEnum.pending,
-        AiDescriptionLocaleStatusEnum.pending,
-    ]
-    assert view_snapshot.activated_at is None
+    assert result.fallback_status_count == 1
+    assert result.activated_view_snapshot_ids == [20]
+    assert view_snapshot.activated_at is not None
+
+
+def test_first_pass_finalization_ignores_ready_english_work() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        lineage_work = session.execute(select(OpinionGroupLineageDescriptionWork)).scalar_one()
+        lineage_work.attempt_count = 0
+        session.commit()
+
+    result = finalize_first_pass_ai_description_work_batch(
+        engine,
+        conversation_ids=[10],
+        conversation_view_snapshot_ids=[20],
+        translation_enabled=True,
+    )
+
+    with Session(engine) as session:
+        view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
+
+    assert result.activated_view_snapshot_ids == [20]
+    assert view_snapshot.activated_at is not None
+
+
+def test_first_pass_finalization_ignores_ready_translation_work() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        translation_work = session.execute(
+            select(OpinionGroupDescriptionTranslationWork)
+        ).scalar_one()
+        translation_work.attempt_count = 0
+        session.add(
+            OpinionGroupDescriptionTranslation(
+                id=601,
+                description_id=501,
+                locale="fr",
+                label="Groupe",
+                summary="Résumé",
+                created_at=NOW,
+            )
+        )
+        session.commit()
+
+    result = finalize_first_pass_ai_description_work_batch(
+        engine,
+        conversation_ids=[10],
+        conversation_view_snapshot_ids=[20],
+        translation_enabled=True,
+    )
+
+    with Session(engine) as session:
+        view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
+
+    assert result.activated_view_snapshot_ids == [20]
+    assert view_snapshot.activated_at is not None
 
 
 def test_activation_does_not_publish_content_count_snapshots() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
-        statuses = session.execute(select(OpinionGroupDescriptionLocaleStatus)).scalars().all()
-        for status in statuses:
-            status.status = AiDescriptionLocaleStatusEnum.fallback
         session.add(
             ConversationViewSnapshot(
                 id=21,
@@ -989,12 +974,6 @@ def test_newer_content_snapshot_does_not_stale_first_pass_translation() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
-        english_status = session.execute(
-            select(OpinionGroupDescriptionLocaleStatus).where(
-                OpinionGroupDescriptionLocaleStatus.locale == "en"
-            )
-        ).scalar_one()
-        english_status.status = AiDescriptionLocaleStatusEnum.ready
         conversation = session.execute(select(Conversation)).scalar_one()
         conversation.current_content_id = 40
         session.add(
@@ -1041,13 +1020,6 @@ def test_translation_fallback_allows_first_pass_activation() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
-        statuses = session.execute(select(OpinionGroupDescriptionLocaleStatus)).scalars().all()
-        for status in statuses:
-            status.status = (
-                AiDescriptionLocaleStatusEnum.ready
-                if status.locale == "en"
-                else AiDescriptionLocaleStatusEnum.fallback
-            )
         session.commit()
 
     result = finalize_first_pass_ai_description_work_batch(
@@ -1064,16 +1036,83 @@ def test_translation_fallback_allows_first_pass_activation() -> None:
     assert view_snapshot.activated_at is not None
 
 
+def test_activate_pending_translation_expectations_marks_missing_translation_due() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
+        view_snapshot.activated_at = NOW
+        session.commit()
+
+    activated_ids = activate_pending_translation_expectations(
+        engine,
+        limit=10,
+        require_activated_view_snapshot=True,
+    )
+
+    with Session(engine) as session:
+        translation_expectation = session.execute(
+            select(OpinionGroupDescriptionLocaleExpectation).where(
+                OpinionGroupDescriptionLocaleExpectation.expectation_kind
+                == AiDescriptionLocaleExpectationKindEnum.translation
+            )
+        ).scalar_one()
+
+    assert activated_ids == [10]
+    assert translation_expectation.retry_demand_due_at is not None
+
+
+def test_activate_pending_translation_expectations_clears_ready_translation_due() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
+        view_snapshot.activated_at = NOW
+        translation_expectation = session.execute(
+            select(OpinionGroupDescriptionLocaleExpectation).where(
+                OpinionGroupDescriptionLocaleExpectation.expectation_kind
+                == AiDescriptionLocaleExpectationKindEnum.translation
+            )
+        ).scalar_one()
+        translation_expectation.retry_demand_due_at = NOW
+        session.add(
+            OpinionGroupDescriptionTranslation(
+                id=601,
+                description_id=501,
+                locale="fr",
+                label="Groupe",
+                summary="Résumé",
+                created_at=NOW,
+            )
+        )
+        session.commit()
+
+    activated_ids = activate_pending_translation_expectations(
+        engine,
+        limit=10,
+        require_activated_view_snapshot=True,
+    )
+
+    with Session(engine) as session:
+        translation_expectation = session.execute(
+            select(OpinionGroupDescriptionLocaleExpectation).where(
+                OpinionGroupDescriptionLocaleExpectation.expectation_kind
+                == AiDescriptionLocaleExpectationKindEnum.translation
+            )
+        ).scalar_one()
+
+    assert activated_ids == []
+    assert translation_expectation.retry_demand_due_at is None
+
+
 def test_translation_retry_fallback_does_not_activate_first_pass_snapshot() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
-        english_status = session.execute(
-            select(OpinionGroupDescriptionLocaleStatus).where(
-                OpinionGroupDescriptionLocaleStatus.locale == "en"
-            )
-        ).scalar_one()
-        english_status.status = AiDescriptionLocaleStatusEnum.ready
         conversation = session.execute(select(Conversation)).scalar_one()
         conversation.current_content_id = 40
         translation_work = session.execute(
@@ -1107,10 +1146,10 @@ def test_translation_retry_fallback_does_not_activate_first_pass_snapshot() -> N
     )
 
     with Session(engine) as session:
-        statuses = (
+        expectations = (
             session.execute(
-                select(OpinionGroupDescriptionLocaleStatus).order_by(
-                    OpinionGroupDescriptionLocaleStatus.locale
+                select(OpinionGroupDescriptionLocaleExpectation).order_by(
+                    OpinionGroupDescriptionLocaleExpectation.locale
                 )
             )
             .scalars()
@@ -1122,10 +1161,7 @@ def test_translation_retry_fallback_does_not_activate_first_pass_snapshot() -> N
         ).scalar_one()
 
     assert schedule.retry_scheduled_at is not None
-    assert [status.status for status in statuses] == [
-        AiDescriptionLocaleStatusEnum.ready,
-        AiDescriptionLocaleStatusEnum.fallback,
-    ]
+    assert expectations[1].retry_demand_due_at is None
     assert view_snapshot.activated_at is None
     assert translation_work.lease_token is None
     assert translation_work.next_run_at is not None
@@ -1609,10 +1645,10 @@ def test_claimed_non_processable_lineage_work_does_not_call_generator() -> None:
     )
 
     with Session(engine) as session:
-        statuses = (
+        expectations = (
             session.execute(
-                select(OpinionGroupDescriptionLocaleStatus).order_by(
-                    OpinionGroupDescriptionLocaleStatus.locale
+                select(OpinionGroupDescriptionLocaleExpectation).order_by(
+                    OpinionGroupDescriptionLocaleExpectation.locale
                 )
             )
             .scalars()
@@ -1621,10 +1657,7 @@ def test_claimed_non_processable_lineage_work_does_not_call_generator() -> None:
         view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
         lineage_work = session.execute(select(OpinionGroupLineageDescriptionWork)).scalar_one()
 
-    assert [status.status for status in statuses] == [
-        AiDescriptionLocaleStatusEnum.fallback,
-        AiDescriptionLocaleStatusEnum.fallback,
-    ]
+    assert [expectation.retry_demand_due_at for expectation in expectations] == [None, None]
     assert view_snapshot.activated_at is None
     assert lineage_work.lease_token is None
     assert lineage_work.next_run_at is None

@@ -15,18 +15,10 @@ interface CreateDidReturn {
 
 export async function createDidIfDoesNotExist(): Promise<CreateDidReturn> {
   const prefixedKey = PREFIXED_KEY;
-  try {
-    const cryptoStore = await getWebCryptoStore();
-    await cryptoStore.keystore.createIfDoesNotExists(prefixedKey);
-    const did = await DID.write(cryptoStore, prefixedKey);
-    return { did, prefixedKey };
-  } catch (error) {
-    console.warn("Stored signing key was unusable; recreating it", error);
-    await clearWebCryptoStore();
-  }
-
+  // Do not silently mint a new DID on local keystore errors. The backend's
+  // check-login-status response is the source of truth for clearing auth state.
   const cryptoStore = await getWebCryptoStore();
-  await cryptoStore.keystore.createOverwriteIfAlreadyExists(prefixedKey);
+  await cryptoStore.keystore.createIfDoesNotExists(prefixedKey);
   const did = await DID.write(cryptoStore, prefixedKey);
   return { did, prefixedKey };
 }

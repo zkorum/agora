@@ -114,10 +114,9 @@ class VoteEnumSimple(StrEnum):
     disagree = "disagree"
 
 
-class AiDescriptionLocaleStatusEnum(StrEnum):
-    pending = "pending"
-    ready = "ready"
-    fallback = "fallback"
+class AiDescriptionLocaleExpectationKindEnum(StrEnum):
+    english_description = "english_description"
+    translation = "translation"
 
 
 class OpinionGroupReducerEnum(StrEnum):
@@ -483,8 +482,8 @@ class OpinionGroupCandidate(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
-class OpinionGroupDescriptionLocaleStatus(Base):
-    __tablename__ = "opinion_group_description_locale_status"
+class OpinionGroupDescriptionLocaleExpectation(Base):
+    __tablename__ = "opinion_group_description_locale_expectation"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     conversation_view_snapshot_id: Mapped[int] = mapped_column(Integer)
@@ -492,19 +491,14 @@ class OpinionGroupDescriptionLocaleStatus(Base):
     opinion_group_spec_id: Mapped[int] = mapped_column(Integer)
     analysis_snapshot_result_id: Mapped[int] = mapped_column(Integer)
     locale: Mapped[str] = mapped_column(String(10))
-    status: Mapped[AiDescriptionLocaleStatusEnum] = mapped_column(
-        SaEnum(AiDescriptionLocaleStatusEnum, values_callable=_enum_values, native_enum=False),
+    expectation_kind: Mapped[AiDescriptionLocaleExpectationKindEnum] = mapped_column(
+        SaEnum(
+            AiDescriptionLocaleExpectationKindEnum,
+            values_callable=_enum_values,
+            native_enum=False,
+        ),
     )
-    ai_generation_expected: Mapped[bool] = mapped_column(Boolean, server_default="false")
-    translation_expected: Mapped[bool] = mapped_column(Boolean, server_default="false")
-    attempt_count: Mapped[int] = mapped_column(Integer, server_default="0")
-    next_run_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    lease_owner: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    lease_token: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    non_retryable_ai_description_epoch: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    last_error_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    last_error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    retry_demand_due_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 

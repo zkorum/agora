@@ -118,6 +118,7 @@
                     :on-view-analysis="onViewAnalysis"
                     :navigate-to-discover-tab="navigateToDiscoverTab"
                     v-bind="analysisRouteProps"
+                    @analysis-live-pause-stats="setAnalysisLivePauseStats"
                     @update:comment-filter="
                       (filter: CommentFilterOptions) => {
                         commentFilter = filter;
@@ -222,6 +223,9 @@ const authStore = useAuthenticationStore();
 const { userId } = storeToRefs(authStore);
 const { reveal: headerRevealed } = storeToRefs(useLayoutHeaderStore());
 const commentComposerRef = ref<InstanceType<typeof CommentComposer>>();
+const pausedAnalysisActionBarStats = ref<
+  ConversationActionBarStats | undefined
+>();
 
 const conversationConfig: ConversationParentConfig = {
   analysisRouteName: "/conversation/[postSlugId]/analysis",
@@ -260,6 +264,7 @@ const { actionBarStats, isLoadingCheckpointStats } =
     conversationData,
     currentTab,
     routeQuery: computed(() => route.query),
+    overrideStats: pausedAnalysisActionBarStats,
   });
 
 const displayedActionBarStats = computed<ConversationActionBarStats>(() => {
@@ -285,6 +290,27 @@ function getActionBarStatsFromMetadata(): ConversationActionBarStats {
     totalVoteCount: metadata.totalVoteCount,
   };
 }
+
+function setAnalysisLivePauseStats(
+  stats: ConversationActionBarStats | undefined
+): void {
+  pausedAnalysisActionBarStats.value = stats;
+}
+
+watch(
+  () => ({
+    conversationSlugId: conversationData.value?.metadata.conversationSlugId,
+    currentTab: currentTab.value,
+  }),
+  ({ conversationSlugId: nextSlugId, currentTab: nextTab }, previous) => {
+    if (
+      nextTab !== "analysis" ||
+      (previous !== undefined && nextSlugId !== previous.conversationSlugId)
+    ) {
+      pausedAnalysisActionBarStats.value = undefined;
+    }
+  }
+);
 
 function getVisualRefreshBoundaryTop(): number | undefined {
   const sentinel = sentinelElement.value;

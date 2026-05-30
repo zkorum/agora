@@ -16,14 +16,24 @@ import {
     analysisWorkStateTable,
     conversationTable,
     conversationViewSnapshotCheckpointReasonTable,
-    opinionGroupDescriptionLocaleStatusTable,
+    opinionGroupCandidateTable,
+    opinionGroupDescriptionLocaleExpectationTable,
+    opinionGroupLineageTable,
+    opinionGroupTable,
     conversationViewSnapshotTable,
     opinionGroupSpecTable,
 } from "@/shared-backend/schema.js";
 import { calculateConversationCounters } from "@/shared-backend/conversationCounters.js";
-import { ZodSupportedDisplayLanguageCodes } from "@/shared/languages.js";
+import {
+    type SupportedDisplayLanguageCodes,
+    ZodSupportedDisplayLanguageCodes,
+} from "@/shared/languages.js";
 import type { FetchAnalysisCheckpointsResponse } from "@/shared/types/dto.js";
 import { queueConversationAnalysisUpdatedEventsForViewSnapshots } from "./realtimeEventOutbox.js";
+import {
+    fetchSnapshotCandidateOptions,
+    getRequiredDescriptionCandidateIds,
+} from "./opinionGroupAnalysis.js";
 
 type ConversationViewSnapshotReason =
     | "analysis_completed"
@@ -37,6 +47,14 @@ interface LatestSnapshotRefs {
     analysisSnapshotId: number | null;
     surveyAggregateSnapshotId: number | null;
     variantsEnabled: boolean;
+}
+
+type AiDescriptionLocaleExpectationKind = "english_description" | "translation";
+
+function getAiDescriptionLocaleExpectationKind(
+    locale: SupportedDisplayLanguageCodes,
+): AiDescriptionLocaleExpectationKind {
+    return locale === "en" ? "english_description" : "translation";
 }
 
 export async function fetchAnalysisCheckpointsByConversationSlugId({
@@ -368,7 +386,47 @@ export async function createConversationViewSnapshotsFromCurrentState({
     return currentOpinionGroupSpecIds.length;
 }
 
-export async function ensureAiDescriptionLocaleStatusesForLatestAnalysisSnapshots({
+async function hasReadyEnglishDescriptionsForSnapshotResult({
+    db,
+    resultId,
+    variantsEnabled,
+}: {
+    db: PostgresJsDatabase;
+    resultId: number;
+    variantsEnabled: boolean;
+}): Promise<boolean> {
+    const candidateRows = await fetchSnapshotCandidateOptions({ db, resultId });
+    const requiredCandidateIds = getRequiredDescriptionCandidateIds({
+        candidates: candidateRows,
+        variantsEnabled,
+    });
+    if (requiredCandidateIds.length === 0) {
+        return false;
+    }
+
+    const missingDescriptionRows = await db
+        .select({ id: opinionGroupLineageTable.id })
+        .from(opinionGroupCandidateTable)
+        .innerJoin(
+            opinionGroupTable,
+            eq(opinionGroupTable.candidateId, opinionGroupCandidateTable.id),
+        )
+        .innerJoin(
+            opinionGroupLineageTable,
+            eq(opinionGroupLineageTable.id, opinionGroupTable.lineageId),
+        )
+        .where(
+            and(
+                inArray(opinionGroupCandidateTable.id, requiredCandidateIds),
+                isNull(opinionGroupLineageTable.systemDescriptionId),
+            ),
+        )
+        .limit(1);
+
+    return missingDescriptionRows.length === 0;
+}
+
+export async function ensureAiDescriptionLocaleExpectationsForLatestAnalysisSnapshots({
     db,
     conversationId,
 }: {
@@ -479,7 +537,6 @@ export async function ensureAiDescriptionLocaleStatusesForLatestAnalysisSnapshot
         return false;
     }
 
-    const pendingStatus = "pending" as const;
     let didQueueAiDescriptionWork = false;
     for (const [opinionGroupSpecId, snapshot] of latestSnapshotBySpecId) {
         if (
@@ -491,31 +548,31 @@ export async function ensureAiDescriptionLocaleStatusesForLatestAnalysisSnapshot
         const resultId = snapshot.resultId;
 
         await db
-            .update(opinionGroupDescriptionLocaleStatusTable)
-            .set({ nextRunAt: null })
+            .update(opinionGroupDescriptionLocaleExpectationTable)
+            .set({ retryDemandDueAt: null, updatedAt: new Date() })
             .where(
                 and(
                     eq(
-                        opinionGroupDescriptionLocaleStatusTable.conversationId,
+                        opinionGroupDescriptionLocaleExpectationTable.conversationId,
                         conversationId,
                     ),
                     eq(
-                        opinionGroupDescriptionLocaleStatusTable.opinionGroupSpecId,
+                        opinionGroupDescriptionLocaleExpectationTable.opinionGroupSpecId,
                         opinionGroupSpecId,
                     ),
                     ne(
-                        opinionGroupDescriptionLocaleStatusTable.conversationViewSnapshotId,
+                        opinionGroupDescriptionLocaleExpectationTable.conversationViewSnapshotId,
                         snapshot.viewSnapshotId,
                     ),
                     isNotNull(
-                        opinionGroupDescriptionLocaleStatusTable.nextRunAt,
+                        opinionGroupDescriptionLocaleExpectationTable.retryDemandDueAt,
                     ),
-                    isNull(opinionGroupDescriptionLocaleStatusTable.leaseToken),
                 ),
             );
 
+        const now = new Date();
         const insertedRows = await db
-            .insert(opinionGroupDescriptionLocaleStatusTable)
+            .insert(opinionGroupDescriptionLocaleExpectationTable)
             .values(
                 ZodSupportedDisplayLanguageCodes.options.map((locale) => ({
                     conversationViewSnapshotId: snapshot.viewSnapshotId,
@@ -523,43 +580,162 @@ export async function ensureAiDescriptionLocaleStatusesForLatestAnalysisSnapshot
                     opinionGroupSpecId,
                     analysisSnapshotResultId: resultId,
                     locale,
-                    status: pendingStatus,
-                    aiGenerationExpected: false,
-                    translationExpected: false,
-                    nextRunAt: locale === "en" ? new Date() : null,
+                    expectationKind: getAiDescriptionLocaleExpectationKind(locale),
+                    retryDemandDueAt: locale === "en" ? now : null,
                 })),
             )
-            .onConflictDoNothing()
-            .returning({ id: opinionGroupDescriptionLocaleStatusTable.id });
+            .onConflictDoUpdate({
+                target: [
+                    opinionGroupDescriptionLocaleExpectationTable.conversationViewSnapshotId,
+                    opinionGroupDescriptionLocaleExpectationTable.locale,
+                ],
+                set: {
+                    analysisSnapshotResultId: resultId,
+                    updatedAt: now,
+                },
+            })
+            .returning({ id: opinionGroupDescriptionLocaleExpectationTable.id });
         if (insertedRows.length > 0) {
             didQueueAiDescriptionWork = true;
         }
 
         const updatedRows = await db
-            .update(opinionGroupDescriptionLocaleStatusTable)
+            .update(opinionGroupDescriptionLocaleExpectationTable)
             .set({
-                nextRunAt: new Date(),
-                nonRetryableAiDescriptionEpoch: null,
+                retryDemandDueAt: now,
+                updatedAt: now,
             })
             .where(
                 and(
                     eq(
-                        opinionGroupDescriptionLocaleStatusTable.conversationViewSnapshotId,
+                        opinionGroupDescriptionLocaleExpectationTable.conversationViewSnapshotId,
                         snapshot.viewSnapshotId,
                     ),
-                    ne(
-                        opinionGroupDescriptionLocaleStatusTable.status,
-                        "ready",
-                    ),
-                    eq(opinionGroupDescriptionLocaleStatusTable.locale, "en"),
-                    isNull(opinionGroupDescriptionLocaleStatusTable.leaseToken),
+                    eq(opinionGroupDescriptionLocaleExpectationTable.locale, "en"),
                 ),
             )
-            .returning({ id: opinionGroupDescriptionLocaleStatusTable.id });
+            .returning({ id: opinionGroupDescriptionLocaleExpectationTable.id });
         if (updatedRows.length > 0) {
             didQueueAiDescriptionWork = true;
         }
     }
 
     return didQueueAiDescriptionWork;
+}
+
+export async function ensureAiDescriptionLocaleExpectationForConversationViewSnapshot({
+    db,
+    conversationSlugId,
+    conversationViewSnapshotId,
+    requestedLocale,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    conversationViewSnapshotId: number;
+    requestedLocale: SupportedDisplayLanguageCodes;
+}): Promise<boolean> {
+    const snapshotRows = await db
+        .select({
+            conversationId: conversationTable.id,
+            aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+            opinionGroupSpecId: conversationViewSnapshotTable.opinionGroupSpecId,
+            resultId: analysisSnapshotResultTable.id,
+            resultOutcome: analysisSnapshotResultTable.outcome,
+            variantsEnabled: analysisSnapshotResultTable.variantsEnabled,
+        })
+        .from(conversationViewSnapshotTable)
+        .innerJoin(
+            conversationTable,
+            eq(conversationTable.id, conversationViewSnapshotTable.conversationId),
+        )
+        .leftJoin(
+            analysisSnapshotResultTable,
+            and(
+                eq(
+                    analysisSnapshotResultTable.analysisSnapshotId,
+                    conversationViewSnapshotTable.analysisSnapshotId,
+                ),
+                eq(
+                    analysisSnapshotResultTable.opinionGroupSpecId,
+                    conversationViewSnapshotTable.opinionGroupSpecId,
+                ),
+            ),
+        )
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationViewSnapshotTable.id, conversationViewSnapshotId),
+                isNotNull(conversationViewSnapshotTable.activatedAt),
+            ),
+        )
+        .limit(1);
+    const snapshot = snapshotRows.at(0);
+    if (
+        snapshot === undefined ||
+        !snapshot.aiLabelingEnabled ||
+        snapshot.resultId === null ||
+        snapshot.resultOutcome !== "success"
+    ) {
+        return false;
+    }
+
+    const now = new Date();
+    const englishRows = await db
+        .insert(opinionGroupDescriptionLocaleExpectationTable)
+        .values({
+            conversationViewSnapshotId,
+            conversationId: snapshot.conversationId,
+            opinionGroupSpecId: snapshot.opinionGroupSpecId,
+            analysisSnapshotResultId: snapshot.resultId,
+            locale: "en",
+            expectationKind: "english_description",
+            retryDemandDueAt: now,
+        })
+        .onConflictDoUpdate({
+            target: [
+                opinionGroupDescriptionLocaleExpectationTable.conversationViewSnapshotId,
+                opinionGroupDescriptionLocaleExpectationTable.locale,
+            ],
+            set: {
+                analysisSnapshotResultId: snapshot.resultId,
+                retryDemandDueAt: now,
+                updatedAt: now,
+            },
+        })
+        .returning({ id: opinionGroupDescriptionLocaleExpectationTable.id });
+
+    if (requestedLocale === "en") {
+        return englishRows.length > 0;
+    }
+
+    const englishReady = await hasReadyEnglishDescriptionsForSnapshotResult({
+        db,
+        resultId: snapshot.resultId,
+        variantsEnabled: snapshot.variantsEnabled === true,
+    });
+    const requestedRows = await db
+        .insert(opinionGroupDescriptionLocaleExpectationTable)
+        .values({
+            conversationViewSnapshotId,
+            conversationId: snapshot.conversationId,
+            opinionGroupSpecId: snapshot.opinionGroupSpecId,
+            analysisSnapshotResultId: snapshot.resultId,
+            locale: requestedLocale,
+            expectationKind: "translation",
+            retryDemandDueAt: englishReady ? now : null,
+        })
+        .onConflictDoUpdate({
+            target: [
+                opinionGroupDescriptionLocaleExpectationTable.conversationViewSnapshotId,
+                opinionGroupDescriptionLocaleExpectationTable.locale,
+            ],
+            set: {
+                analysisSnapshotResultId: snapshot.resultId,
+                ...(englishReady ? { retryDemandDueAt: now } : {}),
+                updatedAt: now,
+            },
+        })
+        .returning({ id: opinionGroupDescriptionLocaleExpectationTable.id });
+
+    return englishRows.length > 0 || requestedRows.length > 0;
 }

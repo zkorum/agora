@@ -197,6 +197,7 @@ const props = withDefaults(
     conversationSlugId: string;
     surveyGate?: SurveyGateSummary;
     surveyQuery: UseQueryReturnType<SurveyResultsAggregatedResponse, Error>;
+    surveyResultsOverride?: SurveyResultsAggregatedResponse;
     clusters: Partial<PolisClusters>;
     totalParticipantCount: number;
     compactMode?: boolean;
@@ -205,6 +206,7 @@ const props = withDefaults(
   {
     compactMode: false,
     surveyGate: undefined,
+    surveyResultsOverride: undefined,
   }
 );
 
@@ -273,13 +275,17 @@ const answerCalloutActionLabel = computed(() => {
   return t(surveyAnswerCalloutCopy.value.actionLabelKey);
 });
 
+const activeSurveyResults = computed(
+  () => props.surveyResultsOverride ?? props.surveyQuery.data.value
+);
+
 const canViewFullResults = computed(() =>
-  canViewFullSurveyResults({ surveyResults: props.surveyQuery.data.value })
+  canViewFullSurveyResults({ surveyResults: activeSurveyResults.value })
 );
 
 const surveyRows = computed(() =>
   getDisplayedSurveyRows({
-    surveyResults: props.surveyQuery.data.value,
+    surveyResults: activeSurveyResults.value,
     displayMode: displayMode.value,
   })
 );

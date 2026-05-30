@@ -9,10 +9,10 @@ import type { AnalysisData } from "src/utils/api/comment/comment";
 export const LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS = 2_000;
 export const DESCRIPTION_READINESS_RETRY_INTERVAL_MS = 5_000;
 
-function isTerminalDescriptionStatus(
+function isReadyDescriptionStatus(
   status: AnalysisDescriptionReadiness["english"]["status"]
 ): boolean {
-  return status === "ready" || status === "fallback";
+  return status === "ready";
 }
 
 export function getPendingDescriptionLocales(
@@ -25,14 +25,14 @@ export function getPendingDescriptionLocales(
   const locales: SupportedDisplayLanguageCodes[] = [];
   if (
     readiness.english.expected &&
-    !isTerminalDescriptionStatus(readiness.english.status)
+    !isReadyDescriptionStatus(readiness.english.status)
   ) {
     locales.push("en");
   }
 
   if (
     readiness.requested.expected &&
-    !isTerminalDescriptionStatus(readiness.requested.status) &&
+    !isReadyDescriptionStatus(readiness.requested.status) &&
     !locales.includes(readiness.requestedLocale)
   ) {
     locales.push(readiness.requestedLocale);

@@ -780,9 +780,9 @@ export const conversationViewSnapshotReasonEnum = pgEnum(
     ],
 );
 
-export const aiDescriptionLocaleStatusEnum = pgEnum(
-    "ai_description_locale_status_enum",
-    ["pending", "ready", "fallback"],
+export const aiDescriptionLocaleExpectationKindEnum = pgEnum(
+    "ai_description_locale_expectation_kind_enum",
+    ["english_description", "translation"],
 );
 
 // One user == one account.
@@ -2261,7 +2261,11 @@ export const notificationOpinionVoteTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (t) => [index("notification_opinion_vote_notification_idx").on(t.notificationId)],
+    (t) => [
+        index("notification_opinion_vote_notification_idx").on(
+            t.notificationId,
+        ),
+    ],
 );
 
 export const notificationNewOpinionTable = pgTable(
@@ -2287,7 +2291,9 @@ export const notificationNewOpinionTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (t) => [index("notification_new_opinion_notification_idx").on(t.notificationId)],
+    (t) => [
+        index("notification_new_opinion_notification_idx").on(t.notificationId),
+    ],
 );
 
 export const notificationExportTable = pgTable(
@@ -3288,9 +3294,12 @@ export const realtimeEventOutboxTable = pgTable(
     ],
 );
 
+// One row means a snapshot/locale is expected to eventually have generated
+// description content. This is not a display-readiness source of truth: API
+// readiness is derived from actual description/translation content and work rows.
 /** @service api, math-updater */
-export const opinionGroupDescriptionLocaleStatusTable = pgTable(
-    "opinion_group_description_locale_status",
+export const opinionGroupDescriptionLocaleExpectationTable = pgTable(
+    "opinion_group_description_locale_expectation",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         conversationViewSnapshotId: integer("conversation_view_snapshot_id")
@@ -3306,29 +3315,14 @@ export const opinionGroupDescriptionLocaleStatusTable = pgTable(
             .notNull()
             .references(() => analysisSnapshotResultTable.id),
         locale: varchar("locale", { length: 10 }).notNull(),
-        status: aiDescriptionLocaleStatusEnum("status").notNull(),
-        aiGenerationExpected: boolean("ai_generation_expected")
-            .notNull()
-            .default(false),
-        translationExpected: boolean("translation_expected")
-            .notNull()
-            .default(false),
-        attemptCount: integer("attempt_count").notNull().default(0),
-        nextRunAt: timestamp("next_run_at", {
+        expectationKind:
+            aiDescriptionLocaleExpectationKindEnum(
+                "expectation_kind",
+            ).notNull(),
+        retryDemandDueAt: timestamp("retry_demand_due_at", {
             mode: "date",
             precision: 0,
         }),
-        leaseOwner: varchar("lease_owner", { length: 100 }),
-        leaseToken: varchar("lease_token", { length: 100 }),
-        leaseExpiresAt: timestamp("lease_expires_at", {
-            mode: "date",
-            precision: 0,
-        }),
-        nonRetryableAiDescriptionEpoch: integer(
-            "non_retryable_ai_description_epoch",
-        ),
-        lastErrorCode: varchar("last_error_code", { length: 100 }),
-        lastErrorMessage: text("last_error_message"),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -3343,31 +3337,29 @@ export const opinionGroupDescriptionLocaleStatusTable = pgTable(
             .notNull(),
     },
     (t) => [
-        unique("opinion_group_description_locale_status_unique").on(
+        unique("opinion_group_description_locale_expectation_unique").on(
             t.conversationViewSnapshotId,
             t.locale,
         ),
-        index("opinion_group_description_locale_status_due_idx")
-            .on(t.nextRunAt)
-            .where(
-                sqlAnd(
-                    isNull(t.leaseToken),
-                    isNotNull(t.nextRunAt),
-                    sql`${t.status} <> 'ready'`,
-                ),
-            ),
+        index("opinion_group_description_locale_expectation_due_idx")
+            .on(t.retryDemandDueAt)
+            .where(isNotNull(t.retryDemandDueAt)),
+        index("opinion_group_description_locale_expectation_lookup_idx").on(
+            t.conversationId,
+            t.expectationKind,
+            t.locale,
+            t.conversationViewSnapshotId,
+        ),
         check(
-            "opinion_group_description_locale_status_running_lease_check",
+            "opinion_group_description_locale_expectation_kind_check",
             sqlOr(
                 sqlAnd(
-                    isNull(t.leaseOwner),
-                    isNull(t.leaseToken),
-                    isNull(t.leaseExpiresAt),
+                    sql`${t.locale} = 'en'`,
+                    sql`${t.expectationKind} = 'english_description'`,
                 ),
                 sqlAnd(
-                    isNotNull(t.leaseOwner),
-                    isNotNull(t.leaseToken),
-                    isNotNull(t.leaseExpiresAt),
+                    sql`${t.locale} <> 'en'`,
+                    sql`${t.expectationKind} = 'translation'`,
                 ),
             ),
         ),

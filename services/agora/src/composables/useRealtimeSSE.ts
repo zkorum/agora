@@ -827,7 +827,7 @@ export function useRealtimeSSE({
               }),
             refetchType: "none",
           });
-          if (checkpointChanged) {
+          if (checkpointChanged || data.changeKind === "descriptions") {
             void queryClient.invalidateQueries({
               predicate: (query) =>
                 isCheckpointAnalysisQueryKey({
@@ -835,7 +835,10 @@ export function useRealtimeSSE({
                   conversationSlugId: data.conversationSlugId,
                   checkpointViewSnapshotId: data.conversationViewSnapshotId,
                 }),
+              refetchType: "active",
             });
+          }
+          if (checkpointChanged) {
             void queryClient.invalidateQueries({
               queryKey: ["analysisCheckpoints", data.conversationSlugId],
             });

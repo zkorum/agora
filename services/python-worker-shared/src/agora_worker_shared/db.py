@@ -15,7 +15,7 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session, aliased
 
 from agora_worker_shared.generated_models import (
-    AiDescriptionLocaleStatusEnum,
+    AiDescriptionLocaleExpectationKindEnum,
     AnalysisCompressionEnum,
     AnalysisInputSnapshot,
     AnalysisInsufficientDataReasonEnum,
@@ -35,7 +35,7 @@ from agora_worker_shared.generated_models import (
     OpinionGroupCandidate,
     OpinionGroupCandidateAssessment,
     OpinionGroupCandidateOpinionMetrics,
-    OpinionGroupDescriptionLocaleStatus,
+    OpinionGroupDescriptionLocaleExpectation,
     OpinionGroupLineage,
     OpinionGroupLineageDescriptionWork,
     OpinionGroupLineageScope,
@@ -2227,7 +2227,7 @@ def _fetch_displayable_group_counts_by_view_snapshot_id(
     return group_counts_by_view_snapshot_id
 
 
-def _create_ai_description_locale_status_rows(
+def _create_ai_description_locale_expectation_rows(
     session: Session,
     *,
     persisted_view_snapshots_by_pair: dict[tuple[int, int], _PersistedConversationViewSnapshot],
@@ -2235,7 +2235,7 @@ def _create_ai_description_locale_status_rows(
     ai_generation_expected: bool,
     translation_expected: bool,
 ) -> list[int]:
-    if not persisted_view_snapshots_by_pair:
+    if not ai_generation_expected or not persisted_view_snapshots_by_pair:
         return []
 
     current_snapshot_id_by_pair = {
@@ -2247,32 +2247,29 @@ def _create_ai_description_locale_status_rows(
         opinion_group_spec_id,
     ), current_snapshot_id in current_snapshot_id_by_pair.items():
         session.execute(
-            update(OpinionGroupDescriptionLocaleStatus)
+            update(OpinionGroupDescriptionLocaleExpectation)
             .where(
                 and_(
-                    OpinionGroupDescriptionLocaleStatus.conversation_id == conversation_id,
-                    OpinionGroupDescriptionLocaleStatus.opinion_group_spec_id
+                    OpinionGroupDescriptionLocaleExpectation.conversation_id == conversation_id,
+                    OpinionGroupDescriptionLocaleExpectation.opinion_group_spec_id
                     == opinion_group_spec_id,
-                    OpinionGroupDescriptionLocaleStatus.conversation_view_snapshot_id
+                    OpinionGroupDescriptionLocaleExpectation.conversation_view_snapshot_id
                     != current_snapshot_id,
-                    OpinionGroupDescriptionLocaleStatus.conversation_view_snapshot_id.not_in(
+                    OpinionGroupDescriptionLocaleExpectation.conversation_view_snapshot_id.not_in(
                         select(
                             ConversationViewSnapshotCheckpointReason.conversation_view_snapshot_id
                         )
                     ),
-                    OpinionGroupDescriptionLocaleStatus.next_run_at.is_not(None),
+                    OpinionGroupDescriptionLocaleExpectation.retry_demand_due_at.is_not(None),
                 )
             )
             .values(
-                next_run_at=None,
-                lease_owner=None,
-                lease_token=None,
-                lease_expires_at=None,
+                retry_demand_due_at=None,
                 updated_at=func.now(),
             )
         )
 
-    locale_status_values: list[dict[str, object]] = []
+    locale_expectation_values: list[dict[str, object]] = []
     due_conversation_ids: set[int] = set()
     for pair, persisted in persisted_view_snapshots_by_pair.items():
         conversation_id, opinion_group_spec_id = pair
@@ -2285,23 +2282,27 @@ def _create_ai_description_locale_status_rows(
         result_id = result_id_by_conversation_id[conversation_id]
         due_conversation_ids.add(conversation_id)
         for locale in SUPPORTED_DISPLAY_LANGUAGE_CODES:
-            locale_status_values.append(
+            if locale != "en" and not translation_expected:
+                continue
+            locale_expectation_values.append(
                 {
                     "conversation_view_snapshot_id": persisted.view_snapshot_id,
                     "conversation_id": conversation_id,
                     "opinion_group_spec_id": opinion_group_spec_id,
                     "analysis_snapshot_result_id": result_id,
                     "locale": locale,
-                    "status": AiDescriptionLocaleStatusEnum.pending,
-                    "ai_generation_expected": ai_generation_expected,
-                    "translation_expected": locale != "en" and translation_expected,
-                    "next_run_at": func.now() if locale == "en" else None,
+                    "expectation_kind": AiDescriptionLocaleExpectationKindEnum.english_description
+                    if locale == "en"
+                    else AiDescriptionLocaleExpectationKindEnum.translation,
+                    "retry_demand_due_at": func.now() if locale == "en" else None,
                 }
             )
 
-    if locale_status_values:
+    if locale_expectation_values:
         session.execute(
-            sqlalchemy_insert(OpinionGroupDescriptionLocaleStatus).values(locale_status_values)
+            sqlalchemy_insert(OpinionGroupDescriptionLocaleExpectation).values(
+                locale_expectation_values
+            )
         )
 
     return sorted(due_conversation_ids)
@@ -3971,7 +3972,7 @@ def persist_computed_analysis_results_batch(
             ai_generation_expected=ai_generation_expected,
         )
 
-        ai_description_due_conversation_ids = _create_ai_description_locale_status_rows(
+        ai_description_due_conversation_ids = _create_ai_description_locale_expectation_rows(
             session,
             persisted_view_snapshots_by_pair=persisted_view_snapshots_by_pair,
             result_id_by_conversation_id=result_id_by_conversation_id,

@@ -18,7 +18,13 @@ function optionalStatus(
     return status;
 }
 
-function isTerminalStatus(
+function isReadyStatus(
+    status: AiDescriptionLocaleStatus | null,
+): boolean {
+    return status === "ready";
+}
+
+function isDisplayableStatus(
     status: AiDescriptionLocaleStatus | null,
 ): boolean {
     return status === "ready" || status === "fallback";
@@ -50,28 +56,31 @@ export function buildAnalysisDescriptionReadiness({
     };
 
     const shouldRetry =
-        (english.expected && !isTerminalStatus(english.status)) ||
-        (requested.expected && !isTerminalStatus(requested.status));
+        (english.expected && !isReadyStatus(english.status)) ||
+        (requested.expected && !isReadyStatus(requested.status));
 
     const state: AnalysisDescriptionReadiness["state"] = (() => {
         if (!aiLabelingEnabled) {
             return "disabled";
         }
 
-        if (english.expected && !isTerminalStatus(english.status)) {
+        if (
+            (english.expected && english.status === "fallback") ||
+            (requested.expected && requested.status === "fallback")
+        ) {
+            return "fallback";
+        }
+
+        if (english.expected && !isReadyStatus(english.status)) {
             return "english_pending";
         }
 
-        if (requested.expected && !isTerminalStatus(requested.status)) {
+        if (requested.expected && !isReadyStatus(requested.status)) {
             return "requested_pending";
         }
 
         if (!english.expected && !requested.expected) {
             return "not_expected";
-        }
-
-        if (english.status === "fallback" || requested.status === "fallback") {
-            return "fallback";
         }
 
         return "ready";
@@ -94,7 +103,7 @@ export function shouldUseSystemDescriptions(
     }
 
     if (input.englishExpected === true) {
-        return isTerminalStatus(optionalStatus(input.englishStatus));
+        return isDisplayableStatus(optionalStatus(input.englishStatus));
     }
 
     return true;
@@ -115,7 +124,7 @@ export function isDescriptionReadinessFreshForExpectedLocales({
         if (
             locale === "en" &&
             readiness.english.expected &&
-            !isTerminalStatus(readiness.english.status)
+            !isReadyStatus(readiness.english.status)
         ) {
             return false;
         }
@@ -123,7 +132,7 @@ export function isDescriptionReadinessFreshForExpectedLocales({
         if (
             locale === readiness.requestedLocale &&
             readiness.requested.expected &&
-            !isTerminalStatus(readiness.requested.status)
+            !isReadyStatus(readiness.requested.status)
         ) {
             return false;
         }

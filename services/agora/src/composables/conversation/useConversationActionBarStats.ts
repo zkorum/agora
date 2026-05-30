@@ -19,12 +19,14 @@ interface UseConversationActionBarStatsParams {
   conversationData: MaybeRefOrGetter<ExtendedConversation | undefined>;
   currentTab: MaybeRefOrGetter<"comment" | "analysis">;
   routeQuery: MaybeRefOrGetter<LocationQuery>;
+  overrideStats?: MaybeRefOrGetter<ConversationActionBarStats | undefined>;
 }
 
 export function useConversationActionBarStats({
   conversationData,
   currentTab,
   routeQuery,
+  overrideStats,
 }: UseConversationActionBarStatsParams) {
   const checkpointViewSnapshotId = computed(() =>
     parseCheckpointQuery({ query: toValue(routeQuery) })
@@ -60,6 +62,12 @@ export function useConversationActionBarStats({
   });
 
   const actionBarStats = computed<ConversationActionBarStats | undefined>(() => {
+    const statsOverride =
+      overrideStats === undefined ? undefined : toValue(overrideStats);
+    if (statsOverride !== undefined) {
+      return statsOverride;
+    }
+
     const checkpoint = selectedCheckpoint.value;
     if (checkpoint !== undefined) {
       return pickActionBarStats(checkpoint);

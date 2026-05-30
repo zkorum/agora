@@ -32,7 +32,7 @@ import {
 } from "@/service/premiumEntitlement.js";
 import {
     createConversationViewSnapshotsFromCurrentState,
-    ensureAiDescriptionLocaleStatusesForLatestAnalysisSnapshots,
+    ensureAiDescriptionLocaleExpectationsForLatestAnalysisSnapshots,
 } from "@/service/conversationViewSnapshot.js";
 import { queueConversationSettingsUpdatedEvent } from "@/service/realtimeEventOutbox.js";
 
@@ -464,7 +464,7 @@ export async function updateConversation({
     });
 
     if (result.success && result.didEnableAiLabeling) {
-        await ensureAiDescriptionLocaleStatusesForLatestAnalysisSnapshots({
+        await ensureAiDescriptionLocaleExpectationsForLatestAnalysisSnapshots({
             db,
             conversationId: result.conversationId,
         });

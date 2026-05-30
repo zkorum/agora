@@ -22,11 +22,13 @@
       :navigate-to-discover-tab="props.navigateToDiscoverTab"
       :conversation-scroll-context="props.conversationScrollContext"
       @update:live-analysis-paused="setLiveAnalysisPaused"
+      @live-pause-stats="emit('analysisLivePauseStats', $event)"
     />
   </div>
 </template>
 
 <script setup lang="ts">
+import type { ConversationActionBarStats } from "src/composables/conversation/useConversationActionBarStats";
 import type {
   ConversationScrollContext,
   RegisterChildRefreshHandler,
@@ -68,6 +70,10 @@ const props = withDefaults(
   }
 );
 
+const emit = defineEmits<{
+  analysisLivePauseStats: [stats: ConversationActionBarStats | undefined];
+}>();
+
 // Inject parent function to report loading state
 const setCurrentTabLoading = inject<(loading: boolean) => void>(
   "setCurrentTabLoading",
@@ -75,12 +81,15 @@ const setCurrentTabLoading = inject<(loading: boolean) => void>(
     /* noop */
   }
 );
-const registerChildRefreshHandler = inject<RegisterChildRefreshHandler>("registerChildRefreshHandler", () => {
-  /* noop */
-  return () => {
+const registerChildRefreshHandler = inject<RegisterChildRefreshHandler>(
+  "registerChildRefreshHandler",
+  () => {
     /* noop */
-  };
-});
+    return () => {
+      /* noop */
+    };
+  }
+);
 
 const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
 const isTabActive = ref(true);
@@ -135,7 +144,7 @@ const surveyResultsQuery = useSurveyResultsAggregatedQuery({
   conversationSlugId,
   analysisView,
   checkpointViewSnapshotId,
-  enabled: hasSurvey,
+  enabled: computed(() => hasSurvey.value && !isLiveAnalysisPaused.value),
 });
 
 const isSurveyResultsLoading = computed(

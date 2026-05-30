@@ -35,6 +35,18 @@ describe("analysis freshness", () => {
     ).toEqual(["fr"]);
   });
 
+  it("treats fallback descriptions as displayable but not fresh", () => {
+    expect(
+      getPendingDescriptionLocales({
+        requestedLocale: "fr",
+        english: { expected: true, status: "ready" },
+        requested: { expected: true, status: "fallback" },
+        state: "fallback",
+        shouldRetry: true,
+      })
+    ).toEqual(["fr"]);
+  });
+
   it("treats snapshot and locale freshness independently", () => {
     const data = analysis({
       conversationViewSnapshotId: 12,
