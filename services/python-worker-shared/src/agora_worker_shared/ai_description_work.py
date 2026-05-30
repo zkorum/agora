@@ -139,6 +139,20 @@ class FirstPassFinalizeResult:
 
 
 @dataclass(frozen=True)
+class FirstPassPendingStatusCounts:
+    english: int
+    translation: int
+
+    @property
+    def total(self) -> int:
+        return self.english + self.translation
+
+
+class FirstPassPendingStatusError(RuntimeError):
+    pass
+
+
+@dataclass(frozen=True)
 class DescriptionTranslationBatchProcessResult:
     schedules: list[WorkStateSchedule]
     translated_description_ids: list[int]
@@ -482,13 +496,6 @@ def finalize_first_pass_ai_description_work_batch(
     unique_conversation_ids = sorted(set(conversation_ids))
     unique_view_snapshot_ids = sorted(set(conversation_view_snapshot_ids))
     with Session(engine) as session:
-        _ensure_lineage_description_work_for_pending_statuses(
-            session,
-            conversation_ids=unique_conversation_ids,
-            conversation_view_snapshot_ids=unique_view_snapshot_ids,
-            next_run_required=False,
-            require_processable_conversation=False,
-        )
         _refresh_english_locale_statuses(
             session,
             conversation_ids=unique_conversation_ids,
@@ -496,13 +503,6 @@ def finalize_first_pass_ai_description_work_batch(
             require_processable_conversation=False,
         )
         if translation_enabled:
-            _ensure_translation_work_for_pending_statuses(
-                session,
-                conversation_ids=unique_conversation_ids,
-                conversation_view_snapshot_ids=unique_view_snapshot_ids,
-                next_run_required=False,
-                require_processable_conversation=False,
-            )
             _refresh_translation_locale_statuses(
                 session,
                 conversation_ids=unique_conversation_ids,
@@ -543,6 +543,27 @@ def finalize_first_pass_ai_description_work_batch(
                 .returning(OpinionGroupDescriptionLocaleStatus.id)
             ).all()
             fallback_status_count = len(fallback_rows)
+        pending_counts = _first_pass_pending_status_counts(
+            session,
+            conversation_ids=unique_conversation_ids,
+            conversation_view_snapshot_ids=unique_view_snapshot_ids,
+        )
+        if pending_counts.total > 0:
+            log.error(
+                "[MathUpdaterDB] First-pass activation blocked by pending expected "
+                "AI description statuses english=%d translation=%d conversation_ids=%s "
+                "view_snapshot_ids=%s",
+                pending_counts.english,
+                pending_counts.translation,
+                _format_ids_for_log(unique_conversation_ids),
+                _format_ids_for_log(unique_view_snapshot_ids),
+            )
+            msg = (
+                "first-pass AI description work did not terminalize every expected "
+                f"status: english={pending_counts.english} "
+                f"translation={pending_counts.translation}"
+            )
+            raise FirstPassPendingStatusError(msg)
         activated_view_snapshot_ids = _activate_first_pass_display_safe_view_snapshots(
             session,
             conversation_ids=unique_conversation_ids,
@@ -1000,6 +1021,67 @@ def _pending_status_view_snapshot_filter(
 
 def false_condition() -> ColumnElement[bool]:
     return false()
+
+
+def _first_pass_pending_status_counts(
+    session: Session,
+    *,
+    conversation_ids: list[int],
+    conversation_view_snapshot_ids: list[int],
+) -> FirstPassPendingStatusCounts:
+    if not conversation_ids or not conversation_view_snapshot_ids:
+        return FirstPassPendingStatusCounts(english=0, translation=0)
+
+    english_count = session.execute(
+        select(func.count(OpinionGroupDescriptionLocaleStatus.id)).where(
+            and_(
+                OpinionGroupDescriptionLocaleStatus.conversation_id.in_(
+                    sorted(set(conversation_ids))
+                ),
+                OpinionGroupDescriptionLocaleStatus.conversation_view_snapshot_id.in_(
+                    sorted(set(conversation_view_snapshot_ids))
+                ),
+                OpinionGroupDescriptionLocaleStatus.locale == "en",
+                OpinionGroupDescriptionLocaleStatus.ai_generation_expected.is_(True),
+                OpinionGroupDescriptionLocaleStatus.status
+                == AiDescriptionLocaleStatusEnum.pending,
+            )
+        )
+    ).scalar_one()
+    translation_count = session.execute(
+        select(func.count(OpinionGroupDescriptionLocaleStatus.id)).where(
+            and_(
+                OpinionGroupDescriptionLocaleStatus.conversation_id.in_(
+                    sorted(set(conversation_ids))
+                ),
+                OpinionGroupDescriptionLocaleStatus.conversation_view_snapshot_id.in_(
+                    sorted(set(conversation_view_snapshot_ids))
+                ),
+                OpinionGroupDescriptionLocaleStatus.locale != "en",
+                OpinionGroupDescriptionLocaleStatus.translation_expected.is_(True),
+                OpinionGroupDescriptionLocaleStatus.status
+                == AiDescriptionLocaleStatusEnum.pending,
+            )
+        )
+    ).scalar_one()
+    return FirstPassPendingStatusCounts(
+        english=english_count,
+        translation=translation_count,
+    )
+
+
+def fetch_first_pass_pending_status_counts(
+    engine: Engine,
+    *,
+    conversation_ids: list[int],
+    conversation_view_snapshot_ids: list[int],
+) -> FirstPassPendingStatusCounts:
+    with Session(engine) as session:
+        return _first_pass_pending_status_counts(
+            session,
+            conversation_ids=conversation_ids,
+            conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+        )
 
 
 def _activate_first_pass_display_safe_view_snapshots(
@@ -1796,7 +1878,13 @@ def _lineage_work_relevant_status_filter(
     *,
     require_activated_view_snapshot: bool = False,
     require_unactivated_view_snapshot: bool = False,
+    require_pending_status: bool = False,
 ) -> ColumnElement[bool]:
+    status_filter = (
+        OpinionGroupDescriptionLocaleStatus.status == AiDescriptionLocaleStatusEnum.pending
+        if require_pending_status
+        else OpinionGroupDescriptionLocaleStatus.status != AiDescriptionLocaleStatusEnum.ready
+    )
     return (
         select(OpinionGroupDescriptionLocaleStatus.id)
         .join(
@@ -1819,7 +1907,7 @@ def _lineage_work_relevant_status_filter(
                 OpinionGroupDescriptionLocaleStatus.conversation_id
                 == OpinionGroupLineageDescriptionWork.conversation_id,
                 OpinionGroupDescriptionLocaleStatus.locale == "en",
-                OpinionGroupDescriptionLocaleStatus.status != AiDescriptionLocaleStatusEnum.ready,
+                status_filter,
                 OpinionGroupDescriptionLocaleStatus.ai_generation_expected.is_(True),
                 OpinionGroupCandidate.outcome == AnalysisResultOutcomeEnum.success,
                 OpinionGroupCandidateAssessment.hidden_reason.is_(None),
@@ -1841,11 +1929,13 @@ def _lineage_work_view_snapshot_filter(
     *,
     require_activated_view_snapshot: bool = False,
     require_unactivated_view_snapshot: bool = False,
+    require_pending_status: bool = False,
 ) -> ColumnElement[bool]:
     return _lineage_work_relevant_status_filter(
         conversation_view_snapshot_ids,
         require_activated_view_snapshot=require_activated_view_snapshot,
         require_unactivated_view_snapshot=require_unactivated_view_snapshot,
+        require_pending_status=require_pending_status,
     )
 
 
@@ -1854,7 +1944,13 @@ def _translation_work_relevant_status_filter(
     *,
     require_activated_view_snapshot: bool = False,
     require_unactivated_view_snapshot: bool = False,
+    require_pending_status: bool = False,
 ) -> ColumnElement[bool]:
+    status_filter = (
+        OpinionGroupDescriptionLocaleStatus.status == AiDescriptionLocaleStatusEnum.pending
+        if require_pending_status
+        else OpinionGroupDescriptionLocaleStatus.status != AiDescriptionLocaleStatusEnum.ready
+    )
     return (
         select(OpinionGroupDescriptionLocaleStatus.id)
         .join(
@@ -1883,7 +1979,7 @@ def _translation_work_relevant_status_filter(
                 == OpinionGroupDescriptionTranslationWork.conversation_id,
                 OpinionGroupDescriptionLocaleStatus.locale
                 == OpinionGroupDescriptionTranslationWork.locale,
-                OpinionGroupDescriptionLocaleStatus.status != AiDescriptionLocaleStatusEnum.ready,
+                status_filter,
                 OpinionGroupDescriptionLocaleStatus.translation_expected.is_(True),
                 OpinionGroupCandidate.outcome == AnalysisResultOutcomeEnum.success,
                 OpinionGroupCandidateAssessment.hidden_reason.is_(None),
@@ -1906,11 +2002,13 @@ def _translation_work_view_snapshot_filter(
     *,
     require_activated_view_snapshot: bool = False,
     require_unactivated_view_snapshot: bool = False,
+    require_pending_status: bool = False,
 ) -> ColumnElement[bool]:
     return _translation_work_relevant_status_filter(
         conversation_view_snapshot_ids,
         require_activated_view_snapshot=require_activated_view_snapshot,
         require_unactivated_view_snapshot=require_unactivated_view_snapshot,
+        require_pending_status=require_pending_status,
     )
 
 
@@ -1927,6 +2025,7 @@ def claim_ai_description_locale_work_items_batch(
     claim_lineage_descriptions: bool = True,
     claim_translations: bool = True,
     require_activated_view_snapshot: bool = False,
+    require_pending_status: bool = False,
 ) -> list[ClaimedAiDescriptionLocaleWorkItem]:
     if (
         not conversation_ids
@@ -2009,6 +2108,7 @@ def claim_ai_description_locale_work_items_batch(
                                 require_unactivated_view_snapshot=(
                                     require_unactivated_view_snapshot
                                 ),
+                                require_pending_status=require_pending_status,
                             ),
                             or_(
                                 OpinionGroupLineageDescriptionWork.non_retryable_ai_description_epoch.is_(
@@ -2055,6 +2155,7 @@ def claim_ai_description_locale_work_items_batch(
                                         require_unactivated_view_snapshot=(
                                             require_unactivated_view_snapshot
                                         ),
+                                        require_pending_status=require_pending_status,
                                     ),
                                 )
                             )
@@ -2126,6 +2227,7 @@ def claim_ai_description_locale_work_items_batch(
                             conversation_view_snapshot_ids,
                             require_activated_view_snapshot=require_activated_view_snapshot,
                             require_unactivated_view_snapshot=require_unactivated_view_snapshot,
+                            require_pending_status=require_pending_status,
                         ),
                         ~select(OpinionGroupDescriptionTranslation.id)
                         .where(
@@ -2177,6 +2279,7 @@ def claim_ai_description_locale_work_items_batch(
                                     require_unactivated_view_snapshot=(
                                         require_unactivated_view_snapshot
                                     ),
+                                    require_pending_status=require_pending_status,
                                 ),
                                 ~select(OpinionGroupDescriptionTranslation.id)
                                 .where(

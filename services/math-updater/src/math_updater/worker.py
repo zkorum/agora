@@ -6,16 +6,18 @@ import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Event, Lock, Thread
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 import valkey as valkey_lib
 from agora_worker_shared.ai_description_work import (
     ClaimedDescriptionTranslationWorkItem,
     ClaimedLineageDescriptionWorkItem,
+    FirstPassPendingStatusError,
     claim_ai_description_locale_work_items_batch,
     complete_non_processable_ai_description_work_batch,
     description_translation_work_claim_batches,
     fetch_ai_description_view_snapshot_ids_for_analysis_snapshots,
+    fetch_first_pass_pending_status_counts,
     finalize_first_pass_ai_description_work_batch,
     mark_non_retryable_ai_description_locale_work_item,
     process_ai_description_locale_work_item,
@@ -106,6 +108,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 log = logging.getLogger(__name__)
+type FirstPassPhase = Literal["english", "translation"]
 
 _running = True
 _lease_heartbeat_stoppers: list[Callable[[], None]] = []
@@ -384,12 +387,15 @@ def _process_ai_description_conversation_ids(
     description_translator: DescriptionTranslator | None,
     simulation_runtime: SimulationRuntime | None = None,
     retry_first_pass_once: bool = False,
+    claim_lineage_descriptions: bool = True,
+    claim_translations: bool = True,
+    require_pending_status: bool = False,
 ) -> int:
     completed_non_processable_ids = complete_non_processable_ai_description_work_batch(
         primary_engine,
         conversation_ids=conversation_ids,
-        include_lineage_descriptions=True,
-        include_translations=description_translator is not None,
+        include_lineage_descriptions=claim_lineage_descriptions,
+        include_translations=description_translator is not None and claim_translations,
     )
     if completed_non_processable_ids:
         log.info(
@@ -408,19 +414,26 @@ def _process_ai_description_conversation_ids(
         return 0
 
     claim_started_at = time.perf_counter()
-    ai_claims = claim_ai_description_locale_work_items_batch(
-        primary_engine,
-        worker_id=worker_id,
-        conversation_ids=processable_conversation_ids,
-        conversation_view_snapshot_ids=conversation_view_snapshot_ids,
-        lease_ttl_seconds=lease_ttl_seconds,
-        limit=min(claim_limit, max_workers),
-        ai_description_epoch=ai_description_epoch,
-        translation_enabled=description_translator is not None,
-        claim_translations=False,
-    )
+    ai_claims: list[ClaimedAiDescriptionLocaleWorkItem] = []
+    if claim_lineage_descriptions:
+        ai_claims = claim_ai_description_locale_work_items_batch(
+            primary_engine,
+            worker_id=worker_id,
+            conversation_ids=processable_conversation_ids,
+            conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+            lease_ttl_seconds=lease_ttl_seconds,
+            limit=min(claim_limit, max_workers),
+            ai_description_epoch=ai_description_epoch,
+            translation_enabled=description_translator is not None,
+            claim_translations=False,
+            require_pending_status=require_pending_status,
+        )
     remaining_translation_claim_limit = claim_limit - len(ai_claims)
-    if description_translator is not None and remaining_translation_claim_limit > 0:
+    if (
+        claim_translations
+        and description_translator is not None
+        and remaining_translation_claim_limit > 0
+    ):
         ai_claims.extend(
             claim_ai_description_locale_work_items_batch(
                 primary_engine,
@@ -432,6 +445,7 @@ def _process_ai_description_conversation_ids(
                 ai_description_epoch=ai_description_epoch,
                 translation_enabled=True,
                 claim_lineage_descriptions=False,
+                require_pending_status=require_pending_status,
             )
         )
     if not ai_claims:
@@ -686,6 +700,131 @@ def _process_ai_description_conversation_ids(
     return len(ai_claims)
 
 
+def _pending_count_for_first_pass_phase(
+    *,
+    primary_engine: Engine,
+    conversation_ids: list[int],
+    conversation_view_snapshot_ids: list[int],
+    phase: FirstPassPhase,
+) -> int:
+    counts = fetch_first_pass_pending_status_counts(
+        primary_engine,
+        conversation_ids=conversation_ids,
+        conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+    )
+    if phase == "english":
+        return counts.english
+    if phase == "translation":
+        return counts.translation
+    msg = f"unknown first-pass phase {phase}"
+    raise ValueError(msg)
+
+
+def _raise_first_pass_no_progress(
+    *,
+    phase: FirstPassPhase,
+    pending_count: int,
+    conversation_ids: list[int],
+    conversation_view_snapshot_ids: list[int],
+) -> None:
+    log.error(
+        "[MathUpdater] first_pass %s phase could not make progress pending=%d "
+        "conversation_count=%d view_snapshot_count=%d conversation_ids=%s "
+        "view_snapshot_ids=%s",
+        phase,
+        pending_count,
+        len(conversation_ids),
+        len(conversation_view_snapshot_ids),
+        _format_ids(conversation_ids),
+        _format_ids(conversation_view_snapshot_ids),
+    )
+    msg = (
+        f"first-pass {phase} phase has {pending_count} pending expected "
+        "status(es) but no claimable work"
+    )
+    raise FirstPassPendingStatusError(msg)
+
+
+def _process_ai_description_first_pass_phase(
+    *,
+    phase: FirstPassPhase,
+    primary_engine: Engine,
+    vk: valkey_lib.Valkey,
+    worker_id: str,
+    conversation_ids: list[int],
+    conversation_view_snapshot_ids: list[int],
+    lease_ttl_seconds: int,
+    claim_limit: int,
+    max_workers: int,
+    ai_description_epoch: int,
+    retry_policy: RetryPolicy,
+    description_generator: DescriptionGenerator,
+    description_translator: DescriptionTranslator | None,
+    simulation_runtime: SimulationRuntime | None,
+) -> int:
+    total_processed_count = 0
+    pending_count = _pending_count_for_first_pass_phase(
+        primary_engine=primary_engine,
+        conversation_ids=conversation_ids,
+        conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+        phase=phase,
+    )
+    while pending_count > 0:
+        processed_count = _process_ai_description_conversation_ids(
+            primary_engine=primary_engine,
+            vk=vk,
+            worker_id=worker_id,
+            conversation_ids=conversation_ids,
+            conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+            lease_ttl_seconds=lease_ttl_seconds,
+            claim_limit=claim_limit,
+            max_workers=max_workers,
+            ai_description_epoch=ai_description_epoch,
+            retry_policy=retry_policy,
+            description_generator=description_generator,
+            description_translator=description_translator,
+            simulation_runtime=simulation_runtime,
+            retry_first_pass_once=True,
+            claim_lineage_descriptions=phase == "english",
+            claim_translations=phase == "translation",
+            require_pending_status=True,
+        )
+        log.info(
+            "[MathUpdater] first_pass %s phase processed count=%d pending_before=%d "
+            "conversation_count=%d view_snapshot_count=%d",
+            phase,
+            processed_count,
+            pending_count,
+            len(conversation_ids),
+            len(conversation_view_snapshot_ids),
+        )
+        total_processed_count += processed_count
+        if processed_count > 0:
+            pending_count = _pending_count_for_first_pass_phase(
+                primary_engine=primary_engine,
+                conversation_ids=conversation_ids,
+                conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+                phase=phase,
+            )
+            continue
+
+        pending_count = _pending_count_for_first_pass_phase(
+            primary_engine=primary_engine,
+            conversation_ids=conversation_ids,
+            conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+            phase=phase,
+        )
+        if pending_count == 0:
+            break
+        _raise_first_pass_no_progress(
+            phase=phase,
+            pending_count=pending_count,
+            conversation_ids=conversation_ids,
+            conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+        )
+    return total_processed_count
+
+
 def _process_ai_description_first_pass(
     *,
     primary_engine: Engine,
@@ -713,23 +852,42 @@ def _process_ai_description_first_pass(
         count=len(conversation_view_snapshot_ids),
         metadata={"conversationCount": len(unique_conversation_ids)},
     )
-    while True:
-        recovered_conversation_ids = recover_expired_ai_description_work(
-            primary_engine,
-            translation_enabled=description_translator is not None,
-            conversation_ids=unique_conversation_ids,
-            conversation_view_snapshot_ids=conversation_view_snapshot_ids,
-            include_lineage_descriptions=True,
-            include_translations=description_translator is not None,
-            require_unactivated_view_snapshot=True,
+    recovered_conversation_ids = recover_expired_ai_description_work(
+        primary_engine,
+        translation_enabled=description_translator is not None,
+        conversation_ids=unique_conversation_ids,
+        conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+        include_lineage_descriptions=True,
+        include_translations=description_translator is not None,
+        require_unactivated_view_snapshot=True,
+    )
+    if recovered_conversation_ids:
+        log.info(
+            "[MathUpdater] first_pass recovered %d expired AI description lease(s) ids=%s",
+            len(recovered_conversation_ids),
+            _format_ids(recovered_conversation_ids),
         )
-        if recovered_conversation_ids:
-            log.info(
-                "[MathUpdater] first_pass recovered %d expired AI description lease(s) ids=%s",
-                len(recovered_conversation_ids),
-                _format_ids(recovered_conversation_ids),
-            )
-        processed_count = _process_ai_description_conversation_ids(
+
+    english_processed_count = _process_ai_description_first_pass_phase(
+        phase="english",
+        primary_engine=primary_engine,
+        vk=vk,
+        worker_id=worker_id,
+        conversation_ids=unique_conversation_ids,
+        conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+        lease_ttl_seconds=lease_ttl_seconds,
+        claim_limit=claim_limit,
+        max_workers=max_workers,
+        ai_description_epoch=ai_description_epoch,
+        retry_policy=retry_policy,
+        description_generator=description_generator,
+        description_translator=description_translator,
+        simulation_runtime=simulation_runtime,
+    )
+    translation_processed_count = 0
+    if description_translator is not None:
+        translation_processed_count = _process_ai_description_first_pass_phase(
+            phase="translation",
             primary_engine=primary_engine,
             vk=vk,
             worker_id=worker_id,
@@ -743,17 +901,15 @@ def _process_ai_description_first_pass(
             description_generator=description_generator,
             description_translator=description_translator,
             simulation_runtime=simulation_runtime,
-            retry_first_pass_once=True,
         )
-        log.info(
-            "[MathUpdater] first_pass processed count=%d conversation_count=%d "
-            "view_snapshot_count=%d",
-            processed_count,
-            len(unique_conversation_ids),
-            len(conversation_view_snapshot_ids),
-        )
-        if processed_count == 0:
-            break
+    log.info(
+        "[MathUpdater] first_pass terminal processing complete english=%d translation=%d "
+        "conversation_count=%d view_snapshot_count=%d",
+        english_processed_count,
+        translation_processed_count,
+        len(unique_conversation_ids),
+        len(conversation_view_snapshot_ids),
+    )
     finalize_result = finalize_first_pass_ai_description_work_batch(
         primary_engine,
         conversation_ids=unique_conversation_ids,

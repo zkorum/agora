@@ -470,6 +470,13 @@
       "when": 1780141429246,
       "tag": "0066_narrow_scream",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1780149010817,
+      "tag": "0067_flimsy_stark_industries",
+      "breakpoints": true
     }
   ]
 }

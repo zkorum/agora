@@ -279,6 +279,14 @@ pnpm db:migrate
 pnpm db:undo
 ```
 
+### Migration Authoring Rules
+
+- For schema changes, edit only `services/shared-backend/src/schema.ts` and use `pnpm db:*` commands to generate/apply migrations. Do not manually edit generated Drizzle SQL files or Flyway SQL files for normal schema changes.
+- If a migration command is interactive or destructive, such as dropping/regenerating migrations, ask the user to run it or explicitly approve it first.
+- Creating Flyway SQL by hand is allowed for data backfills only. Backfill means changing existing data, not changing schema structure.
+- Hand-written Flyway SQL is also allowed for database features not representable in `schema.ts`, such as PostgreSQL functions/triggers/NOTIFY behavior.
+- If generated SQL fails because of ordering or tool limitations, prefer adding or moving generated migration files before editing SQL contents. Edit generated SQL only when necessary to make the migration valid.
+
 ### Docker Images
 
 ```bash
