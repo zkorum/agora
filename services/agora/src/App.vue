@@ -62,9 +62,9 @@ const realtimeConversationSlugId = computed(() => {
   return getSingleRouteParam(route.params.postSlugId) || undefined;
 });
 
-// Initialize SSE for real-time events (notifications + feed updates).
-// Always connected: authenticated users get personal notifications + global
-// events; anonymous users get only global events (e.g. new_conversation).
+// Initialize SSE for real-time events after auth initialization.
+// Authenticated users get personal notifications + global events; anonymous
+// users get the public stream and conversation subscriptions when applicable.
 useRealtimeSSE({ subscribedConversationSlugId: realtimeConversationSlugId });
 const nonDrawerRoutePatterns = [
   "/onboarding/",

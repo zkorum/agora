@@ -4,9 +4,13 @@ Adapts Connection-Oriented Cluster Match (Miller, Weyl, Erichsen 2022,
 "Beyond Collusion Resistance", Eq. 15-16) from QF funding allocation
 to per-user-per-entity voting weights for Solidago's aggregation pipeline.
 
-Reference implementations (MIT licensed, same authors):
-- external/plural-qf/pluralqf.py (connection_oriented_cluster_match)
-- external/COQF/COQF.py (COQF_sp26)
+Reference code by Joel Miller:
+- plural-qf: https://github.com/Jmiller4/plural-qf
+  License: no license file found; used as algorithm reference only.
+- COQF: https://github.com/Jmiller4/COQF
+  License: MIT, Copyright (c) 2026 Joel Miller.
+- qf-variants: https://github.com/Jmiller4/qf-variants
+  License: GPL-3.0; used as comparison reference only, no copied code.
 
 Paper: https://ssrn.com/abstract=4311507
 

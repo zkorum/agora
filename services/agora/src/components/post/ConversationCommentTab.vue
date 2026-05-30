@@ -25,7 +25,10 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import type { SubmittedCommentData } from "src/composables/conversation/useConversationParentState";
+import type {
+  RegisterChildRefreshHandler,
+  SubmittedCommentData,
+} from "src/composables/conversation/useConversationParentState";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
@@ -35,7 +38,16 @@ import {
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
-import { computed, inject, onActivated, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  inject,
+  onActivated,
+  onDeactivated,
+  onMounted,
+  onUnmounted,
+  ref,
+  watch,
+} from "vue";
 
 import CommentSection from "./comments/CommentSection.vue";
 
@@ -58,10 +70,13 @@ const setCurrentTabLoading = inject<(loading: boolean) => void>(
     /* noop */
   }
 );
-const registerChildRefreshHandler = inject<(handler: () => Promise<void>) => void>(
+const registerChildRefreshHandler = inject<RegisterChildRefreshHandler>(
   "registerChildRefreshHandler",
   () => {
     /* noop */
+    return () => {
+      /* noop */
+    };
   }
 );
 const registerSubmittedCommentHandler = inject<
@@ -71,6 +86,8 @@ const registerSubmittedCommentHandler = inject<
 });
 
 const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
+const isTabActive = ref(true);
+let unregisterChildRefreshHandler: (() => void) | undefined;
 
 const { markAnalysisAsStale, markCommentsAsStale } = useInvalidateCommentQueries();
 const { loadAuthenticatedModules } = useBackendAuthApi();
@@ -127,13 +144,14 @@ const hiddenCommentsQuery = useHiddenCommentsQuery({
   enabled: false, // Lazy: fetched on-demand when user selects this filter
 });
 
-// Report loading state to parent (for spinner in PostActionBar)
-watch(
-  () => opinionSectionRef.value?.isLoading ?? false,
-  (isLoading) => {
-    setCurrentTabLoading(isLoading);
-  }
+const isLoading = computed(
+  () => isTabActive.value && (opinionSectionRef.value?.isLoading ?? false)
 );
+
+// Report loading state to parent (for spinner in PostActionBar)
+watch(isLoading, (loading) => {
+  setCurrentTabLoading(loading);
+});
 
 // Sync filter: when parent changes filter (user clicked sorting selector), tell CommentSection
 watch(
@@ -165,10 +183,6 @@ async function submittedComment(data: SubmittedCommentData): Promise<void> {
 
   // Handle deferred cache refresh if auth state changed (new guest user)
   if (data.needsCacheRefresh) {
-    console.log(
-      "[ConversationCommentTab] New guest user detected - performing deferred cache refresh"
-    );
-
     await loadAuthenticatedModules();
 
     if (opinionSectionRef.value) {
@@ -202,16 +216,34 @@ async function handleChildRefresh(): Promise<void> {
   ]);
 }
 
-registerChildRefreshHandler(handleChildRefresh);
+function registerRefreshHandler(): void {
+  unregisterChildRefreshHandler?.();
+  unregisterChildRefreshHandler = registerChildRefreshHandler(handleChildRefresh);
+}
+
+function unregisterRefreshHandler(): void {
+  unregisterChildRefreshHandler?.();
+  unregisterChildRefreshHandler = undefined;
+}
+
+registerRefreshHandler();
 
 onActivated(() => {
-  registerChildRefreshHandler(handleChildRefresh);
+  isTabActive.value = true;
+  registerRefreshHandler();
   registerSubmittedCommentHandler(submittedComment);
 });
 
+onDeactivated(() => {
+  isTabActive.value = false;
+  unregisterRefreshHandler();
+});
+
+onUnmounted(unregisterRefreshHandler);
+
 onMounted(() => {
   // Report initial loading state to parent
-  setCurrentTabLoading(opinionSectionRef.value?.isLoading ?? false);
+  setCurrentTabLoading(isLoading.value);
   registerSubmittedCommentHandler(submittedComment);
 });
 </script>

@@ -4,9 +4,8 @@ import logging
 import signal
 import time
 import uuid
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
-import valkey as valkey_lib
 from agora_worker_shared.ai_description_work import (
     activate_pending_translation_expectations,
     fetch_due_ai_description_work_conversation_ids,
@@ -24,19 +23,9 @@ from agora_worker_shared.simulation_providers import (
     build_simulation_runtime,
     log_simulation_startup,
 )
-from agora_worker_shared.valkey_client import (
-    description_translation_queue_depth,
-    format_queue_lag_ms,
-    now_ms,
-    pop_due_description_translation_conversations,
-    requeue_description_translation_conversations,
-    schedule_description_translation_conversation,
-)
 from sqlalchemy import create_engine
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from agora_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
     from agora_worker_shared.description_input import ConversationDescriptionInput
 
@@ -56,47 +45,6 @@ def _handle_signal(signum: int, frame: object) -> None:
     _running = False
 
 
-def _connect_to_valkey_with_retry(
-    settings: DescriptionTranslationWorkerSettings,
-) -> valkey_lib.Valkey | None:
-    valkey_url = str(settings.valkey_url)
-    while _running:
-        try:
-            from_url = cast("Callable[..., object]", valkey_lib.from_url)
-            vk = cast(
-                "valkey_lib.Valkey",
-                from_url(valkey_url, decode_responses=True),
-            )
-            ping = cast("Callable[[], object]", vk.ping)
-            ping()
-            log.info("%s Valkey connected", LOG_PREFIX)
-            return vk
-        except Exception as error:
-            log.warning(
-                "%s Valkey unavailable at %s (%s); retrying in %.1fs",
-                LOG_PREFIX,
-                valkey_url,
-                error,
-                settings.valkey_retry_interval_seconds,
-            )
-            time.sleep(settings.valkey_retry_interval_seconds)
-    return None
-
-
-def _enqueue_conversation_ids(
-    vk: valkey_lib.Valkey,
-    *,
-    conversation_ids: list[int],
-    due_at_ms: int,
-) -> None:
-    for conversation_id in conversation_ids:
-        schedule_description_translation_conversation(
-            vk,
-            conversation_id=conversation_id,
-            due_at_ms=due_at_ms,
-        )
-
-
 def _unused_description_generator(
     conversation: ConversationDescriptionInput,
 ) -> ParsedLabelSummaryOutput:
@@ -112,11 +60,10 @@ def main() -> None:
 
     worker_id = f"desc-trans:{uuid.uuid4()}"
     log.info(
-        "%s Starting worker_id=%s pop_batch=%d claim_batch=%d translation=%d "
+        "%s Starting worker_id=%s claim_batch=%d translation=%d "
         "lease_ttl=%ds recovery=%ds",
         LOG_PREFIX,
         worker_id,
-        settings.valkey_pop_batch_size,
         settings.db_claim_batch_size,
         settings.max_ai_description_concurrency,
         settings.lease_ttl_seconds,
@@ -137,11 +84,6 @@ def main() -> None:
         return
     log.info("%s Description translation mode=%s", LOG_PREFIX, translator_bundle.mode)
 
-    vk = _connect_to_valkey_with_retry(settings)
-    if vk is None:
-        log.info("%s Shutdown complete", LOG_PREFIX)
-        return
-
     primary_engine = create_engine(
         settings.connection_string.replace("postgres://", "postgresql+psycopg://"),
         pool_pre_ping=True,
@@ -152,11 +94,7 @@ def main() -> None:
         pool_pre_ping=True,
         hide_parameters=True,
     )
-    log.info(
-        "%s PostgreSQL connected translation_dirty_depth=%d",
-        LOG_PREFIX,
-        description_translation_queue_depth(vk),
-    )
+    log.info("%s PostgreSQL connected", LOG_PREFIX)
     retry_policy = RetryPolicy(
         burst_attempts=settings.retry_burst_attempts,
         burst_interval_seconds=settings.retry_burst_seconds,
@@ -164,43 +102,10 @@ def main() -> None:
     )
 
     monotonic_start = time.monotonic()
-    last_reconcile = monotonic_start - settings.reconciliation_interval_seconds
     last_recover = monotonic_start - settings.running_recovery_interval_seconds
 
     while _running:
         monotonic_now = time.monotonic()
-
-        if monotonic_now - last_reconcile >= settings.reconciliation_interval_seconds:
-            try:
-                activated_ids = activate_pending_translation_expectations(
-                    primary_engine,
-                    limit=1000,
-                    require_activated_view_snapshot=True,
-                )
-                due_ids = fetch_due_ai_description_work_conversation_ids(
-                    read_engine,
-                    limit=1000,
-                    ai_description_epoch=settings.ai_description_epoch,
-                    translation_enabled=True,
-                    include_lineage_descriptions=False,
-                    include_translations=True,
-                    require_activated_view_snapshot=True,
-                )
-                conversation_ids = sorted({*activated_ids, *due_ids})
-                _enqueue_conversation_ids(
-                    vk,
-                    conversation_ids=conversation_ids,
-                    due_at_ms=now_ms(),
-                )
-                if conversation_ids:
-                    log.info(
-                        "%s Reconciled %d due translation conversation(s)",
-                        LOG_PREFIX,
-                        len(conversation_ids),
-                    )
-            except Exception:
-                log.exception("%s Reconciliation failed", LOG_PREFIX)
-            last_reconcile = monotonic_now
 
         if monotonic_now - last_recover >= settings.running_recovery_interval_seconds:
             try:
@@ -210,11 +115,6 @@ def main() -> None:
                     include_lineage_descriptions=False,
                     include_translations=True,
                     require_activated_view_snapshot=True,
-                )
-                _enqueue_conversation_ids(
-                    vk,
-                    conversation_ids=sorted(set(recovered_ids)),
-                    due_at_ms=now_ms(),
                 )
                 if recovered_ids:
                     log.info(
@@ -226,42 +126,51 @@ def main() -> None:
                 log.exception("%s Running-work recovery failed", LOG_PREFIX)
             last_recover = monotonic_now
 
-        pop_current_ms = now_ms()
-        due_items, next_due_at_ms = pop_due_description_translation_conversations(
-            vk,
-            count=settings.valkey_pop_batch_size,
-            current_time_ms=pop_current_ms,
-        )
-        if not due_items:
-            if next_due_at_ms is None:
-                time.sleep(settings.worker_poll_idle_sleep_seconds)
-            else:
-                sleep_ms = max(0, next_due_at_ms - now_ms())
-                time.sleep(min(settings.worker_poll_idle_sleep_seconds, sleep_ms / 1000))
+        try:
+            activated_ids = activate_pending_translation_expectations(
+                primary_engine,
+                limit=settings.db_claim_batch_size,
+                require_activated_view_snapshot=True,
+            )
+            if activated_ids:
+                log.info(
+                    "%s Activated translation expectations for %d conversation(s)",
+                    LOG_PREFIX,
+                    len(activated_ids),
+                )
+        except Exception:
+            log.exception("%s Translation expectation activation failed", LOG_PREFIX)
+
+        try:
+            due_ids = fetch_due_ai_description_work_conversation_ids(
+                read_engine,
+                limit=settings.db_claim_batch_size,
+                ai_description_epoch=settings.ai_description_epoch,
+                translation_enabled=True,
+                include_lineage_descriptions=False,
+                include_translations=True,
+                require_activated_view_snapshot=True,
+            )
+        except Exception:
+            log.exception("%s Due translation scan failed", LOG_PREFIX)
+            time.sleep(settings.worker_poll_idle_sleep_seconds)
+            continue
+        if not due_ids:
+            time.sleep(settings.worker_poll_idle_sleep_seconds)
             continue
 
         log.info(
-            "%s Popped %d due translation conversation(s) queue_lag_ms=%s",
+            "%s Found due translation conversation(s) source=read_replica count=%d ids=%s",
             LOG_PREFIX,
-            len(due_items),
-            format_queue_lag_ms(due_items, current_time_ms=pop_current_ms),
+            len(due_ids),
+            ",".join(str(conversation_id) for conversation_id in due_ids),
         )
 
         batch_started_at = time.perf_counter()
-        claimable_due_items = due_items[: settings.db_claim_batch_size]
-        overflow_due_items = due_items[settings.db_claim_batch_size :]
-        requeue_description_translation_conversations(vk, conversations=overflow_due_items)
-        if overflow_due_items:
-            log.info(
-                "%s Requeued %d overflow translation conversation(s)",
-                LOG_PREFIX,
-                len(overflow_due_items),
-            )
         processed_count = process_ai_description_conversation_ids(
             primary_engine=primary_engine,
-            vk=vk,
             worker_id=worker_id,
-            conversation_ids=[item.conversation_id for item in claimable_due_items],
+            conversation_ids=due_ids,
             lease_ttl_seconds=settings.lease_ttl_seconds,
             claim_limit=settings.db_claim_batch_size,
             max_workers=settings.max_ai_description_concurrency,
@@ -283,15 +192,15 @@ def main() -> None:
             )
         else:
             log.info(
-                "%s No translation work item processed conversation_count=%d batch_ms=%.1f",
+                "%s No translation work item processed conversation_count=%d ids=%s batch_ms=%.1f",
                 LOG_PREFIX,
-                len(claimable_due_items),
+                len(due_ids),
+                ",".join(str(conversation_id) for conversation_id in due_ids),
                 (time.perf_counter() - batch_started_at) * 1000,
             )
 
     primary_engine.dispose()
     read_engine.dispose()
-    vk.close()
     log.info("%s Shutdown complete", LOG_PREFIX)
 
 

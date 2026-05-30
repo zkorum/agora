@@ -4,8 +4,13 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from botocore.exceptions import ConnectTimeoutError, ReadTimeoutError
+from google.api_core.exceptions import DeadlineExceeded
+from google.api_core.exceptions import RetryError as GoogleRetryError
+
 from agora_worker_shared.bedrock_label_summary import (
     BedrockLabelSummaryConfig,
+    BedrockLabelSummaryError,
     generate_label_summaries_with_bedrock,
 )
 from agora_worker_shared.description_translation import (
@@ -68,9 +73,13 @@ def build_description_generator(settings: Settings) -> DescriptionGenerator | No
     def generate(
         conversation: ConversationDescriptionInput,
     ) -> ParsedLabelSummaryOutput:
-        return generate_label_summaries_with_bedrock(
-            conversation=conversation,
-            config=config,
+        return _retry_description_provider(
+            provider_name="Bedrock",
+            attempts=2,
+            call=lambda: generate_label_summaries_with_bedrock(
+                conversation=conversation,
+                config=config,
+            ),
         )
 
     return generate
@@ -118,7 +127,9 @@ def build_description_translator(settings: Settings) -> DescriptionTranslatorBun
                         target_language_codes=target_language_codes,
                     ),
                 )
-            except Exception:
+            except Exception as error:
+                if _is_timeout_error(error):
+                    raise
                 log.warning(
                     "[DescriptionTranslator] Bedrock translation exhausted; falling back to Google",
                     exc_info=True,
@@ -236,6 +247,15 @@ def _retry_translation_provider(
             return call()
         except Exception as error:
             last_error = error
+            if _is_timeout_error(error):
+                log.warning(
+                    "[DescriptionTranslator] %s translation attempt %d/%d timed out",
+                    provider_name,
+                    attempt,
+                    attempts,
+                    exc_info=True,
+                )
+                raise
             log.warning(
                 "[DescriptionTranslator] %s translation attempt %d/%d failed",
                 provider_name,
@@ -245,3 +265,55 @@ def _retry_translation_provider(
             )
     msg = f"{provider_name} translation failed after {attempts} attempt(s)"
     raise DescriptionTranslationError(msg) from last_error
+
+
+def _retry_description_provider(
+    *,
+    provider_name: str,
+    attempts: int,
+    call: Callable[[], ParsedLabelSummaryOutput],
+) -> ParsedLabelSummaryOutput:
+    last_error: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            return call()
+        except Exception as error:
+            last_error = error
+            log.warning(
+                "[DescriptionGenerator] %s description attempt %d/%d failed",
+                provider_name,
+                attempt,
+                attempts,
+                exc_info=True,
+            )
+    msg = f"{provider_name} description generation failed after {attempts} attempt(s)"
+    raise BedrockLabelSummaryError(msg) from last_error
+
+
+def _is_timeout_error(error: BaseException) -> bool:
+    seen: set[int] = set()
+    stack: list[BaseException] = [error]
+    while stack:
+        current = stack.pop()
+        current_id = id(current)
+        if current_id in seen:
+            continue
+        seen.add(current_id)
+
+        if isinstance(
+            current,
+            TimeoutError | ConnectTimeoutError | DeadlineExceeded | ReadTimeoutError,
+        ):
+            return True
+
+        if isinstance(current, GoogleRetryError):
+            cause = current.cause
+            if isinstance(cause, BaseException):
+                stack.append(cause)
+
+        if current.__cause__ is not None:
+            stack.append(current.__cause__)
+        if current.__context__ is not None:
+            stack.append(current.__context__)
+
+    return False

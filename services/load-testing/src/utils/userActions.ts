@@ -26,6 +26,8 @@ export interface UserActionConfig {
     sleepBetweenActions: number;
     allAvailableOpinions: string[];
     alreadyVotedOpinionSlugs?: string[];
+    priorityOpinionSlugs?: string[];
+    minPriorityVotesToCast?: number;
     intermittentOpinionCreationProbability?: number; // Probability (0-1) of creating an opinion before a vote
     fetchMainPageProbability?: number; // Probability (0-1) of fetching main page during actions
     fetchConversationPageProbability?: number; // Probability (0-1) of fetching conversation page during actions
@@ -87,6 +89,8 @@ export async function performUserActions({
         sleepBetweenActions,
         allAvailableOpinions,
         alreadyVotedOpinionSlugs,
+        priorityOpinionSlugs,
+        minPriorityVotesToCast,
         intermittentOpinionCreationProbability,
         fetchMainPageProbability,
         fetchConversationPageProbability,
@@ -98,6 +102,9 @@ export async function performUserActions({
     }[] = [];
     const votedOpinions = new Set(alreadyVotedOpinionSlugs ?? []);
     const availableOpinionSlugs = [...allAvailableOpinions];
+    const priorityOpinionSlugSet = new Set(priorityOpinionSlugs ?? []);
+    const priorityVoteTarget = minPriorityVotesToCast ?? 0;
+    let priorityVotesSucceeded = 0;
 
     const metrics = {
         opinionsSucceeded: 0,
@@ -113,8 +120,13 @@ export async function performUserActions({
     // Phase 1: Create all opinions first
     for (let i = 0; i < numOpinionsToCreate; i++) {
         // Randomly fetch pages to simulate realistic browsing behavior
-        if (fetchMainPageProbability && Math.random() < fetchMainPageProbability) {
-            console.log(`[${userId}] Fetching main page (during opinion creation)`);
+        if (
+            fetchMainPageProbability &&
+            Math.random() < fetchMainPageProbability
+        ) {
+            console.log(
+                `[${userId}] Fetching main page (during opinion creation)`,
+            );
             const mainPageResult = fetchMainPage();
             metrics.mainPageFetches++;
             metrics.totalMainPageResponseTime += mainPageResult.responseTime;
@@ -129,15 +141,23 @@ export async function performUserActions({
             });
         }
 
-        if (fetchConversationPageProbability && Math.random() < fetchConversationPageProbability) {
+        if (
+            fetchConversationPageProbability &&
+            Math.random() < fetchConversationPageProbability
+        ) {
             const conversationSlugId =
-                conversationSlugIds[Math.floor(Math.random() * conversationSlugIds.length)];
-            console.log(`[${userId}] Fetching conversation page (during opinion creation)`);
+                conversationSlugIds[
+                    Math.floor(Math.random() * conversationSlugIds.length)
+                ];
+            console.log(
+                `[${userId}] Fetching conversation page (during opinion creation)`,
+            );
             const conversationPageResult = fetchConversationPage({
                 conversationSlugId,
             });
             metrics.conversationPageFetches++;
-            metrics.totalConversationPageResponseTime += conversationPageResult.responseTime;
+            metrics.totalConversationPageResponseTime +=
+                conversationPageResult.responseTime;
             logLoadEvent({
                 phase: "page_fetch",
                 action: "fetch_conversation_page",
@@ -151,7 +171,9 @@ export async function performUserActions({
         }
 
         const conversationSlugId =
-            conversationSlugIds[Math.floor(Math.random() * conversationSlugIds.length)];
+            conversationSlugIds[
+                Math.floor(Math.random() * conversationSlugIds.length)
+            ];
         const opinionText =
             opinionTexts[Math.floor(Math.random() * opinionTexts.length)];
 
@@ -183,8 +205,15 @@ export async function performUserActions({
     // Phase 2: Cast all votes
     let votesAttempted = 0;
     while (votesAttempted < numVotesToCast) {
+        const shouldPrioritizeVotes =
+            priorityVotesSucceeded < priorityVoteTarget;
+
         // Randomly fetch pages to simulate realistic browsing behavior
-        if (fetchMainPageProbability && Math.random() < fetchMainPageProbability) {
+        if (
+            !shouldPrioritizeVotes &&
+            fetchMainPageProbability &&
+            Math.random() < fetchMainPageProbability
+        ) {
             console.log(`[${userId}] Fetching main page (during voting)`);
             const mainPageResult = fetchMainPage();
             metrics.mainPageFetches++;
@@ -200,15 +229,24 @@ export async function performUserActions({
             });
         }
 
-        if (fetchConversationPageProbability && Math.random() < fetchConversationPageProbability) {
+        if (
+            !shouldPrioritizeVotes &&
+            fetchConversationPageProbability &&
+            Math.random() < fetchConversationPageProbability
+        ) {
             const conversationSlugId =
-                conversationSlugIds[Math.floor(Math.random() * conversationSlugIds.length)];
-            console.log(`[${userId}] Fetching conversation page (during voting)`);
+                conversationSlugIds[
+                    Math.floor(Math.random() * conversationSlugIds.length)
+                ];
+            console.log(
+                `[${userId}] Fetching conversation page (during voting)`,
+            );
             const conversationPageResult = fetchConversationPage({
                 conversationSlugId,
             });
             metrics.conversationPageFetches++;
-            metrics.totalConversationPageResponseTime += conversationPageResult.responseTime;
+            metrics.totalConversationPageResponseTime +=
+                conversationPageResult.responseTime;
             logLoadEvent({
                 phase: "page_fetch",
                 action: "fetch_conversation_page",
@@ -221,9 +259,15 @@ export async function performUserActions({
             });
         }
 
-        if (intermittentOpinionCreationProbability && Math.random() < intermittentOpinionCreationProbability) {
+        if (
+            !shouldPrioritizeVotes &&
+            intermittentOpinionCreationProbability &&
+            Math.random() < intermittentOpinionCreationProbability
+        ) {
             const conversationSlugId =
-                conversationSlugIds[Math.floor(Math.random() * conversationSlugIds.length)];
+                conversationSlugIds[
+                    Math.floor(Math.random() * conversationSlugIds.length)
+                ];
             const opinionText =
                 opinionTexts[Math.floor(Math.random() * opinionTexts.length)];
 
@@ -259,7 +303,9 @@ export async function performUserActions({
         );
 
         if (unvotedOpinions.length === 0) {
-            console.log(`User ${userId} has no more unvoted opinions (voted: ${String(votedOpinions.size)}/${String(availableOpinionSlugs.length)})`);
+            console.log(
+                `User ${userId} has no more unvoted opinions (voted: ${String(votedOpinions.size)}/${String(availableOpinionSlugs.length)})`,
+            );
             logLoadEvent({
                 phase: "user_action",
                 action: "cast_vote",
@@ -274,9 +320,21 @@ export async function performUserActions({
             break;
         }
 
-        // Randomly select an unvoted opinion
+        const priorityUnvotedOpinions = shouldPrioritizeVotes
+            ? unvotedOpinions.filter((opinionSlugId) =>
+                  priorityOpinionSlugSet.has(opinionSlugId),
+              )
+            : [];
+        const targetOpinionPool =
+            priorityUnvotedOpinions.length > 0
+                ? priorityUnvotedOpinions
+                : unvotedOpinions;
+
+        // Randomly select an unvoted opinion, prioritizing the assigned conversation first.
         const targetOpinionSlugId =
-            unvotedOpinions[Math.floor(Math.random() * unvotedOpinions.length)];
+            targetOpinionPool[
+                Math.floor(Math.random() * targetOpinionPool.length)
+            ];
 
         const votingAction =
             votingOptions[Math.floor(Math.random() * votingOptions.length)];
@@ -293,6 +351,9 @@ export async function performUserActions({
 
         if (result.success) {
             votedOpinions.add(targetOpinionSlugId);
+            if (priorityOpinionSlugSet.has(targetOpinionSlugId)) {
+                priorityVotesSucceeded++;
+            }
             metrics.votesSucceeded++;
         } else {
             metrics.votesFailed++;
@@ -302,7 +363,9 @@ export async function performUserActions({
         sleep(sleepBetweenActions);
     }
 
-    console.log(`User ${userId} finished (opinions: ${String(metrics.opinionsSucceeded)}/${String(numOpinionsToCreate)}, votes: ${String(metrics.votesSucceeded)}/${String(numVotesToCast)})`);
+    console.log(
+        `User ${userId} finished (opinions: ${String(metrics.opinionsSucceeded)}/${String(numOpinionsToCreate)}, votes: ${String(metrics.votesSucceeded)}/${String(numVotesToCast)})`,
+    );
 
     return {
         opinionsCreated,

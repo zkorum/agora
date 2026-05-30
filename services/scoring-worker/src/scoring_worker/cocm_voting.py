@@ -8,10 +8,13 @@ Based on:
 - Miller, Weyl, Erichsen (2022), "Beyond Collusion Resistance:
   Leveraging Social Information for Plural Funding and Voting"
   https://ssrn.com/abstract=4311507
-- Reference implementations:
-  - external/plural-qf/pluralqf.py (MIT, Joel Miller)
-  - external/COQF/COQF.py (MIT, Joel Miller)
-  - external/qf-variants/qf-variants.py (GPL v3)
+- Reference code by Joel Miller:
+  - plural-qf: https://github.com/Jmiller4/plural-qf
+    License: no license file found; used as algorithm reference only.
+  - COQF: https://github.com/Jmiller4/COQF
+    License: MIT, Copyright (c) 2026 Joel Miller.
+  - qf-variants: https://github.com/Jmiller4/qf-variants
+    License: GPL-3.0; used as comparison reference only, no copied code.
 
 Adaptation from QF to voting rights:
 - QF COCM computes a total funding amount for a project using group-pair

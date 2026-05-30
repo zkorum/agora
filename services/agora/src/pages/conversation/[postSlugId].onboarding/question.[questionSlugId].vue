@@ -3,6 +3,7 @@
     :back-callback="handleBackAction"
     :close-callback="handleCloseToConversation"
     :show-close-button="true"
+    :pin-footer-to-bottom="false"
   >
     <template #body>
       <ConversationSurveyOnboardingHero :conversation-data="conversationData" />
@@ -26,12 +27,14 @@
         :enable-next-button="canNavigateForward"
         :show-next-button="true"
         :show-loading-button="isSaving"
+        density="compact"
       >
         <template #header>
           <InfoHeader
             :title="t('conversationSurveyTitle')"
             :description="progressLabel"
             icon-name="mdi-clipboard-edit-outline"
+            density="compact"
           />
         </template>
 
@@ -63,8 +66,20 @@
               />
             </div>
 
-            <div v-if="questionDescription" class="survey-card__description">
-              {{ questionDescription }}
+            <div
+              v-if="questionDescription || showPublicAggregateSuppressionNotice"
+              class="survey-card__copy-stack"
+            >
+              <div v-if="questionDescription" class="survey-card__description">
+                {{ questionDescription }}
+              </div>
+
+              <div
+                v-if="showPublicAggregateSuppressionNotice"
+                class="survey-card__privacy-note"
+              >
+                {{ t("publicAggregateSuppressionNotice") }}
+              </div>
             </div>
 
             <SurveyChoiceInput
@@ -77,6 +92,7 @@
               :selected-multi-option-slug-ids="selectedMultiOptionSlugIds"
               :select-option-label="t('selectOptionLabel')"
               :max-selections="question.constraints.maxSelections"
+              density="compact"
               @update:selected-single-option-slug-id="
                 selectedSingleOptionSlugId = $event
               "
@@ -449,6 +465,15 @@ const questionDescription = computed(() => {
   return "";
 });
 
+const showPublicAggregateSuppressionNotice = computed(() => {
+  const currentQuestion = question.value;
+  if (currentQuestion === undefined || currentQuestion.questionType !== "choice") {
+    return false;
+  }
+
+  return currentQuestion.isPublicAggregateSuppressionEnabled;
+});
+
 const isSingleSelectionQuestion = computed(() => {
   const currentQuestion = question.value;
   if (currentQuestion === undefined) {
@@ -773,7 +798,7 @@ async function handleNext(): Promise<void> {
 .survey-card {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.7rem;
 }
 
 .survey-card__prompt-row {
@@ -793,6 +818,19 @@ async function handleNext(): Promise<void> {
 .survey-card__description {
   color: #4b5563;
   font-size: 0.95rem;
+}
+
+.survey-card__copy-stack {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+}
+
+.survey-card__privacy-note {
+  color: #6b7280;
+  font-size: 0.8rem;
+  line-height: 1.35;
 }
 
 .survey-card__editor {

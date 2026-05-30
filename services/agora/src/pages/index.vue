@@ -42,7 +42,7 @@
       </WidthWrapper>
     </Teleport>
 
-    <q-pull-to-refresh @refresh="pullDownTriggered">
+    <PullToRefresh @refresh="pullDownTriggered">
       <div class="bannerWrapper">
         <WidthWrapper :enable="true">
           <FeaturedConversationBanner />
@@ -52,7 +52,7 @@
       <div class="container">
         <CompactPostList ref="compactPostListRef" />
       </div>
-    </q-pull-to-refresh>
+    </PullToRefresh>
 
     <NewPostButtonWrapper />
   </div>
@@ -65,6 +65,7 @@ import FeaturedConversationBanner from "src/components/feed/FeaturedConversation
 import { HomeMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import NewPostButtonWrapper from "src/components/post/NewPostButtonWrapper.vue";
+import PullToRefresh from "src/components/ui/PullToRefresh.vue";
 import ZKBadge from "src/components/ui-library/ZKBadge.vue";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";

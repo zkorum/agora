@@ -29,8 +29,15 @@ export function canViewFullSurveyResults({
 }): boolean {
   return (
     surveyResults?.accessLevel === "owner" &&
-    surveyResults.fullRows !== undefined
+    surveyResults.fullRows !== undefined &&
+    surveyResults.suppressedRows.some(
+      (row) => row.isPublicAggregateSuppressionEnabled
+    )
   );
+}
+
+function getSurveyAggregateRowKey({ row }: { row: SurveyAggregateRow }): string {
+  return [row.scope, row.clusterId, row.questionId, row.optionId].join("|");
 }
 
 export function getDisplayedSurveyRows({
@@ -41,7 +48,20 @@ export function getDisplayedSurveyRows({
   displayMode: SurveyResultsDisplayMode;
 }): SurveyAggregateRow[] {
   if (displayMode === "full" && canViewFullSurveyResults({ surveyResults })) {
-    return surveyResults?.fullRows ?? [];
+    const fullRowsByKey = new Map(
+      (surveyResults?.fullRows ?? []).map((row) => [
+        getSurveyAggregateRowKey({ row }),
+        row,
+      ])
+    );
+
+    return (surveyResults?.suppressedRows ?? []).map((row) => {
+      if (!row.isPublicAggregateSuppressionEnabled) {
+        return row;
+      }
+
+      return fullRowsByKey.get(getSurveyAggregateRowKey({ row })) ?? row;
+    });
   }
 
   return surveyResults?.suppressedRows ?? [];

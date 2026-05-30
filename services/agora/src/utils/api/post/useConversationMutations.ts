@@ -217,6 +217,12 @@ export function useUpdateConversationMutation() {
         void queryClient.invalidateQueries({
           queryKey: ["analysis", variables.conversationSlugId],
         });
+        void queryClient.invalidateQueries({
+          queryKey: ["analysisMetadata", variables.conversationSlugId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["analysisContent", variables.conversationSlugId],
+        });
       } else {
         void queryClient.invalidateQueries({
           queryKey: ["conversation", variables.conversationSlugId],

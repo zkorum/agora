@@ -36,6 +36,11 @@
           <span>{{ t("latestIsCurrent") }}</span>
         </label>
 
+        <label class="checkbox-row">
+          <input v-model="closedTerminal" type="checkbox" />
+          <span>{{ t("closedTerminal") }}</span>
+        </label>
+
         <div class="reason-controls">
           <div class="control-label">{{ t("reasonOptions") }}</div>
           <label
@@ -59,10 +64,11 @@
           :selected-checkpoint-id="selectedCheckpointId"
           :is-live-selected="selectedCheckpointId === undefined"
           :is-live-paused="false"
-          :is-latest-checkpoint-live="latestIsCurrent"
+          :is-latest-checkpoint-live="isTerminalMarkerActive"
+          :is-live-closed="closedTerminal"
           :title="t('checkpointTimeline')"
           :start-label="t('start')"
-          :now-label="t('now')"
+          :now-label="closedTerminal ? t('conversationClosed') : t('now')"
           :previous-label="t('previous')"
           :next-label="t('next')"
           :format-reason="formatReason"
@@ -105,6 +111,7 @@ const { t } = useComponentI18n<CheckpointTimelineTestTranslations>(
 const checkpointCount = ref(4);
 const selectedCheckpointId = ref<number | undefined>(1001);
 const latestIsCurrent = ref(true);
+const closedTerminal = ref(false);
 const selectedReasons = ref<CheckpointTimelineReason[]>([
   "first_displayable_analysis",
   "first_group_count_available",
@@ -123,6 +130,10 @@ const reasonOptions = computed<
 ]);
 
 const baseTime = new Date("2026-05-23T00:00:00Z");
+
+const isTerminalMarkerActive = computed(
+  () => latestIsCurrent.value || closedTerminal.value
+);
 
 const checkpoints = computed<AnalysisCheckpoint[]>(() =>
   Array.from({ length: checkpointCount.value }, (_value, index) => {
@@ -147,13 +158,25 @@ const checkpoints = computed<AnalysisCheckpoint[]>(() =>
         voteMilestone: reason === "major_vote_milestone" ? 100 + index * 50 : null,
       }));
 
+    const opinionCount = 10 + index;
+    const voteCount = 100 + index * 50;
+    const participantCount = 20 + index * 3;
+
     return {
       conversationViewSnapshotId: id,
       createdAt: activatedAt,
       activatedAt,
-      opinionCount: 10 + index,
-      voteCount: 100 + index * 50,
-      participantCount: 20 + index * 3,
+      opinionCount,
+      voteCount,
+      participantCount,
+      totalOpinionCount: opinionCount,
+      totalVoteCount: voteCount,
+      totalParticipantCount: participantCount,
+      moderatedOpinionCount: opinionCount,
+      hiddenOpinionCount: 0,
+      isClosed:
+        (closedTerminal.value && index === checkpointCount.value - 1) ||
+        reasons.some((reason) => reason.reason === "conversation_closed"),
       reasons,
     };
   })

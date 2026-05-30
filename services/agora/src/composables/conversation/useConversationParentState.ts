@@ -4,10 +4,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
-import {
-  useConversationQuery,
-  useInvalidateConversationQuery,
-} from "src/utils/api/post/useConversationQuery";
+import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { useInvalidateVoteQueries } from "src/utils/api/vote/useVoteQueries";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
@@ -40,6 +37,11 @@ export interface SubmittedCommentData {
   authStateChanged: boolean;
   needsCacheRefresh: boolean;
 }
+
+export type ChildRefreshHandler = () => Promise<void>;
+export type RegisterChildRefreshHandler = (
+  handler: ChildRefreshHandler
+) => () => void;
 
 export interface ConversationScrollContext {
   actionBarElement: HTMLElement | null;
@@ -100,19 +102,21 @@ export function useConversationParentState({
 
   const { invalidateUserVotes } = useInvalidateVoteQueries();
   const {
-    invalidateAnalysis: invalidateAnalysisQuery,
-    invalidateAnalysisCheckpoints,
     invalidateComments,
     markAnalysisAsStale,
   } = useInvalidateCommentQueries();
-  const { invalidateConversation } = useInvalidateConversationQuery();
 
   // Child tab refresh: the active child route registers its own refresh handler
-  const childRefreshHandler = ref<(() => Promise<void>) | undefined>();
-  provide(
+  const childRefreshHandler = ref<ChildRefreshHandler | undefined>();
+  provide<RegisterChildRefreshHandler>(
     "registerChildRefreshHandler",
-    (handler: () => Promise<void>) => {
+    (handler) => {
       childRefreshHandler.value = handler;
+      return () => {
+        if (childRefreshHandler.value === handler) {
+          childRefreshHandler.value = undefined;
+        }
+      };
     }
   );
 
@@ -255,15 +259,6 @@ export function useConversationParentState({
     (newRouteName) => {
       if (newRouteName === analysisRouteName) {
         currentTab.value = "analysis";
-        // Refresh both conversation metadata and analysis data together.
-        // Stale participantCount causes >100% group percentages when clusters
-        // have more users than the cached count.
-        const slugId = conversationData.value?.metadata.conversationSlugId;
-        if (slugId) {
-          invalidateConversation(slugId);
-          invalidateAnalysisQuery(slugId);
-          invalidateAnalysisCheckpoints(slugId);
-        }
       } else if (commentRouteNames.some((name) => name === newRouteName)) {
         currentTab.value = "comment";
       }

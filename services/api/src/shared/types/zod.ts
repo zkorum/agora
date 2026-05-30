@@ -542,6 +542,7 @@ const zodSurveyQuestionBase = z
 const zodSurveyChoiceQuestionBase = zodSurveyQuestionBase
     .extend({
         choiceDisplay: zodSurveyChoiceDisplay,
+        isPublicAggregateSuppressionEnabled: z.boolean().optional().default(false),
         options: z.array(zodSurveyQuestionOption).min(2),
     })
     .strict();
@@ -729,6 +730,10 @@ export const zodSurveyAggregateRow = z
         count: z.number().int().nonnegative().optional(),
         percentage: z.number().min(0).max(100).optional(),
         isSuppressed: z.boolean(),
+        isPublicAggregateSuppressionEnabled: z
+            .boolean()
+            .optional()
+            .default(false),
         suppressionReason: zodSurveyAggregateSuppressionReason.optional(),
     })
     .strict();

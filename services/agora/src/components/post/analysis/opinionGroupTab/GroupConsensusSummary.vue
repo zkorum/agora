@@ -4,7 +4,7 @@
       <div><img src="/images/icons/stars.svg" class="iconStyle" /></div>
       <div class="messageBody">
         <div class="titleBar">
-          <div class="titleString">{{ summaryTitle }}</div>
+          <div class="titleString">{{ title }}</div>
 
           <AnalysisActionButton
             type="learnMore"
@@ -12,7 +12,7 @@
           />
         </div>
         <div>
-          {{ summary }}
+          {{ props.summary }}
         </div>
       </div>
     </div>
@@ -20,7 +20,7 @@
     <q-dialog v-model="showInformationDialog" position="bottom">
       <ZKBottomDialogContainer :title="t('aiSummaryTitle')">
         <div>
-          {{ t("aiSummaryDescription") }}
+          {{ summaryLearnMoreDescription }}
         </div>
       </ZKBottomDialogContainer>
     </q-dialog>
@@ -30,7 +30,7 @@
 <script setup lang="ts">
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
 import {
@@ -38,15 +38,23 @@ import {
   groupConsensusSummaryTranslations,
 } from "./GroupConsensusSummary.i18n";
 
-defineProps<{
+const props = defineProps<{
   summary: string;
+  title: string | undefined;
+  summaryState: "available" | "pending";
 }>();
 
 const { t } = useComponentI18n<GroupConsensusSummaryTranslations>(
   groupConsensusSummaryTranslations
 );
 
-const summaryTitle = t("groupSummaryTitle");
+const title = computed(() => props.title ?? t("groupSummaryTitle"));
+
+const summaryLearnMoreDescription = computed(() =>
+  props.summaryState === "pending"
+    ? t("aiSummaryPendingDescription")
+    : t("aiSummaryDescription")
+);
 
 const showInformationDialog = ref(false);
 </script>

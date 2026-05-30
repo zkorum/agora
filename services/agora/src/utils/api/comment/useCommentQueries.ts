@@ -1,16 +1,29 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import {
+  type QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/vue-query";
+import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { AnalysisFreshnessRequest } from "src/shared/types/dto";
 import type { AnalysisView, PolisKey } from "src/shared/types/zod";
 import type { OpinionItem } from "src/shared/types/zod";
+import { useLanguageStore } from "src/stores/language";
 import { useUserStore } from "src/stores/user";
+import {
+  buildAnalysisFreshnessRequest,
+  DESCRIPTION_READINESS_RETRY_INTERVAL_MS,
+  shouldRetryAnalysisData,
+} from "src/utils/analysis/analysisFreshness";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
 import { useNotify } from "../../ui/notify";
 import type { AxiosErrorResponse } from "../common";
 import { getErrorMessage } from "../common";
 import { updateConversationQueryCache } from "../post/useConversationQuery";
-import type { CommentTabFilters } from "./comment";
-import { useBackendCommentApi } from "./comment";
+import type { AnalysisData, CommentTabFilters } from "./comment";
+import { buildAnalysisData, useBackendCommentApi } from "./comment";
 import {
   type UseCommentQueriesTranslations,
   useCommentQueriesTranslations,
@@ -86,7 +99,7 @@ export function useHiddenCommentsQuery({
  *
  * Buffer calculation: singleton window + 2s buffer for scan + network
  */
-function getAnalysisStaleTime(voteCount?: number): number {
+export function getAnalysisStaleTime(voteCount?: number): number {
   if (!voteCount) return 30000; // Default 30s if unknown (huge conversation default)
 
   // Buffer for scan interval (2s) + network processing + safety margin
@@ -104,6 +117,76 @@ function getAnalysisStaleTime(voteCount?: number): number {
   }
 }
 
+type BackendCommentApi = ReturnType<typeof useBackendCommentApi>;
+
+export async function fetchAnalysisDataWithCache({
+  queryClient,
+  fetchAnalysisMetadataData,
+  fetchAnalysisContentData,
+  conversationSlugId,
+  analysisView,
+  checkpointViewSnapshotId,
+  aiLabelingEnabled,
+  displayLanguage,
+  voteCount,
+  freshness,
+}: {
+  queryClient: QueryClient;
+  fetchAnalysisMetadataData: BackendCommentApi["fetchAnalysisMetadataData"];
+  fetchAnalysisContentData: BackendCommentApi["fetchAnalysisContentData"];
+  conversationSlugId: string;
+  analysisView: AnalysisView | undefined;
+  checkpointViewSnapshotId: number | undefined;
+  aiLabelingEnabled: boolean | undefined;
+  displayLanguage: string;
+  voteCount: number | undefined;
+  freshness: AnalysisFreshnessRequest | null;
+}): Promise<AnalysisData> {
+  const metadata = await queryClient.fetchQuery({
+    queryKey: [
+      "analysisMetadata",
+      conversationSlugId,
+      analysisView,
+      checkpointViewSnapshotId,
+      aiLabelingEnabled,
+      displayLanguage,
+    ],
+    queryFn: () =>
+      fetchAnalysisMetadataData({
+        conversationSlugId,
+        analysisView,
+        checkpointViewSnapshotId,
+        freshness,
+      }),
+    staleTime: 0,
+  });
+
+  const resolvedCandidateId = metadata.analysisViewState.resolvedCandidateId;
+  const resolvedContentViewSnapshotId = metadata.conversationViewSnapshotId;
+  const contentResult =
+    resolvedContentViewSnapshotId === undefined || resolvedCandidateId === null
+      ? undefined
+      : await queryClient.fetchQuery({
+          queryKey: [
+            "analysisContent",
+            conversationSlugId,
+            resolvedContentViewSnapshotId,
+            resolvedCandidateId,
+            displayLanguage,
+          ],
+          queryFn: () =>
+            fetchAnalysisContentData({
+              conversationSlugId,
+              conversationViewSnapshotId: resolvedContentViewSnapshotId,
+              candidateId: resolvedCandidateId,
+              freshness,
+            }),
+          staleTime: freshness === null ? getAnalysisStaleTime(voteCount) : 0,
+        });
+
+  return buildAnalysisData({ metadata, content: contentResult });
+}
+
 export function useAnalysisQuery({
   conversationSlugId,
   analysisView,
@@ -119,8 +202,10 @@ export function useAnalysisQuery({
   voteCount?: MaybeRefOrGetter<number | undefined>;
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
-  const { fetchAnalysisData } = useBackendCommentApi();
+  const { fetchAnalysisMetadataData, fetchAnalysisContentData } =
+    useBackendCommentApi();
   const queryClient = useQueryClient();
+  const { displayLanguage } = storeToRefs(useLanguageStore());
 
   return useQuery({
     queryKey: [
@@ -129,16 +214,45 @@ export function useAnalysisQuery({
       computed(() => toValue(analysisView)),
       computed(() => toValue(checkpointViewSnapshotId)),
       computed(() => toValue(aiLabelingEnabled)),
+      computed(() => displayLanguage.value),
     ],
     queryFn: async () => {
       const resolvedConversationSlugId = toValue(conversationSlugId);
+      const resolvedAnalysisView = toValue(analysisView);
       const resolvedCheckpointViewSnapshotId = toValue(
         checkpointViewSnapshotId
       );
-      const analysisData = await fetchAnalysisData({
+      const resolvedAiLabelingEnabled = toValue(aiLabelingEnabled);
+      const resolvedDisplayLanguage = displayLanguage.value;
+      const resolvedVoteCount = toValue(voteCount);
+      const resolvedQueryKey = [
+        "analysis",
+        resolvedConversationSlugId,
+        resolvedAnalysisView,
+        resolvedCheckpointViewSnapshotId,
+        resolvedAiLabelingEnabled,
+        resolvedDisplayLanguage,
+      ];
+      const previousAnalysis = queryClient.getQueryData<AnalysisData>(
+        resolvedQueryKey
+      );
+      const freshness = buildAnalysisFreshnessRequest({
+        previousAnalysis,
+        expectedSnapshotId: null,
+        expectedDescriptionLocales: [],
+        enablePrimaryFallback: true,
+      });
+      const analysisData = await fetchAnalysisDataWithCache({
+        queryClient,
+        fetchAnalysisMetadataData,
+        fetchAnalysisContentData,
         conversationSlugId: resolvedConversationSlugId,
-        analysisView: toValue(analysisView),
+        analysisView: resolvedAnalysisView,
         checkpointViewSnapshotId: resolvedCheckpointViewSnapshotId,
+        aiLabelingEnabled: resolvedAiLabelingEnabled,
+        displayLanguage: resolvedDisplayLanguage,
+        voteCount: resolvedVoteCount,
+        freshness,
       });
 
       const snapshot = analysisData.conversationViewSnapshot;
@@ -188,6 +302,10 @@ export function useAnalysisQuery({
     // Note: When votes/comments happen, markAnalysisAsStale() is called
     // This marks data as stale immediately, so next access will refetch
     placeholderData: (previousData) => previousData, // Preserve previous data during analysis refreshes
+    refetchInterval: (query) =>
+      shouldRetryAnalysisData(query.state.data)
+        ? DESCRIPTION_READINESS_RETRY_INTERVAL_MS
+        : false,
     retry: false, // Disable auto-retry
   });
 }
@@ -385,6 +503,12 @@ export function useInvalidateCommentQueries() {
         queryKey: ["analysis", conversationSlugId],
       });
       void queryClient.invalidateQueries({
+        queryKey: ["analysisMetadata", conversationSlugId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["analysisContent", conversationSlugId],
+      });
+      void queryClient.invalidateQueries({
         queryKey: ["analysisCheckpoints", conversationSlugId],
       });
     },
@@ -400,6 +524,14 @@ export function useInvalidateCommentQueries() {
         refetchType: "active", // Force active queries to refetch immediately
       });
       void queryClient.invalidateQueries({
+        queryKey: ["analysisMetadata", conversationSlugId],
+        refetchType: "active",
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["analysisContent", conversationSlugId],
+        refetchType: "active",
+      });
+      void queryClient.invalidateQueries({
         queryKey: ["analysisCheckpoints", conversationSlugId],
         refetchType: "active",
       });
@@ -407,6 +539,12 @@ export function useInvalidateCommentQueries() {
       // Also trigger immediate refetch for any matching queries
       void queryClient.refetchQueries({
         queryKey: ["analysis", conversationSlugId],
+      });
+      void queryClient.refetchQueries({
+        queryKey: ["analysisMetadata", conversationSlugId],
+      });
+      void queryClient.refetchQueries({
+        queryKey: ["analysisContent", conversationSlugId],
       });
       void queryClient.refetchQueries({
         queryKey: ["analysisCheckpoints", conversationSlugId],
@@ -418,15 +556,29 @@ export function useInvalidateCommentQueries() {
         refetchType: "none", // Mark as stale but don't refetch immediately
       });
       void queryClient.invalidateQueries({
+        queryKey: ["analysisMetadata", conversationSlugId],
+        refetchType: "none",
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["analysisContent", conversationSlugId],
+        refetchType: "none",
+      });
+      void queryClient.invalidateQueries({
         queryKey: ["analysisCheckpoints", conversationSlugId],
         refetchType: "none",
       });
     },
     markCommentsAsStale: (conversationSlugId: string) => {
-      return queryClient.invalidateQueries({
-        queryKey: ["comments", conversationSlugId],
-        refetchType: "none", // Mark as stale but don't refetch immediately
-      });
+      return Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["comments", conversationSlugId],
+          refetchType: "none", // Mark as stale but don't refetch immediately
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["hiddenComments", conversationSlugId],
+          refetchType: "none",
+        }),
+      ]);
     },
     invalidateAll: (conversationSlugId: string) => {
       return Promise.all([
@@ -434,7 +586,16 @@ export function useInvalidateCommentQueries() {
           queryKey: ["comments", conversationSlugId],
         }),
         queryClient.invalidateQueries({
+          queryKey: ["hiddenComments", conversationSlugId],
+        }),
+        queryClient.invalidateQueries({
           queryKey: ["analysis", conversationSlugId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["analysisMetadata", conversationSlugId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["analysisContent", conversationSlugId],
         }),
         queryClient.invalidateQueries({
           queryKey: ["analysisCheckpoints", conversationSlugId],

@@ -18,6 +18,7 @@
       :ai-labeling-enabled="conversationData.metadata.aiLabelingEnabled"
       :show-report-button="showReportButton"
       :is-live-analysis-paused="isLiveAnalysisPaused"
+      :is-conversation-closed="conversationData.metadata.isClosed"
       :navigate-to-discover-tab="props.navigateToDiscoverTab"
       :conversation-scroll-context="props.conversationScrollContext"
       @update:live-analysis-paused="setLiveAnalysisPaused"
@@ -26,7 +27,10 @@
 </template>
 
 <script setup lang="ts">
-import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
+import type {
+  ConversationScrollContext,
+  RegisterChildRefreshHandler,
+} from "src/composables/conversation/useConversationParentState";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import {
   parseAnalysisViewQuery,
@@ -43,6 +47,7 @@ import {
   onActivated,
   onDeactivated,
   onMounted,
+  onUnmounted,
   ref,
   watch,
 } from "vue";
@@ -70,16 +75,18 @@ const setCurrentTabLoading = inject<(loading: boolean) => void>(
     /* noop */
   }
 );
-const registerChildRefreshHandler = inject<
-  (handler: () => Promise<void>) => void
->("registerChildRefreshHandler", () => {
+const registerChildRefreshHandler = inject<RegisterChildRefreshHandler>("registerChildRefreshHandler", () => {
   /* noop */
+  return () => {
+    /* noop */
+  };
 });
 
 const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
 const isTabActive = ref(true);
 const isLiveAnalysisPaused = ref(false);
 const route = useRoute();
+let unregisterChildRefreshHandler: (() => void) | undefined;
 
 // Create computed properties to ensure reactivity
 const conversationSlugId = computed(
@@ -126,6 +133,8 @@ const analysisCheckpointsQuery = useAnalysisCheckpointsQuery({
 
 const surveyResultsQuery = useSurveyResultsAggregatedQuery({
   conversationSlugId,
+  analysisView,
+  checkpointViewSnapshotId,
   enabled: hasSurvey,
 });
 
@@ -140,12 +149,12 @@ const isSurveyResultsLoading = computed(
 // Report loading state to parent (for spinner in PostActionBar)
 const isLoading = computed(
   () =>
-    ((analysisQuery.isPending.value || analysisQuery.isRefetching.value) &&
-      analysisQuery.data.value === undefined) ||
-    ((analysisCheckpointsQuery.isPending.value ||
-      analysisCheckpointsQuery.isRefetching.value) &&
-      analysisCheckpointsQuery.data.value === undefined) ||
-    isSurveyResultsLoading.value
+    isTabActive.value &&
+    (analysisQuery.isPending.value ||
+      analysisQuery.isRefetching.value ||
+      analysisCheckpointsQuery.isPending.value ||
+      analysisCheckpointsQuery.isRefetching.value ||
+      isSurveyResultsLoading.value)
 );
 
 function setLiveAnalysisPaused(paused: boolean): void {
@@ -157,31 +166,41 @@ watch(isLoading, (loading) => {
 });
 
 async function handleChildRefresh(): Promise<void> {
-  const checkpointRefresh =
-    analysisPageRef.value?.refreshCheckpoints() ?? Promise.resolve();
+  const analysisRefresh =
+    analysisPageRef.value?.refreshLatestAnalysis() ??
+    Promise.all([analysisQuery.refetch(), analysisCheckpointsQuery.refetch()]);
 
   if (hasSurvey.value) {
-    await Promise.all([
-      analysisQuery.refetch(),
-      surveyResultsQuery.refetch(),
-      checkpointRefresh,
-    ]);
+    await Promise.all([analysisRefresh, surveyResultsQuery.refetch()]);
     return;
   }
 
-  await Promise.all([analysisQuery.refetch(), checkpointRefresh]);
+  await analysisRefresh;
 }
 
-registerChildRefreshHandler(handleChildRefresh);
+function registerRefreshHandler(): void {
+  unregisterChildRefreshHandler?.();
+  unregisterChildRefreshHandler = registerChildRefreshHandler(handleChildRefresh);
+}
+
+function unregisterRefreshHandler(): void {
+  unregisterChildRefreshHandler?.();
+  unregisterChildRefreshHandler = undefined;
+}
+
+registerRefreshHandler();
 
 onActivated(() => {
   isTabActive.value = true;
-  registerChildRefreshHandler(handleChildRefresh);
+  registerRefreshHandler();
 });
 
 onDeactivated(() => {
   isTabActive.value = false;
+  unregisterRefreshHandler();
 });
+
+onUnmounted(unregisterRefreshHandler);
 
 onMounted(() => {
   isTabActive.value = true;

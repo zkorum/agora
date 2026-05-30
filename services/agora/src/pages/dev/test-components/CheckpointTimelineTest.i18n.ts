@@ -10,6 +10,7 @@ export interface CheckpointTimelineTestTranslations {
   live: string;
   freezeLatest: string;
   latestIsCurrent: string;
+  closedTerminal: string;
   reasonOptions: string;
   checkpointTimeline: string;
   start: string;
@@ -35,6 +36,7 @@ const en: CheckpointTimelineTestTranslations = {
   live: "Live",
   freezeLatest: "Freeze latest",
   latestIsCurrent: "Latest is current",
+  closedTerminal: "Closed terminal marker",
   reasonOptions: "Reason options",
   checkpointTimeline: "Checkpoint timeline",
   start: "Start",

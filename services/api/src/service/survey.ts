@@ -1,7 +1,6 @@
 import { httpErrors } from "@fastify/sensible";
 import { and, asc, eq, inArray, isNotNull, isNull, or } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { z } from "zod";
 import { generateRandomSlugId } from "@/crypto.js";
 import {
     conversationTable,
@@ -13,7 +12,6 @@ import {
     opinionTable,
     organizationTable,
     surveyAggregateOptionTable,
-    surveyAggregateOwnerCurrentTable,
     surveyAggregateQuestionTable,
     surveyAggregateResultTable,
     surveyAggregateSnapshotTable,
@@ -53,9 +51,11 @@ import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
 import {
     countHtmlPlainTextCharacters,
     htmlToCountedText,
+    PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
 } from "@/shared/shared.js";
 import {
     zodSurveyQuestionConstraints,
+    type AnalysisView,
     type ConversationType,
     type ParticipationBlockedReason,
     type SurveyAnswerDraft,
@@ -83,7 +83,6 @@ import {
     isConversationOwner,
 } from "@/service/conversationAccess.js";
 import {
-    PUBLIC_SURVEY_SUPPRESSION_THRESHOLD,
     buildSurveyCompletionCounts,
     loadSurveyExportContext,
 } from "./conversationExport/generators/surveyShared.js";
@@ -328,6 +327,7 @@ export interface ActiveSurveyQuestionRecord {
     currentSemanticVersion: number;
     displayOrder: number;
     isRequired: boolean;
+    isPublicAggregateSuppressionEnabled: boolean;
     questionText: string;
     constraints: SurveyQuestionConstraints;
     sourceLanguageCode?: string | null;
@@ -467,6 +467,8 @@ export function surveyQuestionToConfig({
                 ...baseQuestion,
                 questionType: "choice",
                 choiceDisplay: question.choiceDisplay,
+                isPublicAggregateSuppressionEnabled:
+                    question.isPublicAggregateSuppressionEnabled,
                 constraints: question.constraints,
                 options: question.options.map((option) => ({
                     optionSlugId: option.slugId,
@@ -998,6 +1000,8 @@ export async function getActiveSurveyConfigRecord({
             currentSemanticVersion: surveyQuestionTable.currentSemanticVersion,
             displayOrder: surveyQuestionTable.displayOrder,
             isRequired: surveyQuestionTable.isRequired,
+            isPublicAggregateSuppressionEnabled:
+                surveyQuestionTable.isPublicAggregateSuppressionEnabled,
             questionText: surveyQuestionContentTable.questionText,
             constraints: surveyQuestionContentTable.constraints,
             sourceLanguageCode: surveyQuestionContentTable.sourceLanguageCode,
@@ -1086,6 +1090,8 @@ export async function getActiveSurveyConfigRecord({
             currentSemanticVersion: question.currentSemanticVersion,
             displayOrder: question.displayOrder,
             isRequired: question.isRequired,
+            isPublicAggregateSuppressionEnabled:
+                question.isPublicAggregateSuppressionEnabled,
             questionText: question.questionText,
             constraints: zodSurveyQuestionConstraints.parse(
                 question.constraints,
@@ -1735,6 +1741,10 @@ async function insertSurveyQuestion({
             currentSemanticVersion: 1,
             displayOrder: question.displayOrder,
             isRequired: question.isRequired,
+            isPublicAggregateSuppressionEnabled:
+                question.questionType === "choice"
+                    ? question.isPublicAggregateSuppressionEnabled
+                    : false,
             createdAt: now,
             updatedAt: now,
         })
@@ -1887,6 +1897,17 @@ async function replaceSurveyConfigById({
                 now,
             });
             continue;
+        }
+
+        if (
+            existingQuestion.questionType === "choice" &&
+            existingQuestion.isPublicAggregateSuppressionEnabled &&
+            (question.questionType !== "choice" ||
+                !question.isPublicAggregateSuppressionEnabled)
+        ) {
+            throw httpErrors.badRequest(
+                "Public aggregate suppression cannot be disabled after it was enabled",
+            );
         }
 
         let semanticChanged = false;
@@ -2089,6 +2110,10 @@ async function replaceSurveyConfigById({
                     : existingQuestion.currentSemanticVersion,
                 displayOrder: question.displayOrder,
                 isRequired: question.isRequired,
+                isPublicAggregateSuppressionEnabled:
+                    question.questionType === "choice"
+                        ? question.isPublicAggregateSuppressionEnabled
+                        : false,
                 updatedAt: now,
             })
             .where(eq(surveyQuestionTable.id, existingQuestion.id));
@@ -2361,19 +2386,27 @@ export async function checkSurveyStatus({
     };
 }
 
+interface SurveyAggregateRowsFromSnapshot {
+    suppressedRows: SurveyAggregateRow[];
+    fullRows: SurveyAggregateRow[];
+    hasPublicAggregateSuppressionEnabled: boolean;
+}
+
 async function fetchSurveyAggregateRowsFromSnapshot({
     db,
     surveyAggregateSnapshotId,
     selectedCandidateId,
     displayLanguage,
     useSystemDescriptions,
+    currentPublicSuppressionByQuestionId,
 }: {
     db: PostgresJsDatabase;
     surveyAggregateSnapshotId: number;
     selectedCandidateId: number;
     displayLanguage: SupportedDisplayLanguageCodes;
     useSystemDescriptions: boolean;
-}): Promise<SurveyAggregateRow[]> {
+    currentPublicSuppressionByQuestionId: Map<string, boolean> | undefined;
+}): Promise<SurveyAggregateRowsFromSnapshot> {
     const aggregateRows = await db
         .select({
             scope: surveyAggregateResultTable.scope,
@@ -2385,11 +2418,16 @@ async function fetchSurveyAggregateRowsFromSnapshot({
             questionType: surveyAggregateQuestionTable.questionType,
             question: surveyAggregateQuestionTable.questionText,
             questionOrder: surveyAggregateQuestionTable.questionOrder,
+            isPublicAggregateSuppressionEnabled:
+                surveyAggregateQuestionTable.isPublicAggregateSuppressionEnabled,
             optionId: surveyAggregateOptionTable.optionSlugId,
             option: surveyAggregateOptionTable.optionText,
             optionOrder: surveyAggregateOptionTable.optionOrder,
-            count: surveyAggregateResultTable.count,
-            percentage: surveyAggregateResultTable.percentage,
+            suppressedCount: surveyAggregateResultTable.suppressedCount,
+            suppressedPercentage:
+                surveyAggregateResultTable.suppressedPercentage,
+            fullCount: surveyAggregateResultTable.fullCount,
+            fullPercentage: surveyAggregateResultTable.fullPercentage,
             isSuppressed: surveyAggregateResultTable.isSuppressed,
             suppressionReason: surveyAggregateResultTable.suppressionReason,
         })
@@ -2474,29 +2512,53 @@ async function fetchSurveyAggregateRowsFromSnapshot({
         includeSystemDescriptions: useSystemDescriptions,
     });
 
-    return aggregateRows.map((row) => {
-        let count: number | undefined;
-        let percentage: number | undefined;
-        let suppressionReason: SurveyAggregateRow["suppressionReason"];
+    const suppressedRows: SurveyAggregateRow[] = [];
+    const fullRows: SurveyAggregateRow[] = [];
+    let hasPublicAggregateSuppressionEnabled = false;
+
+    for (const row of aggregateRows) {
+        const isPublicAggregateSuppressionEnabled =
+            currentPublicSuppressionByQuestionId?.get(row.questionId) ??
+            row.isPublicAggregateSuppressionEnabled;
+        hasPublicAggregateSuppressionEnabled ||=
+            isPublicAggregateSuppressionEnabled;
+
+        const fullCount = row.fullCount;
+        const fullPercentage = row.fullPercentage ?? undefined;
+        let suppressedCount: number | undefined;
+        let suppressedPercentage: number | undefined;
+        let suppressedReason: SurveyAggregateRow["suppressionReason"];
         if (row.isSuppressed) {
             if (row.suppressionReason === null) {
                 throw httpErrors.internalServerError(
                     "Suppressed survey aggregate row is missing suppression reason",
                 );
             }
-            suppressionReason = row.suppressionReason;
+            suppressedReason = row.suppressionReason;
         } else {
-            if (row.count === null) {
+            if (row.suppressedCount === null) {
                 throw httpErrors.internalServerError(
                     "Unsuppressed survey aggregate row is missing count",
                 );
             }
-            count = row.count;
-            percentage = row.percentage ?? undefined;
+            suppressedCount = row.suppressedCount;
+            suppressedPercentage = row.suppressedPercentage ?? undefined;
         }
 
+        const displayedCount = isPublicAggregateSuppressionEnabled
+            ? suppressedCount
+            : fullCount;
+        const displayedPercentage = isPublicAggregateSuppressionEnabled
+            ? suppressedPercentage
+            : fullPercentage;
+        const displayedIsSuppressed =
+            isPublicAggregateSuppressionEnabled && row.isSuppressed;
+        const displayedSuppressionReason = isPublicAggregateSuppressionEnabled
+            ? suppressedReason
+            : undefined;
+
         if (row.scope === "overall") {
-            return {
+            suppressedRows.push({
                 scope: "overall",
                 clusterId: "",
                 clusterLabel: "",
@@ -2505,11 +2567,28 @@ async function fetchSurveyAggregateRowsFromSnapshot({
                 question: row.question,
                 optionId: row.optionId,
                 option: row.option,
-                count,
-                percentage,
-                isSuppressed: row.isSuppressed,
-                suppressionReason,
-            };
+                count: displayedCount,
+                percentage: displayedPercentage,
+                isSuppressed: displayedIsSuppressed,
+                isPublicAggregateSuppressionEnabled,
+                suppressionReason: displayedSuppressionReason,
+            });
+            fullRows.push({
+                scope: "overall",
+                clusterId: "",
+                clusterLabel: "",
+                questionId: row.questionId,
+                questionType: row.questionType,
+                question: row.question,
+                optionId: row.optionId,
+                option: row.option,
+                count: fullCount,
+                percentage: fullPercentage,
+                isSuppressed: false,
+                isPublicAggregateSuppressionEnabled,
+                suppressionReason: undefined,
+            });
+            continue;
         }
 
         if (row.groupId === null || row.groupKey === null) {
@@ -2519,198 +2598,73 @@ async function fetchSurveyAggregateRowsFromSnapshot({
         }
 
         const description = descriptionsByGroupId.get(row.groupId);
-        return {
+        const clusterLabel = description?.label ?? `Group ${row.groupKey}`;
+        suppressedRows.push({
             scope: "cluster",
             clusterId: row.groupKey,
-            clusterLabel: description?.label ?? `Group ${row.groupKey}`,
+            clusterLabel,
             questionId: row.questionId,
             questionType: row.questionType,
             question: row.question,
             optionId: row.optionId,
             option: row.option,
-            count,
-            percentage,
-            isSuppressed: row.isSuppressed,
-            suppressionReason,
-        };
-    });
+            count: displayedCount,
+            percentage: displayedPercentage,
+            isSuppressed: displayedIsSuppressed,
+            isPublicAggregateSuppressionEnabled,
+            suppressionReason: displayedSuppressionReason,
+        });
+        fullRows.push({
+            scope: "cluster",
+            clusterId: row.groupKey,
+            clusterLabel,
+            questionId: row.questionId,
+            questionType: row.questionType,
+            question: row.question,
+            optionId: row.optionId,
+            option: row.option,
+            count: fullCount,
+            percentage: fullPercentage,
+            isSuppressed: false,
+            isPublicAggregateSuppressionEnabled,
+            suppressionReason: undefined,
+        });
+    }
+
+    return {
+        suppressedRows,
+        fullRows,
+        hasPublicAggregateSuppressionEnabled,
+    };
 }
 
-async function fetchOwnerCurrentSurveyAggregateRowsFromSnapshot({
-    db,
-    surveyAggregateSnapshotId,
-    selectedCandidateId,
-    displayLanguage,
-    useSystemDescriptions,
+function getCurrentPublicSuppressionByQuestionId({
+    activeSurveyConfig,
 }: {
-    db: PostgresJsDatabase;
-    surveyAggregateSnapshotId: number;
-    selectedCandidateId: number;
-    displayLanguage: SupportedDisplayLanguageCodes;
-    useSystemDescriptions: boolean;
-}): Promise<SurveyAggregateRow[] | undefined> {
-    const ownerCurrentSnapshotRows = await db
-        .select({
-            rows: surveyAggregateOwnerCurrentTable.rows,
-        })
-        .from(surveyAggregateOwnerCurrentTable)
-        .where(
-            eq(
-                surveyAggregateOwnerCurrentTable.surveyAggregateSnapshotId,
-                surveyAggregateSnapshotId,
-            ),
-        )
-        .limit(1);
-    const ownerCurrentSnapshot = ownerCurrentSnapshotRows.at(0);
-    if (ownerCurrentSnapshot === undefined) {
-        return undefined;
-    }
-
-    const zodStoredOwnerCurrentSurveyAggregateRows = z.array(
-        z
-            .object({
-                scope: z.enum(["overall", "cluster"]),
-                candidateId: z.number().int().positive().nullable().optional(),
-                groupId: z.number().int().positive().nullable().optional(),
-                questionId: z.string(),
-                questionType: z.enum(["choice", "free_text"]),
-                question: z.string(),
-                optionId: z.string(),
-                option: z.string(),
-                count: z.number().int().nonnegative(),
-                percentage: z
-                    .number()
-                    .nonnegative()
-                    .max(100)
-                    .nullable()
-                    .optional(),
-            })
-            .strict(),
+    activeSurveyConfig: ActiveSurveyConfigRecord;
+}): Map<string, boolean> {
+    return new Map(
+        activeSurveyConfig.questions
+            .filter((question) => question.questionType === "choice")
+            .map((question) => [
+                question.slugId,
+                question.isPublicAggregateSuppressionEnabled,
+            ]),
     );
-    const aggregateRows = zodStoredOwnerCurrentSurveyAggregateRows
-        .parse(ownerCurrentSnapshot.rows)
-        .filter((row) => {
-            return (
-                row.scope === "overall" ||
-                row.candidateId === selectedCandidateId
-            );
-        });
-
-    const groupIds = Array.from(
-        new Set(
-            aggregateRows.flatMap((row) => {
-                if (row.scope !== "cluster" || row.groupId == null) {
-                    return [];
-                }
-                return [row.groupId];
-            }),
-        ),
-    );
-    const groupRows =
-        groupIds.length === 0
-            ? []
-            : await db
-                  .select({
-                      groupId: opinionGroupTable.id,
-                      groupKey: opinionGroupTable.key,
-                      systemDescriptionId:
-                          opinionGroupLineageTable.systemDescriptionId,
-                      adminDescriptionId:
-                          opinionGroupLineageTable.adminDescriptionId,
-                  })
-                  .from(opinionGroupTable)
-                  .leftJoin(
-                      opinionGroupLineageTable,
-                      eq(
-                          opinionGroupLineageTable.id,
-                          opinionGroupTable.lineageId,
-                      ),
-                  )
-                  .where(inArray(opinionGroupTable.id, groupIds))
-                  .orderBy(asc(opinionGroupTable.key));
-
-    const groupsById = new Map<
-        number,
-        {
-            groupId: number;
-            groupKey: string;
-            systemDescriptionId: number | null;
-            adminDescriptionId: number | null;
-        }
-    >();
-    for (const row of groupRows) {
-        groupsById.set(row.groupId, {
-            groupId: row.groupId,
-            groupKey: row.groupKey,
-            systemDescriptionId: row.systemDescriptionId,
-            adminDescriptionId: row.adminDescriptionId,
-        });
-    }
-
-    const descriptionsByGroupId = await getDescriptionTextsByGroupId({
-        db,
-        groups: Array.from(groupsById.values()),
-        displayLanguage,
-        includeSystemDescriptions: useSystemDescriptions,
-    });
-
-    return aggregateRows.map((row) => {
-        if (row.scope === "overall") {
-            return {
-                scope: "overall",
-                clusterId: "",
-                clusterLabel: "",
-                questionId: row.questionId,
-                questionType: row.questionType,
-                question: row.question,
-                optionId: row.optionId,
-                option: row.option,
-                count: row.count,
-                percentage: row.percentage ?? undefined,
-                isSuppressed: false,
-                suppressionReason: undefined,
-            };
-        }
-
-        if (row.groupId == null) {
-            throw httpErrors.internalServerError(
-                "Owner survey aggregate row is missing opinion group metadata",
-            );
-        }
-
-        const group = groupsById.get(row.groupId);
-        if (group === undefined) {
-            throw httpErrors.internalServerError(
-                "Owner survey aggregate row references a missing opinion group",
-            );
-        }
-
-        const description = descriptionsByGroupId.get(row.groupId);
-        return {
-            scope: "cluster",
-            clusterId: group.groupKey,
-            clusterLabel: description?.label ?? `Group ${group.groupKey}`,
-            questionId: row.questionId,
-            questionType: row.questionType,
-            question: row.question,
-            optionId: row.optionId,
-            option: row.option,
-            count: row.count,
-            percentage: row.percentage ?? undefined,
-            isSuppressed: false,
-            suppressionReason: undefined,
-        };
-    });
 }
 
 export async function fetchSurveyAggregatedResults({
     db,
     conversationSlugId,
+    analysisView,
+    checkpointViewSnapshotId,
     userId,
     displayLanguage,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
+    analysisView: AnalysisView | undefined;
+    checkpointViewSnapshotId: number | undefined;
     userId: string | undefined;
     displayLanguage: SupportedDisplayLanguageCodes;
 }): Promise<{
@@ -2730,16 +2684,15 @@ export async function fetchSurveyAggregatedResults({
         authorId: conversation.authorId,
         organizationId: conversation.organizationId,
     });
-    const hasActiveSurvey =
-        (await getActiveSurveyConfigRecord({
-            db,
-            conversationId: conversation.conversationId,
-        })) !== undefined;
-    if (!hasActiveSurvey) {
+    const activeSurveyConfig = await getActiveSurveyConfigRecord({
+        db,
+        conversationId: conversation.conversationId,
+    });
+    if (checkpointViewSnapshotId === undefined && activeSurveyConfig === undefined) {
         return {
             hasSurvey: false,
             accessLevel,
-            suppressionThreshold: PUBLIC_SURVEY_SUPPRESSION_THRESHOLD,
+            suppressionThreshold: PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
             suppressedRows: [],
             fullRows: undefined,
         };
@@ -2748,13 +2701,15 @@ export async function fetchSurveyAggregatedResults({
     const selectedCandidate = await getSelectedOpinionGroupCandidate({
         db,
         conversationId: conversation.conversationId,
+        analysisView,
+        checkpointViewSnapshotId,
         displayLanguage,
     });
     if (selectedCandidate?.surveyAggregateSnapshotId == null) {
         return {
             hasSurvey: false,
             accessLevel,
-            suppressionThreshold: PUBLIC_SURVEY_SUPPRESSION_THRESHOLD,
+            suppressionThreshold: PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
             suppressedRows: [],
             fullRows: undefined,
         };
@@ -2777,38 +2732,36 @@ export async function fetchSurveyAggregatedResults({
         return {
             hasSurvey: false,
             accessLevel,
-            suppressionThreshold: PUBLIC_SURVEY_SUPPRESSION_THRESHOLD,
+            suppressionThreshold: PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
             suppressedRows: [],
             fullRows: undefined,
         };
     }
 
-    const suppressedRows = await fetchSurveyAggregateRowsFromSnapshot({
+    const aggregateRows = await fetchSurveyAggregateRowsFromSnapshot({
         db,
         surveyAggregateSnapshotId: selectedCandidate.surveyAggregateSnapshotId,
         selectedCandidateId: selectedCandidate.candidateId,
         displayLanguage,
         useSystemDescriptions: selectedCandidate.useSystemDescriptions,
+        currentPublicSuppressionByQuestionId:
+            activeSurveyConfig === undefined
+                ? undefined
+                : getCurrentPublicSuppressionByQuestionId({
+                      activeSurveyConfig,
+                  }),
     });
-    const ownerCurrentFullRows =
-        accessLevel !== "owner"
-            ? undefined
-            : await fetchOwnerCurrentSurveyAggregateRowsFromSnapshot({
-                  db,
-                  surveyAggregateSnapshotId:
-                      selectedCandidate.surveyAggregateSnapshotId,
-                  selectedCandidateId: selectedCandidate.candidateId,
-                  displayLanguage,
-                  useSystemDescriptions:
-                      selectedCandidate.useSystemDescriptions,
-              });
 
     return {
         hasSurvey: true,
         accessLevel,
         suppressionThreshold: snapshotRows[0].suppressionThreshold,
-        suppressedRows,
-        fullRows: ownerCurrentFullRows,
+        suppressedRows: aggregateRows.suppressedRows,
+        fullRows:
+            accessLevel === "owner" &&
+            aggregateRows.hasPublicAggregateSuppressionEnabled
+                ? aggregateRows.fullRows
+                : undefined,
     };
 }
 

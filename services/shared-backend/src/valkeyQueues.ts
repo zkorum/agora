@@ -49,20 +49,6 @@ export const VALKEY_QUEUE_KEYS = {
     ANALYSIS_DIRTY: "analysis:dirty",
 
     /**
-     * Opinion-group AI description dirty set: conversations needing label or translation work.
-     * Used by: API AI-label warm-up, math-updater Python worker (ZPOPMIN)
-     * Pattern: Sorted set of conversationId strings. Score = due timestamp in milliseconds.
-     */
-    AI_DESCRIPTION_DIRTY: "analysis:ai-description:dirty",
-
-    /**
-     * Opinion-group description translation dirty set: conversations needing localized labels.
-     * Used by: description-translation-worker Python worker (ZPOPMIN)
-     * Pattern: Sorted set of conversationId strings. Score = due timestamp in milliseconds.
-     */
-    DESCRIPTION_TRANSLATION_DIRTY: "analysis:description-translation:dirty",
-
-    /**
      * UCAN replay protection - key prefix for used UCAN hashes
      * Used by: index.ts (verifyUcan)
      * Pattern: Key = prefix + SHA-256(encodedUcan), Value = issuer DID, TTL = token remaining lifetime + 5s

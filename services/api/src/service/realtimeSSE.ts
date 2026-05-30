@@ -4,7 +4,6 @@ import { zodSlugId } from "@/shared/types/zod.js";
 import type {
     SSEConnectedData,
     SSENotificationData,
-    SSEHeartbeatData,
     SSEShutdownData,
     SSEEventDataByType,
     SSEEventType,
@@ -27,14 +26,17 @@ export function parseRealtimeSubscribedConversationSlugId(
 
 type ConversationSubscriptionEvent =
     | {
+          id: number | undefined;
           event: "conversation_analysis_updated";
           data: SSEEventDataByType["conversation_analysis_updated"];
       }
     | {
+          id: number | undefined;
           event: "conversation_settings_updated";
           data: SSEEventDataByType["conversation_settings_updated"];
       }
     | {
+          id: number | undefined;
           event: "new_opinion";
           data: SSEEventDataByType["new_opinion"];
       };
@@ -56,7 +58,6 @@ export class RealtimeSSEManager {
     private anonymousConnections: Set<FastifyReply>;
     private connectionTimestamps: Map<FastifyReply, number>;
     private connectionConversationSubscriptions: Map<FastifyReply, string>;
-    private heartbeatInterval: NodeJS.Timeout | null;
     private cleanupInterval: NodeJS.Timeout | null;
     private isShuttingDown: boolean;
     private readonly CONNECTION_TIMEOUT_MS = 3600000; // 1 hour
@@ -66,27 +67,20 @@ export class RealtimeSSEManager {
         this.anonymousConnections = new Set();
         this.connectionTimestamps = new Map();
         this.connectionConversationSubscriptions = new Map();
-        this.heartbeatInterval = null;
         this.cleanupInterval = null;
         this.isShuttingDown = false;
     }
 
     /**
-     * Initialize the SSE manager and start heartbeat
+     * Initialize periodic realtime connection cleanup.
      */
     public initialize(): void {
-        // Send heartbeat every 30 seconds to keep connections alive
-        this.heartbeatInterval = setInterval(() => {
-            this.sendHeartbeat();
-        }, 30000);
-
         // Cleanup stale connections every 5 minutes
         this.cleanupInterval = setInterval(() => {
             this.cleanupStaleConnections();
         }, 300000);
 
         // Prevent intervals from keeping process alive during shutdown
-        this.heartbeatInterval.unref();
         this.cleanupInterval.unref();
     }
 
@@ -217,18 +211,21 @@ export class RealtimeSSEManager {
 
     public async sendToConnection<TEvent extends SSEEventType>({
         reply,
+        id,
         event,
         data,
     }: {
         reply: FastifyReply;
+        id: number | undefined;
         event: TEvent;
         data: SSEEventDataByType[TEvent];
     }): Promise<void> {
-        await reply.sse.send({ event, data });
+        await reply.sse.send({ id: id?.toString(), event, data });
     }
 
     public broadcastToConversationSubscribers({
         conversationSlugId,
+        id,
         event,
         data,
     }: ConversationSubscriptionEvent & {
@@ -247,7 +244,7 @@ export class RealtimeSSEManager {
                 ) {
                     continue;
                 }
-                reply.sse.send({ event, data }).catch(() => {
+                reply.sse.send({ id: id?.toString(), event, data }).catch(() => {
                     deadAuthenticated.push({ userId, reply });
                 });
             }
@@ -262,7 +259,7 @@ export class RealtimeSSEManager {
             ) {
                 continue;
             }
-            reply.sse.send({ event, data }).catch(() => {
+            reply.sse.send({ id: id?.toString(), event, data }).catch(() => {
                 deadAnonymous.push(reply);
             });
         }
@@ -277,6 +274,7 @@ export class RealtimeSSEManager {
 
     public broadcastToConversationSubscribersExcept({
         conversationSlugId,
+        id,
         event,
         data,
         excludeUserId,
@@ -300,7 +298,7 @@ export class RealtimeSSEManager {
                 ) {
                     continue;
                 }
-                reply.sse.send({ event, data }).catch(() => {
+                reply.sse.send({ id: id?.toString(), event, data }).catch(() => {
                     deadAuthenticated.push({ userId, reply });
                 });
             }
@@ -315,7 +313,7 @@ export class RealtimeSSEManager {
             ) {
                 continue;
             }
-            reply.sse.send({ event, data }).catch(() => {
+            reply.sse.send({ id: id?.toString(), event, data }).catch(() => {
                 deadAnonymous.push(reply);
             });
         }
@@ -500,63 +498,6 @@ export class RealtimeSSEManager {
     }
 
     /**
-     * Send a heartbeat comment to all connected clients
-     */
-    private sendHeartbeat(): void {
-        const authenticatedCount = Array.from(this.connections.values()).reduce(
-            (sum, set) => sum + set.size,
-            0,
-        );
-        const totalConnections =
-            authenticatedCount + this.anonymousConnections.size;
-
-        if (totalConnections === 0) {
-            return;
-        }
-
-        const heartbeatData: SSEHeartbeatData = {
-            timestamp: Date.now(),
-        };
-
-        // Heartbeat to authenticated connections
-        for (const [userId, userConnections] of this.connections.entries()) {
-            const deadConnections: FastifyReply[] = [];
-
-            for (const reply of userConnections) {
-                reply.sse
-                    .send({
-                        event: "heartbeat",
-                        data: heartbeatData,
-                    })
-                    .catch(() => {
-                        deadConnections.push(reply);
-                    });
-            }
-
-            for (const deadReply of deadConnections) {
-                this.disconnect({ userId, reply: deadReply });
-            }
-        }
-
-        // Heartbeat to anonymous connections
-        const deadAnonymous: FastifyReply[] = [];
-        for (const reply of this.anonymousConnections) {
-            reply.sse
-                .send({
-                    event: "heartbeat",
-                    data: heartbeatData,
-                })
-                .catch(() => {
-                    deadAnonymous.push(reply);
-                });
-        }
-
-        for (const deadReply of deadAnonymous) {
-            this.disconnectAnonymous(deadReply);
-        }
-    }
-
-    /**
      * Get connection statistics
      */
     public getStats(): {
@@ -588,12 +529,6 @@ export class RealtimeSSEManager {
      */
     public async shutdown(): Promise<void> {
         this.isShuttingDown = true;
-
-        // Stop heartbeat
-        if (this.heartbeatInterval) {
-            clearInterval(this.heartbeatInterval);
-            this.heartbeatInterval = null;
-        }
 
         // Stop cleanup interval
         if (this.cleanupInterval) {

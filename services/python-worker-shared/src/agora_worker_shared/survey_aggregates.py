@@ -12,7 +12,7 @@ from agora_worker_shared.generated_models import (
 if TYPE_CHECKING:
     from uuid import UUID
 
-PUBLIC_SURVEY_SUPPRESSION_THRESHOLD = 5
+PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD = 5
 
 
 @dataclass(frozen=True)
@@ -31,6 +31,7 @@ class SurveyQuestionSnapshot:
     question_type: SurveyQuestionType
     question_text: str
     is_required: bool
+    is_public_aggregate_suppression_enabled: bool
     current_semantic_version: int
     constraints: dict[str, object]
     options: list[SurveyOptionSnapshot]
@@ -75,6 +76,7 @@ class SurveyAggregateQuestionRecord:
     question_type: SurveyQuestionType
     question_text: str
     is_required: bool
+    is_public_aggregate_suppression_enabled: bool
     question_semantic_version: int
 
 
@@ -95,8 +97,10 @@ class SurveyAggregateResultRecord:
     group_id: int | None
     question_key: str
     option_key: str
-    count: int | None
-    percentage: float | None
+    suppressed_count: int | None
+    suppressed_percentage: float | None
+    full_count: int
+    full_percentage: float | None
     is_suppressed: bool
     suppression_reason: SurveyAggregateSuppressionReasonEnum | None
 
@@ -125,27 +129,13 @@ def build_suppressed_survey_aggregates(
     config: SurveyConfigSnapshot,
     responses: list[SurveyResponseSnapshot],
     group_memberships: list[SurveyAggregateGroupMembership],
-    suppression_threshold: int = PUBLIC_SURVEY_SUPPRESSION_THRESHOLD,
+    suppression_threshold: int = PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
 ) -> SurveyAggregateBuildResult:
     return _build_survey_aggregates(
         config=config,
         responses=responses,
         group_memberships=group_memberships,
         suppression_threshold=suppression_threshold,
-    )
-
-
-def build_full_survey_aggregates(
-    *,
-    config: SurveyConfigSnapshot,
-    responses: list[SurveyResponseSnapshot],
-    group_memberships: list[SurveyAggregateGroupMembership],
-) -> SurveyAggregateBuildResult:
-    return _build_survey_aggregates(
-        config=config,
-        responses=responses,
-        group_memberships=group_memberships,
-        suppression_threshold=None,
     )
 
 
@@ -240,6 +230,9 @@ def _question_record(question: SurveyQuestionSnapshot) -> SurveyAggregateQuestio
         question_type=question.question_type,
         question_text=question.question_text,
         is_required=question.is_required,
+        is_public_aggregate_suppression_enabled=(
+            question.is_public_aggregate_suppression_enabled
+        ),
         question_semantic_version=question.current_semantic_version,
     )
 
@@ -321,10 +314,15 @@ def _aggregate_block_records(
             group_id=group_id,
             question_key=question.slug_id,
             option_key=f"{question.slug_id}:{option_count.option.slug_id}",
-            count=None if is_suppressed else option_count.count,
-            percentage=None
+            suppressed_count=None if is_suppressed else option_count.count,
+            suppressed_percentage=None
             if is_suppressed
             else _format_percentage(numerator=option_count.count, denominator=denominator),
+            full_count=option_count.count,
+            full_percentage=_format_percentage(
+                numerator=option_count.count,
+                denominator=denominator,
+            ),
             is_suppressed=is_suppressed,
             suppression_reason=(suppression_reason if is_suppressed else None),
         )

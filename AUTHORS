@@ -19,6 +19,7 @@ With help from many libraries and frameworks including:
 - Fastify
 - Vite
 - pnpm
+- eventsource-parser (MIT; SSE parser reference): https://github.com/rexxars/eventsource-parser
 ...
 
 Algorithm inspiration:
@@ -27,6 +28,11 @@ Algorithm inspiration:
   - Solidago/Tournesol (LGPL): https://github.com/tournesol-app/tournesol
   - SeregPie/MaxDiff (MIT): https://github.com/SeregPie/MaxDiff
   - Hunter (2004), "MM algorithms for generalized Bradley-Terry models," Annals of Statistics
+- COCM voting rights:
+  - Miller, Weyl, Erichsen (2022), "Beyond Collusion Resistance: Leveraging Social Information for Plural Funding and Voting"
+  - Joel Miller's plural-qf (no license file found; algorithm reference): https://github.com/Jmiller4/plural-qf
+  - Joel Miller's COQF (MIT; Copyright (c) 2026 Joel Miller): https://github.com/Jmiller4/COQF
+  - Joel Miller's qf-variants (GPL-3.0; comparison reference only): https://github.com/Jmiller4/qf-variants
 - Polis clustering:
   - red-dwarf (community rewrite): https://github.com/nicobao/red-dwarf
   - Original Polis (inspiration): https://github.com/compdemocracy/polis

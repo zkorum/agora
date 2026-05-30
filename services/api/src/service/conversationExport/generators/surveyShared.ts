@@ -11,6 +11,7 @@ import {
     userTable,
     voteTable,
 } from "@/shared-backend/schema.js";
+import { PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD } from "@/shared/shared.js";
 import type {
     SurveyAggregateRow as PublicSurveyAggregateRow,
     SurveyQuestionType,
@@ -26,8 +27,6 @@ import {
 } from "@/service/survey.js";
 import { getSelectedOpinionGroupMembershipsByParticipantId } from "@/service/opinionGroupAnalysis.js";
 import type { GeneratorParams } from "./base.js";
-
-export const PUBLIC_SURVEY_SUPPRESSION_THRESHOLD = 5;
 
 type CsvValue = string | number | null;
 type CsvRow = Record<string, CsvValue>;
@@ -80,6 +79,7 @@ interface SurveyQuestionExportMetadata {
     questionType: SurveyQuestionType;
     questionText: string;
     isRequired: 0 | 1;
+    isPublicAggregateSuppressionEnabled: 0 | 1;
     questionSemanticVersion: number;
 }
 
@@ -165,6 +165,8 @@ function buildSurveyExportMetadata({
             questionType: question.questionType,
             questionText: question.questionText,
             isRequired: question.isRequired ? 1 : 0,
+            isPublicAggregateSuppressionEnabled:
+                question.isPublicAggregateSuppressionEnabled ? 1 : 0,
             questionSemanticVersion: question.currentSemanticVersion,
         };
         questionIdByQuestionDbId.set(
@@ -178,6 +180,8 @@ function buildSurveyExportMetadata({
             "question-type": questionMetadata.questionType,
             "question-text": questionMetadata.questionText,
             "is-required": questionMetadata.isRequired,
+            "is-public-aggregate-suppression-enabled":
+                questionMetadata.isPublicAggregateSuppressionEnabled,
             "question-semantic-version":
                 questionMetadata.questionSemanticVersion,
         });
@@ -227,16 +231,19 @@ function buildSurveyExportMetadata({
 function shouldSuppressSurveyAggregateBlock({
     optionCounts,
     includeSuppression,
+    isPublicAggregateSuppressionEnabled,
 }: {
     optionCounts: SurveyAggregateCsvOptionCount[];
     includeSuppression: boolean;
+    isPublicAggregateSuppressionEnabled: boolean;
 }): boolean {
     return (
         includeSuppression &&
+        isPublicAggregateSuppressionEnabled &&
         optionCounts.some(
             (optionCount) =>
                 optionCount.count > 0 &&
-                optionCount.count < PUBLIC_SURVEY_SUPPRESSION_THRESHOLD,
+                optionCount.count < PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
         )
     );
 }
@@ -635,16 +642,19 @@ interface SurveyAggregatePublicOptionCount {
 function shouldSuppressPublicSurveyAggregateBlock({
     optionCounts,
     includeSuppression,
+    isPublicAggregateSuppressionEnabled,
 }: {
     optionCounts: SurveyAggregatePublicOptionCount[];
     includeSuppression: boolean;
+    isPublicAggregateSuppressionEnabled: boolean;
 }): boolean {
     return (
         includeSuppression &&
+        isPublicAggregateSuppressionEnabled &&
         optionCounts.some(
             (optionCount) =>
                 optionCount.count > 0 &&
-                optionCount.count < PUBLIC_SURVEY_SUPPRESSION_THRESHOLD,
+                optionCount.count < PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
         )
     );
 }
@@ -683,8 +693,10 @@ function buildPublicSurveyAggregateBlockRows({
             : formatPercentage({
                   numerator: optionCount.count,
                   denominator,
-              }),
+        }),
         isSuppressed,
+        isPublicAggregateSuppressionEnabled:
+            question.isPublicAggregateSuppressionEnabled,
         suppressionReason: isSuppressed ? suppressionReason : undefined,
     }));
 }
@@ -760,6 +772,8 @@ export function buildSurveyAggregateRows({
                 isSuppressed: shouldSuppressPublicSurveyAggregateBlock({
                     optionCounts: overallOptionCounts,
                     includeSuppression,
+                    isPublicAggregateSuppressionEnabled:
+                        question.isPublicAggregateSuppressionEnabled,
                 }),
                 suppressionReason: "count_below_threshold",
             }),
@@ -824,6 +838,8 @@ export function buildSurveyAggregateRows({
                     isSuppressed: shouldSuppressPublicSurveyAggregateBlock({
                         optionCounts,
                         includeSuppression,
+                        isPublicAggregateSuppressionEnabled:
+                            question.isPublicAggregateSuppressionEnabled,
                     }),
                     suppressionReason: "cluster_deductive_disclosure",
                 }),
@@ -929,6 +945,8 @@ export function buildSurveyAggregateCsvRows({
                 isSuppressed: shouldSuppressSurveyAggregateBlock({
                     optionCounts: overallOptionCounts,
                     includeSuppression,
+                    isPublicAggregateSuppressionEnabled:
+                        question.isPublicAggregateSuppressionEnabled,
                 }),
                 suppressionReason: "count_below_threshold",
             }),
@@ -1012,6 +1030,8 @@ export function buildSurveyAggregateCsvRows({
                     isSuppressed: shouldSuppressSurveyAggregateBlock({
                         optionCounts,
                         includeSuppression,
+                        isPublicAggregateSuppressionEnabled:
+                            question.isPublicAggregateSuppressionEnabled,
                     }),
                     suppressionReason: "cluster_deductive_disclosure",
                 }),

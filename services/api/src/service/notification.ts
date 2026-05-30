@@ -18,7 +18,7 @@ import type {
     NotificationItem,
 } from "@/shared/types/zod.js";
 import { zodNotificationItem } from "@/shared/types/zod.js";
-import { and, desc, eq, inArray, lt } from "drizzle-orm";
+import { and, desc, eq, inArray, lt, or, type SQL } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
@@ -50,30 +50,46 @@ export async function markAllNotificationsAsRead({
     }
 }
 
-interface GetNotificationSlugIdLastCreatedAtProps {
+interface GetNotificationSlugIdLastCursorProps {
     lastSlugId: string | undefined;
     db: PostgresJsDatabase;
+    userId: string;
 }
 
-async function getNotificationSlugIdLastCreatedAt({
+async function getNotificationSlugIdLastCursor({
     lastSlugId,
     db,
-}: GetNotificationSlugIdLastCreatedAtProps) {
-    let lastCreatedAt = new Date();
+    userId,
+}: GetNotificationSlugIdLastCursorProps): Promise<
+    | {
+          id: number;
+          createdAt: Date;
+      }
+    | undefined
+> {
+    let lastCursor;
 
     if (lastSlugId) {
         const selectResponse = await db
-            .select({ createdAt: notificationTable.createdAt })
+            .select({
+                id: notificationTable.id,
+                createdAt: notificationTable.createdAt,
+            })
             .from(notificationTable)
-            .where(eq(notificationTable.slugId, lastSlugId));
+            .where(
+                and(
+                    eq(notificationTable.slugId, lastSlugId),
+                    eq(notificationTable.userId, userId),
+                ),
+            );
         if (selectResponse.length == 1) {
-            lastCreatedAt = selectResponse[0].createdAt;
+            lastCursor = selectResponse[0];
         } else {
             // Ignore the slug ID if it cannot be found
         }
     }
 
-    return lastCreatedAt;
+    return lastCursor;
 }
 
 interface GetNotificationsProps {
@@ -107,25 +123,52 @@ export async function getNotifications({
 
     let numNewNotifications = 0;
 
-    const lastCreatedAt = await getNotificationSlugIdLastCreatedAt({
+    const lastCursor = await getNotificationSlugIdLastCursor({
         db: db,
         lastSlugId: lastSlugId,
+        userId,
     });
+
+    const cursorFilter =
+        lastCursor === undefined
+            ? undefined
+            : or(
+                  lt(notificationTable.createdAt, lastCursor.createdAt),
+                  and(
+                      eq(notificationTable.createdAt, lastCursor.createdAt),
+                      lt(notificationTable.id, lastCursor.id),
+                  ),
+              );
+
+    const pageNotificationRows = await db
+        .select({
+            id: notificationTable.id,
+            slugId: notificationTable.slugId,
+        })
+        .from(notificationTable)
+        .where(
+            cursorFilter === undefined
+                ? eq(notificationTable.userId, userId)
+                : and(eq(notificationTable.userId, userId), cursorFilter),
+        )
+        .orderBy(desc(notificationTable.createdAt), desc(notificationTable.id))
+        .limit(fetchLimit);
+
+    if (pageNotificationRows.length === 0) {
+        return { numNewNotifications, notificationList: [] };
+    }
+
+    const pageNotificationIds = pageNotificationRows.map((row) => row.id);
+    const notificationOrderBySlugId = new Map(
+        pageNotificationRows.map((row, index) => [row.slugId, index]),
+    );
 
     const orderByClause = desc(notificationTable.createdAt);
 
-    // Build per-type WHERE clauses to ensure LIMIT only counts rows of the
-    // correct notification type. Without a type filter, the LIMIT can be filled
-    // by wrong-type notifications (which are then skipped by NULL checks),
-    // causing valid notifications and their unread counts to be missed.
-    function buildWhereClause(typeFilter: ReturnType<typeof eq>) {
-        return lastSlugId
-            ? and(
-                  eq(notificationTable.userId, userId),
-                  lt(notificationTable.createdAt, lastCreatedAt),
-                  typeFilter,
-              )
-            : and(eq(notificationTable.userId, userId), typeFilter);
+    // Details queries are scoped to the already-paginated notification IDs so
+    // mixed notification types cannot consume each other's page slots.
+    function buildWhereClause(typeFilter: SQL) {
+        return and(inArray(notificationTable.id, pageNotificationIds), typeFilter);
     }
 
     {
@@ -153,7 +196,7 @@ export async function getNotifications({
             )
             .leftJoin(
                 opinionContentTable,
-                eq(opinionContentTable.opinionId, opinionTable.id),
+                eq(opinionContentTable.id, opinionTable.currentContentId),
             )
             .leftJoin(
                 conversationTable,
@@ -232,7 +275,7 @@ export async function getNotifications({
             )
             .leftJoin(
                 opinionContentTable,
-                eq(opinionContentTable.opinionId, opinionTable.id),
+                eq(opinionContentTable.id, opinionTable.currentContentId),
             )
             .leftJoin(
                 conversationTable,
@@ -529,11 +572,11 @@ export async function getNotifications({
         }
     }
 
-    notificationItemList.sort(function (a, b) {
-        return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-    });
+    notificationItemList.sort(
+        (a, b) =>
+            (notificationOrderBySlugId.get(a.slugId) ?? Number.MAX_SAFE_INTEGER) -
+            (notificationOrderBySlugId.get(b.slugId) ?? Number.MAX_SAFE_INTEGER),
+    );
 
     return {
         numNewNotifications: numNewNotifications,
@@ -674,7 +717,7 @@ async function buildVoteNotification(
             .leftJoin(opinionTable, eq(opinionTable.id, opinionId))
             .leftJoin(
                 opinionContentTable,
-                eq(opinionContentTable.opinionId, opinionId),
+                eq(opinionContentTable.id, opinionTable.currentContentId),
             )
             .leftJoin(
                 conversationTable,
@@ -741,7 +784,7 @@ async function buildOpinionNotification(
             .leftJoin(opinionTable, eq(opinionTable.id, opinionId))
             .leftJoin(
                 opinionContentTable,
-                eq(opinionContentTable.opinionId, opinionId),
+                eq(opinionContentTable.id, opinionTable.currentContentId),
             )
             .leftJoin(
                 conversationTable,

@@ -1,5 +1,6 @@
 /** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 import { z } from "zod";
+import { ZodSupportedDisplayLanguageCodes } from "../languages.js";
 import {
     zodEventSlug,
     zodNotificationItem,
@@ -59,16 +60,6 @@ export const zodSSENewOpinionData = z
 export type SSENewOpinionData = z.infer<typeof zodSSENewOpinionData>;
 
 /**
- * Data sent periodically to keep the connection alive
- */
-export const zodSSEHeartbeatData = z
-    .object({
-        timestamp: z.number(),
-    })
-    .strict();
-export type SSEHeartbeatData = z.infer<typeof zodSSEHeartbeatData>;
-
-/**
  * Data sent when engagement rankings change on the "Following" feed
  */
 export const zodSSEPopularConversationData = z
@@ -88,7 +79,9 @@ export const zodSSEConversationAnalysisUpdatedData = z
         conversationSlugId: zodSlugId,
         conversationViewSnapshotId: z.number().int().positive(),
         analysisSnapshotId: z.number().int().positive(),
+        changeKind: z.enum(["snapshot", "descriptions", "latest_state"]),
         checkpointChanged: z.boolean(),
+        displayableGroupCounts: z.array(z.number().int().min(2).max(6)),
         opinionCount: z.number().int().nonnegative().optional(),
         voteCount: z.number().int().nonnegative().optional(),
         participantCount: z.number().int().nonnegative().optional(),
@@ -98,6 +91,7 @@ export const zodSSEConversationAnalysisUpdatedData = z
         moderatedOpinionCount: z.number().int().nonnegative().optional(),
         hiddenOpinionCount: z.number().int().nonnegative().optional(),
         isClosed: z.boolean().optional(),
+        locales: z.array(ZodSupportedDisplayLanguageCodes).optional(),
         timestamp: z.number(),
     })
     .strict();
@@ -151,7 +145,6 @@ export const zodSSEEventDataByType = {
     popular_conversation: zodSSEPopularConversationData,
     conversation_analysis_updated: zodSSEConversationAnalysisUpdatedData,
     conversation_settings_updated: zodSSEConversationSettingsUpdatedData,
-    heartbeat: zodSSEHeartbeatData,
     shutdown: zodSSEShutdownData,
 } as const;
 
@@ -181,7 +174,6 @@ export type SSEConversationAnalysisUpdatedEvent =
     SSEEvent<"conversation_analysis_updated">;
 export type SSEConversationSettingsUpdatedEvent =
     SSEEvent<"conversation_settings_updated">;
-export type SSEHeartbeatEvent = SSEEvent<"heartbeat">;
 export type SSEShutdownEvent = SSEEvent<"shutdown">;
 
 /**
@@ -195,5 +187,4 @@ export type AnySSEEvent =
     | SSEPopularConversationEvent
     | SSEConversationAnalysisUpdatedEvent
     | SSEConversationSettingsUpdatedEvent
-    | SSEHeartbeatEvent
     | SSEShutdownEvent;

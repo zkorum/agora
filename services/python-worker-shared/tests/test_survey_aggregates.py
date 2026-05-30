@@ -24,7 +24,7 @@ USER_4 = UUID("00000000-0000-0000-0000-000000000004")
 USER_5 = UUID("00000000-0000-0000-0000-000000000005")
 
 
-def _question() -> SurveyQuestionSnapshot:
+def _question(*, is_public_aggregate_suppression_enabled: bool = True) -> SurveyQuestionSnapshot:
     return SurveyQuestionSnapshot(
         id=100,
         slug_id="q1",
@@ -32,6 +32,7 @@ def _question() -> SurveyQuestionSnapshot:
         question_type=SurveyQuestionType.choice,
         question_text="Pick one",
         is_required=True,
+        is_public_aggregate_suppression_enabled=is_public_aggregate_suppression_enabled,
         current_semantic_version=2,
         constraints={"type": "choice", "minSelections": 1, "maxSelections": 1},
         options=[
@@ -41,12 +42,22 @@ def _question() -> SurveyQuestionSnapshot:
     )
 
 
-def _config(*, is_optional: bool = False) -> SurveyConfigSnapshot:
+def _config(
+    *,
+    is_optional: bool = False,
+    is_public_aggregate_suppression_enabled: bool = True,
+) -> SurveyConfigSnapshot:
     return SurveyConfigSnapshot(
         id=1,
         current_revision=3,
         is_optional=is_optional,
-        questions=[_question()],
+        questions=[
+            _question(
+                is_public_aggregate_suppression_enabled=(
+                    is_public_aggregate_suppression_enabled
+                )
+            )
+        ],
     )
 
 
@@ -84,11 +95,37 @@ def test_build_suppressed_survey_aggregates_suppresses_small_overall_counts() ->
 
     assert len(result.questions) == 1
     assert len(result.options) == 2
-    assert [record.count for record in result.results] == [None, None]
+    assert [record.suppressed_count for record in result.results] == [None, None]
+    assert [record.full_count for record in result.results] == [2, 1]
     assert {record.is_suppressed for record in result.results} == {True}
     assert {record.suppression_reason for record in result.results} == {
         SurveyAggregateSuppressionReasonEnum.count_below_threshold
     }
+
+
+def test_build_suppressed_survey_aggregates_suppresses_even_when_display_toggle_disabled() -> None:
+    result = build_suppressed_survey_aggregates(
+        config=_config(is_public_aggregate_suppression_enabled=False),
+        responses=[
+            _response(participant_id=USER_1, option_slug_ids=["a"]),
+            _response(participant_id=USER_2, option_slug_ids=["a"]),
+            _response(participant_id=USER_3, option_slug_ids=["b"]),
+        ],
+        group_memberships=[],
+    )
+
+    suppressed_results = [
+        (record.suppressed_count, record.suppressed_percentage) for record in result.results
+    ]
+    assert suppressed_results == [
+        (None, None),
+        (None, None),
+    ]
+    assert [(record.full_count, record.full_percentage) for record in result.results] == [
+        (2, 66.67),
+        (1, 33.33),
+    ]
+    assert {record.is_suppressed for record in result.results} == {True}
 
 
 def test_build_suppressed_survey_aggregates_persists_unsuppressed_percentages() -> None:
@@ -104,7 +141,14 @@ def test_build_suppressed_survey_aggregates_persists_unsuppressed_percentages() 
         group_memberships=[],
     )
 
-    assert [(record.count, record.percentage) for record in result.results] == [
+    suppressed_results = [
+        (record.suppressed_count, record.suppressed_percentage) for record in result.results
+    ]
+    assert suppressed_results == [
+        (5, 100.0),
+        (0, 0.0),
+    ]
+    assert [(record.full_count, record.full_percentage) for record in result.results] == [
         (5, 100.0),
         (0, 0.0),
     ]
@@ -153,5 +197,6 @@ def test_build_suppressed_survey_aggregates_excludes_withdrawn_and_stale_answers
         group_memberships=[],
     )
 
-    assert [record.count for record in result.results] == [None, None]
+    assert [record.suppressed_count for record in result.results] == [None, None]
+    assert [record.full_count for record in result.results] == [0, 1]
     assert {record.is_suppressed for record in result.results} == {True}

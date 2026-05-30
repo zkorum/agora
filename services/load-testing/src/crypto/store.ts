@@ -10,11 +10,11 @@ import { type Implementation } from "./ucan/implementation.js";
 let k6CryptoStore: Implementation | undefined = undefined;
 
 export async function getNodeCryptoStore(): Promise<Implementation> {
-  if (k6CryptoStore !== undefined) {
+    if (k6CryptoStore !== undefined) {
+        return k6CryptoStore;
+    }
+    k6CryptoStore = await K6Crypto.implementation({
+        storeName: "agora-keys-loadtest",
+    });
     return k6CryptoStore;
-  }
-  k6CryptoStore = await K6Crypto.implementation({
-    storeName: "agora-keys-loadtest",
-  });
-  return k6CryptoStore;
 }

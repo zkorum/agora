@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -39,6 +40,7 @@ DISPLAY_LANGUAGE_TO_GOOGLE_CODE = {
     "zh-Hans": "zh-CN",
     "zh-Hant": "zh-TW",
 }
+log = logging.getLogger(__name__)
 
 
 class DescriptionTranslationError(RuntimeError):
@@ -177,6 +179,7 @@ def generate_description_translations(
     target_language_codes: Sequence[str] = SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES,
 ) -> list[DescriptionTranslation]:
     translations: list[DescriptionTranslation] = []
+    description_ids = [description.description_id for description in descriptions]
     for target_language_code in target_language_codes:
         if _should_skip_translation(
             source_language_code=SOURCE_LANGUAGE,
@@ -189,6 +192,7 @@ def generate_description_translations(
             source_language_code=SOURCE_LANGUAGE,
             target_language_code=target_language_code,
             content_kind="ai_label",
+            element_ids=description_ids,
         )
         translated_summaries = _batch_translate_texts(
             service=service,
@@ -196,6 +200,7 @@ def generate_description_translations(
             source_language_code=SOURCE_LANGUAGE,
             target_language_code=target_language_code,
             content_kind="ai_summary",
+            element_ids=description_ids,
         )
         translations.extend(
             DescriptionTranslation(
@@ -238,16 +243,48 @@ def generate_description_translations_with_bedrock(
             target_language_code=target_language_code,
             config=config,
         )
-        response = bedrock_client.converse(**command_payload)
-        translations.extend(
-            parse_bedrock_translation_response(
-                response,
-                expected_description_ids={
-                    description.description_id for description in descriptions
-                },
-                expected_locale=target_language_code,
-            )
+        description_ids = [description.description_id for description in descriptions]
+        log.info(
+            "[DescriptionTranslator] Bedrock translation request "
+            "model_id=%s target_locale=%s description_ids=%s system_prompt_json=%s "
+            "user_prompt=%s",
+            config.model_id,
+            target_language_code,
+            description_ids,
+            json.dumps(config.prompt, ensure_ascii=False),
+            _bedrock_translation_payload_json(
+                descriptions=descriptions,
+                target_language_code=target_language_code,
+            ),
         )
+        response = bedrock_client.converse(**command_payload)
+        model_response_text = extract_text_content_from_response(response)
+        log.info(
+            "[DescriptionTranslator] Bedrock translation response "
+            "model_id=%s target_locale=%s description_ids=%s response_text_json=%s",
+            config.model_id,
+            target_language_code,
+            description_ids,
+            json.dumps(model_response_text, ensure_ascii=False),
+        )
+        if model_response_text is None:
+            msg = "unable to extract text content from Bedrock translation response"
+            raise DescriptionTranslationError(msg)
+        parsed_translations = parse_bedrock_translation_text(
+            model_response_text,
+            expected_description_ids={description.description_id for description in descriptions},
+            expected_locale=target_language_code,
+        )
+        log.info(
+            "[DescriptionTranslator] Bedrock translation parsed "
+            "model_id=%s target_locale=%s description_ids=%s output_count=%d translations=%s",
+            config.model_id,
+            target_language_code,
+            description_ids,
+            len(parsed_translations),
+            _description_translations_json(parsed_translations),
+        )
+        translations.extend(parsed_translations)
     return translations
 
 
@@ -257,13 +294,9 @@ def build_bedrock_translation_converse_payload(
     target_language_code: str,
     config: BedrockTranslationConfig,
 ) -> ConverseRequestTypeDef:
-    user_prompt = json.dumps(
-        _bedrock_translation_payload(
-            descriptions=descriptions,
-            target_language_code=target_language_code,
-        ),
-        ensure_ascii=False,
-        separators=(",", ":"),
+    user_prompt = _bedrock_translation_payload_json(
+        descriptions=descriptions,
+        target_language_code=target_language_code,
     )
     return {
         "modelId": config.model_id,
@@ -292,6 +325,19 @@ def parse_bedrock_translation_response(
     if model_response_text is None:
         msg = "unable to extract text content from Bedrock translation response"
         raise DescriptionTranslationError(msg)
+    return parse_bedrock_translation_text(
+        model_response_text,
+        expected_description_ids=expected_description_ids,
+        expected_locale=expected_locale,
+    )
+
+
+def parse_bedrock_translation_text(
+    model_response_text: str,
+    *,
+    expected_description_ids: set[int] | None = None,
+    expected_locale: str | None = None,
+) -> list[DescriptionTranslation]:
     model_response = parse_llm_output_json(model_response_text)
     return parse_description_translation_output(
         model_response,
@@ -387,6 +433,37 @@ def _bedrock_translation_payload(
     }
 
 
+def _bedrock_translation_payload_json(
+    *,
+    descriptions: list[DescriptionForTranslation],
+    target_language_code: str,
+) -> str:
+    return json.dumps(
+        _bedrock_translation_payload(
+            descriptions=descriptions,
+            target_language_code=target_language_code,
+        ),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+
+
+def _description_translations_json(translations: list[DescriptionTranslation]) -> str:
+    return json.dumps(
+        [
+            {
+                "descriptionId": translation.description_id,
+                "locale": translation.locale,
+                "label": translation.label,
+                "summary": translation.summary,
+            }
+            for translation in translations
+        ],
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+
+
 def _load_service_account_json(
     *,
     google_cloud_service_account_aws_secret_key: str | None,
@@ -477,7 +554,18 @@ def _batch_translate_texts(
     source_language_code: str | None,
     target_language_code: str,
     content_kind: str,
+    element_ids: list[int],
 ) -> list[str]:
+    model_name = _get_translation_model_name(content_kind=content_kind)
+    log.info(
+        "[DescriptionTranslator] Google translation request "
+        "element_ids=%s source_locale=%s target_locale=%s content_kind=%s model=%s",
+        element_ids,
+        source_language_code,
+        target_language_code,
+        content_kind,
+        model_name,
+    )
     return [
         _translate_text(
             service=service,
@@ -485,6 +573,7 @@ def _batch_translate_texts(
             source_language_code=source_language_code,
             target_language_code=target_language_code,
             content_kind=content_kind,
+            model_name=model_name,
         )
         for text in texts
     ]
@@ -497,6 +586,7 @@ def _translate_text(
     source_language_code: str | None,
     target_language_code: str,
     content_kind: str,
+    model_name: str | None = None,
 ) -> str:
     if text == "":
         return ""
@@ -517,7 +607,7 @@ def _translate_text(
         model=_build_model_path(
             project_id=service.config.project_id,
             location=service.config.location,
-            model_name=_get_translation_model_name(content_kind=content_kind),
+            model_name=model_name or _get_translation_model_name(content_kind=content_kind),
         ),
         timeout=service.config.request_timeout_seconds,
     )

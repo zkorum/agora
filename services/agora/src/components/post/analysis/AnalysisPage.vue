@@ -6,9 +6,10 @@
       :is-live-selected="isLiveAnalysis"
       :is-live-paused="isLivePaused"
       :is-latest-checkpoint-live="isLatestCheckpointLive"
+      :is-live-closed="props.isConversationClosed"
       :title="t('checkpointTimelineLabel')"
       :start-label="t('checkpointTimelineStart')"
-      :now-label="t('checkpointTimelineNow')"
+      :now-label="timelineLiveLabel"
       :previous-label="t('previousCheckpoint')"
       :next-label="t('nextCheckpoint')"
       :format-reason="formatCheckpointReason"
@@ -21,9 +22,11 @@
     <AsyncStateHandler :query="analysisQuery" :config="asyncStateConfig">
       <div class="analysis-content">
         <div
+          v-if="showAnalysisControls"
           class="analysis-controls"
           :class="{
-            'analysis-controls--playback-only': analysisViewOptions.length === 0,
+            'analysis-controls--playback-only':
+              analysisViewOptions.length === 0,
           }"
         >
           <ZKDropdownSelectorButton
@@ -40,6 +43,7 @@
           />
 
           <button
+            v-if="showAnalysisPlaybackButton"
             type="button"
             class="analysis-playback-button"
             :class="{
@@ -114,6 +118,7 @@
             :clusters="polisClusters"
             :total-participant-count="analysisParticipantCount"
             :analysis-frame-key="analysisFrameKey"
+            :ai-labeling-enabled="props.aiLabelingEnabled"
             :compact-mode="currentTab === 'Summary'"
             :conversation-scroll-context="props.conversationScrollContext"
           />
@@ -191,6 +196,7 @@
             :clusters="polisClusters"
             :total-participant-count="analysisParticipantCount"
             :compact-mode="currentTab === 'Summary'"
+            :conversation-scroll-context="props.conversationScrollContext"
             @update:model-value="onTabChange"
           />
         </div>
@@ -351,6 +357,7 @@ import {
   parseAnalysisViewQuery,
   parseCheckpointQuery,
 } from "src/utils/analysis/analysisRoute";
+import { getLiveAnalysisClosedTransitionAction } from "src/utils/analysis/liveAnalysisClosedTransition";
 import type { AnalysisData } from "src/utils/api/comment/comment";
 import {
   getAnalysisViewGroupCount,
@@ -365,7 +372,7 @@ import {
   shortcutItemSchema,
 } from "src/utils/component/analysis/shortcutBar";
 import { getDisplayPolisClusters } from "src/utils/component/opinion";
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 import { useRoute, useRouter } from "vue-router";
 
@@ -402,6 +409,7 @@ const props = defineProps<{
   aiLabelingEnabled: boolean;
   showReportButton: boolean;
   isLiveAnalysisPaused: boolean;
+  isConversationClosed: boolean;
   navigateToDiscoverTab: () => void;
   conversationScrollContext: ConversationScrollContext;
 }>();
@@ -496,6 +504,8 @@ const analysisQuery = props.analysisQuery;
 
 const isLivePaused = computed(() => props.isLiveAnalysisPaused);
 
+const showAnalysisPlaybackButton = computed(() => !props.isConversationClosed);
+
 const activeAnalysisData = computed<AnalysisData | undefined>(() => {
   if (isLivePaused.value) {
     return pausedLiveAnalysisData.value;
@@ -514,7 +524,9 @@ const selectedRouteAnalysisView = computed(() =>
 );
 
 const hasInvalidRouteAnalysisView = computed(
-  () => route.query.analysisView !== undefined && selectedRouteAnalysisView.value === undefined
+  () =>
+    route.query.analysisView !== undefined &&
+    selectedRouteAnalysisView.value === undefined
 );
 
 const selectedRouteCheckpoint = computed(() =>
@@ -559,12 +571,26 @@ const isLiveAnalysis = computed(
 const isLatestCheckpointLive = computed(() => {
   const checkpoint = latestCheckpoint.value;
   const liveViewSnapshotId = props.liveConversationViewSnapshotId;
-  if (checkpoint === undefined || liveViewSnapshotId === undefined) {
+  if (checkpoint === undefined) {
+    return false;
+  }
+
+  if (props.isConversationClosed && checkpoint.isClosed) {
+    return true;
+  }
+
+  if (liveViewSnapshotId === undefined) {
     return false;
   }
 
   return checkpoint.conversationViewSnapshotId === liveViewSnapshotId;
 });
+
+const timelineLiveLabel = computed(() =>
+  props.isConversationClosed
+    ? t("checkpointReasonConversationClosed")
+    : t("checkpointTimelineNow")
+);
 
 const analysisPlaybackIcon = computed(() =>
   isLiveAnalysis.value && !isLivePaused.value
@@ -652,6 +678,10 @@ const analysisViewOptions = computed(() => {
     : options;
 });
 
+const showAnalysisControls = computed(
+  () => analysisViewOptions.value.length > 0 || showAnalysisPlaybackButton.value
+);
+
 const modeAnalysisViewOptions = computed(() =>
   analysisViewOptions.value.filter(
     (option) =>
@@ -713,8 +743,8 @@ const analysisViewLearnMoreItems = computed(() => [
   },
 ]);
 
-const selectedAnalysisView = computed(
-  () => getDisplayedAnalysisView({
+const selectedAnalysisView = computed(() =>
+  getDisplayedAnalysisView({
     routeView: selectedRouteAnalysisView.value,
     viewState: analysisViewState.value,
   })
@@ -762,7 +792,9 @@ function formatCheckpointReason(
 function formatCheckpointReasons(
   reasons: AnalysisCheckpoint["reasons"]
 ): string[] {
-  if (reasons.some((reason) => reason.reason === "first_displayable_analysis")) {
+  if (
+    reasons.some((reason) => reason.reason === "first_displayable_analysis")
+  ) {
     return [t("checkpointReasonFirstDisplayableAnalysis")];
   }
 
@@ -942,9 +974,7 @@ watch(
     }
 
     if (
-      checkpoints.some(
-        (item) => item.conversationViewSnapshotId === checkpoint
-      )
+      checkpoints.some((item) => item.conversationViewSnapshotId === checkpoint)
     ) {
       return;
     }
@@ -974,6 +1004,34 @@ watch(
   }),
   () => {
     clearLivePause();
+  }
+);
+
+watch(
+  () => props.isConversationClosed,
+  async (isClosed, wasClosed) => {
+    const action = getLiveAnalysisClosedTransitionAction({
+      isClosed,
+      wasClosed,
+      isLiveAnalysis: isLiveAnalysis.value,
+    });
+
+    switch (action) {
+      case "refresh-latest-analysis":
+        await refreshLatestAnalysis();
+        return;
+
+      case "refresh-checkpoints":
+        await refreshCheckpoints({ includePaused: true });
+        return;
+
+      case "clear-live-pause":
+        clearLivePause();
+        return;
+
+      case "none":
+        return;
+    }
   }
 );
 
@@ -1014,7 +1072,10 @@ function getAnalysisViewReasonCaption(
     analysisViewState.value?.resolvedBy === "no_analysis" &&
     option.reason === "recommended_default_unavailable"
   ) {
-    return activeAnalysisData.value?.emptyReason ?? t("recommendedDefaultUnavailable");
+    return (
+      activeAnalysisData.value?.emptyReason ??
+      t("recommendedDefaultUnavailable")
+    );
   }
 
   switch (option.reason) {
@@ -1048,7 +1109,10 @@ function getAnalysisViewCaption(
   }
 
   if (option.view === "facilitator_preference") {
-    return getFacilitatorPreferenceCaption(option) ?? t("facilitatorPreferenceCaption");
+    return (
+      getFacilitatorPreferenceCaption(option) ??
+      t("facilitatorPreferenceCaption")
+    );
   }
 
   if (option.view === "auto") {
@@ -1069,9 +1133,11 @@ function getAnalysisViewOptionClasses(
   option: AnalysisViewOption
 ): Record<string, boolean> {
   return {
-    "analysis-view-drawer-option--selected": option.view === selectedAnalysisView.value,
+    "analysis-view-drawer-option--selected":
+      option.view === selectedAnalysisView.value,
     "analysis-view-drawer-option--recommended":
-      option.status === "recommended" && shouldShowAnalysisViewOptionStats(option),
+      option.status === "recommended" &&
+      shouldShowAnalysisViewOptionStats(option),
     "analysis-view-drawer-option--muted": isAnalysisViewOptionMuted({
       option,
       variantsEnabled: analysisViewState.value?.variantsEnabled,
@@ -1079,7 +1145,9 @@ function getAnalysisViewOptionClasses(
   };
 }
 
-function formatScoreChipValue(score: number | null | undefined): string | undefined {
+function formatScoreChipValue(
+  score: number | null | undefined
+): string | undefined {
   return score === null || score === undefined
     ? undefined
     : String(Math.round(score * 100));
@@ -1325,12 +1393,31 @@ const asyncStateConfig = {
   },
 };
 
-async function refreshCheckpoints(): Promise<void> {
-  if (isLivePaused.value) {
+async function refreshCheckpoints({
+  includePaused = false,
+}: {
+  includePaused?: boolean;
+} = {}): Promise<void> {
+  if (isLivePaused.value && !includePaused) {
     return;
   }
 
   await props.analysisCheckpointsQuery.refetch();
+}
+
+async function refreshLatestAnalysis(): Promise<void> {
+  clearLivePause();
+
+  if (!isLiveAnalysis.value) {
+    await goLive();
+  }
+
+  await nextTick();
+
+  await Promise.all([
+    props.analysisQuery.refetch(),
+    props.analysisCheckpointsQuery.refetch(),
+  ]);
 }
 
 defineExpose({
@@ -1343,6 +1430,7 @@ defineExpose({
         props.analysisCheckpointsQuery.data.value === undefined)
   ),
   refreshCheckpoints,
+  refreshLatestAnalysis,
 });
 </script>
 

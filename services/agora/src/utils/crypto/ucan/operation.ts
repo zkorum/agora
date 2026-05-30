@@ -5,7 +5,7 @@ import {
 } from "src/shared-app-api/ucan/ucan";
 import { processEnv } from "src/utils/processEnv";
 
-import { getWebCryptoStore } from "../store";
+import { clearWebCryptoStore, getWebCryptoStore } from "../store";
 import * as DID from "./did/index";
 
 interface CreateDidReturn {
@@ -14,9 +14,19 @@ interface CreateDidReturn {
 }
 
 export async function createDidIfDoesNotExist(): Promise<CreateDidReturn> {
-  const prefixedKey = "com.zkorum.agora/v1/sign";
+  const prefixedKey = PREFIXED_KEY;
+  try {
+    const cryptoStore = await getWebCryptoStore();
+    await cryptoStore.keystore.createIfDoesNotExists(prefixedKey);
+    const did = await DID.write(cryptoStore, prefixedKey);
+    return { did, prefixedKey };
+  } catch (error) {
+    console.warn("Stored signing key was unusable; recreating it", error);
+    await clearWebCryptoStore();
+  }
+
   const cryptoStore = await getWebCryptoStore();
-  await cryptoStore.keystore.createIfDoesNotExists(prefixedKey);
+  await cryptoStore.keystore.createOverwriteIfAlreadyExists(prefixedKey);
   const did = await DID.write(cryptoStore, prefixedKey);
   return { did, prefixedKey };
 }
@@ -40,9 +50,7 @@ export async function getDid(): Promise<CreateDidReturn> {
 }
 
 export async function deleteDid(): Promise<void> {
-  const cryptoStore = await getWebCryptoStore();
-  // TODO: understand why deleteKey(prefixedKey) doesn't work...
-  await cryptoStore.keystore.clearStore();
+  await clearWebCryptoStore();
 }
 
 // Default UCAN lifetime for standard API calls (30 seconds)

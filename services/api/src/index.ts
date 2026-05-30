@@ -61,7 +61,9 @@ import {
 } from "./shared-app-api/ucan/ucan.js";
 import {
     deleteOpinionBySlugId,
+    fetchAnalysisContentByCandidateId,
     fetchAnalysisByConversationSlugId,
+    fetchAnalysisMetadataByConversationSlugId,
     fetchOpinionsByPostSlugId,
     fetchOpinionsByOpinionSlugIdList,
     postNewOpinion,
@@ -141,6 +143,7 @@ import { createImportWorkerEventBridge } from "./service/importWorkerEventBridge
 import {
     createRealtimeEventOutboxBridge,
     fetchConversationAnalysisUpdatedEventForLatestViewSnapshot,
+    fetchConversationRealtimeEventsAfterId,
 } from "./service/realtimeEventOutbox.js";
 import { createUcanReplayGuard } from "./service/ucanReplayGuard.js";
 import {
@@ -957,6 +960,36 @@ async function verifyUcanOptionalAuth(
     });
 }
 
+async function getRequestDisplayLanguage({
+    deviceStatus,
+    request,
+}: {
+    deviceStatus: DeviceLoginStatusInternal;
+    request: FastifyRequest;
+}): Promise<SupportedDisplayLanguageCodes> {
+    const parsedHeaderDisplayLanguage =
+        ZodSupportedDisplayLanguageCodes.safeParse(
+            request.headers["accept-language"],
+        );
+    const headerDisplayLanguage: SupportedDisplayLanguageCodes =
+        parsedHeaderDisplayLanguage.success
+            ? parsedHeaderDisplayLanguage.data
+            : "en";
+
+    if (!deviceStatus.isKnown) {
+        return headerDisplayLanguage;
+    }
+
+    const preferences = await getLanguagePreferences({
+        db,
+        userId: deviceStatus.userId,
+        request: {
+            currentDisplayLanguage: headerDisplayLanguage,
+        },
+    });
+    return preferences.displayLanguage;
+}
+
 async function sendLatestSubscribedConversationAnalysisEvent({
     reply,
     conversationSlugId,
@@ -980,6 +1013,7 @@ async function sendLatestSubscribedConversationAnalysisEvent({
 
         await realtimeSSEManager.sendToConnection({
             reply,
+            id: undefined,
             event: "conversation_analysis_updated",
             data,
         });
@@ -987,6 +1021,63 @@ async function sendLatestSubscribedConversationAnalysisEvent({
         log.error(
             error,
             `[RealtimeSSE] Failed to send latest analysis event conversationSlugId=${conversationSlugId}`,
+        );
+    }
+}
+
+async function replaySubscribedConversationEvents({
+    reply,
+    conversationSlugId,
+}: {
+    reply: FastifyReply;
+    conversationSlugId: string | undefined;
+}): Promise<void> {
+    if (conversationSlugId === undefined || reply.sse.lastEventId === null) {
+        return;
+    }
+
+    const lastEventId = Number(reply.sse.lastEventId);
+    if (!Number.isSafeInteger(lastEventId) || lastEventId <= 0) {
+        return;
+    }
+
+    try {
+        let nextLastEventId = lastEventId;
+        let replayedEventCount = 0;
+        while (replayedEventCount < REALTIME_REPLAY_MAX_EVENTS) {
+            const events = await fetchConversationRealtimeEventsAfterId({
+                db,
+                conversationSlugId,
+                lastEventId: nextLastEventId,
+                limit: REALTIME_REPLAY_BATCH_LIMIT,
+            });
+            if (events.length === 0) {
+                return;
+            }
+
+            for (const event of events) {
+                await realtimeSSEManager.sendToConnection({
+                    reply,
+                    id: event.id,
+                    event: event.event,
+                    data: event.data,
+                });
+                nextLastEventId = event.id;
+                replayedEventCount += 1;
+            }
+
+            if (events.length < REALTIME_REPLAY_BATCH_LIMIT) {
+                return;
+            }
+        }
+
+        log.warn(
+            `[RealtimeSSE] Replay event cap reached conversationSlugId=${conversationSlugId} lastEventId=${String(lastEventId)} maxEvents=${String(REALTIME_REPLAY_MAX_EVENTS)}`,
+        );
+    } catch (error) {
+        log.error(
+            error,
+            `[RealtimeSSE] Failed to replay events conversationSlugId=${conversationSlugId} lastEventId=${String(lastEventId)}`,
         );
     }
 }
@@ -1036,6 +1127,8 @@ async function verifyUcanAndKnownDeviceStatus(
 }
 
 const apiVersion = "v1";
+const REALTIME_REPLAY_BATCH_LIMIT = 100;
+const REALTIME_REPLAY_MAX_EVENTS = 1_000;
 
 async function requireSiteOrgAdmin(request: FastifyRequest): Promise<string> {
     const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(db, request, {
@@ -2192,6 +2285,67 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
+        url: `/api/${apiVersion}/opinion/fetch-analysis-metadata-by-conversation`,
+        schema: {
+            body: Dto.fetchAnalysisMetadataRequest,
+            response: {
+                200: Dto.fetchAnalysisMetadataResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+            const displayLanguage = await getRequestDisplayLanguage({
+                deviceStatus,
+                request,
+            });
+
+            return await fetchAnalysisMetadataByConversationSlugId({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                personalizationUserId: deviceStatus.isKnown
+                    ? deviceStatus.userId
+                    : undefined,
+                displayLanguage,
+                analysisView: request.body.analysisView,
+                checkpointViewSnapshotId: request.body.checkpointViewSnapshotId,
+                freshnessOptions: request.body.freshness,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/opinion/fetch-analysis-content-by-candidate`,
+        schema: {
+            body: Dto.fetchAnalysisContentRequest,
+            response: {
+                200: Dto.fetchAnalysisContentResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+            const displayLanguage = await getRequestDisplayLanguage({
+                deviceStatus,
+                request,
+            });
+
+            return await fetchAnalysisContentByCandidateId({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                conversationViewSnapshotId:
+                    request.body.conversationViewSnapshotId,
+                candidateId: request.body.candidateId,
+                personalizationUserId: deviceStatus.isKnown
+                    ? deviceStatus.userId
+                    : undefined,
+                displayLanguage,
+                freshnessOptions: request.body.freshness,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
         url: `/api/${apiVersion}/opinion/fetch-analysis-by-conversation`,
         schema: {
             body: Dto.fetchAnalysisRequest,
@@ -2201,27 +2355,10 @@ server.after(() => {
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
-
-            // Get display language from validated header or use default "en"
-            const parsedHeaderDisplayLanguage =
-                ZodSupportedDisplayLanguageCodes.safeParse(
-                    request.headers["accept-language"],
-                );
-            const headerDisplayLanguage: SupportedDisplayLanguageCodes =
-                parsedHeaderDisplayLanguage.success
-                    ? parsedHeaderDisplayLanguage.data
-                    : "en";
-
-            // Get user's display language from DB if known (falls back to header language)
-            const displayLanguage = deviceStatus.isKnown
-                ? await getLanguagePreferences({
-                      db,
-                      userId: deviceStatus.userId,
-                      request: {
-                          currentDisplayLanguage: headerDisplayLanguage,
-                      },
-                  }).then((prefs) => prefs.displayLanguage)
-                : headerDisplayLanguage;
+            const displayLanguage = await getRequestDisplayLanguage({
+                deviceStatus,
+                request,
+            });
 
             const analysis = await fetchAnalysisByConversationSlugId({
                 db: db,
@@ -2914,7 +3051,6 @@ server.after(() => {
                 db: db,
                 userId: deviceStatus.userId,
                 googleCloudCredentials,
-                valkey: queueValkeyRef.current,
                 data: request.body,
             });
 
@@ -3118,6 +3254,8 @@ server.after(() => {
             return await surveyService.fetchSurveyAggregatedResults({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
+                analysisView: request.body.analysisView,
+                checkpointViewSnapshotId: request.body.checkpointViewSnapshotId,
                 userId: deviceStatus.isKnown ? deviceStatus.userId : undefined,
                 displayLanguage,
             });
@@ -3852,6 +3990,10 @@ server.after(() => {
                         reply,
                         subscribedConversationSlugId,
                     });
+                    await replaySubscribedConversationEvents({
+                        reply,
+                        conversationSlugId: subscribedConversationSlugId,
+                    });
                     await sendLatestSubscribedConversationAnalysisEvent({
                         reply,
                         conversationSlugId: subscribedConversationSlugId,
@@ -3875,6 +4017,10 @@ server.after(() => {
                     realtimeSSEManager.connectAnonymous({
                         reply,
                         subscribedConversationSlugId,
+                    });
+                    await replaySubscribedConversationEvents({
+                        reply,
+                        conversationSlugId: subscribedConversationSlugId,
                     });
                     await sendLatestSubscribedConversationAnalysisEvent({
                         reply,

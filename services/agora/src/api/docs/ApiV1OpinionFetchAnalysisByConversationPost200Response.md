@@ -8,13 +8,14 @@ Name | Type | Description | Notes
 **polisContentId** | **number** |  | [optional] [default to undefined]
 **conversationViewSnapshotId** | **number** |  | [optional] [default to undefined]
 **analysisSnapshotId** | **number** |  | [optional] [default to undefined]
-**conversationViewSnapshot** | [**ApiV1OpinionFetchAnalysisByConversationPost200ResponseConversationViewSnapshot**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseConversationViewSnapshot.md) |  | [optional] [default to undefined]
+**conversationViewSnapshot** | [**ApiV1OpinionFetchAnalysisMetadataByConversationPost200ResponseConversationViewSnapshot**](ApiV1OpinionFetchAnalysisMetadataByConversationPost200ResponseConversationViewSnapshot.md) |  | [optional] [default to undefined]
+**descriptionReadiness** | [**ApiV1OpinionFetchAnalysisMetadataByConversationPost200ResponseDescriptionReadiness**](ApiV1OpinionFetchAnalysisMetadataByConversationPost200ResponseDescriptionReadiness.md) |  | [default to undefined]
 **emptyReason** | **string** |  | [optional] [default to undefined]
-**analysisViewState** | [**ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewState**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewState.md) |  | [optional] [default to undefined]
-**consensusAgree** | [**Array&lt;ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner&gt;**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner.md) |  | [default to undefined]
-**consensusDisagree** | [**Array&lt;ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner&gt;**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner.md) |  | [default to undefined]
-**controversial** | [**Array&lt;ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner&gt;**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner.md) |  | [default to undefined]
-**clusters** | [**{ [key: string]: ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue; }**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue.md) |  | [default to undefined]
+**analysisViewState** | [**ApiV1OpinionFetchAnalysisMetadataByConversationPost200ResponseAnalysisViewState**](ApiV1OpinionFetchAnalysisMetadataByConversationPost200ResponseAnalysisViewState.md) |  | [optional] [default to undefined]
+**consensusAgree** | [**Array&lt;ApiV1OpinionFetchAnalysisContentByCandidatePost200ResponseOneOfConsensusAgreeInner&gt;**](ApiV1OpinionFetchAnalysisContentByCandidatePost200ResponseOneOfConsensusAgreeInner.md) |  | [default to undefined]
+**consensusDisagree** | [**Array&lt;ApiV1OpinionFetchAnalysisContentByCandidatePost200ResponseOneOfConsensusAgreeInner&gt;**](ApiV1OpinionFetchAnalysisContentByCandidatePost200ResponseOneOfConsensusAgreeInner.md) |  | [default to undefined]
+**controversial** | [**Array&lt;ApiV1OpinionFetchAnalysisContentByCandidatePost200ResponseOneOfConsensusAgreeInner&gt;**](ApiV1OpinionFetchAnalysisContentByCandidatePost200ResponseOneOfConsensusAgreeInner.md) |  | [default to undefined]
+**clusters** | [**{ [key: string]: ApiV1OpinionFetchAnalysisContentByCandidatePost200ResponseOneOfClustersValue; }**](ApiV1OpinionFetchAnalysisContentByCandidatePost200ResponseOneOfClustersValue.md) |  | [default to undefined]
 **hasVotedOnAllAvailableOpinions** | **boolean** |  | [optional] [default to undefined]
 
 ## Example
@@ -27,6 +28,7 @@ const instance: ApiV1OpinionFetchAnalysisByConversationPost200Response = {
     conversationViewSnapshotId,
     analysisSnapshotId,
     conversationViewSnapshot,
+    descriptionReadiness,
     emptyReason,
     analysisViewState,
     consensusAgree,

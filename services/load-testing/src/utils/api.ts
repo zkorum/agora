@@ -5,7 +5,10 @@
  */
 
 import http from "k6/http";
-import { buildUcan, buildAuthorizationHeader } from "../crypto/ucan/operation.js";
+import {
+    buildUcan,
+    buildAuthorizationHeader,
+} from "../crypto/ucan/operation.js";
 
 // API base URL from environment or default to local dev server
 const API_BASE_URL = __ENV.API_BASE_URL || "http://127.0.0.1:8084";
@@ -98,7 +101,12 @@ interface SurveyGateSummary {
     hasSurvey: boolean;
     isOptional: boolean;
     canParticipate: boolean;
-    status: "no_survey" | "not_started" | "in_progress" | "needs_update" | "complete_valid";
+    status:
+        | "no_survey"
+        | "not_started"
+        | "in_progress"
+        | "needs_update"
+        | "complete_valid";
 }
 
 interface SurveyQuestionOption {
@@ -210,20 +218,36 @@ export async function fetchSurveyForm(
         });
         const responseTime = Date.now() - startTime;
 
+        const responseBody =
+            typeof response.body === "string" ? response.body : "Unknown body";
+
+        if (
+            response.status === 404 &&
+            responseBody.includes("Survey not found")
+        ) {
+            return {
+                success: true,
+                responseTime,
+                surveyGate: {
+                    hasSurvey: false,
+                    isOptional: false,
+                    canParticipate: true,
+                    status: "no_survey",
+                },
+                questions: [],
+            };
+        }
+
         if (response.status !== 200) {
             return {
                 success: false,
                 responseTime,
                 questions: [],
-                error: `HTTP ${String(response.status)}: ${
-                    typeof response.body === "string"
-                        ? response.body
-                        : "Unknown body"
-                }`,
+                error: `HTTP ${String(response.status)}: ${responseBody}`,
             };
         }
 
-        const responseData = JSON.parse(response.body as string) as {
+        const responseData = JSON.parse(responseBody) as {
             surveyGate: SurveyGateSummary;
             questions: SurveyQuestionFormItem[];
         };
@@ -391,7 +415,8 @@ export function fetchOpinions(
 export async function createOpinion(
     params: CreateOpinionParams,
 ): Promise<CreateOpinionResponse> {
-    const { conversationSlugId, opinionText, did, prefixedKey, backendDid } = params;
+    const { conversationSlugId, opinionText, did, prefixedKey, backendDid } =
+        params;
 
     const url = `${API_BASE_URL}/api/v1/opinion/create`;
     const pathname = "/api/v1/opinion/create";
@@ -468,7 +493,8 @@ export async function createOpinion(
  * Uses the generated OpenAPI endpoint following the agora pattern
  */
 export async function castVote(params: VoteParams): Promise<VoteResponse> {
-    const { commentSlugId, votingAction, did, prefixedKey, backendDid } = params;
+    const { commentSlugId, votingAction, did, prefixedKey, backendDid } =
+        params;
 
     const url = `${API_BASE_URL}/api/v1/vote/cast`;
     const pathname = "/api/v1/vote/cast";
@@ -505,9 +531,7 @@ export async function castVote(params: VoteParams): Promise<VoteResponse> {
             success: response.status === 200 || response.status === 201,
             responseTime,
             error:
-                response.status >= 400
-                    ? (response.body as string)
-                    : undefined,
+                response.status >= 400 ? (response.body as string) : undefined,
         };
     } catch (error) {
         return {
@@ -561,9 +585,7 @@ export async function deleteOpinion(
             success: response.status === 200 || response.status === 204,
             responseTime,
             error:
-                response.status >= 400
-                    ? (response.body as string)
-                    : undefined,
+                response.status >= 400 ? (response.body as string) : undefined,
         };
     } catch (error) {
         return {
@@ -613,9 +635,7 @@ export async function deleteUser(
             success: response.status === 200 || response.status === 204,
             responseTime,
             error:
-                response.status >= 400
-                    ? (response.body as string)
-                    : undefined,
+                response.status >= 400 ? (response.body as string) : undefined,
         };
     } catch (error) {
         return {

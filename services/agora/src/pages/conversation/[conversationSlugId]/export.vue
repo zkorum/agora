@@ -8,7 +8,7 @@
       />
     </Teleport>
 
-    <q-pull-to-refresh @refresh="handleRefresh">
+    <PullToRefresh @refresh="handleRefresh">
       <WidthWrapper :enable="true">
         <div class="export-page">
           <!-- Active Export Banner -->
@@ -76,7 +76,7 @@
           </section>
         </div>
       </WidthWrapper>
-    </q-pull-to-refresh>
+    </PullToRefresh>
   </div>
 </template>
 
@@ -91,6 +91,7 @@ import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
+import PullToRefresh from "src/components/ui/PullToRefresh.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { isNetworkOffline } from "src/composables/useNetworkStatus";

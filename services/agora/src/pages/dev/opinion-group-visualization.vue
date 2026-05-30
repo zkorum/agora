@@ -98,7 +98,7 @@
           </div>
 
           <div class="control-item">
-            <label for="ai-feature" class="control-label">AI feature</label>
+            <label for="ai-feature" class="control-label">LLM feature</label>
             <PrimeSelect
               id="ai-feature"
               v-model="aiFeatureMode"
@@ -384,6 +384,7 @@
           :ai-labeling-enabled="aiLabelingEnabled"
           :show-report-button="false"
           :is-live-analysis-paused="isLiveAnalysisPaused"
+          :is-conversation-closed="mockSnapshotMetrics.isClosed"
           :navigate-to-discover-tab="handleDevVoteMore"
           :conversation-scroll-context="conversationScrollContext"
           @update:live-analysis-paused="setLiveAnalysisPaused"
@@ -444,7 +445,7 @@
           @click="simulateParticipantEvent"
         />
         <PrimeButton
-          label="AI labels"
+          label="LLM labels"
           size="small"
           @click="simulateAiLabelEvent"
         />
@@ -556,7 +557,7 @@ import {
   getScrollTop,
   scrollTo,
 } from "src/utils/html/scroll";
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import {
@@ -596,6 +597,7 @@ type GroupStateOverride =
 type AnalysisVariantsMode = "enabled" | "locked";
 type AnalysisAvailabilityMode = "available" | "noAnalysis";
 type AiFeatureMode = "enabled" | "disabled";
+type DevAiLabelMode = AiLabelMode | "partial";
 type DistributionMode = "balanced" | "imbalanced" | "singleton";
 type ScoreProfileMode = "balanced" | "smallBest" | "largeBest" | "flat";
 type NumberScale = "normal" | "large" | "veryLarge";
@@ -633,11 +635,11 @@ type MockResolvedAnalysisView = {
   groupCount: VariantGroupCount | undefined;
   resolvedBy: AnalysisViewState["resolvedBy"];
 };
-type MockAiPayloadStatus = "configured" | "missing" | "updated";
+type MockAiPayloadStatus = "configured" | "missing" | "partial" | "updated";
 
 interface MockAiPayload {
-  labels: string[] | undefined;
-  summaries: string[] | undefined;
+  labels: Array<string | undefined> | undefined;
+  summaries: Array<string | undefined> | undefined;
   status: MockAiPayloadStatus;
 }
 
@@ -705,7 +707,7 @@ const recommendedDefaultMode = ref<VariantSelectionMode>("auto");
 const facilitatorPreferenceMode = ref<VariantSelectionMode>(5);
 const groupStateOverride = ref<GroupStateOverride>("none");
 const aiFeatureMode = ref<AiFeatureMode>("enabled");
-const aiLabelMode = ref<AiLabelMode>("long");
+const aiLabelMode = ref<DevAiLabelMode>("long");
 const distributionMode = ref<DistributionMode>("balanced");
 const scoreProfileMode = ref<ScoreProfileMode>("balanced");
 const numberScale = ref<NumberScale>("normal");
@@ -762,9 +764,13 @@ const analysisVariantsEnabled = computed(
   () => analysisVariantsMode.value === "enabled"
 );
 const mockAiPayload = computed<MockAiPayload>(() => getMockAiPayload());
-const effectiveBackendAiLabelMode = computed<AiLabelMode>(() =>
-  mockAiPayload.value.labels === undefined ? "none" : aiLabelMode.value
-);
+const effectiveBackendAiLabelMode = computed<AiLabelMode>(() => {
+  if (mockAiPayload.value.labels === undefined) {
+    return "none";
+  }
+
+  return aiLabelMode.value === "partial" ? "long" : aiLabelMode.value;
+});
 
 const liveEventStatus = computed(
   () =>
@@ -803,19 +809,21 @@ const groupSizeSummary = computed(() => {
 
 const aiStatusSummary = computed(() => {
   if (!aiLabelingEnabled.value) {
-    return "AI labels hidden by feature flag";
+    return "LLM labels hidden by feature flag";
   }
 
   switch (mockAiPayload.value.status) {
     case "configured":
-      return `AI labels: ${aiLabelMode.value}`;
+      return `LLM labels: ${aiLabelMode.value}`;
     case "missing":
-      return "AI labels: backend omitted, UI falls back to A/B/C";
+      return "LLM labels: backend omitted, UI falls back to A/B/C";
+    case "partial":
+      return "LLM labels: mixed payload, one group is pending";
     case "updated":
-      return `AI labels: refreshed v${String(liveAiPayloadSerial.value)}`;
+      return `LLM labels: refreshed v${String(liveAiPayloadSerial.value)}`;
   }
 
-  return "AI labels: unknown payload";
+  return "LLM labels: unknown payload";
 });
 
 const statementListStatusSummary = computed(
@@ -944,13 +952,14 @@ const groupStateOverrideOptions = [
 ] satisfies Array<{ label: string; value: GroupStateOverride }>;
 
 const aiFeatureOptions = [
-  { label: "AI enabled", value: "enabled" },
-  { label: "AI disabled", value: "disabled" },
+  { label: "LLM enabled", value: "enabled" },
+  { label: "LLM disabled", value: "disabled" },
 ] satisfies Array<{ label: string; value: AiFeatureMode }>;
 
 const aiLabelOptions = computed(() => [
-  { label: "Long AI labels", value: "long" },
-  { label: "Short AI labels", value: "short" },
+  { label: "Long LLM labels", value: "long" },
+  { label: "Short LLM labels", value: "short" },
+  { label: "Mixed LLM content", value: "partial" },
   { label: t("withoutAiLabels"), value: "none" },
 ]);
 
@@ -1102,7 +1111,7 @@ function getLiveEventKindLabel(kind: LiveEventKind): string {
     case "participants":
       return "participants";
     case "aiLabels":
-      return "AI labels";
+      return "LLM labels";
     case "recommendedDefault":
       return "variant scores";
     case "discourageGroup":
@@ -1136,12 +1145,26 @@ function getBaseAiLabels(): string[] | undefined {
       return longAiLabels;
     case "short":
       return shortAiLabels;
+    case "partial":
+      return longAiLabels;
     case "none":
       return undefined;
   }
 }
 
 function getMockAiPayload(): MockAiPayload {
+  if (aiLabelMode.value === "partial") {
+    return {
+      labels: longAiLabels.map((label, index) =>
+        index === 1 ? undefined : label
+      ),
+      summaries: aiSummaries.map((summary, index) =>
+        index === 1 ? undefined : summary
+      ),
+      status: "partial",
+    };
+  }
+
   const baseLabels = getBaseAiLabels();
   if (baseLabels === undefined) {
     return { labels: undefined, summaries: undefined, status: "configured" };
@@ -1793,20 +1816,30 @@ const mockCheckpoints = computed<FetchAnalysisCheckpointsResponse>(() =>
             : null,
       }));
 
+    const opinionCount = Math.max(
+      0,
+      10 + index + liveOpinionBump.value - removedStatementBump.value
+    );
+    const voteCount =
+      (100 + index * 50) * participantScaleMultiplier.value +
+      liveVoteBump.value;
+    const participantCount =
+      (20 + index * 3) * participantScaleMultiplier.value +
+      liveParticipantBump.value;
+
     return {
       conversationViewSnapshotId: id,
       createdAt: activatedAt,
       activatedAt,
-      opinionCount: Math.max(
-        0,
-        10 + index + liveOpinionBump.value - removedStatementBump.value
-      ),
-      voteCount:
-        (100 + index * 50) * participantScaleMultiplier.value +
-        liveVoteBump.value,
-      participantCount:
-        (20 + index * 3) * participantScaleMultiplier.value +
-        liveParticipantBump.value,
+      opinionCount,
+      voteCount,
+      participantCount,
+      totalOpinionCount: opinionCount,
+      totalVoteCount: voteCount,
+      totalParticipantCount: participantCount,
+      moderatedOpinionCount: opinionCount,
+      hiddenOpinionCount: 0,
+      isClosed: reasons.some((reason) => reason.reason === "conversation_closed"),
       reasons,
     };
   })
@@ -1839,9 +1872,7 @@ const mockSnapshotMetrics = computed(() => {
       opinionCount: checkpoint.opinionCount,
       voteCount: checkpoint.voteCount,
       participantCount: checkpoint.participantCount,
-      isClosed: checkpoint.reasons.some(
-        (reason) => reason.reason === "conversation_closed"
-      ),
+      isClosed: checkpoint.isClosed,
     };
   }
 
@@ -2073,6 +2104,8 @@ const mockAnalysisData = computed<AnalysisData>(() => {
         : undefined,
     analysisViewState: mockAnalysisViewState.value,
     hasVotedOnAllAvailableOpinions: voteCompletionMode.value === "complete",
+    descriptionReadiness: null,
+    contentStatus: hideGroupAnalysis ? "not_applicable" : "available",
   };
 });
 
@@ -2218,7 +2251,7 @@ watch(
         (checkpoint) => checkpoint.conversationViewSnapshotId === checkpointId
       )
     ) {
-      selectCheckpoint(checkpoints.at(-1)?.conversationViewSnapshotId);
+      void selectCheckpoint(checkpoints.at(-1)?.conversationViewSnapshotId);
     }
   },
   { immediate: true }
@@ -2250,7 +2283,9 @@ function restoreScrollPosition(scrollTop: number): void {
   });
 }
 
-function selectCheckpoint(checkpointViewSnapshotId: number | undefined): void {
+async function selectCheckpoint(
+  checkpointViewSnapshotId: number | undefined
+): Promise<void> {
   isLiveAnalysisPaused.value = false;
 
   if (checkpointViewSnapshotId === selectedRouteCheckpoint.value) {
@@ -2258,20 +2293,22 @@ function selectCheckpoint(checkpointViewSnapshotId: number | undefined): void {
   }
 
   const scrollTop = getScrollTop({ scrollContainer: null });
-  void router
-    .replace({
+  try {
+    await router.replace({
       path: route.path,
       query: getUpdatedAnalysisRouteQuery({
         query: route.query,
         analysisView: selectedRouteAnalysisView.value,
         checkpointViewSnapshotId,
       }),
-    })
-    .finally(() => restoreScrollPosition(scrollTop));
+    });
+  } finally {
+    restoreScrollPosition(scrollTop);
+  }
 }
 
 function freezeLatestCheckpoint(): void {
-  selectCheckpoint(latestCheckpoint.value?.conversationViewSnapshotId);
+  void selectCheckpoint(latestCheckpoint.value?.conversationViewSnapshotId);
 }
 
 function toggleReason(reason: CheckpointReason): void {
@@ -2285,7 +2322,22 @@ function toggleReason(reason: CheckpointReason): void {
 function commitLiveEvent(): void {
   lastCommittedLiveEventSource.value = currentLiveEventSource.value;
   liveEventSerial.value += 1;
-  selectCheckpoint(undefined);
+  void selectLiveCheckpointAfterEvent();
+}
+
+async function selectLiveCheckpointAfterEvent(): Promise<void> {
+  await selectCheckpoint(undefined);
+  await refreshDevAnalysisQueriesAfterLiveEvent();
+}
+
+async function refreshDevAnalysisQueriesAfterLiveEvent(): Promise<void> {
+  if (conversationTab.value !== "analysis" || isLiveAnalysisPaused.value) {
+    return;
+  }
+
+  await nextTick();
+  await analysisQuery.refetch();
+  await analysisCheckpointsQuery.refetch();
 }
 
 function simulateSelectedLiveEvent({ kind }: { kind: LiveEventKind }): void {
@@ -2363,7 +2415,7 @@ function simulateParticipantEvent(): void {
 
 function simulateAiLabelEvent(): void {
   liveAiPayloadSerial.value += 1;
-  lastLiveEventLabel.value = `AI label payload: ${mockAiPayload.value.status}`;
+  lastLiveEventLabel.value = `LLM label payload: ${mockAiPayload.value.status}`;
   commitLiveEvent();
 }
 

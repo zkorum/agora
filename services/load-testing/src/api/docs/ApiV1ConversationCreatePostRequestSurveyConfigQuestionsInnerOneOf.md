@@ -11,6 +11,7 @@ Name | Type | Description | Notes
 **displayOrder** | **number** |  | [default to undefined]
 **textChangeIsSemantic** | **boolean** |  | [optional] [default to undefined]
 **choiceDisplay** | **string** |  | [default to undefined]
+**isPublicAggregateSuppressionEnabled** | **boolean** |  | [optional] [default to false]
 **_options** | [**Array&lt;ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner&gt;**](ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner.md) |  | [default to undefined]
 **questionType** | **string** |  | [default to undefined]
 **constraints** | [**ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraints**](ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraints.md) |  | [default to undefined]
@@ -27,6 +28,7 @@ const instance: ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneO
     displayOrder,
     textChangeIsSemantic,
     choiceDisplay,
+    isPublicAggregateSuppressionEnabled,
     _options,
     questionType,
     constraints,

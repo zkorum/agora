@@ -18,12 +18,12 @@
         <PostActionBar
           v-model="currentTab"
           :compact-mode="false"
-          :opinion-count="loadedConversationData.metadata.opinionCount"
-          :participant-count="loadedConversationData.metadata.participantCount"
-          :vote-count="loadedConversationData.metadata.voteCount"
-          :total-participant-count="loadedConversationData.metadata.totalParticipantCount"
-          :total-vote-count="loadedConversationData.metadata.totalVoteCount"
-          :is-loading="isCurrentTabLoading"
+          :opinion-count="displayedActionBarStats.opinionCount"
+          :participant-count="displayedActionBarStats.participantCount"
+          :vote-count="displayedActionBarStats.voteCount"
+          :total-participant-count="displayedActionBarStats.totalParticipantCount"
+          :total-vote-count="displayedActionBarStats.totalVoteCount"
+          :is-loading="isActionBarLoading"
           :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
           :conversation-title="loadedConversationData.payload.title"
           :author-username="loadedConversationData.metadata.authorUsername"
@@ -78,6 +78,10 @@ import FloatingBottomContainer from "src/components/navigation/FloatingBottomCon
 import CommentComposer from "src/components/post/comments/CommentComposer.vue";
 import PostContent from "src/components/post/display/PostContent.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
+import {
+  type ConversationActionBarStats,
+  useConversationActionBarStats,
+} from "src/composables/conversation/useConversationActionBarStats";
 import { useConversationParentState } from "src/composables/conversation/useConversationParentState";
 import { useTabScrollRestoration } from "src/composables/conversation/useTabScrollRestoration";
 import { useStickyObserver } from "src/composables/ui/useStickyObserver";
@@ -92,6 +96,7 @@ const { sentinelElement, headerHeight } = useStickyObserver();
 
 const {
   route,
+  conversationData,
   hasConversationData,
   loadedConversationData,
   currentTab,
@@ -116,6 +121,37 @@ const {
   routePrefix: "/conversation/{id}/embed",
   scrollContainer,
 });
+
+const { actionBarStats, isLoadingCheckpointStats } =
+  useConversationActionBarStats({
+    conversationData,
+    currentTab,
+    routeQuery: computed(() => route.query),
+  });
+
+const displayedActionBarStats = computed<ConversationActionBarStats>(() => {
+  const stats = actionBarStats.value;
+  if (stats !== undefined) {
+    return stats;
+  }
+
+  return getActionBarStatsFromMetadata();
+});
+
+const isActionBarLoading = computed(
+  () => isCurrentTabLoading.value || isLoadingCheckpointStats.value
+);
+
+function getActionBarStatsFromMetadata(): ConversationActionBarStats {
+  const metadata = loadedConversationData.value.metadata;
+  return {
+    opinionCount: metadata.opinionCount,
+    participantCount: metadata.participantCount,
+    voteCount: metadata.voteCount,
+    totalParticipantCount: metadata.totalParticipantCount,
+    totalVoteCount: metadata.totalVoteCount,
+  };
+}
 
 const isVotingDisabled = computed(() => {
   const data = loadedConversationData.value;

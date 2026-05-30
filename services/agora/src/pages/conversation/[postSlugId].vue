@@ -10,104 +10,150 @@
     </DefaultMenuBar>
   </Teleport>
 
-  <q-pull-to-refresh @refresh="handleRefresh">
-      <WidthWrapper :enable="true">
-        <PageLoadingSpinner v-if="conversationQuery.isPending.value && !hasConversationData" />
+  <PullToRefresh
+    :can-refresh="canStartConversationRefresh"
+    @refresh="handleRefresh"
+  >
+    <WidthWrapper :enable="true">
+      <PageLoadingSpinner
+        v-if="conversationQuery.isPending.value && !hasConversationData"
+      />
 
-        <ErrorRetryBlock
-          v-else-if="conversationQuery.isError.value && !conversationQuery.isPending.value && !hasConversationData"
-          :title="t('errorTitle')"
-          :retry-label="t('retryButton')"
-          @retry="conversationQuery.refetch()"
-        />
+      <ErrorRetryBlock
+        v-else-if="
+          conversationQuery.isError.value &&
+          !conversationQuery.isPending.value &&
+          !hasConversationData
+        "
+        :title="t('errorTitle')"
+        :retry-label="t('retryButton')"
+        @retry="conversationQuery.refetch()"
+      />
 
-        <div v-else-if="hasConversationData">
-          <ZKHoverEffect :enable-hover="false">
-            <div class="container standardStyle">
-              <PostContent
-                :extended-post-data="loadedConversationData"
-                :compact-mode="false"
-                @open-moderation-history="openModerationHistory()"
-                @conversation-deleted="handleConversationDeleted"
-                @verified="(payload) => handleTicketVerified(payload)"
-              />
+      <div v-else-if="hasConversationData">
+        <ZKHoverEffect :enable-hover="false">
+          <div class="container standardStyle">
+            <PostContent
+              :extended-post-data="loadedConversationData"
+              :compact-mode="false"
+              @open-moderation-history="openModerationHistory()"
+              @conversation-deleted="handleConversationDeleted"
+              @verified="(payload) => handleTicketVerified(payload)"
+            />
 
-              <div ref="sentinelElement"></div>
-              <div
-                ref="actionBarElement"
-                class="sticky-below-header sticky-action-bar"
-                :style="{ '--header-height': (headerRevealed ? headerHeight : 0) + 'px' }"
-              >
+            <div ref="sentinelElement"></div>
+            <div
+              ref="actionBarElement"
+              class="sticky-below-header sticky-action-bar"
+              :style="{
+                '--header-height': (headerRevealed ? headerHeight : 0) + 'px',
+              }"
+            >
               <PostActionBar
                 v-model="currentTab"
                 :compact-mode="false"
-                :opinion-count="loadedConversationData.metadata.opinionCount"
-                :participant-count="loadedConversationData.metadata.participantCount"
-                :vote-count="loadedConversationData.metadata.voteCount"
-                :total-participant-count="loadedConversationData.metadata.totalParticipantCount"
-                :total-vote-count="loadedConversationData.metadata.totalVoteCount"
-                :is-loading="isCurrentTabLoading"
-                :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
+                :opinion-count="displayedActionBarStats.opinionCount"
+                :participant-count="displayedActionBarStats.participantCount"
+                :vote-count="displayedActionBarStats.voteCount"
+                :total-participant-count="
+                  displayedActionBarStats.totalParticipantCount
+                "
+                :total-vote-count="displayedActionBarStats.totalVoteCount"
+                :is-loading="isActionBarLoading"
+                :conversation-slug-id="
+                  loadedConversationData.metadata.conversationSlugId
+                "
                 :conversation-title="loadedConversationData.payload.title"
-                :author-username="loadedConversationData.metadata.authorUsername"
-                :on-same-tab-click="() => scrollToActionBar({ behavior: 'smooth' })"
-                :conversation-type="loadedConversationData.metadata.conversationType"
-                :has-survey="loadedConversationData.interaction.surveyGate?.hasSurvey === true"
+                :author-username="
+                  loadedConversationData.metadata.authorUsername
+                "
+                :on-same-tab-click="
+                  () => scrollToActionBar({ behavior: 'smooth' })
+                "
+                :conversation-type="
+                  loadedConversationData.metadata.conversationType
+                "
+                :has-survey="
+                  loadedConversationData.interaction.surveyGate?.hasSurvey ===
+                  true
+                "
                 :enable-route-navigation="true"
               />
-              </div>
-
-              <div v-if="currentTab === 'comment' && loadedConversationData.metadata.conversationType !== 'maxdiff'" class="dropdownSlot">
-                <CommentSortingSelector
-                  :filter-value="commentFilter"
-                  :moderated-opinion-count="loadedConversationData.metadata.moderatedOpinionCount"
-                  :hidden-opinion-count="loadedConversationData.metadata.hiddenOpinionCount"
-                  @changed-algorithm="
-                    (filter: CommentFilterOptions) => { commentFilter = filter }
-                  "
-                />
-              </div>
-
-              <!-- Child routes: only tab-specific content -->
-              <div class="tab-content" :style="tabContentStyle">
-                <router-view v-slot="{ Component }">
-                  <KeepAlive :max="2">
-                    <component
-                      :is="Component"
-                      :key="route.path"
-                      :conversation-data="loadedConversationData"
-                      :has-conversation-data="hasConversationData"
-                      :moderation-history-trigger="moderationHistoryTrigger"
-                      :comment-filter="commentFilter"
-                      :on-view-analysis="onViewAnalysis"
-                      :navigate-to-discover-tab="navigateToDiscoverTab"
-                      v-bind="analysisRouteProps"
-                      @update:comment-filter="
-                        (filter: CommentFilterOptions) => { commentFilter = filter }
-                      "
-                    />
-                  </KeepAlive>
-                </router-view>
-              </div>
-
-              <FloatingBottomContainer
-                v-if="loadedConversationData.metadata.conversationType !== 'maxdiff'"
-              >
-                <CommentComposer
-                  ref="commentComposerRef"
-                  :post-slug-id="loadedConversationData.metadata.conversationSlugId"
-                  :participation-mode="loadedConversationData.metadata.participationMode"
-                  :requires-event-ticket="loadedConversationData.metadata.requiresEventTicket"
-                  :survey-gate="loadedConversationData.interaction.surveyGate"
-                  :is-composer-disabled="isVotingDisabled"
-                  @submitted-comment="handleSubmittedComment"
-                />
-              </FloatingBottomContainer>
             </div>
-          </ZKHoverEffect>
-        </div>
-      </WidthWrapper>
-    </q-pull-to-refresh>
+
+            <div
+              v-if="
+                currentTab === 'comment' &&
+                loadedConversationData.metadata.conversationType !== 'maxdiff'
+              "
+              class="dropdownSlot"
+            >
+              <CommentSortingSelector
+                :filter-value="commentFilter"
+                :moderated-opinion-count="
+                  loadedConversationData.metadata.moderatedOpinionCount
+                "
+                :hidden-opinion-count="
+                  loadedConversationData.metadata.hiddenOpinionCount
+                "
+                @changed-algorithm="
+                  (filter: CommentFilterOptions) => {
+                    commentFilter = filter;
+                  }
+                "
+              />
+            </div>
+
+            <!-- Child routes: only tab-specific content -->
+            <div class="tab-content" :style="tabContentStyle">
+              <router-view v-slot="{ Component }">
+                <KeepAlive :max="2">
+                  <component
+                    :is="Component"
+                    :key="route.path"
+                    :conversation-data="loadedConversationData"
+                    :has-conversation-data="hasConversationData"
+                    :moderation-history-trigger="moderationHistoryTrigger"
+                    :comment-filter="commentFilter"
+                    :on-view-analysis="onViewAnalysis"
+                    :navigate-to-discover-tab="navigateToDiscoverTab"
+                    v-bind="analysisRouteProps"
+                    @update:comment-filter="
+                      (filter: CommentFilterOptions) => {
+                        commentFilter = filter;
+                      }
+                    "
+                  />
+                </KeepAlive>
+              </router-view>
+            </div>
+
+            <FloatingBottomContainer
+              v-if="
+                loadedConversationData.metadata.conversationType !== 'maxdiff'
+              "
+            >
+              <CommentComposer
+                ref="commentComposerRef"
+                :post-slug-id="
+                  loadedConversationData.metadata.conversationSlugId
+                "
+                :participation-mode="
+                  loadedConversationData.metadata.participationMode
+                "
+                :requires-event-ticket="
+                  loadedConversationData.metadata.requiresEventTicket
+                "
+                :survey-gate="loadedConversationData.interaction.surveyGate"
+                :is-composer-disabled="isVotingDisabled"
+                @submitted-comment="handleSubmittedComment"
+              />
+            </FloatingBottomContainer>
+          </div>
+        </ZKHoverEffect>
+      </div>
+    </WidthWrapper>
+  </PullToRefresh>
 </template>
 
 <script setup lang="ts">
@@ -122,7 +168,12 @@ import PostContent from "src/components/post/display/PostContent.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
+import PullToRefresh from "src/components/ui/PullToRefresh.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
+import {
+  type ConversationActionBarStats,
+  useConversationActionBarStats,
+} from "src/composables/conversation/useConversationActionBarStats";
 import {
   type ConversationParentConfig,
   useConversationParentState,
@@ -136,6 +187,7 @@ import { useLayoutHeaderStore } from "src/stores/layout/header";
 import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
+import { getElementScrollTop, getScrollTop } from "src/utils/html/scroll";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import {
   isBackToConversationCommentTab,
@@ -155,7 +207,13 @@ const router = useRouter();
 const { t } = useComponentI18n<ConversationPageTranslations>(
   conversationPageTranslations
 );
-const { sentinelElement, isSticky, headerHeight, refresh: refreshStickyState } = useStickyObserver();
+const PULL_TO_REFRESH_BOUNDARY_TOLERANCE_PX = 2;
+const {
+  sentinelElement,
+  isSticky,
+  headerHeight,
+  refresh: refreshStickyState,
+} = useStickyObserver();
 const navigationStore = useNavigationStore();
 const { resetDraft } = useNewPostDraftsStore();
 const { safeNavigateBack } = useGoBackButtonHandler();
@@ -197,6 +255,64 @@ const {
   pendingScrollOverride,
 } = useConversationParentState(conversationConfig);
 
+const { actionBarStats, isLoadingCheckpointStats } =
+  useConversationActionBarStats({
+    conversationData,
+    currentTab,
+    routeQuery: computed(() => route.query),
+  });
+
+const displayedActionBarStats = computed<ConversationActionBarStats>(() => {
+  const stats = actionBarStats.value;
+  if (stats !== undefined) {
+    return stats;
+  }
+
+  return getActionBarStatsFromMetadata();
+});
+
+const isActionBarLoading = computed(
+  () => isCurrentTabLoading.value || isLoadingCheckpointStats.value
+);
+
+function getActionBarStatsFromMetadata(): ConversationActionBarStats {
+  const metadata = loadedConversationData.value.metadata;
+  return {
+    opinionCount: metadata.opinionCount,
+    participantCount: metadata.participantCount,
+    voteCount: metadata.voteCount,
+    totalParticipantCount: metadata.totalParticipantCount,
+    totalVoteCount: metadata.totalVoteCount,
+  };
+}
+
+function getVisualRefreshBoundaryTop(): number | undefined {
+  const sentinel = sentinelElement.value;
+  if (sentinel === null) {
+    return undefined;
+  }
+
+  const effectiveHeaderHeight = headerRevealed.value ? headerHeight.value : 0;
+  return getElementScrollTop({ element: sentinel }) - effectiveHeaderHeight;
+}
+
+function canStartConversationRefresh(): boolean {
+  const currentScrollTop = getScrollTop({});
+  if (currentScrollTop <= PULL_TO_REFRESH_BOUNDARY_TOLERANCE_PX) {
+    return true;
+  }
+
+  const visualBoundaryTop = getVisualRefreshBoundaryTop();
+  if (visualBoundaryTop === undefined) {
+    return false;
+  }
+
+  return (
+    Math.abs(currentScrollTop - visualBoundaryTop) <=
+    PULL_TO_REFRESH_BOUNDARY_TOLERANCE_PX
+  );
+}
+
 const isVotingDisabled = computed(() => {
   const data = conversationData.value;
   if (data === undefined) {
@@ -233,7 +349,10 @@ function handleBack(event: MouseEvent): void {
     if (slugId === undefined) return;
 
     const fallbackRoute = `/conversation/${slugId}/`;
-    const conversationPathPrefix = conversationConfig.routePrefix.replace("{id}", slugId);
+    const conversationPathPrefix = conversationConfig.routePrefix.replace(
+      "{id}",
+      slugId
+    );
     void navigateBackOrReplace({
       router,
       fallbackRoute,
@@ -261,10 +380,14 @@ onMounted(() => {
 // Watch for userId changes to detect account merges
 watch(userId, async (newUserId, oldUserId) => {
   if (
-    oldUserId !== undefined && newUserId !== undefined && oldUserId !== newUserId
+    oldUserId !== undefined &&
+    newUserId !== undefined &&
+    oldUserId !== newUserId
   ) {
     if (conversationData.value) {
-      void invalidateUserVotes(conversationData.value.metadata.conversationSlugId);
+      void invalidateUserVotes(
+        conversationData.value.metadata.conversationSlugId
+      );
     }
     await conversationQuery.refetch();
   }

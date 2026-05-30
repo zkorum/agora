@@ -32,7 +32,7 @@ import { useCommonPost } from "./common.js";
 import { getPostSlugIdLastCursor } from "./feed.js";
 import {
     fetchOpinionDisplayCounts,
-    getCommentSlugIdLastCreatedAt,
+    getCommentSlugIdLastCursor,
 } from "./comment.js";
 import { fetchPostBySlugId } from "./post.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
@@ -111,9 +111,10 @@ export async function getUserComments({
     limit,
 }: GetUserCommentsProps): Promise<ExtendedOpinionWithConvId[]> {
     try {
-        const lastCreatedAt = await getCommentSlugIdLastCreatedAt({
+        const lastCursor = await getCommentSlugIdLastCursor({
             lastSlugId: lastCommentSlugId,
             db: db,
+            authorId: userId,
         });
 
         // Fetch a list of comment IDs first
@@ -156,18 +157,26 @@ export async function getUserComments({
                 eq(opinionModerationTable.opinionId, opinionTable.id),
             )
             .where(
-                lastCreatedAt !== undefined
+                lastCursor !== undefined
                     ? and(
                           eq(opinionTable.authorId, userId),
-                          lt(opinionTable.createdAt, lastCreatedAt),
+                          or(
+                              lt(opinionTable.createdAt, lastCursor.createdAt),
+                              and(
+                                  eq(opinionTable.createdAt, lastCursor.createdAt),
+                                  lt(opinionTable.id, lastCursor.opinionId),
+                              ),
+                          ),
+                          isNotNull(opinionTable.currentContentId),
                           eq(conversationAuthorTable.isDeleted, false),
                       )
                     : and(
                           eq(opinionTable.authorId, userId),
+                          isNotNull(opinionTable.currentContentId),
                           eq(conversationAuthorTable.isDeleted, false),
                       ),
             )
-            .orderBy(desc(opinionTable.createdAt));
+            .orderBy(desc(opinionTable.createdAt), desc(opinionTable.id));
 
         const commentResponseList =
             limit !== undefined
@@ -394,7 +403,8 @@ export async function getUserVotes({
                 // and they are already ignored for counts, so we don't cancel them
                 isNotNull(opinionTable.currentContentId),
             ),
-        );
+        )
+        .orderBy(desc(voteTable.updatedAt), desc(voteTable.id));
     const results =
         limit !== undefined
             ? await preparedQuery.$dynamic().limit(limit)

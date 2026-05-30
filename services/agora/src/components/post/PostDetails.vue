@@ -16,14 +16,14 @@
         <PostActionBar
           v-model="currentTab"
           :compact-mode="compactMode"
-          :opinion-count="conversationData.metadata.opinionCount"
-          :participant-count="conversationData.metadata.participantCount"
-          :vote-count="props.conversationData.metadata.voteCount"
+          :opinion-count="displayedActionBarStats.opinionCount"
+          :participant-count="displayedActionBarStats.participantCount"
+          :vote-count="displayedActionBarStats.voteCount"
           :total-participant-count="
-            props.conversationData.metadata.totalParticipantCount
+            displayedActionBarStats.totalParticipantCount
           "
-          :total-vote-count="props.conversationData.metadata.totalVoteCount"
-          :is-loading="isCurrentTabLoading"
+          :total-vote-count="displayedActionBarStats.totalVoteCount"
+          :is-loading="isActionBarLoading"
           :conversation-slug-id="conversationData.metadata.conversationSlugId"
           :conversation-title="conversationData.payload.title"
           :author-username="conversationData.metadata.authorUsername"
@@ -57,6 +57,7 @@
           :ai-labeling-enabled="conversationData.metadata.aiLabelingEnabled"
           :show-report-button="true"
           :is-live-analysis-paused="isLiveAnalysisPaused"
+          :is-conversation-closed="conversationData.metadata.isClosed"
           :navigate-to-discover-tab="navigateToDiscoverTab"
           :conversation-scroll-context="conversationScrollContext"
           @update:live-analysis-paused="setLiveAnalysisPaused"
@@ -103,6 +104,10 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import {
+  type ConversationActionBarStats,
+  useConversationActionBarStats,
+} from "src/composables/conversation/useConversationActionBarStats";
 import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
 import type { ExtendedConversation, OpinionItem } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
@@ -121,6 +126,7 @@ import {
   scrollTo,
 } from "src/utils/html/scroll";
 import { computed, onMounted, ref, watch } from "vue";
+import { useRoute } from "vue-router";
 
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
@@ -142,6 +148,7 @@ const emit = defineEmits<{
 }>();
 
 const currentTab = ref<"comment" | "analysis">("comment");
+const route = useRoute();
 
 const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
 const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
@@ -293,6 +300,37 @@ const isCurrentTabLoading = computed((): boolean => {
   return false;
 });
 
+const { actionBarStats, isLoadingCheckpointStats } =
+  useConversationActionBarStats({
+    conversationData: computed(() => props.conversationData),
+    currentTab,
+    routeQuery: computed(() => route.query),
+  });
+
+const displayedActionBarStats = computed<ConversationActionBarStats>(() => {
+  const stats = actionBarStats.value;
+  if (stats !== undefined) {
+    return stats;
+  }
+
+  return getActionBarStatsFromMetadata();
+});
+
+const isActionBarLoading = computed(
+  () => isCurrentTabLoading.value || isLoadingCheckpointStats.value
+);
+
+function getActionBarStatsFromMetadata(): ConversationActionBarStats {
+  const metadata = props.conversationData.metadata;
+  return {
+    opinionCount: metadata.opinionCount,
+    participantCount: metadata.participantCount,
+    voteCount: metadata.voteCount,
+    totalParticipantCount: metadata.totalParticipantCount,
+    totalVoteCount: metadata.totalVoteCount,
+  };
+}
+
 function openModerationHistory(): void {
   if (opinionSectionRef.value) {
     opinionSectionRef.value.openModerationHistory();
@@ -316,10 +354,6 @@ async function submittedComment(data: {
 
   // Handle deferred cache refresh if auth state changed (new guest user)
   if (data.needsCacheRefresh) {
-    console.log(
-      "[PostDetails] New guest user detected - performing deferred cache refresh"
-    );
-
     // Load authenticated modules (including user profile with username)
     await loadAuthenticatedModules();
 
@@ -402,19 +436,12 @@ async function handleTicketVerified(payload: {
   userIdChanged: boolean;
   needsCacheRefresh: boolean;
 }): Promise<void> {
-  console.log(
-    "[PostDetails] Ticket verified event received - emitting to parent",
-    payload
-  );
   // This is called directly by PostContent when EventTicketRequirementBanner emits verified
   // Emit to parent (conversation page) so it can refresh conversation data AND all tab data
   emit("ticketVerified", payload);
 
   // Handle deferred cache refresh if a new guest was created via Zupass
   if (payload.needsCacheRefresh) {
-    console.log(
-      "[PostDetails] New guest via Zupass - performing deferred cache refresh"
-    );
     // Load authenticated modules (including user profile) after ticket verification
     // The underlying problem is read replica lag: when a new guest user is created via Zupass,
     // the username is written to the primary database but may not yet be replicated to read replicas.

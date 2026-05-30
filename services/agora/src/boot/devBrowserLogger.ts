@@ -12,8 +12,33 @@ const consoleMethodNames: ConsoleMethodName[] = [
   "error",
 ];
 
+function isError(value: unknown): value is Error {
+  return value instanceof Error;
+}
+
+function firstErrorFromArgs(args: unknown[]): Error | undefined {
+  return args.find(isError);
+}
+
 function stackFromUnknown(value: unknown): string | undefined {
-  return value instanceof Error ? value.stack : undefined;
+  return isError(value) ? value.stack : undefined;
+}
+
+function stackFromConsoleArgs(args: unknown[]): string | undefined {
+  return firstErrorFromArgs(args)?.stack;
+}
+
+function valueType(value: unknown): string {
+  if (value === null) {
+    return "null";
+  }
+  if (Array.isArray(value)) {
+    return "array";
+  }
+  if (isError(value)) {
+    return "error";
+  }
+  return typeof value;
 }
 
 function consoleMessage(args: unknown[]): string {
@@ -43,9 +68,11 @@ export default defineBoot(({ router }) => {
         level: methodName,
         category: "console",
         message: consoleMessage(data),
-        stack: stackFromUnknown(data[0]),
+        stack: stackFromConsoleArgs(data),
         metadata: {
           argumentCount: data.length,
+          argumentTypes: data.map(valueType).join(","),
+          firstErrorName: firstErrorFromArgs(data)?.name ?? null,
         },
       });
     };

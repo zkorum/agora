@@ -17,7 +17,7 @@
 
       <template #body>
         <p v-if="!compactMode" class="groups-subtitle">
-          {{ hasAiLabels ? t("groupsSubtitle") : t("groupsSubtitleNoAi") }}
+          {{ groupsSubtitle }}
         </p>
         <EmptyStateMessage
           v-if="clusterList.length <= 1"
@@ -37,44 +37,49 @@
             {{ t("imbalanceNotice") }}
           </p>
 
-          <template v-if="showGroupControls">
-            <div ref="groupStickySentinel"></div>
-            <div
-              ref="groupStickyBarElement"
-              class="group-sticky-bar"
-              :class="{
-                'group-sticky-bar--stuck': isGroupBarSticky,
-              }"
-              :style="groupStickyStyle"
-            >
-              <div class="group-sticky-row">
-                <ZKDropdownSelectorButton
-                  :label="selectedClusterLabel"
-                  :accessibility-label="t('selectGroup')"
-                  button-type="standardButton"
-                  class="group-selector-trigger"
-                  content-alignment="start"
-                  icon-name="mdi-chevron-down"
-                  icon-size="1rem"
-                  label-overflow="truncate"
-                  @click="showGroupDrawer = true"
-                />
+          <AnalysisClusterSelectorBar
+            v-if="showGroupControls"
+            :clusters="props.clusters"
+            :selected-cluster-key="currentClusterTab"
+            :all-option="undefined"
+            :accessibility-label="t('selectGroup')"
+            :conversation-scroll-context="props.conversationScrollContext"
+            :content-floor-element="groupContentFloorTarget"
+            :secondary-content-merge-target="commentsHeaderElement"
+            @update:selected-cluster-key="selectClusterFromSelector"
+            @update:is-secondary-content-merged="isScopeMerged = $event"
+          >
+            <template #secondary>
+              <OpinionGroupScopeSelector
+                v-if="isScopeMerged"
+                class="group-scope-selector"
+                :display-mode="displayMode"
+                variant="compact"
+                @previous="selectPreviousDisplayMode"
+                @next="selectNextDisplayMode"
+              />
+            </template>
+          </AnalysisClusterSelectorBar>
 
-                <OpinionGroupScopeSelector
-                  v-if="isScopeMerged"
-                  class="group-sticky-row__scope"
-                  :display-mode="displayMode"
-                  variant="compact"
-                  @previous="selectPreviousDisplayMode"
-                  @next="selectNextDisplayMode"
-                />
-              </div>
-
-            </div>
-          </template>
-
-          <div v-if="currentAiSummary" ref="groupContentFloorElement">
-            <GroupConsensusSummary :summary="currentAiSummary" />
+          <div
+            v-if="currentAiSummary !== undefined"
+            ref="groupContentFloorElement"
+          >
+            <GroupConsensusSummary
+              :summary="currentAiSummary"
+              :title="undefined"
+              summary-state="available"
+            />
+          </div>
+          <div
+            v-else-if="showCurrentGroupAiPendingNotice"
+            ref="groupContentFloorElement"
+          >
+            <GroupConsensusSummary
+              :summary="t('groupAiPendingNotice')"
+              :title="undefined"
+              summary-state="pending"
+            />
           </div>
 
           <OpinionGroupComments
@@ -101,31 +106,6 @@
       </template>
     </AnalysisSectionWrapper>
 
-    <q-dialog v-model="showGroupDrawer" position="bottom">
-      <ZKBottomDialogContainer :title="t('selectGroup')">
-        <div class="group-drawer-list">
-          <button
-            v-for="cluster in clusterList"
-            :key="cluster.key"
-            type="button"
-            class="group-drawer-option"
-            :class="{
-              'group-drawer-option--selected': cluster.key === currentClusterTab,
-            }"
-            :aria-pressed="cluster.key === currentClusterTab"
-            @click="selectClusterFromDrawer(cluster.key)"
-          >
-            <span>{{ getClusterLabel(cluster) }}</span>
-            <q-icon
-              v-if="cluster.key === currentClusterTab"
-              name="mdi-check"
-              size="1.1rem"
-            />
-          </button>
-        </div>
-      </ZKBottomDialogContainer>
-    </q-dialog>
-
     <ClusterInformationDialog v-model="showClusterInformation" />
   </div>
 </template>
@@ -136,26 +116,14 @@ import {
   voteLegendTranslations,
 } from "src/components/ui/VoteLegend.i18n";
 import VoteLegend from "src/components/ui/VoteLegend.vue";
-import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
-import ZKDropdownSelectorButton from "src/components/ui-library/ZKDropdownSelectorButton.vue";
 import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { PolisClusters, PolisKey } from "src/shared/types/zod";
-import { formatClusterLabel, isClustersImbalanced } from "src/utils/component/opinion";
-import { getHeaderHeight } from "src/utils/html/scroll";
-import {
-  computed,
-  nextTick,
-  onActivated,
-  onBeforeUnmount,
-  onDeactivated,
-  onMounted,
-  onUpdated,
-  ref,
-  watch,
-} from "vue";
+import { isClustersImbalanced } from "src/utils/component/opinion";
+import { computed, ref, watch } from "vue";
 
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
+import AnalysisClusterSelectorBar from "../common/AnalysisClusterSelectorBar.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import EmptyStateMessage from "../common/EmptyStateMessage.vue";
@@ -184,6 +152,7 @@ const props = withDefaults(
     clusters: Partial<PolisClusters>;
     totalParticipantCount: number;
     analysisFrameKey: string | undefined;
+    aiLabelingEnabled: boolean;
     compactMode?: boolean;
     conversationScrollContext: ConversationScrollContext;
   }>(),
@@ -199,8 +168,6 @@ const { t: tLegend } = useComponentI18n<VoteLegendTranslations>(
   voteLegendTranslations
 );
 
-const groupStickySentinel = ref<HTMLElement | null>(null);
-const groupStickyBarElement = ref<HTMLElement | null>(null);
 const groupContentFloorElement = ref<HTMLElement | null>(null);
 interface OpinionGroupCommentsExposed {
   getHeaderElement: () => HTMLElement | null;
@@ -209,18 +176,10 @@ interface OpinionGroupCommentsExposed {
 const commentsRef = ref<OpinionGroupCommentsExposed | null>(null);
 
 const showClusterInformation = ref(false);
-const showGroupDrawer = ref(false);
-const isGroupBarSticky = ref(false);
 const isScopeMerged = ref(false);
-const stickyTopOffset = ref(0);
 const displayMode = ref<OpinionGroupDisplayMode>("current");
-const groupScrollPositions = new Map<PolisKey, number>();
 let hasAppliedClusterDefault = false;
 let lastDefaultAnalysisFrameKey: string | undefined;
-
-let resizeObserver: ResizeObserver | undefined;
-let removeScrollListener: (() => void) | undefined;
-let layoutRafId: number | undefined;
 
 const clusterList = computed<ClusterItem[]>(() =>
   Object.values(props.clusters)
@@ -267,8 +226,27 @@ const isImbalanced = computed(() => {
 });
 
 const hasAiLabels = computed(() =>
-  clusterList.value.some((cluster) => Boolean(cluster.aiLabel))
+  clusterList.value.some((cluster) => cluster.aiLabel !== undefined)
 );
+
+const hasMissingAiGeneratedContent = computed(() =>
+  clusterList.value.some(
+    (cluster) =>
+      cluster.aiLabel === undefined || cluster.aiSummary === undefined
+  )
+);
+
+const groupsSubtitle = computed(() => {
+  if (!props.aiLabelingEnabled) {
+    return t("groupsSubtitleNoAi");
+  }
+
+  if (hasMissingAiGeneratedContent.value) {
+    return t("groupsSubtitlePendingAi");
+  }
+
+  return hasAiLabels.value ? t("groupsSubtitle") : t("groupsSubtitleNoAi");
+});
 
 const analysisLegendItems = computed(() => [
   { label: tLegend("agree"), type: "agree" as const },
@@ -283,15 +261,18 @@ const currentCluster = computed(() =>
 
 const currentAiSummary = computed(() => currentCluster.value?.aiSummary);
 
+const showCurrentGroupAiPendingNotice = computed(() => {
+  const cluster = currentCluster.value;
+  if (!props.aiLabelingEnabled || cluster === undefined) {
+    return false;
+  }
+
+  return cluster.aiLabel === undefined || cluster.aiSummary === undefined;
+});
+
 const currentRepresentativeItems = computed(
   () => currentCluster.value?.representative ?? []
 );
-
-const selectedClusterLabel = computed(() => {
-  const cluster = currentCluster.value;
-  if (cluster === undefined) return formatClusterLabel(currentClusterTab.value, false);
-  return getClusterLabel(cluster);
-});
 
 const clusterLabels = computed(() => {
   const labels: Partial<Record<PolisKey, string>> = {};
@@ -303,9 +284,13 @@ const clusterLabels = computed(() => {
   return labels;
 });
 
-const groupStickyStyle = computed(() => ({
-  "--group-sticky-top": `${stickyTopOffset.value}px`,
-}));
+const commentsHeaderElement = computed(
+  () => commentsRef.value?.getHeaderElement() ?? null
+);
+
+const groupContentFloorTarget = computed(
+  () => groupContentFloorElement.value ?? commentsHeaderElement.value
+);
 
 watch(
   clusterList,
@@ -339,7 +324,6 @@ watch(
 
     currentClusterTab.value = findInitialClusterKey(clusters);
     displayMode.value = "current";
-    groupScrollPositions.clear();
     hasAppliedClusterDefault = true;
     lastDefaultAnalysisFrameKey = analysisFrameKey;
   },
@@ -350,148 +334,20 @@ watch(currentClusterTab, () => {
   displayMode.value = "current";
 });
 
-watch(
-  [clusterList, selectedClusterLabel, displayMode],
-  () => {
-    void nextTick(() => {
-      resetResizeObserver();
-      requestLayoutUpdate();
-    });
-  },
-  { deep: true }
-);
-
-watch(
-  () => props.conversationScrollContext.scrollContainerElement,
-  () => {
-    bindScrollListener();
-    void nextTick(() => {
-      resetResizeObserver();
-      requestLayoutUpdate();
-    });
-  }
-);
-
-watch(
-  () => props.conversationScrollContext.actionBarElement,
-  () => {
-    void nextTick(() => {
-      resetResizeObserver();
-      requestLayoutUpdate();
-    });
-  }
-);
-
-onMounted(async () => {
-  await nextTick();
-  resetResizeObserver();
-  bindScrollListener();
-  requestLayoutUpdate();
-});
-
-onActivated(() => {
-  bindScrollListener();
-  requestLayoutUpdate();
-});
-
-onUpdated(() => {
-  resetResizeObserver();
-  requestLayoutUpdate();
-});
-
-onDeactivated(() => {
-  removeActiveScrollListener();
-});
-
-onBeforeUnmount(() => {
-  resizeObserver?.disconnect();
-  removeActiveScrollListener();
-  if (layoutRafId !== undefined) {
-    cancelAnimationFrame(layoutRafId);
-  }
-});
-
-function getClusterLabel(cluster: ClusterItem): string {
-  return formatClusterLabel(cluster.key, false, cluster.aiLabel);
-}
-
 function handleClusterSelection(clusterKey: PolisKey): void {
-  void selectCluster({ clusterKey, shouldRestoreScroll: false });
-}
-
-function selectClusterFromDrawer(clusterKey: PolisKey): void {
-  showGroupDrawer.value = false;
-  void selectCluster({ clusterKey, shouldRestoreScroll: true });
-}
-
-async function selectCluster({
-  clusterKey,
-  shouldRestoreScroll,
-}: {
-  clusterKey: PolisKey;
-  shouldRestoreScroll: boolean;
-}): Promise<void> {
   if (clusterKey === currentClusterTab.value) {
     return;
   }
 
-  if (shouldRestoreScroll) {
-    saveCurrentGroupScrollPosition();
+  currentClusterTab.value = clusterKey;
+}
+
+function selectClusterFromSelector(clusterKey: PolisKey | undefined): void {
+  if (clusterKey === undefined) {
+    return;
   }
 
   currentClusterTab.value = clusterKey;
-
-  await nextTick();
-
-  if (shouldRestoreScroll) {
-    restoreSelectedGroupScrollPosition();
-  }
-
-  requestLayoutUpdate();
-}
-
-function saveCurrentGroupScrollPosition(): void {
-  if (!showGroupControls.value) {
-    return;
-  }
-
-  groupScrollPositions.set(
-    currentClusterTab.value,
-    props.conversationScrollContext.getScrollPosition()
-  );
-}
-
-function restoreSelectedGroupScrollPosition(): void {
-  if (!showGroupControls.value) {
-    return;
-  }
-
-  const floorScroll = getGroupContentFloorScroll();
-  const savedScroll = groupScrollPositions.get(currentClusterTab.value);
-  const targetScroll = Math.max(savedScroll ?? floorScroll, floorScroll);
-
-  props.conversationScrollContext.scrollToPosition({
-    top: targetScroll,
-    behavior: "smooth",
-  });
-}
-
-function getGroupContentFloorScroll(): number {
-  const targetElement =
-    groupContentFloorElement.value ??
-    commentsRef.value?.getHeaderElement() ??
-    null;
-
-  if (targetElement === null) {
-    return props.conversationScrollContext.getScrollPosition();
-  }
-
-  const elementTop = props.conversationScrollContext.getElementScrollPosition({
-    element: targetElement,
-  });
-  const stickyStackHeight = getStickyTopOffset() + getStickyGroupBarHeight();
-
-  return Math.max(0, elementTop - stickyStackHeight);
 }
 
 function selectNextDisplayMode(): void {
@@ -506,119 +362,6 @@ function selectPreviousDisplayMode(): void {
     displayMode: displayMode.value,
     hasUngroupedParticipants: hasUngroupedParticipants.value,
   });
-}
-
-function getContainerTop(): number {
-  return (
-    props.conversationScrollContext.scrollContainerElement?.getBoundingClientRect()
-      .top ?? 0
-  );
-}
-
-function getStickyTopOffset(): number {
-  const actionBarElement = props.conversationScrollContext.actionBarElement;
-  if (actionBarElement === null) {
-    return getHeaderHeight();
-  }
-
-  const containerTop = getContainerTop();
-  const actionBarRect = actionBarElement.getBoundingClientRect();
-  const actionBarTop = actionBarRect.top - containerTop;
-  const stickyActionBarTop = Math.max(
-    0,
-    Math.min(actionBarTop, getHeaderHeight())
-  );
-
-  return stickyActionBarTop + actionBarRect.height;
-}
-
-function requestLayoutUpdate(): void {
-  if (layoutRafId !== undefined) {
-    return;
-  }
-
-  layoutRafId = requestAnimationFrame(() => {
-    layoutRafId = undefined;
-    updateStickyState();
-  });
-}
-
-function updateStickyState(): void {
-  const sentinel = groupStickySentinel.value;
-  const stickyBar = groupStickyBarElement.value;
-  const commentsHeader = commentsRef.value?.getHeaderElement() ?? null;
-  const nextStickyTopOffset = getStickyTopOffset();
-
-  stickyTopOffset.value = nextStickyTopOffset;
-
-  if (!showGroupControls.value || sentinel === null || stickyBar === null) {
-    isGroupBarSticky.value = false;
-    isScopeMerged.value = false;
-    return;
-  }
-
-  const stickyViewportTop = getContainerTop() + nextStickyTopOffset;
-  isGroupBarSticky.value =
-    sentinel.getBoundingClientRect().top <= stickyViewportTop + 1;
-
-  if (!isGroupBarSticky.value || commentsHeader === null) {
-    isScopeMerged.value = false;
-    return;
-  }
-
-  isScopeMerged.value =
-    commentsHeader.getBoundingClientRect().top <=
-    stickyViewportTop + getStickyGroupBarHeight() + 1;
-}
-
-function resetResizeObserver(): void {
-  resizeObserver?.disconnect();
-  if (typeof ResizeObserver === "undefined") {
-    return;
-  }
-
-  resizeObserver = new ResizeObserver(() => {
-    requestLayoutUpdate();
-  });
-
-  observeElement({ element: groupStickyBarElement.value });
-  observeElement({ element: props.conversationScrollContext.actionBarElement });
-  observeElement({ element: commentsRef.value?.getHeaderElement() ?? null });
-}
-
-function observeElement({ element }: { element: HTMLElement | null }): void {
-  if (element === null || resizeObserver === undefined) {
-    return;
-  }
-
-  resizeObserver.observe(element);
-}
-
-function bindScrollListener(): void {
-  removeActiveScrollListener();
-
-  const scrollTarget =
-    props.conversationScrollContext.scrollContainerElement ?? window;
-  scrollTarget.addEventListener("scroll", requestLayoutUpdate, {
-    passive: true,
-  });
-  removeScrollListener = () => {
-    scrollTarget.removeEventListener("scroll", requestLayoutUpdate);
-  };
-}
-
-function removeActiveScrollListener(): void {
-  removeScrollListener?.();
-  removeScrollListener = undefined;
-}
-
-function getStickyGroupBarHeight(): number {
-  const element = groupStickyBarElement.value;
-  if (element === null) {
-    return 0;
-  }
-
-  return Math.max(element.offsetHeight, element.scrollHeight);
 }
 </script>
 
@@ -640,68 +383,10 @@ function getStickyGroupBarHeight(): number {
   font-weight: normal;
 }
 
-.group-sticky-bar {
-  position: sticky;
-  top: var(--group-sticky-top, 0px);
-  z-index: 9;
-  background-color: white;
-  padding: 0.125rem 0;
-  transition: top 0.12s ease;
-}
-
-.group-sticky-bar--stuck {
-  box-shadow: 0 1px 0 #e9e9f1;
-}
-
-.group-sticky-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: nowrap;
-  gap: 0.35rem;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.group-selector-trigger {
-  flex: 1 1 0;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.group-sticky-row__scope {
+.group-scope-selector {
   flex: 0 1 auto;
   margin-inline-start: auto;
   max-width: 54%;
   min-width: 0;
-}
-
-.group-drawer-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.group-drawer-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  width: 100%;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: white;
-  color: #333238;
-  padding: 0.9rem 1rem;
-  text-align: start;
-  font: inherit;
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-}
-
-.group-drawer-option--selected {
-  background: #e8f1ff;
-  color: #6b4eff;
 }
 </style>

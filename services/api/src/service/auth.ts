@@ -1271,13 +1271,15 @@ async function getPhoneAuthState({
     const phoneResults = await db
         .select({
             userId: phoneTable.userId,
-            isDeleted: phoneTable.isDeleted,
         })
         .from(phoneTable)
         .innerJoin(userTable, eq(userTable.id, phoneTable.userId))
-        .where(eq(phoneTable.phoneHash, phoneHash));
+        .where(
+            and(eq(phoneTable.phoneHash, phoneHash), eq(phoneTable.isDeleted, false)),
+        )
+        .limit(1);
 
-    const activeUser = phoneResults.find((r) => !r.isDeleted);
+    const activeUser = phoneResults.at(0);
 
     // Handle "device_owns_credential" case first - it guarantees a user exists
     if (isAssociated) {
@@ -1373,13 +1375,18 @@ async function getNullifierAuthState({
     const nullifierResults = await db
         .select({
             userId: zkPassportTable.userId,
-            isDeleted: zkPassportTable.isDeleted,
         })
         .from(zkPassportTable)
         .innerJoin(userTable, eq(userTable.id, zkPassportTable.userId))
-        .where(eq(zkPassportTable.nullifier, nullifier));
+        .where(
+            and(
+                eq(zkPassportTable.nullifier, nullifier),
+                eq(zkPassportTable.isDeleted, false),
+            ),
+        )
+        .limit(1);
 
-    const activeUser = nullifierResults.find((r) => !r.isDeleted);
+    const activeUser = nullifierResults.at(0);
 
     // Handle "device_owns_credential" case first
     if (isAssociated) {
@@ -2266,13 +2273,18 @@ async function getEmailAuthState({
     const emailResults = await db
         .select({
             userId: emailTable.userId,
-            isDeleted: emailTable.isDeleted,
         })
         .from(emailTable)
         .innerJoin(userTable, eq(userTable.id, emailTable.userId))
-        .where(eq(emailTable.email, canonicalEmail));
+        .where(
+            and(
+                eq(emailTable.email, canonicalEmail),
+                eq(emailTable.isDeleted, false),
+            ),
+        )
+        .limit(1);
 
-    const activeUser = emailResults.find((r) => !r.isDeleted);
+    const activeUser = emailResults.at(0);
 
     // Handle "device_owns_credential" case first - it guarantees a user exists
     if (isAssociated) {

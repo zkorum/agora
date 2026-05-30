@@ -159,11 +159,61 @@ export class Dto {
         })
         .strict();
     static fetchOpinionsResponse = z.array(zodOpinionItem);
+    static aiDescriptionLocaleStatus = z.enum(["pending", "ready", "fallback"]);
+    static analysisDescriptionReadinessPart = z
+        .object({
+            expected: z.boolean(),
+            status: Dto.aiDescriptionLocaleStatus.nullable(),
+        })
+        .strict();
+    static analysisDescriptionReadiness = z
+        .object({
+            requestedLocale: ZodSupportedDisplayLanguageCodes,
+            english: Dto.analysisDescriptionReadinessPart,
+            requested: Dto.analysisDescriptionReadinessPart,
+            state: z.enum([
+                "disabled",
+                "not_expected",
+                "english_pending",
+                "requested_pending",
+                "ready",
+                "fallback",
+            ]),
+            shouldRetry: z.boolean(),
+        })
+        .strict();
+    static analysisFreshnessRequest = z
+        .object({
+            enablePrimaryFallback: z.boolean(),
+            minimumConversationViewSnapshotId: z
+                .number()
+                .int()
+                .positive()
+                .nullable(),
+            expectedDescriptionLocales: z.array(ZodSupportedDisplayLanguageCodes),
+        })
+        .strict();
     static fetchAnalysisRequest = z
         .object({
             conversationSlugId: zodSlugId, // z.object() does not exist :(
             analysisView: zodAnalysisView.optional(),
             checkpointViewSnapshotId: z.number().int().positive().optional(),
+        })
+        .strict();
+    static fetchAnalysisMetadataRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+            analysisView: zodAnalysisView.optional(),
+            checkpointViewSnapshotId: z.number().int().positive().optional(),
+            freshness: Dto.analysisFreshnessRequest.nullable().default(null),
+        })
+        .strict();
+    static fetchAnalysisContentRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+            conversationViewSnapshotId: z.number().int().positive(),
+            candidateId: z.number().int().positive(),
+            freshness: Dto.analysisFreshnessRequest.nullable().default(null),
         })
         .strict();
     static analysisViewOption = z.union([
@@ -215,6 +265,7 @@ export class Dto {
             analysisSnapshotId: z.number().int().positive().optional(),
             conversationViewSnapshot:
                 Dto.analysisConversationViewSnapshot.optional(),
+            descriptionReadiness: Dto.analysisDescriptionReadiness.nullable(),
             emptyReason: z.string().optional(),
             analysisViewState: Dto.analysisViewState.optional(),
             consensusAgree: z.array(zodAnalysisOpinionItem),
@@ -224,6 +275,40 @@ export class Dto {
             hasVotedOnAllAvailableOpinions: z.boolean().optional(),
         })
         .strict();
+    static fetchAnalysisMetadataResponse = z
+        .object({
+            conversationViewSnapshotId: z.number().int().positive().optional(),
+            analysisSnapshotId: z.number().int().positive().optional(),
+            conversationViewSnapshot:
+                Dto.analysisConversationViewSnapshot.optional(),
+            descriptionReadiness: Dto.analysisDescriptionReadiness.nullable(),
+            emptyReason: z.string().optional(),
+            analysisViewState: Dto.analysisViewState,
+            displayableGroupCounts: z.array(z.number().int().min(2).max(6)),
+            hasVotedOnAllAvailableOpinions: z.boolean().optional(),
+        })
+        .strict();
+    static analysisContent = z
+        .object({
+            conversationViewSnapshotId: z.number().int().positive(),
+            analysisSnapshotId: z.number().int().positive(),
+            candidateId: z.number().int().positive(),
+            descriptionReadiness: Dto.analysisDescriptionReadiness,
+            consensusAgree: z.array(zodAnalysisOpinionItem),
+            consensusDisagree: z.array(zodAnalysisOpinionItem),
+            controversial: z.array(zodAnalysisOpinionItem),
+            clusters: zodPolisClusters,
+        })
+        .strict();
+    static fetchAnalysisContentResponse = z.discriminatedUnion("success", [
+        Dto.analysisContent.extend({ success: z.literal(true) }).strict(),
+        z
+            .object({
+                success: z.literal(false),
+                reason: z.literal("not_available"),
+            })
+            .strict(),
+    ]);
     static fetchAnalysisCheckpointsRequest = z
         .object({
             conversationSlugId: zodSlugId,
@@ -248,6 +333,12 @@ export class Dto {
             opinionCount: z.number().int().nonnegative(),
             voteCount: z.number().int().nonnegative(),
             participantCount: z.number().int().nonnegative(),
+            totalOpinionCount: z.number().int().nonnegative(),
+            totalVoteCount: z.number().int().nonnegative(),
+            totalParticipantCount: z.number().int().nonnegative(),
+            moderatedOpinionCount: z.number().int().nonnegative(),
+            hiddenOpinionCount: z.number().int().nonnegative(),
+            isClosed: z.boolean(),
             reasons: z.array(Dto.analysisCheckpointReason),
         })
         .strict();
@@ -599,6 +690,8 @@ export class Dto {
     static surveyResultsAggregatedRequest = z
         .object({
             conversationSlugId: zodSlugId,
+            analysisView: zodAnalysisView.optional(),
+            checkpointViewSnapshotId: z.number().int().positive().optional(),
         })
         .strict();
     static surveyResultsAggregatedResponse = z
@@ -1485,6 +1578,13 @@ export type UpdateLanguagePreferencesRequest = z.infer<
     typeof Dto.updateLanguagePreferencesRequest
 >;
 export type ConversationAnalysis = z.infer<typeof Dto.fetchAnalysisResponse>;
+export type ConversationAnalysisMetadata = z.infer<
+    typeof Dto.fetchAnalysisMetadataResponse
+>;
+export type ConversationAnalysisContent = z.infer<typeof Dto.analysisContent>;
+export type FetchAnalysisContentResponse = z.infer<
+    typeof Dto.fetchAnalysisContentResponse
+>;
 export type AnalysisViewOptionCandidate = z.infer<
     typeof zodAnalysisViewOptionCandidate
 >;
@@ -1492,6 +1592,12 @@ export type AnalysisViewOption = z.infer<typeof Dto.analysisViewOption>;
 export type AnalysisViewState = z.infer<typeof Dto.analysisViewState>;
 export type AnalysisConversationViewSnapshot = z.infer<
     typeof Dto.analysisConversationViewSnapshot
+>;
+export type AnalysisDescriptionReadiness = z.infer<
+    typeof Dto.analysisDescriptionReadiness
+>;
+export type AnalysisFreshnessRequest = z.infer<
+    typeof Dto.analysisFreshnessRequest
 >;
 export type AnalysisCheckpoint = z.infer<typeof Dto.analysisCheckpoint>;
 export type FetchAnalysisCheckpointsResponse = z.infer<

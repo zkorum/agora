@@ -11,6 +11,12 @@ Name | Type | Description | Notes
 **opinionCount** | **number** |  | [default to undefined]
 **voteCount** | **number** |  | [default to undefined]
 **participantCount** | **number** |  | [default to undefined]
+**totalOpinionCount** | **number** |  | [default to undefined]
+**totalVoteCount** | **number** |  | [default to undefined]
+**totalParticipantCount** | **number** |  | [default to undefined]
+**moderatedOpinionCount** | **number** |  | [default to undefined]
+**hiddenOpinionCount** | **number** |  | [default to undefined]
+**isClosed** | **boolean** |  | [default to undefined]
 **reasons** | [**Array&lt;ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInnerReasonsInner&gt;**](ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInnerReasonsInner.md) |  | [default to undefined]
 
 ## Example
@@ -25,6 +31,12 @@ const instance: ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200Respons
     opinionCount,
     voteCount,
     participantCount,
+    totalOpinionCount,
+    totalVoteCount,
+    totalParticipantCount,
+    moderatedOpinionCount,
+    hiddenOpinionCount,
+    isClosed,
     reasons,
 };
 ```

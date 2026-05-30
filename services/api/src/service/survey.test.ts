@@ -59,6 +59,7 @@ function createFreeTextQuestion({
         currentSemanticVersion: 1,
         displayOrder,
         isRequired,
+        isPublicAggregateSuppressionEnabled: false,
         questionText: slugId,
         constraints: {
             type: "free_text",
@@ -332,6 +333,7 @@ describe("validateSurveyAnswer", () => {
             currentSemanticVersion: 1,
             displayOrder: 0,
             isRequired: true,
+            isPublicAggregateSuppressionEnabled: false,
             questionText: "What is your age?",
             constraints: {
                 type: "free_text" as const,

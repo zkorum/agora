@@ -9,6 +9,7 @@ export const MAX_LENGTH_OPINION_HTML = 840; // Reserve extra space for HTML tags
 export const MAX_LENGTH_OPINION_HTML_OUTPUT = 3000; // Old value for database retro-compatibility of existing data
 export const MAX_LENGTH_SURVEY_QUESTION = 500;
 export const MAX_LENGTH_SURVEY_OPTION = 200;
+export const PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD = 5;
 export const MAX_LENGTH_NAME_CREATOR = 65;
 export const MAX_LENGTH_USERNAME = 20;
 export const MIN_LENGTH_USERNAME = 2;

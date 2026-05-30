@@ -16,6 +16,7 @@ Name | Type | Description | Notes
 **count** | **number** |  | [optional] [default to undefined]
 **percentage** | **number** |  | [optional] [default to undefined]
 **isSuppressed** | **boolean** |  | [default to undefined]
+**isPublicAggregateSuppressionEnabled** | **boolean** |  | [default to false]
 **suppressionReason** | **string** |  | [optional] [default to undefined]
 
 ## Example
@@ -35,6 +36,7 @@ const instance: ApiV1SurveyResultsAggregatedPost200ResponseSuppressedRowsInner =
     count,
     percentage,
     isSuppressed,
+    isPublicAggregateSuppressionEnabled,
     suppressionReason,
 };
 ```

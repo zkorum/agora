@@ -1,9 +1,15 @@
 <template>
   <div>
-    <div class="flexLayout">
-      <q-icon :name="iconName" size="2rem" />
+    <div
+      class="flexLayout"
+      :class="{ 'flexLayout--compact': props.density === 'compact' }"
+    >
+      <q-icon :name="iconName" :size="iconSize" />
 
-      <div class="coreText">
+      <div
+        class="coreText"
+        :class="{ 'coreText--compact': props.density === 'compact' }"
+      >
         <div class="title">
           {{ title }}
         </div>
@@ -17,11 +23,23 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  title: string;
-  description: string;
-  iconName: string;
-}>();
+import { computed } from "vue";
+
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    description: string;
+    iconName: string;
+    density?: "comfortable" | "compact";
+  }>(),
+  {
+    density: "comfortable",
+  }
+);
+
+const iconSize = computed(() => {
+  return props.density === "compact" ? "1.65rem" : "2rem";
+});
 </script>
 
 <style scoped lang="scss">
@@ -30,10 +48,18 @@ defineProps<{
   gap: 1rem;
 }
 
+.flexLayout--compact {
+  gap: 0.75rem;
+}
+
 .coreText {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.coreText--compact {
+  gap: 0.35rem;
 }
 
 .title {

@@ -32,7 +32,12 @@
     </q-infinite-scroll>
 
     <NewContentPill
-      v-if="isCommentTabActive && hasPendingNewOpinion && !isShowingInitialCommentsLoading"
+      v-if="
+        isCommentTabActive &&
+        hasPendingNewOpinion &&
+        !isShowingInitialCommentsLoading &&
+        !isOpeningNewOpinions
+      "
       :label="t('newStatementButton')"
       dismissible
       @click="showNewOpinions"
@@ -99,6 +104,7 @@ const emit = defineEmits<{
 const isComponentMounted = ref(false);
 const isCommentTabActive = ref(true);
 const isInitialActivation = ref(true);
+const isOpeningNewOpinions = ref(false);
 
 const { t } = useComponentI18n<CommentSectionTranslations>(
   commentSectionTranslations
@@ -258,13 +264,22 @@ async function handleOpinionMuted(): Promise<void> {
 }
 
 async function showNewOpinions(): Promise<void> {
-  scrollToActionBar({ behavior: "smooth" });
-  currentFilter.value = "new";
-  const result = await props.preloadedQueries.commentsNewQuery.refetch();
-  if (result.data !== undefined) {
-    opinionUpdatesStore.clearNewOpinion(props.postSlugId);
+  if (isOpeningNewOpinions.value) {
+    return;
   }
-  await fetchUserVotingData();
+
+  isOpeningNewOpinions.value = true;
+  try {
+    scrollToActionBar({ behavior: "smooth" });
+    currentFilter.value = "new";
+    const result = await props.preloadedQueries.commentsNewQuery.refetch();
+    if (result.data !== undefined) {
+      opinionUpdatesStore.clearNewOpinion(props.postSlugId);
+    }
+    await fetchUserVotingData();
+  } finally {
+    isOpeningNewOpinions.value = false;
+  }
 }
 
 function dismissNewOpinionPill(): void {

@@ -108,15 +108,13 @@ const props = defineProps<{
 const showLoginDialog = ref(false);
 const hasVotedThisSession = ref(false);
 const { setOpinionAgreementIntention } = useConversationLoginIntentions();
-const {
-  needsAuth: isAuthBlocked,
-  shouldOpenParticipationModal,
-} = useParticipationGate({
-  conversationSlugId: computed(() => props.postSlugId),
-  participationMode: computed(() => props.participationMode),
-  requiresEventTicket: computed(() => props.requiresEventTicket),
-  surveyGate: computed(() => props.surveyGate),
-});
+const { needsAuth: isAuthBlocked, shouldOpenParticipationModal } =
+  useParticipationGate({
+    conversationSlugId: computed(() => props.postSlugId),
+    participationMode: computed(() => props.participationMode),
+    requiresEventTicket: computed(() => props.requiresEventTicket),
+    surveyGate: computed(() => props.surveyGate),
+  });
 
 const { showNotifyMessage } = useNotify();
 const { updateAuthState } = useBackendAuthApi();
@@ -138,15 +136,16 @@ const userClusteredThisMount = ref(false);
 // Check if user is in a cluster by looking at analysis cache
 // This matches the same check in useVoteQueries.ts that determines whether to ask backend
 const userIsClusteredFromCache = computed(() => {
-  const analysisData = queryClient.getQueryData<{
+  const analysisQueryData = queryClient.getQueriesData<{
     polisClusters?: Record<string, { isUserInCluster?: boolean } | undefined>;
-  }>(["analysis", props.postSlugId]);
+  }>({ queryKey: ["analysis", props.postSlugId] });
 
-  return (
-    analysisData?.polisClusters &&
-    Object.values(analysisData.polisClusters).some(
-      (cluster) => cluster?.isUserInCluster === true
-    )
+  return analysisQueryData.some(
+    ([, analysisData]) =>
+      analysisData?.polisClusters !== undefined &&
+      Object.values(analysisData.polisClusters).some(
+        (cluster) => cluster?.isUserInCluster === true
+      )
   );
 });
 
@@ -238,7 +237,12 @@ async function castPersonalVote(
         showNotifyMessage(t("conversationClosed"));
       } else if (result.reason === "conversation_locked") {
         showNotifyMessage(t("voteFailed"));
-      } else if (result.reason === "event_ticket_required" || result.reason === "account_required" || result.reason === "strong_verification_required" || result.reason === "email_verification_required") {
+      } else if (
+        result.reason === "event_ticket_required" ||
+        result.reason === "account_required" ||
+        result.reason === "strong_verification_required" ||
+        result.reason === "email_verification_required"
+      ) {
         showLoginDialog.value = true;
       } else if (
         result.reason === "survey_required" ||
@@ -275,10 +279,14 @@ const bannerMessage = computed(() => {
   if (state === "refine") {
     return t("keepVotingToRefineAnalysis");
   }
-  return t("keepVotingToDiscoverGroup", { minVotes: String(MIN_VOTES_FOR_CLUSTER) });
+  return t("keepVotingToDiscoverGroup", {
+    minVotes: String(MIN_VOTES_FOR_CLUSTER),
+  });
 });
 
-const showViewAnalysisLink = computed(() => bannerState.value === "celebration");
+const showViewAnalysisLink = computed(
+  () => bannerState.value === "celebration"
+);
 
 const shouldShowBanner = computed(() => {
   // Show banner whenever user has voted this session

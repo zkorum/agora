@@ -8,7 +8,7 @@
       </HomeMenuBar>
     </Teleport>
 
-    <q-pull-to-refresh @refresh="pullDownTriggered">
+    <PullToRefresh @refresh="pullDownTriggered">
       <PageLoadingSpinner v-if="isLoading" />
 
       <ErrorRetryBlock
@@ -90,7 +90,7 @@
           {{ t("noNotifications") }}
         </div>
       </q-infinite-scroll>
-    </q-pull-to-refresh>
+    </PullToRefresh>
   </div>
 </template>
 
@@ -100,6 +100,7 @@ import UserAvatar from "src/components/account/UserAvatar.vue";
 import { HomeMenuBar } from "src/components/navigation/header/variants";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
+import PullToRefresh from "src/components/ui/PullToRefresh.vue";
 import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";

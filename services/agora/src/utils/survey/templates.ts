@@ -1,5 +1,8 @@
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
-import type { SurveyQuestionConfig, SurveyQuestionOption } from "src/shared/types/zod";
+import type {
+  SurveyQuestionConfig,
+  SurveyQuestionOption,
+} from "src/shared/types/zod";
 
 import {
   createChoiceSurveyQuestionConstraints,
@@ -31,7 +34,10 @@ function getSurveyTemplateTranslations({
 }: {
   displayLanguage: SupportedDisplayLanguageCodes;
 }): SurveyTemplateTextTranslations {
-  return surveyTemplateTextTranslations[displayLanguage] ?? surveyTemplateTextTranslations.en;
+  return (
+    surveyTemplateTextTranslations[displayLanguage] ??
+    surveyTemplateTextTranslations.en
+  );
 }
 
 export function createSurveyTemplateQuestion({
@@ -50,11 +56,14 @@ export function createSurveyTemplateQuestion({
       return {
         questionType: "choice",
         choiceDisplay: "auto",
+        isPublicAggregateSuppressionEnabled: false,
         questionText: translations.ageGroupPrompt,
         isRequired: true,
         displayOrder,
         constraints: createChoiceSurveyQuestionConstraints(),
-        options: createSurveyTemplateOptions({ optionTexts: AGE_GROUP_OPTIONS }),
+        options: createSurveyTemplateOptions({
+          optionTexts: AGE_GROUP_OPTIONS,
+        }),
       };
     case "age":
       return {
@@ -68,6 +77,7 @@ export function createSurveyTemplateQuestion({
       return {
         questionType: "choice",
         choiceDisplay: "auto",
+        isPublicAggregateSuppressionEnabled: false,
         questionText: translations.sexAtBirthPrompt,
         isRequired: true,
         displayOrder,
@@ -80,6 +90,7 @@ export function createSurveyTemplateQuestion({
       return {
         questionType: "choice",
         choiceDisplay: "auto",
+        isPublicAggregateSuppressionEnabled: false,
         questionText: translations.genderPrompt,
         isRequired: true,
         displayOrder,

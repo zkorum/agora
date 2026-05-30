@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+    buildAnalysisDescriptionReadiness,
+    isDescriptionReadinessFreshForExpectedLocales,
+    shouldUseSystemDescriptions,
+} from "./analysisDescriptionReadiness.js";
+import {
     buildAnalysisViewOptions,
     getCanonicalAnalysisView,
+    getDisplayableGroupCounts,
     getRequestedAnalysisView,
     selectLatestOpinionGroupResultForDisplay,
     shouldFallbackToAuto,
@@ -92,7 +98,10 @@ describe("analysis view snapshot defaults", () => {
             }),
         ).toBe("auto");
         expect(
-            getCanonicalAnalysisView({ requestedView: "3", variantsEnabled: false }),
+            getCanonicalAnalysisView({
+                requestedView: "3",
+                variantsEnabled: false,
+            }),
         ).toBe("auto");
         expect(
             shouldFallbackToAuto({
@@ -101,13 +110,16 @@ describe("analysis view snapshot defaults", () => {
             }),
         ).toBe(true);
         expect(
-            shouldFallbackToAuto({ requestedView: "auto", variantsEnabled: false }),
+            shouldFallbackToAuto({
+                requestedView: "auto",
+                variantsEnabled: false,
+            }),
         ).toBe(false);
     });
 });
 
 describe("selectLatestOpinionGroupResultForDisplay", () => {
-    it("waits on latest pending labels when AI generation is expected", () => {
+    it("uses latest analysis while English labels are pending", () => {
         const latestPending = resultRow({
             viewSnapshotId: 2,
             snapshotId: 200,
@@ -121,12 +133,13 @@ describe("selectLatestOpinionGroupResultForDisplay", () => {
 
         const selected = select({ rows: [latestPending, olderReady] });
 
-        expect(selected?.latestResult.viewSnapshotId).toBe(1);
-        expect(selected?.latestResult.snapshotId).toBe(100);
-        expect(selected?.useSystemDescriptions).toBe(true);
+        expect(selected?.latestResult.viewSnapshotId).toBe(2);
+        expect(selected?.latestResult.snapshotId).toBe(200);
+        expect(selected?.useSystemDescriptions).toBe(false);
+        expect(selected?.descriptionReadiness.state).toBe("english_pending");
     });
 
-    it("does not wait on pending labels when AI generation is not expected", () => {
+    it("uses latest analysis when AI generation is not expected", () => {
         const selected = select({
             rows: [
                 resultRow({
@@ -140,7 +153,24 @@ describe("selectLatestOpinionGroupResultForDisplay", () => {
         });
 
         expect(selected?.latestResult.viewSnapshotId).toBe(2);
-        expect(selected?.useSystemDescriptions).toBe(false);
+        expect(selected?.useSystemDescriptions).toBe(true);
+    });
+
+    it("reports requested locale readiness separately from English readiness", () => {
+        const selected = select({
+            rows: [
+                resultRow({
+                    englishLocaleStatus: "ready",
+                    requestedLocaleStatus: "pending",
+                    requestedTranslationExpected: true,
+                }),
+            ],
+            displayLanguage: "fr",
+        });
+
+        expect(selected?.useSystemDescriptions).toBe(true);
+        expect(selected?.descriptionReadiness.state).toBe("requested_pending");
+        expect(selected?.descriptionReadiness.shouldRetry).toBe(true);
     });
 
     it("does not wait on labels when conversation AI labeling is disabled", () => {
@@ -164,7 +194,7 @@ describe("selectLatestOpinionGroupResultForDisplay", () => {
         expect(selected?.useSystemDescriptions).toBe(true);
     });
 
-    it("shows latest analysis without system descriptions after English fallback", () => {
+    it("uses available system descriptions after English fallback", () => {
         const selected = select({
             rows: [
                 resultRow({
@@ -177,10 +207,10 @@ describe("selectLatestOpinionGroupResultForDisplay", () => {
         });
 
         expect(selected?.latestResult.viewSnapshotId).toBe(2);
-        expect(selected?.useSystemDescriptions).toBe(false);
+        expect(selected?.useSystemDescriptions).toBe(true);
     });
 
-    it("waits on pending translations when translation is expected", () => {
+    it("uses English labels while translations are pending", () => {
         const selected = select({
             rows: [
                 resultRow({
@@ -193,7 +223,7 @@ describe("selectLatestOpinionGroupResultForDisplay", () => {
             displayLanguage: "fr",
         });
 
-        expect(selected?.latestResult.viewSnapshotId).toBe(1);
+        expect(selected?.latestResult.viewSnapshotId).toBe(2);
         expect(selected?.useSystemDescriptions).toBe(true);
     });
 
@@ -244,6 +274,79 @@ describe("selectLatestOpinionGroupResultForDisplay", () => {
     });
 });
 
+describe("analysis description readiness", () => {
+    it("does not retry when AI labeling is disabled", () => {
+        const readiness = buildAnalysisDescriptionReadiness({
+            aiLabelingEnabled: false,
+            requestedLocale: "fr",
+            englishStatus: "pending",
+            englishExpected: true,
+            requestedStatus: "pending",
+            requestedExpected: true,
+        });
+
+        expect(readiness.state).toBe("disabled");
+        expect(readiness.shouldRetry).toBe(false);
+        expect(
+            shouldUseSystemDescriptions({
+                aiLabelingEnabled: false,
+                requestedLocale: "fr",
+                englishStatus: "ready",
+                englishExpected: true,
+                requestedStatus: "ready",
+                requestedExpected: true,
+            }),
+        ).toBe(false);
+    });
+
+    it("only blocks system descriptions while expected English labels are pending", () => {
+        expect(
+            shouldUseSystemDescriptions({
+                aiLabelingEnabled: true,
+                requestedLocale: "fr",
+                englishStatus: "pending",
+                englishExpected: true,
+                requestedStatus: "pending",
+                requestedExpected: true,
+            }),
+        ).toBe(false);
+        expect(
+            shouldUseSystemDescriptions({
+                aiLabelingEnabled: true,
+                requestedLocale: "fr",
+                englishStatus: "pending",
+                englishExpected: false,
+                requestedStatus: "pending",
+                requestedExpected: true,
+            }),
+        ).toBe(true);
+    });
+
+    it("checks expected locale freshness without treating unrelated locales as stale", () => {
+        const readiness = buildAnalysisDescriptionReadiness({
+            aiLabelingEnabled: true,
+            requestedLocale: "fr",
+            englishStatus: "ready",
+            englishExpected: true,
+            requestedStatus: "pending",
+            requestedExpected: true,
+        });
+
+        expect(
+            isDescriptionReadinessFreshForExpectedLocales({
+                readiness,
+                expectedLocales: ["fr"],
+            }),
+        ).toBe(false);
+        expect(
+            isDescriptionReadinessFreshForExpectedLocales({
+                readiness,
+                expectedLocales: ["es"],
+            }),
+        ).toBe(true);
+    });
+});
+
 describe("buildAnalysisViewOptions", () => {
     it("keeps premium variants visible but locked when variants are disabled", () => {
         const systemCandidate = candidate({
@@ -261,9 +364,7 @@ describe("buildAnalysisViewOptions", () => {
             systemCandidate,
         });
 
-        const systemDefault = options.find(
-            (option) => option.view === "auto",
-        );
+        const systemDefault = options.find((option) => option.view === "auto");
         const facilitatorPreference = options.find(
             (option) => option.view === "facilitator_preference",
         );
@@ -328,9 +429,17 @@ describe("buildAnalysisViewOptions", () => {
             variantsEnabled: true,
             preferredGroupCount: 4,
             candidates: [
-                candidate({ candidateId: 22, groupCount: 2, selectionScore: 0.4 }),
+                candidate({
+                    candidateId: 22,
+                    groupCount: 2,
+                    selectionScore: 0.4,
+                }),
                 systemCandidate,
-                candidate({ candidateId: 44, groupCount: 4, selectionScore: 0.8 }),
+                candidate({
+                    candidateId: 44,
+                    groupCount: 4,
+                    selectionScore: 0.8,
+                }),
             ],
             systemCandidate,
         });
@@ -371,14 +480,15 @@ describe("buildAnalysisViewOptions", () => {
             systemCandidate,
         });
 
-        expect(options.find((option) => option.view === "facilitator_preference"))
-            .toMatchObject({
-                view: "facilitator_preference",
-                status: "unavailable",
-                reason: "fixed_group_count_unavailable",
-                groupCount: 5,
-                resolvesToView: "5",
-            });
+        expect(
+            options.find((option) => option.view === "facilitator_preference"),
+        ).toMatchObject({
+            view: "facilitator_preference",
+            status: "unavailable",
+            reason: "fixed_group_count_unavailable",
+            groupCount: 5,
+            resolvesToView: "5",
+        });
     });
 
     it("uses discouraged only for candidate-backed options", () => {
@@ -406,5 +516,19 @@ describe("buildAnalysisViewOptions", () => {
                 candidateId: 22,
             },
         });
+    });
+});
+
+describe("getDisplayableGroupCounts", () => {
+    it("only includes selectable candidates", () => {
+        expect(
+            getDisplayableGroupCounts({
+                candidates: [
+                    candidate({ groupCount: 2, selectionScore: 0.8 }),
+                    candidate({ groupCount: 3, selectionScore: null }),
+                    candidate({ groupCount: 4, selectionScore: 0.6 }),
+                ],
+            }),
+        ).toEqual([2, 4]);
     });
 });

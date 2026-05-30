@@ -54,6 +54,14 @@ export async function fetchAnalysisCheckpointsByConversationSlugId({
             opinionCount: conversationViewSnapshotTable.opinionCount,
             voteCount: conversationViewSnapshotTable.voteCount,
             participantCount: conversationViewSnapshotTable.participantCount,
+            totalOpinionCount: conversationViewSnapshotTable.totalOpinionCount,
+            totalVoteCount: conversationViewSnapshotTable.totalVoteCount,
+            totalParticipantCount:
+                conversationViewSnapshotTable.totalParticipantCount,
+            moderatedOpinionCount:
+                conversationViewSnapshotTable.moderatedOpinionCount,
+            hiddenOpinionCount: conversationViewSnapshotTable.hiddenOpinionCount,
+            isClosed: conversationViewSnapshotTable.isClosed,
             reason: conversationViewSnapshotCheckpointReasonTable.reason,
             groupCount: conversationViewSnapshotCheckpointReasonTable.groupCount,
             previousGroupCount:
@@ -106,6 +114,12 @@ export async function fetchAnalysisCheckpointsByConversationSlugId({
             opinionCount: row.opinionCount,
             voteCount: row.voteCount,
             participantCount: row.participantCount,
+            totalOpinionCount: row.totalOpinionCount,
+            totalVoteCount: row.totalVoteCount,
+            totalParticipantCount: row.totalParticipantCount,
+            moderatedOpinionCount: row.moderatedOpinionCount,
+            hiddenOpinionCount: row.hiddenOpinionCount,
+            isClosed: row.isClosed,
             reasons: [],
         };
 

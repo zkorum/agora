@@ -428,7 +428,7 @@ Authorization headers built via `buildAuthorizationHeader(encodedUcan)` in front
 - `services/app/src/routes/`: SvelteKit pages and layouts (landing page)
 - `services/app/src/lib/logic/`: Pure TypeScript functions with colocated tests
 - `services/app/src/lib/components/`: Reusable Svelte components
-- `services/app/vite.config.ts`: Vite plugins (Tailwind, SvelteKit, Tidewave)
+- `services/app/vite.config.ts`: Vite plugins (Tailwind, SvelteKit)
 - `services/app/svelte.config.js`: SvelteKit adapter configuration
 - `services/api/src/index.ts`: Main backend entry point, route registration
 - `services/shared-backend/src/schema.ts`: Database schema (all tables)

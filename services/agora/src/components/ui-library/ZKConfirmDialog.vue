@@ -118,9 +118,10 @@ watch(showDialog, (newValue) => {
   .dialog-message {
     margin: 0;
     font-size: 1rem;
+    font-weight: var(--font-weight-normal);
     color: black;
     line-height: 1.5;
-    text-align: left;
+    text-align: start;
   }
 }
 

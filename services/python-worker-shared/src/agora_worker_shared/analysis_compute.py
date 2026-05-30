@@ -813,7 +813,9 @@ def _assess_candidate(candidate: ComputedOpinionGroupCandidate) -> CandidateAsse
     coefficient_of_variation = _calculate_coefficient_of_variation(candidate.groups)
     balance_score = _calculate_balance_score(coefficient_of_variation)
     hidden_reason = (
-        OpinionGroupCandidateHiddenReasonEnum.singleton_group if min_group_size == 1 else None
+        OpinionGroupCandidateHiddenReasonEnum.singleton_group
+        if candidate.group_count == 2 and min_group_size == 1
+        else None
     )
     selection_score = _calculate_selection_score(
         silhouette_score=silhouette_score,

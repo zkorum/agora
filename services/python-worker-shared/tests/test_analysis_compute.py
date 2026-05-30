@@ -397,7 +397,7 @@ def test_compute_analysis_bundle_short_circuits_insufficient_data() -> None:
     )
 
 
-def test_singleton_group_candidates_are_recorded_but_hidden() -> None:
+def test_singleton_group_candidates_are_displayable_for_three_groups() -> None:
     snapshot = prepare_input_snapshot(
         conversation_id=10,
         data_generation=3,
@@ -426,6 +426,46 @@ def test_singleton_group_candidates_are_recorded_but_hidden() -> None:
                 max_group_count=3,
             ),
             variants=[OpinionGroupVariantRecord(id=30, opinion_group_spec_id=1, group_count=3)],
+        ),
+        run_red_dwarf_pipeline=fake_runner,
+    )
+
+    assert bundle.outcome == AnalysisResultOutcomeEnum.success
+    assert bundle.candidates[0].outcome == AnalysisResultOutcomeEnum.success
+    assert bundle.candidates[0].assessment is not None
+    assert bundle.candidates[0].assessment.selection_score is not None
+    assert bundle.candidates[0].assessment.hidden_reason is None
+
+
+def test_singleton_group_candidates_are_hidden_for_two_groups() -> None:
+    snapshot = prepare_input_snapshot(
+        conversation_id=10,
+        data_generation=3,
+        rows=_snapshot_rows(),
+    )
+
+    def fake_runner(
+        *,
+        votes: list[dict[str, int]],
+        min_user_vote_threshold: int,
+        max_group_count: int,
+        force_group_count: int | None = None,
+        candidate_group_counts: list[int] | None = None,
+    ) -> FakeRedDwarfSuccess:
+        assert force_group_count == 2
+        assert candidate_group_counts is None
+        return FakeRedDwarfSuccess(_result_with_groups(cluster_ids=[0, 1, 1]))
+
+    bundle = compute_analysis_bundle(
+        snapshot=snapshot,
+        config=OpinionGroupConfigRecord(
+            spec=OpinionGroupSpecRecord(
+                id=1,
+                min_clusterable_participants=2,
+                min_votes_per_participant=2,
+                max_group_count=2,
+            ),
+            variants=[OpinionGroupVariantRecord(id=20, opinion_group_spec_id=1, group_count=2)],
         ),
         run_red_dwarf_pipeline=fake_runner,
     )

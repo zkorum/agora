@@ -1,6 +1,19 @@
 all: dev
 
 LOG_RUNNER := node scripts/dev-log-runner.mjs
+LOAD_TEST_CONVERSATIONS := $(or $(CONVERSATION_SLUG_IDS),$(conversations))
+
+PYTHON_TYPECHECK_PATTERNS := \
+	services/python-worker-shared/src/**/*.py \
+	services/python-worker-shared/tests/**/*.py \
+	services/math-updater/src/**/*.py \
+	services/ai-description-retry-worker/src/**/*.py \
+	services/description-translation-retry-worker/src/**/*.py \
+	services/import-worker/src/**/*.py \
+	services/import-worker/tests/**/*.py \
+	services/scoring-worker/src/**/*.py \
+	services/scoring-worker/tests/**/*.py \
+	services/*/pyproject.toml
 
 generate:
 	docker run --rm \
@@ -104,11 +117,31 @@ sync-import-worker-contracts:
 # Backward-compatible alias for existing scripts/docs.
 sync-python-shared: sync-python-shared-types sync-import-worker-contracts
 
+typecheck-python:
+	cd services/python-worker-shared && uv run --extra dev basedpyright
+	cd services/math-updater && uv run --extra dev basedpyright
+	cd services/ai-description-retry-worker && uv run --extra dev basedpyright
+	cd services/description-translation-retry-worker && uv run --extra dev basedpyright
+	cd services/import-worker && uv run --extra dev basedpyright
+	cd services/scoring-worker && uv run --extra dev basedpyright
+
+dev-typecheck-python:
+	$(LOG_RUNNER) --service python-typecheck -- $(MAKE) dev-typecheck-python-raw
+
+dev-typecheck-python-raw:
+	watchman-make $(foreach pattern,$(PYTHON_TYPECHECK_PATTERNS),-p '$(pattern)') -t typecheck-python
+
 dev-generate:
 	$(LOG_RUNNER) --service openapi -- $(MAKE) dev-generate-raw
 
 dev-generate-raw:
 	watchman-make -p 'services/api/openapi-zkorum.json' -t generate
+
+load-test-scenario1:
+ifeq ($(strip $(LOAD_TEST_CONVERSATIONS)),)
+	$(error CONVERSATION_SLUG_IDS is required. Usage: make load-test-scenario1 CONVERSATION_SLUG_IDS=slug1,slug2)
+endif
+	services/load-testing/scripts/run-scenario1-with-monitoring.sh "$(LOAD_TEST_CONVERSATIONS)"
 
 dev-app:
 	$(LOG_RUNNER) --service agora -- $(MAKE) dev-app-raw

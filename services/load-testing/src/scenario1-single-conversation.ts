@@ -74,13 +74,29 @@ function getBooleanEnv({
 }
 
 // Configuration constants - Simple and configurable
-const OPINION_CREATOR_COUNT = getNumberEnv({ value: __ENV.OPINION_CREATOR_COUNT, fallback: 50 }); // Users who create opinions
-const ADDITIONAL_VOTERS = getNumberEnv({ value: __ENV.ADDITIONAL_VOTERS, fallback: 50 }); // Additional users who only vote
+const OPINION_CREATOR_COUNT = getNumberEnv({
+    value: __ENV.OPINION_CREATOR_COUNT,
+    fallback: 50,
+}); // Users who create opinions
+const ADDITIONAL_VOTERS = getNumberEnv({
+    value: __ENV.ADDITIONAL_VOTERS,
+    fallback: 50,
+}); // Additional users who only vote
 const TOTAL_USERS = OPINION_CREATOR_COUNT + ADDITIONAL_VOTERS;
-const ACTIVE_VUS = getNumberEnv({ value: __ENV.LOAD_TEST_VUS, fallback: Math.min(TOTAL_USERS, 100) });
+const ACTIVE_VUS = getNumberEnv({
+    value: __ENV.LOAD_TEST_VUS,
+    fallback: Math.min(TOTAL_USERS, 100),
+});
 const MIN_VOTE_PERCENTAGE = 0.5; // Each user votes on at least 50% of opinions
 const MAX_VOTE_PERCENTAGE = 1.0; // Each user votes on at most 100% of opinions
-const INTERMITTENT_OPINION_CREATION_PROBABILITY = getNumberEnv({ value: __ENV.INTERMITTENT_OPINION_CREATION_PROBABILITY, fallback: 0.1 });
+const CLUSTERABLE_VOTE_TARGET_PER_CONVERSATION = getNumberEnv({
+    value: __ENV.CLUSTERABLE_VOTE_TARGET_PER_CONVERSATION,
+    fallback: 7,
+});
+const INTERMITTENT_OPINION_CREATION_PROBABILITY = getNumberEnv({
+    value: __ENV.INTERMITTENT_OPINION_CREATION_PROBABILITY,
+    fallback: 0.1,
+});
 
 // Sleep timing configuration (in seconds)
 const SLEEP_BETWEEN_ACTIONS = 0.5;
@@ -89,9 +105,18 @@ const OPINION_FETCH_RETRY_ATTEMPTS = 5; // Number of times to retry fetching opi
 const OPINION_FETCH_RETRY_DELAY = 2; // Seconds between fetch retries
 
 // Page fetching configuration
-const MAIN_PAGE_FETCH_PROBABILITY = getNumberEnv({ value: __ENV.MAIN_PAGE_FETCH_PROBABILITY, fallback: 0.1 }); // 10% chance to fetch main page during actions
-const CONVERSATION_PAGE_FETCH_PROBABILITY = getNumberEnv({ value: __ENV.CONVERSATION_PAGE_FETCH_PROBABILITY, fallback: 0.15 }); // 15% chance to fetch conversation page during actions (higher because users refresh to see updates)
-const AUTO_FILL_SURVEY = getBooleanEnv({ value: __ENV.AUTO_FILL_SURVEY || __ENV.SURVEY_AUTO_FILL, fallback: true });
+const MAIN_PAGE_FETCH_PROBABILITY = getNumberEnv({
+    value: __ENV.MAIN_PAGE_FETCH_PROBABILITY,
+    fallback: 0.1,
+}); // 10% chance to fetch main page during actions
+const CONVERSATION_PAGE_FETCH_PROBABILITY = getNumberEnv({
+    value: __ENV.CONVERSATION_PAGE_FETCH_PROBABILITY,
+    fallback: 0.15,
+}); // 15% chance to fetch conversation page during actions (higher because users refresh to see updates)
+const AUTO_FILL_SURVEY = getBooleanEnv({
+    value: __ENV.AUTO_FILL_SURVEY || __ENV.SURVEY_AUTO_FILL,
+    fallback: true,
+});
 
 // Custom metrics
 const opinionsCreated = new Counter("opinions_created");
@@ -102,7 +127,9 @@ const conversationPageFetches = new Counter("conversation_page_fetches");
 const mainPageFetches = new Counter("main_page_fetches");
 const opinionResponseTime = new Trend("opinion_response_time");
 const voteResponseTime = new Trend("vote_response_time");
-const conversationPageResponseTime = new Trend("conversation_page_response_time");
+const conversationPageResponseTime = new Trend(
+    "conversation_page_response_time",
+);
 const mainPageResponseTime = new Trend("main_page_response_time");
 const opinionSuccessRate = new Rate("opinion_success_rate");
 const voteSuccessRate = new Rate("vote_success_rate");
@@ -135,7 +162,8 @@ export const options = {
 };
 
 // Environment variables (set these before running the test)
-const CONVERSATION_SLUG_IDS_STR = __ENV.CONVERSATION_SLUG_IDS || __ENV.CONVERSATION_SLUG_ID || "";
+const CONVERSATION_SLUG_IDS_STR =
+    __ENV.CONVERSATION_SLUG_IDS || __ENV.CONVERSATION_SLUG_ID || "";
 
 if (!CONVERSATION_SLUG_IDS_STR) {
     throw new Error(
@@ -165,6 +193,8 @@ logLoadEvent({
         totalUsers: TOTAL_USERS,
         activeVus: ACTIVE_VUS,
         autoFillSurvey: AUTO_FILL_SURVEY,
+        clusterableVoteTargetPerConversation:
+            CLUSTERABLE_VOTE_TARGET_PER_CONVERSATION,
     },
 });
 
@@ -228,8 +258,14 @@ function buildSurveyAnswer({
             const optionSlugIds = [...question.options]
                 .sort((a, b) => a.displayOrder - b.displayOrder)
                 .map((option) => option.optionSlugId)
-                .filter((optionSlugId): optionSlugId is string => optionSlugId !== undefined);
-            const selectionCount = Math.max(question.constraints.minSelections, 1);
+                .filter(
+                    (optionSlugId): optionSlugId is string =>
+                        optionSlugId !== undefined,
+                );
+            const selectionCount = Math.max(
+                question.constraints.minSelections,
+                1,
+            );
             if (optionSlugIds.length < selectionCount) {
                 return {
                     success: false,
@@ -240,7 +276,8 @@ function buildSurveyAnswer({
             const startIndex = iterationIndex % optionSlugIds.length;
             const selectedOptionSlugIds = Array.from(
                 { length: selectionCount },
-                (_, index) => optionSlugIds[(startIndex + index) % optionSlugIds.length],
+                (_, index) =>
+                    optionSlugIds[(startIndex + index) % optionSlugIds.length],
             );
             return {
                 success: true,
@@ -254,7 +291,8 @@ function buildSurveyAnswer({
             if (question.constraints.inputMode === "integer") {
                 if (
                     question.constraints.maxValue !== undefined &&
-                    question.constraints.maxValue < question.constraints.minValue
+                    question.constraints.maxValue <
+                        question.constraints.minValue
                 ) {
                     return {
                         success: false,
@@ -368,12 +406,15 @@ async function fillSurveyForConversation({
         surveyForm.questions.length === 0 ||
         surveyGate.status === "complete_valid"
     ) {
-        const skipReason = surveyGate?.hasSurvey !== true
-            ? "no_survey"
-            : surveyForm.questions.length === 0
-                ? "empty_survey"
-                : "already_complete";
-        console.log(`[${userId}] Skipping survey fill for ${conversationSlugId}: ${skipReason}`);
+        const skipReason =
+            surveyGate?.hasSurvey !== true
+                ? "no_survey"
+                : surveyForm.questions.length === 0
+                  ? "empty_survey"
+                  : "already_complete";
+        console.log(
+            `[${userId}] Skipping survey fill for ${conversationSlugId}: ${skipReason}`,
+        );
         return {
             skipped: true,
             success: true,
@@ -548,7 +589,9 @@ function recordSurveyFillResult({
         });
     } else {
         surveyFillFailed.add(1);
-        console.error(`[${userId}] Survey fill failed for ${conversationSlugId}: ${String(result.error)}`);
+        console.error(
+            `[${userId}] Survey fill failed for ${conversationSlugId}: ${String(result.error)}`,
+        );
         logLoadEvent({
             phase: "survey_fill",
             action: "fill_survey",
@@ -597,7 +640,8 @@ export function setup(): void {
 export default async function () {
     const iterationIndex = execution.scenario.iterationInTest;
     const isOpinionCreator = iterationIndex < OPINION_CREATOR_COUNT;
-    const assignedConversationSlugId = CONVERSATION_SLUG_IDS[iterationIndex % CONVERSATION_SLUG_IDS.length];
+    const assignedConversationSlugId =
+        CONVERSATION_SLUG_IDS[iterationIndex % CONVERSATION_SLUG_IDS.length];
     const userId = getUserId(iterationIndex);
 
     console.log(`[${userId}] Starting (iteration ${String(iterationIndex)})`);
@@ -634,7 +678,9 @@ export default async function () {
     conversationPageResponseTime.add(conversationPageResult.responseTime);
 
     if (!conversationPageResult.success) {
-        console.error(`[${userId}] Failed to fetch conversation page: ${String(conversationPageResult.error)}`);
+        console.error(
+            `[${userId}] Failed to fetch conversation page: ${String(conversationPageResult.error)}`,
+        );
         logLoadEvent({
             phase: "page_fetch",
             action: "fetch_conversation_page",
@@ -695,7 +741,9 @@ export default async function () {
     let initialCreatedOpinionSlug: string | undefined;
     if (isOpinionCreator) {
         const opinionText = opinionTexts[iterationIndex % opinionTexts.length];
-        console.log(`[${userId}] Creating opinion in ${assignedConversationSlugId}`);
+        console.log(
+            `[${userId}] Creating opinion in ${assignedConversationSlugId}`,
+        );
 
         const opinionResult = await createOpinion({
             conversationSlugId: assignedConversationSlugId,
@@ -709,7 +757,9 @@ export default async function () {
             initialCreatedOpinionSlug = opinionResult.opinionSlugId;
             opinionsCreated.add(1);
             opinionSuccessRate.add(1);
-            console.log(`[${userId}] Created opinion: ${opinionResult.opinionSlugId} (${String(opinionResult.responseTime)}ms)`);
+            console.log(
+                `[${userId}] Created opinion: ${opinionResult.opinionSlugId} (${String(opinionResult.responseTime)}ms)`,
+            );
             logLoadEvent({
                 phase: "initial_opinion",
                 action: "create_opinion",
@@ -724,7 +774,9 @@ export default async function () {
             opinionsFailed.add(1);
             opinionSuccessRate.add(0);
             const reason = opinionResult.reason ?? "Unknown error";
-            console.error(`[${userId}] OPINION CREATION FAILED - Reason: ${reason} - Response time: ${String(opinionResult.responseTime)}ms`);
+            console.error(
+                `[${userId}] OPINION CREATION FAILED - Reason: ${reason} - Response time: ${String(opinionResult.responseTime)}ms`,
+            );
             logLoadEvent({
                 phase: "initial_opinion",
                 action: "create_opinion",
@@ -741,15 +793,24 @@ export default async function () {
     }
 
     // Step 5: Wait for opinions to be visible before fetching and voting
-    console.log(`[${userId}] Waiting ${String(INITIAL_WAIT_FOR_OPINIONS_SECONDS)}s for opinions to be created...`);
+    console.log(
+        `[${userId}] Waiting ${String(INITIAL_WAIT_FOR_OPINIONS_SECONDS)}s for opinions to be created...`,
+    );
     sleep(INITIAL_WAIT_FOR_OPINIONS_SECONDS);
 
     // Step 6: Fetch available opinions from every configured conversation
     let fetchedOpinionSlugs: string[] = [];
+    let fetchedOpinionSlugsByConversation = new Map<string, string[]>();
     for (let attempt = 1; attempt <= OPINION_FETCH_RETRY_ATTEMPTS; attempt++) {
-        console.log(`[${userId}] Fetching opinions (attempt ${String(attempt)}/${String(OPINION_FETCH_RETRY_ATTEMPTS)})...`);
+        console.log(
+            `[${userId}] Fetching opinions (attempt ${String(attempt)}/${String(OPINION_FETCH_RETRY_ATTEMPTS)})...`,
+        );
 
         const fetchedOpinionSlugSet = new Set<string>();
+        const fetchedOpinionSlugsByConversationAttempt = new Map<
+            string,
+            string[]
+        >();
         let fetchFailed = false;
 
         for (const conversationSlugId of CONVERSATION_SLUG_IDS) {
@@ -758,12 +819,20 @@ export default async function () {
             });
 
             if (fetchResult.success) {
+                const conversationOpinionSlugs: string[] = [];
                 for (const opinion of fetchResult.opinions) {
                     fetchedOpinionSlugSet.add(opinion.opinionSlugId);
+                    conversationOpinionSlugs.push(opinion.opinionSlugId);
                 }
+                fetchedOpinionSlugsByConversationAttempt.set(
+                    conversationSlugId,
+                    conversationOpinionSlugs,
+                );
             } else {
                 fetchFailed = true;
-                console.error(`[${userId}] Failed to fetch opinions for ${conversationSlugId}: ${String(fetchResult.error)}`);
+                console.error(
+                    `[${userId}] Failed to fetch opinions for ${conversationSlugId}: ${String(fetchResult.error)}`,
+                );
                 logLoadEvent({
                     phase: "opinion_fetch",
                     action: "fetch_opinions",
@@ -778,7 +847,11 @@ export default async function () {
         }
 
         fetchedOpinionSlugs = Array.from(fetchedOpinionSlugSet);
-        console.log(`[${userId}] Fetched ${String(fetchedOpinionSlugs.length)} opinions from ${String(CONVERSATION_SLUG_IDS.length)} conversation(s)`);
+        fetchedOpinionSlugsByConversation =
+            fetchedOpinionSlugsByConversationAttempt;
+        console.log(
+            `[${userId}] Fetched ${String(fetchedOpinionSlugs.length)} opinions from ${String(CONVERSATION_SLUG_IDS.length)} conversation(s)`,
+        );
         logLoadEvent({
             phase: "opinion_fetch",
             action: "fetch_opinions",
@@ -786,30 +859,67 @@ export default async function () {
             userId,
             iterationIndex,
             count: fetchedOpinionSlugs.length,
-            metadata: { attempt, conversationCount: CONVERSATION_SLUG_IDS.length },
+            metadata: {
+                attempt,
+                conversationCount: CONVERSATION_SLUG_IDS.length,
+            },
         });
 
         const expectedMinimum = OPINION_CREATOR_COUNT * 0.9;
         if (!fetchFailed && fetchedOpinionSlugs.length >= expectedMinimum) {
-            console.log(`[${userId}] Got sufficient opinions (${String(fetchedOpinionSlugs.length)}/${String(OPINION_CREATOR_COUNT)})`);
+            console.log(
+                `[${userId}] Got sufficient opinions (${String(fetchedOpinionSlugs.length)}/${String(OPINION_CREATOR_COUNT)})`,
+            );
             break;
         }
 
         if (attempt < OPINION_FETCH_RETRY_ATTEMPTS) {
-            console.log(`[${userId}] Only got ${String(fetchedOpinionSlugs.length)}/${String(OPINION_CREATOR_COUNT)} expected opinions, retrying in ${String(OPINION_FETCH_RETRY_DELAY)}s...`);
+            console.log(
+                `[${userId}] Only got ${String(fetchedOpinionSlugs.length)}/${String(OPINION_CREATOR_COUNT)} expected opinions, retrying in ${String(OPINION_FETCH_RETRY_DELAY)}s...`,
+            );
             sleep(OPINION_FETCH_RETRY_DELAY);
         }
     }
 
     // Step 7: Calculate how many votes to cast
     const availableOpinions = fetchedOpinionSlugs.length;
-    const minVotes = Math.floor(availableOpinions * MIN_VOTE_PERCENTAGE);
-    const maxVotes = Math.floor(availableOpinions * MAX_VOTE_PERCENTAGE);
-    const numVotesToCast = availableOpinions > 0
-        ? Math.floor(Math.random() * (maxVotes - minVotes + 1)) + minVotes
-        : 0;
+    const alreadyVotedOpinionSlugs = initialCreatedOpinionSlug
+        ? [initialCreatedOpinionSlug]
+        : [];
+    const unvotedAvailableOpinions = Math.max(
+        availableOpinions - alreadyVotedOpinionSlugs.length,
+        0,
+    );
+    const assignedConversationOpinionSlugs =
+        fetchedOpinionSlugsByConversation.get(assignedConversationSlugId) ?? [];
+    const assignedConversationSelfVoteCredit =
+        initialCreatedOpinionSlug === undefined ? 0 : 1;
+    const priorityVoteTarget = Math.max(
+        CLUSTERABLE_VOTE_TARGET_PER_CONVERSATION -
+            assignedConversationSelfVoteCredit,
+        0,
+    );
+    const priorityVotesToCast = Math.min(
+        assignedConversationOpinionSlugs.filter(
+            (opinionSlugId) =>
+                !alreadyVotedOpinionSlugs.includes(opinionSlugId),
+        ).length,
+        priorityVoteTarget,
+    );
+    const minVotes = Math.floor(unvotedAvailableOpinions * MIN_VOTE_PERCENTAGE);
+    const maxVotes = Math.floor(unvotedAvailableOpinions * MAX_VOTE_PERCENTAGE);
+    const randomVotesToCast =
+        unvotedAvailableOpinions > 0
+            ? Math.floor(Math.random() * (maxVotes - minVotes + 1)) + minVotes
+            : 0;
+    const numVotesToCast = Math.min(
+        unvotedAvailableOpinions,
+        Math.max(randomVotesToCast, priorityVotesToCast),
+    );
 
-    console.log(`[${userId}] Will vote on ${String(numVotesToCast)} opinions (${String(availableOpinions)} available)`);
+    console.log(
+        `[${userId}] Will vote on ${String(numVotesToCast)} opinions (${String(unvotedAvailableOpinions)} unvoted available, ${String(priorityVotesToCast)} prioritized for ${assignedConversationSlugId})`,
+    );
     logLoadEvent({
         phase: "vote_plan",
         action: "plan_votes",
@@ -817,7 +927,15 @@ export default async function () {
         userId,
         iterationIndex,
         count: numVotesToCast,
-        metadata: { availableOpinions },
+        metadata: {
+            availableOpinions,
+            unvotedAvailableOpinions,
+            assignedConversationOpinionCount:
+                assignedConversationOpinionSlugs.length,
+            priorityVotesToCast,
+            clusterableVoteTargetPerConversation:
+                CLUSTERABLE_VOTE_TARGET_PER_CONVERSATION,
+        },
     });
 
     // Step 8: Perform voting actions. Opinion creators already created the initial batch.
@@ -834,10 +952,14 @@ export default async function () {
             votingOptions: VOTING_OPTIONS,
             sleepBetweenActions: SLEEP_BETWEEN_ACTIONS,
             allAvailableOpinions: fetchedOpinionSlugs,
-            alreadyVotedOpinionSlugs: initialCreatedOpinionSlug ? [initialCreatedOpinionSlug] : [],
-            intermittentOpinionCreationProbability: INTERMITTENT_OPINION_CREATION_PROBABILITY,
+            alreadyVotedOpinionSlugs,
+            priorityOpinionSlugs: assignedConversationOpinionSlugs,
+            minPriorityVotesToCast: priorityVotesToCast,
+            intermittentOpinionCreationProbability:
+                INTERMITTENT_OPINION_CREATION_PROBABILITY,
             fetchMainPageProbability: MAIN_PAGE_FETCH_PROBABILITY,
-            fetchConversationPageProbability: CONVERSATION_PAGE_FETCH_PROBABILITY,
+            fetchConversationPageProbability:
+                CONVERSATION_PAGE_FETCH_PROBABILITY,
         },
         onOpinionCreated: (
             opinionResult: CreateOpinionResponse & {
@@ -848,7 +970,9 @@ export default async function () {
             if (opinionResult.success && opinionResult.opinionSlugId) {
                 opinionsCreated.add(1);
                 opinionSuccessRate.add(1);
-                console.log(`[${userId}] Created opinion: ${opinionResult.opinionSlugId} (${String(opinionResult.responseTime)}ms)`);
+                console.log(
+                    `[${userId}] Created opinion: ${opinionResult.opinionSlugId} (${String(opinionResult.responseTime)}ms)`,
+                );
                 logLoadEvent({
                     phase: "user_action",
                     action: "create_opinion",
@@ -863,7 +987,9 @@ export default async function () {
                 opinionsFailed.add(1);
                 opinionSuccessRate.add(0);
                 const reason = opinionResult.reason ?? "Unknown error";
-                console.error(`[${userId}] OPINION CREATION FAILED - Reason: ${reason} - Response time: ${String(opinionResult.responseTime)}ms`);
+                console.error(
+                    `[${userId}] OPINION CREATION FAILED - Reason: ${reason} - Response time: ${String(opinionResult.responseTime)}ms`,
+                );
                 logLoadEvent({
                     phase: "user_action",
                     action: "create_opinion",
@@ -874,15 +1000,21 @@ export default async function () {
                     responseTimeMs: opinionResult.responseTime,
                     error: reason,
                 });
-
             }
             opinionResponseTime.add(opinionResult.responseTime);
         },
-        onVoteCast: (voteResult: VoteResponse & { targetOpinionSlugId?: string; userId?: string }) => {
+        onVoteCast: (
+            voteResult: VoteResponse & {
+                targetOpinionSlugId?: string;
+                userId?: string;
+            },
+        ) => {
             if (voteResult.success) {
                 votesSuccessful.add(1);
                 voteSuccessRate.add(1);
-                console.log(`[${userId}] Voted on opinion: ${String(voteResult.targetOpinionSlugId)}`);
+                console.log(
+                    `[${userId}] Voted on opinion: ${String(voteResult.targetOpinionSlugId)}`,
+                );
                 logLoadEvent({
                     phase: "user_action",
                     action: "cast_vote",
@@ -895,7 +1027,9 @@ export default async function () {
             } else {
                 votesFailed.add(1);
                 voteSuccessRate.add(0);
-                console.error(`[${userId}] Vote failed: ${String(voteResult.error)}`);
+                console.error(
+                    `[${userId}] Vote failed: ${String(voteResult.error)}`,
+                );
                 logLoadEvent({
                     phase: "user_action",
                     action: "cast_vote",
@@ -916,16 +1050,24 @@ export default async function () {
         mainPageFetches.add(userActionResult.metrics.mainPageFetches);
         for (let i = 0; i < userActionResult.metrics.mainPageFetches; i++) {
             mainPageResponseTime.add(
-                userActionResult.metrics.totalMainPageResponseTime / userActionResult.metrics.mainPageFetches
+                userActionResult.metrics.totalMainPageResponseTime /
+                    userActionResult.metrics.mainPageFetches,
             );
         }
     }
 
     if (userActionResult.metrics.conversationPageFetches > 0) {
-        conversationPageFetches.add(userActionResult.metrics.conversationPageFetches);
-        for (let i = 0; i < userActionResult.metrics.conversationPageFetches; i++) {
+        conversationPageFetches.add(
+            userActionResult.metrics.conversationPageFetches,
+        );
+        for (
+            let i = 0;
+            i < userActionResult.metrics.conversationPageFetches;
+            i++
+        ) {
             conversationPageResponseTime.add(
-                userActionResult.metrics.totalConversationPageResponseTime / userActionResult.metrics.conversationPageFetches
+                userActionResult.metrics.totalConversationPageResponseTime /
+                    userActionResult.metrics.conversationPageFetches,
             );
         }
     }

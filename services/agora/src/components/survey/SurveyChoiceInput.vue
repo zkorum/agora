@@ -8,6 +8,7 @@
       :key="option.value"
       :label="option.label"
       :selected="selectedSingleOptionSlugId === option.value"
+      :density="props.density"
       @select="handleSingleSelect({ optionSlugId: option.value })"
     />
   </div>
@@ -15,6 +16,7 @@
   <q-option-group
     v-else-if="isMultipleSelection && !usesDropdown"
     :model-value="selectedMultiOptionSlugIds"
+    :class="{ 'choice-input__multi-list--compact': props.density === 'compact' }"
     type="checkbox"
     :options="optionGroupOptions"
     @update:model-value="handleMultiListUpdate"
@@ -62,10 +64,12 @@ const props = withDefaults(
     selectOptionLabel: string;
     maxSelections?: number;
     dropdownThreshold?: number;
+    density?: "comfortable" | "compact";
   }>(),
   {
     maxSelections: undefined,
     dropdownThreshold: SURVEY_CHOICE_DROPDOWN_OPTION_THRESHOLD,
+    density: "comfortable",
   }
 );
 
@@ -124,5 +128,9 @@ function handleDropdownUpdate(value: string | string[] | null): void {
 .choice-input__single-list {
   display: flex;
   flex-direction: column;
+}
+
+.choice-input__multi-list--compact :deep(.q-checkbox) {
+  min-height: 2.25rem;
 }
 </style>

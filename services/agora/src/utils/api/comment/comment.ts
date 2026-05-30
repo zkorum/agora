@@ -1,51 +1,41 @@
 import { storeToRefs } from "pinia";
 import type {
   ApiV1OpinionCreatePostRequest,
-  ApiV1OpinionFetchAnalysisByConversationPost200Response,
-  ApiV1OpinionFetchAnalysisByConversationPostRequest,
+  ApiV1OpinionFetchAnalysisContentByCandidatePost200Response,
+  ApiV1OpinionFetchAnalysisContentByCandidatePostRequest,
+  ApiV1OpinionFetchAnalysisMetadataByConversationPost200Response,
+  ApiV1OpinionFetchAnalysisMetadataByConversationPostRequest,
   ApiV1OpinionFetchByConversationPostRequest,
   ApiV1OpinionFetchBySlugIdListPostRequest,
   ApiV1OpinionFetchHiddenByConversationPostRequest,
   ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem,
 } from "src/api";
-import {
-  DefaultApiAxiosParamCreator,
-  DefaultApiFactory,
-} from "src/api";
+import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import type {
-  ConversationAnalysis,
+  AnalysisFreshnessRequest,
+  ConversationAnalysisContent,
+  ConversationAnalysisMetadata,
   FetchAnalysisCheckpointsResponse,
+  FetchAnalysisContentResponse,
 } from "src/shared/types/dto";
 import { Dto } from "src/shared/types/dto";
-import type {
-  AnalysisOpinionItem,
-  AnalysisView,
-  OpinionItem,
-  PolisClusters,
-  PolisKey,
-} from "src/shared/types/zod";
+import type { AnalysisView, OpinionItem, PolisKey } from "src/shared/types/zod";
 import { zodOpinionItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { shouldHideGroupAnalysis } from "src/utils/component/opinion";
 
 import { useBackendAuthApi } from "../auth";
 import { api } from "../client";
 import { useCommonApi } from "../common";
+import { type AnalysisData, buildAnalysisData } from "./analysisData";
 
-export type CommentTabFilters = "new" | "moderated" | "discover" | "hidden" | "my_votes";
+export { type AnalysisData, buildAnalysisData } from "./analysisData";
 
-export interface AnalysisData {
-  consensusAgree: AnalysisOpinionItem[];
-  consensusDisagree: AnalysisOpinionItem[];
-  controversial: AnalysisOpinionItem[];
-  polisClusters: Partial<PolisClusters>;
-  conversationViewSnapshotId?: number;
-  analysisSnapshotId?: number;
-  conversationViewSnapshot?: ConversationAnalysis["conversationViewSnapshot"];
-  emptyReason?: string;
-  analysisViewState?: ConversationAnalysis["analysisViewState"];
-  hasVotedOnAllAvailableOpinions?: boolean;
-}
+export type CommentTabFilters =
+  | "new"
+  | "moderated"
+  | "discover"
+  | "hidden"
+  | "my_votes";
 
 type CreateNewCommentResult =
   | {
@@ -62,7 +52,9 @@ type CreateNewCommentResult =
 
 export function useBackendCommentApi() {
   const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
-  const { isGuestOrLoggedIn, isAuthInitialized } = storeToRefs(useAuthenticationStore());
+  const { isGuestOrLoggedIn, isAuthInitialized } = storeToRefs(
+    useAuthenticationStore()
+  );
   const { updateAuthState } = useBackendAuthApi();
 
   function createLocalCommentObject(
@@ -236,21 +228,24 @@ export function useBackendCommentApi() {
     return opinionItemList;
   }
 
-  async function fetchAnalysisData(params: {
+  async function fetchAnalysisMetadataData(params: {
     conversationSlugId: string;
     analysisView?: AnalysisView;
     checkpointViewSnapshotId?: number;
-  }): Promise<AnalysisData> {
-    const requestParams: ApiV1OpinionFetchAnalysisByConversationPostRequest = {
-      conversationSlugId: params.conversationSlugId,
-      analysisView: params.analysisView,
-      checkpointViewSnapshotId: params.checkpointViewSnapshotId,
-    };
-    let data: ApiV1OpinionFetchAnalysisByConversationPost200Response;
+    freshness: AnalysisFreshnessRequest | null;
+  }): Promise<ConversationAnalysisMetadata> {
+    const requestParams: ApiV1OpinionFetchAnalysisMetadataByConversationPostRequest =
+      {
+        conversationSlugId: params.conversationSlugId,
+        analysisView: params.analysisView,
+        checkpointViewSnapshotId: params.checkpointViewSnapshotId,
+        freshness: params.freshness,
+      };
+    let data: ApiV1OpinionFetchAnalysisMetadataByConversationPost200Response;
     // Use authenticated endpoint only if auth is initialized AND user is logged in/guest
     if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisByConversationPost(
+        await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisMetadataByConversationPost(
           requestParams
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -258,7 +253,7 @@ export function useBackendCommentApi() {
         undefined,
         undefined,
         api
-      ).apiV1OpinionFetchAnalysisByConversationPost(
+      ).apiV1OpinionFetchAnalysisMetadataByConversationPost(
         requestParams,
         createRawAxiosRequestConfig({
           encodedUcan: encodedUcan,
@@ -271,30 +266,94 @@ export function useBackendCommentApi() {
         undefined,
         undefined,
         api
-      ).apiV1OpinionFetchAnalysisByConversationPost(
+      ).apiV1OpinionFetchAnalysisMetadataByConversationPost(
         requestParams,
         createRawAxiosRequestConfig({ timeoutProfile: "extended" })
       );
       data = response.data;
     }
 
-    // Use zod to parse and validate - zodDateTimeFlexible handles date conversion automatically
-    const parsedData = Dto.fetchAnalysisResponse.parse(data);
-    const polisClusters = parsedData.clusters ?? {};
-    const hideGroupAnalysis = shouldHideGroupAnalysis(polisClusters);
+    return Dto.fetchAnalysisMetadataResponse.parse(data);
+  }
 
-    return {
-      consensusAgree: hideGroupAnalysis ? [] : parsedData.consensusAgree,
-      consensusDisagree: hideGroupAnalysis ? [] : parsedData.consensusDisagree,
-      controversial: hideGroupAnalysis ? [] : parsedData.controversial,
-      polisClusters: hideGroupAnalysis ? {} : polisClusters,
-      conversationViewSnapshotId: parsedData.conversationViewSnapshotId,
-      analysisSnapshotId: parsedData.analysisSnapshotId,
-      conversationViewSnapshot: parsedData.conversationViewSnapshot,
-      emptyReason: parsedData.emptyReason,
-      analysisViewState: parsedData.analysisViewState,
-      hasVotedOnAllAvailableOpinions: parsedData.hasVotedOnAllAvailableOpinions,
-    };
+  async function fetchAnalysisContentData(params: {
+    conversationSlugId: string;
+    conversationViewSnapshotId: number;
+    candidateId: number;
+    freshness: AnalysisFreshnessRequest | null;
+  }): Promise<ConversationAnalysisContent | null> {
+    const requestParams: ApiV1OpinionFetchAnalysisContentByCandidatePostRequest =
+      {
+        conversationSlugId: params.conversationSlugId,
+        conversationViewSnapshotId: params.conversationViewSnapshotId,
+        candidateId: params.candidateId,
+        freshness: params.freshness,
+      };
+    let data: ApiV1OpinionFetchAnalysisContentByCandidatePost200Response;
+    // Use authenticated endpoint only if auth is initialized AND user is logged in/guest
+    if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisContentByCandidatePost(
+          requestParams
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1OpinionFetchAnalysisContentByCandidatePost(
+        requestParams,
+        createRawAxiosRequestConfig({
+          encodedUcan: encodedUcan,
+          timeoutProfile: "extended",
+        })
+      );
+      data = response.data;
+    } else {
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1OpinionFetchAnalysisContentByCandidatePost(
+        requestParams,
+        createRawAxiosRequestConfig({ timeoutProfile: "extended" })
+      );
+      data = response.data;
+    }
+
+    const parsed: FetchAnalysisContentResponse =
+      Dto.fetchAnalysisContentResponse.parse(data);
+    if (!parsed.success) {
+      return null;
+    }
+
+    return parsed;
+  }
+
+  async function fetchAnalysisData(params: {
+    conversationSlugId: string;
+    analysisView?: AnalysisView;
+    checkpointViewSnapshotId?: number;
+  }): Promise<AnalysisData> {
+    const metadata = await fetchAnalysisMetadataData({
+      ...params,
+      freshness: null,
+    });
+    const candidateId = metadata.analysisViewState.resolvedCandidateId;
+    if (
+      metadata.conversationViewSnapshotId === undefined ||
+      candidateId === null
+    ) {
+      return buildAnalysisData({ metadata });
+    }
+
+    const content = await fetchAnalysisContentData({
+      conversationSlugId: params.conversationSlugId,
+      conversationViewSnapshotId: metadata.conversationViewSnapshotId,
+      candidateId,
+      freshness: null,
+    });
+    return buildAnalysisData({ metadata, content });
   }
 
   async function fetchAnalysisCheckpoints(params: {
@@ -318,6 +377,8 @@ export function useBackendCommentApi() {
     fetchHiddenCommentsForPost,
     deleteCommentBySlugId,
     fetchOpinionsBySlugIdList,
+    fetchAnalysisMetadataData,
+    fetchAnalysisContentData,
     fetchAnalysisData,
     fetchAnalysisCheckpoints,
   };

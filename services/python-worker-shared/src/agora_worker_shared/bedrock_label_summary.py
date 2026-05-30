@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -19,6 +20,7 @@ LABEL_PATTERN = re.compile(r"^\S+(?:\s\S+)?$")
 MISSING_OBJECT_PROPERTY_COMMA_PATTERN = re.compile(
     r'("(?:[^"\\]|\\.)*")(\s+)(?="(?:[^"\\]|\\.)*"\s*:)',
 )
+log = logging.getLogger(__name__)
 
 
 class BedrockLabelSummaryError(RuntimeError):
@@ -89,14 +91,55 @@ def generate_label_summaries_with_bedrock(
         conversation=conversation,
         config=config,
     )
+    log.info(
+        "[DescriptionGenerator] Bedrock label/summary request "
+        "model_id=%s analysis_snapshot_id=%s group_count=%d system_prompt_json=%s "
+        "user_prompt=%s representative_opinions=%s",
+        config.model_id,
+        conversation.analysis_snapshot_id,
+        len(conversation.groups),
+        json.dumps(config.prompt, ensure_ascii=False),
+        _conversation_payload_json(conversation),
+        _representative_opinions_json(conversation),
+    )
 
     last_parse_error: Exception | None = None
-    for _attempt in range(2):
+    for attempt in range(1, 3):
         response = bedrock_client.converse(**command_payload)
+        model_response_text = extract_text_content_from_response(response)
+        log.info(
+            "[DescriptionGenerator] Bedrock label/summary response "
+            "model_id=%s analysis_snapshot_id=%s attempt=%d/2 response_text_json=%s",
+            config.model_id,
+            conversation.analysis_snapshot_id,
+            attempt,
+            json.dumps(model_response_text, ensure_ascii=False),
+        )
         try:
-            return parse_bedrock_label_summary_response(response)
+            if model_response_text is None:
+                msg = "unable to extract text content from Bedrock response"
+                raise BedrockLabelSummaryError(msg)
+            parsed = parse_bedrock_label_summary_text(model_response_text)
+            log.info(
+                "[DescriptionGenerator] Bedrock label/summary parsed "
+                "model_id=%s analysis_snapshot_id=%s attempt=%d/2 mode=%s labels=%s",
+                config.model_id,
+                conversation.analysis_snapshot_id,
+                attempt,
+                parsed.mode,
+                _parsed_labels_json(parsed),
+            )
+            return parsed
         except BedrockLabelSummaryError as error:
             last_parse_error = error
+            log.warning(
+                "[DescriptionGenerator] Bedrock label/summary parse failed "
+                "model_id=%s analysis_snapshot_id=%s attempt=%d/2",
+                config.model_id,
+                conversation.analysis_snapshot_id,
+                attempt,
+                exc_info=True,
+            )
 
     msg = "unable to parse Bedrock label/summary response after retry"
     raise BedrockLabelSummaryError(msg) from last_parse_error
@@ -107,11 +150,7 @@ def build_bedrock_converse_payload(
     conversation: ConversationDescriptionInput,
     config: BedrockLabelSummaryConfig,
 ) -> ConverseRequestTypeDef:
-    user_prompt = json.dumps(
-        _conversation_payload(conversation),
-        ensure_ascii=False,
-        separators=(",", ":"),
-    )
+    user_prompt = _conversation_payload_json(conversation)
     return {
         "modelId": config.model_id,
         "system": [{"text": json.dumps(config.prompt, ensure_ascii=False)}],
@@ -134,6 +173,10 @@ def parse_bedrock_label_summary_response(response: object) -> ParsedLabelSummary
     if model_response_text is None:
         msg = "unable to extract text content from Bedrock response"
         raise BedrockLabelSummaryError(msg)
+    return parse_bedrock_label_summary_text(model_response_text)
+
+
+def parse_bedrock_label_summary_text(model_response_text: str) -> ParsedLabelSummaryOutput:
     model_response = parse_llm_output_json(model_response_text)
     return parse_label_summary_output(model_response)
 
@@ -209,6 +252,46 @@ def _conversation_payload(conversation: ConversationDescriptionInput) -> dict[st
     if conversation.conversation_body is not None:
         payload["conversationBody"] = conversation.conversation_body
     return payload
+
+
+def _conversation_payload_json(conversation: ConversationDescriptionInput) -> str:
+    return json.dumps(
+        _conversation_payload(conversation),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+
+
+def _representative_opinions_json(conversation: ConversationDescriptionInput) -> str:
+    return json.dumps(
+        {
+            group.group_key: [
+                {
+                    "opinionId": opinion.opinion_id,
+                    "stance": opinion.stance.value,
+                    "content": opinion.content,
+                }
+                for opinion in group.representative_opinions
+            ]
+            for group in conversation.groups
+        },
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+
+
+def _parsed_labels_json(parsed: ParsedLabelSummaryOutput) -> str:
+    return json.dumps(
+        {
+            group_key: {
+                "label": label_summary.label,
+                "summary": label_summary.summary,
+            }
+            for group_key, label_summary in parsed.clusters.items()
+        },
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
 
 
 def _parse_clusters(

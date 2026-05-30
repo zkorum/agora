@@ -7,7 +7,6 @@ import { fileURLToPath } from "node:url";
 
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { visualizer } from "rollup-plugin-visualizer";
-import tidewave from "tidewave/vite-plugin";
 import type { Plugin, ViteDevServer } from "vite";
 import viteCompression from "vite-plugin-compression";
 import { z } from "zod";
@@ -253,7 +252,6 @@ export default defineConfig((ctx) => {
 
         if (ctx.dev) {
           viteConf.plugins.push(devBrowserLogPlugin());
-          viteConf.plugins.push(tidewave());
         }
 
         // Point Node.js modules to stub files

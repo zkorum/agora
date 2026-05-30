@@ -146,4 +146,5 @@ def test_emit_load_event_logs_json_marker(caplog: pytest.LogCaptureFixture) -> N
     )
 
     assert "AGORA_LOAD_EVENT" in caplog.text
+    assert '"scenario":"python-worker-simulation"' in caplog.text
     assert '"action":"simulation-provider"' in caplog.text

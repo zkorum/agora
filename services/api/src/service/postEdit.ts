@@ -12,8 +12,6 @@ import { httpErrors } from "@fastify/sensible";
 import { toUnionUndefined } from "@/shared/shared.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
-import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
-import type { Valkey } from "@/shared-backend/valkey.js";
 import {
     getActiveSurveyConfigRecord,
     getSurveyConfigForConversation,
@@ -151,7 +149,6 @@ interface UpdateConversationProps {
     db: PostgresDatabase;
     userId: string;
     googleCloudCredentials?: GoogleCloudCredentials;
-    valkey?: Valkey;
     data: Omit<UpdateConversationRequest, "conversationSlugId"> & {
         conversationSlugId: string;
     };
@@ -161,7 +158,6 @@ export async function updateConversation({
     db,
     userId,
     googleCloudCredentials,
-    valkey,
     data,
 }: UpdateConversationProps): Promise<UpdateConversationResponse> {
     const {
@@ -468,35 +464,10 @@ export async function updateConversation({
     });
 
     if (result.success && result.didEnableAiLabeling) {
-        const didCreateAiLocaleStatuses =
-            await ensureAiDescriptionLocaleStatusesForLatestAnalysisSnapshots({
-                db,
-                conversationId: result.conversationId,
-            });
-        if (didCreateAiLocaleStatuses && valkey !== undefined) {
-            void (async () => {
-                const dueAtMs = Date.now();
-                try {
-                    log.info(
-                        `[PostEdit] ZADD ${VALKEY_QUEUE_KEYS.AI_DESCRIPTION_DIRTY} conversationId=${String(result.conversationId)} conversationSlugId=${result.conversationSlugId} dueAtMs=${String(dueAtMs)}`,
-                    );
-                    const resultCount = await valkey.zadd(
-                        VALKEY_QUEUE_KEYS.AI_DESCRIPTION_DIRTY,
-                        {
-                            [String(result.conversationId)]: dueAtMs,
-                        },
-                    );
-                    log.info(
-                        `[PostEdit] ZADD ${VALKEY_QUEUE_KEYS.AI_DESCRIPTION_DIRTY} succeeded conversationId=${String(result.conversationId)} conversationSlugId=${result.conversationSlugId} result=${String(resultCount)}`,
-                    );
-                } catch (error: unknown) {
-                    log.error(
-                        error,
-                        `[PostEdit] Failed to ZADD ${VALKEY_QUEUE_KEYS.AI_DESCRIPTION_DIRTY} for conversationId=${String(result.conversationId)} conversationSlugId=${result.conversationSlugId}`,
-                    );
-                }
-            })();
-        }
+        await ensureAiDescriptionLocaleStatusesForLatestAnalysisSnapshots({
+            db,
+            conversationId: result.conversationId,
+        });
     }
 
     if (result.success && result.didUpdateConversationSettings) {

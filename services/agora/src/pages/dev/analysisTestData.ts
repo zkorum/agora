@@ -189,6 +189,7 @@ function buildSurveyAggregateBlockRows({
   minorityOption,
   dominantCount,
   minorityCount,
+  isPublicAggregateSuppressionEnabled,
   suppressionReason,
 }: {
   scope: "overall" | "cluster";
@@ -200,6 +201,7 @@ function buildSurveyAggregateBlockRows({
   minorityOption: string;
   dominantCount: number;
   minorityCount: number;
+  isPublicAggregateSuppressionEnabled: boolean;
   suppressionReason: SurveyAggregateSuppressionReason | undefined;
 }): SurveyAggregateRow[] {
   const total = dominantCount + minorityCount;
@@ -220,6 +222,7 @@ function buildSurveyAggregateBlockRows({
         ? undefined
         : (dominantCount / Math.max(total, 1)) * 100,
       isSuppressed,
+      isPublicAggregateSuppressionEnabled,
       suppressionReason,
     },
     {
@@ -236,6 +239,7 @@ function buildSurveyAggregateBlockRows({
         ? undefined
         : (minorityCount / Math.max(total, 1)) * 100,
       isSuppressed,
+      isPublicAggregateSuppressionEnabled,
       suppressionReason,
     },
   ];
@@ -276,9 +280,12 @@ export function buildMockSurveyResults({
   const fullRows: SurveyAggregateRow[] = [];
   const suppressedRows: SurveyAggregateRow[] = [];
   const effectiveClusterCount = Math.max(clusterCount, 1);
+  const isPublicAggregateSuppressionEnabled = surveyScenario !== "visible";
 
   for (const surveyQuestion of surveyQuestions) {
-    const overallCounts = Array.from({ length: effectiveClusterCount }).reduce<SurveyCounts>(
+    const overallCounts = Array.from({
+      length: effectiveClusterCount,
+    }).reduce<SurveyCounts>(
       (acc, _, clusterIndex) => {
         const counts = getClusterSurveyCounts({
           clusterIndex,
@@ -305,6 +312,7 @@ export function buildMockSurveyResults({
         minorityOption: surveyQuestion.minorityOption,
         dominantCount: overallCounts.dominant,
         minorityCount: overallCounts.minority,
+        isPublicAggregateSuppressionEnabled,
         suppressionReason: undefined,
       })
     );
@@ -320,6 +328,7 @@ export function buildMockSurveyResults({
         minorityOption: surveyQuestion.minorityOption,
         dominantCount: overallCounts.dominant,
         minorityCount: overallCounts.minority,
+        isPublicAggregateSuppressionEnabled,
         suppressionReason:
           surveyScenario === "overallSuppressed" ||
           shouldSuppressSurveyBlock({
@@ -351,6 +360,7 @@ export function buildMockSurveyResults({
           minorityOption: surveyQuestion.minorityOption,
           dominantCount: counts.dominant,
           minorityCount: counts.minority,
+          isPublicAggregateSuppressionEnabled,
           suppressionReason: undefined,
         })
       );
@@ -366,6 +376,7 @@ export function buildMockSurveyResults({
           minorityOption: surveyQuestion.minorityOption,
           dominantCount: counts.dominant,
           minorityCount: counts.minority,
+          isPublicAggregateSuppressionEnabled,
           suppressionReason: shouldSuppressSurveyBlock({
             dominantCount: counts.dominant,
             minorityCount: counts.minority,

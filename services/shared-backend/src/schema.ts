@@ -1613,6 +1613,11 @@ export const surveyQuestionTable = pgTable(
             .default(1),
         displayOrder: smallint("display_order").notNull(),
         isRequired: boolean("is_required").notNull().default(true),
+        isPublicAggregateSuppressionEnabled: boolean(
+            "is_public_aggregate_suppression_enabled",
+        )
+            .notNull()
+            .default(false),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1988,11 +1993,17 @@ export const opinionTable = pgTable(
         index("opinion_createdAt_idx").on(table.createdAt),
         index("opinion_slugId_idx").on(table.slugId),
         index("opinion_authorId_idx").on(table.authorId),
+        index("opinion_author_active_created_id_idx")
+            .on(table.authorId, table.createdAt.desc(), table.id.desc())
+            .where(isNotNull(table.currentContentId)),
         // Composite for counter reconciliation: filters conversationId + non-deleted (currentContentId IS NOT NULL)
         index("opinion_conversation_active_idx").on(
             table.conversationId,
             table.currentContentId,
         ),
+        index("opinion_conversation_active_created_id_idx")
+            .on(table.conversationId, table.createdAt.desc(), table.id.desc())
+            .where(isNotNull(table.currentContentId)),
     ],
 );
 
@@ -2046,6 +2057,9 @@ export const voteTable = pgTable(
     (t) => [
         unique().on(t.authorId, t.opinionId),
         index("vote_authorId_idx").on(t.authorId),
+        index("vote_author_active_updated_id_idx")
+            .on(t.authorId, t.updatedAt.desc(), t.id.desc())
+            .where(isNotNull(t.currentContentId)),
         // Composite for counter reconciliation: filters opinionId + non-deleted (currentContentId IS NOT NULL)
         index("vote_opinion_active_idx").on(t.opinionId, t.currentContentId),
     ],
@@ -2247,29 +2261,34 @@ export const notificationOpinionVoteTable = pgTable(
             .defaultNow()
             .notNull(),
     },
+    (t) => [index("notification_opinion_vote_notification_idx").on(t.notificationId)],
 );
 
-export const notificationNewOpinionTable = pgTable("notification_new_opinion", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    notificationId: integer("notification_id")
-        .references(() => notificationTable.id)
-        .notNull(),
-    authorId: uuid("author_id")
-        .references(() => userTable.id)
-        .notNull(),
-    opinionId: integer("opinion_id")
-        .references(() => opinionTable.id)
-        .notNull(),
-    conversationId: integer("conversation_id")
-        .references(() => conversationTable.id)
-        .notNull(),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const notificationNewOpinionTable = pgTable(
+    "notification_new_opinion",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        notificationId: integer("notification_id")
+            .references(() => notificationTable.id)
+            .notNull(),
+        authorId: uuid("author_id")
+            .references(() => userTable.id)
+            .notNull(),
+        opinionId: integer("opinion_id")
+            .references(() => opinionTable.id)
+            .notNull(),
+        conversationId: integer("conversation_id")
+            .references(() => conversationTable.id)
+            .notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [index("notification_new_opinion_notification_idx").on(t.notificationId)],
+);
 
 export const notificationExportTable = pgTable(
     "notification_export",
@@ -2298,24 +2317,28 @@ export const notificationExportTable = pgTable(
 );
 
 /** @service import-worker */
-export const notificationImportTable = pgTable("notification_import", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    notificationId: integer("notification_id")
-        .references(() => notificationTable.id)
-        .notNull(),
-    importId: integer("import_id")
-        .references(() => conversationImportTable.id)
-        .notNull(),
-    conversationId: integer("conversation_id").references(
-        () => conversationTable.id,
-    ),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const notificationImportTable = pgTable(
+    "notification_import",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        notificationId: integer("notification_id")
+            .references(() => notificationTable.id)
+            .notNull(),
+        importId: integer("import_id")
+            .references(() => conversationImportTable.id)
+            .notNull(),
+        conversationId: integer("conversation_id").references(
+            () => conversationTable.id,
+        ),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [index("notification_import_notification_idx").on(t.notificationId)],
+);
 
 /** @service import-worker */
 export const notificationTable = pgTable(
@@ -2336,8 +2359,11 @@ export const notificationTable = pgTable(
             .notNull(),
     },
     (t) => [
-        index("user_idx_notification").on(t.userId),
-        index("notification_createdAt_idx").on(t.createdAt),
+        index("notification_user_created_id_idx").on(
+            t.userId,
+            t.createdAt.desc(),
+            t.id.desc(),
+        ),
     ],
 );
 
@@ -2513,9 +2539,7 @@ export const analysisWorkStateTable = pgTable(
         ),
         index("analysis_work_state_due_idx")
             .on(t.nextRunAt, t.conversationId)
-            .where(
-                sqlAnd(isNull(t.runningDataGeneration), isNotNull(t.nextRunAt)),
-            ),
+            .where(isNull(t.runningDataGeneration)),
         index("analysis_work_state_lease_expiry_idx")
             .on(t.leaseExpiresAt)
             .where(isNotNull(t.runningDataGeneration)),
@@ -2705,6 +2729,11 @@ export const surveyAggregateQuestionTable = pgTable(
             length: MAX_LENGTH_SURVEY_QUESTION,
         }).notNull(),
         isRequired: boolean("is_required").notNull(),
+        isPublicAggregateSuppressionEnabled: boolean(
+            "is_public_aggregate_suppression_enabled",
+        )
+            .notNull()
+            .default(false),
         questionSemanticVersion: integer("question_semantic_version").notNull(),
         createdAt: timestamp("created_at", {
             mode: "date",
@@ -2770,8 +2799,10 @@ export const surveyAggregateResultTable = pgTable(
         surveyAggregateOptionId: integer("survey_aggregate_option_id")
             .notNull()
             .references(() => surveyAggregateOptionTable.id),
-        count: integer("count"),
-        percentage: real("percentage"),
+        suppressedCount: integer("suppressed_count"),
+        suppressedPercentage: real("suppressed_percentage"),
+        fullCount: integer("full_count").notNull(),
+        fullPercentage: real("full_percentage"),
         isSuppressed: boolean("is_suppressed").notNull(),
         suppressionReason:
             surveyAggregateSuppressionReasonEnum("suppression_reason"),
@@ -2803,13 +2834,13 @@ export const surveyAggregateResultTable = pgTable(
             sqlOr(
                 sqlAnd(
                     sql`${t.isSuppressed} = true`,
-                    isNull(t.count),
-                    isNull(t.percentage),
+                    isNull(t.suppressedCount),
+                    isNull(t.suppressedPercentage),
                     isNotNull(t.suppressionReason),
                 ),
                 sqlAnd(
                     sql`${t.isSuppressed} = false`,
-                    isNotNull(t.count),
+                    isNotNull(t.suppressedCount),
                     isNull(t.suppressionReason),
                 ),
             ),
@@ -2818,45 +2849,6 @@ export const surveyAggregateResultTable = pgTable(
             t.surveyAggregateSnapshotId,
         ),
         index("survey_aggregate_result_group_idx").on(t.groupId),
-    ],
-);
-
-/** @service api, math-updater */
-export const surveyAggregateOwnerCurrentTable = pgTable(
-    "survey_aggregate_owner_current",
-    {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        conversationId: integer("conversation_id")
-            .notNull()
-            .references(() => conversationTable.id, { onDelete: "cascade" }),
-        surveyAggregateSnapshotId: integer("survey_aggregate_snapshot_id")
-            .notNull()
-            .references(() => surveyAggregateSnapshotTable.id),
-        surveyConfigId: integer("survey_config_id")
-            .notNull()
-            .references(() => surveyConfigTable.id),
-        surveyConfigRevision: integer("survey_config_revision").notNull(),
-        rows: jsonb("rows").notNull(),
-        createdAt: timestamp("created_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-        updatedAt: timestamp("updated_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-    },
-    (t) => [
-        unique("survey_aggregate_owner_current_conversation_unique").on(
-            t.conversationId,
-        ),
-        unique("survey_aggregate_owner_current_snapshot_unique").on(
-            t.surveyAggregateSnapshotId,
-        ),
     ],
 );
 
@@ -3282,6 +3274,11 @@ export const realtimeEventOutboxTable = pgTable(
     },
     (t) => [
         index("realtime_event_outbox_created_at_idx").on(t.createdAt),
+        index("realtime_event_outbox_conversation_replay_idx")
+            .using("btree", sql`(${t.payload}->>'conversationSlugId')`, t.id)
+            .where(
+                sql`${t.eventType} IN ('conversation_analysis_updated', 'conversation_settings_updated')`,
+            ),
     ],
 );
 

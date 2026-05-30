@@ -20,11 +20,20 @@ import { and, asc, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type {
+    AnalysisDescriptionReadiness,
     AnalysisViewOption,
     AnalysisViewOptionCandidate,
     AnalysisViewState,
 } from "@/shared/types/dto.js";
 import type { AnalysisView } from "@/shared/types/zod.js";
+import {
+    type SupportedDisplayLanguageCodes,
+    ZodSupportedDisplayLanguageCodes,
+} from "@/shared/languages.js";
+import {
+    buildAnalysisDescriptionReadiness,
+    shouldUseSystemDescriptions,
+} from "./analysisDescriptionReadiness.js";
 import { hasPremiumAnalysisVariantsAccess } from "./premiumEntitlement.js";
 
 export type { AnalysisViewState };
@@ -50,6 +59,7 @@ export interface SelectedOpinionGroupCandidate {
     candidateId: number;
     groupCount: number;
     useSystemDescriptions: boolean;
+    descriptionReadiness: AnalysisDescriptionReadiness;
 }
 
 export interface AnalysisConversationViewSnapshot {
@@ -81,6 +91,8 @@ interface SelectableSnapshotCandidateOption extends SnapshotCandidateOption {
 export interface OpinionGroupAnalysisSelection {
     candidate: SelectedOpinionGroupCandidate | undefined;
     viewState: AnalysisViewState;
+    displayableGroupCounts: number[];
+    descriptionReadiness: AnalysisDescriptionReadiness | null;
     conversationViewSnapshot?: AnalysisConversationViewSnapshot;
     emptyReason?: string;
 }
@@ -115,6 +127,7 @@ export interface LatestOpinionGroupResultRow {
 export interface OpinionGroupResultDisplaySelection {
     latestResult: LatestOpinionGroupResultRow;
     useSystemDescriptions: boolean;
+    descriptionReadiness: AnalysisDescriptionReadiness;
 }
 
 export interface DescriptionText {
@@ -328,6 +341,16 @@ function createAnalysisViewOptionCandidate(
     };
 }
 
+export function getDisplayableGroupCounts({
+    candidates,
+}: {
+    candidates: SnapshotCandidateOption[];
+}): number[] {
+    return candidates
+        .filter(isSelectableCandidate)
+        .map((candidate) => candidate.groupCount);
+}
+
 function createCandidateBackedAnalysisViewOption({
     view,
     status,
@@ -373,7 +396,8 @@ function isDiscouragedCandidate(
 
     return (
         candidate.selectionScore < 0.5 ||
-        (normalizedSilhouetteScore !== null && normalizedSilhouetteScore < 0.45) ||
+        (normalizedSilhouetteScore !== null &&
+            normalizedSilhouetteScore < 0.45) ||
         (candidate.balanceScore !== null && candidate.balanceScore < 0.45)
     );
 }
@@ -396,46 +420,28 @@ function getDefinedIds(ids: (number | null)[]): number[] {
     return Array.from(new Set(ids.filter((id): id is number => id !== null)));
 }
 
-function getUseSystemDescriptions({
+function getSupportedDisplayLanguage(
+    displayLanguage: string,
+): SupportedDisplayLanguageCodes {
+    const parsed = ZodSupportedDisplayLanguageCodes.safeParse(displayLanguage);
+    return parsed.success ? parsed.data : "en";
+}
+
+export function getUseSystemDescriptions({
     row,
-    displayLanguage,
+    requestedLocale,
 }: {
     row: LatestOpinionGroupResultRow;
-    displayLanguage: string;
-}): boolean | undefined {
-    if (!row.aiLabelingEnabled) {
-        return false;
-    }
-
-    switch (row.englishLocaleStatus) {
-        case "ready": {
-            break;
-        }
-        case "fallback": {
-            return false;
-        }
-        case "pending":
-        case null: {
-            return row.englishAiGenerationExpected === true ? undefined : false;
-        }
-    }
-
-    if (displayLanguage === "en") {
-        return true;
-    }
-
-    switch (row.requestedLocaleStatus) {
-        case "ready":
-        case "fallback": {
-            return true;
-        }
-        case "pending":
-        case null: {
-            return row.requestedTranslationExpected === true ? undefined : true;
-        }
-    }
-
-    return undefined;
+    requestedLocale: SupportedDisplayLanguageCodes;
+}): boolean {
+    return shouldUseSystemDescriptions({
+        aiLabelingEnabled: row.aiLabelingEnabled,
+        requestedLocale,
+        englishStatus: row.englishLocaleStatus,
+        englishExpected: row.englishAiGenerationExpected,
+        requestedStatus: row.requestedLocaleStatus,
+        requestedExpected: row.requestedTranslationExpected,
+    });
 }
 
 export function selectLatestOpinionGroupResultForDisplay({
@@ -445,22 +451,30 @@ export function selectLatestOpinionGroupResultForDisplay({
     rows: LatestOpinionGroupResultRow[];
     displayLanguage: string;
 }): OpinionGroupResultDisplaySelection | undefined {
+    const requestedLocale = getSupportedDisplayLanguage(displayLanguage);
     for (const row of rows) {
         if (row.outcome !== "success") {
             return undefined;
         }
 
+        const descriptionReadiness = buildAnalysisDescriptionReadiness({
+            aiLabelingEnabled: row.aiLabelingEnabled,
+            requestedLocale,
+            englishStatus: row.englishLocaleStatus,
+            englishExpected: row.englishAiGenerationExpected,
+            requestedStatus: row.requestedLocaleStatus,
+            requestedExpected: row.requestedTranslationExpected,
+        });
+
         const useSystemDescriptions = getUseSystemDescriptions({
             row,
-            displayLanguage,
+            requestedLocale,
         });
-        if (useSystemDescriptions === undefined) {
-            continue;
-        }
 
         return {
             latestResult: row,
             useSystemDescriptions,
+            descriptionReadiness,
         };
     }
 
@@ -657,7 +671,10 @@ export async function getOpinionGroupAnalysisSelection({
         checkpointViewSnapshotId === undefined
             ? isNotNull(conversationViewSnapshotTable.activatedAt)
             : and(
-                  eq(conversationViewSnapshotTable.id, checkpointViewSnapshotId),
+                  eq(
+                      conversationViewSnapshotTable.id,
+                      checkpointViewSnapshotId,
+                  ),
                   isNotNull(conversationViewSnapshotTable.activatedAt),
               );
 
@@ -683,7 +700,8 @@ export async function getOpinionGroupAnalysisSelection({
                 conversationViewSnapshotTable.totalParticipantCount,
             moderatedOpinionCount:
                 conversationViewSnapshotTable.moderatedOpinionCount,
-            hiddenOpinionCount: conversationViewSnapshotTable.hiddenOpinionCount,
+            hiddenOpinionCount:
+                conversationViewSnapshotTable.hiddenOpinionCount,
             isClosed: conversationViewSnapshotTable.isClosed,
             snapshotId: analysisSnapshotTable.id,
             resultId: analysisSnapshotResultTable.id,
@@ -823,9 +841,8 @@ export async function getOpinionGroupAnalysisSelection({
     }
 
     const latestResult = displaySelection.latestResult;
-    const conversationViewSnapshot = createAnalysisConversationViewSnapshot(
-        latestResult,
-    );
+    const conversationViewSnapshot =
+        createAnalysisConversationViewSnapshot(latestResult);
     const variantsEnabled = latestResult.variantsEnabled;
     const requestedView = getRequestedAnalysisView({
         analysisView,
@@ -836,7 +853,8 @@ export async function getOpinionGroupAnalysisSelection({
             candidateId: opinionGroupCandidateTable.id,
             groupCount: opinionGroupVariantTable.groupCount,
             selectionScore: opinionGroupCandidateAssessmentTable.selectionScore,
-            silhouetteScore: opinionGroupCandidateAssessmentTable.silhouetteScore,
+            silhouetteScore:
+                opinionGroupCandidateAssessmentTable.silhouetteScore,
             balanceScore: opinionGroupCandidateAssessmentTable.balanceScore,
         })
         .from(opinionGroupCandidateTable)
@@ -868,8 +886,14 @@ export async function getOpinionGroupAnalysisSelection({
 
     const selectedCandidate = selectCandidate({ candidates: candidateRows });
     const selectableCandidates = candidateRows.filter(isSelectableCandidate);
+    const displayableGroupCounts = getDisplayableGroupCounts({
+        candidates: candidateRows,
+    });
     const candidatesByGroupCount = new Map(
-        selectableCandidates.map((candidate) => [candidate.groupCount, candidate]),
+        selectableCandidates.map((candidate) => [
+            candidate.groupCount,
+            candidate,
+        ]),
     );
     const fixedGroupCount = getFixedGroupCount(requestedView);
     const canonicalView = getCanonicalAnalysisView({
@@ -953,7 +977,9 @@ export async function getOpinionGroupAnalysisSelection({
         return {
             candidate: undefined,
             viewState,
+            displayableGroupCounts,
             conversationViewSnapshot,
+            descriptionReadiness: displaySelection.descriptionReadiness,
             emptyReason: `Agora could not form ${groupCount} meaningful groups for this checkpoint.`,
         };
     }
@@ -969,9 +995,12 @@ export async function getOpinionGroupAnalysisSelection({
             candidateId: resolved.candidate.candidateId,
             groupCount: resolved.candidate.groupCount,
             useSystemDescriptions: displaySelection.useSystemDescriptions,
+            descriptionReadiness: displaySelection.descriptionReadiness,
         },
         conversationViewSnapshot,
+        descriptionReadiness: displaySelection.descriptionReadiness,
         viewState,
+        displayableGroupCounts,
     };
 }
 
@@ -995,7 +1024,9 @@ function createEmptyAnalysisViewSelection({
     return {
         candidate: undefined,
         conversationViewSnapshot,
+        descriptionReadiness: null,
         emptyReason,
+        displayableGroupCounts: [],
         viewState: {
             requestedView,
             canonicalView,
@@ -1027,13 +1058,17 @@ export function buildAnalysisViewOptions({
             ? undefined
             : systemCandidate;
     const candidatesByGroupCount = new Map(
-        selectableCandidates.map((candidate) => [candidate.groupCount, candidate]),
+        selectableCandidates.map((candidate) => [
+            candidate.groupCount,
+            candidate,
+        ]),
     );
     const facilitatorCandidate =
         preferredGroupCount === null
             ? undefined
             : candidatesByGroupCount.get(preferredGroupCount);
-    const resolvedFacilitatorView = facilitatorResolvesToView ??
+    const resolvedFacilitatorView =
+        facilitatorResolvesToView ??
         (preferredGroupCount === null
             ? "auto"
             : (getAnalysisViewForGroupCount(preferredGroupCount) ?? "auto"));
@@ -1048,7 +1083,10 @@ export function buildAnalysisViewOptions({
             };
         }
 
-        if (preferredGroupCount !== null && facilitatorCandidate === undefined) {
+        if (
+            preferredGroupCount !== null &&
+            facilitatorCandidate === undefined
+        ) {
             return {
                 view: "facilitator_preference",
                 status: "unavailable",
@@ -1095,35 +1133,37 @@ export function buildAnalysisViewOptions({
                   candidate: selectableSystemCandidate,
               });
 
-    const fixedOptions = FIXED_ANALYSIS_VIEWS.map((view): AnalysisViewOption => {
-        const groupCount = Number(view);
-        const candidate = candidatesByGroupCount.get(groupCount);
-        if (!variantsEnabled) {
-            return {
-                view,
-                status: "locked",
-                reason: "analysis_variants_not_available",
-            };
-        }
+    const fixedOptions = FIXED_ANALYSIS_VIEWS.map(
+        (view): AnalysisViewOption => {
+            const groupCount = Number(view);
+            const candidate = candidatesByGroupCount.get(groupCount);
+            if (!variantsEnabled) {
+                return {
+                    view,
+                    status: "locked",
+                    reason: "analysis_variants_not_available",
+                };
+            }
 
-        if (candidate === undefined) {
-            return {
-                view,
-                status: "unavailable",
-                reason: "fixed_group_count_unavailable",
-                groupCount,
-            };
-        }
+            if (candidate === undefined) {
+                return {
+                    view,
+                    status: "unavailable",
+                    reason: "fixed_group_count_unavailable",
+                    groupCount,
+                };
+            }
 
-        return createCandidateBackedAnalysisViewOption({
-            view,
-            status: getCandidateBackedStatus({
+            return createCandidateBackedAnalysisViewOption({
+                view,
+                status: getCandidateBackedStatus({
+                    candidate,
+                    systemCandidate: selectableSystemCandidate,
+                }),
                 candidate,
-                systemCandidate: selectableSystemCandidate,
-            }),
-            candidate,
-        });
-    });
+            });
+        },
+    );
 
     return [facilitatorOption, recommendedDefaultOption, ...fixedOptions];
 }

@@ -283,6 +283,10 @@ class SurveyQuestion(Base):
     current_semantic_version: Mapped[int] = mapped_column(Integer, server_default="1")
     display_order: Mapped[int] = mapped_column(Integer)
     is_required: Mapped[bool] = mapped_column(Boolean, server_default="true")
+    is_public_aggregate_suppression_enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        server_default="false",
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 

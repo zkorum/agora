@@ -295,7 +295,12 @@ def _fetch_survey_eligible_participants_batch(
             SurveyAnswer.survey_question_id,
             SurveyAnswer.answered_question_semantic_version,
             SurveyAnswer.text_value_html,
-        ).where(SurveyAnswer.survey_response_id.in_(response_ids))
+        ).where(
+            and_(
+                SurveyAnswer.survey_response_id.in_(response_ids),
+                SurveyAnswer.deleted_at.is_(None),
+            )
+        )
     ).all()
     answer_ids = [row.id for row in answer_rows]
     answer_option_rows = cast(
@@ -310,6 +315,12 @@ def _fetch_survey_eligible_participants_batch(
                 SurveyAnswerOption.survey_question_option_id == SurveyQuestionOption.id,
             )
             .where(SurveyAnswerOption.survey_answer_id.in_(answer_ids))
+            .where(
+                and_(
+                    SurveyAnswerOption.deleted_at.is_(None),
+                    SurveyQuestionOption.current_content_id.is_not(None),
+                )
+            )
         )
         .tuples()
         .all()

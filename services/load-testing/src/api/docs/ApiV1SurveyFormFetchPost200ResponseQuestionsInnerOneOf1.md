@@ -11,7 +11,7 @@ Name | Type | Description | Notes
 **displayOrder** | **number** |  | [default to undefined]
 **textChangeIsSemantic** | **boolean** |  | [optional] [default to undefined]
 **questionType** | **string** |  | [default to undefined]
-**constraints** | [**ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraints**](ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraints.md) |  | [default to undefined]
+**constraints** | [**ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1Constraints**](ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1Constraints.md) |  | [default to undefined]
 **currentAnswer** | [**ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswer**](ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswer.md) |  | [optional] [default to undefined]
 **isPassed** | **boolean** |  | [default to undefined]
 **isMissingRequired** | **boolean** |  | [default to undefined]

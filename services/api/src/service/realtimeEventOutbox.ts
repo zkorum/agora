@@ -1,4 +1,15 @@
-import { and, desc, eq, gt, gte, inArray, isNotNull, lte } from "drizzle-orm";
+import {
+    and,
+    desc,
+    eq,
+    gt,
+    gte,
+    inArray,
+    isNotNull,
+    isNull,
+    lte,
+    sql,
+} from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type pino from "pino";
 import { z } from "zod";
@@ -8,8 +19,13 @@ import {
     conversationTable,
     conversationViewSnapshotCheckpointReasonTable,
     conversationViewSnapshotTable,
+    analysisSnapshotResultTable,
+    opinionGroupCandidateAssessmentTable,
+    opinionGroupCandidateTable,
+    opinionGroupVariantTable,
     realtimeEventOutboxTable,
 } from "@/shared-backend/schema.js";
+import { ZodSupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import type { SSEEventDataByType } from "@/shared/types/dto.js";
 import {
     zodEventSlug,
@@ -25,7 +41,11 @@ const zodConversationAnalysisUpdatedData = z.object({
     conversationSlugId: z.string().min(1),
     conversationViewSnapshotId: z.number().int().positive(),
     analysisSnapshotId: z.number().int().positive(),
+    changeKind: z
+        .enum(["snapshot", "descriptions", "latest_state"])
+        .default("snapshot"),
     checkpointChanged: z.boolean().default(false),
+    displayableGroupCounts: z.array(z.number().int().min(2).max(6)),
     opinionCount: z.number().int().nonnegative().optional(),
     voteCount: z.number().int().nonnegative().optional(),
     participantCount: z.number().int().nonnegative().optional(),
@@ -35,6 +55,7 @@ const zodConversationAnalysisUpdatedData = z.object({
     moderatedOpinionCount: z.number().int().nonnegative().optional(),
     hiddenOpinionCount: z.number().int().nonnegative().optional(),
     isClosed: z.boolean().optional(),
+    locales: z.array(ZodSupportedDisplayLanguageCodes).optional(),
     timestamp: z.number().int().nonnegative(),
 });
 
@@ -74,6 +95,18 @@ interface RealtimeEventOutboxRow {
     payload: unknown;
 }
 
+type ConversationReplayEvent =
+    | {
+          id: number;
+          event: "conversation_analysis_updated";
+          data: SSEEventDataByType["conversation_analysis_updated"];
+      }
+    | {
+          id: number;
+          event: "conversation_settings_updated";
+          data: SSEEventDataByType["conversation_settings_updated"];
+      };
+
 function hasPrimaryDb(db: PostgresJsDatabase): db is PrimaryReplicaDb {
     return "$primary" in db;
 }
@@ -83,6 +116,91 @@ function getPrimaryDb(db: PostgresJsDatabase): PostgresJsDatabase {
         return db.$primary;
     }
     return db;
+}
+
+async function fetchDisplayableGroupCountsByViewSnapshotId({
+    db,
+    conversationViewSnapshotIds,
+}: {
+    db: PostgresJsDatabase;
+    conversationViewSnapshotIds: number[];
+}): Promise<Map<number, number[]>> {
+    const uniqueViewSnapshotIds = Array.from(
+        new Set(conversationViewSnapshotIds),
+    );
+    if (uniqueViewSnapshotIds.length === 0) {
+        return new Map();
+    }
+
+    const rows = await db
+        .select({
+            conversationViewSnapshotId: conversationViewSnapshotTable.id,
+            groupCount: opinionGroupVariantTable.groupCount,
+        })
+        .from(conversationViewSnapshotTable)
+        .innerJoin(
+            analysisSnapshotResultTable,
+            and(
+                eq(
+                    analysisSnapshotResultTable.analysisSnapshotId,
+                    conversationViewSnapshotTable.analysisSnapshotId,
+                ),
+                eq(
+                    analysisSnapshotResultTable.opinionGroupSpecId,
+                    conversationViewSnapshotTable.opinionGroupSpecId,
+                ),
+            ),
+        )
+        .innerJoin(
+            opinionGroupCandidateTable,
+            eq(
+                opinionGroupCandidateTable.snapshotResultId,
+                analysisSnapshotResultTable.id,
+            ),
+        )
+        .innerJoin(
+            opinionGroupVariantTable,
+            eq(
+                opinionGroupVariantTable.id,
+                opinionGroupCandidateTable.opinionGroupVariantId,
+            ),
+        )
+        .innerJoin(
+            opinionGroupCandidateAssessmentTable,
+            eq(
+                opinionGroupCandidateAssessmentTable.candidateId,
+                opinionGroupCandidateTable.id,
+            ),
+        )
+        .where(
+            and(
+                inArray(
+                    conversationViewSnapshotTable.id,
+                    uniqueViewSnapshotIds,
+                ),
+                eq(analysisSnapshotResultTable.outcome, "success"),
+                eq(opinionGroupCandidateTable.outcome, "success"),
+                isNull(opinionGroupCandidateAssessmentTable.hiddenReason),
+                isNotNull(opinionGroupCandidateAssessmentTable.selectionScore),
+            ),
+        )
+        .orderBy(
+            conversationViewSnapshotTable.id,
+            opinionGroupVariantTable.groupCount,
+        );
+
+    const groupCountsByViewSnapshotId = new Map<number, number[]>();
+    for (const row of rows) {
+        const groupCounts =
+            groupCountsByViewSnapshotId.get(row.conversationViewSnapshotId) ??
+            [];
+        groupCounts.push(row.groupCount);
+        groupCountsByViewSnapshotId.set(
+            row.conversationViewSnapshotId,
+            groupCounts,
+        );
+    }
+    return groupCountsByViewSnapshotId;
 }
 
 interface QueueConversationAnalysisUpdatedEventsForViewSnapshotsProps {
@@ -181,6 +299,11 @@ export async function queueConversationAnalysisUpdatedEventsForViewSnapshots({
     const checkpointViewSnapshotIds = new Set(
         checkpointRows.map((row) => row.conversationViewSnapshotId),
     );
+    const displayableGroupCountsByViewSnapshotId =
+        await fetchDisplayableGroupCountsByViewSnapshotId({
+            db: primaryDb,
+            conversationViewSnapshotIds,
+        });
 
     const timestamp = Date.now();
     const values: (typeof realtimeEventOutboxTable.$inferInsert)[] = [];
@@ -192,9 +315,14 @@ export async function queueConversationAnalysisUpdatedEventsForViewSnapshots({
             conversationSlugId: row.conversationSlugId,
             conversationViewSnapshotId: row.conversationViewSnapshotId,
             analysisSnapshotId: row.analysisSnapshotId,
+            changeKind: "snapshot",
             checkpointChanged: checkpointViewSnapshotIds.has(
                 row.conversationViewSnapshotId,
             ),
+            displayableGroupCounts:
+                displayableGroupCountsByViewSnapshotId.get(
+                    row.conversationViewSnapshotId,
+                ) ?? [],
             opinionCount: row.opinionCount,
             voteCount: row.voteCount,
             participantCount: row.participantCount,
@@ -271,6 +399,13 @@ export async function queueConversationAnalysisUpdatedEventsForLatestViewSnapsho
 
     const timestamp = Date.now();
     const values: (typeof realtimeEventOutboxTable.$inferInsert)[] = [];
+    const displayableGroupCountsByViewSnapshotId =
+        await fetchDisplayableGroupCountsByViewSnapshotId({
+            db: primaryDb,
+            conversationViewSnapshotIds: rows.map(
+                (row) => row.conversationViewSnapshotId,
+            ),
+        });
     for (const row of rows) {
         if (row.analysisSnapshotId === null) {
             continue;
@@ -279,7 +414,12 @@ export async function queueConversationAnalysisUpdatedEventsForLatestViewSnapsho
             conversationSlugId: row.conversationSlugId,
             conversationViewSnapshotId: row.conversationViewSnapshotId,
             analysisSnapshotId: row.analysisSnapshotId,
+            changeKind: "snapshot",
             checkpointChanged: false,
+            displayableGroupCounts:
+                displayableGroupCountsByViewSnapshotId.get(
+                    row.conversationViewSnapshotId,
+                ) ?? [],
             opinionCount: row.opinionCount,
             voteCount: row.voteCount,
             participantCount: row.participantCount,
@@ -307,9 +447,7 @@ export async function fetchConversationAnalysisUpdatedEventForLatestViewSnapshot
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
-}): Promise<
-    SSEEventDataByType["conversation_analysis_updated"] | undefined
-> {
+}): Promise<SSEEventDataByType["conversation_analysis_updated"] | undefined> {
     const primaryDb = getPrimaryDb(db);
     const rows = await primaryDb
         .selectDistinctOn([conversationViewSnapshotTable.conversationId], {
@@ -353,7 +491,10 @@ export async function fetchConversationAnalysisUpdatedEventForLatestViewSnapshot
         .limit(1);
 
     const row = rows.at(0);
-    if (row?.analysisSnapshotId === undefined || row.analysisSnapshotId === null) {
+    if (
+        row?.analysisSnapshotId === undefined ||
+        row.analysisSnapshotId === null
+    ) {
         return undefined;
     }
 
@@ -370,12 +511,22 @@ export async function fetchConversationAnalysisUpdatedEventForLatestViewSnapshot
             ),
         )
         .limit(1);
+    const displayableGroupCountsByViewSnapshotId =
+        await fetchDisplayableGroupCountsByViewSnapshotId({
+            db: primaryDb,
+            conversationViewSnapshotIds: [row.conversationViewSnapshotId],
+        });
 
     return {
         conversationSlugId: row.conversationSlugId,
         conversationViewSnapshotId: row.conversationViewSnapshotId,
         analysisSnapshotId: row.analysisSnapshotId,
+        changeKind: "latest_state",
         checkpointChanged: checkpointRows.length > 0,
+        displayableGroupCounts:
+            displayableGroupCountsByViewSnapshotId.get(
+                row.conversationViewSnapshotId,
+            ) ?? [],
         opinionCount: row.opinionCount,
         voteCount: row.voteCount,
         participantCount: row.participantCount,
@@ -390,21 +541,14 @@ export async function fetchConversationAnalysisUpdatedEventForLatestViewSnapshot
 }
 
 function parseRealtimeEventOutboxRow({
+    id,
     eventType,
     payload,
 }: {
+    id: number;
     eventType: string;
     payload: unknown;
-}):
-    | {
-          event: "conversation_analysis_updated";
-          data: SSEEventDataByType["conversation_analysis_updated"];
-      }
-    | {
-          event: "conversation_settings_updated";
-          data: SSEEventDataByType["conversation_settings_updated"];
-      }
-    | undefined {
+}): ConversationReplayEvent | undefined {
     switch (eventType) {
         case "conversation_analysis_updated": {
             const result =
@@ -413,6 +557,7 @@ function parseRealtimeEventOutboxRow({
                 return undefined;
             }
             return {
+                id,
                 event: eventType,
                 data: result.data,
             };
@@ -424,6 +569,7 @@ function parseRealtimeEventOutboxRow({
                 return undefined;
             }
             return {
+                id,
                 event: eventType,
                 data: result.data,
             };
@@ -432,6 +578,48 @@ function parseRealtimeEventOutboxRow({
             return undefined;
         }
     }
+}
+
+export async function fetchConversationRealtimeEventsAfterId({
+    db,
+    conversationSlugId,
+    lastEventId,
+    limit,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    lastEventId: number;
+    limit: number;
+}): Promise<ConversationReplayEvent[]> {
+    const primaryDb = getPrimaryDb(db);
+    const rows = await primaryDb
+        .select({
+            id: realtimeEventOutboxTable.id,
+            eventType: realtimeEventOutboxTable.eventType,
+            payload: realtimeEventOutboxTable.payload,
+        })
+        .from(realtimeEventOutboxTable)
+        .where(
+            and(
+                gt(realtimeEventOutboxTable.id, lastEventId),
+                inArray(realtimeEventOutboxTable.eventType, [
+                    "conversation_analysis_updated",
+                    "conversation_settings_updated",
+                ]),
+                sql`${realtimeEventOutboxTable.payload}->>'conversationSlugId' = ${conversationSlugId}`,
+            ),
+        )
+        .orderBy(realtimeEventOutboxTable.id)
+        .limit(limit);
+
+    const events: ConversationReplayEvent[] = [];
+    for (const row of rows) {
+        const event = parseRealtimeEventOutboxRow(row);
+        if (event !== undefined) {
+            events.push(event);
+        }
+    }
+    return events;
 }
 
 export function createRealtimeEventOutboxBridge({
@@ -454,13 +642,16 @@ export function createRealtimeEventOutboxBridge({
     const primaryDb = getPrimaryDb(db);
 
     const broadcastOutboxRow = ({
+        id,
         eventType,
         payload,
     }: {
+        id: number;
         eventType: string;
         payload: unknown;
     }): void => {
         const realtimeEvent = parseRealtimeEventOutboxRow({
+            id,
             eventType,
             payload,
         });
@@ -475,6 +666,7 @@ export function createRealtimeEventOutboxBridge({
             case "conversation_analysis_updated": {
                 realtimeSSEManager.broadcastToConversationSubscribers({
                     conversationSlugId: realtimeEvent.data.conversationSlugId,
+                    id: realtimeEvent.id,
                     event: realtimeEvent.event,
                     data: realtimeEvent.data,
                 });
@@ -483,6 +675,7 @@ export function createRealtimeEventOutboxBridge({
             case "conversation_settings_updated": {
                 realtimeSSEManager.broadcastToConversationSubscribers({
                     conversationSlugId: realtimeEvent.data.conversationSlugId,
+                    id: realtimeEvent.id,
                     event: realtimeEvent.event,
                     data: realtimeEvent.data,
                 });
@@ -633,10 +826,7 @@ export function createRealtimeEventOutboxBridge({
         try {
             await processNotification({ payload });
         } catch (error: unknown) {
-            log.error(
-                error,
-                "[RealtimeOutbox] Failed to process notification",
-            );
+            log.error(error, "[RealtimeOutbox] Failed to process notification");
         }
     };
 

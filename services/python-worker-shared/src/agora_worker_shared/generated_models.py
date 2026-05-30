@@ -734,19 +734,6 @@ class SurveyAggregateOption(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
-class SurveyAggregateOwnerCurrent(Base):
-    __tablename__ = "survey_aggregate_owner_current"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    conversation_id: Mapped[int] = mapped_column(Integer)
-    survey_aggregate_snapshot_id: Mapped[int] = mapped_column(Integer)
-    survey_config_id: Mapped[int] = mapped_column(Integer)
-    survey_config_revision: Mapped[int] = mapped_column(Integer)
-    rows: Mapped[Any] = mapped_column(JSON(none_as_null=True))
-    created_at: Mapped[datetime] = mapped_column(DateTime)
-    updated_at: Mapped[datetime] = mapped_column(DateTime)
-
-
 class SurveyAggregateQuestion(Base):
     __tablename__ = "survey_aggregate_question"
 
@@ -760,6 +747,10 @@ class SurveyAggregateQuestion(Base):
     )
     question_text: Mapped[str] = mapped_column(String(500))
     is_required: Mapped[bool] = mapped_column(Boolean)
+    is_public_aggregate_suppression_enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        server_default="false",
+    )
     question_semantic_version: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
@@ -776,8 +767,10 @@ class SurveyAggregateResult(Base):
     )
     survey_aggregate_question_id: Mapped[int] = mapped_column(Integer)
     survey_aggregate_option_id: Mapped[int] = mapped_column(Integer)
-    count: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    percentage: Mapped[float | None] = mapped_column(Float, nullable=True)
+    suppressed_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    suppressed_percentage: Mapped[float | None] = mapped_column(Float, nullable=True)
+    full_count: Mapped[int] = mapped_column(Integer)
+    full_percentage: Mapped[float | None] = mapped_column(Float, nullable=True)
     is_suppressed: Mapped[bool] = mapped_column(Boolean)
     suppression_reason: Mapped[SurveyAggregateSuppressionReasonEnum | None] = mapped_column(
         SaEnum(
@@ -890,6 +883,10 @@ class SurveyQuestion(Base):
     current_semantic_version: Mapped[int] = mapped_column(Integer, server_default="1")
     display_order: Mapped[int] = mapped_column(Integer)
     is_required: Mapped[bool] = mapped_column(Boolean, server_default="true")
+    is_public_aggregate_suppression_enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        server_default="false",
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 

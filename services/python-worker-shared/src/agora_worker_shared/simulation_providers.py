@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 SIMULATION_LOG_PREFIX = "[SimulationProvider]"
+SIMULATION_EVENT_SCENARIO = "python-worker-simulation"
 
 
 @dataclass(frozen=True)
@@ -221,7 +222,7 @@ def emit_load_event(
     payload: dict[str, object] = {
         "schemaVersion": 1,
         "timestamp": datetime.now(UTC).isoformat(),
-        "scenario": "math-updater-simulation",
+        "scenario": SIMULATION_EVENT_SCENARIO,
         "phase": phase,
         "action": action,
         "outcome": outcome,

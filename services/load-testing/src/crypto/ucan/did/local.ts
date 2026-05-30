@@ -9,26 +9,26 @@ import { publicKeyToDid } from "./transformers.js";
  * Create a DID based on the exchange key-pair.
  */
 export async function exchange(
-  crypto: Crypto.Implementation,
-  emailOrUserId: string
+    crypto: Crypto.Implementation,
+    emailOrUserId: string,
 ): Promise<string> {
-  const pubKey = await crypto.keystore.publicExchangeKey(emailOrUserId);
-  const ksAlg = await crypto.keystore.getAlgorithm();
+    const pubKey = await crypto.keystore.publicExchangeKey(emailOrUserId);
+    const ksAlg = await crypto.keystore.getAlgorithm();
 
-  return publicKeyToDid(crypto, pubKey, ksAlg);
+    return publicKeyToDid(crypto, pubKey, ksAlg);
 }
 
 /**
  * Create a DID based on the write key-pair.
  */
 export async function write(
-  crypto: Crypto.Implementation,
-  emailOrUserId: string
+    crypto: Crypto.Implementation,
+    emailOrUserId: string,
 ): Promise<string> {
-  const pubKey = await crypto.keystore.publicWriteKey(emailOrUserId);
-  const ksAlg = await crypto.keystore.getAlgorithm();
+    const pubKey = await crypto.keystore.publicWriteKey(emailOrUserId);
+    const ksAlg = await crypto.keystore.getAlgorithm();
 
-  return publicKeyToDid(crypto, pubKey, ksAlg);
+    return publicKeyToDid(crypto, pubKey, ksAlg);
 }
 /**
  * Alias `exchange` to `sharing`

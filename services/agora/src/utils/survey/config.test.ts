@@ -10,6 +10,7 @@ function createChoiceSurveyConfig(): SurveyConfig {
       {
         questionType: "choice",
         choiceDisplay: "auto",
+        isPublicAggregateSuppressionEnabled: false,
         questionText: "Pick one",
         isRequired: true,
         displayOrder: 0,

@@ -12,23 +12,29 @@ import type {
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
+import { useLanguageStore } from "src/stores/language";
 import { useNotificationStore } from "src/stores/notification";
 import { useOpinionUpdatesStore } from "src/stores/opinionUpdates";
 import { useBackendAuthApi } from "src/utils/api/auth";
-import type { AnalysisData } from "src/utils/api/comment/comment";
+import { useBackendCommentApi } from "src/utils/api/comment/comment";
+import { fetchAnalysisDataWithCache } from "src/utils/api/comment/useCommentQueries";
 import { useCommonApi } from "src/utils/api/common";
 import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { processEnv } from "src/utils/processEnv";
-import { useNotify } from "src/utils/ui/notify";
 import {
-  type MaybeRefOrGetter,
-  onUnmounted,
-  ref,
-  toValue,
-  watch,
-} from "vue";
+  type ParsedSSEFrame,
+  parseRawSSEFrame,
+  splitCompleteSSEFrames,
+} from "src/utils/sse/frameParser";
+import { useNotify } from "src/utils/ui/notify";
+import { type MaybeRefOrGetter, onUnmounted, ref, toValue, watch } from "vue";
 
+import {
+  createLiveAnalysisCatchUpController,
+  isAnalysisQueryKeyForConversation,
+  isLiveAnalysisQueryKey,
+} from "./useLiveAnalysisCatchUp";
 import { setNetworkOffline } from "./useNetworkStatus";
 import {
   type RealtimeSSETranslations,
@@ -36,8 +42,10 @@ import {
 } from "./useRealtimeSSE.i18n";
 
 const SSE_CONNECTION_TIMEOUT_MS = 15_000;
-const SSE_RETRY_DELAY_MS = 1_000;
-// Server sends heartbeats every 30s (see services/api/src/service/realtimeSSE.ts).
+const SSE_DEFAULT_RETRY_DELAY_MS = 1_000;
+const SSE_MAX_BUFFER_LENGTH = 1_000_000;
+const SSE_PROCESSED_ID_CACHE_SIZE = 1_000;
+// @fastify/sse sends comment heartbeats every 30s by default.
 // When the API stops ungracefully, reader.read() can hang indefinitely on a dead
 // TCP connection. This watchdog aborts the connection after 45s of silence (1.5x
 // the server interval), triggering the normal reconnect + offline detection flow.
@@ -47,29 +55,20 @@ const SSE_RETRY_DELAY_MS = 1_000;
 // - RabbitMQ heartbeat: https://www.rabbitmq.com/docs/heartbeats
 // - Python websockets keepalive: https://websockets.readthedocs.io/en/stable/topics/keepalive.html
 const SSE_HEARTBEAT_TIMEOUT_MS = 45_000;
-const LIVE_ANALYSIS_CATCH_UP_DELAYS_MS = [250, 500, 1000, 2000] as const;
+const realtimeSSEHotDisposeHandlers = new Set<() => void>();
 
-function isAnalysisQueryKeyForConversation({
-  queryKey,
-  conversationSlugId,
-}: {
-  queryKey: readonly unknown[];
-  conversationSlugId: string;
-}): boolean {
-  return queryKey[0] === "analysis" && queryKey[1] === conversationSlugId;
+interface ParsedRealtimeSSEEvent {
+  event: AnySSEEvent;
+  id: string | null;
 }
 
-function isLiveAnalysisQueryKey({
-  queryKey,
-  conversationSlugId,
-}: {
-  queryKey: readonly unknown[];
-  conversationSlugId: string;
-}): boolean {
-  return (
-    isAnalysisQueryKeyForConversation({ queryKey, conversationSlugId }) &&
-    queryKey[3] === undefined
-  );
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    for (const dispose of realtimeSSEHotDisposeHandlers) {
+      dispose();
+    }
+    realtimeSSEHotDisposeHandlers.clear();
+  });
 }
 
 function isFacilitatorPreferenceLiveAnalysisQueryKey({
@@ -139,6 +138,30 @@ function isAnalysisCheckpointsQueryKey({
   );
 }
 
+function isAnalysisMetadataQueryKey({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return (
+    queryKey[0] === "analysisMetadata" && queryKey[1] === conversationSlugId
+  );
+}
+
+function isAnalysisContentQueryKey({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return (
+    queryKey[0] === "analysisContent" && queryKey[1] === conversationSlugId
+  );
+}
+
 function isConversationCommentsQueryKey({
   queryKey,
   conversationSlugId,
@@ -154,10 +177,11 @@ function isConversationCommentsQueryKey({
 
 /**
  * Single composable for ALL real-time server events.
- * Always maintains an SSE connection regardless of auth state:
+ * Maintains an SSE connection after auth initialization when:
  * - Authenticated (guest/logged-in): connects with UCAN headers → receives
  *   personal notifications + global events (new_conversation)
- * - Anonymous: connects without auth → receives only global events
+ * - Anonymous: connects without auth → receives public global events and
+ *   subscribed conversation events when applicable
  * On auth state change: disconnects from old mode → reconnects with new headers.
  */
 export function useRealtimeSSE({
@@ -170,7 +194,26 @@ export function useRealtimeSSE({
   const homeFeedStore = useHomeFeedStore();
   const opinionUpdatesStore = useOpinionUpdatesStore();
   const authStore = useAuthenticationStore();
+  const languageStore = useLanguageStore();
   const queryClient = useQueryClient();
+  const { fetchAnalysisMetadataData, fetchAnalysisContentData } =
+    useBackendCommentApi();
+  const liveAnalysisCatchUpController = createLiveAnalysisCatchUpController({
+    queryClient,
+    fetchLiveAnalysis: (params) =>
+      fetchAnalysisDataWithCache({
+        queryClient,
+        fetchAnalysisMetadataData,
+        fetchAnalysisContentData,
+        conversationSlugId: params.conversationSlugId,
+        analysisView: params.analysisView,
+        checkpointViewSnapshotId: params.checkpointViewSnapshotId,
+        aiLabelingEnabled: params.aiLabelingEnabled,
+        displayLanguage: params.displayLanguage,
+        voteCount: undefined,
+        freshness: params.freshness,
+      }),
+  });
   const { refreshAuthState } = useBackendAuthApi();
   const { showNotifyMessage } = useNotify();
   const { t } = useComponentI18n<RealtimeSSETranslations>(
@@ -179,25 +222,16 @@ export function useRealtimeSSE({
 
   const isConnected = ref(false);
   const isConnecting = ref(false);
-  const lastHeartbeat = ref<number | null>(null);
   let abortController: AbortController | null = null;
   let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   let shouldReconnect = true;
   let connectionId = 0;
+  let lastEventId: string | null = null;
+  let reconnectDelayMs = SSE_DEFAULT_RETRY_DELAY_MS;
   let offlineTimer: ReturnType<typeof setTimeout> | null = null;
   let heartbeatWatchdog: ReturnType<typeof setTimeout> | null = null;
-  const latestExpectedLiveSnapshotByConversationSlugId = new Map<
-    string,
-    number
-  >();
-  const liveAnalysisCatchUpGenerationByConversationSlugId = new Map<
-    string,
-    number
-  >();
-  const liveAnalysisCatchUpTimeoutByConversationSlugId = new Map<
-    string,
-    ReturnType<typeof setTimeout>
-  >();
+  const processedSSEEventIds = new Set<string>();
+  const processedSSEEventIdOrder: string[] = [];
   const latestAnalysisEventTimestampByConversationSlugId = new Map<
     string,
     number
@@ -206,9 +240,19 @@ export function useRealtimeSSE({
     string,
     number
   >();
+  let didCleanup = false;
 
   function getSubscribedConversationSlugId(): string | undefined {
     return toValue(subscribedConversationSlugId);
+  }
+
+  function shouldMaintainConnection(): boolean {
+    return !didCleanup && !document.hidden && authStore.isAuthInitialized;
+  }
+
+  function disconnectAndAllowLaterReconnect(): void {
+    disconnect();
+    shouldReconnect = true;
   }
 
   function buildRealtimeStreamUrl(): string {
@@ -224,6 +268,10 @@ export function useRealtimeSSE({
   }
 
   async function connect() {
+    if (!shouldMaintainConnection()) {
+      return;
+    }
+
     if (isConnecting.value || isConnected.value) {
       return;
     }
@@ -250,6 +298,9 @@ export function useRealtimeSSE({
       const headers: Record<string, string> = {
         Accept: "text/event-stream",
       };
+      if (lastEventId !== null) {
+        headers["Last-Event-ID"] = lastEventId;
+      }
 
       // Add auth headers when authenticated
       // Future: replace buildEncodedUcan with Bearer token when migrating to JWT
@@ -272,12 +323,17 @@ export function useRealtimeSSE({
 
       if (!response.ok) {
         if (response.status === 401) {
-          const didRefreshAuthState = await refreshAuthStateAfterSSEUnauthorized();
+          const didRefreshAuthState =
+            await refreshAuthStateAfterSSEUnauthorized();
           if (didRefreshAuthState) {
             isConnecting.value = false;
             isConnected.value = false;
             setNetworkOffline(false);
-            if (thisConnectionId === connectionId && shouldReconnect) {
+            if (
+              thisConnectionId === connectionId &&
+              shouldReconnect &&
+              shouldMaintainConnection()
+            ) {
               scheduleReconnect();
             }
             return;
@@ -316,16 +372,18 @@ export function useRealtimeSSE({
         resetHeartbeatWatchdog();
 
         buffer += decoder.decode(value, { stream: true });
+        if (buffer.length > SSE_MAX_BUFFER_LENGTH) {
+          throw new Error("SSE event buffer exceeded maximum size");
+        }
 
-        // SSE events are separated by double newlines
-        const parts = buffer.split("\n\n");
-        buffer = parts.pop() ?? "";
+        const { frames, remainingBuffer } = splitCompleteSSEFrames(buffer);
+        buffer = remainingBuffer;
 
-        for (const part of parts) {
+        for (const part of frames) {
           if (!part.trim()) continue;
           const parsed = parseSSEEvent(part);
           if (parsed !== undefined) {
-            handleSSEEvent(parsed);
+            handleParsedSSEEvent(parsed);
           }
         }
       }
@@ -336,7 +394,7 @@ export function useRealtimeSSE({
 
       isConnected.value = false;
       scheduleOfflineTimer();
-      if (shouldReconnect) {
+      if (shouldReconnect && shouldMaintainConnection()) {
         scheduleReconnect();
       }
     } catch {
@@ -353,41 +411,75 @@ export function useRealtimeSSE({
       isConnecting.value = false;
       scheduleOfflineTimer();
 
-      if (shouldReconnect) {
+      if (shouldReconnect && shouldMaintainConnection()) {
         scheduleReconnect();
       }
     }
   }
 
-  function normalizeSSELine(rawLine: string): string {
-    return rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
+  function updateLastEventId(id: string): void {
+    if (id === "") {
+      lastEventId = null;
+      return;
+    }
+
+    const numericId = Number(id);
+    if (Number.isSafeInteger(numericId) && numericId > 0) {
+      const numericLastEventId =
+        lastEventId === null ? null : Number(lastEventId);
+      if (
+        numericLastEventId === null ||
+        !Number.isSafeInteger(numericLastEventId) ||
+        numericId > numericLastEventId
+      ) {
+        lastEventId = id;
+      }
+      return;
+    }
+
+    lastEventId = id;
   }
 
-  function parseRawSSEFrame(raw: string): { event: string; data: string } {
-    let event = "";
-    const dataLines: string[] = [];
-    for (const rawLine of raw.split("\n")) {
-      const line = normalizeSSELine(rawLine);
-      if (line.startsWith(":")) {
-        continue;
-      }
+  function rememberProcessedSSEEventId(id: string): void {
+    if (processedSSEEventIds.has(id)) {
+      return;
+    }
 
-      if (line.startsWith("event:")) {
-        event = line.slice("event:".length).trimStart();
-      } else if (line.startsWith("data:")) {
-        dataLines.push(line.slice("data:".length).trimStart());
+    processedSSEEventIds.add(id);
+    processedSSEEventIdOrder.push(id);
+    while (processedSSEEventIdOrder.length > SSE_PROCESSED_ID_CACHE_SIZE) {
+      const expiredId = processedSSEEventIdOrder.shift();
+      if (expiredId !== undefined) {
+        processedSSEEventIds.delete(expiredId);
       }
     }
-    return { event, data: dataLines.join("\n") };
   }
 
-  function parseSSEEvent(raw: string): AnySSEEvent | undefined {
+  function handleParsedSSEEvent(parsed: ParsedRealtimeSSEEvent): void {
+    if (parsed.id !== null && parsed.id !== "") {
+      if (processedSSEEventIds.has(parsed.id)) {
+        return;
+      }
+      rememberProcessedSSEEventId(parsed.id);
+    }
+
+    handleSSEEvent(parsed.event);
+  }
+
+  function parseSSEEvent(raw: string): ParsedRealtimeSSEEvent | undefined {
     const frame = parseRawSSEFrame(raw);
-    const data = frame.data.trim();
-    if (frame.event === "" && data === "") {
+    if (frame.kind === "comment") {
       return undefined;
     }
 
+    if (frame.id !== null) {
+      updateLastEventId(frame.id);
+    }
+    if (frame.retry !== null) {
+      reconnectDelayMs = frame.retry;
+    }
+
+    const data = frame.data.trim();
     if (data === "") {
       return undefined;
     }
@@ -397,7 +489,7 @@ export function useRealtimeSSE({
     try {
       rawData = JSON.parse(data);
     } catch (error) {
-      console.error("Failed to parse SSE event JSON", error);
+      logSSEJSONParseError({ raw, frame, data, error });
       return undefined;
     }
 
@@ -408,7 +500,7 @@ export function useRealtimeSSE({
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { event: frame.event, data: result.data };
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
       }
       case "notification": {
         const result = zodSSEEventDataByType.notification.safeParse(rawData);
@@ -416,15 +508,16 @@ export function useRealtimeSSE({
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { event: frame.event, data: result.data };
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
       }
       case "new_conversation": {
-        const result = zodSSEEventDataByType.new_conversation.safeParse(rawData);
+        const result =
+          zodSSEEventDataByType.new_conversation.safeParse(rawData);
         if (!result.success) {
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { event: frame.event, data: result.data };
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
       }
       case "new_opinion": {
         const result = zodSSEEventDataByType.new_opinion.safeParse(rawData);
@@ -432,39 +525,38 @@ export function useRealtimeSSE({
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { event: frame.event, data: result.data };
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
       }
       case "popular_conversation": {
-        const result = zodSSEEventDataByType.popular_conversation.safeParse(rawData);
+        const result =
+          zodSSEEventDataByType.popular_conversation.safeParse(rawData);
         if (!result.success) {
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { event: frame.event, data: result.data };
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
       }
       case "conversation_analysis_updated": {
-        const result = zodSSEEventDataByType.conversation_analysis_updated.safeParse(rawData);
+        const result =
+          zodSSEEventDataByType.conversation_analysis_updated.safeParse(
+            rawData
+          );
         if (!result.success) {
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { event: frame.event, data: result.data };
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
       }
       case "conversation_settings_updated": {
-        const result = zodSSEEventDataByType.conversation_settings_updated.safeParse(rawData);
+        const result =
+          zodSSEEventDataByType.conversation_settings_updated.safeParse(
+            rawData
+          );
         if (!result.success) {
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { event: frame.event, data: result.data };
-      }
-      case "heartbeat": {
-        const result = zodSSEEventDataByType.heartbeat.safeParse(rawData);
-        if (!result.success) {
-          logInvalidSSEPayload({ event: frame.event, error: result.error });
-          return undefined;
-        }
-        return { event: frame.event, data: result.data };
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
       }
       case "shutdown": {
         const result = zodSSEEventDataByType.shutdown.safeParse(rawData);
@@ -472,12 +564,57 @@ export function useRealtimeSSE({
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { event: frame.event, data: result.data };
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
       }
       default:
         console.error(`Unknown SSE event: ${frame.event}`);
         return undefined;
     }
+  }
+
+  function logSSEJSONParseError({
+    raw,
+    frame,
+    data,
+    error,
+  }: {
+    raw: string;
+    frame: Extract<ParsedSSEFrame, { kind: "event" }>;
+    data: string;
+    error: unknown;
+  }): void {
+    if (import.meta.env.DEV) {
+      void logDevSSEJSONParseError({ raw, frame, data, error });
+    }
+
+    console.error("Failed to parse SSE event JSON", error);
+  }
+
+  async function logDevSSEJSONParseError({
+    raw,
+    frame,
+    data,
+    error,
+  }: {
+    raw: string;
+    frame: Extract<ParsedSSEFrame, { kind: "event" }>;
+    data: string;
+    error: unknown;
+  }): Promise<void> {
+    const { logBrowserEvent } = await import("src/utils/devLogger");
+    logBrowserEvent({
+      level: "error",
+      category: "sse_parse_error",
+      message: "failed_to_parse_sse_event_json",
+      stack: error instanceof Error ? error.stack : undefined,
+      metadata: {
+        event: frame.event === "" ? null : frame.event,
+        dataLength: data.length,
+        frameLength: raw.length,
+        dataPreview: data,
+        framePreview: raw,
+      },
+    });
   }
 
   function logInvalidSSEPayload({
@@ -531,7 +668,8 @@ export function useRealtimeSSE({
     }
 
     const messages: string[] = [];
-    const isClosedChanged = previousMetadata.isClosed !== data.settings.isClosed;
+    const isClosedChanged =
+      previousMetadata.isClosed !== data.settings.isClosed;
 
     if (isClosedChanged) {
       messages.push(
@@ -549,8 +687,12 @@ export function useRealtimeSSE({
       );
     }
 
-    if (previousMetadata.participationMode !== data.settings.participationMode) {
-      messages.push(getParticipationModeMessage(data.settings.participationMode));
+    if (
+      previousMetadata.participationMode !== data.settings.participationMode
+    ) {
+      messages.push(
+        getParticipationModeMessage(data.settings.participationMode)
+      );
     }
 
     if (
@@ -564,7 +706,9 @@ export function useRealtimeSSE({
       );
     }
 
-    if (previousMetadata.aiLabelingEnabled !== data.settings.aiLabelingEnabled) {
+    if (
+      previousMetadata.aiLabelingEnabled !== data.settings.aiLabelingEnabled
+    ) {
       messages.push(
         data.settings.aiLabelingEnabled
           ? t("llmTurnedOnByFacilitator")
@@ -597,12 +741,25 @@ export function useRealtimeSSE({
     });
   }
 
+  function shouldHandleAnalysisUpdatedEventForDisplayLanguage(
+    data: SSEConversationAnalysisUpdatedData
+  ): boolean {
+    const locales = data.locales;
+    if (locales === undefined || locales.length === 0) {
+      return true;
+    }
+
+    if (locales.includes("en")) {
+      return true;
+    }
+
+    return locales.includes(languageStore.displayLanguage);
+  }
+
   function handleSSEEvent(sseEvent: AnySSEEvent): void {
     try {
       switch (sseEvent.event) {
         case "connected": {
-          const data = sseEvent.data;
-          lastHeartbeat.value = data.timestamp;
           break;
         }
         case "notification": {
@@ -619,7 +776,7 @@ export function useRealtimeSSE({
           opinionUpdatesStore.markNewOpinion(data.conversationSlugId);
           void queryClient.invalidateQueries({
             queryKey: ["comments", data.conversationSlugId],
-            refetchType: "none",
+            refetchType: "active",
           });
           break;
         }
@@ -632,6 +789,10 @@ export function useRealtimeSSE({
         }
         case "conversation_analysis_updated": {
           const data = sseEvent.data;
+          if (!shouldHandleAnalysisUpdatedEventForDisplayLanguage(data)) {
+            break;
+          }
+
           const checkpointChanged = data.checkpointChanged === true;
           updateConversationCountsFromAnalysisEvent(data);
           void queryClient.invalidateQueries({
@@ -639,24 +800,47 @@ export function useRealtimeSSE({
             refetchType: "none",
           });
           void queryClient.invalidateQueries({
+            queryKey: ["survey-results-aggregated", data.conversationSlugId],
+            refetchType: "active",
+          });
+          void queryClient.invalidateQueries({
             predicate: (query) =>
               isLiveAnalysisQueryKey({
                 queryKey: query.queryKey,
                 conversationSlugId: data.conversationSlugId,
-              }) ||
-              (checkpointChanged &&
+              }),
+            refetchType: "none",
+          });
+          void queryClient.invalidateQueries({
+            predicate: (query) =>
+              isAnalysisMetadataQueryKey({
+                queryKey: query.queryKey,
+                conversationSlugId: data.conversationSlugId,
+              }),
+            refetchType: "none",
+          });
+          void queryClient.invalidateQueries({
+            predicate: (query) =>
+              isAnalysisContentQueryKey({
+                queryKey: query.queryKey,
+                conversationSlugId: data.conversationSlugId,
+              }),
+            refetchType: "none",
+          });
+          if (checkpointChanged) {
+            void queryClient.invalidateQueries({
+              predicate: (query) =>
                 isCheckpointAnalysisQueryKey({
                   queryKey: query.queryKey,
                   conversationSlugId: data.conversationSlugId,
                   checkpointViewSnapshotId: data.conversationViewSnapshotId,
-                })),
-          });
-          if (checkpointChanged) {
+                }),
+            });
             void queryClient.invalidateQueries({
               queryKey: ["analysisCheckpoints", data.conversationSlugId],
             });
           }
-          requestLiveAnalysisCatchUp(data);
+          liveAnalysisCatchUpController.requestCatchUp(data);
           break;
         }
         case "conversation_settings_updated": {
@@ -713,6 +897,20 @@ export function useRealtimeSSE({
 
           notifyConversationSettingsUpdated({ previousMetadata, data });
 
+          if (preferredOpinionGroupCountChanged || aiLabelingEnabledChanged) {
+            void queryClient.invalidateQueries({
+              queryKey: ["analysisMetadata", data.conversationSlugId],
+              refetchType: "none",
+            });
+          }
+
+          if (aiLabelingEnabledChanged) {
+            void queryClient.invalidateQueries({
+              queryKey: ["analysisContent", data.conversationSlugId],
+              refetchType: "none",
+            });
+          }
+
           void queryClient.invalidateQueries({
             predicate: (query) =>
               shouldRefetchLiveAnalysisForSettingsUpdate({
@@ -723,11 +921,6 @@ export function useRealtimeSSE({
                 aiLabelingEnabled: data.settings.aiLabelingEnabled,
               }),
           });
-          break;
-        }
-        case "heartbeat": {
-          const data = sseEvent.data;
-          lastHeartbeat.value = data.timestamp;
           break;
         }
         case "shutdown": {
@@ -798,223 +991,6 @@ export function useRealtimeSSE({
     });
   }
 
-  function getLiveAnalysisCatchUpDelay(attemptIndex: number): number {
-    const delay =
-      LIVE_ANALYSIS_CATCH_UP_DELAYS_MS[
-        Math.min(attemptIndex, LIVE_ANALYSIS_CATCH_UP_DELAYS_MS.length - 1)
-      ];
-    return delay ?? 2000;
-  }
-
-  function getLatestCachedLiveAnalysisSnapshotId({
-    conversationSlugId,
-  }: {
-    conversationSlugId: string;
-  }): number | undefined {
-    let latestSnapshotId: number | undefined;
-    const queryData = queryClient.getQueriesData<AnalysisData>({
-      predicate: (query) =>
-        isLiveAnalysisQueryKey({
-          queryKey: query.queryKey,
-          conversationSlugId,
-        }),
-    });
-
-    for (const [_queryKey, data] of queryData) {
-      const snapshotId = data?.conversationViewSnapshotId;
-      if (snapshotId === undefined) {
-        continue;
-      }
-      latestSnapshotId = Math.max(latestSnapshotId ?? 0, snapshotId);
-    }
-
-    return latestSnapshotId;
-  }
-
-  function hasActiveLiveAnalysisQuery({
-    conversationSlugId,
-  }: {
-    conversationSlugId: string;
-  }): boolean {
-    return queryClient
-      .getQueryCache()
-      .findAll({
-        predicate: (query) =>
-          isLiveAnalysisQueryKey({
-            queryKey: query.queryKey,
-            conversationSlugId,
-          }),
-      })
-      .some((query) => query.isActive());
-  }
-
-  function clearLiveAnalysisCatchUp({
-    conversationSlugId,
-  }: {
-    conversationSlugId: string;
-  }): void {
-    const timeout = liveAnalysisCatchUpTimeoutByConversationSlugId.get(
-      conversationSlugId
-    );
-    if (timeout !== undefined) {
-      clearTimeout(timeout);
-      liveAnalysisCatchUpTimeoutByConversationSlugId.delete(conversationSlugId);
-    }
-    latestExpectedLiveSnapshotByConversationSlugId.delete(conversationSlugId);
-    liveAnalysisCatchUpGenerationByConversationSlugId.set(
-      conversationSlugId,
-      (liveAnalysisCatchUpGenerationByConversationSlugId.get(
-        conversationSlugId
-      ) ?? 0) + 1
-    );
-  }
-
-  function clearAllLiveAnalysisCatchUps(): void {
-    for (const timeout of liveAnalysisCatchUpTimeoutByConversationSlugId.values()) {
-      clearTimeout(timeout);
-    }
-    liveAnalysisCatchUpTimeoutByConversationSlugId.clear();
-    latestExpectedLiveSnapshotByConversationSlugId.clear();
-    liveAnalysisCatchUpGenerationByConversationSlugId.clear();
-  }
-
-  function requestLiveAnalysisCatchUp(
-    data: SSEConversationAnalysisUpdatedData
-  ): void {
-    const previousExpectedSnapshotId =
-      latestExpectedLiveSnapshotByConversationSlugId.get(data.conversationSlugId);
-    clearLiveAnalysisCatchUp({
-      conversationSlugId: data.conversationSlugId,
-    });
-    latestExpectedLiveSnapshotByConversationSlugId.set(
-      data.conversationSlugId,
-      Math.max(previousExpectedSnapshotId ?? 0, data.conversationViewSnapshotId)
-    );
-    const generation =
-      (liveAnalysisCatchUpGenerationByConversationSlugId.get(
-        data.conversationSlugId
-      ) ?? 0) + 1;
-    liveAnalysisCatchUpGenerationByConversationSlugId.set(
-      data.conversationSlugId,
-      generation
-    );
-    void catchUpLiveAnalysis({
-      conversationSlugId: data.conversationSlugId,
-      generation,
-      attemptIndex: 0,
-    });
-  }
-
-  async function catchUpLiveAnalysis({
-    conversationSlugId,
-    generation,
-    attemptIndex,
-  }: {
-    conversationSlugId: string;
-    generation: number;
-    attemptIndex: number;
-  }): Promise<void> {
-    if (
-      liveAnalysisCatchUpGenerationByConversationSlugId.get(conversationSlugId) !==
-      generation
-    ) {
-      return;
-    }
-
-    const expectedSnapshotId =
-      latestExpectedLiveSnapshotByConversationSlugId.get(conversationSlugId);
-    if (expectedSnapshotId === undefined) {
-      return;
-    }
-
-    const cachedSnapshotId = getLatestCachedLiveAnalysisSnapshotId({
-      conversationSlugId,
-    });
-    if (
-      cachedSnapshotId !== undefined &&
-      cachedSnapshotId >= expectedSnapshotId
-    ) {
-      console.info("[RealtimeSSE] Live analysis caught up", {
-        conversationSlugId,
-        expectedSnapshotId,
-        cachedSnapshotId,
-        attemptIndex,
-      });
-      return;
-    }
-
-    if (!hasActiveLiveAnalysisQuery({ conversationSlugId })) {
-      console.info("[RealtimeSSE] No active live analysis query to catch up", {
-        conversationSlugId,
-        expectedSnapshotId,
-        cachedSnapshotId,
-      });
-      return;
-    }
-
-    try {
-      await queryClient.refetchQueries({
-        predicate: (query) =>
-          query.isActive() &&
-          isLiveAnalysisQueryKey({
-            queryKey: query.queryKey,
-            conversationSlugId,
-          }),
-      });
-    } catch (error) {
-      console.warn("[RealtimeSSE] Live analysis catch-up refetch failed", {
-        conversationSlugId,
-        expectedSnapshotId,
-        cachedSnapshotId,
-        attemptIndex,
-        error,
-      });
-    }
-
-    if (
-      liveAnalysisCatchUpGenerationByConversationSlugId.get(conversationSlugId) !==
-      generation
-    ) {
-      return;
-    }
-
-    const refreshedSnapshotId = getLatestCachedLiveAnalysisSnapshotId({
-      conversationSlugId,
-    });
-    if (
-      refreshedSnapshotId !== undefined &&
-      refreshedSnapshotId >= expectedSnapshotId
-    ) {
-      console.info("[RealtimeSSE] Live analysis caught up after refetch", {
-        conversationSlugId,
-        expectedSnapshotId,
-        refreshedSnapshotId,
-        attemptIndex,
-      });
-      return;
-    }
-
-    const delay = getLiveAnalysisCatchUpDelay(attemptIndex);
-    console.info("[RealtimeSSE] Live analysis still behind; scheduling retry", {
-      conversationSlugId,
-      expectedSnapshotId,
-      refreshedSnapshotId,
-      attemptIndex,
-      delay,
-    });
-    const timeout = setTimeout(() => {
-      void catchUpLiveAnalysis({
-        conversationSlugId,
-        generation,
-        attemptIndex: attemptIndex + 1,
-      });
-    }, delay);
-    liveAnalysisCatchUpTimeoutByConversationSlugId.set(
-      conversationSlugId,
-      timeout
-    );
-  }
-
   function refreshActiveConversationQueriesAfterReconnect({
     conversationSlugId,
   }: {
@@ -1027,14 +1003,10 @@ export function useRealtimeSSE({
     void queryClient.refetchQueries({
       predicate: (query) =>
         query.isActive() &&
-        (isLiveAnalysisQueryKey({
+        (isAnalysisCheckpointsQueryKey({
           queryKey: query.queryKey,
           conversationSlugId,
         }) ||
-          isAnalysisCheckpointsQueryKey({
-            queryKey: query.queryKey,
-            conversationSlugId,
-          }) ||
           isConversationCommentsQueryKey({
             queryKey: query.queryKey,
             conversationSlugId,
@@ -1060,16 +1032,20 @@ export function useRealtimeSSE({
   }
 
   function scheduleReconnect() {
+    if (!shouldMaintainConnection()) {
+      return;
+    }
+
     if (reconnectTimeout) {
       clearTimeout(reconnectTimeout);
     }
 
     // Fixed 1s retry with small jitter (0-250ms) to avoid thundering herd
     const jitter = Math.random() * 250;
-    const delay = SSE_RETRY_DELAY_MS + jitter;
+    const delay = reconnectDelayMs + jitter;
 
     reconnectTimeout = setTimeout(() => {
-      if (shouldReconnect) {
+      if (shouldReconnect && shouldMaintainConnection()) {
         void connect();
       }
     }, delay);
@@ -1087,18 +1063,11 @@ export function useRealtimeSSE({
   }
 
   function forceReconnect() {
-    clearHeartbeatWatchdog();
-    if (reconnectTimeout) {
-      clearTimeout(reconnectTimeout);
-      reconnectTimeout = null;
+    disconnectAndAllowLaterReconnect();
+
+    if (shouldMaintainConnection()) {
+      void connect();
     }
-    if (abortController) {
-      abortController.abort();
-      abortController = null;
-    }
-    isConnected.value = false;
-    isConnecting.value = false;
-    void connect();
   }
 
   function disconnect() {
@@ -1135,20 +1104,36 @@ export function useRealtimeSSE({
   // stale — it can never schedule an offline timer or touch shared state.
   function onVisibilityChange() {
     if (document.hidden) {
-      disconnect();
-      shouldReconnect = true;
+      disconnectAndAllowLaterReconnect();
     } else {
-      void connect();
+      if (shouldMaintainConnection()) {
+        void connect();
+      }
     }
   }
 
   document.addEventListener("visibilitychange", onVisibilityChange);
 
+  function cleanupRealtimeSSE(): void {
+    if (didCleanup) {
+      return;
+    }
+    didCleanup = true;
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+    liveAnalysisCatchUpController.clearAll();
+    disconnect();
+    realtimeSSEHotDisposeHandlers.delete(cleanupRealtimeSSE);
+  }
+
+  if (import.meta.env.DEV) {
+    realtimeSSEHotDisposeHandlers.add(cleanupRealtimeSSE);
+  }
+
   watch(
     () => getSubscribedConversationSlugId(),
     (conversationSlugId, previousConversationSlugId) => {
       if (previousConversationSlugId !== undefined) {
-        clearLiveAnalysisCatchUp({
+        liveAnalysisCatchUpController.clearConversation({
           conversationSlugId: previousConversationSlugId,
         });
       }
@@ -1158,36 +1143,47 @@ export function useRealtimeSSE({
       }
 
       if (document.hidden) {
-        disconnect();
-        shouldReconnect = true;
+        disconnectAndAllowLaterReconnect();
         return;
       }
 
-      forceReconnect();
+      if (shouldMaintainConnection()) {
+        forceReconnect();
+      } else {
+        disconnectAndAllowLaterReconnect();
+      }
     }
   );
 
   // Watch for authentication state changes — reconnect to switch auth mode.
-  // Always connected: authenticated users get personal notifications + global
-  // events; anonymous users get only global events.
+  // Wait for auth initialization first so check-login-status is never queued
+  // behind long-lived SSE connections.
   watch(
-    () => authStore.isGuestOrLoggedIn,
-    async (isAuthenticated, wasAuthenticated) => {
-      if (isAuthenticated !== wasAuthenticated) {
-        // Auth state changed — disconnect and reconnect with appropriate headers
-        disconnect();
-        shouldReconnect = true;
-        await connect();
+    () => [authStore.isAuthInitialized, authStore.isGuestOrLoggedIn] as const,
+    async ([isAuthInitialized, isAuthenticated], previousState) => {
+      const wasAuthInitialized = previousState?.[0];
+      const wasAuthenticated = previousState?.[1];
+      if (!isAuthInitialized) {
+        disconnectAndAllowLaterReconnect();
+        return;
+      }
+
+      if (
+        isAuthInitialized !== wasAuthInitialized ||
+        isAuthenticated !== wasAuthenticated
+      ) {
+        disconnectAndAllowLaterReconnect();
+        if (shouldMaintainConnection()) {
+          await connect();
+        }
       }
     },
-    { immediate: true } // Connect on mount regardless of auth state
+    { immediate: true }
   );
 
   // Cleanup on unmount
   onUnmounted(() => {
-    document.removeEventListener("visibilitychange", onVisibilityChange);
-    clearAllLiveAnalysisCatchUps();
-    disconnect();
+    cleanupRealtimeSSE();
   });
 
   return {
@@ -1196,6 +1192,5 @@ export function useRealtimeSSE({
     forceReconnect,
     isConnected,
     isConnecting,
-    lastHeartbeat,
   };
 }
