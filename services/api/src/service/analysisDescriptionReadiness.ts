@@ -21,7 +21,7 @@ function optionalStatus(
 function isReadyStatus(
     status: AiDescriptionLocaleStatus | null,
 ): boolean {
-    return status === "ready";
+    return status === "ready" || status === "fallback";
 }
 
 function isDisplayableStatus(

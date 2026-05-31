@@ -35,16 +35,16 @@ describe("analysis freshness", () => {
     ).toEqual(["fr"]);
   });
 
-  it("treats fallback descriptions as displayable but not fresh", () => {
+  it("treats fallback descriptions as settled", () => {
     expect(
       getPendingDescriptionLocales({
         requestedLocale: "fr",
         english: { expected: true, status: "ready" },
         requested: { expected: true, status: "fallback" },
         state: "fallback",
-        shouldRetry: true,
+        shouldRetry: false,
       })
-    ).toEqual(["fr"]);
+    ).toEqual([]);
   });
 
   it("treats snapshot and locale freshness independently", () => {

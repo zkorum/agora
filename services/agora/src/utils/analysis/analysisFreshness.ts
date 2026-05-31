@@ -12,7 +12,7 @@ export const DESCRIPTION_READINESS_RETRY_INTERVAL_MS = 5_000;
 function isReadyDescriptionStatus(
   status: AnalysisDescriptionReadiness["english"]["status"]
 ): boolean {
-  return status === "ready";
+  return status === "ready" || status === "fallback";
 }
 
 export function getPendingDescriptionLocales(

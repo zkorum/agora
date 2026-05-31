@@ -559,6 +559,17 @@ export function useRealtimeSSE({
         }
         return { id: frame.id, event: { event: frame.event, data: result.data } };
       }
+      case "conversation_comment_stats_updated": {
+        const result =
+          zodSSEEventDataByType.conversation_comment_stats_updated.safeParse(
+            rawData
+          );
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
+      }
       case "conversation_settings_updated": {
         const result =
           zodSSEEventDataByType.conversation_settings_updated.safeParse(

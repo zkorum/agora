@@ -230,7 +230,7 @@ export const analysisPageTranslations: Record<
     analysisViewTitle: "طريقة عرض التحليل",
     analysisViewSortingCaption: "يتم ترتيب أعداد المجموعات حسب جودة التحليل.",
     facilitatorPreference: "تفضيل الميسر",
-    recommendedDefault: "تلقائي",
+    recommendedDefault: "Auto",
     groupsLabel: "{count} مجموعات",
     systemDefaultCaption: "يختار أفضل متغير لكل لقطة جديدة.",
     analysisVariantsNotAvailable: "لا تتضمن هذه اللقطة متغيرات.",
@@ -285,7 +285,7 @@ export const analysisPageTranslations: Record<
     analysisViewSortingCaption:
       "Los recuentos de grupos se ordenan por calidad del análisis.",
     facilitatorPreference: "Preferencia del facilitador",
-    recommendedDefault: "Automático",
+    recommendedDefault: "Auto",
     groupsLabel: "{count} grupos",
     systemDefaultCaption:
       "Elige la variante con mejor puntuación para cada nueva instantánea.",
@@ -341,7 +341,7 @@ export const analysisPageTranslations: Record<
     analysisViewSortingCaption:
       "تعداد گروه‌ها بر اساس کیفیت تحلیل مرتب می‌شوند.",
     facilitatorPreference: "ترجیح تسهیل‌گر",
-    recommendedDefault: "خودکار",
+    recommendedDefault: "Auto",
     groupsLabel: "{count} گروه",
     systemDefaultCaption: "بهترین متغیر را برای هر نمای جدید انتخاب می‌کند.",
     analysisVariantsNotAvailable: "این نما شامل حالت‌های جایگزین نیست.",
@@ -396,7 +396,7 @@ export const analysisPageTranslations: Record<
     analysisViewSortingCaption:
       "Les nombres de groupes sont triés par qualité d'analyse.",
     facilitatorPreference: "Préférence du facilitateur",
-    recommendedDefault: "Automatique",
+    recommendedDefault: "Auto",
     groupsLabel: "{count} groupes",
     systemDefaultCaption:
       "Choisit la variante la mieux notée pour chaque nouvel instantané.",
@@ -450,7 +450,7 @@ export const analysisPageTranslations: Record<
     analysisViewTitle: "分析视图",
     analysisViewSortingCaption: "群组数量按分析质量排序。",
     facilitatorPreference: "主持人偏好",
-    recommendedDefault: "自动",
+    recommendedDefault: "Auto",
     groupsLabel: "{count} 个群组",
     systemDefaultCaption: "为每个新快照选择评分最高的变体。",
     analysisVariantsNotAvailable: "此快照不包含变体。",
@@ -502,7 +502,7 @@ export const analysisPageTranslations: Record<
     analysisViewTitle: "分析視圖",
     analysisViewSortingCaption: "群組數量按分析品質排序。",
     facilitatorPreference: "主持人偏好",
-    recommendedDefault: "自動",
+    recommendedDefault: "Auto",
     groupsLabel: "{count} 個群組",
     systemDefaultCaption: "為每個新快照選擇評分最高的變體。",
     analysisVariantsNotAvailable: "此快照不包含變體。",
@@ -554,7 +554,7 @@ export const analysisPageTranslations: Record<
     analysisViewTitle: "תצוגת ניתוח",
     analysisViewSortingCaption: "מספרי הקבוצות ממוינים לפי איכות הניתוח.",
     facilitatorPreference: "העדפת המנחה",
-    recommendedDefault: "אוטומטי",
+    recommendedDefault: "Auto",
     groupsLabel: "{count} קבוצות",
     systemDefaultCaption:
       "בוחרת את הווריאנט בעל הציון הגבוה ביותר לכל תמונת מצב חדשה.",
@@ -608,7 +608,7 @@ export const analysisPageTranslations: Record<
     analysisViewTitle: "分析ビュー",
     analysisViewSortingCaption: "グループ数は分析品質順に並びます。",
     facilitatorPreference: "ファシリテーターの設定",
-    recommendedDefault: "自動",
+    recommendedDefault: "Auto",
     groupsLabel: "{count} グループ",
     systemDefaultCaption:
       "新しいスナップショットごとに最もスコアの高いバリアントを選択します。",
@@ -663,7 +663,7 @@ export const analysisPageTranslations: Record<
     analysisViewTitle: "Анализ көрүнүшү",
     analysisViewSortingCaption: "Топ сандары анализ сапаты боюнча иреттелет.",
     facilitatorPreference: "Фасилитатордун тандоосу",
-    recommendedDefault: "Автоматтык",
+    recommendedDefault: "Auto",
     groupsLabel: "{count} топ",
     systemDefaultCaption:
       "Ар бир жаңы сүрөт үчүн эң жогорку упай алган вариантты тандайт.",
@@ -719,7 +719,7 @@ export const analysisPageTranslations: Record<
     analysisViewSortingCaption:
       "Количество групп отсортировано по качеству анализа.",
     facilitatorPreference: "Предпочтение фасилитатора",
-    recommendedDefault: "Авто",
+    recommendedDefault: "Auto",
     groupsLabel: "{count} групп",
     systemDefaultCaption:
       "Выбирает вариант с лучшей оценкой для каждого нового снимка.",

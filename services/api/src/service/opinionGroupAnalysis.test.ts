@@ -142,6 +142,26 @@ describe("analysis description readiness", () => {
             }),
         ).toBe(true);
     });
+
+    it("treats fallback descriptions as settled for polling", () => {
+        const readiness = buildAnalysisDescriptionReadiness({
+            aiLabelingEnabled: true,
+            requestedLocale: "fr",
+            englishStatus: "ready",
+            englishExpected: true,
+            requestedStatus: "fallback",
+            requestedExpected: true,
+        });
+
+        expect(readiness.state).toBe("fallback");
+        expect(readiness.shouldRetry).toBe(false);
+        expect(
+            isDescriptionReadinessFreshForExpectedLocales({
+                readiness,
+                expectedLocales: ["fr"],
+            }),
+        ).toBe(true);
+    });
 });
 
 describe("buildAnalysisViewOptions", () => {

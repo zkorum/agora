@@ -1039,7 +1039,10 @@ def activate_pending_translation_expectations(
                     else true(),
                 )
             )
-            .order_by(OpinionGroupDescriptionLocaleExpectation.id)
+            .order_by(
+                OpinionGroupDescriptionLocaleExpectation.retry_demand_due_at.asc().nulls_last(),
+                OpinionGroupDescriptionLocaleExpectation.id.desc(),
+            )
             .limit(limit)
         ).all()
         if not rows:

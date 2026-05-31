@@ -57,7 +57,7 @@
 
           <div class="control-item">
             <label for="recommended-variant" class="control-label">
-              Recommended default
+              Auto
             </label>
             <PrimeSelect
               id="recommended-variant"
