@@ -2962,6 +2962,9 @@ export const opinionGroupDescriptionTranslationWorkTable = pgTable(
         index("opinion_group_description_translation_work_lease_expiry_idx")
             .on(t.leaseExpiresAt)
             .where(isNotNull(t.leaseToken)),
+        index("opinion_group_description_translation_work_claim_idx")
+            .on(t.conversationId, t.updatedAt, t.id)
+            .where(isNull(t.leaseToken)),
         check(
             "opinion_group_description_translation_work_running_lease_check",
             sqlOr(
@@ -3117,6 +3120,9 @@ export const opinionGroupLineageDescriptionWorkTable = pgTable(
         index("opinion_group_lineage_description_work_lease_expiry_idx")
             .on(t.leaseExpiresAt)
             .where(isNotNull(t.leaseToken)),
+        index("opinion_group_lineage_description_work_claim_idx")
+            .on(t.conversationId, t.updatedAt, t.id)
+            .where(isNull(t.leaseToken)),
         check(
             "opinion_group_lineage_description_work_running_lease_check",
             sqlOr(

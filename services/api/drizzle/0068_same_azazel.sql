@@ -17,9 +17,7 @@ DROP INDEX "followed_topic_index";--> statement-breakpoint
 DROP INDEX "maxdiff_external_source_external_id_idx";--> statement-breakpoint
 DROP INDEX "maxdiff_item_slug_idx";--> statement-breakpoint
 DROP INDEX "opinion_group_description_translation_work_due_idx";--> statement-breakpoint
-DROP INDEX "opinion_group_description_translation_work_claim_idx";--> statement-breakpoint
 DROP INDEX "opinion_group_lineage_description_work_due_idx";--> statement-breakpoint
-DROP INDEX "opinion_group_lineage_description_work_claim_idx";--> statement-breakpoint
 DROP INDEX "opinion_createdAt_idx";--> statement-breakpoint
 DROP INDEX "opinion_slugId_idx";--> statement-breakpoint
 DROP INDEX "ranking_score_entity_score_idx";--> statement-breakpoint
@@ -35,6 +33,8 @@ DROP INDEX "conversation_view_snapshot_latest_idx";--> statement-breakpoint
 DROP INDEX "conversation_view_snapshot_latest_active_idx";--> statement-breakpoint
 DROP INDEX "conversation_view_snapshot_latest_spec_active_idx";--> statement-breakpoint
 DROP INDEX "notification_user_created_id_idx";--> statement-breakpoint
+DROP INDEX "opinion_group_description_translation_work_claim_idx";--> statement-breakpoint
+DROP INDEX "opinion_group_lineage_description_work_claim_idx";--> statement-breakpoint
 DROP INDEX "opinion_author_active_created_id_idx";--> statement-breakpoint
 DROP INDEX "opinion_conversation_active_created_id_idx";--> statement-breakpoint
 DROP INDEX "vote_author_active_updated_id_idx";--> statement-breakpoint
@@ -50,6 +50,8 @@ CREATE INDEX "conversation_view_snapshot_latest_idx" ON "conversation_view_snaps
 CREATE INDEX "conversation_view_snapshot_latest_active_idx" ON "conversation_view_snapshot" USING btree ("conversation_id","created_at" DESC,"id" DESC) WHERE "conversation_view_snapshot"."activated_at" is not null;--> statement-breakpoint
 CREATE INDEX "conversation_view_snapshot_latest_spec_active_idx" ON "conversation_view_snapshot" USING btree ("conversation_id","opinion_group_spec_id","created_at" DESC,"id" DESC) WHERE "conversation_view_snapshot"."activated_at" is not null;--> statement-breakpoint
 CREATE INDEX "notification_user_created_id_idx" ON "notification" USING btree ("user_id","created_at" DESC,"id" DESC);--> statement-breakpoint
+CREATE INDEX "opinion_group_description_translation_work_claim_idx" ON "opinion_group_description_translation_work" USING btree ("conversation_id","updated_at","id") WHERE "opinion_group_description_translation_work"."lease_token" is null;--> statement-breakpoint
+CREATE INDEX "opinion_group_lineage_description_work_claim_idx" ON "opinion_group_lineage_description_work" USING btree ("conversation_id","updated_at","id") WHERE "opinion_group_lineage_description_work"."lease_token" is null;--> statement-breakpoint
 CREATE INDEX "opinion_author_active_created_id_idx" ON "opinion" USING btree ("author_id","created_at" DESC,"id" DESC) WHERE "opinion"."current_content_id" is not null;--> statement-breakpoint
 CREATE INDEX "opinion_conversation_active_created_id_idx" ON "opinion" USING btree ("conversation_id","created_at" DESC,"id" DESC) WHERE "opinion"."current_content_id" is not null;--> statement-breakpoint
 CREATE INDEX "vote_author_active_updated_id_idx" ON "vote" USING btree ("author_id","updated_at" DESC,"id" DESC) WHERE "vote"."current_content_id" is not null;--> statement-breakpoint

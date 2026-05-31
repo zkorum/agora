@@ -1,5 +1,5 @@
 {
-  "id": "775f6b3f-2434-4508-91d5-3550445675f2",
+  "id": "6b343831-0f0e-4cbc-b492-8a630d3df0c1",
   "prevId": "6b6d58a8-3179-4c3e-b91b-c299bb5c8fe5",
   "version": "7",
   "dialect": "postgresql",
@@ -6106,6 +6106,34 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "opinion_group_description_translation_work_claim_idx": {
+          "name": "opinion_group_description_translation_work_claim_idx",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"opinion_group_description_translation_work\".\"lease_token\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -6266,6 +6294,34 @@
           ],
           "isUnique": false,
           "where": "\"opinion_group_lineage_description_work\".\"lease_token\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "opinion_group_lineage_description_work_claim_idx": {
+          "name": "opinion_group_lineage_description_work_claim_idx",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"opinion_group_lineage_description_work\".\"lease_token\" is null",
           "concurrently": false,
           "method": "btree",
           "with": {}
