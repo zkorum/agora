@@ -34,7 +34,6 @@ import {
     zodLinkType,
     zodPolisUrl,
     zodLanguagePreferences,
-    zodPolisClusters,
     zodEventSlug,
     zodExportStatus,
     zodExportFileInfo,
@@ -129,6 +128,11 @@ const zodRecommendedDefaultUnavailableAnalysisViewOption =
         status: z.literal("unavailable"),
         reason: z.literal("recommended_default_unavailable"),
     });
+const zodAnalysisFrameOpinionListKind = z.enum([
+    "agreements",
+    "disagreements",
+    "divisive",
+]);
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Dto {
@@ -179,29 +183,6 @@ export class Dto {
             isClosed: z.boolean(),
         })
         .strict();
-    static aiDescriptionLocaleStatus = z.enum(["pending", "ready", "fallback"]);
-    static analysisDescriptionReadinessPart = z
-        .object({
-            expected: z.boolean(),
-            status: Dto.aiDescriptionLocaleStatus.nullable(),
-        })
-        .strict();
-    static analysisDescriptionReadiness = z
-        .object({
-            requestedLocale: ZodSupportedDisplayLanguageCodes,
-            english: Dto.analysisDescriptionReadinessPart,
-            requested: Dto.analysisDescriptionReadinessPart,
-            state: z.enum([
-                "disabled",
-                "not_expected",
-                "english_pending",
-                "requested_pending",
-                "ready",
-                "fallback",
-            ]),
-            shouldRetry: z.boolean(),
-        })
-        .strict();
     static analysisFreshnessRequest = z
         .object({
             enablePrimaryFallback: z.boolean(),
@@ -213,29 +194,51 @@ export class Dto {
             expectedDescriptionLocales: z.array(ZodSupportedDisplayLanguageCodes),
         })
         .strict();
-    static fetchAnalysisRequest = z
+    static analysisFrameKey = z
         .object({
-            conversationSlugId: zodSlugId, // z.object() does not exist :(
-            analysisView: zodAnalysisView.optional(),
-            checkpointViewSnapshotId: z.number().int().positive().optional(),
-        })
-        .strict();
-    static fetchAnalysisMetadataRequest = z
-        .object({
-            conversationSlugId: zodSlugId,
-            analysisView: zodAnalysisView.optional(),
-            checkpointViewSnapshotId: z.number().int().positive().optional(),
-            freshness: Dto.analysisFreshnessRequest.nullable().default(null),
-        })
-        .strict();
-    static fetchAnalysisContentRequest = z
-        .object({
-            conversationSlugId: zodSlugId,
             conversationViewSnapshotId: z.number().int().positive(),
+            analysisSnapshotId: z.number().int().positive(),
             candidateId: z.number().int().positive(),
+        })
+        .strict();
+    static analysisFrameCounters = z
+        .object({
+            opinionCount: z.number().int().nonnegative(),
+            voteCount: z.number().int().nonnegative(),
+            participantCount: z.number().int().nonnegative(),
+            totalOpinionCount: z.number().int().nonnegative(),
+            totalVoteCount: z.number().int().nonnegative(),
+            totalParticipantCount: z.number().int().nonnegative(),
+            moderatedOpinionCount: z.number().int().nonnegative(),
+            hiddenOpinionCount: z.number().int().nonnegative(),
+            isClosed: z.boolean(),
+        })
+        .strict();
+    static groupDescriptionDisplay = z
+        .object({
+            requestedLocale: ZodSupportedDisplayLanguageCodes,
+            displayedLocale: ZodSupportedDisplayLanguageCodes.nullable(),
+        })
+        .strict();
+    static fetchAnalysisFrameManifestRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+            analysisView: zodAnalysisView.optional(),
+            checkpointViewSnapshotId: z.number().int().positive().optional(),
             freshness: Dto.analysisFreshnessRequest.nullable().default(null),
         })
         .strict();
+    static fetchAnalysisFrameSectionRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+            frameKey: Dto.analysisFrameKey,
+            freshness: Dto.analysisFreshnessRequest.nullable().default(null),
+        })
+        .strict();
+    static fetchAnalysisFrameOpinionListRequest =
+        Dto.fetchAnalysisFrameSectionRequest.extend({
+            kind: zodAnalysisFrameOpinionListKind,
+        }).strict();
     static analysisViewOption = z.union([
         zodRecommendedAnalysisViewOption,
         zodAvailableAnalysisViewOption,
@@ -263,6 +266,7 @@ export class Dto {
             options: z.array(Dto.analysisViewOption),
         })
         .strict();
+    static analysisViewResolution = Dto.analysisViewState;
     static analysisConversationViewSnapshot = z
         .object({
             conversationViewSnapshotId: z.number().int().positive(),
@@ -278,57 +282,54 @@ export class Dto {
             isClosed: z.boolean(),
         })
         .strict();
-    static fetchAnalysisResponse = z
+    static analysisFrameManifest = z
         .object({
-            polisContentId: z.number().int().nonnegative().optional(), // for logging/debugging purpose, undefined if no polis calculated
-            conversationViewSnapshotId: z.number().int().positive().optional(),
-            analysisSnapshotId: z.number().int().positive().optional(),
+            frameKey: Dto.analysisFrameKey.optional(),
             conversationViewSnapshot:
                 Dto.analysisConversationViewSnapshot.optional(),
-            descriptionReadiness: Dto.analysisDescriptionReadiness.nullable(),
+            counters: Dto.analysisFrameCounters.optional(),
             emptyReason: z.string().optional(),
-            analysisViewState: Dto.analysisViewState.optional(),
-            consensusAgree: z.array(zodAnalysisOpinionItem),
-            consensusDisagree: z.array(zodAnalysisOpinionItem),
-            controversial: z.array(zodAnalysisOpinionItem),
-            clusters: zodPolisClusters,
+            analysisViewResolution: Dto.analysisViewResolution,
+            aiLabelsExpected: z.boolean(),
             hasVotedOnAllAvailableOpinions: z.boolean().optional(),
         })
         .strict();
-    static fetchAnalysisMetadataResponse = z
+    static analysisFrameGroup = z
         .object({
-            conversationViewSnapshotId: z.number().int().positive().optional(),
-            analysisSnapshotId: z.number().int().positive().optional(),
-            conversationViewSnapshot:
-                Dto.analysisConversationViewSnapshot.optional(),
-            descriptionReadiness: Dto.analysisDescriptionReadiness.nullable(),
-            emptyReason: z.string().optional(),
-            analysisViewState: Dto.analysisViewState,
-            displayableGroupCounts: z.array(z.number().int().min(2).max(6)),
-            hasVotedOnAllAvailableOpinions: z.boolean().optional(),
+            key: zodPolisKey,
+            numUsers: z.number().int().nonnegative(),
+            isUserInCluster: z.boolean(),
+            representative: z.array(zodAnalysisOpinionItem),
         })
         .strict();
-    static analysisContent = z
+    static analysisFrameGroups = z
         .object({
-            conversationViewSnapshotId: z.number().int().positive(),
-            analysisSnapshotId: z.number().int().positive(),
-            candidateId: z.number().int().positive(),
-            descriptionReadiness: Dto.analysisDescriptionReadiness,
-            consensusAgree: z.array(zodAnalysisOpinionItem),
-            consensusDisagree: z.array(zodAnalysisOpinionItem),
-            controversial: z.array(zodAnalysisOpinionItem),
-            clusters: zodPolisClusters,
+            frameKey: Dto.analysisFrameKey,
+            clusters: z.partialRecord(zodPolisKey, Dto.analysisFrameGroup),
         })
         .strict();
-    static fetchAnalysisContentResponse = z.discriminatedUnion("success", [
-        Dto.analysisContent.extend({ success: z.literal(true) }).strict(),
-        z
-            .object({
-                success: z.literal(false),
-                reason: z.literal("not_available"),
-            })
-            .strict(),
-    ]);
+    static analysisFrameGroupLabel = z
+        .object({
+            key: zodPolisKey,
+            aiLabel: z.string(),
+            aiSummary: z.string(),
+        })
+        .strict();
+    static analysisFrameGroupLabels = z
+        .object({
+            frameKey: Dto.analysisFrameKey,
+            groupDescriptionDisplay: Dto.groupDescriptionDisplay,
+            labels: z.partialRecord(zodPolisKey, Dto.analysisFrameGroupLabel),
+        })
+        .strict();
+    static analysisFrameOpinionListKind = zodAnalysisFrameOpinionListKind;
+    static analysisFrameOpinionList = z
+        .object({
+            frameKey: Dto.analysisFrameKey,
+            kind: Dto.analysisFrameOpinionListKind,
+            items: z.array(zodAnalysisOpinionItem),
+        })
+        .strict();
     static fetchAnalysisCheckpointsRequest = z
         .object({
             conversationSlugId: zodSlugId,
@@ -1600,24 +1601,31 @@ export type GetLanguagePreferencesResponse = z.infer<
 export type UpdateLanguagePreferencesRequest = z.infer<
     typeof Dto.updateLanguagePreferencesRequest
 >;
-export type ConversationAnalysis = z.infer<typeof Dto.fetchAnalysisResponse>;
-export type ConversationAnalysisMetadata = z.infer<
-    typeof Dto.fetchAnalysisMetadataResponse
+export type AnalysisFrameKey = z.infer<typeof Dto.analysisFrameKey>;
+export type AnalysisFrameManifest = z.infer<typeof Dto.analysisFrameManifest>;
+export type AnalysisFrameGroups = z.infer<typeof Dto.analysisFrameGroups>;
+export type AnalysisFrameGroupLabels = z.infer<
+    typeof Dto.analysisFrameGroupLabels
 >;
-export type ConversationAnalysisContent = z.infer<typeof Dto.analysisContent>;
-export type FetchAnalysisContentResponse = z.infer<
-    typeof Dto.fetchAnalysisContentResponse
+export type AnalysisFrameOpinionListKind = z.infer<
+    typeof Dto.analysisFrameOpinionListKind
+>;
+export type AnalysisFrameOpinionList = z.infer<
+    typeof Dto.analysisFrameOpinionList
+>;
+export type GroupDescriptionDisplay = z.infer<
+    typeof Dto.groupDescriptionDisplay
 >;
 export type AnalysisViewOptionCandidate = z.infer<
     typeof zodAnalysisViewOptionCandidate
 >;
 export type AnalysisViewOption = z.infer<typeof Dto.analysisViewOption>;
 export type AnalysisViewState = z.infer<typeof Dto.analysisViewState>;
+export type AnalysisViewResolution = z.infer<
+    typeof Dto.analysisViewResolution
+>;
 export type AnalysisConversationViewSnapshot = z.infer<
     typeof Dto.analysisConversationViewSnapshot
->;
-export type AnalysisDescriptionReadiness = z.infer<
-    typeof Dto.analysisDescriptionReadiness
 >;
 export type AnalysisFreshnessRequest = z.infer<
     typeof Dto.analysisFreshnessRequest

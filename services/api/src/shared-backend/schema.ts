@@ -935,7 +935,6 @@ export const userMutePreferenceTable = pgTable(
             .notNull(),
     },
     (t) => [
-        index("user_idx_mute").on(t.sourceUserId),
         unique("user_unique_mute").on(t.sourceUserId, t.targetUserId),
     ],
 );
@@ -3538,6 +3537,18 @@ export const opinionGroupOpinionStatsTable = pgTable(
             t.groupId,
             t.analysisSnapshotOpinionId,
         ),
+        index("opinion_group_opinion_stats_representative_idx")
+            .on(
+                t.groupId,
+                t.representativeProbabilityAgreement.desc(),
+                t.analysisSnapshotOpinionId,
+            )
+            .where(
+                sqlAnd(
+                    isNotNull(t.representativeAgreementType),
+                    isNotNull(t.representativeProbabilityAgreement),
+                ),
+            ),
         check(
             "opinion_group_opinion_stats_counts_check",
             sql`${t.numAgrees} >= 0 AND ${t.numDisagrees} >= 0 AND ${t.numPasses} >= 0`,

@@ -62,10 +62,11 @@ All URIs are relative to *http://localhost*
 |[**apiV1NotificationMarkAllReadPost**](#apiv1notificationmarkallreadpost) | **POST** /api/v1/notification/mark-all-read | |
 |[**apiV1OpinionCreatePost**](#apiv1opinioncreatepost) | **POST** /api/v1/opinion/create | |
 |[**apiV1OpinionDeletePost**](#apiv1opiniondeletepost) | **POST** /api/v1/opinion/delete | |
-|[**apiV1OpinionFetchAnalysisByConversationPost**](#apiv1opinionfetchanalysisbyconversationpost) | **POST** /api/v1/opinion/fetch-analysis-by-conversation | |
 |[**apiV1OpinionFetchAnalysisCheckpointsByConversationPost**](#apiv1opinionfetchanalysischeckpointsbyconversationpost) | **POST** /api/v1/opinion/fetch-analysis-checkpoints-by-conversation | |
-|[**apiV1OpinionFetchAnalysisContentByCandidatePost**](#apiv1opinionfetchanalysiscontentbycandidatepost) | **POST** /api/v1/opinion/fetch-analysis-content-by-candidate | |
-|[**apiV1OpinionFetchAnalysisMetadataByConversationPost**](#apiv1opinionfetchanalysismetadatabyconversationpost) | **POST** /api/v1/opinion/fetch-analysis-metadata-by-conversation | |
+|[**apiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost**](#apiv1opinionfetchanalysisframegrouplabelsbyframepost) | **POST** /api/v1/opinion/fetch-analysis-frame-group-labels-by-frame | |
+|[**apiV1OpinionFetchAnalysisFrameGroupsByFramePost**](#apiv1opinionfetchanalysisframegroupsbyframepost) | **POST** /api/v1/opinion/fetch-analysis-frame-groups-by-frame | |
+|[**apiV1OpinionFetchAnalysisFrameManifestByConversationPost**](#apiv1opinionfetchanalysisframemanifestbyconversationpost) | **POST** /api/v1/opinion/fetch-analysis-frame-manifest-by-conversation | |
+|[**apiV1OpinionFetchAnalysisFrameOpinionListByFramePost**](#apiv1opinionfetchanalysisframeopinionlistbyframepost) | **POST** /api/v1/opinion/fetch-analysis-frame-opinion-list-by-frame | |
 |[**apiV1OpinionFetchByConversationPost**](#apiv1opinionfetchbyconversationpost) | **POST** /api/v1/opinion/fetch-by-conversation | |
 |[**apiV1OpinionFetchBySlugIdListPost**](#apiv1opinionfetchbyslugidlistpost) | **POST** /api/v1/opinion/fetch-by-slug-id-list | |
 |[**apiV1OpinionFetchCommentStatsByConversationPost**](#apiv1opinionfetchcommentstatsbyconversationpost) | **POST** /api/v1/opinion/fetch-comment-stats-by-conversation | |
@@ -2976,57 +2977,6 @@ void (empty response body)
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **apiV1OpinionFetchAnalysisByConversationPost**
-> ApiV1OpinionFetchAnalysisByConversationPost200Response apiV1OpinionFetchAnalysisByConversationPost(apiV1OpinionFetchAnalysisByConversationPostRequest)
-
-
-### Example
-
-```typescript
-import {
-    DefaultApi,
-    Configuration,
-    ApiV1OpinionFetchAnalysisByConversationPostRequest
-} from './api';
-
-const configuration = new Configuration();
-const apiInstance = new DefaultApi(configuration);
-
-let apiV1OpinionFetchAnalysisByConversationPostRequest: ApiV1OpinionFetchAnalysisByConversationPostRequest; //
-
-const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisByConversationPost(
-    apiV1OpinionFetchAnalysisByConversationPostRequest
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **apiV1OpinionFetchAnalysisByConversationPostRequest** | **ApiV1OpinionFetchAnalysisByConversationPostRequest**|  | |
-
-
-### Return type
-
-**ApiV1OpinionFetchAnalysisByConversationPost200Response**
-
-### Authorization
-
-[BearerAuth](../README.md#BearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: application/json
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | Default Response |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
 # **apiV1OpinionFetchAnalysisCheckpointsByConversationPost**
 > Array<ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInner> apiV1OpinionFetchAnalysisCheckpointsByConversationPost(apiV1ModerationConversationWithdrawPostRequest)
 
@@ -3078,8 +3028,8 @@ const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisCheckpointsB
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **apiV1OpinionFetchAnalysisContentByCandidatePost**
-> ApiV1OpinionFetchAnalysisContentByCandidatePost200Response apiV1OpinionFetchAnalysisContentByCandidatePost(apiV1OpinionFetchAnalysisContentByCandidatePostRequest)
+# **apiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost**
+> ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200Response apiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost(apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest)
 
 
 ### Example
@@ -3088,16 +3038,16 @@ const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisCheckpointsB
 import {
     DefaultApi,
     Configuration,
-    ApiV1OpinionFetchAnalysisContentByCandidatePostRequest
+    ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-let apiV1OpinionFetchAnalysisContentByCandidatePostRequest: ApiV1OpinionFetchAnalysisContentByCandidatePostRequest; //
+let apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest: ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest; //
 
-const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisContentByCandidatePost(
-    apiV1OpinionFetchAnalysisContentByCandidatePostRequest
+const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost(
+    apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest
 );
 ```
 
@@ -3105,12 +3055,12 @@ const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisContentByCan
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **apiV1OpinionFetchAnalysisContentByCandidatePostRequest** | **ApiV1OpinionFetchAnalysisContentByCandidatePostRequest**|  | |
+| **apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest** | **ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest**|  | |
 
 
 ### Return type
 
-**ApiV1OpinionFetchAnalysisContentByCandidatePost200Response**
+**ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200Response**
 
 ### Authorization
 
@@ -3129,8 +3079,8 @@ const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisContentByCan
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **apiV1OpinionFetchAnalysisMetadataByConversationPost**
-> ApiV1OpinionFetchAnalysisMetadataByConversationPost200Response apiV1OpinionFetchAnalysisMetadataByConversationPost(apiV1OpinionFetchAnalysisMetadataByConversationPostRequest)
+# **apiV1OpinionFetchAnalysisFrameGroupsByFramePost**
+> ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200Response apiV1OpinionFetchAnalysisFrameGroupsByFramePost(apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest)
 
 
 ### Example
@@ -3139,16 +3089,16 @@ const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisContentByCan
 import {
     DefaultApi,
     Configuration,
-    ApiV1OpinionFetchAnalysisMetadataByConversationPostRequest
+    ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-let apiV1OpinionFetchAnalysisMetadataByConversationPostRequest: ApiV1OpinionFetchAnalysisMetadataByConversationPostRequest; //
+let apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest: ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest; //
 
-const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisMetadataByConversationPost(
-    apiV1OpinionFetchAnalysisMetadataByConversationPostRequest
+const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisFrameGroupsByFramePost(
+    apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest
 );
 ```
 
@@ -3156,12 +3106,114 @@ const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisMetadataByCo
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **apiV1OpinionFetchAnalysisMetadataByConversationPostRequest** | **ApiV1OpinionFetchAnalysisMetadataByConversationPostRequest**|  | |
+| **apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest** | **ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest**|  | |
 
 
 ### Return type
 
-**ApiV1OpinionFetchAnalysisMetadataByConversationPost200Response**
+**ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1OpinionFetchAnalysisFrameManifestByConversationPost**
+> ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200Response apiV1OpinionFetchAnalysisFrameManifestByConversationPost(apiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest: ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest; //
+
+const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisFrameManifestByConversationPost(
+    apiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest** | **ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1OpinionFetchAnalysisFrameOpinionListByFramePost**
+> ApiV1OpinionFetchAnalysisFrameOpinionListByFramePost200Response apiV1OpinionFetchAnalysisFrameOpinionListByFramePost(apiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest: ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest; //
+
+const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisFrameOpinionListByFramePost(
+    apiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest** | **ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest**|  | |
+
+
+### Return type
+
+**ApiV1OpinionFetchAnalysisFrameOpinionListByFramePost200Response**
 
 ### Authorization
 
@@ -3989,7 +4041,7 @@ const { status, data } = await apiInstance.apiV1SurveyResponseWithdrawPost(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1SurveyResultsAggregatedPost**
-> ApiV1SurveyResultsAggregatedPost200Response apiV1SurveyResultsAggregatedPost(apiV1OpinionFetchAnalysisByConversationPostRequest)
+> ApiV1SurveyResultsAggregatedPost200Response apiV1SurveyResultsAggregatedPost(apiV1SurveyResultsAggregatedPostRequest)
 
 
 ### Example
@@ -3998,16 +4050,16 @@ const { status, data } = await apiInstance.apiV1SurveyResponseWithdrawPost(
 import {
     DefaultApi,
     Configuration,
-    ApiV1OpinionFetchAnalysisByConversationPostRequest
+    ApiV1SurveyResultsAggregatedPostRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-let apiV1OpinionFetchAnalysisByConversationPostRequest: ApiV1OpinionFetchAnalysisByConversationPostRequest; //
+let apiV1SurveyResultsAggregatedPostRequest: ApiV1SurveyResultsAggregatedPostRequest; //
 
 const { status, data } = await apiInstance.apiV1SurveyResultsAggregatedPost(
-    apiV1OpinionFetchAnalysisByConversationPostRequest
+    apiV1SurveyResultsAggregatedPostRequest
 );
 ```
 
@@ -4015,7 +4067,7 @@ const { status, data } = await apiInstance.apiV1SurveyResultsAggregatedPost(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **apiV1OpinionFetchAnalysisByConversationPostRequest** | **ApiV1OpinionFetchAnalysisByConversationPostRequest**|  | |
+| **apiV1SurveyResultsAggregatedPostRequest** | **ApiV1SurveyResultsAggregatedPostRequest**|  | |
 
 
 ### Return type

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
     buildAnalysisDescriptionReadiness,
-    isDescriptionReadinessFreshForExpectedLocales,
     shouldUseSystemDescriptions,
 } from "./analysisDescriptionReadiness.js";
 import {
@@ -82,8 +81,8 @@ describe("analysis description readiness", () => {
             requestedExpected: true,
         });
 
-        expect(readiness.state).toBe("disabled");
-        expect(readiness.shouldRetry).toBe(false);
+        expect(readiness.english.expected).toBe(false);
+        expect(readiness.requested.expected).toBe(false);
         expect(
             shouldUseSystemDescriptions({
                 aiLabelingEnabled: false,
@@ -119,7 +118,7 @@ describe("analysis description readiness", () => {
         ).toBe(true);
     });
 
-    it("checks expected locale freshness without treating unrelated locales as stale", () => {
+    it("tracks requested locale status independently from English", () => {
         const readiness = buildAnalysisDescriptionReadiness({
             aiLabelingEnabled: true,
             requestedLocale: "fr",
@@ -129,38 +128,11 @@ describe("analysis description readiness", () => {
             requestedExpected: true,
         });
 
-        expect(
-            isDescriptionReadinessFreshForExpectedLocales({
-                readiness,
-                expectedLocales: ["fr"],
-            }),
-        ).toBe(false);
-        expect(
-            isDescriptionReadinessFreshForExpectedLocales({
-                readiness,
-                expectedLocales: ["es"],
-            }),
-        ).toBe(true);
-    });
-
-    it("treats fallback descriptions as settled for polling", () => {
-        const readiness = buildAnalysisDescriptionReadiness({
-            aiLabelingEnabled: true,
-            requestedLocale: "fr",
-            englishStatus: "ready",
-            englishExpected: true,
-            requestedStatus: "fallback",
-            requestedExpected: true,
+        expect(readiness.english).toEqual({ expected: true, status: "ready" });
+        expect(readiness.requested).toEqual({
+            expected: true,
+            status: "pending",
         });
-
-        expect(readiness.state).toBe("fallback");
-        expect(readiness.shouldRetry).toBe(false);
-        expect(
-            isDescriptionReadinessFreshForExpectedLocales({
-                readiness,
-                expectedLocales: ["fr"],
-            }),
-        ).toBe(true);
     });
 });
 

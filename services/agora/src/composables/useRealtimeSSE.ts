@@ -140,7 +140,7 @@ function isAnalysisCheckpointsQueryKey({
   );
 }
 
-function isAnalysisMetadataQueryKey({
+function isAnalysisFrameManifestQueryKey({
   queryKey,
   conversationSlugId,
 }: {
@@ -148,11 +148,12 @@ function isAnalysisMetadataQueryKey({
   conversationSlugId: string;
 }): boolean {
   return (
-    queryKey[0] === "analysisMetadata" && queryKey[1] === conversationSlugId
+    queryKey[0] === "analysisFrameManifest" &&
+    queryKey[1] === conversationSlugId
   );
 }
 
-function isAnalysisContentQueryKey({
+function isAnalysisFrameSectionQueryKey({
   queryKey,
   conversationSlugId,
 }: {
@@ -160,7 +161,23 @@ function isAnalysisContentQueryKey({
   conversationSlugId: string;
 }): boolean {
   return (
-    queryKey[0] === "analysisContent" && queryKey[1] === conversationSlugId
+    (queryKey[0] === "analysisFrameGroups" ||
+      queryKey[0] === "analysisFrameGroupLabels" ||
+      queryKey[0] === "analysisFrameOpinionList") &&
+    queryKey[1] === conversationSlugId
+  );
+}
+
+function isAnalysisFrameGroupLabelsQueryKey({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return (
+    queryKey[0] === "analysisFrameGroupLabels" &&
+    queryKey[1] === conversationSlugId
   );
 }
 
@@ -208,15 +225,21 @@ export function useRealtimeSSE({
   const authStore = useAuthenticationStore();
   const languageStore = useLanguageStore();
   const queryClient = useQueryClient();
-  const { fetchAnalysisMetadataData, fetchAnalysisContentData } =
-    useBackendCommentApi();
+  const {
+    fetchAnalysisFrameManifest,
+    fetchAnalysisFrameGroups,
+    fetchAnalysisFrameGroupLabels,
+    fetchAnalysisFrameOpinionList,
+  } = useBackendCommentApi();
   const liveAnalysisCatchUpController = createLiveAnalysisCatchUpController({
     queryClient,
     fetchLiveAnalysis: (params) =>
       fetchAnalysisDataWithCache({
         queryClient,
-        fetchAnalysisMetadataData,
-        fetchAnalysisContentData,
+        fetchAnalysisFrameManifest,
+        fetchAnalysisFrameGroups,
+        fetchAnalysisFrameGroupLabels,
+        fetchAnalysisFrameOpinionList,
         conversationSlugId: params.conversationSlugId,
         analysisView: params.analysisView,
         checkpointViewSnapshotId: params.checkpointViewSnapshotId,
@@ -842,20 +865,27 @@ export function useRealtimeSSE({
               }),
             refetchType: "none",
           });
+          if (data.changeKind !== "descriptions") {
+            void queryClient.invalidateQueries({
+              predicate: (query) =>
+                isAnalysisFrameManifestQueryKey({
+                  queryKey: query.queryKey,
+                  conversationSlugId: data.conversationSlugId,
+                }),
+              refetchType: "none",
+            });
+          }
           void queryClient.invalidateQueries({
             predicate: (query) =>
-              isAnalysisMetadataQueryKey({
-                queryKey: query.queryKey,
-                conversationSlugId: data.conversationSlugId,
-              }),
-            refetchType: "none",
-          });
-          void queryClient.invalidateQueries({
-            predicate: (query) =>
-              isAnalysisContentQueryKey({
-                queryKey: query.queryKey,
-                conversationSlugId: data.conversationSlugId,
-              }),
+              data.changeKind === "descriptions"
+                ? isAnalysisFrameGroupLabelsQueryKey({
+                    queryKey: query.queryKey,
+                    conversationSlugId: data.conversationSlugId,
+                  })
+                : isAnalysisFrameSectionQueryKey({
+                    queryKey: query.queryKey,
+                    conversationSlugId: data.conversationSlugId,
+                  }),
             refetchType: "none",
           });
           if (checkpointChanged || data.changeKind === "descriptions") {
@@ -933,14 +963,14 @@ export function useRealtimeSSE({
 
           if (preferredOpinionGroupCountChanged || aiLabelingEnabledChanged) {
             void queryClient.invalidateQueries({
-              queryKey: ["analysisMetadata", data.conversationSlugId],
+              queryKey: ["analysisFrameManifest", data.conversationSlugId],
               refetchType: "none",
             });
           }
 
           if (aiLabelingEnabledChanged) {
             void queryClient.invalidateQueries({
-              queryKey: ["analysisContent", data.conversationSlugId],
+              queryKey: ["analysisFrameGroupLabels", data.conversationSlugId],
               refetchType: "none",
             });
           }

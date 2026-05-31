@@ -7,6 +7,7 @@ import {
 import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
+  AnalysisFrameKey,
   AnalysisFreshnessRequest,
   FetchCommentStatsResponse,
 } from "src/shared/types/dto";
@@ -15,8 +16,6 @@ import { useLanguageStore } from "src/stores/language";
 import { useUserStore } from "src/stores/user";
 import {
   buildAnalysisFreshnessRequest,
-  DESCRIPTION_READINESS_RETRY_INTERVAL_MS,
-  shouldRetryAnalysisData,
 } from "src/utils/analysis/analysisFreshness";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
@@ -25,7 +24,12 @@ import type { AxiosErrorResponse } from "../common";
 import { getErrorMessage } from "../common";
 import { updateConversationQueryCache } from "../post/useConversationQuery";
 import type { AnalysisData, CommentTabFilters } from "./comment";
-import { buildAnalysisData, useBackendCommentApi } from "./comment";
+import {
+  buildAnalysisDataFromFrame,
+  buildEmptyAnalysisDataFromManifest,
+  hasManifestFrame,
+  useBackendCommentApi,
+} from "./comment";
 import {
   type UseCommentQueriesTranslations,
   useCommentQueriesTranslations,
@@ -161,10 +165,69 @@ export function getAnalysisStaleTime(voteCount?: number): number {
 
 type BackendCommentApi = ReturnType<typeof useBackendCommentApi>;
 
+function frameKeyQueryPart(frameKey: AnalysisFrameKey): readonly number[] {
+  return [
+    frameKey.conversationViewSnapshotId,
+    frameKey.analysisSnapshotId,
+    frameKey.candidateId,
+  ];
+}
+
+function getManifestStaleTime({
+  freshness,
+  voteCount,
+}: {
+  freshness: AnalysisFreshnessRequest | null;
+  voteCount: number | undefined;
+}): number {
+  if (
+    freshness === null ||
+    freshness.minimumConversationViewSnapshotId === null
+  ) {
+    return getAnalysisStaleTime(voteCount);
+  }
+
+  return 0;
+}
+
+function shouldRefreshFrameSections({
+  freshness,
+}: {
+  freshness: AnalysisFreshnessRequest | null;
+}): boolean {
+  return (
+    freshness !== null && freshness.minimumConversationViewSnapshotId !== null
+  );
+}
+
+function getFrameSectionStaleTime({
+  freshness,
+  voteCount,
+}: {
+  freshness: AnalysisFreshnessRequest | null;
+  voteCount: number | undefined;
+}): number {
+  return shouldRefreshFrameSections({ freshness })
+    ? 0
+    : getAnalysisStaleTime(voteCount);
+}
+
+function getLabelStaleTime({
+  freshness,
+  voteCount,
+}: {
+  freshness: AnalysisFreshnessRequest | null;
+  voteCount: number | undefined;
+}): number {
+  return freshness === null ? getAnalysisStaleTime(voteCount) : 0;
+}
+
 export async function fetchAnalysisDataWithCache({
   queryClient,
-  fetchAnalysisMetadataData,
-  fetchAnalysisContentData,
+  fetchAnalysisFrameManifest,
+  fetchAnalysisFrameGroups,
+  fetchAnalysisFrameGroupLabels,
+  fetchAnalysisFrameOpinionList,
   conversationSlugId,
   analysisView,
   checkpointViewSnapshotId,
@@ -174,8 +237,10 @@ export async function fetchAnalysisDataWithCache({
   freshness,
 }: {
   queryClient: QueryClient;
-  fetchAnalysisMetadataData: BackendCommentApi["fetchAnalysisMetadataData"];
-  fetchAnalysisContentData: BackendCommentApi["fetchAnalysisContentData"];
+  fetchAnalysisFrameManifest: BackendCommentApi["fetchAnalysisFrameManifest"];
+  fetchAnalysisFrameGroups: BackendCommentApi["fetchAnalysisFrameGroups"];
+  fetchAnalysisFrameGroupLabels: BackendCommentApi["fetchAnalysisFrameGroupLabels"];
+  fetchAnalysisFrameOpinionList: BackendCommentApi["fetchAnalysisFrameOpinionList"];
   conversationSlugId: string;
   analysisView: AnalysisView | undefined;
   checkpointViewSnapshotId: number | undefined;
@@ -184,49 +249,121 @@ export async function fetchAnalysisDataWithCache({
   voteCount: number | undefined;
   freshness: AnalysisFreshnessRequest | null;
 }): Promise<AnalysisData> {
-  const metadata = await queryClient.fetchQuery({
+  const manifest = await queryClient.fetchQuery({
     queryKey: [
-      "analysisMetadata",
+      "analysisFrameManifest",
       conversationSlugId,
       analysisView,
       checkpointViewSnapshotId,
       aiLabelingEnabled,
-      displayLanguage,
     ],
     queryFn: () =>
-      fetchAnalysisMetadataData({
+      fetchAnalysisFrameManifest({
         conversationSlugId,
         analysisView,
         checkpointViewSnapshotId,
         freshness,
       }),
-    staleTime: 0,
+    staleTime: getManifestStaleTime({ freshness, voteCount }),
   });
 
-  const resolvedCandidateId = metadata.analysisViewState.resolvedCandidateId;
-  const resolvedContentViewSnapshotId = metadata.conversationViewSnapshotId;
-  const contentResult =
-    resolvedContentViewSnapshotId === undefined || resolvedCandidateId === null
-      ? undefined
-      : await queryClient.fetchQuery({
-          queryKey: [
-            "analysisContent",
-            conversationSlugId,
-            resolvedContentViewSnapshotId,
-            resolvedCandidateId,
-            displayLanguage,
-          ],
-          queryFn: () =>
-            fetchAnalysisContentData({
-              conversationSlugId,
-              conversationViewSnapshotId: resolvedContentViewSnapshotId,
-              candidateId: resolvedCandidateId,
-              freshness,
-            }),
-          staleTime: freshness === null ? getAnalysisStaleTime(voteCount) : 0,
-        });
+  if (!hasManifestFrame(manifest)) {
+    return buildEmptyAnalysisDataFromManifest({ manifest });
+  }
 
-  return buildAnalysisData({ metadata, content: contentResult });
+  const frameKey = manifest.frameKey;
+  const frameKeyPart = frameKeyQueryPart(frameKey);
+  const frameSectionStaleTime = getFrameSectionStaleTime({
+    freshness,
+    voteCount,
+  });
+  const labelStaleTime = getLabelStaleTime({ freshness, voteCount });
+  const [groups, groupLabels, agreements, disagreements, divisive] =
+    await Promise.all([
+      queryClient.fetchQuery({
+        queryKey: ["analysisFrameGroups", conversationSlugId, frameKeyPart],
+        queryFn: () =>
+          fetchAnalysisFrameGroups({
+            conversationSlugId,
+            frameKey,
+            freshness,
+          }),
+        staleTime: frameSectionStaleTime,
+      }),
+      queryClient.fetchQuery({
+        queryKey: [
+          "analysisFrameGroupLabels",
+          conversationSlugId,
+          frameKeyPart,
+          aiLabelingEnabled,
+          displayLanguage,
+        ],
+        queryFn: () =>
+          fetchAnalysisFrameGroupLabels({
+            conversationSlugId,
+            frameKey,
+            freshness,
+          }),
+        staleTime: labelStaleTime,
+      }),
+      queryClient.fetchQuery({
+        queryKey: [
+          "analysisFrameOpinionList",
+          conversationSlugId,
+          frameKeyPart,
+          "agreements",
+        ],
+        queryFn: () =>
+          fetchAnalysisFrameOpinionList({
+            conversationSlugId,
+            frameKey,
+            kind: "agreements",
+            freshness,
+          }),
+        staleTime: frameSectionStaleTime,
+      }),
+      queryClient.fetchQuery({
+        queryKey: [
+          "analysisFrameOpinionList",
+          conversationSlugId,
+          frameKeyPart,
+          "disagreements",
+        ],
+        queryFn: () =>
+          fetchAnalysisFrameOpinionList({
+            conversationSlugId,
+            frameKey,
+            kind: "disagreements",
+            freshness,
+          }),
+        staleTime: frameSectionStaleTime,
+      }),
+      queryClient.fetchQuery({
+        queryKey: [
+          "analysisFrameOpinionList",
+          conversationSlugId,
+          frameKeyPart,
+          "divisive",
+        ],
+        queryFn: () =>
+          fetchAnalysisFrameOpinionList({
+            conversationSlugId,
+            frameKey,
+            kind: "divisive",
+            freshness,
+          }),
+        staleTime: frameSectionStaleTime,
+      }),
+    ]);
+
+  return buildAnalysisDataFromFrame({
+    manifest,
+    groups,
+    groupLabels,
+    agreements,
+    disagreements,
+    divisive,
+  });
 }
 
 export function useAnalysisQuery({
@@ -244,8 +381,12 @@ export function useAnalysisQuery({
   voteCount?: MaybeRefOrGetter<number | undefined>;
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
-  const { fetchAnalysisMetadataData, fetchAnalysisContentData } =
-    useBackendCommentApi();
+  const {
+    fetchAnalysisFrameManifest,
+    fetchAnalysisFrameGroups,
+    fetchAnalysisFrameGroupLabels,
+    fetchAnalysisFrameOpinionList,
+  } = useBackendCommentApi();
   const queryClient = useQueryClient();
   const { displayLanguage } = storeToRefs(useLanguageStore());
 
@@ -286,8 +427,10 @@ export function useAnalysisQuery({
       });
       const analysisData = await fetchAnalysisDataWithCache({
         queryClient,
-        fetchAnalysisMetadataData,
-        fetchAnalysisContentData,
+        fetchAnalysisFrameManifest,
+        fetchAnalysisFrameGroups,
+        fetchAnalysisFrameGroupLabels,
+        fetchAnalysisFrameOpinionList,
         conversationSlugId: resolvedConversationSlugId,
         analysisView: resolvedAnalysisView,
         checkpointViewSnapshotId: resolvedCheckpointViewSnapshotId,
@@ -344,10 +487,6 @@ export function useAnalysisQuery({
     // Note: When votes/comments happen, markAnalysisAsStale() is called
     // This marks data as stale immediately, so next access will refetch
     placeholderData: (previousData) => previousData, // Preserve previous data during analysis refreshes
-    refetchInterval: (query) =>
-      shouldRetryAnalysisData(query.state.data)
-        ? DESCRIPTION_READINESS_RETRY_INTERVAL_MS
-        : false,
     retry: false, // Disable auto-retry
   });
 }

@@ -2104,8 +2104,6 @@ const mockAnalysisData = computed<AnalysisData>(() => {
         : undefined,
     analysisViewState: mockAnalysisViewState.value,
     hasVotedOnAllAvailableOpinions: voteCompletionMode.value === "complete",
-    descriptionReadiness: null,
-    contentStatus: hideGroupAnalysis ? "not_applicable" : "available",
   };
 });
 

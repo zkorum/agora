@@ -20,7 +20,6 @@ import {
 import { and, asc, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type {
-    AnalysisDescriptionReadiness,
     AnalysisViewOption,
     AnalysisViewOptionCandidate,
     AnalysisViewState,
@@ -31,6 +30,7 @@ import {
     ZodSupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
 import {
+    type AnalysisDescriptionReadiness,
     buildAnalysisDescriptionReadiness,
     shouldUseSystemDescriptions,
 } from "./analysisDescriptionReadiness.js";
@@ -49,8 +49,8 @@ export interface SelectedOpinionGroupCandidate {
     resultId: number;
     candidateId: number;
     groupCount: number;
+    aiLabelingEnabled: boolean;
     useSystemDescriptions: boolean;
-    descriptionReadiness: AnalysisDescriptionReadiness;
 }
 
 export interface AnalysisConversationViewSnapshot {
@@ -83,7 +83,6 @@ export interface OpinionGroupAnalysisSelection {
     candidate: SelectedOpinionGroupCandidate | undefined;
     viewState: AnalysisViewState;
     displayableGroupCounts: number[];
-    descriptionReadiness: AnalysisDescriptionReadiness | null;
     conversationViewSnapshot?: AnalysisConversationViewSnapshot;
     emptyReason?: string;
 }
@@ -397,22 +396,7 @@ function selectCandidate({
     })[0];
 }
 
-export function getRequiredDescriptionCandidateIds({
-    candidates,
-    variantsEnabled,
-}: {
-    candidates: SnapshotCandidateOption[];
-    variantsEnabled: boolean;
-}): number[] {
-    if (variantsEnabled) {
-        return candidates.map((candidate) => candidate.candidateId);
-    }
-
-    const selectedCandidate = selectCandidate({ candidates });
-    return selectedCandidate === undefined ? [] : [selectedCandidate.candidateId];
-}
-
-export async function buildDerivedAnalysisDescriptionReadiness({
+async function buildDerivedAnalysisDescriptionReadiness({
     db,
     aiLabelingEnabled,
     requestedLocale,
@@ -910,23 +894,6 @@ export async function getOpinionGroupAnalysisSelection({
     const displayableGroupCounts = getDisplayableGroupCounts({
         candidates: candidateRows,
     });
-    const descriptionReadiness = await buildDerivedAnalysisDescriptionReadiness({
-        db,
-        aiLabelingEnabled: latestResult.aiLabelingEnabled,
-        requestedLocale,
-        requiredCandidateIds: getRequiredDescriptionCandidateIds({
-            candidates: candidateRows,
-            variantsEnabled,
-        }),
-    });
-    const useSystemDescriptions = shouldUseSystemDescriptions({
-        aiLabelingEnabled: latestResult.aiLabelingEnabled,
-        requestedLocale,
-        englishStatus: descriptionReadiness.english.status,
-        englishExpected: descriptionReadiness.english.expected,
-        requestedStatus: descriptionReadiness.requested.status,
-        requestedExpected: descriptionReadiness.requested.expected,
-    });
     const candidatesByGroupCount = new Map(
         selectableCandidates.map((candidate) => [
             candidate.groupCount,
@@ -993,6 +960,21 @@ export async function getOpinionGroupAnalysisSelection({
             resolvedBy: "unavailable_fixed_count" as const,
         };
     })();
+    const descriptionReadiness = await buildDerivedAnalysisDescriptionReadiness({
+        db,
+        aiLabelingEnabled: latestResult.aiLabelingEnabled,
+        requestedLocale,
+        requiredCandidateIds:
+            resolved.candidate === undefined ? [] : [resolved.candidate.candidateId],
+    });
+    const useSystemDescriptions = shouldUseSystemDescriptions({
+        aiLabelingEnabled: latestResult.aiLabelingEnabled,
+        requestedLocale,
+        englishStatus: descriptionReadiness.english.status,
+        englishExpected: descriptionReadiness.english.expected,
+        requestedStatus: descriptionReadiness.requested.status,
+        requestedExpected: descriptionReadiness.requested.expected,
+    });
 
     const viewState: AnalysisViewState = {
         requestedView,
@@ -1017,7 +999,6 @@ export async function getOpinionGroupAnalysisSelection({
             viewState,
             displayableGroupCounts,
             conversationViewSnapshot,
-            descriptionReadiness,
             emptyReason: `Agora could not form ${groupCount} meaningful groups for this checkpoint.`,
         };
     }
@@ -1032,11 +1013,10 @@ export async function getOpinionGroupAnalysisSelection({
             resultId: latestResult.resultId,
             candidateId: resolved.candidate.candidateId,
             groupCount: resolved.candidate.groupCount,
+            aiLabelingEnabled: latestResult.aiLabelingEnabled,
             useSystemDescriptions,
-            descriptionReadiness,
         },
         conversationViewSnapshot,
-        descriptionReadiness,
         viewState,
         displayableGroupCounts,
     };
@@ -1062,7 +1042,6 @@ function createEmptyAnalysisViewSelection({
     return {
         candidate: undefined,
         conversationViewSnapshot,
-        descriptionReadiness: null,
         emptyReason,
         displayableGroupCounts: [],
         viewState: {

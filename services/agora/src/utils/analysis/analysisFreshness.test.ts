@@ -16,33 +16,54 @@ function analysis(overrides: Partial<AnalysisData> = {}): AnalysisData {
     controversial: [],
     polisClusters: {},
     conversationViewSnapshotId: 10,
-    descriptionReadiness: null,
-    contentStatus: "available",
     ...overrides,
   };
+}
+
+const analysisViewState: NonNullable<AnalysisData["analysisViewState"]> = {
+  requestedView: "auto",
+  canonicalView: "auto",
+  resolvedGroupCount: 2,
+  resolvedCandidateId: 1,
+  resolvedBy: "auto",
+  variantsEnabled: false,
+  options: [],
+};
+
+function analysisWithLabels(overrides: Partial<AnalysisData> = {}): AnalysisData {
+  return analysis({
+    manifest: {
+      analysisViewResolution: analysisViewState,
+      aiLabelsExpected: true,
+    },
+    groupDescriptionDisplay: {
+      requestedLocale: "fr",
+      displayedLocale: "en",
+    },
+    ...overrides,
+  });
 }
 
 describe("analysis freshness", () => {
   it("extracts only pending expected description locales", () => {
     expect(
       getPendingDescriptionLocales({
-        requestedLocale: "fr",
-        english: { expected: true, status: "ready" },
-        requested: { expected: true, status: "pending" },
-        state: "requested_pending",
-        shouldRetry: true,
+        analysis: analysisWithLabels(),
+        expectedDescriptionLocales: ["en", "fr"],
       })
     ).toEqual(["fr"]);
   });
 
-  it("treats fallback descriptions as settled", () => {
+  it("treats displayed requested-locale labels as settled", () => {
     expect(
       getPendingDescriptionLocales({
-        requestedLocale: "fr",
-        english: { expected: true, status: "ready" },
-        requested: { expected: true, status: "fallback" },
-        state: "fallback",
-        shouldRetry: false,
+        analysis: analysisWithLabels({
+          groupDescriptionDisplay: {
+            requestedLocale: "fr",
+            displayedLocale: "fr",
+          },
+        }),
+        expectedDescriptionLocales: ["fr"],
       })
     ).toEqual([]);
   });
@@ -50,12 +71,13 @@ describe("analysis freshness", () => {
   it("treats snapshot and locale freshness independently", () => {
     const data = analysis({
       conversationViewSnapshotId: 12,
-      descriptionReadiness: {
+      manifest: {
+        analysisViewResolution: analysisViewState,
+        aiLabelsExpected: true,
+      },
+      groupDescriptionDisplay: {
         requestedLocale: "fr",
-        english: { expected: true, status: "ready" },
-        requested: { expected: true, status: "pending" },
-        state: "requested_pending",
-        shouldRetry: true,
+        displayedLocale: "en",
       },
     });
 
@@ -77,15 +99,7 @@ describe("analysis freshness", () => {
 
   it("builds explicit freshness requests from event and pending state", () => {
     const request = buildAnalysisFreshnessRequest({
-      previousAnalysis: analysis({
-        descriptionReadiness: {
-          requestedLocale: "fr",
-          english: { expected: true, status: "pending" },
-          requested: { expected: true, status: "pending" },
-          state: "english_pending",
-          shouldRetry: true,
-        },
-      }),
+      previousAnalysis: analysisWithLabels(),
       expectedSnapshotId: 15,
       expectedDescriptionLocales: ["fr"],
       enablePrimaryFallback: true,
@@ -94,7 +108,7 @@ describe("analysis freshness", () => {
     expect(request).toEqual({
       enablePrimaryFallback: true,
       minimumConversationViewSnapshotId: 15,
-      expectedDescriptionLocales: ["fr", "en"],
+      expectedDescriptionLocales: ["fr"],
     });
   });
 
@@ -127,20 +141,8 @@ describe("analysis freshness", () => {
     ).toEqual(["en", "fr"]);
   });
 
-  it("retries only when readiness explicitly says to retry", () => {
-    expect(
-      shouldRetryDescriptionReadiness(
-        analysis({
-          descriptionReadiness: {
-            requestedLocale: "fr",
-            english: { expected: true, status: "ready" },
-            requested: { expected: true, status: "pending" },
-            state: "requested_pending",
-            shouldRetry: true,
-          },
-        })
-      )
-    ).toBe(true);
+  it("does not retry from readiness state", () => {
+    expect(shouldRetryDescriptionReadiness(analysisWithLabels())).toBe(false);
     expect(shouldRetryDescriptionReadiness(analysis())).toBe(false);
   });
 });

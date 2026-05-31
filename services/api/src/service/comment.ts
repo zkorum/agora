@@ -3,6 +3,8 @@ import {
     analysisSnapshotResultTable,
     analysisSnapshotOpinionTable,
     opinionContentTable,
+    opinionGroupDescriptionTable,
+    opinionGroupDescriptionTranslationTable,
     opinionGroupCandidateAssessmentTable,
     opinionGroupCandidateTable,
     opinionGroupCandidateOpinionMetricsTable,
@@ -28,13 +30,14 @@ import {
 import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
 import { createConversationViewSnapshotsFromCurrentState } from "./conversationViewSnapshot.js";
 import type {
-    ConversationAnalysis,
-    ConversationAnalysisContent,
-    ConversationAnalysisMetadata,
-    AnalysisDescriptionReadiness,
+    AnalysisFrameGroupLabels,
+    AnalysisFrameGroups,
+    AnalysisFrameKey,
+    AnalysisFrameManifest,
+    AnalysisFrameOpinionList,
+    AnalysisFrameOpinionListKind,
     AnalysisFreshnessRequest,
     CreateCommentResponse,
-    FetchAnalysisContentResponse,
     FetchCommentStatsResponse,
     GetOpinionBySlugIdListResponse,
 } from "@/shared/types/dto.js";
@@ -57,7 +60,6 @@ import type {
     OpinionItem,
     OpinionItemPerSlugId,
     OpinionModerationAction,
-    PolisClusters,
     SlugId,
     PolisKey,
     ClusterStats,
@@ -82,14 +84,8 @@ import type {
 import { nowZeroMs } from "@/shared/util.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import {
-    buildDerivedAnalysisDescriptionReadiness,
-    fetchSnapshotCandidateOptions,
-    getDescriptionTextsByGroupId,
     getOpinionGroupAnalysisSelection,
     getSelectedOpinionGroupCandidate,
-    getRequiredDescriptionCandidateIds,
-    type AnalysisViewState,
-    type SelectedOpinionGroupCandidate,
 } from "./opinionGroupAnalysis.js";
 import { ensureAiDescriptionLocaleExpectationForConversationViewSnapshot } from "./conversationViewSnapshot.js";
 import { alias } from "drizzle-orm/pg-core";
@@ -97,10 +93,6 @@ import {
     type SupportedDisplayLanguageCodes,
     ZodSupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
-import {
-    isDescriptionReadinessFreshForExpectedLocales,
-    shouldUseSystemDescriptions,
-} from "./analysisDescriptionReadiness.js";
 
 interface PrimaryReplicaDb extends PostgresJsDatabase {
     $primary: PostgresJsDatabase;
@@ -138,33 +130,6 @@ function getSupportedDisplayLanguage(
     return parsed.success ? parsed.data : "en";
 }
 
-async function ensureAiDescriptionExpectationForAnalysisMetadata({
-    db,
-    conversationSlugId,
-    metadata,
-    requestedLocale,
-}: {
-    db: PostgresJsDatabase;
-    conversationSlugId: string;
-    metadata: ConversationAnalysisMetadata;
-    requestedLocale: SupportedDisplayLanguageCodes;
-}): Promise<void> {
-    if (
-        metadata.conversationViewSnapshotId === undefined ||
-        metadata.analysisViewState.resolvedCandidateId === null
-    ) {
-        return;
-    }
-
-    await ensureAiDescriptionLocaleExpectationForConversationViewSnapshot({
-        db,
-        conversationSlugId,
-        conversationViewSnapshotId: metadata.conversationViewSnapshotId,
-        candidateId: metadata.analysisViewState.resolvedCandidateId,
-        requestedLocale,
-    });
-}
-
 function shouldTryPrimaryFallback({
     db,
     freshnessOptions,
@@ -173,42 +138,6 @@ function shouldTryPrimaryFallback({
     freshnessOptions: AnalysisFreshnessOptions | null;
 }): boolean {
     return freshnessOptions?.enablePrimaryFallback === true && hasPrimaryDb(db);
-}
-
-function isAnalysisMetadataFreshEnough({
-    metadata,
-    freshnessOptions,
-}: {
-    metadata: ConversationAnalysisMetadata;
-    freshnessOptions: AnalysisFreshnessOptions | null;
-}): boolean {
-    const minimumSnapshotId =
-        freshnessOptions?.minimumConversationViewSnapshotId ?? null;
-    if (
-        minimumSnapshotId !== null &&
-        (metadata.conversationViewSnapshotId === undefined ||
-            metadata.conversationViewSnapshotId < minimumSnapshotId)
-    ) {
-        return false;
-    }
-
-    return isDescriptionReadinessFreshForExpectedLocales({
-        readiness: metadata.descriptionReadiness,
-        expectedLocales: freshnessOptions?.expectedDescriptionLocales ?? [],
-    });
-}
-
-function isAnalysisContentFreshEnough({
-    descriptionReadiness,
-    freshnessOptions,
-}: {
-    descriptionReadiness: AnalysisDescriptionReadiness | null;
-    freshnessOptions: AnalysisFreshnessOptions | null;
-}): boolean {
-    return isDescriptionReadinessFreshForExpectedLocales({
-        readiness: descriptionReadiness,
-        expectedLocales: freshnessOptions?.expectedDescriptionLocales ?? [],
-    });
 }
 
 async function fetchLatestConversationOpinionCountSnapshot({
@@ -753,85 +682,79 @@ function isPolisKey(value: string): value is PolisKey {
     return POLIS_KEY_SET.has(value);
 }
 
-function createEmptyConversationAnalysis({
-    hasVotedOnAllAvailableOpinions,
-    conversationViewSnapshotId,
-    analysisSnapshotId,
-    conversationViewSnapshot,
-    descriptionReadiness,
-    emptyReason,
-    analysisViewState,
-}: {
-    hasVotedOnAllAvailableOpinions: boolean | undefined;
-    conversationViewSnapshotId?: number;
-    analysisSnapshotId?: number;
-    conversationViewSnapshot?: ConversationAnalysis["conversationViewSnapshot"];
-    descriptionReadiness: AnalysisDescriptionReadiness | null;
-    emptyReason?: string;
-    analysisViewState?: AnalysisViewState;
-}): ConversationAnalysis {
-    return {
-        polisContentId: undefined,
-        conversationViewSnapshotId,
-        analysisSnapshotId,
-        conversationViewSnapshot,
-        descriptionReadiness,
-        emptyReason,
-        analysisViewState,
-        consensusAgree: [],
-        consensusDisagree: [],
-        controversial: [],
-        clusters: {},
-        hasVotedOnAllAvailableOpinions,
-    };
-}
-
 interface SnapshotGroupMetadata {
     id: number;
     key: PolisKey;
     numUsers: number;
-    aiLabel?: string;
-    aiSummary?: string;
+    systemDescriptionId: number | null;
     isUserInCluster: boolean;
 }
 
-interface SnapshotAnalysisOpinionData {
-    opinionsById: Map<number, AnalysisOpinionItem>;
-    representativeOpinionIdsByGroupKey: Map<PolisKey, number[]>;
+interface SnapshotAnalysisOpinionRow {
+    analysisSnapshotOpinionId: number;
+    opinionId: number;
+    opinionSlugId: string;
+    createdAt: Date;
+    updatedAt: Date;
+    opinion: string;
+    authorId: string;
+    username: string;
+    isSeed: boolean;
+    numAgrees: number;
+    numDisagrees: number;
+    numPasses: number;
+    groupAwareConsensusAgree: number | null;
+    groupAwareConsensusDisagree: number | null;
+    divisiveScore: number | null;
+    moderationAction: OpinionModerationAction | null;
+    moderationExplanation: string | null;
+    moderationReason: ModerationReason | null;
+    moderationCreatedAt: Date | null;
+    moderationUpdatedAt: Date | null;
 }
 
-function getOpinionParticipationWeight(opinion: AnalysisOpinionItem): number {
-    const totalVotes =
-        opinion.numAgrees + opinion.numDisagrees + opinion.numPasses;
-    return totalVotes / Math.max(totalVotes + opinion.numParticipants * 0.1, 1);
+interface GroupOpinionStatsRow {
+    groupId: number;
+    analysisSnapshotOpinionId: number;
+    numAgrees: number;
+    numDisagrees: number;
+    numPasses: number;
 }
 
-function sortAnalysisOpinionsByWeightedMetric({
-    opinions,
-    getMetric,
-}: {
-    opinions: AnalysisOpinionItem[];
-    getMetric: (opinion: AnalysisOpinionItem) => number;
-}): AnalysisOpinionItem[] {
-    return [...opinions].sort((a, b) => {
-        const bScore = getMetric(b) * getOpinionParticipationWeight(b);
-        const aScore = getMetric(a) * getOpinionParticipationWeight(a);
-        return bScore - aScore;
-    });
+interface RepresentativeOpinionRow {
+    groupId: number;
+    analysisSnapshotOpinionId: number;
+    opinionId: number;
+    representativeProbabilityAgreement: number;
+}
+
+interface SelectedAnalysisFrameCandidate {
+    conversationId: number;
+    viewSnapshotId: number;
+    surveyAggregateSnapshotId: number | null;
+    participantCount: number;
+    snapshotId: number;
+    resultId: number;
+    candidateId: number;
+    groupCount: number;
+    aiLabelingEnabled: boolean;
+    isCheckpointFrame: boolean;
+}
+
+interface AnalysisFrameKeySource {
+    viewSnapshotId: number;
+    snapshotId: number;
+    candidateId: number;
 }
 
 async function fetchSnapshotGroups({
     db,
     candidateId,
     personalizationUserId,
-    displayLanguage,
-    useSystemDescriptions,
 }: {
     db: PostgresJsDatabase;
     candidateId: number;
     personalizationUserId?: string;
-    displayLanguage: string;
-    useSystemDescriptions: boolean;
 }): Promise<SnapshotGroupMetadata[]> {
     const groupRows = await db
         .select({
@@ -839,7 +762,6 @@ async function fetchSnapshotGroups({
             key: opinionGroupTable.key,
             numUsers: opinionGroupTable.numUsers,
             systemDescriptionId: opinionGroupLineageTable.systemDescriptionId,
-            adminDescriptionId: opinionGroupLineageTable.adminDescriptionId,
         })
         .from(opinionGroupTable)
         .leftJoin(
@@ -848,17 +770,6 @@ async function fetchSnapshotGroups({
         )
         .where(eq(opinionGroupTable.candidateId, candidateId))
         .orderBy(asc(opinionGroupTable.key));
-
-    const descriptionsByGroupId = await getDescriptionTextsByGroupId({
-        db,
-        groups: groupRows.map((row) => ({
-            groupId: row.id,
-            systemDescriptionId: row.systemDescriptionId,
-            adminDescriptionId: row.adminDescriptionId,
-        })),
-        displayLanguage,
-        includeSystemDescriptions: useSystemDescriptions,
-    });
 
     const currentUserGroupIds = new Set<number>();
     if (personalizationUserId !== undefined) {
@@ -885,14 +796,11 @@ async function fetchSnapshotGroups({
             continue;
         }
 
-        const description = descriptionsByGroupId.get(row.id);
-
         groups.push({
             id: row.id,
             key: row.key,
             numUsers: row.numUsers,
-            aiLabel: description?.label,
-            aiSummary: description?.summary,
+            systemDescriptionId: row.systemDescriptionId,
             isUserInCluster: currentUserGroupIds.has(row.id),
         });
     }
@@ -900,83 +808,117 @@ async function fetchSnapshotGroups({
     return groups;
 }
 
-async function removeMutedAnalysisOpinions({
-    db,
-    personalizationUserId,
-    opinionsById,
-}: {
-    db: PostgresJsDatabase;
-    personalizationUserId?: string;
-    opinionsById: Map<number, AnalysisOpinionItem>;
-}): Promise<void> {
-    if (personalizationUserId === undefined) {
-        return;
-    }
-
-    const mutedUserItems = await getUserMutePreferences({
-        db: db,
-        userId: personalizationUserId,
-    });
-    if (mutedUserItems.length === 0) {
-        return;
-    }
-
-    opinionsById.forEach((opinionItem, opinionId, map) => {
-        if (
-            mutedUserItems.some(
-                (muteItem) => muteItem.username === opinionItem.username,
-            )
-        ) {
-            map.delete(opinionId);
-        }
-    });
+function getSnapshotAnalysisOpinionSelectFields() {
+    return {
+        opinionId: opinionTable.id,
+        analysisSnapshotOpinionId: analysisSnapshotOpinionTable.id,
+        opinionSlugId: opinionTable.slugId,
+        createdAt: opinionTable.createdAt,
+        updatedAt: opinionTable.updatedAt,
+        opinion: opinionContentTable.content,
+        authorId: opinionTable.authorId,
+        username: userTable.username,
+        isSeed: opinionTable.isSeed,
+        numAgrees: analysisSnapshotOpinionTable.numAgrees,
+        numDisagrees: analysisSnapshotOpinionTable.numDisagrees,
+        numPasses: analysisSnapshotOpinionTable.numPasses,
+        groupAwareConsensusAgree:
+            opinionGroupCandidateOpinionMetricsTable.groupAwareConsensusAgree,
+        groupAwareConsensusDisagree:
+            opinionGroupCandidateOpinionMetricsTable.groupAwareConsensusDisagree,
+        divisiveScore: opinionGroupCandidateOpinionMetricsTable.divisiveness,
+        moderationAction: opinionModerationTable.moderationAction,
+        moderationExplanation: opinionModerationTable.moderationExplanation,
+        moderationReason: opinionModerationTable.moderationReason,
+        moderationCreatedAt: opinionModerationTable.createdAt,
+        moderationUpdatedAt: opinionModerationTable.updatedAt,
+    };
 }
 
-async function fetchSnapshotAnalysisOpinions({
+function getAnalysisOpinionModerationFilter({
+    includeModeratedOpinions,
+}: {
+    includeModeratedOpinions: boolean;
+}): SQL | undefined {
+    return includeModeratedOpinions ? undefined : isNull(opinionModerationTable.id);
+}
+
+function getAnalysisOpinionMuteFilter({
+    personalizationUserId,
+}: {
+    personalizationUserId?: string;
+}): SQL | undefined {
+    return personalizationUserId === undefined
+        ? undefined
+        : isNull(userMutePreferenceTable.id);
+}
+
+function getAnalysisOpinionMuteJoin({
+    personalizationUserId,
+}: {
+    personalizationUserId?: string;
+}): SQL | undefined {
+    return personalizationUserId === undefined
+        ? sql`false`
+        : and(
+              eq(userMutePreferenceTable.sourceUserId, personalizationUserId),
+              eq(userMutePreferenceTable.targetUserId, opinionTable.authorId),
+          );
+}
+
+function getAnalysisFrameOpinionListMetricSql(
+    kind: AnalysisFrameOpinionListKind,
+): SQL<number> {
+    switch (kind) {
+        case "agreements": {
+            return sql<number>`coalesce(${opinionGroupCandidateOpinionMetricsTable.groupAwareConsensusAgree}, 0)`;
+        }
+        case "disagreements": {
+            return sql<number>`coalesce(${opinionGroupCandidateOpinionMetricsTable.groupAwareConsensusDisagree}, 0)`;
+        }
+        case "divisive": {
+            return sql<number>`coalesce(${opinionGroupCandidateOpinionMetricsTable.divisiveness}, 0)`;
+        }
+    }
+}
+
+function getAnalysisFrameOpinionListScoreSql({
+    kind,
+    conversationParticipantCount,
+}: {
+    kind: AnalysisFrameOpinionListKind;
+    conversationParticipantCount: number;
+}): SQL<number> {
+    const metricSql = getAnalysisFrameOpinionListMetricSql(kind);
+    const totalVotesSql = sql<number>`(${analysisSnapshotOpinionTable.numAgrees} + ${analysisSnapshotOpinionTable.numDisagrees} + ${analysisSnapshotOpinionTable.numPasses})`;
+    const participantSmoothing = conversationParticipantCount * 0.1;
+    return sql<number>`(${metricSql}) * ((${totalVotesSql})::double precision / greatest((${totalVotesSql})::double precision + ${participantSmoothing}, 1.0))`;
+}
+
+async function fetchAnalysisOpinionRowsByIds({
     db,
     candidateId,
     snapshotId,
-    conversationParticipantCount,
-    groups,
+    analysisSnapshotOpinionIds,
     personalizationUserId,
     includeModeratedOpinions,
 }: {
     db: PostgresJsDatabase;
     candidateId: number;
     snapshotId: number;
-    conversationParticipantCount: number;
-    groups: SnapshotGroupMetadata[];
+    analysisSnapshotOpinionIds: number[];
     personalizationUserId?: string;
     includeModeratedOpinions: boolean;
-}): Promise<SnapshotAnalysisOpinionData> {
-    const moderationFilter: SQL | undefined = includeModeratedOpinions
-        ? undefined
-        : isNull(opinionModerationTable.id);
-    const opinionRows = await db
-        .select({
-            opinionId: opinionTable.id,
-            opinionSlugId: opinionTable.slugId,
-            createdAt: opinionTable.createdAt,
-            updatedAt: opinionTable.updatedAt,
-            opinion: opinionContentTable.content,
-            authorId: opinionTable.authorId,
-            username: userTable.username,
-            isSeed: opinionTable.isSeed,
-            numAgrees: analysisSnapshotOpinionTable.numAgrees,
-            numDisagrees: analysisSnapshotOpinionTable.numDisagrees,
-            numPasses: analysisSnapshotOpinionTable.numPasses,
-            groupAwareConsensusAgree:
-                opinionGroupCandidateOpinionMetricsTable.groupAwareConsensusAgree,
-            groupAwareConsensusDisagree:
-                opinionGroupCandidateOpinionMetricsTable.groupAwareConsensusDisagree,
-            divisiveScore:
-                opinionGroupCandidateOpinionMetricsTable.divisiveness,
-            moderationAction: opinionModerationTable.moderationAction,
-            moderationExplanation: opinionModerationTable.moderationExplanation,
-            moderationReason: opinionModerationTable.moderationReason,
-            moderationCreatedAt: opinionModerationTable.createdAt,
-            moderationUpdatedAt: opinionModerationTable.updatedAt,
-        })
+}): Promise<SnapshotAnalysisOpinionRow[]> {
+    const uniqueAnalysisSnapshotOpinionIds = Array.from(
+        new Set(analysisSnapshotOpinionIds),
+    );
+    if (uniqueAnalysisSnapshotOpinionIds.length === 0) {
+        return [];
+    }
+
+    return await db
+        .select(getSnapshotAnalysisOpinionSelectFields())
         .from(opinionGroupCandidateOpinionMetricsTable)
         .innerJoin(
             analysisSnapshotOpinionTable,
@@ -1001,6 +943,10 @@ async function fetchSnapshotAnalysisOpinions({
             opinionModerationTable,
             eq(opinionModerationTable.opinionId, opinionTable.id),
         )
+        .leftJoin(
+            userMutePreferenceTable,
+            getAnalysisOpinionMuteJoin({ personalizationUserId }),
+        )
         .where(
             and(
                 eq(
@@ -1008,53 +954,155 @@ async function fetchSnapshotAnalysisOpinions({
                     candidateId,
                 ),
                 eq(analysisSnapshotOpinionTable.analysisSnapshotId, snapshotId),
-                moderationFilter,
+                inArray(
+                    opinionGroupCandidateOpinionMetricsTable.analysisSnapshotOpinionId,
+                    uniqueAnalysisSnapshotOpinionIds,
+                ),
+                getAnalysisOpinionModerationFilter({ includeModeratedOpinions }),
+                getAnalysisOpinionMuteFilter({ personalizationUserId }),
                 eq(userTable.isDeleted, false),
             ),
         );
+}
+
+async function fetchAnalysisOpinionRowsForList({
+    db,
+    candidateId,
+    snapshotId,
+    conversationParticipantCount,
+    personalizationUserId,
+    includeModeratedOpinions,
+    kind,
+}: {
+    db: PostgresJsDatabase;
+    candidateId: number;
+    snapshotId: number;
+    conversationParticipantCount: number;
+    personalizationUserId?: string;
+    includeModeratedOpinions: boolean;
+    kind: AnalysisFrameOpinionListKind;
+}): Promise<SnapshotAnalysisOpinionRow[]> {
+    const scoreSql = getAnalysisFrameOpinionListScoreSql({
+        kind,
+        conversationParticipantCount,
+    });
+
+    return await db
+        .select(getSnapshotAnalysisOpinionSelectFields())
+        .from(opinionGroupCandidateOpinionMetricsTable)
+        .innerJoin(
+            analysisSnapshotOpinionTable,
+            eq(
+                analysisSnapshotOpinionTable.id,
+                opinionGroupCandidateOpinionMetricsTable.analysisSnapshotOpinionId,
+            ),
+        )
+        .innerJoin(
+            opinionTable,
+            eq(opinionTable.id, analysisSnapshotOpinionTable.opinionId),
+        )
+        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .innerJoin(
+            opinionContentTable,
+            eq(
+                opinionContentTable.id,
+                analysisSnapshotOpinionTable.opinionContentId,
+            ),
+        )
+        .leftJoin(
+            opinionModerationTable,
+            eq(opinionModerationTable.opinionId, opinionTable.id),
+        )
+        .leftJoin(
+            userMutePreferenceTable,
+            getAnalysisOpinionMuteJoin({ personalizationUserId }),
+        )
+        .where(
+            and(
+                eq(
+                    opinionGroupCandidateOpinionMetricsTable.candidateId,
+                    candidateId,
+                ),
+                eq(analysisSnapshotOpinionTable.analysisSnapshotId, snapshotId),
+                getAnalysisOpinionModerationFilter({ includeModeratedOpinions }),
+                getAnalysisOpinionMuteFilter({ personalizationUserId }),
+                eq(userTable.isDeleted, false),
+            ),
+        )
+        .orderBy(desc(scoreSql), desc(opinionTable.createdAt), desc(opinionTable.id))
+        .limit(ANALYSIS_OPINION_LIMIT);
+}
+
+async function fetchGroupOpinionStatsRows({
+    db,
+    groups,
+    analysisSnapshotOpinionIds,
+}: {
+    db: PostgresJsDatabase;
+    groups: SnapshotGroupMetadata[];
+    analysisSnapshotOpinionIds: number[];
+}): Promise<GroupOpinionStatsRow[]> {
+    const uniqueAnalysisSnapshotOpinionIds = Array.from(
+        new Set(analysisSnapshotOpinionIds),
+    );
+    if (groups.length === 0 || uniqueAnalysisSnapshotOpinionIds.length === 0) {
+        return [];
+    }
+
+    return await db
+        .select({
+            groupId: opinionGroupOpinionStatsTable.groupId,
+            analysisSnapshotOpinionId:
+                opinionGroupOpinionStatsTable.analysisSnapshotOpinionId,
+            numAgrees: opinionGroupOpinionStatsTable.numAgrees,
+            numDisagrees: opinionGroupOpinionStatsTable.numDisagrees,
+            numPasses: opinionGroupOpinionStatsTable.numPasses,
+        })
+        .from(opinionGroupOpinionStatsTable)
+        .innerJoin(
+            opinionGroupTable,
+            eq(opinionGroupTable.id, opinionGroupOpinionStatsTable.groupId),
+        )
+        .where(
+            and(
+                inArray(
+                    opinionGroupOpinionStatsTable.groupId,
+                    groups.map((group) => group.id),
+                ),
+                inArray(
+                    opinionGroupOpinionStatsTable.analysisSnapshotOpinionId,
+                    uniqueAnalysisSnapshotOpinionIds,
+                ),
+            ),
+        )
+        .orderBy(asc(opinionGroupTable.key));
+}
+
+async function buildAnalysisOpinionsByIdFromRows({
+    db,
+    candidateId,
+    conversationParticipantCount,
+    groups,
+    opinionRows,
+}: {
+    db: PostgresJsDatabase;
+    candidateId: number;
+    conversationParticipantCount: number;
+    groups: SnapshotGroupMetadata[];
+    opinionRows: SnapshotAnalysisOpinionRow[];
+}): Promise<Map<number, AnalysisOpinionItem>> {
+    const groupOpinionRows = await fetchGroupOpinionStatsRows({
+        db,
+        groups,
+        analysisSnapshotOpinionIds: opinionRows.map(
+            (opinionRow) => opinionRow.analysisSnapshotOpinionId,
+        ),
+    });
 
     const groupsById = new Map<number, SnapshotGroupMetadata>();
     for (const group of groups) {
         groupsById.set(group.id, group);
     }
-
-    const groupOpinionRows =
-        groups.length === 0
-            ? []
-            : await db
-                  .select({
-                      groupId: opinionGroupOpinionStatsTable.groupId,
-                      opinionId: analysisSnapshotOpinionTable.opinionId,
-                      numAgrees: opinionGroupOpinionStatsTable.numAgrees,
-                      numDisagrees: opinionGroupOpinionStatsTable.numDisagrees,
-                      numPasses: opinionGroupOpinionStatsTable.numPasses,
-                      representativeAgreementType:
-                          opinionGroupOpinionStatsTable.representativeAgreementType,
-                      representativeProbabilityAgreement:
-                          opinionGroupOpinionStatsTable.representativeProbabilityAgreement,
-                  })
-                  .from(opinionGroupOpinionStatsTable)
-                  .innerJoin(
-                      analysisSnapshotOpinionTable,
-                      eq(
-                          analysisSnapshotOpinionTable.id,
-                          opinionGroupOpinionStatsTable.analysisSnapshotOpinionId,
-                      ),
-                  )
-                  .innerJoin(
-                      opinionGroupTable,
-                      eq(
-                          opinionGroupTable.id,
-                          opinionGroupOpinionStatsTable.groupId,
-                      ),
-                  )
-                  .where(
-                      inArray(
-                          opinionGroupOpinionStatsTable.groupId,
-                          groups.map((group) => group.id),
-                      ),
-                  )
-                  .orderBy(asc(opinionGroupTable.key));
 
     const authorIds = Array.from(
         new Set(opinionRows.map((opinionRow) => opinionRow.authorId)),
@@ -1081,19 +1129,30 @@ async function fetchSnapshotAnalysisOpinions({
     }
 
     const authorIdByOpinionId = new Map<number, string>();
+    const opinionIdByAnalysisSnapshotOpinionId = new Map<number, number>();
     for (const row of opinionRows) {
         authorIdByOpinionId.set(row.opinionId, row.authorId);
+        opinionIdByAnalysisSnapshotOpinionId.set(
+            row.analysisSnapshotOpinionId,
+            row.opinionId,
+        );
     }
 
     const clustersStatsByOpinionId = new Map<number, ClusterStats[]>();
     for (const row of groupOpinionRows) {
         const group = groupsById.get(row.groupId);
-        const authorId = authorIdByOpinionId.get(row.opinionId);
+        const opinionId = opinionIdByAnalysisSnapshotOpinionId.get(
+            row.analysisSnapshotOpinionId,
+        );
+        if (opinionId === undefined) {
+            continue;
+        }
+        const authorId = authorIdByOpinionId.get(opinionId);
         if (group === undefined || authorId === undefined) {
             continue;
         }
 
-        const clusterStats = clustersStatsByOpinionId.get(row.opinionId) ?? [];
+        const clusterStats = clustersStatsByOpinionId.get(opinionId) ?? [];
         clusterStats.push({
             key: group.key,
             isAuthorInCluster: groupIdByAuthorId.get(authorId) === row.groupId,
@@ -1102,7 +1161,7 @@ async function fetchSnapshotAnalysisOpinions({
             numDisagrees: row.numDisagrees,
             numPasses: row.numPasses,
         });
-        clustersStatsByOpinionId.set(row.opinionId, clusterStats);
+        clustersStatsByOpinionId.set(opinionId, clusterStats);
     }
 
     const opinionsById = new Map<number, AnalysisOpinionItem>();
@@ -1138,24 +1197,95 @@ async function fetchSnapshotAnalysisOpinions({
         });
     }
 
-    await removeMutedAnalysisOpinions({
-        db,
-        personalizationUserId,
-        opinionsById,
-    });
+    return opinionsById;
+}
+
+async function fetchRepresentativeOpinionRows({
+    db,
+    groups,
+}: {
+    db: PostgresJsDatabase;
+    groups: SnapshotGroupMetadata[];
+}): Promise<RepresentativeOpinionRow[]> {
+    if (groups.length === 0) {
+        return [];
+    }
+
+    const rows = await db
+        .select({
+            groupId: opinionGroupOpinionStatsTable.groupId,
+            analysisSnapshotOpinionId:
+                opinionGroupOpinionStatsTable.analysisSnapshotOpinionId,
+            opinionId: analysisSnapshotOpinionTable.opinionId,
+            representativeProbabilityAgreement:
+                opinionGroupOpinionStatsTable.representativeProbabilityAgreement,
+        })
+        .from(opinionGroupOpinionStatsTable)
+        .innerJoin(
+            analysisSnapshotOpinionTable,
+            eq(
+                analysisSnapshotOpinionTable.id,
+                opinionGroupOpinionStatsTable.analysisSnapshotOpinionId,
+            ),
+        )
+        .innerJoin(
+            opinionGroupTable,
+            eq(opinionGroupTable.id, opinionGroupOpinionStatsTable.groupId),
+        )
+        .where(
+            and(
+                inArray(
+                    opinionGroupOpinionStatsTable.groupId,
+                    groups.map((group) => group.id),
+                ),
+                isNotNull(opinionGroupOpinionStatsTable.representativeAgreementType),
+                isNotNull(
+                    opinionGroupOpinionStatsTable.representativeProbabilityAgreement,
+                ),
+            ),
+        )
+        .orderBy(
+            asc(opinionGroupTable.key),
+            desc(opinionGroupOpinionStatsTable.representativeProbabilityAgreement),
+        );
+
+    const representativeRows: RepresentativeOpinionRow[] = [];
+    for (const row of rows) {
+        if (row.representativeProbabilityAgreement === null) {
+            continue;
+        }
+        representativeRows.push({
+            groupId: row.groupId,
+            analysisSnapshotOpinionId: row.analysisSnapshotOpinionId,
+            opinionId: row.opinionId,
+            representativeProbabilityAgreement: row.representativeProbabilityAgreement,
+        });
+    }
+
+    return representativeRows;
+}
+
+function buildRepresentativeOpinionIdsByGroupKey({
+    groups,
+    representativeRows,
+    opinionsById,
+}: {
+    groups: SnapshotGroupMetadata[];
+    representativeRows: RepresentativeOpinionRow[];
+    opinionsById: Map<number, AnalysisOpinionItem>;
+}): Map<PolisKey, number[]> {
+    const groupsById = new Map<number, SnapshotGroupMetadata>();
+    for (const group of groups) {
+        groupsById.set(group.id, group);
+    }
 
     const representativeRowsByGroupKey = new Map<
         PolisKey,
         { opinionId: number; probabilityAgreement: number }[]
     >();
-    for (const row of groupOpinionRows) {
+    for (const row of representativeRows) {
         const group = groupsById.get(row.groupId);
-        if (
-            group === undefined ||
-            row.representativeAgreementType === null ||
-            row.representativeProbabilityAgreement === null ||
-            !opinionsById.has(row.opinionId)
-        ) {
+        if (group === undefined || !opinionsById.has(row.opinionId)) {
             continue;
         }
 
@@ -1179,125 +1309,7 @@ async function fetchSnapshotAnalysisOpinions({
         );
     }
 
-    return { opinionsById, representativeOpinionIdsByGroupKey };
-}
-
-function buildSnapshotPolisClusters({
-    groups,
-    opinionsById,
-    representativeOpinionIdsByGroupKey,
-}: {
-    groups: SnapshotGroupMetadata[];
-    opinionsById: Map<number, AnalysisOpinionItem>;
-    representativeOpinionIdsByGroupKey: Map<PolisKey, number[]>;
-}): PolisClusters {
-    const polisClusters: PolisClusters = {};
-
-    for (const group of groups) {
-        const representative: AnalysisOpinionItem[] = [];
-        for (const opinionId of representativeOpinionIdsByGroupKey.get(
-            group.key,
-        ) ?? []) {
-            const opinion = opinionsById.get(opinionId);
-            if (opinion !== undefined) {
-                representative.push(opinion);
-            }
-        }
-
-        polisClusters[group.key] = {
-            key: group.key,
-            numUsers: group.numUsers,
-            aiLabel: group.aiLabel,
-            aiSummary: group.aiSummary,
-            isUserInCluster: group.isUserInCluster,
-            representative,
-        };
-    }
-
-    return polisClusters;
-}
-
-async function fetchSnapshotAnalysisByConversationSlugId({
-    db,
-    conversationSlugId,
-    personalizationUserId,
-    displayLanguage,
-    analysisView,
-    checkpointViewSnapshotId,
-    hasVotedOnAllAvailableOpinions,
-}: {
-    db: PostgresJsDatabase;
-    conversationSlugId: string;
-    personalizationUserId?: string;
-    displayLanguage: string;
-    analysisView?: AnalysisView;
-    checkpointViewSnapshotId?: number;
-    hasVotedOnAllAvailableOpinions: boolean | undefined;
-}): Promise<ConversationAnalysis> {
-    const selection = await getOpinionGroupAnalysisSelection({
-        db,
-        conversationSlugId,
-        displayLanguage,
-        analysisView,
-        checkpointViewSnapshotId,
-    });
-    const selectedCandidate = selection.candidate;
-    if (selectedCandidate === undefined) {
-        return createEmptyConversationAnalysis({
-            hasVotedOnAllAvailableOpinions,
-            emptyReason: selection.emptyReason,
-            analysisViewState: selection.viewState,
-            conversationViewSnapshot: selection.conversationViewSnapshot,
-            descriptionReadiness: selection.descriptionReadiness,
-        });
-    }
-
-    const candidateId = selectedCandidate.candidateId;
-    const groups = await fetchSnapshotGroups({
-        db,
-        candidateId,
-        personalizationUserId,
-        displayLanguage,
-        useSystemDescriptions: selectedCandidate.useSystemDescriptions,
-    });
-    const { opinionsById, representativeOpinionIdsByGroupKey } =
-        await fetchSnapshotAnalysisOpinions({
-            db,
-            candidateId,
-            snapshotId: selectedCandidate.snapshotId,
-            conversationParticipantCount: selectedCandidate.participantCount,
-            groups,
-            personalizationUserId,
-            includeModeratedOpinions: checkpointViewSnapshotId !== undefined,
-        });
-
-    const opinions = Array.from(opinionsById.values());
-    return {
-        polisContentId: undefined,
-        conversationViewSnapshotId: selectedCandidate.viewSnapshotId,
-        analysisSnapshotId: selectedCandidate.snapshotId,
-        conversationViewSnapshot: selection.conversationViewSnapshot,
-        descriptionReadiness: selection.descriptionReadiness,
-        analysisViewState: selection.viewState,
-        consensusAgree: sortAnalysisOpinionsByWeightedMetric({
-            opinions,
-            getMetric: (opinion) => opinion.groupAwareConsensusAgree,
-        }).slice(0, ANALYSIS_OPINION_LIMIT),
-        consensusDisagree: sortAnalysisOpinionsByWeightedMetric({
-            opinions,
-            getMetric: (opinion) => opinion.groupAwareConsensusDisagree,
-        }).slice(0, ANALYSIS_OPINION_LIMIT),
-        controversial: sortAnalysisOpinionsByWeightedMetric({
-            opinions,
-            getMetric: (opinion) => opinion.divisiveScore,
-        }).slice(0, ANALYSIS_OPINION_LIMIT),
-        clusters: buildSnapshotPolisClusters({
-            groups,
-            opinionsById,
-            representativeOpinionIdsByGroupKey,
-        }),
-        hasVotedOnAllAvailableOpinions,
-    };
+    return representativeOpinionIdsByGroupKey;
 }
 
 async function fetchSelectedOpinionGroupCandidateById({
@@ -1305,15 +1317,12 @@ async function fetchSelectedOpinionGroupCandidateById({
     conversationSlugId,
     conversationViewSnapshotId,
     candidateId,
-    displayLanguage,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
     conversationViewSnapshotId: number;
     candidateId: number;
-    displayLanguage: string;
-}): Promise<SelectedOpinionGroupCandidate | undefined> {
-    const requestedLocale = getSupportedDisplayLanguage(displayLanguage);
+}): Promise<SelectedAnalysisFrameCandidate | undefined> {
     const rows = await db
         .select({
             conversationId: conversationTable.id,
@@ -1323,10 +1332,10 @@ async function fetchSelectedOpinionGroupCandidateById({
             participantCount: conversationViewSnapshotTable.participantCount,
             snapshotId: conversationViewSnapshotTable.analysisSnapshotId,
             resultId: analysisSnapshotResultTable.id,
-            variantsEnabled: analysisSnapshotResultTable.variantsEnabled,
             candidateId: opinionGroupCandidateTable.id,
             groupCount: opinionGroupVariantTable.groupCount,
             aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+            checkpointReasonId: conversationViewSnapshotCheckpointReasonTable.id,
         })
         .from(conversationTable)
         .innerJoin(
@@ -1379,6 +1388,19 @@ async function fetchSelectedOpinionGroupCandidateById({
                 opinionGroupCandidateTable.id,
             ),
         )
+        .leftJoin(
+            conversationViewSnapshotCheckpointReasonTable,
+            and(
+                eq(
+                    conversationViewSnapshotCheckpointReasonTable.conversationViewSnapshotId,
+                    conversationViewSnapshotTable.id,
+                ),
+                eq(
+                    conversationViewSnapshotCheckpointReasonTable.conversationId,
+                    conversationTable.id,
+                ),
+            ),
+        )
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
@@ -1397,20 +1419,6 @@ async function fetchSelectedOpinionGroupCandidateById({
         return undefined;
     }
 
-    const candidateRows = await fetchSnapshotCandidateOptions({
-        db,
-        resultId: row.resultId,
-    });
-    const descriptionReadiness = await buildDerivedAnalysisDescriptionReadiness({
-        db,
-        aiLabelingEnabled: row.aiLabelingEnabled,
-        requestedLocale,
-        requiredCandidateIds: getRequiredDescriptionCandidateIds({
-            candidates: candidateRows,
-            variantsEnabled: row.variantsEnabled,
-        }),
-    });
-
     return {
         conversationId: row.conversationId,
         viewSnapshotId: row.viewSnapshotId,
@@ -1420,19 +1428,146 @@ async function fetchSelectedOpinionGroupCandidateById({
         resultId: row.resultId,
         candidateId: row.candidateId,
         groupCount: row.groupCount,
-        useSystemDescriptions: shouldUseSystemDescriptions({
-            aiLabelingEnabled: row.aiLabelingEnabled,
-            requestedLocale,
-            englishStatus: descriptionReadiness.english.status,
-            englishExpected: descriptionReadiness.english.expected,
-            requestedStatus: descriptionReadiness.requested.status,
-            requestedExpected: descriptionReadiness.requested.expected,
-        }),
-        descriptionReadiness,
+        aiLabelingEnabled: row.aiLabelingEnabled,
+        isCheckpointFrame: row.checkpointReasonId !== null,
     };
 }
 
-export async function fetchAnalysisMetadataByConversationSlugId({
+function createAnalysisFrameKey(candidate: AnalysisFrameKeySource): AnalysisFrameKey {
+    return {
+        conversationViewSnapshotId: candidate.viewSnapshotId,
+        analysisSnapshotId: candidate.snapshotId,
+        candidateId: candidate.candidateId,
+    };
+}
+
+function createAnalysisFrameCounters(
+    snapshot: NonNullable<AnalysisFrameManifest["conversationViewSnapshot"]>,
+): NonNullable<AnalysisFrameManifest["counters"]> {
+    return {
+        opinionCount: snapshot.opinionCount,
+        voteCount: snapshot.voteCount,
+        participantCount: snapshot.participantCount,
+        totalOpinionCount: snapshot.totalOpinionCount,
+        totalVoteCount: snapshot.totalVoteCount,
+        totalParticipantCount: snapshot.totalParticipantCount,
+        moderatedOpinionCount: snapshot.moderatedOpinionCount,
+        hiddenOpinionCount: snapshot.hiddenOpinionCount,
+        isClosed: snapshot.isClosed,
+    };
+}
+
+function isAnalysisFrameKeyEqual({
+    left,
+    right,
+}: {
+    left: AnalysisFrameKey;
+    right: AnalysisFrameKey;
+}): boolean {
+    return (
+        left.conversationViewSnapshotId === right.conversationViewSnapshotId &&
+        left.analysisSnapshotId === right.analysisSnapshotId &&
+        left.candidateId === right.candidateId
+    );
+}
+
+function isAnalysisFrameManifestFreshEnough({
+    manifest,
+    freshnessOptions,
+}: {
+    manifest: AnalysisFrameManifest;
+    freshnessOptions: AnalysisFreshnessOptions | null;
+}): boolean {
+    const minimumSnapshotId =
+        freshnessOptions?.minimumConversationViewSnapshotId ?? null;
+    if (
+        minimumSnapshotId !== null &&
+        (manifest.frameKey === undefined ||
+            manifest.frameKey.conversationViewSnapshotId < minimumSnapshotId)
+    ) {
+        return false;
+    }
+
+    return true;
+}
+
+function isAnalysisFrameGroupLabelsFreshEnough({
+    groupLabels,
+    freshnessOptions,
+}: {
+    groupLabels: AnalysisFrameGroupLabels;
+    freshnessOptions: AnalysisFreshnessOptions | null;
+}): boolean {
+    const expectedLocales = freshnessOptions?.expectedDescriptionLocales ?? [];
+    if (expectedLocales.length === 0) {
+        return true;
+    }
+
+    const displayedLocale = groupLabels.groupDescriptionDisplay.displayedLocale;
+    if (displayedLocale === null) {
+        return false;
+    }
+
+    return expectedLocales.every((locale) => {
+        if (locale === "en") {
+            return true;
+        }
+        return displayedLocale === locale;
+    });
+}
+
+function createAnalysisFrameManifest({
+    selection,
+    hasVotedOnAllAvailableOpinions,
+}: {
+    selection: Awaited<ReturnType<typeof getOpinionGroupAnalysisSelection>>;
+    hasVotedOnAllAvailableOpinions: boolean | undefined;
+}): AnalysisFrameManifest {
+    const frameKey =
+        selection.candidate === undefined
+            ? undefined
+            : createAnalysisFrameKey(selection.candidate);
+    const counters =
+        selection.conversationViewSnapshot === undefined
+            ? undefined
+            : createAnalysisFrameCounters(selection.conversationViewSnapshot);
+
+    return {
+        frameKey,
+        conversationViewSnapshot: selection.conversationViewSnapshot,
+        counters,
+        emptyReason: selection.emptyReason,
+        analysisViewResolution: selection.viewState,
+        aiLabelsExpected: selection.candidate?.aiLabelingEnabled === true,
+        hasVotedOnAllAvailableOpinions,
+    };
+}
+
+async function ensureAiDescriptionExpectationForAnalysisFrameManifest({
+    db,
+    conversationSlugId,
+    manifest,
+    requestedLocale,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    manifest: AnalysisFrameManifest;
+    requestedLocale: SupportedDisplayLanguageCodes;
+}): Promise<void> {
+    if (manifest.frameKey === undefined || !manifest.aiLabelsExpected) {
+        return;
+    }
+
+    await ensureAiDescriptionLocaleExpectationForConversationViewSnapshot({
+        db,
+        conversationSlugId,
+        conversationViewSnapshotId: manifest.frameKey.conversationViewSnapshotId,
+        candidateId: manifest.frameKey.candidateId,
+        requestedLocale,
+    });
+}
+
+export async function fetchAnalysisFrameManifestByConversationSlugId({
     db,
     conversationSlugId,
     personalizationUserId,
@@ -1448,9 +1583,9 @@ export async function fetchAnalysisMetadataByConversationSlugId({
     analysisView?: AnalysisView;
     checkpointViewSnapshotId?: number;
     freshnessOptions: AnalysisFreshnessOptions | null;
-}): Promise<ConversationAnalysisMetadata> {
+}): Promise<AnalysisFrameManifest> {
     const requestedLocale = getSupportedDisplayLanguage(displayLanguage);
-    const metadata = await fetchAnalysisMetadataByConversationSlugIdFromDb({
+    const manifest = await fetchAnalysisFrameManifestByConversationSlugIdFromDb({
         db,
         conversationSlugId,
         personalizationUserId,
@@ -1459,25 +1594,25 @@ export async function fetchAnalysisMetadataByConversationSlugId({
         checkpointViewSnapshotId,
     });
 
-    await ensureAiDescriptionExpectationForAnalysisMetadata({
+    await ensureAiDescriptionExpectationForAnalysisFrameManifest({
         db: getPrimaryDb(db),
         conversationSlugId,
-        metadata,
+        manifest,
         requestedLocale,
     });
 
     if (
-        isAnalysisMetadataFreshEnough({ metadata, freshnessOptions }) ||
+        isAnalysisFrameManifestFreshEnough({ manifest, freshnessOptions }) ||
         !shouldTryPrimaryFallback({ db, freshnessOptions })
     ) {
-        return metadata;
+        return manifest;
     }
 
     log.info(
-        `[Analysis] Falling back to primary for metadata conversationSlugId=${conversationSlugId} ` +
+        `[Analysis] Falling back to primary for frame manifest conversationSlugId=${conversationSlugId} ` +
             `minimumSnapshotId=${String(freshnessOptions?.minimumConversationViewSnapshotId)}`,
     );
-    const primaryMetadata = await fetchAnalysisMetadataByConversationSlugIdFromDb({
+    const primaryManifest = await fetchAnalysisFrameManifestByConversationSlugIdFromDb({
         db: getPrimaryDb(db),
         conversationSlugId,
         personalizationUserId,
@@ -1485,19 +1620,24 @@ export async function fetchAnalysisMetadataByConversationSlugId({
         analysisView,
         checkpointViewSnapshotId,
     });
-    await ensureAiDescriptionExpectationForAnalysisMetadata({
+    await ensureAiDescriptionExpectationForAnalysisFrameManifest({
         db: getPrimaryDb(db),
         conversationSlugId,
-        metadata: primaryMetadata,
+        manifest: primaryManifest,
         requestedLocale,
     });
-    if (isAnalysisMetadataFreshEnough({ metadata: primaryMetadata, freshnessOptions })) {
-        return primaryMetadata;
+    if (
+        isAnalysisFrameManifestFreshEnough({
+            manifest: primaryManifest,
+            freshnessOptions,
+        })
+    ) {
+        return primaryManifest;
     }
-    return metadata;
+    return manifest;
 }
 
-async function fetchAnalysisMetadataByConversationSlugIdFromDb({
+async function fetchAnalysisFrameManifestByConversationSlugIdFromDb({
     db,
     conversationSlugId,
     personalizationUserId,
@@ -1511,7 +1651,7 @@ async function fetchAnalysisMetadataByConversationSlugIdFromDb({
     displayLanguage: string;
     analysisView?: AnalysisView;
     checkpointViewSnapshotId?: number;
-}): Promise<ConversationAnalysisMetadata> {
+}): Promise<AnalysisFrameManifest> {
     const hasVotedOnAllAvailableOpinions =
         await getHasVotedOnAllAvailableOpinions({
             db,
@@ -1526,173 +1666,168 @@ async function fetchAnalysisMetadataByConversationSlugIdFromDb({
         checkpointViewSnapshotId,
     });
 
-    return {
-        conversationViewSnapshotId:
-            selection.conversationViewSnapshot?.conversationViewSnapshotId,
-        analysisSnapshotId:
-            selection.conversationViewSnapshot?.analysisSnapshotId,
-        conversationViewSnapshot: selection.conversationViewSnapshot,
-        descriptionReadiness: selection.descriptionReadiness,
-        emptyReason: selection.emptyReason,
-        analysisViewState: selection.viewState,
-        displayableGroupCounts: selection.displayableGroupCounts,
+    return createAnalysisFrameManifest({
+        selection,
         hasVotedOnAllAvailableOpinions,
-    };
+    });
 }
 
-export async function fetchAnalysisContentByCandidateId({
+async function fetchSelectedFrameCandidateByKey({
     db,
     conversationSlugId,
-    conversationViewSnapshotId,
-    candidateId,
-    personalizationUserId,
-    displayLanguage = "en",
-    freshnessOptions,
+    frameKey,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
-    conversationViewSnapshotId: number;
-    candidateId: number;
-    personalizationUserId?: string;
-    displayLanguage?: string;
-    freshnessOptions: AnalysisFreshnessOptions | null;
-}): Promise<FetchAnalysisContentResponse> {
-    const requestedLocale = getSupportedDisplayLanguage(displayLanguage);
-    await ensureAiDescriptionLocaleExpectationForConversationViewSnapshot({
-        db: getPrimaryDb(db),
-        conversationSlugId,
-        conversationViewSnapshotId,
-        candidateId,
-        requestedLocale,
-    });
-
-    const content = await fetchAnalysisContentByCandidateIdFromDb({
-        db,
-        conversationSlugId,
-        conversationViewSnapshotId,
-        candidateId,
-        personalizationUserId,
-        displayLanguage,
-    });
-    if (
-        content !== undefined &&
-        isAnalysisContentFreshEnough({
-            descriptionReadiness: content.descriptionReadiness,
-            freshnessOptions,
-        })
-    ) {
-        return { success: true, ...content };
-    }
-
-    if (shouldTryPrimaryFallback({ db, freshnessOptions })) {
-        log.info(
-            `[Analysis] Falling back to primary for content conversationSlugId=${conversationSlugId} ` +
-                `viewSnapshotId=${String(conversationViewSnapshotId)} candidateId=${String(candidateId)}`,
-        );
-        const primaryContent = await fetchAnalysisContentByCandidateIdFromDb({
-            db: getPrimaryDb(db),
-            conversationSlugId,
-            conversationViewSnapshotId,
-            candidateId,
-            personalizationUserId,
-            displayLanguage,
-        });
-        if (
-            primaryContent !== undefined &&
-            isAnalysisContentFreshEnough({
-                descriptionReadiness: primaryContent.descriptionReadiness,
-                freshnessOptions,
-            })
-        ) {
-            return { success: true, ...primaryContent };
-        }
-    }
-
-    if (content !== undefined) {
-        return { success: true, ...content };
-    }
-
-    log.info(
-        `[Analysis] Content unavailable conversationSlugId=${conversationSlugId} ` +
-            `viewSnapshotId=${String(conversationViewSnapshotId)} candidateId=${String(candidateId)}`,
-    );
-    return { success: false, reason: "not_available" };
-}
-
-async function fetchAnalysisContentByCandidateIdFromDb({
-    db,
-    conversationSlugId,
-    conversationViewSnapshotId,
-    candidateId,
-    personalizationUserId,
-    displayLanguage,
-}: {
-    db: PostgresJsDatabase;
-    conversationSlugId: string;
-    conversationViewSnapshotId: number;
-    candidateId: number;
-    personalizationUserId?: string;
-    displayLanguage: string;
-}): Promise<ConversationAnalysisContent | undefined> {
+    frameKey: AnalysisFrameKey;
+}): Promise<SelectedAnalysisFrameCandidate | undefined> {
     const selectedCandidate = await fetchSelectedOpinionGroupCandidateById({
         db,
         conversationSlugId,
-        conversationViewSnapshotId,
-        candidateId,
-        displayLanguage,
+        conversationViewSnapshotId: frameKey.conversationViewSnapshotId,
+        candidateId: frameKey.candidateId,
     });
     if (selectedCandidate === undefined) {
         return undefined;
     }
 
-    const checkpointRows = await db
-        .select({ id: conversationViewSnapshotCheckpointReasonTable.id })
-        .from(conversationViewSnapshotCheckpointReasonTable)
-        .where(
-            eq(
-                conversationViewSnapshotCheckpointReasonTable.conversationViewSnapshotId,
-                selectedCandidate.viewSnapshotId,
-            ),
-        )
-        .limit(1);
+    if (
+        !isAnalysisFrameKeyEqual({
+            left: createAnalysisFrameKey(selectedCandidate),
+            right: frameKey,
+        })
+    ) {
+        return undefined;
+    }
+
+    return selectedCandidate;
+}
+
+function buildSnapshotAnalysisFrameGroups({
+    groups,
+    opinionsById,
+    representativeOpinionIdsByGroupKey,
+}: {
+    groups: SnapshotGroupMetadata[];
+    opinionsById: Map<number, AnalysisOpinionItem>;
+    representativeOpinionIdsByGroupKey: Map<PolisKey, number[]>;
+}): AnalysisFrameGroups["clusters"] {
+    const clusters: AnalysisFrameGroups["clusters"] = {};
+
+    for (const group of groups) {
+        const representative: AnalysisOpinionItem[] = [];
+        for (const opinionId of representativeOpinionIdsByGroupKey.get(
+            group.key,
+        ) ?? []) {
+            const opinion = opinionsById.get(opinionId);
+            if (opinion !== undefined) {
+                representative.push(opinion);
+            }
+        }
+
+        clusters[group.key] = {
+            key: group.key,
+            numUsers: group.numUsers,
+            isUserInCluster: group.isUserInCluster,
+            representative,
+        };
+    }
+
+    return clusters;
+}
+
+export async function fetchAnalysisFrameGroupsByFrameKey({
+    db,
+    conversationSlugId,
+    frameKey,
+    personalizationUserId,
+    freshnessOptions,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    frameKey: AnalysisFrameKey;
+    personalizationUserId?: string;
+    freshnessOptions: AnalysisFreshnessOptions | null;
+}): Promise<AnalysisFrameGroups> {
+    const groups = await fetchAnalysisFrameGroupsByFrameKeyFromDb({
+        db,
+        conversationSlugId,
+        frameKey,
+        personalizationUserId,
+    });
+    if (groups !== undefined) {
+        return groups;
+    }
+
+    if (shouldTryPrimaryFallback({ db, freshnessOptions })) {
+        const primaryGroups = await fetchAnalysisFrameGroupsByFrameKeyFromDb({
+            db: getPrimaryDb(db),
+            conversationSlugId,
+            frameKey,
+            personalizationUserId,
+        });
+        if (primaryGroups !== undefined) {
+            return primaryGroups;
+        }
+    }
+
+    throw httpErrors.notFound("Analysis frame groups are not available.");
+}
+
+async function fetchAnalysisFrameGroupsByFrameKeyFromDb({
+    db,
+    conversationSlugId,
+    frameKey,
+    personalizationUserId,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    frameKey: AnalysisFrameKey;
+    personalizationUserId?: string;
+}): Promise<AnalysisFrameGroups | undefined> {
+    const selectedCandidate = await fetchSelectedFrameCandidateByKey({
+        db,
+        conversationSlugId,
+        frameKey,
+    });
+    if (selectedCandidate === undefined) {
+        return undefined;
+    }
 
     const groups = await fetchSnapshotGroups({
         db,
         candidateId: selectedCandidate.candidateId,
         personalizationUserId,
-        displayLanguage,
-        useSystemDescriptions: selectedCandidate.useSystemDescriptions,
     });
-    const { opinionsById, representativeOpinionIdsByGroupKey } =
-        await fetchSnapshotAnalysisOpinions({
-            db,
-            candidateId: selectedCandidate.candidateId,
-            snapshotId: selectedCandidate.snapshotId,
-            conversationParticipantCount: selectedCandidate.participantCount,
+    const includeModeratedOpinions = selectedCandidate.isCheckpointFrame;
+    const representativeRows = await fetchRepresentativeOpinionRows({ db, groups });
+    const opinionRows = await fetchAnalysisOpinionRowsByIds({
+        db,
+        candidateId: selectedCandidate.candidateId,
+        snapshotId: selectedCandidate.snapshotId,
+        analysisSnapshotOpinionIds: representativeRows.map(
+            (row) => row.analysisSnapshotOpinionId,
+        ),
+        personalizationUserId,
+        includeModeratedOpinions,
+    });
+    const opinionsById = await buildAnalysisOpinionsByIdFromRows({
+        db,
+        candidateId: selectedCandidate.candidateId,
+        conversationParticipantCount: selectedCandidate.participantCount,
+        groups,
+        opinionRows,
+    });
+    const representativeOpinionIdsByGroupKey =
+        buildRepresentativeOpinionIdsByGroupKey({
             groups,
-            personalizationUserId,
-            includeModeratedOpinions: checkpointRows.length > 0,
+            representativeRows,
+            opinionsById,
         });
 
-    const opinions = Array.from(opinionsById.values());
     return {
-        conversationViewSnapshotId: selectedCandidate.viewSnapshotId,
-        analysisSnapshotId: selectedCandidate.snapshotId,
-        candidateId: selectedCandidate.candidateId,
-        descriptionReadiness: selectedCandidate.descriptionReadiness,
-        consensusAgree: sortAnalysisOpinionsByWeightedMetric({
-            opinions,
-            getMetric: (opinion) => opinion.groupAwareConsensusAgree,
-        }).slice(0, ANALYSIS_OPINION_LIMIT),
-        consensusDisagree: sortAnalysisOpinionsByWeightedMetric({
-            opinions,
-            getMetric: (opinion) => opinion.groupAwareConsensusDisagree,
-        }).slice(0, ANALYSIS_OPINION_LIMIT),
-        controversial: sortAnalysisOpinionsByWeightedMetric({
-            opinions,
-            getMetric: (opinion) => opinion.divisiveScore,
-        }).slice(0, ANALYSIS_OPINION_LIMIT),
-        clusters: buildSnapshotPolisClusters({
+        frameKey,
+        clusters: buildSnapshotAnalysisFrameGroups({
             groups,
             opinionsById,
             representativeOpinionIdsByGroupKey,
@@ -1700,38 +1835,352 @@ async function fetchAnalysisContentByCandidateIdFromDb({
     };
 }
 
-export async function fetchAnalysisByConversationSlugId({
+function getUniqueDescriptionIds(
+    groups: SnapshotGroupMetadata[],
+): number[] | undefined {
+    const descriptionIds: number[] = [];
+    for (const group of groups) {
+        if (group.systemDescriptionId === null) {
+            return undefined;
+        }
+        descriptionIds.push(group.systemDescriptionId);
+    }
+
+    return Array.from(new Set(descriptionIds));
+}
+
+function buildCompleteGroupLabels({
+    groups,
+    descriptionById,
+}: {
+    groups: SnapshotGroupMetadata[];
+    descriptionById: Map<number, { label: string; summary: string }>;
+}): AnalysisFrameGroupLabels["labels"] | undefined {
+    const labels: AnalysisFrameGroupLabels["labels"] = {};
+
+    for (const group of groups) {
+        if (group.systemDescriptionId === null) {
+            return undefined;
+        }
+
+        const description = descriptionById.get(group.systemDescriptionId);
+        if (description === undefined) {
+            return undefined;
+        }
+
+        labels[group.key] = {
+            key: group.key,
+            aiLabel: description.label,
+            aiSummary: description.summary,
+        };
+    }
+
+    return labels;
+}
+
+async function fetchEnglishGroupLabels({
+    db,
+    groups,
+}: {
+    db: PostgresJsDatabase;
+    groups: SnapshotGroupMetadata[];
+}): Promise<AnalysisFrameGroupLabels["labels"] | undefined> {
+    const descriptionIds = getUniqueDescriptionIds(groups);
+    if (descriptionIds === undefined || descriptionIds.length === 0) {
+        return undefined;
+    }
+
+    const descriptionRows = await db
+        .select({
+            id: opinionGroupDescriptionTable.id,
+            label: opinionGroupDescriptionTable.label,
+            summary: opinionGroupDescriptionTable.summary,
+        })
+        .from(opinionGroupDescriptionTable)
+        .where(inArray(opinionGroupDescriptionTable.id, descriptionIds));
+    return buildCompleteGroupLabels({
+        groups,
+        descriptionById: new Map(
+            descriptionRows.map((row) => [
+                row.id,
+                { label: row.label, summary: row.summary },
+            ]),
+        ),
+    });
+}
+
+async function fetchTranslatedGroupLabels({
+    db,
+    groups,
+    requestedLocale,
+}: {
+    db: PostgresJsDatabase;
+    groups: SnapshotGroupMetadata[];
+    requestedLocale: SupportedDisplayLanguageCodes;
+}): Promise<AnalysisFrameGroupLabels["labels"] | undefined> {
+    const descriptionIds = getUniqueDescriptionIds(groups);
+    if (descriptionIds === undefined || descriptionIds.length === 0) {
+        return undefined;
+    }
+
+    const translationRows = await db
+        .select({
+            descriptionId: opinionGroupDescriptionTranslationTable.descriptionId,
+            label: opinionGroupDescriptionTranslationTable.label,
+            summary: opinionGroupDescriptionTranslationTable.summary,
+        })
+        .from(opinionGroupDescriptionTranslationTable)
+        .where(
+            and(
+                inArray(
+                    opinionGroupDescriptionTranslationTable.descriptionId,
+                    descriptionIds,
+                ),
+                eq(opinionGroupDescriptionTranslationTable.locale, requestedLocale),
+            ),
+        );
+    return buildCompleteGroupLabels({
+        groups,
+        descriptionById: new Map(
+            translationRows.map((row) => [
+                row.descriptionId,
+                { label: row.label, summary: row.summary },
+            ]),
+        ),
+    });
+}
+
+async function fetchAnalysisFrameGroupLabelsByFrameKeyFromDb({
     db,
     conversationSlugId,
-    personalizationUserId,
-    displayLanguage = "en",
-    analysisView,
-    checkpointViewSnapshotId,
+    frameKey,
+    displayLanguage,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
-    personalizationUserId?: string;
-    displayLanguage?: string;
-    analysisView?: AnalysisView;
-    checkpointViewSnapshotId?: number;
-}): Promise<ConversationAnalysis> {
-    const hasVotedOnAllAvailableOpinions =
-        await getHasVotedOnAllAvailableOpinions({
-            db,
-            conversationSlugId,
-            personalizationUserId,
-        });
-
-    const snapshotAnalysis = await fetchSnapshotAnalysisByConversationSlugId({
+    frameKey: AnalysisFrameKey;
+    displayLanguage: string;
+}): Promise<AnalysisFrameGroupLabels | undefined> {
+    const requestedLocale = getSupportedDisplayLanguage(displayLanguage);
+    const selectedCandidate = await fetchSelectedFrameCandidateByKey({
         db,
         conversationSlugId,
-        personalizationUserId,
-        displayLanguage,
-        analysisView,
-        checkpointViewSnapshotId,
-        hasVotedOnAllAvailableOpinions,
+        frameKey,
     });
-    return snapshotAnalysis;
+    if (selectedCandidate === undefined) {
+        return undefined;
+    }
+
+    if (!selectedCandidate.aiLabelingEnabled) {
+        return {
+            frameKey,
+            groupDescriptionDisplay: {
+                requestedLocale,
+                displayedLocale: null,
+            },
+            labels: {},
+        };
+    }
+
+    const groups = await fetchSnapshotGroups({
+        db,
+        candidateId: selectedCandidate.candidateId,
+    });
+    const requestedLabels =
+        requestedLocale === "en"
+            ? await fetchEnglishGroupLabels({ db, groups })
+            : await fetchTranslatedGroupLabels({
+                  db,
+                  groups,
+                  requestedLocale,
+              });
+    if (requestedLabels !== undefined) {
+        return {
+            frameKey,
+            groupDescriptionDisplay: {
+                requestedLocale,
+                displayedLocale: requestedLocale,
+            },
+            labels: requestedLabels,
+        };
+    }
+
+    const englishLabels = await fetchEnglishGroupLabels({ db, groups });
+    if (englishLabels !== undefined) {
+        return {
+            frameKey,
+            groupDescriptionDisplay: {
+                requestedLocale,
+                displayedLocale: "en",
+            },
+            labels: englishLabels,
+        };
+    }
+
+    return {
+        frameKey,
+        groupDescriptionDisplay: {
+            requestedLocale,
+            displayedLocale: null,
+        },
+        labels: {},
+    };
+}
+
+export async function fetchAnalysisFrameGroupLabelsByFrameKey({
+    db,
+    conversationSlugId,
+    frameKey,
+    displayLanguage = "en",
+    freshnessOptions,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    frameKey: AnalysisFrameKey;
+    displayLanguage?: string;
+    freshnessOptions: AnalysisFreshnessOptions | null;
+}): Promise<AnalysisFrameGroupLabels> {
+    const requestedLocale = getSupportedDisplayLanguage(displayLanguage);
+    await ensureAiDescriptionLocaleExpectationForConversationViewSnapshot({
+        db: getPrimaryDb(db),
+        conversationSlugId,
+        conversationViewSnapshotId: frameKey.conversationViewSnapshotId,
+        candidateId: frameKey.candidateId,
+        requestedLocale,
+    });
+
+    const groupLabels = await fetchAnalysisFrameGroupLabelsByFrameKeyFromDb({
+        db,
+        conversationSlugId,
+        frameKey,
+        displayLanguage,
+    });
+    if (
+        groupLabels !== undefined &&
+        isAnalysisFrameGroupLabelsFreshEnough({ groupLabels, freshnessOptions })
+    ) {
+        return groupLabels;
+    }
+
+    if (shouldTryPrimaryFallback({ db, freshnessOptions })) {
+        const primaryGroupLabels =
+            await fetchAnalysisFrameGroupLabelsByFrameKeyFromDb({
+                db: getPrimaryDb(db),
+                conversationSlugId,
+                frameKey,
+                displayLanguage,
+            });
+        if (primaryGroupLabels !== undefined) {
+            return primaryGroupLabels;
+        }
+    }
+
+    if (groupLabels !== undefined) {
+        return groupLabels;
+    }
+
+    throw httpErrors.notFound("Analysis frame group labels are not available.");
+}
+
+async function fetchAnalysisFrameOpinionListByFrameKeyFromDb({
+    db,
+    conversationSlugId,
+    frameKey,
+    personalizationUserId,
+    kind,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    frameKey: AnalysisFrameKey;
+    personalizationUserId?: string;
+    kind: AnalysisFrameOpinionListKind;
+}): Promise<AnalysisFrameOpinionList | undefined> {
+    const selectedCandidate = await fetchSelectedFrameCandidateByKey({
+        db,
+        conversationSlugId,
+        frameKey,
+    });
+    if (selectedCandidate === undefined) {
+        return undefined;
+    }
+
+    const groups = await fetchSnapshotGroups({
+        db,
+        candidateId: selectedCandidate.candidateId,
+    });
+    const includeModeratedOpinions = selectedCandidate.isCheckpointFrame;
+    const opinionRows = await fetchAnalysisOpinionRowsForList({
+        db,
+        candidateId: selectedCandidate.candidateId,
+        snapshotId: selectedCandidate.snapshotId,
+        conversationParticipantCount: selectedCandidate.participantCount,
+        personalizationUserId,
+        includeModeratedOpinions,
+        kind,
+    });
+    const opinionsById = await buildAnalysisOpinionsByIdFromRows({
+        db,
+        candidateId: selectedCandidate.candidateId,
+        conversationParticipantCount: selectedCandidate.participantCount,
+        groups,
+        opinionRows,
+    });
+    const items: AnalysisOpinionItem[] = [];
+    for (const row of opinionRows) {
+        const opinion = opinionsById.get(row.opinionId);
+        if (opinion !== undefined) {
+            items.push(opinion);
+        }
+    }
+
+    return {
+        frameKey,
+        kind,
+        items,
+    };
+}
+
+export async function fetchAnalysisFrameOpinionListByFrameKey({
+    db,
+    conversationSlugId,
+    frameKey,
+    personalizationUserId,
+    kind,
+    freshnessOptions,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    frameKey: AnalysisFrameKey;
+    personalizationUserId?: string;
+    kind: AnalysisFrameOpinionListKind;
+    freshnessOptions: AnalysisFreshnessOptions | null;
+}): Promise<AnalysisFrameOpinionList> {
+    const opinionList = await fetchAnalysisFrameOpinionListByFrameKeyFromDb({
+        db,
+        conversationSlugId,
+        frameKey,
+        personalizationUserId,
+        kind,
+    });
+    if (opinionList !== undefined) {
+        return opinionList;
+    }
+
+    if (shouldTryPrimaryFallback({ db, freshnessOptions })) {
+        const primaryOpinionList =
+            await fetchAnalysisFrameOpinionListByFrameKeyFromDb({
+                db: getPrimaryDb(db),
+                conversationSlugId,
+                frameKey,
+                personalizationUserId,
+                kind,
+            });
+        if (primaryOpinionList !== undefined) {
+            return primaryOpinionList;
+        }
+    }
+
+    throw httpErrors.notFound("Analysis frame opinion list is not available.");
 }
 
 async function getHasVotedOnAllAvailableOpinions({

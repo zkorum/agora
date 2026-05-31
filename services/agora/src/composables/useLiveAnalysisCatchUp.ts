@@ -16,6 +16,8 @@ import type { AnalysisData } from "src/utils/api/comment/comment";
 
 type QueryKey = readonly unknown[];
 
+const MAX_CATCH_UP_ATTEMPTS = 5;
+
 interface LiveAnalysisQueryParams {
   conversationSlugId: string;
   analysisView: AnalysisView | undefined;
@@ -36,6 +38,7 @@ interface LiveAnalysisCatchUpState {
   queryKey: QueryKey;
   expectedSnapshotId: number | null;
   expectedDescriptionLocales: SupportedDisplayLanguageCodes[];
+  remainingAttempts: number;
   lastStartedAt: number;
   inFlight: boolean;
   timeout: ReturnType<typeof setTimeout> | undefined;
@@ -254,6 +257,7 @@ export function createLiveAnalysisCatchUpController({
         current: existingState?.expectedDescriptionLocales ?? [],
         incoming: expectedDescriptionLocales,
       }),
+      remainingAttempts: MAX_CATCH_UP_ATTEMPTS,
       lastStartedAt: existingState?.lastStartedAt ?? 0,
       inFlight: existingState?.inFlight ?? false,
       timeout: existingState?.timeout,
@@ -318,6 +322,11 @@ export function createLiveAnalysisCatchUpController({
       return;
     }
 
+    if (state.remainingAttempts <= 0) {
+      clearQueryState({ queryHash });
+      return;
+    }
+
     if (query.isFetching || state.inFlight) {
       scheduleQueryCheck({
         queryHash,
@@ -336,6 +345,7 @@ export function createLiveAnalysisCatchUpController({
 
     state.inFlight = true;
     state.lastStartedAt = Date.now();
+    state.remainingAttempts -= 1;
 
     try {
       const freshness = buildAnalysisFreshnessRequest({
@@ -379,6 +389,11 @@ export function createLiveAnalysisCatchUpController({
       return;
     }
 
+    if (state.remainingAttempts <= 0) {
+      clearQueryState({ queryHash });
+      return;
+    }
+
     scheduleQueryCheck({
       queryHash,
       delayMs: LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS,
@@ -412,7 +427,10 @@ export function createLiveAnalysisCatchUpController({
       upsertQueryState({
         conversationSlugId: data.conversationSlugId,
         query,
-        expectedSnapshotId: data.conversationViewSnapshotId,
+        expectedSnapshotId:
+          data.changeKind === "descriptions"
+            ? null
+            : data.conversationViewSnapshotId,
         expectedDescriptionLocales,
       });
       scheduleOrRunQueryCatchUp({ query });

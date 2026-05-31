@@ -61,9 +61,10 @@ import {
 } from "./shared-app-api/ucan/ucan.js";
 import {
     deleteOpinionBySlugId,
-    fetchAnalysisContentByCandidateId,
-    fetchAnalysisByConversationSlugId,
-    fetchAnalysisMetadataByConversationSlugId,
+    fetchAnalysisFrameGroupLabelsByFrameKey,
+    fetchAnalysisFrameGroupsByFrameKey,
+    fetchAnalysisFrameManifestByConversationSlugId,
+    fetchAnalysisFrameOpinionListByFrameKey,
     fetchCommentStatsByConversationSlugId,
     fetchOpinionsByPostSlugId,
     fetchOpinionsByOpinionSlugIdList,
@@ -2303,11 +2304,11 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/opinion/fetch-analysis-metadata-by-conversation`,
+        url: `/api/${apiVersion}/opinion/fetch-analysis-frame-manifest-by-conversation`,
         schema: {
-            body: Dto.fetchAnalysisMetadataRequest,
+            body: Dto.fetchAnalysisFrameManifestRequest,
             response: {
-                200: Dto.fetchAnalysisMetadataResponse,
+                200: Dto.analysisFrameManifest,
             },
         },
         handler: async (request) => {
@@ -2317,7 +2318,7 @@ server.after(() => {
                 request,
             });
 
-            return await fetchAnalysisMetadataByConversationSlugId({
+            return await fetchAnalysisFrameManifestByConversationSlugId({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
                 personalizationUserId: deviceStatus.isKnown
@@ -2333,11 +2334,35 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/opinion/fetch-analysis-content-by-candidate`,
+        url: `/api/${apiVersion}/opinion/fetch-analysis-frame-groups-by-frame`,
         schema: {
-            body: Dto.fetchAnalysisContentRequest,
+            body: Dto.fetchAnalysisFrameSectionRequest,
             response: {
-                200: Dto.fetchAnalysisContentResponse,
+                200: Dto.analysisFrameGroups,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+
+            return await fetchAnalysisFrameGroupsByFrameKey({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                frameKey: request.body.frameKey,
+                personalizationUserId: deviceStatus.isKnown
+                    ? deviceStatus.userId
+                    : undefined,
+                freshnessOptions: request.body.freshness,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/opinion/fetch-analysis-frame-group-labels-by-frame`,
+        schema: {
+            body: Dto.fetchAnalysisFrameSectionRequest,
+            response: {
+                200: Dto.analysisFrameGroupLabels,
             },
         },
         handler: async (request) => {
@@ -2347,15 +2372,10 @@ server.after(() => {
                 request,
             });
 
-            return await fetchAnalysisContentByCandidateId({
+            return await fetchAnalysisFrameGroupLabelsByFrameKey({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
-                conversationViewSnapshotId:
-                    request.body.conversationViewSnapshotId,
-                candidateId: request.body.candidateId,
-                personalizationUserId: deviceStatus.isKnown
-                    ? deviceStatus.userId
-                    : undefined,
+                frameKey: request.body.frameKey,
                 displayLanguage,
                 freshnessOptions: request.body.freshness,
             });
@@ -2364,31 +2384,26 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/opinion/fetch-analysis-by-conversation`,
+        url: `/api/${apiVersion}/opinion/fetch-analysis-frame-opinion-list-by-frame`,
         schema: {
-            body: Dto.fetchAnalysisRequest,
+            body: Dto.fetchAnalysisFrameOpinionListRequest,
             response: {
-                200: Dto.fetchAnalysisResponse,
+                200: Dto.analysisFrameOpinionList,
             },
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
-            const displayLanguage = await getRequestDisplayLanguage({
-                deviceStatus,
-                request,
-            });
 
-            const analysis = await fetchAnalysisByConversationSlugId({
-                db: db,
+            return await fetchAnalysisFrameOpinionListByFrameKey({
+                db,
                 conversationSlugId: request.body.conversationSlugId,
+                frameKey: request.body.frameKey,
                 personalizationUserId: deviceStatus.isKnown
                     ? deviceStatus.userId
                     : undefined,
-                displayLanguage,
-                analysisView: request.body.analysisView,
-                checkpointViewSnapshotId: request.body.checkpointViewSnapshotId,
+                kind: request.body.kind,
+                freshnessOptions: request.body.freshness,
             });
-            return analysis;
         },
     });
 

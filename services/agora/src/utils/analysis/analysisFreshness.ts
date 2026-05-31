@@ -1,44 +1,49 @@
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
-  AnalysisDescriptionReadiness,
   AnalysisFreshnessRequest,
+  GroupDescriptionDisplay,
   SSEConversationAnalysisUpdatedData,
 } from "src/shared/types/dto";
 import type { AnalysisData } from "src/utils/api/comment/comment";
 
 export const LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS = 2_000;
-export const DESCRIPTION_READINESS_RETRY_INTERVAL_MS = 5_000;
 
-function isReadyDescriptionStatus(
-  status: AnalysisDescriptionReadiness["english"]["status"]
-): boolean {
-  return status === "ready" || status === "fallback";
+function isDisplayedLocaleFresh({
+  display,
+  locale,
+}: {
+  display: GroupDescriptionDisplay | undefined;
+  locale: SupportedDisplayLanguageCodes;
+}): boolean {
+  if (display?.displayedLocale === null || display?.displayedLocale === undefined) {
+    return false;
+  }
+
+  if (locale === "en") {
+    return true;
+  }
+
+  return display.displayedLocale === locale;
 }
 
-export function getPendingDescriptionLocales(
-  readiness: AnalysisDescriptionReadiness | null
-): SupportedDisplayLanguageCodes[] {
-  if (readiness === null) {
+export function getPendingDescriptionLocales({
+  analysis,
+  expectedDescriptionLocales,
+}: {
+  analysis: AnalysisData | undefined;
+  expectedDescriptionLocales: SupportedDisplayLanguageCodes[];
+}): SupportedDisplayLanguageCodes[] {
+  if (analysis?.manifest?.aiLabelsExpected !== true) {
     return [];
   }
 
-  const locales: SupportedDisplayLanguageCodes[] = [];
-  if (
-    readiness.english.expected &&
-    !isReadyDescriptionStatus(readiness.english.status)
-  ) {
-    locales.push("en");
-  }
-
-  if (
-    readiness.requested.expected &&
-    !isReadyDescriptionStatus(readiness.requested.status) &&
-    !locales.includes(readiness.requestedLocale)
-  ) {
-    locales.push(readiness.requestedLocale);
-  }
-
-  return locales;
+  return expectedDescriptionLocales.filter(
+    (locale) =>
+      !isDisplayedLocaleFresh({
+        display: analysis.groupDescriptionDisplay,
+        locale,
+      })
+  );
 }
 
 export function getExpectedDescriptionLocalesFromEvent({
@@ -86,11 +91,9 @@ export function isAnalysisFreshEnough({
     return false;
   }
 
-  const pendingLocales = getPendingDescriptionLocales(
-    analysis.descriptionReadiness
-  );
-  return expectedDescriptionLocales.every(
-    (locale) => !pendingLocales.includes(locale)
+  return (
+    getPendingDescriptionLocales({ analysis, expectedDescriptionLocales })
+      .length === 0
   );
 }
 
@@ -105,12 +108,10 @@ export function buildAnalysisFreshnessRequest({
   expectedDescriptionLocales: SupportedDisplayLanguageCodes[];
   enablePrimaryFallback: boolean;
 }): AnalysisFreshnessRequest | null {
-  const pendingLocales = getPendingDescriptionLocales(
-    previousAnalysis?.descriptionReadiness ?? null
-  );
-  const locales = Array.from(
-    new Set([...expectedDescriptionLocales, ...pendingLocales])
-  );
+  const locales = getPendingDescriptionLocales({
+    analysis: previousAnalysis,
+    expectedDescriptionLocales,
+  });
 
   if (expectedSnapshotId === null && locales.length === 0) {
     return null;
@@ -124,16 +125,13 @@ export function buildAnalysisFreshnessRequest({
 }
 
 export function shouldRetryDescriptionReadiness(
-  analysis: AnalysisData | undefined
+  _analysis: AnalysisData | undefined
 ): boolean {
-  return analysis?.descriptionReadiness?.shouldRetry === true;
+  return false;
 }
 
 export function shouldRetryAnalysisData(
-  analysis: AnalysisData | undefined
+  _analysis: AnalysisData | undefined
 ): boolean {
-  return (
-    shouldRetryDescriptionReadiness(analysis) ||
-    analysis?.contentStatus === "not_available"
-  );
+  return false;
 }

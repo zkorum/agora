@@ -1,5 +1,5 @@
 {
-  "id": "af6ea773-ff87-46c8-8eb8-aa51b3c16335",
+  "id": "5de11041-9aa8-4a7b-880b-c91a1aae0af5",
   "prevId": "6b6d58a8-3179-4c3e-b91b-c299bb5c8fe5",
   "version": "7",
   "dialect": "postgresql",
@@ -6872,7 +6872,36 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "opinion_group_opinion_stats_representative_idx": {
+          "name": "opinion_group_opinion_stats_representative_idx",
+          "columns": [
+            {
+              "expression": "group_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "representative_probability_agreement",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            },
+            {
+              "expression": "analysis_snapshot_opinion_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "(\"opinion_group_opinion_stats\".\"representative_agreement_type\" is not null AND \"opinion_group_opinion_stats\".\"representative_probability_agreement\" is not null)",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "opinion_group_opinion_stats_group_id_opinion_group_id_fk": {
           "name": "opinion_group_opinion_stats_group_id_opinion_group_id_fk",
@@ -10771,23 +10800,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "user_idx_mute": {
-          "name": "user_idx_mute",
-          "columns": [
-            {
-              "expression": "source_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "user_mute_preference_source_user_id_user_id_fk": {
           "name": "user_mute_preference_source_user_id_user_id_fk",
