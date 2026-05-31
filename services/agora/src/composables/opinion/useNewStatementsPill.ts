@@ -13,7 +13,7 @@ import {
   watch,
 } from "vue";
 
-const NEW_STATEMENTS_SUPPRESSION_MS = 30_000;
+const NEW_STATEMENTS_SUPPRESSION_MS = 15_000;
 const TOP_COMMENT_COUNT = 3;
 const filtersAffectedByNewOpinions = new Set<CommentFilterOptions>([
   "new",
