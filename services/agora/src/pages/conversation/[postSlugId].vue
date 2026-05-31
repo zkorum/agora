@@ -68,7 +68,7 @@
                   loadedConversationData.metadata.authorUsername
                 "
                 :on-same-tab-click="
-                  () => scrollToActionBar({ behavior: 'smooth' })
+                  () => handleSameTabActionBarClick()
                 "
                 :conversation-type="
                   loadedConversationData.metadata.conversationType
@@ -259,13 +259,17 @@ const {
   pendingScrollOverride,
 } = useConversationParentState(conversationConfig);
 
-const { actionBarStats, isLoadingCheckpointStats } =
-  useConversationActionBarStats({
-    conversationData,
-    currentTab,
-    routeQuery: computed(() => route.query),
-    overrideStats: pausedAnalysisActionBarStats,
-  });
+const {
+  actionBarStats,
+  isLoadingCheckpointStats,
+  isLoadingCommentStats,
+  refetchCommentStats,
+} = useConversationActionBarStats({
+  conversationData,
+  currentTab,
+  routeQuery: computed(() => route.query),
+  overrideStats: pausedAnalysisActionBarStats,
+});
 
 const displayedActionBarStats = computed<ConversationActionBarStats>(() => {
   const stats = actionBarStats.value;
@@ -277,7 +281,10 @@ const displayedActionBarStats = computed<ConversationActionBarStats>(() => {
 });
 
 const isActionBarLoading = computed(
-  () => isCurrentTabLoading.value || isLoadingCheckpointStats.value
+  () =>
+    isCurrentTabLoading.value ||
+    isLoadingCheckpointStats.value ||
+    isLoadingCommentStats.value
 );
 
 function getActionBarStatsFromMetadata(): ConversationActionBarStats {
@@ -295,6 +302,13 @@ function setAnalysisLivePauseStats(
   stats: ConversationActionBarStats | undefined
 ): void {
   pausedAnalysisActionBarStats.value = stats;
+}
+
+function handleSameTabActionBarClick(): void {
+  scrollToActionBar({ behavior: "smooth" });
+  if (currentTab.value === "comment") {
+    void refetchCommentStats();
+  }
 }
 
 watch(

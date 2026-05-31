@@ -778,6 +778,7 @@ export function createVoteBuffer({
                                     db: tx,
                                     conversationId,
                                     viewReason: "conversation_content_updated",
+                                    emitCommentStatsRealtimeEvent: true,
                                 },
                             );
                         }

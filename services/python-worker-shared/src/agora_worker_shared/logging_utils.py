@@ -1,12 +1,25 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 
 if TYPE_CHECKING:
-    import logging
     from collections.abc import Mapping
+
+    from agora_worker_shared.config import LogLevel
+
+
+LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+
+
+def configure_worker_logging(*, log_level: LogLevel) -> None:
+    logging.basicConfig(
+        level=getattr(logging, log_level),
+        format=LOG_FORMAT,
+        force=True,
+    )
 
 
 def _first_line(value: object) -> str | None:

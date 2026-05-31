@@ -78,6 +78,43 @@ def test_settings_rejects_empty_optional_strings(
     assert exc_info.value.errors()[0]["type"] == "string_too_short"
 
 
+def test_effective_log_level_defaults_to_info_outside_dev(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+
+    settings = Settings(connection_string=VALID_DSN)
+
+    assert settings.effective_log_level == "INFO"
+
+
+def test_effective_log_level_defaults_to_debug_in_dev(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+
+    settings = Settings(connection_string=VALID_DSN, agora_dev_mode=True)
+
+    assert settings.effective_log_level == "DEBUG"
+
+
+def test_explicit_log_level_overrides_dev_default(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+
+    settings = Settings(
+        connection_string=VALID_DSN,
+        agora_dev_mode=True,
+        log_level="WARNING",
+    )
+
+    assert settings.effective_log_level == "WARNING"
+
+
 def test_settings_rejects_invalid_tuning_values(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -106,8 +143,9 @@ def test_settings_accepts_valid_minimal_config(
     assert settings.simulation_providers_enable is False
     assert settings.ai_description_simulation_mode == "off"
     assert settings.description_translation_simulation_mode == "off"
-    assert settings.lease_ttl_seconds == 120
-    assert settings.heartbeat_interval_seconds == 30
+    assert settings.lease_ttl_seconds == 45
+    assert settings.heartbeat_interval_seconds == 15
+    assert settings.running_recovery_interval_seconds == 10
     assert settings.aws_ai_label_summary_read_timeout_seconds == 12.0
     assert settings.aws_description_translation_read_timeout_seconds == 12.0
     assert settings.google_cloud_translation_timeout_seconds == 10.0

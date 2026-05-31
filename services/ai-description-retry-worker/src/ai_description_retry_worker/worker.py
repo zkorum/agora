@@ -16,21 +16,36 @@ from agora_worker_shared.config import (
 )
 from agora_worker_shared.description_retry_processor import process_ai_description_conversation_ids
 from agora_worker_shared.description_services import build_description_generator
+from agora_worker_shared.logging_utils import LOG_FORMAT, configure_worker_logging
+from agora_worker_shared.postgres_engine import create_ready_postgres_engine
 from agora_worker_shared.retry_policy import RetryPolicy
+from agora_worker_shared.schema_readiness import (
+    StartupSchemaRetryState,
+    handle_startup_schema_retry,
+    mark_startup_schema_ready,
+)
 from agora_worker_shared.simulation_providers import (
     build_simulation_runtime,
     log_simulation_startup,
 )
-from sqlalchemy import create_engine
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    format=LOG_FORMAT,
 )
 log = logging.getLogger(__name__)
 
 _running = True
 LOG_PREFIX = "[AiDescriptionRetryWorker]"
+
+
+def _sleep_before_retry(seconds: float) -> None:
+    deadline = time.monotonic() + seconds
+    while _running:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return
+        time.sleep(min(0.5, remaining))
 
 
 def _handle_signal(signum: int, frame: object) -> None:
@@ -41,18 +56,21 @@ def _handle_signal(signum: int, frame: object) -> None:
 
 def main() -> None:
     settings = AiDescriptionWorkerSettings()
+    configure_worker_logging(log_level=settings.effective_log_level)
 
     signal.signal(signal.SIGTERM, _handle_signal)
     signal.signal(signal.SIGINT, _handle_signal)
 
     worker_id = f"ai-desc:{uuid.uuid4()}"
     log.info(
-        "%s Starting worker_id=%s claim_batch=%d ai=%d lease_ttl=%ds recovery=%ds",
+        "%s Starting worker_id=%s claim_batch=%d ai=%d lease_ttl=%ds "
+        "heartbeat=%ds recovery=%ds",
         LOG_PREFIX,
         worker_id,
         settings.db_claim_batch_size,
         settings.max_ai_description_concurrency,
         settings.lease_ttl_seconds,
+        settings.heartbeat_interval_seconds,
         settings.running_recovery_interval_seconds,
     )
 
@@ -74,16 +92,31 @@ def main() -> None:
         "simulation" if settings.ai_description_simulation_enabled else "bedrock",
     )
 
-    primary_engine = create_engine(
-        settings.connection_string.replace("postgres://", "postgresql+psycopg://"),
-        pool_pre_ping=True,
-        hide_parameters=True,
+    primary_engine = create_ready_postgres_engine(
+        connection_string=settings.connection_string,
+        role="primary",
+        logger=log,
+        log_prefix=LOG_PREFIX,
+        retry_interval_seconds=settings.valkey_retry_interval_seconds,
+        should_continue=lambda: _running,
+        sleep_fn=_sleep_before_retry,
     )
-    read_engine = create_engine(
-        settings.read_dsn.replace("postgres://", "postgresql+psycopg://"),
-        pool_pre_ping=True,
-        hide_parameters=True,
+    if primary_engine is None:
+        log.info("%s Shutdown complete", LOG_PREFIX)
+        return
+    read_engine = create_ready_postgres_engine(
+        connection_string=settings.read_dsn,
+        role="read",
+        logger=log,
+        log_prefix=LOG_PREFIX,
+        retry_interval_seconds=settings.valkey_retry_interval_seconds,
+        should_continue=lambda: _running,
+        sleep_fn=_sleep_before_retry,
     )
+    if read_engine is None:
+        primary_engine.dispose()
+        log.info("%s Shutdown complete", LOG_PREFIX)
+        return
     log.info("%s PostgreSQL connected", LOG_PREFIX)
     retry_policy = RetryPolicy(
         burst_attempts=settings.retry_burst_attempts,
@@ -93,6 +126,7 @@ def main() -> None:
 
     monotonic_start = time.monotonic()
     last_recover = monotonic_start - settings.running_recovery_interval_seconds
+    schema_retry_state = StartupSchemaRetryState()
 
     while _running:
         monotonic_now = time.monotonic()
@@ -112,7 +146,17 @@ def main() -> None:
                         LOG_PREFIX,
                         len(recovered_ids),
                     )
-            except Exception:
+            except Exception as error:
+                retry_decision = handle_startup_schema_retry(
+                    state=schema_retry_state,
+                    error=error,
+                    logger=log,
+                    log_prefix=LOG_PREFIX,
+                )
+                schema_retry_state = retry_decision.state
+                if retry_decision.should_retry:
+                    time.sleep(settings.worker_poll_idle_sleep_seconds)
+                    continue
                 log.exception("%s Running-work recovery failed", LOG_PREFIX)
             last_recover = monotonic_now
 
@@ -126,15 +170,26 @@ def main() -> None:
                 include_translations=False,
                 require_activated_view_snapshot=True,
             )
-        except Exception:
+        except Exception as error:
+            retry_decision = handle_startup_schema_retry(
+                state=schema_retry_state,
+                error=error,
+                logger=log,
+                log_prefix=LOG_PREFIX,
+            )
+            schema_retry_state = retry_decision.state
+            if retry_decision.should_retry:
+                time.sleep(settings.worker_poll_idle_sleep_seconds)
+                continue
             log.exception("%s Due lineage scan failed", LOG_PREFIX)
             time.sleep(settings.worker_poll_idle_sleep_seconds)
             continue
+        schema_retry_state = mark_startup_schema_ready(state=schema_retry_state)
         if not due_ids:
             time.sleep(settings.worker_poll_idle_sleep_seconds)
             continue
 
-        log.info(
+        log.debug(
             "%s Found due lineage conversation(s) source=read_replica count=%d ids=%s",
             LOG_PREFIX,
             len(due_ids),
@@ -147,6 +202,7 @@ def main() -> None:
             worker_id=worker_id,
             conversation_ids=due_ids,
             lease_ttl_seconds=settings.lease_ttl_seconds,
+            heartbeat_interval_seconds=settings.heartbeat_interval_seconds,
             claim_limit=settings.db_claim_batch_size,
             max_workers=settings.max_ai_description_concurrency,
             ai_description_epoch=settings.ai_description_epoch,
@@ -166,7 +222,7 @@ def main() -> None:
                 (time.perf_counter() - batch_started_at) * 1000,
             )
         else:
-            log.info(
+            log.debug(
                 "%s No lineage work item processed conversation_count=%d ids=%s batch_ms=%.1f",
                 LOG_PREFIX,
                 len(due_ids),

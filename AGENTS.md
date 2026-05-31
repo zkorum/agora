@@ -741,13 +741,11 @@ For Vue component props, prefer `prop: T | undefined` over `prop?: T`. Optional 
 
 ### Logging Guidelines
 
-**Important:** Do NOT use `log.debug()` in this codebase. Always use `log.info()`, `log.warn()`, or `log.error()` instead.
+Prefer `log.info()`, `log.warn()`, or `log.error()` for production-relevant events.
 
-**Rationale:**
+`log.debug()` is allowed in Python workers for dev-only or high-frequency diagnostics. Python workers default to `DEBUG` when `AGORA_DEV_MODE=true`, default to `INFO` otherwise, and support worker-specific `*_LOG_LEVEL` overrides.
 
-- Debug logs are rarely checked in production and add noise
-- Info-level logs are always visible and provide better traceability
-- Simpler to grep/filter logs when there are fewer log levels in use
+API and frontend should get the same explicit log-level mechanism later. Until then, keep API/frontend logs production-oriented.
 
 **Examples:**
 
@@ -756,9 +754,6 @@ For Vue component props, prefer `prop: T | undefined` over `prop?: T`. Optional 
 log.info(`[Math Updater] Processing conversation ${conversationSlugId}`);
 log.warn(`[Scanner] Skipped conversation due to rate limiting`);
 log.error(error, `[API] Failed to create opinion`);
-
-// BAD - Never use log.debug
-log.debug(`Processing started`); // ❌ Don't use this
 ```
 
 ## Important Patterns

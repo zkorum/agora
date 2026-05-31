@@ -160,6 +160,25 @@ export class Dto {
         })
         .strict();
     static fetchOpinionsResponse = z.array(zodOpinionItem);
+    static fetchCommentStatsRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static fetchCommentStatsResponse = z
+        .object({
+            conversationViewSnapshotId: z.number().int().positive(),
+            opinionCount: z.number().int().nonnegative(),
+            voteCount: z.number().int().nonnegative(),
+            participantCount: z.number().int().nonnegative(),
+            totalOpinionCount: z.number().int().nonnegative(),
+            totalVoteCount: z.number().int().nonnegative(),
+            totalParticipantCount: z.number().int().nonnegative(),
+            moderatedOpinionCount: z.number().int().nonnegative(),
+            hiddenOpinionCount: z.number().int().nonnegative(),
+            isClosed: z.boolean(),
+        })
+        .strict();
     static aiDescriptionLocaleStatus = z.enum(["pending", "ready", "fallback"]);
     static analysisDescriptionReadinessPart = z
         .object({
@@ -1504,6 +1523,9 @@ export type FetchUserVotesForPostSlugIdsResponse = z.infer<
 >;
 export type FetchCommentFeedResponse = z.infer<
     typeof Dto.fetchOpinionsResponse
+>;
+export type FetchCommentStatsResponse = z.infer<
+    typeof Dto.fetchCommentStatsResponse
 >;
 export type FetchFeedResponse = z.infer<typeof Dto.fetchFeedResponse>;
 export type GetUserProfileResponse = z.infer<typeof Dto.getUserProfileResponse>;

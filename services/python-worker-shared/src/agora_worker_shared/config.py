@@ -16,6 +16,7 @@ DEFAULT_VALKEY_URL: AnyUrl = TypeAdapter(AnyUrl).validate_python(
 log = logging.getLogger(__name__)
 ALLOWED_VALKEY_SCHEMES = {"valkey", "valkeys", "redis", "rediss"}
 MATH_UPDATER_ENV_PREFIX = "MATH_UPDATER_"
+LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 SimulationMode = Literal[
     "off",
     "success",
@@ -183,6 +184,7 @@ class Settings(BaseSettings):
         default=False,
         validation_alias=AliasChoices("AGORA_DEV_MODE", "MATH_UPDATER_AGORA_DEV_MODE"),
     )
+    log_level: LogLevel | None = None
     connection_string: str = Field(default="", min_length=1)
     connection_string_read: str | None = Field(default=None, min_length=1)
 
@@ -193,12 +195,12 @@ class Settings(BaseSettings):
     db_write_batch_size: int = Field(default=10, ge=1)
     max_compute_concurrency: int = Field(default=4, ge=1)
     max_ai_description_concurrency: int = Field(default=4, ge=1)
-    lease_ttl_seconds: int = Field(default=120, ge=1)
-    heartbeat_interval_seconds: int = Field(default=30, ge=1)
+    lease_ttl_seconds: int = Field(default=45, ge=1)
+    heartbeat_interval_seconds: int = Field(default=15, ge=1)
     worker_poll_idle_sleep_seconds: float = Field(default=0.5, gt=0)
     default_debounce_seconds: int = Field(default=5, ge=0)
     reconciliation_interval_seconds: int = Field(default=60, ge=1)
-    running_recovery_interval_seconds: int = Field(default=60, ge=1)
+    running_recovery_interval_seconds: int = Field(default=10, ge=1)
     valkey_retry_interval_seconds: float = Field(default=5.0, gt=0)
     retry_burst_attempts: int = Field(default=10, ge=1)
     retry_burst_seconds: int = Field(default=10, ge=1)
@@ -279,6 +281,12 @@ class Settings(BaseSettings):
     @property
     def read_dsn(self) -> str:
         return self.connection_string_read or self.connection_string
+
+    @property
+    def effective_log_level(self) -> LogLevel:
+        if self.log_level is not None:
+            return self.log_level
+        return "DEBUG" if self.agora_dev_mode else "INFO"
 
     @property
     def google_translation_credentials_configured(self) -> bool:

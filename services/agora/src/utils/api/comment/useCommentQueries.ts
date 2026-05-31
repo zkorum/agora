@@ -6,9 +6,11 @@ import {
 } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { AnalysisFreshnessRequest } from "src/shared/types/dto";
-import type { AnalysisView, PolisKey } from "src/shared/types/zod";
-import type { OpinionItem } from "src/shared/types/zod";
+import type {
+  AnalysisFreshnessRequest,
+  FetchCommentStatsResponse,
+} from "src/shared/types/dto";
+import type { AnalysisView, OpinionItem, PolisKey } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
 import { useUserStore } from "src/stores/user";
 import {
@@ -85,6 +87,46 @@ export function useHiddenCommentsQuery({
     placeholderData: (previousData) => previousData, // Preserve previous data during refetches
     retry: false, // Disable auto-retry
   });
+}
+
+export function useCommentStatsQuery({
+  conversationSlugId,
+  enabled = true,
+}: {
+  conversationSlugId: MaybeRefOrGetter<string>;
+  enabled?: MaybeRefOrGetter<boolean>;
+}) {
+  const { fetchCommentStatsForPost } = useBackendCommentApi();
+
+  return useQuery({
+    queryKey: ["commentStats", computed(() => toValue(conversationSlugId))],
+    queryFn: () => fetchCommentStatsForPost(toValue(conversationSlugId)),
+    enabled: computed(
+      () => toValue(enabled) && toValue(conversationSlugId) !== ""
+    ),
+    placeholderData: (previousData) => previousData,
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+export function pickCommentStatsForActionBar(
+  stats: FetchCommentStatsResponse
+): Pick<
+  FetchCommentStatsResponse,
+  | "opinionCount"
+  | "participantCount"
+  | "voteCount"
+  | "totalParticipantCount"
+  | "totalVoteCount"
+> {
+  return {
+    opinionCount: stats.opinionCount,
+    participantCount: stats.participantCount,
+    voteCount: stats.voteCount,
+    totalParticipantCount: stats.totalParticipantCount,
+    totalVoteCount: stats.totalVoteCount,
+  };
 }
 
 /**

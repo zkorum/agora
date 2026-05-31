@@ -68,6 +68,7 @@ def create_bedrock_converse_client(
         config=Config(
             connect_timeout=connect_timeout_seconds,
             read_timeout=read_timeout_seconds,
+            retries={"total_max_attempts": 1},
         ),
     )
     if not _is_bedrock_converse_client(client):
@@ -103,46 +104,32 @@ def generate_label_summaries_with_bedrock(
         _representative_opinions_json(conversation),
     )
 
-    last_parse_error: Exception | None = None
-    for attempt in range(1, 3):
-        response = bedrock_client.converse(**command_payload)
-        model_response_text = extract_text_content_from_response(response)
-        log.info(
-            "[DescriptionGenerator] Bedrock label/summary response "
-            "model_id=%s analysis_snapshot_id=%s attempt=%d/2 response_text_json=%s",
-            config.model_id,
-            conversation.analysis_snapshot_id,
-            attempt,
-            json.dumps(model_response_text, ensure_ascii=False),
-        )
-        try:
-            if model_response_text is None:
-                msg = "unable to extract text content from Bedrock response"
-                raise BedrockLabelSummaryError(msg)
-            parsed = parse_bedrock_label_summary_text(model_response_text)
-            log.info(
-                "[DescriptionGenerator] Bedrock label/summary parsed "
-                "model_id=%s analysis_snapshot_id=%s attempt=%d/2 mode=%s labels=%s",
-                config.model_id,
-                conversation.analysis_snapshot_id,
-                attempt,
-                parsed.mode,
-                _parsed_labels_json(parsed),
-            )
-            return parsed
-        except BedrockLabelSummaryError as error:
-            last_parse_error = error
-            log.warning(
-                "[DescriptionGenerator] Bedrock label/summary parse failed "
-                "model_id=%s analysis_snapshot_id=%s attempt=%d/2",
-                config.model_id,
-                conversation.analysis_snapshot_id,
-                attempt,
-                exc_info=True,
-            )
-
-    msg = "unable to parse Bedrock label/summary response after retry"
-    raise BedrockLabelSummaryError(msg) from last_parse_error
+    response = bedrock_client.converse(**command_payload)
+    model_response_text = extract_text_content_from_response(response)
+    log.info(
+        "[DescriptionGenerator] Bedrock label/summary response "
+        "model_id=%s analysis_snapshot_id=%s response_text_json=%s",
+        config.model_id,
+        conversation.analysis_snapshot_id,
+        json.dumps(model_response_text, ensure_ascii=False),
+    )
+    if model_response_text is None:
+        msg = "unable to extract text content from Bedrock response"
+        raise BedrockLabelSummaryError(msg)
+    parsed = parse_bedrock_label_summary_text(
+        model_response_text,
+        expected_group_keys={group.group_key for group in conversation.groups},
+        allow_partial=True,
+    )
+    log.info(
+        "[DescriptionGenerator] Bedrock label/summary parsed "
+        "model_id=%s analysis_snapshot_id=%s mode=%s labels=%s",
+        config.model_id,
+        conversation.analysis_snapshot_id,
+        parsed.mode,
+        _parsed_labels_json(parsed),
+    )
+    return parsed
 
 
 def build_bedrock_converse_payload(
@@ -168,17 +155,43 @@ def build_bedrock_converse_payload(
     }
 
 
-def parse_bedrock_label_summary_response(response: object) -> ParsedLabelSummaryOutput:
+def parse_bedrock_label_summary_response(
+    response: object,
+    *,
+    expected_group_keys: set[str] | None = None,
+    allow_partial: bool = False,
+) -> ParsedLabelSummaryOutput:
     model_response_text = extract_text_content_from_response(response)
     if model_response_text is None:
         msg = "unable to extract text content from Bedrock response"
         raise BedrockLabelSummaryError(msg)
-    return parse_bedrock_label_summary_text(model_response_text)
+    return parse_bedrock_label_summary_text(
+        model_response_text,
+        expected_group_keys=expected_group_keys,
+        allow_partial=allow_partial,
+    )
 
 
-def parse_bedrock_label_summary_text(model_response_text: str) -> ParsedLabelSummaryOutput:
-    model_response = parse_llm_output_json(model_response_text)
-    return parse_label_summary_output(model_response)
+def parse_bedrock_label_summary_text(
+    model_response_text: str,
+    *,
+    expected_group_keys: set[str] | None = None,
+    allow_partial: bool = False,
+) -> ParsedLabelSummaryOutput:
+    last_error: BedrockLabelSummaryError | None = None
+    for model_response in iter_llm_output_json_candidates(model_response_text):
+        try:
+            if expected_group_keys is not None:
+                return parse_label_summary_output_for_groups(
+                    model_response,
+                    expected_group_keys=expected_group_keys,
+                    allow_partial=allow_partial,
+                )
+            return parse_label_summary_output(model_response)
+        except BedrockLabelSummaryError as error:
+            last_error = error
+    msg = "unable to parse AI label/summary output from any JSON object"
+    raise BedrockLabelSummaryError(msg) from last_error
 
 
 def extract_text_content_from_response(response: object) -> str | None:
@@ -206,23 +219,29 @@ def extract_text_content_from_response(response: object) -> str | None:
 
 
 def parse_llm_output_json(raw_llm_output: str) -> dict[str, object]:
-    candidate_outputs = _candidate_llm_outputs(raw_llm_output)
-    parsed_json = _parse_first_json_object(candidate_outputs)
-    if parsed_json is not None:
-        return parsed_json
-
-    repaired_candidate_outputs = _repaired_candidate_outputs(candidate_outputs)
-    repaired_json = _parse_first_json_object(repaired_candidate_outputs)
-    if repaired_json is not None:
-        return repaired_json
-
-    for candidate_output in [*candidate_outputs, *repaired_candidate_outputs]:
-        extracted_json = _extract_first_json_object(candidate_output)
-        if extracted_json is not None:
-            return extracted_json
+    for candidate in iter_llm_output_json_candidates(raw_llm_output):
+        return candidate
 
     msg = "unable to extract first JSON object from LLM output"
     raise BedrockLabelSummaryError(msg)
+
+
+def iter_llm_output_json_candidates(raw_llm_output: str) -> list[dict[str, object]]:
+    candidate_outputs = _candidate_llm_outputs(raw_llm_output)
+    repaired_candidate_outputs = _repaired_candidate_outputs(candidate_outputs)
+    json_candidates: list[dict[str, object]] = []
+    seen_candidates: set[str] = set()
+    for candidate in [
+        *_parse_json_objects(candidate_outputs),
+        *_parse_json_objects(repaired_candidate_outputs),
+        *_extract_json_objects([*candidate_outputs, *repaired_candidate_outputs]),
+    ]:
+        candidate_key = json.dumps(candidate, ensure_ascii=False, sort_keys=True)
+        if candidate_key in seen_candidates:
+            continue
+        seen_candidates.add(candidate_key)
+        json_candidates.append(candidate)
+    return json_candidates
 
 
 def parse_label_summary_output(model_response: dict[str, object]) -> ParsedLabelSummaryOutput:
@@ -236,6 +255,53 @@ def parse_label_summary_output(model_response: dict[str, object]) -> ParsedLabel
 
     msg = "unable to parse AI label/summary output"
     raise BedrockLabelSummaryError(msg)
+
+
+def parse_label_summary_output_for_groups(
+    model_response: dict[str, object],
+    *,
+    expected_group_keys: set[str],
+    allow_partial: bool = False,
+) -> ParsedLabelSummaryOutput:
+    unexpected_keys = expected_group_keys - CLUSTER_KEYS
+    if unexpected_keys:
+        msg = f"unsupported expected cluster keys: {sorted(unexpected_keys)}"
+        raise BedrockLabelSummaryError(msg)
+    clusters = model_response.get("clusters")
+    if not _is_string_key_mapping(clusters):
+        msg = "unable to parse AI label/summary output"
+        raise BedrockLabelSummaryError(msg)
+
+    parsed_clusters: dict[str, LabelSummary] = {}
+    used_loose_mode = False
+    for group_key in sorted(expected_group_keys):
+        raw_cluster = clusters.get(group_key)
+        if not _is_string_key_mapping(raw_cluster):
+            if allow_partial:
+                continue
+            msg = f"missing generated description for group {group_key}"
+            raise BedrockLabelSummaryError(msg)
+        parsed_cluster = _parse_cluster_value(raw_cluster, strict=True)
+        if parsed_cluster is None:
+            parsed_cluster = _parse_cluster_value(raw_cluster, strict=False)
+            used_loose_mode = parsed_cluster is not None
+        if parsed_cluster is None:
+            if allow_partial:
+                continue
+            msg = f"invalid generated description for group {group_key}"
+            raise BedrockLabelSummaryError(msg)
+        parsed_clusters[group_key] = parsed_cluster
+
+    if not parsed_clusters:
+        msg = "AI label/summary output did not include any valid expected clusters"
+        raise BedrockLabelSummaryError(msg)
+    if not allow_partial and set(parsed_clusters) != expected_group_keys:
+        msg = "AI label/summary output did not include exactly the expected clusters"
+        raise BedrockLabelSummaryError(msg)
+    return ParsedLabelSummaryOutput(
+        mode="loose" if used_loose_mode else "strict",
+        clusters=parsed_clusters,
+    )
 
 
 def _conversation_payload(conversation: ConversationDescriptionInput) -> dict[str, object]:
@@ -328,12 +394,12 @@ def _parse_cluster_value(
         return None
     if reasoning is not None and not isinstance(reasoning, str):
         return None
+    if len(label) > 100 or len(summary) > 1000:
+        return None
     if strict:
         if not isinstance(reasoning, str) or len(reasoning) > 2000:
             return None
-        if len(label) > 100 or LABEL_PATTERN.fullmatch(label) is None:
-            return None
-        if len(summary) > 1000:
+        if LABEL_PATTERN.fullmatch(label) is None:
             return None
     return LabelSummary(
         reasoning=reasoning if isinstance(reasoning, str) else None,
@@ -378,29 +444,32 @@ def _repaired_candidate_outputs(candidate_outputs: list[str]) -> list[str]:
     )
 
 
-def _parse_first_json_object(candidate_outputs: list[str]) -> dict[str, object] | None:
+def _parse_json_objects(candidate_outputs: list[str]) -> list[dict[str, object]]:
+    parsed_objects: list[dict[str, object]] = []
     for candidate_output in candidate_outputs:
         try:
             parsed = json.loads(candidate_output)
         except json.JSONDecodeError:
             continue
         if _is_string_key_mapping(parsed):
-            return parsed
-    return None
+            parsed_objects.append(parsed)
+    return parsed_objects
 
 
-def _extract_first_json_object(candidate_output: str) -> dict[str, object] | None:
+def _extract_json_objects(candidate_outputs: list[str]) -> list[dict[str, object]]:
+    extracted_objects: list[dict[str, object]] = []
     decoder = json.JSONDecoder()
-    for index, character in enumerate(candidate_output):
-        if character != "{":
-            continue
-        try:
-            parsed, _end = decoder.raw_decode(candidate_output[index:])
-        except json.JSONDecodeError:
-            continue
-        if _is_string_key_mapping(parsed):
-            return parsed
-    return None
+    for candidate_output in candidate_outputs:
+        for index, character in enumerate(candidate_output):
+            if character != "{":
+                continue
+            try:
+                parsed, _end = decoder.raw_decode(candidate_output[index:])
+            except json.JSONDecodeError:
+                continue
+            if _is_string_key_mapping(parsed):
+                extracted_objects.append(parsed)
+    return extracted_objects
 
 
 def _is_string_key_mapping(value: object) -> TypeGuard[dict[str, object]]:

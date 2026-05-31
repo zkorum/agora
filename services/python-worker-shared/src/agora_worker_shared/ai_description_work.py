@@ -3,16 +3,17 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
-from sqlalchemy import and_, false, func, or_, select, true, update
+from sqlalchemy import and_, false, func, or_, select, true, tuple_, update
 from sqlalchemy import insert as sqlalchemy_insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session, aliased
 
+from agora_worker_shared.bedrock_label_summary import LabelSummary, ParsedLabelSummaryOutput
 from agora_worker_shared.db import (
     CheckpointActivationContext,
     materialize_checkpoint_reasons_for_activated_view_snapshots,
@@ -61,6 +62,7 @@ from agora_worker_shared.valkey_client import datetime_to_epoch_ms
 log = logging.getLogger(__name__)
 POSTGRES_INSERT_BIND_PARAM_LIMIT = 60_000
 DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE = 4
+FIRST_PASS_MAX_EXISTING_ATTEMPT_COUNT = 1
 
 
 def _max_rows_per_insert(*, column_count: int) -> int:
@@ -72,13 +74,36 @@ def _iter_chunks[T](values: list[T], *, chunk_size: int) -> Iterator[list[T]]:
         yield values[start : start + chunk_size]
 
 
+def _lock_locale_expectation_ids_for_update(
+    session: Session,
+    *,
+    expectation_ids: list[int],
+) -> list[int]:
+    unique_ids = sorted(set(expectation_ids))
+    if not unique_ids:
+        return []
+    if session.get_bind().dialect.name == "sqlite":
+        return unique_ids
+
+    rows = session.execute(
+        select(OpinionGroupDescriptionLocaleExpectation.id)
+        .where(OpinionGroupDescriptionLocaleExpectation.id.in_(unique_ids))
+        .order_by(OpinionGroupDescriptionLocaleExpectation.id)
+        .with_for_update(
+            skip_locked=True,
+            of=OpinionGroupDescriptionLocaleExpectation,
+        )
+    ).all()
+    return [row.id for row in rows]
+
+
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping, Sequence
 
     from sqlalchemy import Engine
+    from sqlalchemy.orm.attributes import InstrumentedAttribute
     from sqlalchemy.sql.elements import ColumnElement
 
-    from agora_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
     from agora_worker_shared.description_translation import DescriptionTranslation
 
     DescriptionGenerator = Callable[
@@ -89,6 +114,14 @@ if TYPE_CHECKING:
         [list[DescriptionForTranslation], list[str]],
         list[DescriptionTranslation],
     ]
+    type _NextRunExpression = (
+        ColumnElement[datetime | None] | InstrumentedAttribute[datetime | None]
+    )
+    type _OrderByExpression = (
+        ColumnElement[bool]
+        | ColumnElement[datetime | None]
+        | InstrumentedAttribute[int]
+    )
 
 
 @dataclass(frozen=True)
@@ -157,6 +190,34 @@ class FirstPassPendingStatusError(RuntimeError):
 class DescriptionTranslationBatchProcessResult:
     schedules: list[WorkStateSchedule]
     translated_description_ids: list[int]
+    missing_description_ids: list[int] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class LineageDescriptionBatchProcessResult:
+    schedules: list[WorkStateSchedule]
+    generated_lineage_ids: list[int]
+    missing_lineage_ids: list[int] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class AiDescriptionLeaseExtension:
+    extended_lineage_work_ids: list[int]
+    extended_translation_work_ids: list[int]
+
+    @property
+    def extended_count(self) -> int:
+        return len(self.extended_lineage_work_ids) + len(
+            self.extended_translation_work_ids
+        )
+
+
+@dataclass(frozen=True)
+class _TranslationDescriptionContext:
+    description_id: int
+    lineage_id: int
+    source_candidate_id: int
+    conversation_title: str | None
 
 
 def claimable_immediate_retry_at(now: datetime) -> datetime:
@@ -176,9 +237,9 @@ def description_translation_work_claim_batches(
     claims: list[ClaimedDescriptionTranslationWorkItem],
 ) -> list[list[ClaimedDescriptionTranslationWorkItem]]:
     batches: list[list[ClaimedDescriptionTranslationWorkItem]] = []
-    claims_by_context: dict[tuple[int, str], list[ClaimedDescriptionTranslationWorkItem]] = {}
+    claims_by_context: dict[str, list[ClaimedDescriptionTranslationWorkItem]] = {}
     for claim in claims:
-        claims_by_context.setdefault((claim.conversation_id, claim.locale), []).append(claim)
+        claims_by_context.setdefault(claim.locale, []).append(claim)
 
     for context_claims in claims_by_context.values():
         batches.extend(
@@ -188,6 +249,15 @@ def description_translation_work_claim_batches(
             )
         )
     return batches
+
+
+def lineage_description_work_claim_batches(
+    claims: list[ClaimedLineageDescriptionWorkItem],
+) -> list[list[ClaimedLineageDescriptionWorkItem]]:
+    claims_by_candidate_id: dict[int, list[ClaimedLineageDescriptionWorkItem]] = {}
+    for claim in claims:
+        claims_by_candidate_id.setdefault(claim.source_candidate_id, []).append(claim)
+    return list(claims_by_candidate_id.values())
 
 
 @dataclass(frozen=True)
@@ -939,19 +1009,27 @@ def activate_pending_translation_expectations(
             if row.retry_demand_due_at is not None:
                 clear_due_ids.append(row.id)
 
-        if mark_due_ids:
+        locked_mark_due_ids = _lock_locale_expectation_ids_for_update(
+            session,
+            expectation_ids=mark_due_ids,
+        )
+        if locked_mark_due_ids:
             session.execute(
                 update(OpinionGroupDescriptionLocaleExpectation)
-                .where(OpinionGroupDescriptionLocaleExpectation.id.in_(mark_due_ids))
+                .where(OpinionGroupDescriptionLocaleExpectation.id.in_(locked_mark_due_ids))
                 .values(
                     retry_demand_due_at=func.now(),
                     updated_at=func.now(),
                 )
             )
-        if clear_due_ids:
+        locked_clear_due_ids = _lock_locale_expectation_ids_for_update(
+            session,
+            expectation_ids=clear_due_ids,
+        )
+        if locked_clear_due_ids:
             session.execute(
                 update(OpinionGroupDescriptionLocaleExpectation)
-                .where(OpinionGroupDescriptionLocaleExpectation.id.in_(clear_due_ids))
+                .where(OpinionGroupDescriptionLocaleExpectation.id.in_(locked_clear_due_ids))
                 .values(
                     retry_demand_due_at=None,
                     updated_at=func.now(),
@@ -1754,15 +1832,17 @@ def _ensure_lineage_description_work_for_pending_expectations(
     if not demands:
         return
 
-    values: list[dict[str, object]] = [
-        {
+    values: list[dict[str, object]] = []
+    value_by_lineage_id: dict[int, dict[str, object]] = {}
+    for demand in demands:
+        value: dict[str, object] = {
             "lineage_id": demand.lineage_id,
             "conversation_id": demand.conversation_id,
             "source_candidate_id": demand.source_candidate_id,
             "next_run_at": demand.next_run_at or func.now(),
         }
-        for demand in demands
-    ]
+        values.append(value)
+        value_by_lineage_id[demand.lineage_id] = value
     if session.get_bind().dialect.name == "sqlite":
         for value in values:
             existing_row = session.execute(
@@ -1798,19 +1878,40 @@ def _ensure_lineage_description_work_for_pending_expectations(
 
     for chunk in _iter_chunks(values, chunk_size=_max_rows_per_insert(column_count=4)):
         insert_query = pg_insert(OpinionGroupLineageDescriptionWork).values(chunk)
+        session.execute(insert_query.on_conflict_do_nothing())
+
+    lineage_ids = sorted(value_by_lineage_id)
+    if not lineage_ids:
+        return
+
+    existing_rows = session.execute(
+        select(
+            OpinionGroupLineageDescriptionWork.id,
+            OpinionGroupLineageDescriptionWork.lineage_id,
+        )
+        .where(
+            and_(
+                OpinionGroupLineageDescriptionWork.lineage_id.in_(lineage_ids),
+                OpinionGroupLineageDescriptionWork.lease_token.is_(None),
+                OpinionGroupLineageDescriptionWork.next_run_at.is_(None),
+            )
+        )
+        .order_by(OpinionGroupLineageDescriptionWork.lineage_id)
+        .with_for_update(
+            skip_locked=True,
+            of=OpinionGroupLineageDescriptionWork,
+        )
+    ).all()
+    for row in existing_rows:
+        value = value_by_lineage_id[row.lineage_id]
         session.execute(
-            insert_query.on_conflict_do_update(
-                index_elements=[OpinionGroupLineageDescriptionWork.lineage_id],
-                set_={
-                    "conversation_id": insert_query.excluded.conversation_id,
-                    "source_candidate_id": insert_query.excluded.source_candidate_id,
-                    "next_run_at": func.coalesce(
-                        OpinionGroupLineageDescriptionWork.next_run_at,
-                        insert_query.excluded.next_run_at,
-                    ),
-                    "updated_at": func.now(),
-                },
-                where=OpinionGroupLineageDescriptionWork.lease_token.is_(None),
+            update(OpinionGroupLineageDescriptionWork)
+            .where(OpinionGroupLineageDescriptionWork.id == row.id)
+            .values(
+                conversation_id=value["conversation_id"],
+                source_candidate_id=value["source_candidate_id"],
+                next_run_at=value["next_run_at"],
+                updated_at=func.now(),
             )
         )
 
@@ -1865,15 +1966,17 @@ def _ensure_translation_work_for_pending_expectations(
     if not demands:
         return
 
-    values: list[dict[str, object]] = [
-        {
+    values: list[dict[str, object]] = []
+    value_by_description_locale: dict[tuple[int, str], dict[str, object]] = {}
+    for demand in demands:
+        value: dict[str, object] = {
             "description_id": demand.description_id,
             "conversation_id": demand.conversation_id,
             "locale": demand.locale,
             "next_run_at": demand.next_run_at or func.now(),
         }
-        for demand in demands
-    ]
+        values.append(value)
+        value_by_description_locale[(demand.description_id, demand.locale)] = value
     if session.get_bind().dialect.name == "sqlite":
         for value in values:
             existing_row = session.execute(
@@ -1913,22 +2016,58 @@ def _ensure_translation_work_for_pending_expectations(
     for chunk in _iter_chunks(values, chunk_size=_max_rows_per_insert(column_count=4)):
         insert_query = pg_insert(OpinionGroupDescriptionTranslationWork).values(chunk)
         session.execute(
-            insert_query.on_conflict_do_update(
+            insert_query.on_conflict_do_nothing(
                 index_elements=[
                     OpinionGroupDescriptionTranslationWork.description_id,
                     OpinionGroupDescriptionTranslationWork.locale,
-                ],
-                set_={
-                    "conversation_id": insert_query.excluded.conversation_id,
-                    "next_run_at": func.coalesce(
-                        OpinionGroupDescriptionTranslationWork.next_run_at,
-                        insert_query.excluded.next_run_at,
-                    ),
-                    "updated_at": func.now(),
-                },
-                where=OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
+                ]
             )
         )
+
+    description_locale_keys = sorted(value_by_description_locale)
+    if not description_locale_keys:
+        return
+
+    for chunk in _iter_chunks(
+        description_locale_keys,
+        chunk_size=_max_rows_per_insert(column_count=2),
+    ):
+        existing_rows = session.execute(
+            select(
+                OpinionGroupDescriptionTranslationWork.id,
+                OpinionGroupDescriptionTranslationWork.description_id,
+                OpinionGroupDescriptionTranslationWork.locale,
+            )
+            .where(
+                and_(
+                    tuple_(
+                        OpinionGroupDescriptionTranslationWork.description_id,
+                        OpinionGroupDescriptionTranslationWork.locale,
+                    ).in_(chunk),
+                    OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
+                    OpinionGroupDescriptionTranslationWork.next_run_at.is_(None),
+                )
+            )
+            .order_by(
+                OpinionGroupDescriptionTranslationWork.description_id,
+                OpinionGroupDescriptionTranslationWork.locale,
+            )
+            .with_for_update(
+                skip_locked=True,
+                of=OpinionGroupDescriptionTranslationWork,
+            )
+        ).all()
+        for row in existing_rows:
+            value = value_by_description_locale[(row.description_id, row.locale)]
+            session.execute(
+                update(OpinionGroupDescriptionTranslationWork)
+                .where(OpinionGroupDescriptionTranslationWork.id == row.id)
+                .values(
+                    conversation_id=value["conversation_id"],
+                    next_run_at=value["next_run_at"],
+                    updated_at=func.now(),
+                )
+            )
 
 
 def _lineage_work_relevant_expectation_filter(
@@ -2071,7 +2210,7 @@ def _translation_work_view_snapshot_filter(
 
 
 def _next_run_claim_filter(
-    next_run_at: object,
+    next_run_at: _NextRunExpression,
     *,
     require_due: bool,
 ) -> ColumnElement[bool]:
@@ -2123,11 +2262,11 @@ def _claim_ai_description_locale_work_items_batch(
     should_prioritize_latest = (
         conversation_view_snapshot_ids is None and require_activated_view_snapshot
     )
-    lineage_order_by = [
+    lineage_order_by: list[_OrderByExpression] = [
         OpinionGroupLineageDescriptionWork.next_run_at.asc(),
         OpinionGroupLineageDescriptionWork.id,
     ]
-    translation_order_by = [
+    translation_order_by: list[_OrderByExpression] = [
         OpinionGroupDescriptionTranslationWork.next_run_at.asc(),
         OpinionGroupDescriptionTranslationWork.id,
     ]
@@ -2512,7 +2651,81 @@ def claim_first_pass_ai_description_locale_work_items_batch(
         claim_translations=claim_translations,
         require_pending_status=False,
         require_due=False,
-        max_existing_attempt_count=0,
+        max_existing_attempt_count=FIRST_PASS_MAX_EXISTING_ATTEMPT_COUNT,
+    )
+
+
+def extend_ai_description_locale_work_leases(
+    engine: Engine,
+    *,
+    claims: list[ClaimedAiDescriptionLocaleWorkItem],
+    lease_ttl_seconds: int,
+) -> AiDescriptionLeaseExtension:
+    if not claims:
+        return AiDescriptionLeaseExtension(
+            extended_lineage_work_ids=[],
+            extended_translation_work_ids=[],
+        )
+
+    lease_expires_at = datetime.now(UTC) + timedelta(seconds=lease_ttl_seconds)
+    lineage_keys = sorted(
+        (claim.id, claim.lease_token)
+        for claim in claims
+        if isinstance(claim, ClaimedLineageDescriptionWorkItem)
+    )
+    translation_keys = sorted(
+        (claim.id, claim.lease_token)
+        for claim in claims
+        if isinstance(claim, ClaimedDescriptionTranslationWorkItem)
+    )
+    extended_lineage_work_ids: list[int] = []
+    extended_translation_work_ids: list[int] = []
+
+    with Session(engine) as session:
+        for chunk in _iter_chunks(
+            lineage_keys,
+            chunk_size=_max_rows_per_insert(column_count=2),
+        ):
+            rows = session.execute(
+                update(OpinionGroupLineageDescriptionWork)
+                .where(
+                    tuple_(
+                        OpinionGroupLineageDescriptionWork.id,
+                        OpinionGroupLineageDescriptionWork.lease_token,
+                    ).in_(chunk)
+                )
+                .values(
+                    lease_expires_at=lease_expires_at,
+                    updated_at=func.now(),
+                )
+                .returning(OpinionGroupLineageDescriptionWork.id)
+            ).all()
+            extended_lineage_work_ids.extend(row.id for row in rows)
+
+        for chunk in _iter_chunks(
+            translation_keys,
+            chunk_size=_max_rows_per_insert(column_count=2),
+        ):
+            rows = session.execute(
+                update(OpinionGroupDescriptionTranslationWork)
+                .where(
+                    tuple_(
+                        OpinionGroupDescriptionTranslationWork.id,
+                        OpinionGroupDescriptionTranslationWork.lease_token,
+                    ).in_(chunk)
+                )
+                .values(
+                    lease_expires_at=lease_expires_at,
+                    updated_at=func.now(),
+                )
+                .returning(OpinionGroupDescriptionTranslationWork.id)
+            ).all()
+            extended_translation_work_ids.extend(row.id for row in rows)
+        session.commit()
+
+    return AiDescriptionLeaseExtension(
+        extended_lineage_work_ids=sorted(extended_lineage_work_ids),
+        extended_translation_work_ids=sorted(extended_translation_work_ids),
     )
 
 
@@ -2597,11 +2810,6 @@ def process_ai_description_locale_work_item(
                 )
             _mark_lineage_description_work_complete(session, claim=claim)
             _refresh_english_locale_expectations(
-                session,
-                conversation_ids=[claim.conversation_id],
-                require_activated_view_snapshot=require_activated_view_snapshot,
-            )
-            _ensure_translation_work_for_pending_expectations(
                 session,
                 conversation_ids=[claim.conversation_id],
                 require_activated_view_snapshot=require_activated_view_snapshot,
@@ -2733,6 +2941,201 @@ def process_ai_description_locale_work_item(
         return schedule
 
 
+def process_lineage_description_work_items_batch(
+    engine: Engine,
+    *,
+    claims: list[ClaimedLineageDescriptionWorkItem],
+    generate_descriptions: DescriptionGenerator,
+    require_activated_view_snapshot: bool = False,
+) -> LineageDescriptionBatchProcessResult:
+    if not claims:
+        return LineageDescriptionBatchProcessResult(
+            schedules=[],
+            generated_lineage_ids=[],
+        )
+
+    started_at = time.perf_counter()
+    schedules: list[WorkStateSchedule] = []
+    processable_claims: list[ClaimedLineageDescriptionWorkItem] = []
+    request_by_claim_id: dict[int, _LineageDescriptionRequest] = {}
+
+    with Session(engine) as session:
+        active_claims: list[ClaimedLineageDescriptionWorkItem] = []
+        for claim in claims:
+            if not _ai_description_claim_is_active(session, claim=claim):
+                log.info(
+                    "[AiDescriptionWorkDB] Skipping inactive lineage claim "
+                    "conversationSlugId=%s lineageId=%d attemptCount=%d",
+                    claim.conversation_slug_id,
+                    claim.lineage_id,
+                    claim.attempt_count,
+                )
+                schedules.append(
+                    _get_conversation_schedule(
+                        session,
+                        conversation_id=claim.conversation_id,
+                        require_activated_view_snapshot=require_activated_view_snapshot,
+                    )
+                )
+                continue
+            if not _conversation_is_processable(session, conversation_id=claim.conversation_id):
+                schedules.append(
+                    _complete_claimed_non_processable_ai_description_work(
+                        session,
+                        claim=claim,
+                        require_activated_view_snapshot=require_activated_view_snapshot,
+                    )
+                )
+                continue
+            active_claims.append(claim)
+
+        request_by_claim_id = _fetch_base_description_requests_for_lineage_work_batch(
+            session,
+            claims=active_claims,
+        )
+        processable_claims.extend(active_claims)
+        session.commit()
+
+    provider_started_at = time.perf_counter()
+    generated_by_claim_id: dict[int, ParsedLabelSummaryOutput] = {}
+    claims_by_candidate_id: dict[int, list[ClaimedLineageDescriptionWorkItem]] = {}
+    for claim in processable_claims:
+        if claim.id in request_by_claim_id:
+            claims_by_candidate_id.setdefault(claim.source_candidate_id, []).append(claim)
+
+    for candidate_claims in claims_by_candidate_id.values():
+        requests = [request_by_claim_id[claim.id] for claim in candidate_claims]
+        first_request = requests[0]
+        conversation = ConversationDescriptionInput(
+            conversation_title=first_request.conversation.conversation_title,
+            conversation_body=first_request.conversation.conversation_body,
+            groups=[request.conversation.groups[0] for request in requests],
+            analysis_snapshot_id=first_request.conversation.analysis_snapshot_id,
+        )
+        generated = _generate_label_summaries_with_partial_retry(
+            generate_descriptions=generate_descriptions,
+            conversation=conversation,
+            attempts=2,
+        )
+        for claim, request in zip(candidate_claims, requests, strict=True):
+            if request.group_key in generated.clusters:
+                generated_by_claim_id[claim.id] = generated
+    provider_ms = (time.perf_counter() - provider_started_at) * 1000
+
+    missing_lineage_ids = sorted(
+        claim.lineage_id
+        for claim in processable_claims
+        if claim.id in request_by_claim_id and claim.id not in generated_by_claim_id
+    )
+    with Session(engine) as session:
+        completed_claims: list[ClaimedLineageDescriptionWorkItem] = []
+        generated_lineage_ids: set[int] = set()
+        for claim in processable_claims:
+            if not _ai_description_claim_is_active(session, claim=claim):
+                log.info(
+                    "[AiDescriptionWorkDB] Skipping inactive lineage claim after provider "
+                    "conversationSlugId=%s lineageId=%d attemptCount=%d",
+                    claim.conversation_slug_id,
+                    claim.lineage_id,
+                    claim.attempt_count,
+                )
+                schedules.append(
+                    _get_conversation_schedule(
+                        session,
+                        conversation_id=claim.conversation_id,
+                        require_activated_view_snapshot=require_activated_view_snapshot,
+                    )
+                )
+                continue
+            if not _conversation_is_processable(session, conversation_id=claim.conversation_id):
+                schedules.append(
+                    _complete_claimed_non_processable_ai_description_work(
+                        session,
+                        claim=claim,
+                        require_activated_view_snapshot=require_activated_view_snapshot,
+                    )
+                )
+                continue
+            request = request_by_claim_id.get(claim.id)
+            generated = generated_by_claim_id.get(claim.id)
+            if request is not None and generated is not None:
+                _persist_generated_base_description_for_lineage_work(
+                    session,
+                    claim=claim,
+                    request=request,
+                    generated=generated,
+                )
+                generated_lineage_ids.add(claim.lineage_id)
+            if request is None or generated is not None:
+                _mark_lineage_description_work_complete(session, claim=claim)
+                completed_claims.append(claim)
+
+        affected_conversation_ids = sorted({claim.conversation_id for claim in completed_claims})
+        if affected_conversation_ids:
+            _refresh_english_locale_expectations(
+                session,
+                conversation_ids=affected_conversation_ids,
+                require_activated_view_snapshot=require_activated_view_snapshot,
+            )
+            schedule_by_conversation_id = {
+                conversation_id: _get_conversation_schedule(
+                    session,
+                    conversation_id=conversation_id,
+                    require_activated_view_snapshot=require_activated_view_snapshot,
+                )
+                for conversation_id in affected_conversation_ids
+            }
+            schedules.extend(
+                schedule_by_conversation_id[claim.conversation_id] for claim in completed_claims
+            )
+        session.commit()
+
+    log.info(
+        "[AiDescriptionWorkDB] Completed lineage description work batch count=%d "
+        "providerMs=%.1f totalMs=%.1f generated=%d conversationSlugIds=%s",
+        len(claims),
+        provider_ms,
+        (time.perf_counter() - started_at) * 1000,
+        len(generated_lineage_ids),
+        ",".join(sorted({claim.conversation_slug_id for claim in claims})),
+    )
+    return LineageDescriptionBatchProcessResult(
+        schedules=schedules,
+        generated_lineage_ids=sorted(generated_lineage_ids),
+        missing_lineage_ids=missing_lineage_ids,
+    )
+
+
+def _generate_label_summaries_with_partial_retry(
+    *,
+    generate_descriptions: DescriptionGenerator,
+    conversation: ConversationDescriptionInput,
+    attempts: int,
+) -> ParsedLabelSummaryOutput:
+    generated_clusters: dict[str, LabelSummary] = {}
+    generated_mode = "strict"
+    group_by_key = {group.group_key: group for group in conversation.groups}
+    remaining_group_keys = set(group_by_key)
+    for _attempt in range(attempts):
+        if not remaining_group_keys:
+            break
+        attempt_conversation = ConversationDescriptionInput(
+            conversation_title=conversation.conversation_title,
+            conversation_body=conversation.conversation_body,
+            groups=[group_by_key[group_key] for group_key in sorted(remaining_group_keys)],
+            analysis_snapshot_id=conversation.analysis_snapshot_id,
+        )
+        generated = generate_descriptions(attempt_conversation)
+        generated_mode = "loose" if generated.mode == "loose" else generated_mode
+        for group_key in sorted(remaining_group_keys):
+            label_summary = generated.clusters.get(group_key)
+            if label_summary is None:
+                continue
+            generated_clusters[group_key] = label_summary
+        remaining_group_keys -= set(generated_clusters)
+    return ParsedLabelSummaryOutput(mode=generated_mode, clusters=generated_clusters)
+
+
 def process_description_translation_work_items_batch(
     engine: Engine,
     *,
@@ -2750,10 +3153,6 @@ def process_description_translation_work_items_batch(
     if any(claim.locale != locale for claim in claims):
         msg = "translation batches must contain exactly one locale"
         raise ValueError(msg)
-    conversation_id = claims[0].conversation_id
-    if any(claim.conversation_id != conversation_id for claim in claims):
-        msg = "translation batches must contain exactly one conversation"
-        raise ValueError(msg)
 
     started_at = time.perf_counter()
     schedules: list[WorkStateSchedule] = []
@@ -2762,6 +3161,7 @@ def process_description_translation_work_items_batch(
     processable_claims: list[ClaimedDescriptionTranslationWorkItem] = []
 
     with Session(engine) as session:
+        active_claims: list[ClaimedDescriptionTranslationWorkItem] = []
         for claim in claims:
             if not _ai_description_claim_is_active(session, claim=claim):
                 log.info(
@@ -2790,11 +3190,14 @@ def process_description_translation_work_items_batch(
                 )
                 continue
 
+            active_claims.append(claim)
+        descriptions_by_id = _fetch_descriptions_for_translation_work_batch(
+            session,
+            claims=active_claims,
+        )
+        for claim in active_claims:
             processable_claims.append(claim)
-            description_request = _fetch_description_for_translation_work(
-                session,
-                claim=claim,
-            )
+            description_request = descriptions_by_id.get(claim.description_id)
             if description_request is None:
                 continue
             claim_by_description_id[claim.description_id] = claim
@@ -2809,9 +3212,13 @@ def process_description_translation_work_items_batch(
         expected_description_ids=set(claim_by_description_id),
         locale=locale,
     )
+    missing_description_ids = sorted(
+        set(claim_by_description_id) - set(translation_by_description_id)
+    )
 
     with Session(engine) as session:
         completed_claims: list[ClaimedDescriptionTranslationWorkItem] = []
+        provider_requested_description_ids = set(claim_by_description_id)
         for claim in processable_claims:
             if not _ai_description_claim_is_active(session, claim=claim):
                 log.info(
@@ -2839,7 +3246,11 @@ def process_description_translation_work_items_batch(
                     )
                 )
                 continue
-            completed_claims.append(claim)
+            if (
+                claim.description_id not in provider_requested_description_ids
+                or claim.description_id in translation_by_description_id
+            ):
+                completed_claims.append(claim)
 
         active_description_ids = {
             claim.description_id
@@ -2900,6 +3311,7 @@ def process_description_translation_work_items_batch(
     return DescriptionTranslationBatchProcessResult(
         schedules=schedules,
         translated_description_ids=sorted(active_description_ids),
+        missing_description_ids=missing_description_ids,
     )
 
 
@@ -3256,16 +3668,24 @@ def _refresh_english_locale_expectations(
     if not ready_expectation_ids:
         return
 
-    session.execute(
-        update(OpinionGroupDescriptionLocaleExpectation)
-        .where(OpinionGroupDescriptionLocaleExpectation.id.in_(ready_expectation_ids))
-        .values(
-            retry_demand_due_at=None,
-            updated_at=func.now(),
-        )
+    locked_ready_expectation_ids = _lock_locale_expectation_ids_for_update(
+        session,
+        expectation_ids=ready_expectation_ids,
     )
-    session.execute(
-        update(OpinionGroupDescriptionLocaleExpectation)
+    if locked_ready_expectation_ids:
+        session.execute(
+            update(OpinionGroupDescriptionLocaleExpectation)
+            .where(
+                OpinionGroupDescriptionLocaleExpectation.id.in_(locked_ready_expectation_ids)
+            )
+            .values(
+                retry_demand_due_at=None,
+                updated_at=func.now(),
+            )
+        )
+
+    translation_expectation_rows = session.execute(
+        select(OpinionGroupDescriptionLocaleExpectation.id)
         .where(
             and_(
                 OpinionGroupDescriptionLocaleExpectation.conversation_view_snapshot_id.in_(
@@ -3276,11 +3696,22 @@ def _refresh_english_locale_expectations(
                 OpinionGroupDescriptionLocaleExpectation.retry_demand_due_at.is_(None),
             )
         )
-        .values(
-            retry_demand_due_at=func.now(),
-            updated_at=func.now(),
+        .order_by(OpinionGroupDescriptionLocaleExpectation.id)
+        .with_for_update(
+            skip_locked=True,
+            of=OpinionGroupDescriptionLocaleExpectation,
         )
-    )
+    ).all()
+    translation_expectation_ids = [row.id for row in translation_expectation_rows]
+    if translation_expectation_ids:
+        session.execute(
+            update(OpinionGroupDescriptionLocaleExpectation)
+            .where(OpinionGroupDescriptionLocaleExpectation.id.in_(translation_expectation_ids))
+            .values(
+                retry_demand_due_at=func.now(),
+                updated_at=func.now(),
+            )
+        )
 
 
 def _refresh_translation_locale_expectations(
@@ -3330,9 +3761,16 @@ def _refresh_translation_locale_expectations(
     if not ready_expectation_ids:
         return
 
+    locked_ready_expectation_ids = _lock_locale_expectation_ids_for_update(
+        session,
+        expectation_ids=ready_expectation_ids,
+    )
+    if not locked_ready_expectation_ids:
+        return
+
     session.execute(
         update(OpinionGroupDescriptionLocaleExpectation)
-        .where(OpinionGroupDescriptionLocaleExpectation.id.in_(ready_expectation_ids))
+        .where(OpinionGroupDescriptionLocaleExpectation.id.in_(locked_ready_expectation_ids))
         .values(
             retry_demand_due_at=None,
             updated_at=func.now(),
@@ -3574,6 +4012,142 @@ def _fetch_base_description_request_for_lineage_work(
     )
 
 
+def _fetch_base_description_requests_for_lineage_work_batch(
+    session: Session,
+    *,
+    claims: list[ClaimedLineageDescriptionWorkItem],
+) -> dict[int, _LineageDescriptionRequest]:
+    if not claims:
+        return {}
+
+    lineage_ids = sorted({claim.lineage_id for claim in claims})
+    lineage_rows = session.execute(
+        select(OpinionGroupLineage.id, OpinionGroupLineage.system_description_id).where(
+            OpinionGroupLineage.id.in_(lineage_ids)
+        )
+    ).all()
+    existing_description_lineage_ids = {
+        row.id for row in lineage_rows if row.system_description_id is not None
+    }
+    pending_claims = [
+        claim for claim in claims if claim.lineage_id not in existing_description_lineage_ids
+    ]
+    if not pending_claims:
+        return {}
+
+    source_candidate_ids = sorted({claim.source_candidate_id for claim in pending_claims})
+    conversation_content_rows = session.execute(
+        select(
+            OpinionGroupCandidate.id.label("candidate_id"),
+            ConversationContent.title,
+            ConversationContent.body,
+            AnalysisSnapshot.id.label("analysis_snapshot_id"),
+        )
+        .select_from(OpinionGroupCandidate)
+        .join(
+            AnalysisSnapshotResult,
+            AnalysisSnapshotResult.id == OpinionGroupCandidate.snapshot_result_id,
+        )
+        .join(AnalysisSnapshot, AnalysisSnapshot.id == AnalysisSnapshotResult.analysis_snapshot_id)
+        .join(
+            ConversationContent,
+            ConversationContent.id == AnalysisSnapshot.conversation_content_id,
+        )
+        .where(OpinionGroupCandidate.id.in_(source_candidate_ids))
+    ).all()
+    conversation_content_by_candidate_id = {
+        row.candidate_id: row for row in conversation_content_rows
+    }
+
+    group_pairs = sorted(
+        {(claim.source_candidate_id, claim.lineage_id) for claim in pending_claims}
+    )
+    group_rows = session.execute(
+        select(
+            OpinionGroup.candidate_id,
+            OpinionGroup.lineage_id,
+            OpinionGroup.key,
+        ).where(tuple_(OpinionGroup.candidate_id, OpinionGroup.lineage_id).in_(group_pairs))
+    ).all()
+    group_key_by_pair = {
+        (row.candidate_id, row.lineage_id): row.key for row in group_rows
+    }
+
+    representative_rows = session.execute(
+        select(
+            OpinionGroup.candidate_id,
+            OpinionGroup.lineage_id,
+            AnalysisSnapshotOpinion.opinion_id,
+            OpinionContent.content,
+            OpinionGroupOpinionStats.representative_agreement_type,
+        )
+        .select_from(OpinionGroup)
+        .join(OpinionGroupOpinionStats, OpinionGroupOpinionStats.group_id == OpinionGroup.id)
+        .join(
+            AnalysisSnapshotOpinion,
+            AnalysisSnapshotOpinion.id == OpinionGroupOpinionStats.analysis_snapshot_opinion_id,
+        )
+        .join(OpinionContent, OpinionContent.id == AnalysisSnapshotOpinion.opinion_content_id)
+        .where(
+            and_(
+                tuple_(OpinionGroup.candidate_id, OpinionGroup.lineage_id).in_(group_pairs),
+                OpinionGroupOpinionStats.representative_agreement_type.is_not(None),
+            )
+        )
+        .order_by(
+            OpinionGroup.candidate_id,
+            OpinionGroup.lineage_id,
+            AnalysisSnapshotOpinion.opinion_id,
+        )
+    ).all()
+    representative_opinions_by_pair: dict[
+        tuple[int, int], list[RepresentativeOpinionText]
+    ] = {}
+    for row in representative_rows:
+        if row.representative_agreement_type is None:
+            continue
+        representative_opinions_by_pair.setdefault((row.candidate_id, row.lineage_id), []).append(
+            RepresentativeOpinionText(
+                opinion_id=row.opinion_id,
+                stance=row.representative_agreement_type,
+                content=row.content,
+            )
+        )
+
+    requests_by_claim_id: dict[int, _LineageDescriptionRequest] = {}
+    for claim in pending_claims:
+        pair = (claim.source_candidate_id, claim.lineage_id)
+        conversation_content = conversation_content_by_candidate_id.get(claim.source_candidate_id)
+        if conversation_content is None:
+            msg = "analysis snapshot is missing conversation content"
+            raise DescriptionInputError(msg)
+        group_key = group_key_by_pair.get(pair)
+        if group_key is None:
+            msg = f"lineage {claim.lineage_id} is missing source group"
+            raise DescriptionInputError(msg)
+        representative_opinions = representative_opinions_by_pair.get(pair, [])
+        if not representative_opinions:
+            msg = f"lineage {claim.lineage_id} has no representative opinions"
+            raise DescriptionInputError(msg)
+        group = GroupDescriptionInput(
+            group_key=group_key,
+            representative_opinions=sorted(
+                representative_opinions,
+                key=lambda opinion: (opinion.stance.value, opinion.opinion_id),
+            ),
+        )
+        requests_by_claim_id[claim.id] = _LineageDescriptionRequest(
+            group_key=group.group_key,
+            conversation=ConversationDescriptionInput(
+                conversation_title=conversation_content.title,
+                conversation_body=conversation_content.body,
+                groups=[group],
+                analysis_snapshot_id=conversation_content.analysis_snapshot_id,
+            ),
+        )
+    return requests_by_claim_id
+
+
 def _persist_generated_base_description_for_lineage_work(
     session: Session,
     *,
@@ -3718,10 +4292,168 @@ def _translation_by_description_id_for_batch(
             raise DescriptionOutputError(msg)
         translation_by_description_id[translation.description_id] = translation
 
-    if set(translation_by_description_id) != expected_description_ids:
-        msg = "translation output did not include exactly the expected descriptions"
-        raise DescriptionOutputError(msg)
     return translation_by_description_id
+
+
+def _fetch_descriptions_for_translation_work_batch(
+    session: Session,
+    *,
+    claims: list[ClaimedDescriptionTranslationWorkItem],
+) -> dict[int, DescriptionForTranslation]:
+    if not claims:
+        return {}
+
+    locale = claims[0].locale
+    if any(claim.locale != locale for claim in claims):
+        msg = "translation hydration batches must contain exactly one locale"
+        raise ValueError(msg)
+
+    description_ids = sorted({claim.description_id for claim in claims})
+    existing_translation_rows = session.execute(
+        select(OpinionGroupDescriptionTranslation.description_id).where(
+            and_(
+                OpinionGroupDescriptionTranslation.description_id.in_(description_ids),
+                OpinionGroupDescriptionTranslation.locale == locale,
+            )
+        )
+    ).all()
+    translated_description_ids = {row.description_id for row in existing_translation_rows}
+    pending_description_ids = [
+        description_id
+        for description_id in description_ids
+        if description_id not in translated_description_ids
+    ]
+    if not pending_description_ids:
+        return {}
+
+    description_rows = session.execute(
+        select(
+            OpinionGroupDescription.id,
+            OpinionGroupDescription.label,
+            OpinionGroupDescription.summary,
+        ).where(OpinionGroupDescription.id.in_(pending_description_ids))
+    ).all()
+    description_row_by_id = {row.id: row for row in description_rows}
+    missing_description_ids = sorted(set(pending_description_ids) - set(description_row_by_id))
+    if missing_description_ids:
+        msg = f"description {missing_description_ids[0]} is missing"
+        raise DescriptionInputError(msg)
+
+    conversation_ids = sorted({claim.conversation_id for claim in claims})
+    context_rows = session.execute(
+        select(
+            OpinionGroupLineage.system_description_id.label("description_id"),
+            OpinionGroupLineage.id.label("lineage_id"),
+            OpinionGroupLineageDescriptionWork.source_candidate_id,
+            ConversationContent.title.label("conversation_title"),
+        )
+        .select_from(OpinionGroupLineage)
+        .join(
+            OpinionGroupLineageDescriptionWork,
+            OpinionGroupLineageDescriptionWork.lineage_id == OpinionGroupLineage.id,
+        )
+        .join(
+            OpinionGroupCandidate,
+            OpinionGroupCandidate.id == OpinionGroupLineageDescriptionWork.source_candidate_id,
+        )
+        .join(
+            AnalysisSnapshotResult,
+            AnalysisSnapshotResult.id == OpinionGroupCandidate.snapshot_result_id,
+        )
+        .join(AnalysisSnapshot, AnalysisSnapshot.id == AnalysisSnapshotResult.analysis_snapshot_id)
+        .join(
+            ConversationContent,
+            ConversationContent.id == AnalysisSnapshot.conversation_content_id,
+        )
+        .where(
+            and_(
+                OpinionGroupLineage.system_description_id.in_(pending_description_ids),
+                OpinionGroupLineageDescriptionWork.conversation_id.in_(conversation_ids),
+            )
+        )
+        .order_by(OpinionGroupLineage.system_description_id, OpinionGroupLineageDescriptionWork.id)
+    ).all()
+    context_by_description_id: dict[int, _TranslationDescriptionContext] = {}
+    for row in context_rows:
+        if row.description_id in context_by_description_id:
+            continue
+        context_by_description_id[row.description_id] = _TranslationDescriptionContext(
+            description_id=row.description_id,
+            lineage_id=row.lineage_id,
+            source_candidate_id=row.source_candidate_id,
+            conversation_title=row.conversation_title,
+        )
+
+    context_pairs = sorted(
+        {
+            (context.source_candidate_id, context.lineage_id)
+            for context in context_by_description_id.values()
+        }
+    )
+    representative_opinions_by_description_id: dict[
+        int, list[TranslationRepresentativeOpinion]
+    ] = {description_id: [] for description_id in pending_description_ids}
+    if context_pairs:
+        representative_rows = session.execute(
+            select(
+                OpinionGroup.candidate_id,
+                OpinionGroup.lineage_id,
+                AnalysisSnapshotOpinion.opinion_id,
+                OpinionContent.content,
+                OpinionGroupOpinionStats.representative_agreement_type,
+            )
+            .select_from(OpinionGroup)
+            .join(OpinionGroupOpinionStats, OpinionGroupOpinionStats.group_id == OpinionGroup.id)
+            .join(
+                AnalysisSnapshotOpinion,
+                AnalysisSnapshotOpinion.id == OpinionGroupOpinionStats.analysis_snapshot_opinion_id,
+            )
+            .join(OpinionContent, OpinionContent.id == AnalysisSnapshotOpinion.opinion_content_id)
+            .where(
+                and_(
+                    tuple_(OpinionGroup.candidate_id, OpinionGroup.lineage_id).in_(context_pairs),
+                    OpinionGroupOpinionStats.representative_agreement_type.is_not(None),
+                )
+            )
+            .order_by(
+                OpinionGroup.candidate_id,
+                OpinionGroup.lineage_id,
+                AnalysisSnapshotOpinion.opinion_id,
+            )
+        ).all()
+        description_id_by_context_pair = {
+            (context.source_candidate_id, context.lineage_id): context.description_id
+            for context in context_by_description_id.values()
+        }
+        for row in representative_rows:
+            description_id = description_id_by_context_pair.get(
+                (row.candidate_id, row.lineage_id)
+            )
+            if description_id is None or row.representative_agreement_type is None:
+                continue
+            representative_opinions_by_description_id.setdefault(description_id, []).append(
+                TranslationRepresentativeOpinion(
+                    opinion_id=row.opinion_id,
+                    stance=row.representative_agreement_type.value,
+                    content=row.content,
+                )
+            )
+
+    descriptions_by_id: dict[int, DescriptionForTranslation] = {}
+    for description_id in pending_description_ids:
+        description_row = description_row_by_id[description_id]
+        context = context_by_description_id.get(description_id)
+        descriptions_by_id[description_id] = DescriptionForTranslation(
+            description_id=description_row.id,
+            label=description_row.label,
+            summary=description_row.summary,
+            conversation_title=context.conversation_title if context is not None else None,
+            representative_opinions=sorted(
+                representative_opinions_by_description_id.get(description_id, []),
+                key=lambda opinion: (opinion.stance, opinion.opinion_id),
+            ),
+        )
+    return descriptions_by_id
 
 
 def _fetch_description_for_translation_work(

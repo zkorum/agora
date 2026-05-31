@@ -1,7 +1,11 @@
 import type { AnalysisCheckpoint } from "src/shared/types/dto";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { parseCheckpointQuery } from "src/utils/analysis/analysisRoute";
-import { useAnalysisCheckpointsQuery } from "src/utils/api/comment/useCommentQueries";
+import {
+  pickCommentStatsForActionBar,
+  useAnalysisCheckpointsQuery,
+  useCommentStatsQuery,
+} from "src/utils/api/comment/useCommentQueries";
 import type { MaybeRefOrGetter } from "vue";
 import { computed, toValue } from "vue";
 import type { LocationQuery } from "vue-router";
@@ -20,6 +24,7 @@ interface UseConversationActionBarStatsParams {
   currentTab: MaybeRefOrGetter<"comment" | "analysis">;
   routeQuery: MaybeRefOrGetter<LocationQuery>;
   overrideStats?: MaybeRefOrGetter<ConversationActionBarStats | undefined>;
+  enableCommentStats?: MaybeRefOrGetter<boolean>;
 }
 
 export function useConversationActionBarStats({
@@ -27,6 +32,7 @@ export function useConversationActionBarStats({
   currentTab,
   routeQuery,
   overrideStats,
+  enableCommentStats = true,
 }: UseConversationActionBarStatsParams) {
   const checkpointViewSnapshotId = computed(() =>
     parseCheckpointQuery({ query: toValue(routeQuery) })
@@ -40,10 +46,23 @@ export function useConversationActionBarStats({
       checkpointViewSnapshotId.value !== undefined &&
       conversationSlugId.value !== ""
   );
+  const shouldLoadCommentStats = computed(() => {
+    const conversation = toValue(conversationData);
+    return (
+      toValue(currentTab) === "comment" &&
+      toValue(enableCommentStats) &&
+      conversationSlugId.value !== "" &&
+      conversation?.metadata.conversationType !== "maxdiff"
+    );
+  });
 
   const analysisCheckpointsQuery = useAnalysisCheckpointsQuery({
     conversationSlugId,
     enabled: shouldLoadCheckpointStats,
+  });
+  const commentStatsQuery = useCommentStatsQuery({
+    conversationSlugId,
+    enabled: shouldLoadCommentStats,
   });
 
   const selectedCheckpoint = computed<AnalysisCheckpoint | undefined>(() => {
@@ -68,6 +87,10 @@ export function useConversationActionBarStats({
       return statsOverride;
     }
 
+    if (shouldLoadCommentStats.value && commentStatsQuery.data.value !== undefined) {
+      return pickCommentStatsForActionBar(commentStatsQuery.data.value);
+    }
+
     const checkpoint = selectedCheckpoint.value;
     if (checkpoint !== undefined) {
       return pickActionBarStats(checkpoint);
@@ -88,10 +111,18 @@ export function useConversationActionBarStats({
       (analysisCheckpointsQuery.isPending.value ||
         analysisCheckpointsQuery.isRefetching.value)
   );
+  const isLoadingCommentStats = computed(
+    () =>
+      shouldLoadCommentStats.value &&
+      commentStatsQuery.data.value === undefined &&
+      (commentStatsQuery.isPending.value || commentStatsQuery.isRefetching.value)
+  );
 
   return {
     actionBarStats,
     isLoadingCheckpointStats,
+    isLoadingCommentStats,
+    refetchCommentStats: () => commentStatsQuery.refetch(),
   };
 }
 

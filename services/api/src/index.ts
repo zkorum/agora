@@ -64,6 +64,7 @@ import {
     fetchAnalysisContentByCandidateId,
     fetchAnalysisByConversationSlugId,
     fetchAnalysisMetadataByConversationSlugId,
+    fetchCommentStatsByConversationSlugId,
     fetchOpinionsByPostSlugId,
     fetchOpinionsByOpinionSlugIdList,
     postNewOpinion,
@@ -2280,6 +2281,23 @@ server.after(() => {
                 limit: 3000,
             });
             return Array.from(opinionItemsPerSlugId.values());
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/opinion/fetch-comment-stats-by-conversation`,
+        schema: {
+            body: Dto.fetchCommentStatsRequest,
+            response: {
+                200: Dto.fetchCommentStatsResponse,
+            },
+        },
+        handler: async (request) => {
+            return await fetchCommentStatsByConversationSlugId({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+            });
         },
     });
 

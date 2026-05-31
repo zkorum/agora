@@ -1,5 +1,5 @@
 {
-  "id": "95e6f3ed-d5e4-4e8d-ab33-bfa6b9921e3b",
+  "id": "af6ea773-ff87-46c8-8eb8-aa51b3c16335",
   "prevId": "6b6d58a8-3179-4c3e-b91b-c299bb5c8fe5",
   "version": "7",
   "dialect": "postgresql",
@@ -5916,6 +5916,39 @@
           ],
           "isUnique": false,
           "where": "\"opinion_group_description_locale_expectation\".\"retry_demand_due_at\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "opinion_group_description_locale_expectation_lookup_idx": {
+          "name": "opinion_group_description_locale_expectation_lookup_idx",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "expectation_kind",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "locale",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "conversation_view_snapshot_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}

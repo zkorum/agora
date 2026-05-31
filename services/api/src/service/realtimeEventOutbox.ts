@@ -59,6 +59,21 @@ const zodConversationAnalysisUpdatedData = z.object({
     timestamp: z.number().int().nonnegative(),
 });
 
+const zodConversationCommentStatsUpdatedData = z.object({
+    conversationSlugId: z.string().min(1),
+    conversationViewSnapshotId: z.number().int().positive(),
+    opinionCount: z.number().int().nonnegative(),
+    voteCount: z.number().int().nonnegative(),
+    participantCount: z.number().int().nonnegative(),
+    totalOpinionCount: z.number().int().nonnegative(),
+    totalVoteCount: z.number().int().nonnegative(),
+    totalParticipantCount: z.number().int().nonnegative(),
+    moderatedOpinionCount: z.number().int().nonnegative(),
+    hiddenOpinionCount: z.number().int().nonnegative(),
+    isClosed: z.boolean(),
+    timestamp: z.number().int().nonnegative(),
+});
+
 const zodConversationSettingsUpdatedData = z.object({
     conversationSlugId: z.string().min(1),
     settings: z
@@ -100,6 +115,11 @@ type ConversationReplayEvent =
           id: number;
           event: "conversation_analysis_updated";
           data: SSEEventDataByType["conversation_analysis_updated"];
+      }
+    | {
+          id: number;
+          event: "conversation_comment_stats_updated";
+          data: SSEEventDataByType["conversation_comment_stats_updated"];
       }
     | {
           id: number;
@@ -204,6 +224,11 @@ async function fetchDisplayableGroupCountsByViewSnapshotId({
 }
 
 interface QueueConversationAnalysisUpdatedEventsForViewSnapshotsProps {
+    db: PostgresJsDatabase;
+    conversationViewSnapshotIds: number[];
+}
+
+interface QueueConversationCommentStatsUpdatedEventsForViewSnapshotsProps {
     db: PostgresJsDatabase;
     conversationViewSnapshotIds: number[];
 }
@@ -336,6 +361,73 @@ export async function queueConversationAnalysisUpdatedEventsForViewSnapshots({
         };
         values.push({ eventType: "conversation_analysis_updated", payload });
     }
+
+    if (values.length === 0) {
+        return;
+    }
+
+    await primaryDb.insert(realtimeEventOutboxTable).values(values);
+}
+
+export async function queueConversationCommentStatsUpdatedEventsForViewSnapshots({
+    db,
+    conversationViewSnapshotIds,
+}: QueueConversationCommentStatsUpdatedEventsForViewSnapshotsProps): Promise<void> {
+    if (conversationViewSnapshotIds.length === 0) {
+        return;
+    }
+
+    const primaryDb = getPrimaryDb(db);
+    const rows = await primaryDb
+        .select({
+            conversationSlugId: conversationTable.slugId,
+            conversationViewSnapshotId: conversationViewSnapshotTable.id,
+            opinionCount: conversationViewSnapshotTable.opinionCount,
+            voteCount: conversationViewSnapshotTable.voteCount,
+            participantCount: conversationViewSnapshotTable.participantCount,
+            totalOpinionCount: conversationViewSnapshotTable.totalOpinionCount,
+            totalVoteCount: conversationViewSnapshotTable.totalVoteCount,
+            totalParticipantCount:
+                conversationViewSnapshotTable.totalParticipantCount,
+            moderatedOpinionCount:
+                conversationViewSnapshotTable.moderatedOpinionCount,
+            hiddenOpinionCount:
+                conversationViewSnapshotTable.hiddenOpinionCount,
+            isClosed: conversationViewSnapshotTable.isClosed,
+        })
+        .from(conversationViewSnapshotTable)
+        .innerJoin(
+            conversationTable,
+            eq(
+                conversationTable.id,
+                conversationViewSnapshotTable.conversationId,
+            ),
+        )
+        .where(
+            inArray(
+                conversationViewSnapshotTable.id,
+                conversationViewSnapshotIds,
+            ),
+        );
+
+    const timestamp = Date.now();
+    const values = rows.map((row) => {
+        const payload: SSEEventDataByType["conversation_comment_stats_updated"] = {
+            conversationSlugId: row.conversationSlugId,
+            conversationViewSnapshotId: row.conversationViewSnapshotId,
+            opinionCount: row.opinionCount,
+            voteCount: row.voteCount,
+            participantCount: row.participantCount,
+            totalOpinionCount: row.totalOpinionCount,
+            totalVoteCount: row.totalVoteCount,
+            totalParticipantCount: row.totalParticipantCount,
+            moderatedOpinionCount: row.moderatedOpinionCount,
+            hiddenOpinionCount: row.hiddenOpinionCount,
+            isClosed: row.isClosed,
+            timestamp,
+        };
+        return { eventType: "conversation_comment_stats_updated", payload };
+    });
 
     if (values.length === 0) {
         return;
@@ -562,6 +654,18 @@ function parseRealtimeEventOutboxRow({
                 data: result.data,
             };
         }
+        case "conversation_comment_stats_updated": {
+            const result =
+                zodConversationCommentStatsUpdatedData.safeParse(payload);
+            if (!result.success) {
+                return undefined;
+            }
+            return {
+                id,
+                event: eventType,
+                data: result.data,
+            };
+        }
         case "conversation_settings_updated": {
             const result =
                 zodConversationSettingsUpdatedData.safeParse(payload);
@@ -664,6 +768,15 @@ export function createRealtimeEventOutboxBridge({
 
         switch (realtimeEvent.event) {
             case "conversation_analysis_updated": {
+                realtimeSSEManager.broadcastToConversationSubscribers({
+                    conversationSlugId: realtimeEvent.data.conversationSlugId,
+                    id: realtimeEvent.id,
+                    event: realtimeEvent.event,
+                    data: realtimeEvent.data,
+                });
+                break;
+            }
+            case "conversation_comment_stats_updated": {
                 realtimeSSEManager.broadcastToConversationSubscribers({
                     conversationSlugId: realtimeEvent.data.conversationSlugId,
                     id: realtimeEvent.id,

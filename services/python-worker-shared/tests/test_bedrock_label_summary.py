@@ -11,7 +11,9 @@ from agora_worker_shared.bedrock_label_summary import (
     build_bedrock_converse_payload,
     generate_label_summaries_with_bedrock,
     parse_bedrock_label_summary_response,
+    parse_bedrock_label_summary_text,
     parse_label_summary_output,
+    parse_label_summary_output_for_groups,
     parse_llm_output_json,
 )
 from agora_worker_shared.description_input import (
@@ -141,10 +143,89 @@ def test_parse_label_summary_output_returns_loose_mode_when_strict_rules_fail() 
     assert parsed.clusters["0"].reasoning is None
 
 
+def test_parse_label_summary_output_rejects_overlong_loose_values() -> None:
+    with pytest.raises(BedrockLabelSummaryError):
+        parse_label_summary_output(
+            {
+                "clusters": {
+                    "0": {
+                        "label": "x" * 101,
+                        "summary": "This group supports free public transit.",
+                    }
+                }
+            }
+        )
+
+
 def test_parse_llm_output_json_handles_fenced_and_repaired_json() -> None:
     parsed = parse_llm_output_json('```json\n{"clusters":{"0":{"label":"A" "summary":"B"}}}\n```')
 
     assert parsed == {"clusters": {"0": {"label": "A", "summary": "B"}}}
+
+
+def test_parse_bedrock_label_summary_text_skips_preceding_example_json() -> None:
+    parsed = parse_bedrock_label_summary_response(
+        _bedrock_response(
+            'Example: {"notClusters": true}\nFinal: '
+            '{"clusters":{"0":{"reasoning":"ok","label":"Transitists","summary":"Summary"}}}'
+        )
+    )
+
+    assert parsed.clusters["0"].label == "Transitists"
+
+
+def test_parse_label_summary_output_for_groups_returns_valid_partial_clusters() -> None:
+    parsed = parse_label_summary_output_for_groups(
+        {
+            "clusters": {
+                "0": {
+                    "reasoning": "ok",
+                    "label": "Transitists",
+                    "summary": "Summary",
+                },
+                "1": {
+                    "reasoning": "ok",
+                    "label": "x" * 101,
+                    "summary": "Summary",
+                },
+                "5": {
+                    "reasoning": "ok",
+                    "label": "Extra",
+                    "summary": "Ignored extra cluster.",
+                },
+            }
+        },
+        expected_group_keys={"0", "1"},
+        allow_partial=True,
+    )
+
+    assert list(parsed.clusters) == ["0"]
+
+
+def test_parse_label_summary_output_for_groups_requires_exact_when_not_partial() -> None:
+    with pytest.raises(BedrockLabelSummaryError):
+        parse_label_summary_output_for_groups(
+            {
+                "clusters": {
+                    "0": {
+                        "reasoning": "ok",
+                        "label": "Transitists",
+                        "summary": "Summary",
+                    }
+                }
+            },
+            expected_group_keys={"0", "1"},
+        )
+
+
+def test_parse_bedrock_label_summary_text_uses_later_semantic_match() -> None:
+    parsed = parse_bedrock_label_summary_text(
+        'Example: {"clusters":{"5":{"reasoning":"ok","label":"Extra","summary":"Nope"}}}'
+        '\nFinal: {"clusters":{"0":{"reasoning":"ok","label":"Transitists","summary":"Summary"}}}',
+        expected_group_keys={"0"},
+    )
+
+    assert parsed.clusters["0"].label == "Transitists"
 
 
 def test_parse_bedrock_label_summary_response_concatenates_text_blocks() -> None:
@@ -164,10 +245,9 @@ def test_parse_bedrock_label_summary_response_concatenates_text_blocks() -> None
     assert parsed.clusters["0"].summary == "Summary"
 
 
-def test_generate_label_summaries_retries_after_parse_failure() -> None:
+def test_generate_label_summaries_parses_single_bedrock_response() -> None:
     client = FakeBedrockClient(
         responses=[
-            _bedrock_response("not json"),
             _bedrock_response(
                 json.dumps(
                     {
@@ -191,15 +271,13 @@ def test_generate_label_summaries_retries_after_parse_failure() -> None:
     )
 
     assert parsed.clusters["0"].label == "Transitists"
-    assert len(client.calls) == 2
+    assert len(client.calls) == 1
 
 
-def test_generate_label_summaries_raises_after_second_parse_failure() -> None:
-    client = FakeBedrockClient(
-        responses=[_bedrock_response("not json"), _bedrock_response("still not json")]
-    )
+def test_generate_label_summaries_raises_after_parse_failure() -> None:
+    client = FakeBedrockClient(responses=[_bedrock_response("not json")])
 
-    with pytest.raises(BedrockLabelSummaryError, match="after retry"):
+    with pytest.raises(BedrockLabelSummaryError):
         generate_label_summaries_with_bedrock(
             conversation=_conversation(),
             config=_config(),

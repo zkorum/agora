@@ -39,7 +39,7 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "You have been assigned a group!",
     viewAnalysis: "View analysis",
     statementRemovedByModerator: "This statement has been removed by a moderator.",
-    newStatementButton: "New statement",
+    newStatementButton: "New statements",
   },
   ar: {
     loadingOpinions: "جاري تحميل المقترحات...",
@@ -57,7 +57,7 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "تم تعيينك لمجموعة!",
     viewAnalysis: "عرض التحليل",
     statementRemovedByModerator: "تم إزالة هذا المقترح من قبل المشرف.",
-    newStatementButton: "مقترح جديد",
+    newStatementButton: "مقترحات جديدة",
   },
   es: {
     loadingOpinions: "Cargando proposiciones...",
@@ -75,7 +75,7 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "¡Te han asignado un cluster!",
     viewAnalysis: "Ver análisis",
     statementRemovedByModerator: "Esta proposición ha sido eliminada por un moderador.",
-    newStatementButton: "Nueva proposición",
+    newStatementButton: "Nuevas proposiciones",
   },
   fa: {
     loadingOpinions: "در حال بارگذاری گزاره‌ها...",
@@ -93,7 +93,7 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "شما به یک گروه اختصاص داده شدید!",
     viewAnalysis: "مشاهده تحلیل",
     statementRemovedByModerator: "این گزاره توسط مدیر حذف شده است.",
-    newStatementButton: "گزاره جدید",
+    newStatementButton: "گزاره‌های جدید",
   },
   fr: {
     loadingOpinions: "Chargement des propositions...",
@@ -111,7 +111,7 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "Vous avez été assigné à un cluster!",
     viewAnalysis: "Voir l'analyse",
     statementRemovedByModerator: "Cette proposition a été supprimée par un modérateur.",
-    newStatementButton: "Nouvelle proposition",
+    newStatementButton: "Nouvelles propositions",
   },
   "zh-Hans": {
     loadingOpinions: "正在加载意见...",
@@ -165,7 +165,7 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "שויכת לקבוצה!",
     viewAnalysis: "צפייה בניתוח",
     statementRemovedByModerator: "הצהרה זו הוסרה על ידי מנהל.",
-    newStatementButton: "הצהרה חדשה",
+    newStatementButton: "הצהרות חדשות",
   },
   ja: {
     loadingOpinions: "意見を読み込み中...",
@@ -219,6 +219,6 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "Вам назначена группа!",
     viewAnalysis: "Посмотреть анализ",
     statementRemovedByModerator: "Это высказывание удалено модератором.",
-    newStatementButton: "Новое высказывание",
+    newStatementButton: "Новые высказывания",
   },
 };

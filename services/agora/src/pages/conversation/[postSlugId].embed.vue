@@ -27,7 +27,7 @@
           :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
           :conversation-title="loadedConversationData.payload.title"
           :author-username="loadedConversationData.metadata.authorUsername"
-          :on-same-tab-click="() => scrollToActionBar({ behavior: 'smooth' })"
+          :on-same-tab-click="() => handleSameTabActionBarClick()"
           :conversation-type="loadedConversationData.metadata.conversationType"
           :has-survey="loadedConversationData.interaction.surveyGate?.hasSurvey === true"
           :enable-route-navigation="true"
@@ -122,12 +122,16 @@ const {
   scrollContainer,
 });
 
-const { actionBarStats, isLoadingCheckpointStats } =
-  useConversationActionBarStats({
-    conversationData,
-    currentTab,
-    routeQuery: computed(() => route.query),
-  });
+const {
+  actionBarStats,
+  isLoadingCheckpointStats,
+  isLoadingCommentStats,
+  refetchCommentStats,
+} = useConversationActionBarStats({
+  conversationData,
+  currentTab,
+  routeQuery: computed(() => route.query),
+});
 
 const displayedActionBarStats = computed<ConversationActionBarStats>(() => {
   const stats = actionBarStats.value;
@@ -139,7 +143,10 @@ const displayedActionBarStats = computed<ConversationActionBarStats>(() => {
 });
 
 const isActionBarLoading = computed(
-  () => isCurrentTabLoading.value || isLoadingCheckpointStats.value
+  () =>
+    isCurrentTabLoading.value ||
+    isLoadingCheckpointStats.value ||
+    isLoadingCommentStats.value
 );
 
 function getActionBarStatsFromMetadata(): ConversationActionBarStats {
@@ -151,6 +158,13 @@ function getActionBarStatsFromMetadata(): ConversationActionBarStats {
     totalParticipantCount: metadata.totalParticipantCount,
     totalVoteCount: metadata.totalVoteCount,
   };
+}
+
+function handleSameTabActionBarClick(): void {
+  scrollToActionBar({ behavior: "smooth" });
+  if (currentTab.value === "comment") {
+    void refetchCommentStats();
+  }
 }
 
 const isVotingDisabled = computed(() => {

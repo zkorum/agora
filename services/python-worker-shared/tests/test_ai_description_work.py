@@ -19,9 +19,11 @@ from agora_worker_shared.ai_description_work import (
     TranslationWorkDemand,
     activate_pending_translation_expectations,
     claim_ai_description_locale_work_items_batch,
+    claim_first_pass_ai_description_locale_work_items_batch,
     claimable_immediate_retry_at,
     complete_non_processable_ai_description_work_batch,
     description_translation_work_claim_batches,
+    extend_ai_description_locale_work_leases,
     fetch_due_ai_description_work_conversation_ids,
     finalize_first_pass_ai_description_work_batch,
     lineage_description_work_demands_for_statuses,
@@ -432,12 +434,9 @@ def test_translation_claim_batches_keep_context_and_bound_size() -> None:
 
     assert sum(len(batch) for batch in batches) == len(claims)
     assert all(len(batch) <= DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE for batch in batches)
-    assert all(
-        len({(claim.conversation_id, claim.locale) for claim in batch}) == 1
-        for batch in batches
-    )
+    assert all(len({claim.locale for claim in batch}) == 1 for batch in batches)
     assert [claim.description_id for claim in batches[0]] == [700, 701, 702, 703]
-    assert [claim.description_id for claim in batches[1]] == [704]
+    assert [claim.description_id for claim in batches[1]] == [704, 800]
 
 
 def test_process_translation_work_items_batch_persists_multiple_translations() -> None:
@@ -783,6 +782,92 @@ def test_first_pass_claiming_treats_fallback_statuses_as_terminal() -> None:
     )
 
     assert claims == []
+
+
+def test_first_pass_claiming_allows_one_immediate_lineage_retry() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        lineage = session.execute(select(OpinionGroupLineage)).scalar_one()
+        lineage.system_description_id = None
+        lineage_work = session.execute(select(OpinionGroupLineageDescriptionWork)).scalar_one()
+        lineage_work.attempt_count = 1
+        lineage_work.next_run_at = NOW
+        session.commit()
+
+    claims = claim_first_pass_ai_description_locale_work_items_batch(
+        engine,
+        worker_id="math-updater:test",
+        conversation_ids=[10],
+        conversation_view_snapshot_ids=[20],
+        lease_ttl_seconds=120,
+        limit=10,
+        ai_description_epoch=1,
+        translation_enabled=False,
+    )
+
+    assert len(claims) == 1
+    assert isinstance(claims[0], ClaimedLineageDescriptionWorkItem)
+    assert claims[0].attempt_count == 2
+
+
+def test_first_pass_claiming_stops_after_one_lineage_retry() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        lineage = session.execute(select(OpinionGroupLineage)).scalar_one()
+        lineage.system_description_id = None
+        lineage_work = session.execute(select(OpinionGroupLineageDescriptionWork)).scalar_one()
+        lineage_work.attempt_count = 2
+        lineage_work.next_run_at = NOW
+        session.commit()
+
+    claims = claim_first_pass_ai_description_locale_work_items_batch(
+        engine,
+        worker_id="math-updater:test",
+        conversation_ids=[10],
+        conversation_view_snapshot_ids=[20],
+        lease_ttl_seconds=120,
+        limit=10,
+        ai_description_epoch=1,
+        translation_enabled=False,
+    )
+
+    assert claims == []
+
+
+def test_first_pass_claiming_allows_one_immediate_translation_retry() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        translation_work = session.execute(
+            select(OpinionGroupDescriptionTranslationWork)
+        ).scalar_one()
+        translation_work.attempt_count = 1
+        translation_work.next_run_at = NOW
+        session.commit()
+
+    claims = claim_first_pass_ai_description_locale_work_items_batch(
+        engine,
+        worker_id="math-updater:test",
+        conversation_ids=[10],
+        conversation_view_snapshot_ids=[20],
+        lease_ttl_seconds=120,
+        limit=10,
+        ai_description_epoch=1,
+        translation_enabled=True,
+        claim_lineage_descriptions=False,
+    )
+
+    assert len(claims) == 1
+    assert isinstance(claims[0], ClaimedDescriptionTranslationWorkItem)
+    assert claims[0].attempt_count == 2
 
 
 def test_first_pass_finalization_warns_and_activates_pending_translation() -> None:
@@ -1575,6 +1660,78 @@ def test_extend_postgres_leases_only_extends_active_owned_claims() -> None:
     assert work_states[0].lease_expires_at is not None
     assert work_states[0].lease_expires_at > original_expires_at
     assert work_states[1].lease_expires_at == original_expires_at
+
+
+def test_extend_ai_description_locale_work_leases_only_extends_active_claims() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session, leased_lineage_work=True)
+        translation_work = session.get(OpinionGroupDescriptionTranslationWork, 202)
+        assert translation_work is not None
+        translation_work.next_run_at = None
+        translation_work.lease_owner = "worker-1"
+        translation_work.lease_token = "token-translation"
+        translation_work.lease_expires_at = NOW + timedelta(seconds=1)
+        session.add(
+            OpinionGroupDescriptionTranslationWork(
+                id=203,
+                description_id=501,
+                conversation_id=10,
+                locale="es",
+                attempt_count=1,
+                next_run_at=None,
+                lease_owner="worker-1",
+                lease_token="other-token",
+                lease_expires_at=NOW + timedelta(seconds=1),
+                non_retryable_ai_description_epoch=None,
+                last_error_code=None,
+                last_error_message=None,
+                created_at=NOW,
+                updated_at=NOW,
+            )
+        )
+        session.commit()
+
+    result = extend_ai_description_locale_work_leases(
+        engine,
+        claims=[
+            ClaimedLineageDescriptionWorkItem(
+                id=201,
+                conversation_id=10,
+                conversation_slug_id="abc12345",
+                lineage_id=301,
+                source_candidate_id=401,
+                locale="en",
+                attempt_count=1,
+                lease_token="token-1",
+            ),
+            _translation_claim(),
+            _translation_claim(
+                work_id=203,
+                locale="es",
+                lease_token="stale-token",
+            ),
+        ],
+        lease_ttl_seconds=120,
+    )
+
+    with Session(engine) as session:
+        lineage_work = session.get(OpinionGroupLineageDescriptionWork, 201)
+        active_translation_work = session.get(OpinionGroupDescriptionTranslationWork, 202)
+        stale_translation_work = session.get(OpinionGroupDescriptionTranslationWork, 203)
+
+    original_expires_at = (NOW + timedelta(seconds=1)).replace(tzinfo=None)
+    assert lineage_work is not None
+    assert active_translation_work is not None
+    assert stale_translation_work is not None
+    assert result.extended_lineage_work_ids == [201]
+    assert result.extended_translation_work_ids == [202]
+    assert result.extended_count == 2
+    assert lineage_work.lease_expires_at is not None
+    assert active_translation_work.lease_expires_at is not None
+    assert lineage_work.lease_expires_at > original_expires_at
+    assert active_translation_work.lease_expires_at > original_expires_at
+    assert stale_translation_work.lease_expires_at == original_expires_at
 
 
 def test_recover_expired_persisted_analysis_work_keeps_resume_state() -> None:

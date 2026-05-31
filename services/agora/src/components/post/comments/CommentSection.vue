@@ -33,24 +33,22 @@
 
     <NewContentPill
       v-if="
-        isCommentTabActive &&
-        hasPendingNewOpinion &&
-        !isShowingInitialCommentsLoading &&
-        !isOpeningNewOpinions
+        shouldShowNewStatementsPill && !isShowingInitialCommentsLoading
       "
       :label="t('newStatementButton')"
       dismissible
-      @click="showNewOpinions"
+      @click="showNewStatements"
       @dismiss="dismissNewOpinionPill"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import type { UseQueryReturnType } from "@tanstack/vue-query";
+import { useQueryClient, type UseQueryReturnType } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
 import NewContentPill from "src/components/feed/NewContentPill.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
+import { useNewStatementsPill } from "src/composables/opinion/useNewStatementsPill";
 import { useOpinionFiltering } from "src/composables/opinion/useOpinionFiltering";
 import { useOpinionPagination } from "src/composables/opinion/useOpinionPagination";
 import { useOpinionVoting } from "src/composables/opinion/useOpinionVoting";
@@ -64,10 +62,19 @@ import type {
 } from "src/shared/types/zod";
 import { useOpinionUpdatesStore } from "src/stores/opinionUpdates";
 import { useUserStore } from "src/stores/user";
+import { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, inject, onActivated, onDeactivated, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  inject,
+  onActivated,
+  onDeactivated,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 
 import {
   type CommentSectionTranslations,
@@ -104,7 +111,6 @@ const emit = defineEmits<{
 const isComponentMounted = ref(false);
 const isCommentTabActive = ref(true);
 const isInitialActivation = ref(true);
-const isOpeningNewOpinions = ref(false);
 
 const { t } = useComponentI18n<CommentSectionTranslations>(
   commentSectionTranslations
@@ -113,6 +119,8 @@ const { t } = useComponentI18n<CommentSectionTranslations>(
 const { profileData } = storeToRefs(useUserStore());
 const { showNotifyMessage } = useNotify();
 const opinionUpdatesStore = useOpinionUpdatesStore();
+const queryClient = useQueryClient();
+const { fetchCommentsForPost } = useBackendCommentApi();
 const scrollToActionBar = inject<({ behavior }: { behavior?: ScrollBehavior }) => void>(
   "scrollToActionBar",
   () => {
@@ -192,13 +200,47 @@ const isCommentListEmpty = computed(
   () => customIsEmpty.value && targetOpinion.value === null
 );
 
-const hasPendingNewOpinion = computed(() =>
-  opinionUpdatesStore.hasNewOpinion(props.postSlugId)
+const newOpinionSignalVersion = computed(() =>
+  opinionUpdatesStore.getNewOpinionSignalVersion(props.postSlugId)
 );
 
 const isShowingInitialCommentsLoading = computed(
   () => activeQuery.value.isPending.value
 );
+
+async function fetchCommentsPreviewForFilter({
+  filter,
+}: {
+  filter: CommentFilterOptions;
+}): Promise<OpinionItem[]> {
+  return await queryClient.fetchQuery({
+    queryKey: ["commentsRefreshPreview", props.postSlugId, filter],
+    queryFn: () => fetchCommentsForPost(props.postSlugId, filter, undefined),
+    staleTime: 0,
+  });
+}
+
+const {
+  shouldShowNewStatementsPill,
+  showNewStatements: showNewStatementsFromPill,
+  dismissNewStatementsPill,
+  resetForCurrentView: resetNewStatementsPillForCurrentView,
+  refetchActiveQueryAndAcknowledge,
+} = useNewStatementsPill({
+  postSlugId: () => props.postSlugId,
+  currentFilter,
+  currentOpinionData,
+  activeQuery,
+  isCommentTabActive,
+  newOpinionSignalVersion,
+  fetchCommentsForFilter: fetchCommentsPreviewForFilter,
+  scrollToNewStatements: () => scrollToActionBar({ behavior: "smooth" }),
+});
+
+async function showNewStatements(): Promise<void> {
+  await showNewStatementsFromPill();
+  await fetchUserVotingData();
+}
 
 // AsyncStateHandler configuration
 const asyncStateConfig = computed(() => ({
@@ -228,6 +270,7 @@ onMounted(async (): Promise<void> => {
 
 onActivated(async (): Promise<void> => {
   isCommentTabActive.value = true;
+  resetNewStatementsPillForCurrentView();
   if (isInitialActivation.value) {
     isInitialActivation.value = false;
     return;
@@ -263,27 +306,8 @@ async function handleOpinionMuted(): Promise<void> {
   await refreshData();
 }
 
-async function showNewOpinions(): Promise<void> {
-  if (isOpeningNewOpinions.value) {
-    return;
-  }
-
-  isOpeningNewOpinions.value = true;
-  try {
-    scrollToActionBar({ behavior: "smooth" });
-    currentFilter.value = "new";
-    const result = await props.preloadedQueries.commentsNewQuery.refetch();
-    if (result.data !== undefined) {
-      opinionUpdatesStore.clearNewOpinion(props.postSlugId);
-    }
-    await fetchUserVotingData();
-  } finally {
-    isOpeningNewOpinions.value = false;
-  }
-}
-
 function dismissNewOpinionPill(): void {
-  opinionUpdatesStore.clearNewOpinion(props.postSlugId);
+  dismissNewStatementsPill();
 }
 
 function handleOpinionDeleted(opinionSlugId: string): void {
@@ -301,7 +325,7 @@ defineExpose({
   triggerLoadMore,
   handleRetryLoadComments,
   refreshData,
-  refetchActiveQuery: () => activeQuery.value.refetch(),
+  refetchActiveQuery: refetchActiveQueryAndAcknowledge,
   targetOpinion,
   currentFilter,
   handleUserFilterChange,

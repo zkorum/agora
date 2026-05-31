@@ -99,6 +99,29 @@ export type SSEConversationAnalysisUpdatedData = z.infer<
 >;
 
 /**
+ * Data sent when the comment tab's current server-side counters changed.
+ */
+export const zodSSEConversationCommentStatsUpdatedData = z
+    .object({
+        conversationSlugId: zodSlugId,
+        conversationViewSnapshotId: z.number().int().positive(),
+        opinionCount: z.number().int().nonnegative(),
+        voteCount: z.number().int().nonnegative(),
+        participantCount: z.number().int().nonnegative(),
+        totalOpinionCount: z.number().int().nonnegative(),
+        totalVoteCount: z.number().int().nonnegative(),
+        totalParticipantCount: z.number().int().nonnegative(),
+        moderatedOpinionCount: z.number().int().nonnegative(),
+        hiddenOpinionCount: z.number().int().nonnegative(),
+        isClosed: z.boolean(),
+        timestamp: z.number(),
+    })
+    .strict();
+export type SSEConversationCommentStatsUpdatedData = z.infer<
+    typeof zodSSEConversationCommentStatsUpdatedData
+>;
+
+/**
  * Data sent when conversation settings that affect live views change.
  */
 export const zodSSEConversationSettingsData = z
@@ -143,6 +166,8 @@ export const zodSSEEventDataByType = {
     new_opinion: zodSSENewOpinionData,
     popular_conversation: zodSSEPopularConversationData,
     conversation_analysis_updated: zodSSEConversationAnalysisUpdatedData,
+    conversation_comment_stats_updated:
+        zodSSEConversationCommentStatsUpdatedData,
     conversation_settings_updated: zodSSEConversationSettingsUpdatedData,
     shutdown: zodSSEShutdownData,
 } as const;
@@ -171,6 +196,8 @@ export type SSENewOpinionEvent = SSEEvent<"new_opinion">;
 export type SSEPopularConversationEvent = SSEEvent<"popular_conversation">;
 export type SSEConversationAnalysisUpdatedEvent =
     SSEEvent<"conversation_analysis_updated">;
+export type SSEConversationCommentStatsUpdatedEvent =
+    SSEEvent<"conversation_comment_stats_updated">;
 export type SSEConversationSettingsUpdatedEvent =
     SSEEvent<"conversation_settings_updated">;
 export type SSEShutdownEvent = SSEEvent<"shutdown">;
@@ -185,5 +212,6 @@ export type AnySSEEvent =
     | SSENewOpinionEvent
     | SSEPopularConversationEvent
     | SSEConversationAnalysisUpdatedEvent
+    | SSEConversationCommentStatsUpdatedEvent
     | SSEConversationSettingsUpdatedEvent
     | SSEShutdownEvent;

@@ -2,7 +2,9 @@ import { useQueryClient } from "@tanstack/vue-query";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   type AnySSEEvent,
+  type FetchCommentStatsResponse,
   type SSEConversationAnalysisUpdatedData,
+  type SSEConversationCommentStatsUpdatedData,
   type SSEConversationSettingsUpdatedData,
   zodSSEEventDataByType,
 } from "src/shared/types/dto";
@@ -173,6 +175,16 @@ function isConversationCommentsQueryKey({
     (queryKey[0] === "comments" || queryKey[0] === "hiddenComments") &&
     queryKey[1] === conversationSlugId
   );
+}
+
+function isCommentStatsQueryKey({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return queryKey[0] === "commentStats" && queryKey[1] === conversationSlugId;
 }
 
 /**
@@ -776,8 +788,16 @@ export function useRealtimeSSE({
           opinionUpdatesStore.markNewOpinion(data.conversationSlugId);
           void queryClient.invalidateQueries({
             queryKey: ["comments", data.conversationSlugId],
+            refetchType: "none",
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ["commentStats", data.conversationSlugId],
             refetchType: "active",
           });
+          break;
+        }
+        case "conversation_comment_stats_updated": {
+          updateCommentStatsFromEvent(sseEvent.data);
           break;
         }
         case "popular_conversation": {
@@ -994,6 +1014,25 @@ export function useRealtimeSSE({
     });
   }
 
+  function updateCommentStatsFromEvent(
+    data: SSEConversationCommentStatsUpdatedData
+  ): void {
+    const stats: FetchCommentStatsResponse = {
+      conversationViewSnapshotId: data.conversationViewSnapshotId,
+      opinionCount: data.opinionCount,
+      voteCount: data.voteCount,
+      participantCount: data.participantCount,
+      totalOpinionCount: data.totalOpinionCount,
+      totalVoteCount: data.totalVoteCount,
+      totalParticipantCount: data.totalParticipantCount,
+      moderatedOpinionCount: data.moderatedOpinionCount,
+      hiddenOpinionCount: data.hiddenOpinionCount,
+      isClosed: data.isClosed,
+    };
+
+    queryClient.setQueryData(["commentStats", data.conversationSlugId], stats);
+  }
+
   function refreshActiveConversationQueriesAfterReconnect({
     conversationSlugId,
   }: {
@@ -1010,6 +1049,10 @@ export function useRealtimeSSE({
           queryKey: query.queryKey,
           conversationSlugId,
         }) ||
+          isCommentStatsQueryKey({
+            queryKey: query.queryKey,
+            conversationSlugId,
+          }) ||
           isConversationCommentsQueryKey({
             queryKey: query.queryKey,
             conversationSlugId,

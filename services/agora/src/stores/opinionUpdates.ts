@@ -2,33 +2,25 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 
 export const useOpinionUpdatesStore = defineStore("opinionUpdates", () => {
-  const pendingConversationSlugIds = ref(new Set<string>());
+  const signalVersionsByConversationSlugId = ref(new Map<string, number>());
 
   function markNewOpinion(conversationSlugId: string): void {
-    pendingConversationSlugIds.value = new Set([
-      ...pendingConversationSlugIds.value,
-      conversationSlugId,
-    ]);
-  }
-
-  function clearNewOpinion(conversationSlugId: string): void {
-    if (!pendingConversationSlugIds.value.has(conversationSlugId)) {
-      return;
-    }
-    const nextPendingConversationSlugIds = new Set(
-      pendingConversationSlugIds.value
+    const nextSignalVersionsByConversationSlugId = new Map(
+      signalVersionsByConversationSlugId.value
     );
-    nextPendingConversationSlugIds.delete(conversationSlugId);
-    pendingConversationSlugIds.value = nextPendingConversationSlugIds;
+    nextSignalVersionsByConversationSlugId.set(
+      conversationSlugId,
+      (nextSignalVersionsByConversationSlugId.get(conversationSlugId) ?? 0) + 1
+    );
+    signalVersionsByConversationSlugId.value = nextSignalVersionsByConversationSlugId;
   }
 
-  function hasNewOpinion(conversationSlugId: string): boolean {
-    return pendingConversationSlugIds.value.has(conversationSlugId);
+  function getNewOpinionSignalVersion(conversationSlugId: string): number {
+    return signalVersionsByConversationSlugId.value.get(conversationSlugId) ?? 0;
   }
 
   return {
     markNewOpinion,
-    clearNewOpinion,
-    hasNewOpinion,
+    getNewOpinionSignalVersion,
   };
 });

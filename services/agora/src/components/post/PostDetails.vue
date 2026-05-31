@@ -300,11 +300,12 @@ const isCurrentTabLoading = computed((): boolean => {
   return false;
 });
 
-const { actionBarStats, isLoadingCheckpointStats } =
+const { actionBarStats, isLoadingCheckpointStats, isLoadingCommentStats } =
   useConversationActionBarStats({
     conversationData: computed(() => props.conversationData),
     currentTab,
     routeQuery: computed(() => route.query),
+    enableCommentStats: computed(() => !props.compactMode),
   });
 
 const displayedActionBarStats = computed<ConversationActionBarStats>(() => {
@@ -317,7 +318,10 @@ const displayedActionBarStats = computed<ConversationActionBarStats>(() => {
 });
 
 const isActionBarLoading = computed(
-  () => isCurrentTabLoading.value || isLoadingCheckpointStats.value
+  () =>
+    isCurrentTabLoading.value ||
+    isLoadingCheckpointStats.value ||
+    isLoadingCommentStats.value
 );
 
 function getActionBarStatsFromMetadata(): ConversationActionBarStats {

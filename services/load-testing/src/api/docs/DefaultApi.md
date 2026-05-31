@@ -68,6 +68,7 @@ All URIs are relative to *http://localhost*
 |[**apiV1OpinionFetchAnalysisMetadataByConversationPost**](#apiv1opinionfetchanalysismetadatabyconversationpost) | **POST** /api/v1/opinion/fetch-analysis-metadata-by-conversation | |
 |[**apiV1OpinionFetchByConversationPost**](#apiv1opinionfetchbyconversationpost) | **POST** /api/v1/opinion/fetch-by-conversation | |
 |[**apiV1OpinionFetchBySlugIdListPost**](#apiv1opinionfetchbyslugidlistpost) | **POST** /api/v1/opinion/fetch-by-slug-id-list | |
+|[**apiV1OpinionFetchCommentStatsByConversationPost**](#apiv1opinionfetchcommentstatsbyconversationpost) | **POST** /api/v1/opinion/fetch-comment-stats-by-conversation | |
 |[**apiV1OpinionFetchHiddenByConversationPost**](#apiv1opinionfetchhiddenbyconversationpost) | **POST** /api/v1/opinion/fetch-hidden-by-conversation | |
 |[**apiV1PremiumFeatureAccessCheckPost**](#apiv1premiumfeatureaccesscheckpost) | **POST** /api/v1/premium-feature/access/check | |
 |[**apiV1RealtimeStreamGet**](#apiv1realtimestreamget) | **GET** /api/v1/realtime/stream | |
@@ -3263,6 +3264,57 @@ const { status, data } = await apiInstance.apiV1OpinionFetchBySlugIdListPost(
 ### Return type
 
 **Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1OpinionFetchCommentStatsByConversationPost**
+> ApiV1OpinionFetchCommentStatsByConversationPost200Response apiV1OpinionFetchCommentStatsByConversationPost(apiV1ModerationConversationWithdrawPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ModerationConversationWithdrawPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest; //
+
+const { status, data } = await apiInstance.apiV1OpinionFetchCommentStatsByConversationPost(
+    apiV1ModerationConversationWithdrawPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ModerationConversationWithdrawPostRequest** | **ApiV1ModerationConversationWithdrawPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1OpinionFetchCommentStatsByConversationPost200Response**
 
 ### Authorization
 

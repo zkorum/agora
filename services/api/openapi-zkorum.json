@@ -4182,6 +4182,105 @@
                 }
             }
         },
+        "/api/v1/opinion/fetch-comment-stats-by-conversation": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "conversationViewSnapshotId": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": true,
+                                            "maximum": 9007199254740991
+                                        },
+                                        "opinionCount": {
+                                            "type": "integer",
+                                            "minimum": 0,
+                                            "maximum": 9007199254740991
+                                        },
+                                        "voteCount": {
+                                            "type": "integer",
+                                            "minimum": 0,
+                                            "maximum": 9007199254740991
+                                        },
+                                        "participantCount": {
+                                            "type": "integer",
+                                            "minimum": 0,
+                                            "maximum": 9007199254740991
+                                        },
+                                        "totalOpinionCount": {
+                                            "type": "integer",
+                                            "minimum": 0,
+                                            "maximum": 9007199254740991
+                                        },
+                                        "totalVoteCount": {
+                                            "type": "integer",
+                                            "minimum": 0,
+                                            "maximum": 9007199254740991
+                                        },
+                                        "totalParticipantCount": {
+                                            "type": "integer",
+                                            "minimum": 0,
+                                            "maximum": 9007199254740991
+                                        },
+                                        "moderatedOpinionCount": {
+                                            "type": "integer",
+                                            "minimum": 0,
+                                            "maximum": 9007199254740991
+                                        },
+                                        "hiddenOpinionCount": {
+                                            "type": "integer",
+                                            "minimum": 0,
+                                            "maximum": 9007199254740991
+                                        },
+                                        "isClosed": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "required": [
+                                        "conversationViewSnapshotId",
+                                        "opinionCount",
+                                        "voteCount",
+                                        "participantCount",
+                                        "totalOpinionCount",
+                                        "totalVoteCount",
+                                        "totalParticipantCount",
+                                        "moderatedOpinionCount",
+                                        "hiddenOpinionCount",
+                                        "isClosed"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/opinion/fetch-analysis-metadata-by-conversation": {
             "post": {
                 "requestBody": {

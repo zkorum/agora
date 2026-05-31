@@ -17,6 +17,7 @@ import type {
   ConversationAnalysisMetadata,
   FetchAnalysisCheckpointsResponse,
   FetchAnalysisContentResponse,
+  FetchCommentStatsResponse,
 } from "src/shared/types/dto";
 import { Dto } from "src/shared/types/dto";
 import type { AnalysisView, OpinionItem, PolisKey } from "src/shared/types/zod";
@@ -97,6 +98,25 @@ export function useBackendCommentApi() {
     );
 
     return createLocalCommentObject(response.data);
+  }
+
+  async function fetchCommentStatsForPost(
+    postSlugId: string
+  ): Promise<FetchCommentStatsResponse> {
+    const params = {
+      conversationSlugId: postSlugId,
+    };
+
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1OpinionFetchCommentStatsByConversationPost(
+      params,
+      createRawAxiosRequestConfig({ timeoutProfile: "extended" })
+    );
+
+    return Dto.fetchCommentStatsResponse.parse(response.data);
   }
 
   async function fetchCommentsForPost(
@@ -375,6 +395,7 @@ export function useBackendCommentApi() {
     createNewComment,
     fetchCommentsForPost,
     fetchHiddenCommentsForPost,
+    fetchCommentStatsForPost,
     deleteCommentBySlugId,
     fetchOpinionsBySlugIdList,
     fetchAnalysisMetadataData,

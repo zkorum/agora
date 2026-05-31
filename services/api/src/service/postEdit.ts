@@ -32,7 +32,6 @@ import {
 } from "@/service/premiumEntitlement.js";
 import {
     createConversationViewSnapshotsFromCurrentState,
-    ensureAiDescriptionLocaleExpectationsForLatestAnalysisSnapshots,
 } from "@/service/conversationViewSnapshot.js";
 import { queueConversationSettingsUpdatedEvent } from "@/service/realtimeEventOutbox.js";
 
@@ -265,9 +264,6 @@ export async function updateConversation({
         }
 
         const conversationId = conversation.conversationId;
-        const didEnableAiLabeling =
-            !conversation.aiLabelingEnabled && aiLabelingEnabled === true;
-
         const subject = getPremiumEntitlementSubjectForConversation({
             conversation,
         });
@@ -450,7 +446,6 @@ export async function updateConversation({
             success: true,
             conversationId,
             conversationSlugId,
-            didEnableAiLabeling,
             didUpdateConversationSettings: conversationSettingsChanged,
             conversationSettings: {
                 isIndexed,
@@ -462,13 +457,6 @@ export async function updateConversation({
             },
         } as const;
     });
-
-    if (result.success && result.didEnableAiLabeling) {
-        await ensureAiDescriptionLocaleExpectationsForLatestAnalysisSnapshots({
-            db,
-            conversationId: result.conversationId,
-        });
-    }
 
     if (result.success && result.didUpdateConversationSettings) {
         await queueConversationSettingsUpdatedEvent({

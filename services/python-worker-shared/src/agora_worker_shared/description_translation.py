@@ -18,7 +18,7 @@ from agora_worker_shared.bedrock_label_summary import (
     BedrockConverseClient,
     create_bedrock_converse_client,
     extract_text_content_from_response,
-    parse_llm_output_json,
+    iter_llm_output_json_candidates,
 )
 from agora_worker_shared.generated_shared_types import SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES
 
@@ -41,6 +41,8 @@ DISPLAY_LANGUAGE_TO_GOOGLE_CODE = {
     "zh-Hant": "zh-TW",
 }
 log = logging.getLogger(__name__)
+GOOGLE_TRANSLATE_MAX_TEXT_CODEPOINTS = 1024
+GOOGLE_TRANSLATE_MAX_REQUEST_CODEPOINTS = 25_000
 
 
 class DescriptionTranslationError(RuntimeError):
@@ -76,6 +78,7 @@ class TranslationClient(Protocol):
         source_language_code: str | None,
         target_language_code: str,
         model: str,
+        retry: object | None,
         timeout: float,
     ) -> TranslateTextResponse: ...
 
@@ -135,6 +138,25 @@ class DescriptionTranslation:
     locale: str
     label: str
     summary: str
+
+
+@dataclass(frozen=True)
+class _TranslationRequestItem:
+    index: int
+    text: str
+
+
+@dataclass(frozen=True)
+class _TranslationRequestChunk:
+    items: list[_TranslationRequestItem]
+
+    @property
+    def texts(self) -> list[str]:
+        return [item.text for item in self.items]
+
+    @property
+    def indices(self) -> list[int]:
+        return [item.index for item in self.items]
 
 
 def initialize_google_translation_service(
@@ -274,6 +296,7 @@ def generate_description_translations_with_bedrock(
             model_response_text,
             expected_description_ids={description.description_id for description in descriptions},
             expected_locale=target_language_code,
+            allow_partial=True,
         )
         log.info(
             "[DescriptionTranslator] Bedrock translation parsed "
@@ -320,6 +343,7 @@ def parse_bedrock_translation_response(
     *,
     expected_description_ids: set[int] | None = None,
     expected_locale: str | None = None,
+    allow_partial: bool = False,
 ) -> list[DescriptionTranslation]:
     model_response_text = extract_text_content_from_response(response)
     if model_response_text is None:
@@ -329,6 +353,7 @@ def parse_bedrock_translation_response(
         model_response_text,
         expected_description_ids=expected_description_ids,
         expected_locale=expected_locale,
+        allow_partial=allow_partial,
     )
 
 
@@ -337,13 +362,21 @@ def parse_bedrock_translation_text(
     *,
     expected_description_ids: set[int] | None = None,
     expected_locale: str | None = None,
+    allow_partial: bool = False,
 ) -> list[DescriptionTranslation]:
-    model_response = parse_llm_output_json(model_response_text)
-    return parse_description_translation_output(
-        model_response,
-        expected_description_ids=expected_description_ids,
-        expected_locale=expected_locale,
-    )
+    last_error: DescriptionTranslationError | None = None
+    for model_response in iter_llm_output_json_candidates(model_response_text):
+        try:
+            return parse_description_translation_output(
+                model_response,
+                expected_description_ids=expected_description_ids,
+                expected_locale=expected_locale,
+                allow_partial=allow_partial,
+            )
+        except DescriptionTranslationError as error:
+            last_error = error
+    msg = "unable to parse Bedrock translation output from any JSON object"
+    raise DescriptionTranslationError(msg) from last_error
 
 
 def parse_description_translation_output(
@@ -351,6 +384,7 @@ def parse_description_translation_output(
     *,
     expected_description_ids: set[int] | None = None,
     expected_locale: str | None = None,
+    allow_partial: bool = False,
 ) -> list[DescriptionTranslation]:
     raw_translations = model_response.get("translations")
     if not _is_object_sequence(raw_translations):
@@ -360,49 +394,80 @@ def parse_description_translation_output(
     translations: list[DescriptionTranslation] = []
     seen_description_ids: set[int] = set()
     for raw_translation in raw_translations:
-        if not _is_string_key_mapping(raw_translation):
-            msg = "unable to parse Bedrock translation item"
-            raise DescriptionTranslationError(msg)
-        description_id = raw_translation.get("descriptionId")
-        locale = raw_translation.get("locale")
-        reasoning = raw_translation.get("reasoning")
-        label = raw_translation.get("label")
-        summary = raw_translation.get("summary")
-        if (
-            not isinstance(description_id, int)
-            or not isinstance(locale, str)
-            or not isinstance(reasoning, str)
-            or not isinstance(label, str)
-            or not isinstance(summary, str)
-        ):
-            msg = "Bedrock translation item has invalid fields"
-            raise DescriptionTranslationError(msg)
-        if len(reasoning) > 2000:
-            msg = "Bedrock translation reasoning exceeds parser limits"
-            raise DescriptionTranslationError(msg)
-        if expected_locale is not None and locale != expected_locale:
-            msg = f"Bedrock translation locale mismatch: expected {expected_locale}, got {locale}"
-            raise DescriptionTranslationError(msg)
-        if len(label) > 100 or len(summary) > 1000:
-            msg = "Bedrock translation output exceeds storage limits"
-            raise DescriptionTranslationError(msg)
-        if description_id in seen_description_ids:
-            msg = f"Bedrock translation output duplicated description {description_id}"
-            raise DescriptionTranslationError(msg)
-        seen_description_ids.add(description_id)
-        translations.append(
-            DescriptionTranslation(
-                description_id=description_id,
-                locale=locale,
-                label=label,
-                summary=summary,
+        try:
+            translation = _parse_description_translation_item(
+                raw_translation,
+                expected_description_ids=expected_description_ids,
+                expected_locale=expected_locale,
+                seen_description_ids=seen_description_ids,
             )
-        )
+        except DescriptionTranslationError:
+            if allow_partial:
+                continue
+            raise
+        description_id = translation.description_id
+        seen_description_ids.add(description_id)
+        translations.append(translation)
 
-    if expected_description_ids is not None and seen_description_ids != expected_description_ids:
+    if not translations:
+        msg = "Bedrock translation output did not include any valid translations"
+        raise DescriptionTranslationError(msg)
+
+    if (
+        not allow_partial
+        and expected_description_ids is not None
+        and seen_description_ids != expected_description_ids
+    ):
         msg = "Bedrock translation output did not include exactly the expected descriptions"
         raise DescriptionTranslationError(msg)
     return translations
+
+
+def _parse_description_translation_item(
+    raw_translation: object,
+    *,
+    expected_description_ids: set[int] | None,
+    expected_locale: str | None,
+    seen_description_ids: set[int],
+) -> DescriptionTranslation:
+    if not _is_string_key_mapping(raw_translation):
+        msg = "unable to parse Bedrock translation item"
+        raise DescriptionTranslationError(msg)
+    description_id = raw_translation.get("descriptionId")
+    locale = raw_translation.get("locale")
+    reasoning = raw_translation.get("reasoning")
+    label = raw_translation.get("label")
+    summary = raw_translation.get("summary")
+    if (
+        not isinstance(description_id, int)
+        or not isinstance(locale, str)
+        or not isinstance(reasoning, str)
+        or not isinstance(label, str)
+        or not isinstance(summary, str)
+    ):
+        msg = "Bedrock translation item has invalid fields"
+        raise DescriptionTranslationError(msg)
+    if expected_description_ids is not None and description_id not in expected_description_ids:
+        msg = f"unexpected Bedrock translation output for description {description_id}"
+        raise DescriptionTranslationError(msg)
+    if len(reasoning) > 2000:
+        msg = "Bedrock translation reasoning exceeds parser limits"
+        raise DescriptionTranslationError(msg)
+    if expected_locale is not None and locale != expected_locale:
+        msg = f"Bedrock translation locale mismatch: expected {expected_locale}, got {locale}"
+        raise DescriptionTranslationError(msg)
+    if len(label) > 100 or len(summary) > 1000:
+        msg = "Bedrock translation output exceeds storage limits"
+        raise DescriptionTranslationError(msg)
+    if description_id in seen_description_ids:
+        msg = f"Bedrock translation output duplicated description {description_id}"
+        raise DescriptionTranslationError(msg)
+    return DescriptionTranslation(
+        description_id=description_id,
+        locale=locale,
+        label=label,
+        summary=summary,
+    )
 
 
 def _bedrock_translation_payload(
@@ -539,6 +604,7 @@ def _create_secrets_manager_client(
         config=Config(
             connect_timeout=connect_timeout_seconds,
             read_timeout=read_timeout_seconds,
+            retries={"total_max_attempts": 1},
         ),
     )
     if not _is_secrets_manager_client(client):
@@ -557,7 +623,7 @@ def _batch_translate_texts(
     element_ids: list[int],
 ) -> list[str]:
     model_name = _get_translation_model_name(content_kind=content_kind)
-    log.info(
+    log.debug(
         "[DescriptionTranslator] Google translation request "
         "element_ids=%s source_locale=%s target_locale=%s content_kind=%s model=%s",
         element_ids,
@@ -566,39 +632,47 @@ def _batch_translate_texts(
         content_kind,
         model_name,
     )
-    return [
-        _translate_text(
+    if _should_skip_translation(
+        source_language_code=source_language_code,
+        target_language_code=target_language_code,
+    ):
+        return texts
+
+    translated_texts = list(texts)
+    request_items = [
+        _TranslationRequestItem(index=index, text=text)
+        for index, text in enumerate(texts)
+        if text != ""
+    ]
+    for chunk in _translation_request_chunks(request_items):
+        chunk_translations = _translate_text_chunk(
             service=service,
-            text=text,
+            texts=chunk.texts,
             source_language_code=source_language_code,
             target_language_code=target_language_code,
             content_kind=content_kind,
             model_name=model_name,
         )
-        for text in texts
-    ]
+        for item, translated_text in zip(chunk.items, chunk_translations, strict=True):
+            translated_texts[item.index] = translated_text
+    return translated_texts
 
 
-def _translate_text(
+def _translate_text_chunk(
     *,
     service: GoogleTranslationService,
-    text: str,
+    texts: list[str],
     source_language_code: str | None,
     target_language_code: str,
     content_kind: str,
-    model_name: str | None = None,
-) -> str:
-    if text == "":
-        return ""
-    if _should_skip_translation(
-        source_language_code=source_language_code,
-        target_language_code=target_language_code,
-    ):
-        return text
+    model_name: str,
+) -> list[str]:
+    if not texts:
+        return []
 
     response = service.client.translate_text(
         parent=f"projects/{service.config.project_id}/locations/{service.config.location}",
-        contents=[text],
+        contents=texts,
         mime_type="text/plain",
         source_language_code=_normalize_source_language_code_for_google(source_language_code)
         if source_language_code is not None
@@ -609,13 +683,48 @@ def _translate_text(
             location=service.config.location,
             model_name=model_name or _get_translation_model_name(content_kind=content_kind),
         ),
+        retry=None,
         timeout=service.config.request_timeout_seconds,
     )
-    translated_text = response.translations[0].translated_text if response.translations else None
-    if translated_text is None:
-        msg = f"Translation failed: no translated text returned for {text!r}"
+    translated_texts = [translation.translated_text for translation in response.translations]
+    if len(translated_texts) != len(texts):
+        msg = (
+            "Translation failed: expected "
+            f"{len(texts)} translated text(s), got {len(translated_texts)}"
+        )
         raise DescriptionTranslationError(msg)
-    return translated_text
+    return translated_texts
+
+
+def _translation_request_chunks(
+    items: list[_TranslationRequestItem],
+) -> list[_TranslationRequestChunk]:
+    chunks: list[_TranslationRequestChunk] = []
+    current_items: list[_TranslationRequestItem] = []
+    current_codepoints = 0
+    for item in items:
+        item_codepoints = len(item.text)
+        if item_codepoints > GOOGLE_TRANSLATE_MAX_TEXT_CODEPOINTS:
+            msg = (
+                "Google translation text exceeds max codepoints "
+                f"index={item.index} codepoints={item_codepoints} "
+                f"max={GOOGLE_TRANSLATE_MAX_TEXT_CODEPOINTS}"
+            )
+            raise DescriptionTranslationError(msg)
+        would_exceed_request = (
+            current_items
+            and current_codepoints + item_codepoints
+            > GOOGLE_TRANSLATE_MAX_REQUEST_CODEPOINTS
+        )
+        if would_exceed_request:
+            chunks.append(_TranslationRequestChunk(items=current_items))
+            current_items = []
+            current_codepoints = 0
+        current_items.append(item)
+        current_codepoints += item_codepoints
+    if current_items:
+        chunks.append(_TranslationRequestChunk(items=current_items))
+    return chunks
 
 
 def _get_translation_model_name(*, content_kind: str) -> str:

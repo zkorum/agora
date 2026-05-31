@@ -9,7 +9,12 @@ from threading import Event, Lock, Thread
 from typing import TYPE_CHECKING, cast
 
 import valkey as valkey_lib
+from agora_worker_shared.ai_description_lease_heartbeat import (
+    start_ai_description_lease_heartbeat,
+)
 from agora_worker_shared.ai_description_work import (
+    DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE,
+    ClaimedAiDescriptionLocaleWorkItem,
     ClaimedDescriptionTranslationWorkItem,
     ClaimedLineageDescriptionWorkItem,
     claim_ai_description_locale_work_items_batch,
@@ -18,8 +23,9 @@ from agora_worker_shared.ai_description_work import (
     description_translation_work_claim_batches,
     fetch_ai_description_view_snapshot_ids_for_analysis_snapshots,
     finalize_first_pass_ai_description_work_batch,
+    lineage_description_work_claim_batches,
     mark_non_retryable_ai_description_locale_work_item,
-    process_ai_description_locale_work_item,
+    process_lineage_description_work_items_batch,
     process_description_translation_work_items_batch,
     recover_expired_ai_description_work,
     retry_ai_description_locale_work_item,
@@ -51,14 +57,20 @@ from agora_worker_shared.db import (
     retry_scheduled_work_items_batch,
     upsert_input_snapshots_batch,
 )
-from agora_worker_shared.description_input import DescriptionInputError
+from agora_worker_shared.description_input import DescriptionInputError, DescriptionOutputError
 from agora_worker_shared.description_services import (
     build_description_generator,
     build_description_translator,
 )
 from agora_worker_shared.input_snapshot import PreparedInputSnapshot, prepare_input_snapshots_batch
-from agora_worker_shared.logging_utils import log_database_error
+from agora_worker_shared.logging_utils import LOG_FORMAT, configure_worker_logging, log_database_error
+from agora_worker_shared.postgres_engine import create_ready_postgres_engine
 from agora_worker_shared.retry_policy import RetryPolicy
+from agora_worker_shared.schema_readiness import (
+    StartupSchemaRetryState,
+    handle_startup_schema_retry,
+    mark_startup_schema_ready,
+)
 from agora_worker_shared.simulation_providers import (
     SimulatedRetryableError,
     build_simulation_runtime,
@@ -78,7 +90,6 @@ from agora_worker_shared.valkey_client import (
 from botocore.exceptions import ConnectTimeoutError, ReadTimeoutError
 from google.api_core.exceptions import DeadlineExceeded
 from google.api_core.exceptions import RetryError as GoogleRetryError
-from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
 if TYPE_CHECKING:
@@ -104,7 +115,7 @@ if TYPE_CHECKING:
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    format=LOG_FORMAT,
 )
 log = logging.getLogger(__name__)
 
@@ -159,35 +170,6 @@ def _sleep_before_retry(seconds: float) -> None:
         if remaining <= 0:
             return
         time.sleep(min(0.5, remaining))
-
-
-def _create_engine_with_retry(
-    *,
-    connection_string: str,
-    role: str,
-    retry_interval_seconds: float,
-) -> Engine | None:
-    while _running:
-        engine = create_engine(
-            connection_string.replace("postgres://", "postgresql+psycopg://"),
-            pool_pre_ping=True,
-            hide_parameters=True,
-        )
-        try:
-            with engine.connect() as connection:
-                connection.execute(text("select 1"))
-            log.info("[MathUpdater] PostgreSQL %s connection verified", role)
-            return engine
-        except Exception as error:
-            engine.dispose()
-            log.warning(
-                "[MathUpdater] PostgreSQL %s unavailable (%s); retrying in %.1fs",
-                role,
-                error,
-                retry_interval_seconds,
-            )
-            _sleep_before_retry(retry_interval_seconds)
-    return None
 
 
 def _enqueue_schedules(
@@ -355,6 +337,34 @@ def _start_lease_heartbeat(
     return set_active_claims, stop_heartbeat
 
 
+def _start_ai_description_lease_heartbeat(
+    *,
+    primary_engine: Engine,
+    claims: list[ClaimedAiDescriptionLocaleWorkItem],
+    lease_ttl_seconds: int,
+    interval_seconds: int,
+) -> Callable[[], None]:
+    stop_heartbeat = start_ai_description_lease_heartbeat(
+        primary_engine=primary_engine,
+        claims=claims,
+        lease_ttl_seconds=lease_ttl_seconds,
+        interval_seconds=interval_seconds,
+        log_prefix="[MathUpdater]",
+        thread_name="math-updater-ai-description-lease-heartbeat",
+    )
+
+    def stop_managed_heartbeat() -> None:
+        stop_heartbeat()
+        with _lease_heartbeat_stoppers_lock:
+            if stop_managed_heartbeat in _lease_heartbeat_stoppers:
+                _lease_heartbeat_stoppers.remove(stop_managed_heartbeat)
+
+    with _lease_heartbeat_stoppers_lock:
+        _lease_heartbeat_stoppers.append(stop_managed_heartbeat)
+
+    return stop_managed_heartbeat
+
+
 def _format_schedules(
     *,
     schedules: list[WorkStateSchedule],
@@ -369,6 +379,14 @@ def _format_schedules(
     )
 
 
+def _first_pass_translation_claim_limit(
+    *,
+    claim_limit: int,
+    max_workers: int,
+) -> int:
+    return max(claim_limit, max_workers * DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE)
+
+
 def _process_ai_description_conversation_ids(
     *,
     primary_engine: Engine,
@@ -377,6 +395,7 @@ def _process_ai_description_conversation_ids(
     conversation_ids: list[int],
     conversation_view_snapshot_ids: list[int] | None = None,
     lease_ttl_seconds: int,
+    heartbeat_interval_seconds: int,
     claim_limit: int,
     max_workers: int,
     ai_description_epoch: int,
@@ -414,50 +433,76 @@ def _process_ai_description_conversation_ids(
     claim_started_at = time.perf_counter()
     ai_claims: list[ClaimedAiDescriptionLocaleWorkItem] = []
     if claim_lineage_descriptions:
-        claim_lineage_work = (
-            claim_first_pass_ai_description_locale_work_items_batch
-            if retry_first_pass_once and conversation_view_snapshot_ids is not None
-            else claim_ai_description_locale_work_items_batch
-        )
-        ai_claims = claim_lineage_work(
-            primary_engine,
-            worker_id=worker_id,
-            conversation_ids=processable_conversation_ids,
-            conversation_view_snapshot_ids=conversation_view_snapshot_ids,
-            lease_ttl_seconds=lease_ttl_seconds,
-            limit=min(claim_limit, max_workers),
-            ai_description_epoch=ai_description_epoch,
-            translation_enabled=description_translator is not None,
-            claim_translations=False,
-            require_pending_status=require_pending_status,
-        )
-    remaining_translation_claim_limit = claim_limit - len(ai_claims)
-    if (
-        claim_translations
-        and description_translator is not None
-        and remaining_translation_claim_limit > 0
-    ):
-        claim_translation_work = (
-            claim_first_pass_ai_description_locale_work_items_batch
-            if retry_first_pass_once and conversation_view_snapshot_ids is not None
-            else claim_ai_description_locale_work_items_batch
-        )
-        ai_claims.extend(
-            claim_translation_work(
+        if retry_first_pass_once and conversation_view_snapshot_ids is not None:
+            ai_claims = claim_first_pass_ai_description_locale_work_items_batch(
                 primary_engine,
                 worker_id=worker_id,
                 conversation_ids=processable_conversation_ids,
                 conversation_view_snapshot_ids=conversation_view_snapshot_ids,
                 lease_ttl_seconds=lease_ttl_seconds,
-                limit=remaining_translation_claim_limit,
+                limit=claim_limit,
                 ai_description_epoch=ai_description_epoch,
-                translation_enabled=True,
-                claim_lineage_descriptions=False,
+                translation_enabled=description_translator is not None,
+                claim_translations=False,
                 require_pending_status=require_pending_status,
             )
+        else:
+            ai_claims = claim_ai_description_locale_work_items_batch(
+                primary_engine,
+                worker_id=worker_id,
+                conversation_ids=processable_conversation_ids,
+                conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+                lease_ttl_seconds=lease_ttl_seconds,
+                limit=claim_limit,
+                ai_description_epoch=ai_description_epoch,
+                translation_enabled=description_translator is not None,
+                claim_translations=False,
+                require_pending_status=require_pending_status,
+            )
+    translation_claim_limit = claim_limit
+    if retry_first_pass_once:
+        translation_claim_limit = _first_pass_translation_claim_limit(
+            claim_limit=claim_limit,
+            max_workers=max_workers,
         )
+    remaining_translation_claim_limit = translation_claim_limit - len(ai_claims)
+    if (
+        claim_translations
+        and description_translator is not None
+        and remaining_translation_claim_limit > 0
+    ):
+        if retry_first_pass_once and conversation_view_snapshot_ids is not None:
+            ai_claims.extend(
+                claim_first_pass_ai_description_locale_work_items_batch(
+                    primary_engine,
+                    worker_id=worker_id,
+                    conversation_ids=processable_conversation_ids,
+                    conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+                    lease_ttl_seconds=lease_ttl_seconds,
+                    limit=remaining_translation_claim_limit,
+                    ai_description_epoch=ai_description_epoch,
+                    translation_enabled=True,
+                    claim_lineage_descriptions=False,
+                    require_pending_status=require_pending_status,
+                )
+            )
+        else:
+            ai_claims.extend(
+                claim_ai_description_locale_work_items_batch(
+                    primary_engine,
+                    worker_id=worker_id,
+                    conversation_ids=processable_conversation_ids,
+                    conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+                    lease_ttl_seconds=lease_ttl_seconds,
+                    limit=remaining_translation_claim_limit,
+                    ai_description_epoch=ai_description_epoch,
+                    translation_enabled=True,
+                    claim_lineage_descriptions=False,
+                    require_pending_status=require_pending_status,
+                )
+    )
     if not ai_claims:
-        log.info(
+        log.debug(
             "[MathUpdater] No claimable AI description locale work for "
             "conversation_count=%d ids=%s claim_ms=%.1f",
             len(processable_conversation_ids),
@@ -465,7 +510,8 @@ def _process_ai_description_conversation_ids(
             (time.perf_counter() - claim_started_at) * 1000,
         )
         return 0
-    log.info(
+    work_log = log.debug if retry_first_pass_once else log.info
+    work_log(
         "[MathUpdater] Claimed %d AI description locale work item(s) claim_ms=%.1f "
         "claimScope=%s",
         len(ai_claims),
@@ -521,7 +567,6 @@ def _process_ai_description_conversation_ids(
             retry_first_pass_once
             and not is_timeout
             and claim.attempt_count == 1
-            and isinstance(error, SimulatedRetryableError)
         )
         is_first_pass_timeout = retry_first_pass_once and is_timeout
         schedule = retry_ai_description_locale_work_item(
@@ -552,23 +597,50 @@ def _process_ai_description_conversation_ids(
             )
         return schedule
 
-    def process_lineage_claim(
-        claim: ClaimedLineageDescriptionWorkItem,
-    ) -> AiDescriptionWorkStateSchedule:
+    def process_lineage_claims(
+        claims: list[ClaimedLineageDescriptionWorkItem],
+    ) -> list[tuple[ClaimedLineageDescriptionWorkItem, AiDescriptionWorkStateSchedule]]:
+        processable_claims: list[ClaimedLineageDescriptionWorkItem] = []
+        retry_schedules: list[
+            tuple[ClaimedLineageDescriptionWorkItem, AiDescriptionWorkStateSchedule]
+        ] = []
+        for claim in claims:
+            try:
+                maybe_raise_simulated_claim_error(
+                    runtime=simulation_runtime,
+                    claim=claim,
+                    phase="math-updater",
+                )
+                processable_claims.append(claim)
+            except Exception as error:
+                retry_schedules.append(
+                    (claim, process_claim_error(claim=claim, error=error))
+                )
+
+        if not processable_claims:
+            return retry_schedules
         try:
-            maybe_raise_simulated_claim_error(
-                runtime=simulation_runtime,
-                claim=claim,
-                phase="math-updater",
-            )
-            return process_ai_description_locale_work_item(
+            result = process_lineage_description_work_items_batch(
                 primary_engine,
-                claim=claim,
+                claims=processable_claims,
                 generate_descriptions=description_generator,
-                translate_descriptions=description_translator,
             )
+            if result.missing_lineage_ids:
+                missing_lineage_ids = set(result.missing_lineage_ids)
+                missing_error = DescriptionOutputError(
+                    "AI label/summary output did not include all requested groups"
+                )
+                retry_schedules.extend(
+                    (claim, process_claim_error(claim=claim, error=missing_error))
+                    for claim in processable_claims
+                    if claim.lineage_id in missing_lineage_ids
+                )
         except Exception as error:
-            return process_claim_error(claim=claim, error=error)
+            retry_schedules.extend(
+                (claim, process_claim_error(claim=claim, error=error))
+                for claim in processable_claims
+            )
+        return retry_schedules
 
     def process_translation_claims(
         claims: list[ClaimedDescriptionTranslationWorkItem],
@@ -609,11 +681,21 @@ def _process_ai_description_conversation_ids(
             return unavailable_schedules
 
         try:
-            process_description_translation_work_items_batch(
+            result = process_description_translation_work_items_batch(
                 primary_engine,
                 claims=processable_claims,
                 translate_descriptions=translator,
             )
+            if result.missing_description_ids:
+                missing_description_ids = set(result.missing_description_ids)
+                missing_error = DescriptionOutputError(
+                    "translation output did not include all requested descriptions"
+                )
+                retry_schedules.extend(
+                    (claim, process_claim_error(claim=claim, error=missing_error))
+                    for claim in processable_claims
+                    if claim.description_id in missing_description_ids
+                )
         except Exception as error:
             retry_schedules.extend(
                 (claim, process_claim_error(claim=claim, error=error))
@@ -621,58 +703,33 @@ def _process_ai_description_conversation_ids(
             )
         return retry_schedules
 
-    processing_started_at = time.perf_counter()
-    lineage_claims = [
-        claim for claim in ai_claims if isinstance(claim, ClaimedLineageDescriptionWorkItem)
-    ]
-    translation_claims: list[ClaimedDescriptionTranslationWorkItem] = []
-    for claim in ai_claims:
-        if isinstance(claim, ClaimedLineageDescriptionWorkItem):
-            continue
-        translation_claims.append(claim)
+    stop_ai_description_heartbeat = _start_ai_description_lease_heartbeat(
+        primary_engine=primary_engine,
+        claims=ai_claims,
+        lease_ttl_seconds=lease_ttl_seconds,
+        interval_seconds=heartbeat_interval_seconds,
+    )
+    try:
+        processing_started_at = time.perf_counter()
+        lineage_claims = [
+            claim for claim in ai_claims if isinstance(claim, ClaimedLineageDescriptionWorkItem)
+        ]
+        translation_claims: list[ClaimedDescriptionTranslationWorkItem] = []
+        for claim in ai_claims:
+            if isinstance(claim, ClaimedLineageDescriptionWorkItem):
+                continue
+            translation_claims.append(claim)
 
-    with ThreadPoolExecutor(max_workers=min(max_workers, len(lineage_claims) or 1)) as executor:
-        future_by_claim = {
-            executor.submit(process_lineage_claim, claim): claim for claim in lineage_claims
-        }
-        for future in as_completed(future_by_claim):
-            claim = future_by_claim[future]
-            try:
-                schedule = future.result()
-                if schedule.retry_scheduled_at is not None:
-                    emit_load_event(
-                        phase="math-updater",
-                        action="retry-scheduled",
-                        outcome="info",
-                        conversation_slug_id=claim.conversation_slug_id,
-                        metadata={
-                            "conversationId": schedule.conversation_id,
-                            "locale": claim.locale,
-                            "attemptCount": claim.attempt_count,
-                            "nextRunAt": schedule.retry_scheduled_at.isoformat(),
-                            **_ai_description_claim_target_metadata(claim),
-                        },
-                    )
-            except Exception:
-                log.exception(
-                    "[MathUpdater] Failed to finalize AI description retry state for "
-                    "conversationSlugId=%s locale=%s %s",
-                    claim.conversation_slug_id,
-                    claim.locale,
-                    _ai_description_claim_target_log(claim),
-                )
-
-    translation_claim_batches = description_translation_work_claim_batches(translation_claims)
-    if translation_claim_batches:
+        lineage_claim_batches = lineage_description_work_claim_batches(lineage_claims)
         with ThreadPoolExecutor(
-            max_workers=min(max_workers, len(translation_claim_batches))
+            max_workers=min(max_workers, len(lineage_claim_batches) or 1)
         ) as executor:
-            future_by_translation_claims = {
-                executor.submit(process_translation_claims, claims): claims
-                for claims in translation_claim_batches
+            future_by_lineage_claims = {
+                executor.submit(process_lineage_claims, claims): claims
+                for claims in lineage_claim_batches
             }
-            for future in as_completed(future_by_translation_claims):
-                claims = future_by_translation_claims[future]
+            for future in as_completed(future_by_lineage_claims):
+                claims_for_candidate = future_by_lineage_claims[future]
                 try:
                     retry_schedules = future.result()
                     for claim, schedule in retry_schedules:
@@ -692,20 +749,61 @@ def _process_ai_description_conversation_ids(
                             )
                 except Exception:
                     log.exception(
-                        "[MathUpdater] Failed to finalize translation batch retry state "
-                        "claims=%s",
+                        "[MathUpdater] Failed to finalize AI description retry state claims=%s",
                         ", ".join(
-                            f"{claim.conversation_slug_id}:{claim.locale}:{claim.description_id}"
-                            for claim in claims
+                            f"{claim.conversation_slug_id}:{claim.locale}:{claim.lineage_id}"
+                            for claim in claims_for_candidate
                         ),
                     )
 
-    log.info(
-        "[MathUpdater] Finished AI description locale work count=%d process_ms=%.1f",
-        len(ai_claims),
-        (time.perf_counter() - processing_started_at) * 1000,
-    )
-    return len(ai_claims)
+        translation_claim_batches = description_translation_work_claim_batches(
+            translation_claims
+        )
+        if translation_claim_batches:
+            with ThreadPoolExecutor(
+                max_workers=min(max_workers, len(translation_claim_batches))
+            ) as executor:
+                future_by_translation_claims = {
+                    executor.submit(process_translation_claims, claims): claims
+                    for claims in translation_claim_batches
+                }
+                for future in as_completed(future_by_translation_claims):
+                    claims = future_by_translation_claims[future]
+                    try:
+                        retry_schedules = future.result()
+                        for claim, schedule in retry_schedules:
+                            if schedule.retry_scheduled_at is not None:
+                                emit_load_event(
+                                    phase="math-updater",
+                                    action="retry-scheduled",
+                                    outcome="info",
+                                    conversation_slug_id=claim.conversation_slug_id,
+                                    metadata={
+                                        "conversationId": schedule.conversation_id,
+                                        "locale": claim.locale,
+                                        "attemptCount": claim.attempt_count,
+                                        "nextRunAt": schedule.retry_scheduled_at.isoformat(),
+                                        **_ai_description_claim_target_metadata(claim),
+                                    },
+                                )
+                    except Exception:
+                        log.exception(
+                            "[MathUpdater] Failed to finalize translation batch retry state "
+                            "claims=%s",
+                            ", ".join(
+                                f"{claim.conversation_slug_id}:{claim.locale}:{claim.description_id}"
+                                for claim in claims
+                            ),
+                        )
+
+        work_log(
+            "[MathUpdater] Finished AI description locale work count=%d process_ms=%.1f",
+            len(ai_claims),
+            (time.perf_counter() - processing_started_at) * 1000,
+        )
+        return len(ai_claims)
+    finally:
+        stop_ai_description_heartbeat()
 
 
 def _process_ai_description_first_pass_phase(
@@ -717,6 +815,7 @@ def _process_ai_description_first_pass_phase(
     conversation_ids: list[int],
     conversation_view_snapshot_ids: list[int],
     lease_ttl_seconds: int,
+    heartbeat_interval_seconds: int,
     claim_limit: int,
     max_workers: int,
     ai_description_epoch: int,
@@ -734,6 +833,7 @@ def _process_ai_description_first_pass_phase(
             conversation_ids=conversation_ids,
             conversation_view_snapshot_ids=conversation_view_snapshot_ids,
             lease_ttl_seconds=lease_ttl_seconds,
+            heartbeat_interval_seconds=heartbeat_interval_seconds,
             claim_limit=claim_limit,
             max_workers=max_workers,
             ai_description_epoch=ai_description_epoch,
@@ -746,7 +846,7 @@ def _process_ai_description_first_pass_phase(
             claim_translations=phase == "translation",
             require_pending_status=True,
         )
-        log.info(
+        log.debug(
             "[MathUpdater] first_pass %s phase processed count=%d "
             "conversation_count=%d view_snapshot_count=%d",
             phase,
@@ -769,6 +869,7 @@ def _process_ai_description_first_pass(
     conversation_ids: list[int],
     conversation_view_snapshot_ids: list[int],
     lease_ttl_seconds: int,
+    heartbeat_interval_seconds: int,
     claim_limit: int,
     max_workers: int,
     ai_description_epoch: int,
@@ -811,6 +912,7 @@ def _process_ai_description_first_pass(
         conversation_ids=unique_conversation_ids,
         conversation_view_snapshot_ids=conversation_view_snapshot_ids,
         lease_ttl_seconds=lease_ttl_seconds,
+        heartbeat_interval_seconds=heartbeat_interval_seconds,
         claim_limit=claim_limit,
         max_workers=max_workers,
         ai_description_epoch=ai_description_epoch,
@@ -829,6 +931,7 @@ def _process_ai_description_first_pass(
             conversation_ids=unique_conversation_ids,
             conversation_view_snapshot_ids=conversation_view_snapshot_ids,
             lease_ttl_seconds=lease_ttl_seconds,
+            heartbeat_interval_seconds=heartbeat_interval_seconds,
             claim_limit=claim_limit,
             max_workers=max_workers,
             ai_description_epoch=ai_description_epoch,
@@ -951,6 +1054,7 @@ def _is_expected_simulated_retryable_error(error: BaseException) -> bool:
 
 def _run_worker_once() -> None:
     settings = Settings()
+    configure_worker_logging(log_level=settings.effective_log_level)
 
     signal.signal(signal.SIGTERM, _handle_signal)
     signal.signal(signal.SIGINT, _handle_signal)
@@ -982,20 +1086,28 @@ def _run_worker_once() -> None:
         log.info("[MathUpdater] Shutdown complete")
         return
 
-    primary_engine = _create_engine_with_retry(
+    primary_engine = create_ready_postgres_engine(
         connection_string=settings.connection_string,
         role="primary",
+        logger=log,
+        log_prefix="[MathUpdater]",
         retry_interval_seconds=settings.valkey_retry_interval_seconds,
+        should_continue=lambda: _running,
+        sleep_fn=_sleep_before_retry,
     )
     if primary_engine is None:
         vk.close()
         log.info("[MathUpdater] Shutdown complete")
         return
 
-    read_engine = _create_engine_with_retry(
+    read_engine = create_ready_postgres_engine(
         connection_string=settings.read_dsn,
         role="read",
+        logger=log,
+        log_prefix="[MathUpdater]",
         retry_interval_seconds=settings.valkey_retry_interval_seconds,
+        should_continue=lambda: _running,
+        sleep_fn=_sleep_before_retry,
     )
     if read_engine is None:
         primary_engine.dispose()
@@ -1043,6 +1155,7 @@ def _run_worker_once() -> None:
     monotonic_start = time.monotonic()
     last_reconcile = monotonic_start - settings.reconciliation_interval_seconds
     last_recover = monotonic_start - settings.running_recovery_interval_seconds
+    schema_retry_state = StartupSchemaRetryState()
 
     while _running:
         set_active_analysis_claims([])
@@ -1068,7 +1181,17 @@ def _run_worker_once() -> None:
                         len(due_ids),
                         _format_ids(due_ids),
                     )
-            except Exception:
+            except Exception as error:
+                retry_decision = handle_startup_schema_retry(
+                    state=schema_retry_state,
+                    error=error,
+                    logger=log,
+                    log_prefix="[MathUpdater]",
+                )
+                schema_retry_state = retry_decision.state
+                if retry_decision.should_retry:
+                    time.sleep(settings.worker_poll_idle_sleep_seconds)
+                    continue
                 log.exception("[MathUpdater] Reconciliation failed")
             last_reconcile = monotonic_now
 
@@ -1094,7 +1217,18 @@ def _run_worker_once() -> None:
                         "[MathUpdater] Recovered %d expired running/first-pass items",
                         len(recovered_ids),
                     )
-            except Exception:
+                schema_retry_state = mark_startup_schema_ready(state=schema_retry_state)
+            except Exception as error:
+                retry_decision = handle_startup_schema_retry(
+                    state=schema_retry_state,
+                    error=error,
+                    logger=log,
+                    log_prefix="[MathUpdater]",
+                )
+                schema_retry_state = retry_decision.state
+                if retry_decision.should_retry:
+                    time.sleep(settings.worker_poll_idle_sleep_seconds)
+                    continue
                 log.exception("[MathUpdater] Running-work recovery failed")
             last_recover = monotonic_now
 
@@ -1162,6 +1296,17 @@ def _run_worker_once() -> None:
                 analysis_engine_epoch=settings.analysis_engine_epoch,
             )
         except SQLAlchemyError as error:
+            retry_decision = handle_startup_schema_retry(
+                state=schema_retry_state,
+                error=error,
+                logger=log,
+                log_prefix="[MathUpdater]",
+            )
+            schema_retry_state = retry_decision.state
+            if retry_decision.should_retry:
+                requeue_conversations(vk, conversations=processable_due_items)
+                time.sleep(settings.worker_poll_idle_sleep_seconds)
+                continue
             log_database_error(
                 logger=log,
                 message="[MathUpdater] Failed to claim analysis work",
@@ -1228,6 +1373,7 @@ def _run_worker_once() -> None:
                         conversation_ids=[claim.conversation_id for claim in persisted_claims],
                         conversation_view_snapshot_ids=persisted_view_snapshot_ids,
                         lease_ttl_seconds=settings.lease_ttl_seconds,
+                        heartbeat_interval_seconds=settings.heartbeat_interval_seconds,
                         claim_limit=settings.db_claim_batch_size,
                         max_workers=settings.max_ai_description_concurrency,
                         ai_description_epoch=settings.ai_description_epoch,
@@ -1456,6 +1602,7 @@ def _run_worker_once() -> None:
                                 conversation_ids=completed_result.ai_description_due_conversation_ids,
                                 conversation_view_snapshot_ids=completed_result.ai_description_due_view_snapshot_ids,
                                 lease_ttl_seconds=settings.lease_ttl_seconds,
+                                heartbeat_interval_seconds=settings.heartbeat_interval_seconds,
                                 claim_limit=settings.db_claim_batch_size,
                                 max_workers=settings.max_ai_description_concurrency,
                                 ai_description_epoch=settings.ai_description_epoch,
@@ -1572,6 +1719,7 @@ def _run_worker_once() -> None:
                                             conversation_ids=isolated_result.ai_description_due_conversation_ids,
                                             conversation_view_snapshot_ids=isolated_result.ai_description_due_view_snapshot_ids,
                                             lease_ttl_seconds=settings.lease_ttl_seconds,
+                                            heartbeat_interval_seconds=settings.heartbeat_interval_seconds,
                                             claim_limit=settings.db_claim_batch_size,
                                             max_workers=settings.max_ai_description_concurrency,
                                             ai_description_epoch=settings.ai_description_epoch,

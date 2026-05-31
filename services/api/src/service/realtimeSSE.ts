@@ -32,6 +32,11 @@ type ConversationSubscriptionEvent =
       }
     | {
           id: number | undefined;
+          event: "conversation_comment_stats_updated";
+          data: SSEEventDataByType["conversation_comment_stats_updated"];
+      }
+    | {
+          id: number | undefined;
           event: "conversation_settings_updated";
           data: SSEEventDataByType["conversation_settings_updated"];
       }
