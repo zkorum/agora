@@ -1975,7 +1975,6 @@ async function fetchAnalysisFrameGroupLabelsByFrameKeyFromDb({
         return {
             frameKey,
             groupDescriptionDisplay: {
-                requestedLocale,
                 displayedLocale: null,
             },
             labels: {},
@@ -1998,7 +1997,6 @@ async function fetchAnalysisFrameGroupLabelsByFrameKeyFromDb({
         return {
             frameKey,
             groupDescriptionDisplay: {
-                requestedLocale,
                 displayedLocale: requestedLocale,
             },
             labels: requestedLabels,
@@ -2010,7 +2008,6 @@ async function fetchAnalysisFrameGroupLabelsByFrameKeyFromDb({
         return {
             frameKey,
             groupDescriptionDisplay: {
-                requestedLocale,
                 displayedLocale: "en",
             },
             labels: englishLabels,
@@ -2020,7 +2017,6 @@ async function fetchAnalysisFrameGroupLabelsByFrameKeyFromDb({
     return {
         frameKey,
         groupDescriptionDisplay: {
-            requestedLocale,
             displayedLocale: null,
         },
         labels: {},

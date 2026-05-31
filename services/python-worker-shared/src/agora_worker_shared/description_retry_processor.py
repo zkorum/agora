@@ -10,10 +10,10 @@ from agora_worker_shared.ai_description_lease_heartbeat import (
 )
 from agora_worker_shared.ai_description_work import (
     DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE,
+    AiDescriptionWorkResult,
     ClaimedDescriptionTranslationWorkItem,
     ClaimedLineageDescriptionWorkItem,
     DescriptionTranslationBatchProcessResult,
-    WorkStateSchedule,
     claim_ai_description_locale_work_items_batch,
     complete_non_processable_ai_description_work_batch,
     description_translation_work_claim_batches,
@@ -43,7 +43,6 @@ if TYPE_CHECKING:
         DescriptionForTranslation,
         DescriptionTranslation,
     )
-    from agora_worker_shared.retry_policy import RetryPolicy
     from agora_worker_shared.simulation_providers import SimulationRuntime
 
     DescriptionGenerator = Callable[[ConversationDescriptionInput], ParsedLabelSummaryOutput]
@@ -53,6 +52,12 @@ if TYPE_CHECKING:
     ]
 
 log = logging.getLogger(__name__)
+
+type LineageRetryResult = tuple[ClaimedLineageDescriptionWorkItem, AiDescriptionWorkResult]
+type TranslationRetryResult = tuple[
+    ClaimedDescriptionTranslationWorkItem,
+    AiDescriptionWorkResult,
+]
 
 
 def _format_ids_for_log(conversation_ids: list[int]) -> str:
@@ -95,13 +100,11 @@ def process_ai_description_conversation_ids(
     claim_limit: int,
     max_workers: int,
     ai_description_epoch: int,
-    retry_policy: RetryPolicy,
     description_generator: DescriptionGenerator,
     description_translator: DescriptionTranslator | None,
     claim_lineage_descriptions: bool,
     claim_translations: bool,
     simulation_runtime: SimulationRuntime | None = None,
-    retry_first_pass_once: bool = False,
     log_prefix: str,
 ) -> int:
     completed_conversation_ids = complete_non_processable_ai_description_work_batch(
@@ -169,7 +172,7 @@ def process_ai_description_conversation_ids(
         *,
         claim: ClaimedAiDescriptionLocaleWorkItem,
         error: Exception,
-    ) -> WorkStateSchedule:
+    ) -> AiDescriptionWorkResult:
         if isinstance(error, DescriptionInputError):
             log.exception(
                 "%s Non-retryable %s failure conversationSlugId=%s locale=%s %s",
@@ -208,26 +211,19 @@ def process_ai_description_conversation_ids(
                 claim.locale,
                 _claim_target_log(claim),
             )
-        should_retry_immediately = (
-            retry_first_pass_once
-            and claim.attempt_count == 1
-        )
         return retry_ai_description_locale_work_item(
             primary_engine,
             claim=claim,
-            retry_policy=retry_policy,
             error_code="ai_description_retryable",
             error_message=str(error),
-            retry_immediately_without_fallback=should_retry_immediately,
-            force_cooldown=retry_first_pass_once and not should_retry_immediately,
             require_activated_view_snapshot=True,
         )
 
     def process_lineage_claims(
         claims: list[ClaimedLineageDescriptionWorkItem],
-    ) -> tuple[list[tuple[ClaimedLineageDescriptionWorkItem, WorkStateSchedule]], set[int]]:
+    ) -> tuple[list[LineageRetryResult], set[int]]:
         processable_claims: list[ClaimedLineageDescriptionWorkItem] = []
-        retry_schedules: list[tuple[ClaimedLineageDescriptionWorkItem, WorkStateSchedule]] = []
+        retry_schedules: list[LineageRetryResult] = []
         for claim in claims:
             try:
                 maybe_raise_simulated_claim_error(
@@ -268,11 +264,11 @@ def process_ai_description_conversation_ids(
     def process_translation_claims(
         claims: list[ClaimedDescriptionTranslationWorkItem],
     ) -> tuple[
-        list[tuple[ClaimedDescriptionTranslationWorkItem, WorkStateSchedule]],
+        list[TranslationRetryResult],
         DescriptionTranslationBatchProcessResult,
     ]:
         processable_claims: list[ClaimedDescriptionTranslationWorkItem] = []
-        retry_schedules: list[tuple[ClaimedDescriptionTranslationWorkItem, WorkStateSchedule]] = []
+        retry_schedules: list[TranslationRetryResult] = []
         for claim in claims:
             try:
                 maybe_raise_simulated_claim_error(
@@ -294,9 +290,7 @@ def process_ai_description_conversation_ids(
 
         translator = description_translator
         if translator is None:
-            unavailable_schedules: list[
-                tuple[ClaimedDescriptionTranslationWorkItem, WorkStateSchedule]
-            ] = []
+            unavailable_schedules: list[TranslationRetryResult] = []
             for claim in processable_claims:
                 try:
                     msg = f"translation service unavailable for locale {claim.locale}"
@@ -372,17 +366,17 @@ def process_ai_description_conversation_ids(
                 try:
                     retry_schedules, generated_lineage_ids = future.result()
                     for claim, schedule in retry_schedules:
-                        if schedule.retry_scheduled_at is not None:
+                        if schedule.retry_released_at is not None:
                             emit_load_event(
                                 phase=log_prefix.strip("[]").lower(),
-                                action="retry-scheduled",
+                                action="retry-released",
                                 outcome="info",
                                 conversation_slug_id=claim.conversation_slug_id,
                                 metadata={
                                     "conversationId": schedule.conversation_id,
                                     "locale": claim.locale,
                                     "attemptCount": claim.attempt_count,
-                                    "nextRunAt": schedule.retry_scheduled_at.isoformat(),
+                                    "retryReleasedAt": schedule.retry_released_at.isoformat(),
                                     **_claim_target_metadata(claim),
                                 },
                             )
@@ -416,17 +410,17 @@ def process_ai_description_conversation_ids(
                     try:
                         retry_schedules, result = future.result()
                         for claim, schedule in retry_schedules:
-                            if schedule.retry_scheduled_at is not None:
+                            if schedule.retry_released_at is not None:
                                 emit_load_event(
                                     phase=log_prefix.strip("[]").lower(),
-                                    action="retry-scheduled",
+                                    action="retry-released",
                                     outcome="info",
                                     conversation_slug_id=claim.conversation_slug_id,
                                     metadata={
                                         "conversationId": schedule.conversation_id,
                                         "locale": claim.locale,
                                         "attemptCount": claim.attempt_count,
-                                        "nextRunAt": schedule.retry_scheduled_at.isoformat(),
+                                        "retryReleasedAt": schedule.retry_released_at.isoformat(),
                                         **_claim_target_metadata(claim),
                                     },
                                 )

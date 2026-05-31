@@ -98,23 +98,22 @@ async function ensureLineageDescriptionWorkForCandidate({
         return false;
     }
 
-    await db
+    const insertedWorkRows = await db
         .insert(opinionGroupLineageDescriptionWorkTable)
         .values(
             lineageIds.map((lineageId) => ({
                 lineageId,
                 conversationId,
                 sourceCandidateId: candidateId,
-                nextRunAt: now,
             })),
         )
-        .onConflictDoNothing();
+        .onConflictDoNothing()
+        .returning({ id: opinionGroupLineageDescriptionWorkTable.id });
     const updatedWorkRows = await db
         .update(opinionGroupLineageDescriptionWorkTable)
         .set({
             conversationId,
             sourceCandidateId: candidateId,
-            nextRunAt: now,
             updatedAt: now,
         })
         .where(
@@ -124,11 +123,10 @@ async function ensureLineageDescriptionWorkForCandidate({
                     lineageIds,
                 ),
                 isNull(opinionGroupLineageDescriptionWorkTable.leaseToken),
-                isNull(opinionGroupLineageDescriptionWorkTable.nextRunAt),
             ),
         )
         .returning({ id: opinionGroupLineageDescriptionWorkTable.id });
-    return updatedWorkRows.length > 0;
+    return insertedWorkRows.length > 0 || updatedWorkRows.length > 0;
 }
 
 async function ensureDescriptionTranslationWorkForCandidate({
@@ -170,22 +168,21 @@ async function ensureDescriptionTranslationWorkForCandidate({
         return false;
     }
 
-    await db
+    const insertedTranslationWorkRows = await db
         .insert(opinionGroupDescriptionTranslationWorkTable)
         .values(
             missingTranslationDescriptionIds.map((descriptionId) => ({
                 descriptionId,
                 conversationId,
                 locale,
-                nextRunAt: now,
             })),
         )
-        .onConflictDoNothing();
+        .onConflictDoNothing()
+        .returning({ id: opinionGroupDescriptionTranslationWorkTable.id });
     const updatedTranslationWorkRows = await db
         .update(opinionGroupDescriptionTranslationWorkTable)
         .set({
             conversationId,
-            nextRunAt: now,
             updatedAt: now,
         })
         .where(
@@ -196,11 +193,10 @@ async function ensureDescriptionTranslationWorkForCandidate({
                 ),
                 eq(opinionGroupDescriptionTranslationWorkTable.locale, locale),
                 isNull(opinionGroupDescriptionTranslationWorkTable.leaseToken),
-                isNull(opinionGroupDescriptionTranslationWorkTable.nextRunAt),
             ),
         )
         .returning({ id: opinionGroupDescriptionTranslationWorkTable.id });
-    return updatedTranslationWorkRows.length > 0;
+    return insertedTranslationWorkRows.length > 0 || updatedTranslationWorkRows.length > 0;
 }
 
 export async function fetchAnalysisCheckpointsByConversationSlugId({
@@ -694,13 +690,14 @@ export async function ensureAiDescriptionLocaleRequestForConversationViewSnapsho
         now,
     });
     if (missingEnglishLineageIds.length > 0) {
-        didQueueAiDescriptionWork ||= await ensureLineageDescriptionWorkForCandidate({
+        const didQueueEnglishWork = await ensureLineageDescriptionWorkForCandidate({
             db,
             conversationId: snapshot.conversationId,
             candidateId: snapshot.candidateId,
             lineageIds: missingEnglishLineageIds,
             now,
         });
+        didQueueAiDescriptionWork = didQueueAiDescriptionWork || didQueueEnglishWork;
     }
 
     if (requestedLocale === "en") {

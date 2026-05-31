@@ -5520,22 +5520,6 @@
                                         "groupDescriptionDisplay": {
                                             "type": "object",
                                             "properties": {
-                                                "requestedLocale": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "en",
-                                                        "es",
-                                                        "fr",
-                                                        "zh-Hant",
-                                                        "zh-Hans",
-                                                        "ja",
-                                                        "ar",
-                                                        "fa",
-                                                        "he",
-                                                        "ky",
-                                                        "ru"
-                                                    ]
-                                                },
                                                 "displayedLocale": {
                                                     "nullable": true,
                                                     "type": "string",
@@ -5555,7 +5539,6 @@
                                                 }
                                             },
                                             "required": [
-                                                "requestedLocale",
                                                 "displayedLocale"
                                             ],
                                             "additionalProperties": false

@@ -110,7 +110,7 @@ CHUNK_SIZE = 1000
 class AnalysisQueueSchedule:
     conversation_id: int
     conversation_slug_id: str
-    due_at_ms: int
+    enqueued_at_ms: int
 
 
 @dataclass(frozen=True)
@@ -148,7 +148,7 @@ class OpinionInsertData:
 @dataclass(frozen=True)
 class AnalysisSchedule:
     conversation_id: int
-    next_run_at: datetime | None
+    should_enqueue_analysis: bool
 
 
 class InsertedOpinionRow(BaseModel):
@@ -663,7 +663,6 @@ def _update_counts_and_schedule(
                         "conversation_id": conversation_id,
                         "opinion_group_spec_id": spec_id,
                         "dirty_since": now,
-                        "next_run_at": now,
                         "updated_at": now,
                     }
                     for spec_id in current_spec_ids
@@ -677,7 +676,6 @@ def _update_counts_and_schedule(
             select(
                 AnalysisWorkState.id,
                 AnalysisWorkState.dirty_since,
-                AnalysisWorkState.next_run_at,
                 AnalysisWorkState.running_data_generation,
             )
             .where(
@@ -688,22 +686,15 @@ def _update_counts_and_schedule(
             )
             .with_for_update(),
         ).all()
-        next_run_values: list[datetime] = []
         for row in work_state_rows:
-            next_run_at = now if row.running_data_generation is None else row.next_run_at
-            if next_run_at is not None:
-                next_run_values.append(next_run_at)
             session.execute(
                 update(AnalysisWorkState)
                 .where(AnalysisWorkState.id == row.id)
                 .values(
                     dirty_since=row.dirty_since or now,
-                    next_run_at=next_run_at,
                     updated_at=now,
                 ),
             )
-    else:
-        next_run_values = []
 
     if current_spec_ids:
         session.execute(
@@ -738,7 +729,7 @@ def _update_counts_and_schedule(
     session.commit()
     return AnalysisSchedule(
         conversation_id=conversation_id,
-        next_run_at=min(next_run_values) if next_run_values else None,
+        should_enqueue_analysis=bool(current_spec_ids) and participant_data.vote_count > 0,
     )
 
 
@@ -1014,18 +1005,13 @@ def process_import_request(session: Session, *, request: ImportRequest) -> Impor
             ),
         )
         session.commit()
-        next_run_at_ms = (
-            int(schedule.next_run_at.replace(tzinfo=UTC).timestamp() * 1000)
-            if schedule.next_run_at is not None
-            else None
-        )
         analysis_queue_schedule = (
             AnalysisQueueSchedule(
                 conversation_id=conversation_ids.conversation_id,
                 conversation_slug_id=conversation_ids.conversation_slug_id,
-                due_at_ms=next_run_at_ms,
+                enqueued_at_ms=int(now_zero_ms().timestamp() * 1000),
             )
-            if next_run_at_ms is not None
+            if schedule.should_enqueue_analysis
             else None
         )
         return ImportProcessResult(

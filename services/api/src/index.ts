@@ -962,34 +962,18 @@ async function verifyUcanOptionalAuth(
     });
 }
 
-async function getRequestDisplayLanguage({
-    deviceStatus,
+function getRequestDisplayLanguage({
     request,
 }: {
-    deviceStatus: DeviceLoginStatusInternal;
     request: FastifyRequest;
-}): Promise<SupportedDisplayLanguageCodes> {
+}): SupportedDisplayLanguageCodes {
     const parsedHeaderDisplayLanguage =
         ZodSupportedDisplayLanguageCodes.safeParse(
             request.headers["accept-language"],
         );
-    const headerDisplayLanguage: SupportedDisplayLanguageCodes =
-        parsedHeaderDisplayLanguage.success
-            ? parsedHeaderDisplayLanguage.data
-            : "en";
-
-    if (!deviceStatus.isKnown) {
-        return headerDisplayLanguage;
-    }
-
-    const preferences = await getLanguagePreferences({
-        db,
-        userId: deviceStatus.userId,
-        request: {
-            currentDisplayLanguage: headerDisplayLanguage,
-        },
-    });
-    return preferences.displayLanguage;
+    return parsedHeaderDisplayLanguage.success
+        ? parsedHeaderDisplayLanguage.data
+        : "en";
 }
 
 async function sendLatestSubscribedConversationAnalysisEvent({
@@ -2313,8 +2297,7 @@ server.after(() => {
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
-            const displayLanguage = await getRequestDisplayLanguage({
-                deviceStatus,
+            const displayLanguage = getRequestDisplayLanguage({
                 request,
             });
 
@@ -2367,8 +2350,7 @@ server.after(() => {
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
-            const displayLanguage = await getRequestDisplayLanguage({
-                deviceStatus,
+            const displayLanguage = getRequestDisplayLanguage({
                 request,
             });
 

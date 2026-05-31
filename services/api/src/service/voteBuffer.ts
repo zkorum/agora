@@ -83,8 +83,8 @@ import { nowZeroMs } from "@/shared/util.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
 import {
+    enqueueConversationForMathWork,
     scheduleAnalysisUpdate,
-    wakeAnalysisWorker,
     type AnalysisSchedule,
 } from "@/shared-backend/analysisScheduler.js";
 import { Script } from "@valkey/valkey-glide";
@@ -794,10 +794,8 @@ export function createVoteBuffer({
                             conversationId,
                             log,
                         });
-                        const nextRunAt =
-                            analysisSchedule.nextRunAt?.toISOString() ?? "none";
                         log.info(
-                            `[VoteBuffer] Scheduled analysis for conversationId=${String(conversationId)} conversationSlugId=${analysisSchedule.conversationSlugId} dataGeneration=${String(analysisSchedule.dataGeneration)} specs=${String(analysisSchedule.scheduledSpecCount)} nextRunAt=${nextRunAt}`,
+                            `[VoteBuffer] Scheduled analysis for conversationId=${String(conversationId)} conversationSlugId=${analysisSchedule.conversationSlugId} dataGeneration=${String(analysisSchedule.dataGeneration)} specs=${String(analysisSchedule.scheduledSpecCount)}`,
                         );
                         analysisSchedules.push(analysisSchedule);
                     }
@@ -835,12 +833,11 @@ export function createVoteBuffer({
             );
 
             for (const schedule of analysisSchedules) {
-                const nextRunAt = schedule.nextRunAt?.toISOString() ?? "none";
                 const valkey = getValkey();
                 log.info(
-                    `[VoteBuffer] Waking analysis worker for conversationId=${String(schedule.conversationId)} conversationSlugId=${schedule.conversationSlugId} nextRunAt=${nextRunAt} valkey=${valkey === undefined ? "missing" : "connected"}`,
+                    `[VoteBuffer] Queueing scheduled math work conversationId=${String(schedule.conversationId)} conversationSlugId=${schedule.conversationSlugId} valkey=${valkey === undefined ? "missing" : "connected"}`,
                 );
-                wakeAnalysisWorker({
+                enqueueConversationForMathWork({
                     valkey,
                     schedule,
                     log,

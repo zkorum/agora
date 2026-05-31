@@ -37,7 +37,6 @@ function analysisWithLabels(overrides: Partial<AnalysisData> = {}): AnalysisData
       aiLabelsExpected: true,
     },
     groupDescriptionDisplay: {
-      requestedLocale: "fr",
       displayedLocale: "en",
     },
     ...overrides,
@@ -59,7 +58,6 @@ describe("analysis freshness", () => {
       getPendingDescriptionLocales({
         analysis: analysisWithLabels({
           groupDescriptionDisplay: {
-            requestedLocale: "fr",
             displayedLocale: "fr",
           },
         }),
@@ -76,7 +74,6 @@ describe("analysis freshness", () => {
         aiLabelsExpected: true,
       },
       groupDescriptionDisplay: {
-        requestedLocale: "fr",
         displayedLocale: "en",
       },
     });

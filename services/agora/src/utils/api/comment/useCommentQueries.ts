@@ -7,15 +7,24 @@ import {
 import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
+  AnalysisFrameGroupLabels,
+  AnalysisFrameGroups,
   AnalysisFrameKey,
+  AnalysisFrameManifest,
+  AnalysisFrameOpinionList,
   AnalysisFreshnessRequest,
   FetchCommentStatsResponse,
 } from "src/shared/types/dto";
+import {
+  type SupportedDisplayLanguageCodes,
+  ZodSupportedDisplayLanguageCodes,
+} from "src/shared/languages";
 import type { AnalysisView, OpinionItem, PolisKey } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
 import { useUserStore } from "src/stores/user";
 import {
   buildAnalysisFreshnessRequest,
+  LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS,
 } from "src/utils/analysis/analysisFreshness";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
@@ -164,6 +173,26 @@ export function getAnalysisStaleTime(voteCount?: number): number {
 }
 
 type BackendCommentApi = ReturnType<typeof useBackendCommentApi>;
+type AnalysisQueryKey = readonly unknown[];
+
+const LABEL_CATCH_UP_MAX_ATTEMPTS = 5;
+const labelCatchUpStateByKey = new Map<
+  string,
+  { attemptCount: number; timeout: ReturnType<typeof setTimeout> | undefined }
+>();
+
+type CompleteAnalysisData = AnalysisData & {
+  manifest: AnalysisFrameManifest & {
+    frameKey: AnalysisFrameKey;
+    conversationViewSnapshot: NonNullable<
+      AnalysisFrameManifest["conversationViewSnapshot"]
+    >;
+  };
+  groups: AnalysisFrameGroups;
+  agreements: AnalysisFrameOpinionList;
+  disagreements: AnalysisFrameOpinionList;
+  divisive: AnalysisFrameOpinionList;
+};
 
 function frameKeyQueryPart(frameKey: AnalysisFrameKey): readonly number[] {
   return [
@@ -171,6 +200,74 @@ function frameKeyQueryPart(frameKey: AnalysisFrameKey): readonly number[] {
     frameKey.analysisSnapshotId,
     frameKey.candidateId,
   ];
+}
+
+function isSameFrameKey({
+  left,
+  right,
+}: {
+  left: AnalysisFrameKey;
+  right: AnalysisFrameKey;
+}): boolean {
+  return (
+    left.conversationViewSnapshotId === right.conversationViewSnapshotId &&
+    left.analysisSnapshotId === right.analysisSnapshotId &&
+    left.candidateId === right.candidateId
+  );
+}
+
+function hasCompleteAnalysisFrame(
+  analysis: AnalysisData | undefined
+): analysis is CompleteAnalysisData {
+  return (
+    analysis?.manifest?.frameKey !== undefined &&
+    analysis.manifest.conversationViewSnapshot !== undefined &&
+    analysis.groups !== undefined &&
+    analysis.agreements !== undefined &&
+    analysis.disagreements !== undefined &&
+    analysis.divisive !== undefined
+  );
+}
+
+function isGroupLabelDisplayFresh({
+  groupLabels,
+  displayLanguage,
+}: {
+  groupLabels: AnalysisFrameGroupLabels;
+  displayLanguage: SupportedDisplayLanguageCodes;
+}): boolean {
+  const displayedLocale = groupLabels.groupDescriptionDisplay.displayedLocale;
+  if (displayedLocale === null) {
+    return false;
+  }
+  return displayLanguage === "en" || displayedLocale === displayLanguage;
+}
+
+function expectedLabelLocales(
+  displayLanguage: SupportedDisplayLanguageCodes
+): SupportedDisplayLanguageCodes[] {
+  return displayLanguage === "en" ? ["en"] : ["en", displayLanguage];
+}
+
+function labelCatchUpKey({
+  conversationSlugId,
+  frameKey,
+  aiLabelingEnabled,
+  displayLanguage,
+}: {
+  conversationSlugId: string;
+  frameKey: AnalysisFrameKey;
+  aiLabelingEnabled: boolean | undefined;
+  displayLanguage: SupportedDisplayLanguageCodes;
+}): string {
+  return JSON.stringify([
+    conversationSlugId,
+    frameKey.conversationViewSnapshotId,
+    frameKey.analysisSnapshotId,
+    frameKey.candidateId,
+    aiLabelingEnabled,
+    displayLanguage,
+  ]);
 }
 
 function getManifestStaleTime({
@@ -222,6 +319,167 @@ function getLabelStaleTime({
   return freshness === null ? getAnalysisStaleTime(voteCount) : 0;
 }
 
+interface FrameLabelCatchUpParams {
+  queryClient: QueryClient;
+  fetchAnalysisFrameGroupLabels: BackendCommentApi["fetchAnalysisFrameGroupLabels"];
+  conversationSlugId: string;
+  frameKey: AnalysisFrameKey;
+  aiLabelingEnabled: boolean | undefined;
+  displayLanguage: string;
+  groupLabels: AnalysisFrameGroupLabels;
+  analysisQueryKey: AnalysisQueryKey;
+}
+
+interface FrameLabelCatchUpAttemptParams extends FrameLabelCatchUpParams {
+  catchUpKey: string;
+  supportedDisplayLanguage: SupportedDisplayLanguageCodes;
+}
+
+async function runFrameLabelCatchUpAttempt({
+  queryClient,
+  fetchAnalysisFrameGroupLabels,
+  conversationSlugId,
+  frameKey,
+  aiLabelingEnabled,
+  displayLanguage,
+  groupLabels,
+  analysisQueryKey,
+  catchUpKey,
+  supportedDisplayLanguage,
+}: FrameLabelCatchUpAttemptParams): Promise<void> {
+  const frameKeyPart = frameKeyQueryPart(frameKey);
+  const labelQueryKey = [
+    "analysisFrameGroupLabels",
+    conversationSlugId,
+    frameKeyPart,
+    aiLabelingEnabled,
+    displayLanguage,
+  ];
+  const freshness: AnalysisFreshnessRequest = {
+    enablePrimaryFallback: true,
+    minimumConversationViewSnapshotId: null,
+    expectedDescriptionLocales: expectedLabelLocales(supportedDisplayLanguage),
+  };
+  await queryClient.invalidateQueries({
+    queryKey: labelQueryKey,
+    exact: true,
+    refetchType: "none",
+  });
+  const refreshedGroupLabels = await queryClient.fetchQuery({
+    queryKey: labelQueryKey,
+    queryFn: () =>
+      fetchAnalysisFrameGroupLabels({
+        conversationSlugId,
+        frameKey,
+        freshness,
+      }),
+    staleTime: 0,
+  });
+
+  queryClient.setQueryData<AnalysisData>(analysisQueryKey, (current) => {
+    if (
+      !hasCompleteAnalysisFrame(current) ||
+      !isSameFrameKey({ left: current.manifest.frameKey, right: frameKey })
+    ) {
+      return current;
+    }
+    return buildAnalysisDataFromFrame({
+      manifest: current.manifest,
+      groups: current.groups,
+      groupLabels: refreshedGroupLabels,
+      agreements: current.agreements,
+      disagreements: current.disagreements,
+      divisive: current.divisive,
+    });
+  });
+
+  if (
+    isGroupLabelDisplayFresh({
+      groupLabels: refreshedGroupLabels,
+      displayLanguage: supportedDisplayLanguage,
+    })
+  ) {
+    labelCatchUpStateByKey.delete(catchUpKey);
+    return;
+  }
+
+  scheduleFrameLabelCatchUp({
+    queryClient,
+    fetchAnalysisFrameGroupLabels,
+    conversationSlugId,
+    frameKey,
+    aiLabelingEnabled,
+    displayLanguage,
+    groupLabels: refreshedGroupLabels,
+    analysisQueryKey,
+  });
+}
+
+function scheduleFrameLabelCatchUp(params: FrameLabelCatchUpParams): void {
+  const {
+    conversationSlugId,
+    frameKey,
+    aiLabelingEnabled,
+    displayLanguage,
+    groupLabels,
+  } = params;
+  const parsedDisplayLanguage =
+    ZodSupportedDisplayLanguageCodes.safeParse(displayLanguage);
+  if (!parsedDisplayLanguage.success) {
+    return;
+  }
+  const supportedDisplayLanguage = parsedDisplayLanguage.data;
+  if (
+    isGroupLabelDisplayFresh({
+      groupLabels,
+      displayLanguage: supportedDisplayLanguage,
+    })
+  ) {
+    labelCatchUpStateByKey.delete(
+      labelCatchUpKey({
+        conversationSlugId,
+        frameKey,
+        aiLabelingEnabled,
+        displayLanguage: supportedDisplayLanguage,
+      })
+    );
+    return;
+  }
+
+  const catchUpKey = labelCatchUpKey({
+    conversationSlugId,
+    frameKey,
+    aiLabelingEnabled,
+    displayLanguage: supportedDisplayLanguage,
+  });
+  const currentState = labelCatchUpStateByKey.get(catchUpKey) ?? {
+    attemptCount: 0,
+    timeout: undefined,
+  };
+  if (
+    currentState.timeout !== undefined ||
+    currentState.attemptCount >= LABEL_CATCH_UP_MAX_ATTEMPTS
+  ) {
+    labelCatchUpStateByKey.set(catchUpKey, currentState);
+    return;
+  }
+
+  currentState.timeout = setTimeout(() => {
+    currentState.timeout = undefined;
+    currentState.attemptCount += 1;
+    labelCatchUpStateByKey.set(catchUpKey, currentState);
+
+    void runFrameLabelCatchUpAttempt({
+      ...params,
+      catchUpKey,
+      supportedDisplayLanguage,
+    }).catch(() => {
+      scheduleFrameLabelCatchUp(params);
+    });
+  }, LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS);
+  labelCatchUpStateByKey.set(catchUpKey, currentState);
+}
+
 export async function fetchAnalysisDataWithCache({
   queryClient,
   fetchAnalysisFrameManifest,
@@ -235,6 +493,7 @@ export async function fetchAnalysisDataWithCache({
   displayLanguage,
   voteCount,
   freshness,
+  analysisQueryKey,
 }: {
   queryClient: QueryClient;
   fetchAnalysisFrameManifest: BackendCommentApi["fetchAnalysisFrameManifest"];
@@ -248,6 +507,7 @@ export async function fetchAnalysisDataWithCache({
   displayLanguage: string;
   voteCount: number | undefined;
   freshness: AnalysisFreshnessRequest | null;
+  analysisQueryKey: AnalysisQueryKey | undefined;
 }): Promise<AnalysisData> {
   const manifest = await queryClient.fetchQuery({
     queryKey: [
@@ -356,6 +616,19 @@ export async function fetchAnalysisDataWithCache({
       }),
     ]);
 
+  if (manifest.aiLabelsExpected && analysisQueryKey !== undefined) {
+    scheduleFrameLabelCatchUp({
+      queryClient,
+      fetchAnalysisFrameGroupLabels,
+      conversationSlugId,
+      frameKey,
+      aiLabelingEnabled,
+      displayLanguage,
+      groupLabels,
+      analysisQueryKey,
+    });
+  }
+
   return buildAnalysisDataFromFrame({
     manifest,
     groups,
@@ -438,6 +711,7 @@ export function useAnalysisQuery({
         displayLanguage: resolvedDisplayLanguage,
         voteCount: resolvedVoteCount,
         freshness,
+        analysisQueryKey: resolvedQueryKey,
       });
 
       const snapshot = analysisData.conversationViewSnapshot;

@@ -84,7 +84,7 @@ function parseLiveAnalysisQueryParams({
   queryKey: QueryKey;
   conversationSlugId: string;
 }): LiveAnalysisQueryParams | undefined {
-  if (!isLiveAnalysisQueryKey({ queryKey, conversationSlugId })) {
+  if (!isAnalysisQueryKeyForConversation({ queryKey, conversationSlugId })) {
     return undefined;
   }
 
@@ -94,6 +94,14 @@ function parseLiveAnalysisQueryParams({
       ? { success: true, data: undefined }
       : zodAnalysisView.safeParse(rawAnalysisView);
   if (!analysisViewResult.success) {
+    return undefined;
+  }
+
+  const rawCheckpointViewSnapshotId = queryKey[3];
+  if (
+    rawCheckpointViewSnapshotId !== undefined &&
+    typeof rawCheckpointViewSnapshotId !== "number"
+  ) {
     return undefined;
   }
 
@@ -115,7 +123,7 @@ function parseLiveAnalysisQueryParams({
   return {
     conversationSlugId,
     analysisView: analysisViewResult.data,
-    checkpointViewSnapshotId: undefined,
+    checkpointViewSnapshotId: rawCheckpointViewSnapshotId,
     aiLabelingEnabled: rawAiLabelingEnabled,
     displayLanguage: displayLanguageResult.data,
   };
@@ -142,17 +150,24 @@ export function createLiveAnalysisCatchUpController({
 
   function getActiveLiveAnalysisQueries({
     conversationSlugId,
+    includeCheckpoints = false,
   }: {
     conversationSlugId: string;
+    includeCheckpoints?: boolean;
   }): LiveAnalysisQueryInfo[] {
     const queries: LiveAnalysisQueryInfo[] = [];
     for (const query of queryClient.getQueryCache().findAll({
       predicate: (candidate) =>
         candidate.isActive() &&
-        isLiveAnalysisQueryKey({
-          queryKey: candidate.queryKey,
-          conversationSlugId,
-        }),
+        (includeCheckpoints
+          ? isAnalysisQueryKeyForConversation({
+              queryKey: candidate.queryKey,
+              conversationSlugId,
+            })
+          : isLiveAnalysisQueryKey({
+              queryKey: candidate.queryKey,
+              conversationSlugId,
+            })),
     })) {
       const params = parseLiveAnalysisQueryParams({
         queryKey: query.queryKey,
@@ -180,7 +195,10 @@ export function createLiveAnalysisCatchUpController({
     conversationSlugId: string;
     queryHash: string;
   }): LiveAnalysisQueryInfo | undefined {
-    return getActiveLiveAnalysisQueries({ conversationSlugId }).find(
+    return getActiveLiveAnalysisQueries({
+      conversationSlugId,
+      includeCheckpoints: true,
+    }).find(
       (query) => query.queryHash === queryHash
     );
   }
@@ -403,6 +421,7 @@ export function createLiveAnalysisCatchUpController({
   function requestCatchUp(data: SSEConversationAnalysisUpdatedData): void {
     const activeQueries = getActiveLiveAnalysisQueries({
       conversationSlugId: data.conversationSlugId,
+      includeCheckpoints: data.changeKind === "descriptions",
     });
     const activeQueryHashes = new Set(
       activeQueries.map((query) => query.queryHash)

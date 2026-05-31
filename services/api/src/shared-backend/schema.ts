@@ -822,7 +822,6 @@ export const userTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (table) => [index("user_isDeleted_idx").on(table.isDeleted)],
 );
 
 /** @service import-worker */
@@ -844,7 +843,6 @@ export const userOrganizationMappingTable = pgTable(
             .notNull(),
     },
     (t) => [
-        index("user_idx_organization").on(t.userId),
         unique("unique_user_orgaization_mapping").on(
             t.userId,
             t.organizationId,
@@ -869,10 +867,7 @@ export const conversationTopicTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (t) => [
-        index("conversation_topic_index").on(t.conversationId),
-        unique("conversation_topic_unique").on(t.conversationId, t.topicId),
-    ],
+    (t) => [unique("conversation_topic_unique").on(t.conversationId, t.topicId)],
 );
 
 export const topicTable = pgTable("topic", {
@@ -906,10 +901,7 @@ export const followedTopicTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (t) => [
-        index("followed_topic_index").on(t.userId),
-        unique("followed_topic_unique").on(t.userId, t.topicId),
-    ],
+    (t) => [unique("followed_topic_unique").on(t.userId, t.topicId)],
 );
 
 export const userMutePreferenceTable = pgTable(
@@ -956,7 +948,6 @@ export const userSpokenLanguagesTable = pgTable(
             .notNull(),
     },
     (t) => [
-        index("user_spoken_languages_user_idx").on(t.userId),
         unique("user_spoken_languages_unique").on(t.userId, t.languageCode),
     ],
 );
@@ -983,7 +974,6 @@ export const userDisplayLanguageTable = pgTable(
             .notNull(),
     },
     (t) => [
-        index("user_display_language_user_idx").on(t.userId),
         unique("user_display_language_unique").on(t.userId, t.languageCode),
     ],
 );
@@ -1513,9 +1503,9 @@ export const conversationTable = pgTable(
             .notNull(),
     },
     (table) => [
-        // Partial index for feed query: filters isIndexed=true + isImporting=false, sorts by createdAt
+        // Partial index for feed query: filters isIndexed=true + isImporting=false, sorts by createdAt/id
         index("conversation_feed_idx")
-            .on(table.createdAt)
+            .using("btree", sql`${table.createdAt} DESC`, sql`${table.id} DESC`)
             .where(
                 sql`${table.isIndexed} = true AND ${table.isImporting} = false`,
             ),
@@ -1524,19 +1514,22 @@ export const conversationTable = pgTable(
             table.isImporting,
             table.conversationType,
         ),
-        // Composite for user conversation timeline: filters authorId + isImporting, sorts by createdAt
-        index("conversation_author_timeline_idx").on(
+        // Composite for user conversation timeline: filters authorId + isImporting, sorts by createdAt/id
+        index("conversation_author_timeline_idx").using(
+            "btree",
             table.authorId,
             table.isImporting,
-            table.createdAt,
+            sql`${table.createdAt} DESC`,
+            sql`${table.id} DESC`,
         ),
-        // Composite for organization conversation timeline: filters organizationId + isImporting, sorts by createdAt
+        // Composite for organization conversation timeline: filters organizationId + isImporting, sorts by createdAt/id
         index("conversation_organization_timeline_idx")
-            .on(
+            .using(
+                "btree",
                 table.organizationId,
                 table.isImporting,
-                table.createdAt,
-                table.id,
+                sql`${table.createdAt} DESC`,
+                sql`${table.id} DESC`,
             )
             .where(isNotNull(table.currentContentId)),
         check(
@@ -1985,11 +1978,14 @@ export const opinionTable = pgTable(
             .notNull(),
     },
     (table) => [
-        index("opinion_createdAt_idx").on(table.createdAt),
-        index("opinion_slugId_idx").on(table.slugId),
         index("opinion_authorId_idx").on(table.authorId),
         index("opinion_author_active_created_id_idx")
-            .on(table.authorId, table.createdAt.desc(), table.id.desc())
+            .using(
+                "btree",
+                table.authorId,
+                sql`${table.createdAt} DESC`,
+                sql`${table.id} DESC`,
+            )
             .where(isNotNull(table.currentContentId)),
         // Composite for counter reconciliation: filters conversationId + non-deleted (currentContentId IS NOT NULL)
         index("opinion_conversation_active_idx").on(
@@ -1997,7 +1993,12 @@ export const opinionTable = pgTable(
             table.currentContentId,
         ),
         index("opinion_conversation_active_created_id_idx")
-            .on(table.conversationId, table.createdAt.desc(), table.id.desc())
+            .using(
+                "btree",
+                table.conversationId,
+                sql`${table.createdAt} DESC`,
+                sql`${table.id} DESC`,
+            )
             .where(isNotNull(table.currentContentId)),
     ],
 );
@@ -2053,7 +2054,12 @@ export const voteTable = pgTable(
         unique().on(t.authorId, t.opinionId),
         index("vote_authorId_idx").on(t.authorId),
         index("vote_author_active_updated_id_idx")
-            .on(t.authorId, t.updatedAt.desc(), t.id.desc())
+            .using(
+                "btree",
+                t.authorId,
+                sql`${t.updatedAt} DESC`,
+                sql`${t.id} DESC`,
+            )
             .where(isNotNull(t.currentContentId)),
         // Composite for counter reconciliation: filters opinionId + non-deleted (currentContentId IS NOT NULL)
         index("vote_opinion_active_idx").on(t.opinionId, t.currentContentId),
@@ -2185,11 +2191,6 @@ export const conversationModerationTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (table) => [
-        index(
-            "conversation_moderation_conversation_id_moderation_action_idx",
-        ).on(table.conversationId, table.moderationAction),
-    ],
 );
 
 /** @service math-updater */
@@ -2360,10 +2361,11 @@ export const notificationTable = pgTable(
             .notNull(),
     },
     (t) => [
-        index("notification_user_created_id_idx").on(
+        index("notification_user_created_id_idx").using(
+            "btree",
             t.userId,
-            t.createdAt.desc(),
-            t.id.desc(),
+            sql`${t.createdAt} DESC`,
+            sql`${t.id} DESC`,
         ),
     ],
 );
@@ -2500,10 +2502,6 @@ export const analysisWorkStateTable = pgTable(
             mode: "date",
             precision: 0,
         }),
-        nextRunAt: timestamp("next_run_at", {
-            mode: "date",
-            precision: 0,
-        }),
         attemptGeneration: integer("attempt_generation"),
         attemptCount: integer("attempt_count").notNull().default(0),
         nonRetryableGeneration: integer("non_retryable_generation"),
@@ -2538,9 +2536,6 @@ export const analysisWorkStateTable = pgTable(
             t.conversationId,
             t.opinionGroupSpecId,
         ),
-        index("analysis_work_state_due_idx")
-            .on(t.nextRunAt, t.conversationId)
-            .where(isNull(t.runningDataGeneration)),
         index("analysis_work_state_lease_expiry_idx")
             .on(t.leaseExpiresAt)
             .where(isNotNull(t.runningDataGeneration)),
@@ -2935,10 +2930,6 @@ export const opinionGroupDescriptionTranslationWorkTable = pgTable(
             .references(() => conversationTable.id),
         locale: varchar("locale", { length: 10 }).notNull(),
         attemptCount: integer("attempt_count").notNull().default(0),
-        nextRunAt: timestamp("next_run_at", {
-            mode: "date",
-            precision: 0,
-        }),
         leaseOwner: varchar("lease_owner", { length: 100 }),
         leaseToken: varchar("lease_token", { length: 100 }),
         leaseExpiresAt: timestamp("lease_expires_at", {
@@ -2968,12 +2959,6 @@ export const opinionGroupDescriptionTranslationWorkTable = pgTable(
             t.descriptionId,
             t.locale,
         ),
-        index("opinion_group_description_translation_work_due_idx")
-            .on(t.nextRunAt)
-            .where(sqlAnd(isNull(t.leaseToken), isNotNull(t.nextRunAt))),
-        index("opinion_group_description_translation_work_claim_idx")
-            .on(t.conversationId, t.nextRunAt, t.id)
-            .where(sqlAnd(isNull(t.leaseToken), isNotNull(t.nextRunAt))),
         index("opinion_group_description_translation_work_lease_expiry_idx")
             .on(t.leaseExpiresAt)
             .where(isNotNull(t.leaseToken)),
@@ -3103,10 +3088,6 @@ export const opinionGroupLineageDescriptionWorkTable = pgTable(
             .notNull()
             .references(() => opinionGroupCandidateTable.id),
         attemptCount: integer("attempt_count").notNull().default(0),
-        nextRunAt: timestamp("next_run_at", {
-            mode: "date",
-            precision: 0,
-        }),
         leaseOwner: varchar("lease_owner", { length: 100 }),
         leaseToken: varchar("lease_token", { length: 100 }),
         leaseExpiresAt: timestamp("lease_expires_at", {
@@ -3133,12 +3114,6 @@ export const opinionGroupLineageDescriptionWorkTable = pgTable(
     },
     (t) => [
         unique("opinion_group_lineage_description_work_unique").on(t.lineageId),
-        index("opinion_group_lineage_description_work_due_idx")
-            .on(t.nextRunAt)
-            .where(sqlAnd(isNull(t.leaseToken), isNotNull(t.nextRunAt))),
-        index("opinion_group_lineage_description_work_claim_idx")
-            .on(t.conversationId, t.nextRunAt, t.id)
-            .where(sqlAnd(isNull(t.leaseToken), isNotNull(t.nextRunAt))),
         index("opinion_group_lineage_description_work_lease_expiry_idx")
             .on(t.leaseExpiresAt)
             .where(isNotNull(t.leaseToken)),
@@ -3272,20 +3247,27 @@ export const conversationViewSnapshotTable = pgTable(
             .notNull(),
     },
     (t) => [
-        index("conversation_view_snapshot_latest_idx").on(
+        index("conversation_view_snapshot_latest_idx").using(
+            "btree",
             t.conversationId,
-            t.createdAt.desc(),
-            t.id.desc(),
+            sql`${t.createdAt} DESC`,
+            sql`${t.id} DESC`,
         ),
         index("conversation_view_snapshot_latest_active_idx")
-            .on(t.conversationId, t.createdAt.desc(), t.id.desc())
+            .using(
+                "btree",
+                t.conversationId,
+                sql`${t.createdAt} DESC`,
+                sql`${t.id} DESC`,
+            )
             .where(isNotNull(t.activatedAt)),
         index("conversation_view_snapshot_latest_spec_active_idx")
-            .on(
+            .using(
+                "btree",
                 t.conversationId,
                 t.opinionGroupSpecId,
-                t.createdAt.desc(),
-                t.id.desc(),
+                sql`${t.createdAt} DESC`,
+                sql`${t.id} DESC`,
             )
             .where(isNotNull(t.activatedAt)),
         index("conversation_view_snapshot_analysis_snapshot_idx")
@@ -3746,7 +3728,6 @@ export const conversationImportTable = pgTable(
         index("conversation_import_status_idx").on(t.status),
         index("conversation_import_created_idx").on(t.createdAt),
         index("conversation_import_user_idx").on(t.userId),
-        index("conversation_import_conversation_idx").on(t.conversationId),
         uniqueIndex("conversation_import_active_user_unique")
             .on(t.userId)
             .where(sql`${t.status} = 'processing'`),
@@ -3833,7 +3814,6 @@ export const maxdiffItemTable = pgTable(
             .notNull(),
     },
     (t) => [
-        index("maxdiff_item_slug_idx").on(t.slugId),
         index("maxdiff_item_conversation_active_idx").on(
             t.conversationId,
             t.currentContentId,
@@ -3897,7 +3877,6 @@ export const maxdiffItemExternalSourceTable = pgTable(
             .notNull(),
     },
     (t) => [
-        index("maxdiff_external_source_external_id_idx").on(t.externalId),
         // Prevents duplicate items for the same external source within a conversation.
         // Scoped per-conversation so the same issue can exist in multiple conversations.
         uniqueIndex("maxdiff_external_source_dedup_idx").on(
@@ -3969,7 +3948,6 @@ export const rankingScoreEntityTable = pgTable(
         participantCount: integer("participant_count").notNull().default(0),
     },
     (t) => [
-        index("ranking_score_entity_score_idx").on(t.rankingScoreId),
         index("ranking_score_entity_slug_idx").on(
             t.rankingScoreId,
             t.entitySlugId,
@@ -4019,5 +3997,12 @@ export const maxdiffUserEntityScoreTable = pgTable(
         uncertaintyLeft: real("uncertainty_left").notNull(),
         uncertaintyRight: real("uncertainty_right").notNull(),
     },
-    (t) => [unique().on(t.maxdiffResultId, t.entitySlugId)],
+    (t) => [
+        unique().on(t.maxdiffResultId, t.entitySlugId),
+        index("maxdiff_user_entity_score_result_score_idx").using(
+            "btree",
+            t.maxdiffResultId,
+            sql`${t.score} DESC`,
+        ),
+    ],
 );

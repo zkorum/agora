@@ -14,6 +14,7 @@ from agora_worker_shared.ai_description_lease_heartbeat import (
 )
 from agora_worker_shared.ai_description_work import (
     DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE,
+    AiDescriptionWorkResult,
     ClaimedAiDescriptionLocaleWorkItem,
     ClaimedDescriptionTranslationWorkItem,
     ClaimedLineageDescriptionWorkItem,
@@ -25,13 +26,10 @@ from agora_worker_shared.ai_description_work import (
     finalize_first_pass_ai_description_work_batch,
     lineage_description_work_claim_batches,
     mark_non_retryable_ai_description_locale_work_item,
-    process_lineage_description_work_items_batch,
     process_description_translation_work_items_batch,
+    process_lineage_description_work_items_batch,
     recover_expired_ai_description_work,
     retry_ai_description_locale_work_item,
-)
-from agora_worker_shared.ai_description_work import (
-    WorkStateSchedule as AiDescriptionWorkStateSchedule,
 )
 from agora_worker_shared.analysis_compute import RedDwarfContractError, compute_analysis_bundle
 from agora_worker_shared.config import (
@@ -43,18 +41,17 @@ from agora_worker_shared.db import (
     AnalysisWorkStatePersistenceError,
     CheckpointActivationContext,
     LineageAssignmentInvariantError,
-    WorkStateSchedule,
     claim_work_items_and_fetch_inputs_batch,
     complete_computed_analysis_work_items_batch,
     complete_non_processable_work_items_batch,
     extend_postgres_leases,
-    fetch_due_work_conversation_ids,
+    fetch_claimable_work_conversation_ids,
     fetch_opinion_group_configs,
     mark_non_retryable_work_items_batch,
     persist_computed_analysis_results_batch,
     persist_empty_vote_matrix_results_batch,
     recover_expired_running_work,
-    retry_scheduled_work_items_batch,
+    release_retryable_work_items_batch,
     upsert_input_snapshots_batch,
 )
 from agora_worker_shared.description_input import DescriptionInputError, DescriptionOutputError
@@ -63,9 +60,12 @@ from agora_worker_shared.description_services import (
     build_description_translator,
 )
 from agora_worker_shared.input_snapshot import PreparedInputSnapshot, prepare_input_snapshots_batch
-from agora_worker_shared.logging_utils import LOG_FORMAT, configure_worker_logging, log_database_error
+from agora_worker_shared.logging_utils import (
+    LOG_FORMAT,
+    configure_worker_logging,
+    log_database_error,
+)
 from agora_worker_shared.postgres_engine import create_ready_postgres_engine
-from agora_worker_shared.retry_policy import RetryPolicy
 from agora_worker_shared.schema_readiness import (
     StartupSchemaRetryState,
     handle_startup_schema_retry,
@@ -79,13 +79,12 @@ from agora_worker_shared.simulation_providers import (
     maybe_raise_simulated_claim_error,
 )
 from agora_worker_shared.valkey_client import (
-    datetime_to_epoch_ms,
+    enqueue_conversation,
     format_queue_lag_ms,
     now_ms,
-    pop_due_conversations,
+    pop_conversations,
     queue_depth,
     requeue_conversations,
-    schedule_conversation,
 )
 from botocore.exceptions import ConnectTimeoutError, ReadTimeoutError
 from google.api_core.exceptions import DeadlineExceeded
@@ -172,24 +171,23 @@ def _sleep_before_retry(seconds: float) -> None:
         time.sleep(min(0.5, remaining))
 
 
-def _enqueue_schedules(
+def _enqueue_conversations_for_math_work(
     vk: valkey_lib.Valkey,
     *,
-    schedules: Sequence[WorkStateSchedule | AiDescriptionWorkStateSchedule],
+    conversation_ids: Sequence[int],
 ) -> None:
     enqueued_count = 0
-    for schedule in schedules:
-        if schedule.next_run_at is None:
-            continue
-        schedule_conversation(
+    current_ms = now_ms()
+    for conversation_id in conversation_ids:
+        enqueue_conversation(
             vk,
-            conversation_id=schedule.conversation_id,
-            due_at_ms=datetime_to_epoch_ms(schedule.next_run_at),
+            conversation_id=conversation_id,
+            enqueued_at_ms=current_ms,
         )
         enqueued_count += 1
     if enqueued_count:
         log.info(
-            "[MathUpdater] Enqueued %d scheduled conversation(s) queue=analysis:dirty",
+            "[MathUpdater] Queued %d conversation(s) for math work queue=analysis:dirty",
             enqueued_count,
         )
 
@@ -231,20 +229,20 @@ def _enqueue_conversation_ids(
     vk: valkey_lib.Valkey,
     *,
     conversation_ids: list[int],
-    due_at_ms: int,
+    enqueued_at_ms: int,
 ) -> None:
     if conversation_ids:
         log.info(
-            "[MathUpdater] Enqueueing %d conversation id(s) ids=%s due_at_ms=%d",
+            "[MathUpdater] Enqueueing %d conversation id(s) ids=%s enqueued_at_ms=%d",
             len(conversation_ids),
             _format_ids(conversation_ids),
-            due_at_ms,
+            enqueued_at_ms,
         )
     for conversation_id in conversation_ids:
-        schedule_conversation(
+        enqueue_conversation(
             vk,
             conversation_id=conversation_id,
-            due_at_ms=due_at_ms,
+            enqueued_at_ms=enqueued_at_ms,
         )
 
 
@@ -365,17 +363,17 @@ def _start_ai_description_lease_heartbeat(
     return stop_managed_heartbeat
 
 
-def _format_schedules(
+def _format_processed_conversations_for_log(
     *,
-    schedules: list[WorkStateSchedule],
-    claims: list[ClaimedWorkItem],
+    conversation_ids: list[int],
+    work_items: list[ClaimedWorkItem],
 ) -> str:
-    claim_by_conversation_id = {claim.conversation_id: claim for claim in claims}
+    work_item_by_conversation_id = {item.conversation_id: item for item in work_items}
     return ", ".join(
-        _format_claim(claim_by_conversation_id[schedule.conversation_id])
-        if schedule.conversation_id in claim_by_conversation_id
-        else f"id={schedule.conversation_id}"
-        for schedule in schedules
+        _format_claim(work_item_by_conversation_id[conversation_id])
+        if conversation_id in work_item_by_conversation_id
+        else f"id={conversation_id}"
+        for conversation_id in conversation_ids
     )
 
 
@@ -399,7 +397,6 @@ def _process_ai_description_conversation_ids(
     claim_limit: int,
     max_workers: int,
     ai_description_epoch: int,
-    retry_policy: RetryPolicy,
     description_generator: DescriptionGenerator,
     description_translator: DescriptionTranslator | None,
     simulation_runtime: SimulationRuntime | None = None,
@@ -525,7 +522,7 @@ def _process_ai_description_conversation_ids(
         *,
         claim: ClaimedAiDescriptionLocaleWorkItem,
         error: Exception,
-    ) -> AiDescriptionWorkStateSchedule:
+    ) -> AiDescriptionWorkResult:
         if _is_non_retryable_ai_description_error(error):
             log.exception(
                 "[MathUpdater] Non-retryable %s failure for "
@@ -563,46 +560,38 @@ def _process_ai_description_conversation_ids(
                 _ai_description_claim_target_log(claim),
             )
         is_timeout = _is_timeout_error(error)
-        should_retry_immediately = (
-            retry_first_pass_once
-            and not is_timeout
-            and claim.attempt_count == 1
-        )
         is_first_pass_timeout = retry_first_pass_once and is_timeout
         schedule = retry_ai_description_locale_work_item(
             primary_engine,
             claim=claim,
-            retry_policy=retry_policy,
             error_code="ai_description_timeout"
             if is_first_pass_timeout
             else "ai_description_retryable",
             error_message=str(error),
-            retry_immediately_without_fallback=should_retry_immediately,
-            force_cooldown=retry_first_pass_once and not should_retry_immediately,
         )
         if is_first_pass_timeout:
             log.warning(
-                "[MathUpdater] First-pass timeout fallback scheduled "
+                "[MathUpdater] First-pass timeout released for retry worker "
                 "kind=%s conversationSlugId=%s conversationId=%d locale=%s %s "
-                "attemptCount=%d retryWorkerAt=%s",
+                "attemptCount=%d retryReleasedAt=%s",
                 _ai_description_claim_kind(claim),
                 claim.conversation_slug_id,
                 claim.conversation_id,
                 claim.locale,
                 _ai_description_claim_target_log(claim),
                 claim.attempt_count,
-                schedule.retry_scheduled_at.isoformat()
-                if schedule.retry_scheduled_at is not None
+                schedule.retry_released_at.isoformat()
+                if schedule.retry_released_at is not None
                 else "none",
             )
         return schedule
 
     def process_lineage_claims(
         claims: list[ClaimedLineageDescriptionWorkItem],
-    ) -> list[tuple[ClaimedLineageDescriptionWorkItem, AiDescriptionWorkStateSchedule]]:
+    ) -> list[tuple[ClaimedLineageDescriptionWorkItem, AiDescriptionWorkResult]]:
         processable_claims: list[ClaimedLineageDescriptionWorkItem] = []
         retry_schedules: list[
-            tuple[ClaimedLineageDescriptionWorkItem, AiDescriptionWorkStateSchedule]
+            tuple[ClaimedLineageDescriptionWorkItem, AiDescriptionWorkResult]
         ] = []
         for claim in claims:
             try:
@@ -644,10 +633,10 @@ def _process_ai_description_conversation_ids(
 
     def process_translation_claims(
         claims: list[ClaimedDescriptionTranslationWorkItem],
-    ) -> list[tuple[ClaimedDescriptionTranslationWorkItem, AiDescriptionWorkStateSchedule]]:
+    ) -> list[tuple[ClaimedDescriptionTranslationWorkItem, AiDescriptionWorkResult]]:
         processable_claims: list[ClaimedDescriptionTranslationWorkItem] = []
         retry_schedules: list[
-            tuple[ClaimedDescriptionTranslationWorkItem, AiDescriptionWorkStateSchedule]
+            tuple[ClaimedDescriptionTranslationWorkItem, AiDescriptionWorkResult]
         ] = []
         for claim in claims:
             try:
@@ -668,7 +657,7 @@ def _process_ai_description_conversation_ids(
         translator = description_translator
         if translator is None:
             unavailable_schedules: list[
-                tuple[ClaimedDescriptionTranslationWorkItem, AiDescriptionWorkStateSchedule]
+                tuple[ClaimedDescriptionTranslationWorkItem, AiDescriptionWorkResult]
             ] = []
             for claim in processable_claims:
                 try:
@@ -733,17 +722,17 @@ def _process_ai_description_conversation_ids(
                 try:
                     retry_schedules = future.result()
                     for claim, schedule in retry_schedules:
-                        if schedule.retry_scheduled_at is not None:
+                        if schedule.retry_released_at is not None:
                             emit_load_event(
                                 phase="math-updater",
-                                action="retry-scheduled",
+                                action="retry-released",
                                 outcome="info",
                                 conversation_slug_id=claim.conversation_slug_id,
                                 metadata={
                                     "conversationId": schedule.conversation_id,
                                     "locale": claim.locale,
                                     "attemptCount": claim.attempt_count,
-                                    "nextRunAt": schedule.retry_scheduled_at.isoformat(),
+                                    "retryReleasedAt": schedule.retry_released_at.isoformat(),
                                     **_ai_description_claim_target_metadata(claim),
                                 },
                             )
@@ -772,17 +761,17 @@ def _process_ai_description_conversation_ids(
                     try:
                         retry_schedules = future.result()
                         for claim, schedule in retry_schedules:
-                            if schedule.retry_scheduled_at is not None:
+                            if schedule.retry_released_at is not None:
                                 emit_load_event(
                                     phase="math-updater",
-                                    action="retry-scheduled",
+                                    action="retry-released",
                                     outcome="info",
                                     conversation_slug_id=claim.conversation_slug_id,
                                     metadata={
                                         "conversationId": schedule.conversation_id,
                                         "locale": claim.locale,
                                         "attemptCount": claim.attempt_count,
-                                        "nextRunAt": schedule.retry_scheduled_at.isoformat(),
+                                        "retryReleasedAt": schedule.retry_released_at.isoformat(),
                                         **_ai_description_claim_target_metadata(claim),
                                     },
                                 )
@@ -819,7 +808,6 @@ def _process_ai_description_first_pass_phase(
     claim_limit: int,
     max_workers: int,
     ai_description_epoch: int,
-    retry_policy: RetryPolicy,
     description_generator: DescriptionGenerator,
     description_translator: DescriptionTranslator | None,
     simulation_runtime: SimulationRuntime | None,
@@ -837,7 +825,6 @@ def _process_ai_description_first_pass_phase(
             claim_limit=claim_limit,
             max_workers=max_workers,
             ai_description_epoch=ai_description_epoch,
-            retry_policy=retry_policy,
             description_generator=description_generator,
             description_translator=description_translator,
             simulation_runtime=simulation_runtime,
@@ -873,7 +860,6 @@ def _process_ai_description_first_pass(
     claim_limit: int,
     max_workers: int,
     ai_description_epoch: int,
-    retry_policy: RetryPolicy,
     description_generator: DescriptionGenerator,
     description_translator: DescriptionTranslator | None,
     simulation_runtime: SimulationRuntime | None,
@@ -916,7 +902,6 @@ def _process_ai_description_first_pass(
         claim_limit=claim_limit,
         max_workers=max_workers,
         ai_description_epoch=ai_description_epoch,
-        retry_policy=retry_policy,
         description_generator=description_generator,
         description_translator=description_translator,
         simulation_runtime=simulation_runtime,
@@ -935,8 +920,7 @@ def _process_ai_description_first_pass(
             claim_limit=claim_limit,
             max_workers=max_workers,
             ai_description_epoch=ai_description_epoch,
-            retry_policy=retry_policy,
-            description_generator=description_generator,
+        description_generator=description_generator,
             description_translator=description_translator,
             simulation_runtime=simulation_runtime,
         )
@@ -994,6 +978,7 @@ def _finalize_ai_description_first_pass_without_generator(
         conversation_view_snapshot_ids=unique_view_snapshot_ids,
         translation_enabled=False,
         fallback_pending_statuses=True,
+        require_ai_descriptions=False,
         checkpoint_activation_context=checkpoint_activation_context,
     )
     log.info(
@@ -1061,10 +1046,9 @@ def _run_worker_once() -> None:
 
     worker_id = f"math-updater:{uuid.uuid4()}"
     log.info(
-        "[MathUpdater] Starting worker_id=%s pop_batch=%d claim_batch=%d compute=%d ai=%d "
+        "[MathUpdater] Starting worker_id=%s claim_batch=%d compute=%d ai=%d "
         "lease_ttl=%ds heartbeat=%ds recovery=%ds",
         worker_id,
-        settings.valkey_pop_batch_size,
         settings.db_claim_batch_size,
         settings.max_compute_concurrency,
         settings.max_ai_description_concurrency,
@@ -1141,11 +1125,6 @@ def _run_worker_once() -> None:
                 "[MathUpdater] Description translation mode=%s",
                 description_translator_bundle.mode,
             )
-    retry_policy = RetryPolicy(
-        burst_attempts=settings.retry_burst_attempts,
-        burst_interval_seconds=settings.retry_burst_seconds,
-        cooldown_seconds=settings.retry_cooldown_seconds,
-    )
     set_active_analysis_claims, stop_lease_heartbeat = _start_lease_heartbeat(
         primary_engine=primary_engine,
         lease_ttl_seconds=settings.lease_ttl_seconds,
@@ -1163,7 +1142,7 @@ def _run_worker_once() -> None:
 
         if monotonic_now - last_reconcile >= settings.reconciliation_interval_seconds:
             try:
-                due_ids = fetch_due_work_conversation_ids(
+                claimable_ids = fetch_claimable_work_conversation_ids(
                     read_engine,
                     limit=1000,
                     analysis_engine_epoch=settings.analysis_engine_epoch,
@@ -1171,15 +1150,15 @@ def _run_worker_once() -> None:
                 current_ms = now_ms()
                 _enqueue_conversation_ids(
                     vk,
-                    conversation_ids=sorted(set(due_ids)),
-                    due_at_ms=current_ms,
+                    conversation_ids=sorted(set(claimable_ids)),
+                    enqueued_at_ms=current_ms,
                 )
-                if due_ids:
+                if claimable_ids:
                     log.info(
-                        "[MathUpdater] Reconciled due analysis conversations "
+                        "[MathUpdater] Reconciled claimable analysis conversations "
                         "source=read_replica count=%d ids=%s",
-                        len(due_ids),
-                        _format_ids(due_ids),
+                        len(claimable_ids),
+                        _format_ids(claimable_ids),
                     )
             except Exception as error:
                 retry_decision = handle_startup_schema_retry(
@@ -1210,7 +1189,7 @@ def _run_worker_once() -> None:
                 _enqueue_conversation_ids(
                     vk,
                     conversation_ids=sorted(set(recovered_ids)),
-                    due_at_ms=current_ms,
+                    enqueued_at_ms=current_ms,
                 )
                 if recovered_ids:
                     log.info(
@@ -1233,41 +1212,38 @@ def _run_worker_once() -> None:
             last_recover = monotonic_now
 
         pop_current_ms = now_ms()
-        due_items, next_due_at_ms = pop_due_conversations(
+        queued_items = pop_conversations(
             vk,
-            count=settings.valkey_pop_batch_size,
-            current_time_ms=pop_current_ms,
+            count=settings.db_claim_batch_size,
         )
-        if not due_items:
-            if next_due_at_ms is None:
-                time.sleep(settings.worker_poll_idle_sleep_seconds)
-            else:
-                sleep_ms = max(0, next_due_at_ms - now_ms())
-                time.sleep(min(settings.worker_poll_idle_sleep_seconds, sleep_ms / 1000))
+        if not queued_items:
+            time.sleep(settings.worker_poll_idle_sleep_seconds)
             continue
 
         log.info(
-            "[MathUpdater] Popped %d due conversation(s) ids=%s queue_lag_ms=%s depth_after=%d",
-            len(due_items),
-            _format_ids([item.conversation_id for item in due_items]),
-            format_queue_lag_ms(due_items, current_time_ms=pop_current_ms),
+            "[MathUpdater] Popped %d queued conversation(s) that may need math work ids=%s "
+            "queue_lag_ms=%s depth_after=%d",
+            len(queued_items),
+            _format_ids([item.conversation_id for item in queued_items]),
+            format_queue_lag_ms(queued_items, current_time_ms=pop_current_ms),
             queue_depth(vk),
         )
 
-        batch_started_at = time.perf_counter()
-        claimable_due_items = due_items[: settings.db_claim_batch_size]
-        overflow_due_items = due_items[settings.db_claim_batch_size :]
-        requeue_conversations(vk, conversations=overflow_due_items)
-        if overflow_due_items:
+        if not _running:
+            requeue_conversations(vk, conversations=queued_items)
             log.info(
-                "[MathUpdater] Requeued %d overflow due conversation(s) ids=%s",
-                len(overflow_due_items),
-                _format_ids([item.conversation_id for item in overflow_due_items]),
+                "[MathUpdater] Requeued unprocessed conversation(s) ids=%s "
+                "reason=shutdown_before_processing",
+                _format_ids([item.conversation_id for item in queued_items]),
             )
+            break
+
+        batch_started_at = time.perf_counter()
+        processable_queue_items = queued_items
 
         completed_non_processable_ids = complete_non_processable_work_items_batch(
             primary_engine,
-            conversation_ids=[item.conversation_id for item in claimable_due_items],
+            conversation_ids=[item.conversation_id for item in processable_queue_items],
         )
         if completed_non_processable_ids:
             log.info(
@@ -1277,12 +1253,12 @@ def _run_worker_once() -> None:
             )
 
         non_processable_id_set = set(completed_non_processable_ids)
-        processable_due_items = [
+        processable_items = [
             item
-            for item in claimable_due_items
+            for item in processable_queue_items
             if item.conversation_id not in non_processable_id_set
         ]
-        if not processable_due_items:
+        if not processable_items:
             continue
 
         claim_started_at = time.perf_counter()
@@ -1290,7 +1266,7 @@ def _run_worker_once() -> None:
             claimed_input_batch = claim_work_items_and_fetch_inputs_batch(
                 primary_engine,
                 worker_id=worker_id,
-                conversation_ids=[item.conversation_id for item in processable_due_items],
+                conversation_ids=[item.conversation_id for item in processable_items],
                 lease_ttl_seconds=settings.lease_ttl_seconds,
                 limit=settings.db_claim_batch_size,
                 analysis_engine_epoch=settings.analysis_engine_epoch,
@@ -1304,7 +1280,7 @@ def _run_worker_once() -> None:
             )
             schema_retry_state = retry_decision.state
             if retry_decision.should_retry:
-                requeue_conversations(vk, conversations=processable_due_items)
+                requeue_conversations(vk, conversations=processable_items)
                 time.sleep(settings.worker_poll_idle_sleep_seconds)
                 continue
             log_database_error(
@@ -1313,30 +1289,30 @@ def _run_worker_once() -> None:
                 error=error,
                 context={
                     "conversation_ids": _format_ids(
-                        [item.conversation_id for item in processable_due_items]
+                        [item.conversation_id for item in processable_items]
                     ),
                 },
             )
-            requeue_conversations(vk, conversations=processable_due_items)
+            requeue_conversations(vk, conversations=processable_items)
             continue
         claims = claimed_input_batch.claims
 
         if not claims:
-            primary_due_ids: list[int] = []
+            primary_claimable_ids: list[int] = []
             try:
-                primary_due_ids = fetch_due_work_conversation_ids(
+                primary_claimable_ids = fetch_claimable_work_conversation_ids(
                     primary_engine,
                     limit=settings.db_claim_batch_size,
                     analysis_engine_epoch=settings.analysis_engine_epoch,
                 )
             except Exception:
-                log.exception("[MathUpdater] Failed primary due diagnostic after zero claim")
+                log.exception("[MathUpdater] Failed primary claimable diagnostic after zero claim")
             log.info(
-                "[MathUpdater] No claimable analysis work for due conversation(s) "
-                "ids=%s primaryDueCount=%d primaryDueIds=%s",
-                _format_ids([item.conversation_id for item in processable_due_items]),
-                len(primary_due_ids),
-                _format_ids(primary_due_ids),
+                "[MathUpdater] No math work processable for queued conversation(s) "
+                "ids=%s primaryClaimableCount=%d primaryClaimableIds=%s",
+                _format_ids([item.conversation_id for item in processable_items]),
+                len(primary_claimable_ids),
+                _format_ids(primary_claimable_ids),
             )
             continue
 
@@ -1347,6 +1323,39 @@ def _run_worker_once() -> None:
             (time.perf_counter() - claim_started_at) * 1000,
         )
         set_active_analysis_claims(claims)
+
+        if not _running:
+            releasable_claims = [
+                claim for claim in claims if claim.persisted_analysis_snapshot_id is None
+            ]
+            retained_claims = [
+                claim for claim in claims if claim.persisted_analysis_snapshot_id is not None
+            ]
+            if releasable_claims:
+                shutdown_retry_conversation_ids = release_retryable_work_items_batch(
+                    primary_engine,
+                    claims=releasable_claims,
+                    error_code="worker_shutdown",
+                    error_message="math-updater shut down before processing started",
+                )
+                _enqueue_conversations_for_math_work(
+                    vk,
+                    conversation_ids=shutdown_retry_conversation_ids,
+                )
+                log.info(
+                    "[MathUpdater] Requeued unprocessed conversation(s) ids=%s "
+                    "reason=shutdown_after_claim_before_processing",
+                    _format_ids(shutdown_retry_conversation_ids),
+                )
+            if retained_claims:
+                log.info(
+                    "[MathUpdater] Leaving %d persisted analysis work item(s) for lease "
+                    "recovery reason=shutdown_after_claim_before_processing claims=%s",
+                    len(retained_claims),
+                    _format_claims(retained_claims),
+                )
+            set_active_analysis_claims([])
+            break
 
         persisted_claims = [
             claim for claim in claims if claim.persisted_analysis_snapshot_id is not None
@@ -1377,7 +1386,6 @@ def _run_worker_once() -> None:
                         claim_limit=settings.db_claim_batch_size,
                         max_workers=settings.max_ai_description_concurrency,
                         ai_description_epoch=settings.ai_description_epoch,
-                        retry_policy=retry_policy,
                         description_generator=description_generator,
                         description_translator=description_translator,
                         simulation_runtime=simulation_runtime,
@@ -1393,12 +1401,15 @@ def _run_worker_once() -> None:
                 ready_to_complete_persisted_claims = False
             if ready_to_complete_persisted_claims:
                 try:
-                    completed_schedules = complete_computed_analysis_work_items_batch(
+                    persisted_newer_generation_ids = complete_computed_analysis_work_items_batch(
                         primary_engine,
                         claims=persisted_claims,
                         require_display_safe_activation=True,
                     )
-                    _enqueue_schedules(vk, schedules=completed_schedules)
+                    _enqueue_conversations_for_math_work(
+                        vk,
+                        conversation_ids=persisted_newer_generation_ids,
+                    )
                 except SQLAlchemyError as error:
                     log_database_error(
                         logger=log,
@@ -1440,9 +1451,9 @@ def _run_worker_once() -> None:
             if len(snapshots_by_conversation_id[claim.conversation_id].votes) == 0
         ]
         if empty_claims:
-            completed_schedules: list[WorkStateSchedule]
+            empty_newer_generation_ids: list[int]
             try:
-                completed_schedules = persist_empty_vote_matrix_results_batch(
+                empty_newer_generation_ids = persist_empty_vote_matrix_results_batch(
                     primary_engine,
                     claims=empty_claims,
                     stored_input_snapshots_by_conversation_id=stored_snapshots,
@@ -1456,11 +1467,11 @@ def _run_worker_once() -> None:
                         "claims": _format_claims(empty_claims),
                     },
                 )
-                completed_schedules = []
+                empty_newer_generation_ids = []
                 isolated_empty_failed_claims: list[ClaimedWorkItem] = []
                 for claim in empty_claims:
                     try:
-                        completed_schedules.extend(
+                        empty_newer_generation_ids.extend(
                             persist_empty_vote_matrix_results_batch(
                                 primary_engine,
                                 claims=[claim],
@@ -1476,25 +1487,34 @@ def _run_worker_once() -> None:
                         )
                         isolated_empty_failed_claims.append(claim)
                 if isolated_empty_failed_claims:
-                    completed_schedules.extend(
-                        retry_scheduled_work_items_batch(
+                    empty_newer_generation_ids.extend(
+                        release_retryable_work_items_batch(
                             primary_engine,
                             claims=isolated_empty_failed_claims,
-                            retry_policy=retry_policy,
                             error_code="analysis_persist_failed",
                             error_message="analysis persistence failed; see worker logs",
                         )
                     )
-            _enqueue_schedules(vk, schedules=completed_schedules)
-            log.info(
-                "[MathUpdater] Completed %d empty-matrix conversation(s): %s",
-                len(completed_schedules),
-                _format_schedules(schedules=completed_schedules, claims=empty_claims),
+            _enqueue_conversations_for_math_work(
+                vk,
+                conversation_ids=empty_newer_generation_ids,
             )
             log.info(
-                "[MathUpdater] Empty-matrix batch complete claims=%d completed=%d batch_ms=%.1f",
+                "[MathUpdater] Completed empty-matrix math work completed=%d "
+                "newer_generation=%d conversations=%s",
                 len(empty_claims),
-                len(completed_schedules),
+                len(empty_newer_generation_ids),
+                _format_processed_conversations_for_log(
+                    conversation_ids=empty_newer_generation_ids,
+                    work_items=empty_claims,
+                ),
+            )
+            log.info(
+                "[MathUpdater] Empty-matrix batch complete processable=%d completed=%d "
+                "newer_generation=%d batch_ms=%.1f",
+                len(empty_claims),
+                len(empty_claims),
+                len(empty_newer_generation_ids),
                 (time.perf_counter() - batch_started_at) * 1000,
             )
 
@@ -1580,17 +1600,17 @@ def _run_worker_once() -> None:
                     )
                     did_persist_computed_results = True
                     log.info(
-                        "[MathUpdater] Persisted computed results count=%d ai_due=%d "
+                        "[MathUpdater] Persisted computed results count=%d ai_work=%d "
                         "ai_view_snapshots=%d persist_ms=%.1f",
                         len(completed_claims),
-                        len(completed_result.ai_description_due_conversation_ids),
-                        len(completed_result.ai_description_due_view_snapshot_ids),
+                        len(completed_result.ai_description_work_conversation_ids),
+                        len(completed_result.ai_description_work_view_snapshot_ids),
                         (time.perf_counter() - persist_started_at) * 1000,
                     )
                     ready_to_complete_computed_claims = True
                     if (
                         description_generator is not None
-                        and completed_result.ai_description_due_conversation_ids
+                        and completed_result.ai_description_work_conversation_ids
                     ):
                         try:
                             _process_ai_description_first_pass(
@@ -1598,14 +1618,13 @@ def _run_worker_once() -> None:
                                 vk=vk,
                                 worker_id=worker_id,
                                 analysis_claims=completed_claims,
-                                conversation_ids=completed_result.ai_description_due_conversation_ids,
-                                conversation_view_snapshot_ids=completed_result.ai_description_due_view_snapshot_ids,
+                                conversation_ids=completed_result.ai_description_work_conversation_ids,
+                                conversation_view_snapshot_ids=completed_result.ai_description_work_view_snapshot_ids,
                                 lease_ttl_seconds=settings.lease_ttl_seconds,
                                 heartbeat_interval_seconds=settings.heartbeat_interval_seconds,
                                 claim_limit=settings.db_claim_batch_size,
                                 max_workers=settings.max_ai_description_concurrency,
                                 ai_description_epoch=settings.ai_description_epoch,
-                                retry_policy=retry_policy,
                                 description_generator=description_generator,
                                 description_translator=description_translator,
                                 simulation_runtime=simulation_runtime,
@@ -1618,31 +1637,38 @@ def _run_worker_once() -> None:
                                 "[MathUpdater] AI description first pass failed after math persist"
                             )
                             ready_to_complete_computed_claims = False
-                    elif completed_result.ai_description_due_conversation_ids:
+                    elif completed_result.ai_description_work_conversation_ids:
                         _finalize_ai_description_first_pass_without_generator(
                             primary_engine=primary_engine,
-                            conversation_ids=completed_result.ai_description_due_conversation_ids,
+                            conversation_ids=completed_result.ai_description_work_conversation_ids,
                             conversation_view_snapshot_ids=(
-                                completed_result.ai_description_due_view_snapshot_ids
+                                completed_result.ai_description_work_view_snapshot_ids
                             ),
                             checkpoint_activation_context=(
                                 completed_result.checkpoint_activation_context
                             ),
                         )
-                    computed_completed_schedules: list[WorkStateSchedule] = []
+                    computed_newer_generation_ids: list[int] = []
                     if ready_to_complete_computed_claims:
-                        computed_completed_schedules = complete_computed_analysis_work_items_batch(
-                            primary_engine,
-                            claims=completed_claims,
-                            require_display_safe_activation=True,
-                        )
-                        _enqueue_schedules(vk, schedules=computed_completed_schedules)
-                        log.info(
-                            "[MathUpdater] Completed %d non-empty conversation(s): %s",
-                            len(computed_completed_schedules),
-                            _format_schedules(
-                                schedules=computed_completed_schedules,
+                        computed_newer_generation_ids = (
+                            complete_computed_analysis_work_items_batch(
+                                primary_engine,
                                 claims=completed_claims,
+                                require_display_safe_activation=True,
+                            )
+                        )
+                        _enqueue_conversations_for_math_work(
+                            vk,
+                            conversation_ids=computed_newer_generation_ids,
+                        )
+                        log.info(
+                            "[MathUpdater] Completed non-empty math work completed=%d "
+                            "newer_generation=%d conversations=%s",
+                            len(completed_claims),
+                            len(computed_newer_generation_ids),
+                            _format_processed_conversations_for_log(
+                                conversation_ids=computed_newer_generation_ids,
+                                work_items=completed_claims,
                             ),
                         )
                     log.info(
@@ -1667,12 +1693,17 @@ def _run_worker_once() -> None:
                         isolated_complete_failed_claims: list[ClaimedWorkItem] = []
                         for claim in completed_claims:
                             try:
-                                completed_schedules = complete_computed_analysis_work_items_batch(
-                                    primary_engine,
-                                    claims=[claim],
-                                    require_display_safe_activation=True,
+                                isolated_completion_newer_generation_ids = (
+                                    complete_computed_analysis_work_items_batch(
+                                        primary_engine,
+                                        claims=[claim],
+                                        require_display_safe_activation=True,
+                                    )
                                 )
-                                _enqueue_schedules(vk, schedules=completed_schedules)
+                                _enqueue_conversations_for_math_work(
+                                    vk,
+                                    conversation_ids=isolated_completion_newer_generation_ids,
+                                )
                             except SQLAlchemyError as isolated_error:
                                 log_database_error(
                                     logger=log,
@@ -1706,7 +1737,7 @@ def _run_worker_once() -> None:
                                 ready_to_complete_isolated_claim = True
                                 if (
                                     description_generator is not None
-                                    and isolated_result.ai_description_due_conversation_ids
+                                    and isolated_result.ai_description_work_conversation_ids
                                 ):
                                     try:
                                         _process_ai_description_first_pass(
@@ -1714,14 +1745,13 @@ def _run_worker_once() -> None:
                                             vk=vk,
                                             worker_id=worker_id,
                                             analysis_claims=[claim],
-                                            conversation_ids=isolated_result.ai_description_due_conversation_ids,
-                                            conversation_view_snapshot_ids=isolated_result.ai_description_due_view_snapshot_ids,
+                                            conversation_ids=isolated_result.ai_description_work_conversation_ids,
+                                            conversation_view_snapshot_ids=isolated_result.ai_description_work_view_snapshot_ids,
                                             lease_ttl_seconds=settings.lease_ttl_seconds,
                                             heartbeat_interval_seconds=settings.heartbeat_interval_seconds,
                                             claim_limit=settings.db_claim_batch_size,
                                             max_workers=settings.max_ai_description_concurrency,
                                             ai_description_epoch=settings.ai_description_epoch,
-                                            retry_policy=retry_policy,
                                             description_generator=description_generator,
                                             description_translator=description_translator,
                                             simulation_runtime=simulation_runtime,
@@ -1735,30 +1765,30 @@ def _run_worker_once() -> None:
                                             "failed after math persist"
                                         )
                                         ready_to_complete_isolated_claim = False
-                                elif isolated_result.ai_description_due_conversation_ids:
+                                elif isolated_result.ai_description_work_conversation_ids:
                                     _finalize_ai_description_first_pass_without_generator(
                                         primary_engine=primary_engine,
                                         conversation_ids=(
-                                            isolated_result.ai_description_due_conversation_ids
+                                            isolated_result.ai_description_work_conversation_ids
                                         ),
                                         conversation_view_snapshot_ids=(
-                                            isolated_result.ai_description_due_view_snapshot_ids
+                                            isolated_result.ai_description_work_view_snapshot_ids
                                         ),
                                         checkpoint_activation_context=(
                                             isolated_result.checkpoint_activation_context
                                         ),
                                     )
                                 if ready_to_complete_isolated_claim:
-                                    isolated_completed_schedules = (
+                                    isolated_persist_newer_generation_ids = (
                                         complete_computed_analysis_work_items_batch(
                                             primary_engine,
                                             claims=[claim],
                                             require_display_safe_activation=True,
                                         )
                                     )
-                                    _enqueue_schedules(
+                                    _enqueue_conversations_for_math_work(
                                         vk,
-                                        schedules=isolated_completed_schedules,
+                                        conversation_ids=isolated_persist_newer_generation_ids,
                                     )
                             except LineageAssignmentInvariantError:
                                 log.exception(
@@ -1781,7 +1811,7 @@ def _run_worker_once() -> None:
                                 isolated_failed_claims.append(claim)
 
                         if lineage_invariant_failed_claims:
-                            blocked_schedules = mark_non_retryable_work_items_batch(
+                            lineage_newer_generation_ids = mark_non_retryable_work_items_batch(
                                 primary_engine,
                                 claims=lineage_invariant_failed_claims,
                                 analysis_engine_epoch=settings.analysis_engine_epoch,
@@ -1790,65 +1820,83 @@ def _run_worker_once() -> None:
                                     "lineage assignment invariant failed; see worker logs"
                                 ),
                             )
-                            _enqueue_schedules(vk, schedules=blocked_schedules)
+                            _enqueue_conversations_for_math_work(
+                                vk,
+                                conversation_ids=lineage_newer_generation_ids,
+                            )
                             log.info(
                                 "[MathUpdater] Marked %d lineage-invariant-failed "
-                                "conversation(s) non-retryable: %s",
-                                len(blocked_schedules),
-                                _format_schedules(
-                                    schedules=blocked_schedules,
-                                    claims=lineage_invariant_failed_claims,
+                                "conversation(s) non-retryable newer_generation=%d: %s",
+                                len(lineage_invariant_failed_claims),
+                                len(lineage_newer_generation_ids),
+                                _format_processed_conversations_for_log(
+                                    conversation_ids=lineage_newer_generation_ids,
+                                    work_items=lineage_invariant_failed_claims,
                                 ),
                             )
 
                         if isolated_failed_claims:
-                            requeued_schedules = retry_scheduled_work_items_batch(
+                            persist_retry_conversation_ids = release_retryable_work_items_batch(
                                 primary_engine,
                                 claims=isolated_failed_claims,
-                                retry_policy=retry_policy,
                                 error_code="analysis_persist_failed",
                                 error_message="analysis persistence failed; see worker logs",
                             )
-                            _enqueue_schedules(vk, schedules=requeued_schedules)
+                            _enqueue_conversations_for_math_work(
+                                vk,
+                                conversation_ids=persist_retry_conversation_ids,
+                            )
                             log.info(
-                                "[MathUpdater] Requeued %d persist-failed conversation(s): %s",
-                                len(requeued_schedules),
-                                _format_schedules(
-                                    schedules=requeued_schedules,
-                                    claims=isolated_failed_claims,
+                                "[MathUpdater] Requeued conversation(s) after retryable "
+                                "math persistence failure count=%d conversations=%s",
+                                len(persist_retry_conversation_ids),
+                                _format_processed_conversations_for_log(
+                                    conversation_ids=persist_retry_conversation_ids,
+                                    work_items=isolated_failed_claims,
                                 ),
                             )
 
             if failed_claims:
-                requeued_schedules = retry_scheduled_work_items_batch(
+                compute_retry_conversation_ids = release_retryable_work_items_batch(
                     primary_engine,
                     claims=failed_claims,
-                    retry_policy=retry_policy,
                     error_code="red_dwarf_compute_failed",
                     error_message="red-dwarf compute failed; see worker logs",
                 )
-                _enqueue_schedules(vk, schedules=requeued_schedules)
+                _enqueue_conversations_for_math_work(
+                    vk,
+                    conversation_ids=compute_retry_conversation_ids,
+                )
                 log.info(
-                    "[MathUpdater] Requeued %d failed conversation(s): %s",
-                    len(requeued_schedules),
-                    _format_schedules(schedules=requeued_schedules, claims=failed_claims),
+                    "[MathUpdater] Requeued conversation(s) after retryable math failure "
+                    "count=%d conversations=%s",
+                    len(compute_retry_conversation_ids),
+                    _format_processed_conversations_for_log(
+                        conversation_ids=compute_retry_conversation_ids,
+                        work_items=failed_claims,
+                    ),
                 )
 
             if non_retryable_failed_claims:
-                blocked_schedules = mark_non_retryable_work_items_batch(
+                contract_newer_generation_ids = mark_non_retryable_work_items_batch(
                     primary_engine,
                     claims=non_retryable_failed_claims,
                     analysis_engine_epoch=settings.analysis_engine_epoch,
                     error_code="red_dwarf_contract_error",
                     error_message="red-dwarf success payload violated math-updater contract",
                 )
-                _enqueue_schedules(vk, schedules=blocked_schedules)
+                _enqueue_conversations_for_math_work(
+                    vk,
+                    conversation_ids=contract_newer_generation_ids,
+                )
                 log.info(
-                    "[MathUpdater] Marked %d contract-failed conversation(s) non-retryable: %s",
-                    len(blocked_schedules),
-                    _format_schedules(
-                        schedules=blocked_schedules,
-                        claims=non_retryable_failed_claims,
+                    "[MathUpdater] Marked %d contract-failed conversation(s) "
+                    "non-retryable newer_generation=%d: %s",
+                    len(non_retryable_failed_claims),
+                    len(contract_newer_generation_ids),
+                    _format_processed_conversations_for_log(
+                        conversation_ids=contract_newer_generation_ids,
+                        work_items=non_retryable_failed_claims,
                     ),
                 )
 

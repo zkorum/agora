@@ -5,7 +5,6 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**requestedLocale** | **string** |  | [default to undefined]
 **displayedLocale** | **string** |  | [default to undefined]
 
 ## Example
@@ -14,7 +13,6 @@ Name | Type | Description | Notes
 import { ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200ResponseGroupDescriptionDisplay } from './api';
 
 const instance: ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200ResponseGroupDescriptionDisplay = {
-    requestedLocale,
     displayedLocale,
 };
 ```

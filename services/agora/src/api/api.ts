@@ -2160,25 +2160,9 @@ export interface ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200Response
     'labels': { [key: string]: ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200ResponseLabelsValue; };
 }
 export interface ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200ResponseGroupDescriptionDisplay {
-    'requestedLocale': ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200ResponseGroupDescriptionDisplayRequestedLocaleEnum;
     'displayedLocale': ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200ResponseGroupDescriptionDisplayDisplayedLocaleEnum | null;
 }
 
-export const ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200ResponseGroupDescriptionDisplayRequestedLocaleEnum = {
-    En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
-    Ar: 'ar',
-    Fa: 'fa',
-    He: 'he',
-    Ky: 'ky',
-    Ru: 'ru',
-} as const;
-
-export type ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200ResponseGroupDescriptionDisplayRequestedLocaleEnum = typeof ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200ResponseGroupDescriptionDisplayRequestedLocaleEnum[keyof typeof ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200ResponseGroupDescriptionDisplayRequestedLocaleEnum];
 export const ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200ResponseGroupDescriptionDisplayDisplayedLocaleEnum = {
     En: 'en',
     Es: 'es',

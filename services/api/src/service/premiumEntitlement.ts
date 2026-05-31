@@ -2,8 +2,9 @@ import { httpErrors } from "@fastify/sensible";
 import { and, desc, eq, inArray, isNotNull, isNull, lte } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
+    enqueueScheduledConversationForMathWork,
+    hasActiveVotesForMathWork,
     scheduleAnalysisUpdate,
-    wakeScheduledAnalysisForConversation,
 } from "@/shared-backend/analysisScheduler.js";
 import {
     conversationTable,
@@ -293,12 +294,22 @@ async function refreshPremiumAnalysisForSubject({
         .orderBy(desc(conversationTable.createdAt));
 
     for (const row of conversationRows) {
+        const hasActiveVotes = await hasActiveVotesForMathWork({
+            db,
+            conversationId: row.conversationId,
+        });
+        if (!hasActiveVotes) {
+            log.info(
+                `[PremiumEntitlement] Skipping math work schedule for premium refresh without active votes conversationId=${String(row.conversationId)}`,
+            );
+            continue;
+        }
         await scheduleAnalysisUpdate({
             db,
             conversationId: row.conversationId,
             log,
         });
-        await wakeScheduledAnalysisForConversation({
+        await enqueueScheduledConversationForMathWork({
             db,
             valkey,
             conversationId: row.conversationId,

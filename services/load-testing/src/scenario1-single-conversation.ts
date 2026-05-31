@@ -34,7 +34,11 @@ import {
     type VoteResponse,
 } from "./utils/api.js";
 import { logLoadEvent } from "./utils/semanticLog.js";
-import { performUserActions } from "./utils/userActions.js";
+import {
+    performUserActions,
+    type VotingPattern,
+    type VotingPatternConfig,
+} from "./utils/userActions.js";
 
 function getNumberEnv({
     value,
@@ -71,6 +75,25 @@ function getBooleanEnv({
     }
 
     return fallback;
+}
+
+function getVotingPatternEnv(value: string | undefined): VotingPattern {
+    if (value === undefined || value === "") {
+        return "random";
+    }
+
+    const normalizedValue = value.trim().toLowerCase();
+    if (normalizedValue === "random" || normalizedValue === "clustered") {
+        return normalizedValue;
+    }
+
+    throw new Error(
+        `Unsupported VOTING_PATTERN=${value}. Expected "random" or "clustered".`,
+    );
+}
+
+function clampProbability(value: number): number {
+    return Math.max(0, Math.min(1, value));
 }
 
 // Configuration constants - Simple and configurable
@@ -117,6 +140,25 @@ const AUTO_FILL_SURVEY = getBooleanEnv({
     value: __ENV.AUTO_FILL_SURVEY || __ENV.SURVEY_AUTO_FILL,
     fallback: true,
 });
+const VOTING_PATTERN_CONFIG: VotingPatternConfig = {
+    pattern: getVotingPatternEnv(__ENV.VOTING_PATTERN),
+    clusterCount: getNumberEnv({
+        value: __ENV.VOTING_CLUSTER_COUNT,
+        fallback: 4,
+    }),
+    noiseRate: clampProbability(
+        getNumberEnv({
+            value: __ENV.VOTING_NOISE_RATE,
+            fallback: 0.08,
+        }),
+    ),
+    outlierRate: clampProbability(
+        getNumberEnv({
+            value: __ENV.VOTING_OUTLIER_RATE,
+            fallback: 0.05,
+        }),
+    ),
+};
 
 // Custom metrics
 const opinionsCreated = new Counter("opinions_created");
@@ -193,6 +235,10 @@ logLoadEvent({
         totalUsers: TOTAL_USERS,
         activeVus: ACTIVE_VUS,
         autoFillSurvey: AUTO_FILL_SURVEY,
+        votingPattern: VOTING_PATTERN_CONFIG.pattern,
+        votingClusterCount: VOTING_PATTERN_CONFIG.clusterCount,
+        votingNoiseRate: VOTING_PATTERN_CONFIG.noiseRate,
+        votingOutlierRate: VOTING_PATTERN_CONFIG.outlierRate,
         clusterableVoteTargetPerConversation:
             CLUSTERABLE_VOTE_TARGET_PER_CONVERSATION,
     },
@@ -960,6 +1006,7 @@ export default async function () {
             fetchMainPageProbability: MAIN_PAGE_FETCH_PROBABILITY,
             fetchConversationPageProbability:
                 CONVERSATION_PAGE_FETCH_PROBABILITY,
+            votingPatternConfig: VOTING_PATTERN_CONFIG,
         },
         onOpinionCreated: (
             opinionResult: CreateOpinionResponse & {

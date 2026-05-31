@@ -247,6 +247,7 @@ export function useRealtimeSSE({
         displayLanguage: params.displayLanguage,
         voteCount: undefined,
         freshness: params.freshness,
+        analysisQueryKey: undefined,
       }),
   });
   const { refreshAuthState } = useBackendAuthApi();
@@ -888,6 +889,16 @@ export function useRealtimeSSE({
                   }),
             refetchType: "none",
           });
+          if (data.changeKind === "descriptions") {
+            void queryClient.refetchQueries({
+              predicate: (query) =>
+                query.isActive() &&
+                isAnalysisFrameGroupLabelsQueryKey({
+                  queryKey: query.queryKey,
+                  conversationSlugId: data.conversationSlugId,
+                }),
+            });
+          }
           if (checkpointChanged || data.changeKind === "descriptions") {
             void queryClient.invalidateQueries({
               predicate: (query) =>

@@ -126,7 +126,6 @@ class AnalysisWorkState(Base):
     running_data_generation: Mapped[int | None] = mapped_column(Integer, nullable=True)
     persisted_analysis_snapshot_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     dirty_since: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    next_run_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     attempt_generation: Mapped[int | None] = mapped_column(Integer, nullable=True)
     attempt_count: Mapped[int] = mapped_column(Integer, server_default="0")
     non_retryable_generation: Mapped[int | None] = mapped_column(Integer, nullable=True)

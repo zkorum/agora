@@ -215,7 +215,6 @@ export class Dto {
         .strict();
     static groupDescriptionDisplay = z
         .object({
-            requestedLocale: ZodSupportedDisplayLanguageCodes,
             displayedLocale: ZodSupportedDisplayLanguageCodes.nullable(),
         })
         .strict();

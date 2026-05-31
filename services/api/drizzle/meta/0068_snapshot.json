@@ -1,5 +1,5 @@
 {
-  "id": "3a7ec019-0c2d-4bf6-a056-5799f8f93432",
+  "id": "775f6b3f-2434-4508-91d5-3550445675f2",
   "prevId": "6b6d58a8-3179-4c3e-b91b-c299bb5c8fe5",
   "version": "7",
   "dialect": "postgresql",
@@ -653,12 +653,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "next_run_at": {
-          "name": "next_run_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": false
-        },
         "attempt_generation": {
           "name": "attempt_generation",
           "type": "integer",
@@ -743,28 +737,6 @@
         }
       },
       "indexes": {
-        "analysis_work_state_due_idx": {
-          "name": "analysis_work_state_due_idx",
-          "columns": [
-            {
-              "expression": "next_run_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"analysis_work_state\".\"running_data_generation\" is null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "analysis_work_state_lease_expiry_idx": {
           "name": "analysis_work_state_lease_expiry_idx",
           "columns": [
@@ -2098,21 +2070,6 @@
           "method": "btree",
           "with": {}
         },
-        "conversation_import_conversation_idx": {
-          "name": "conversation_import_conversation_idx",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "conversation_import_active_user_unique": {
           "name": "conversation_import_active_user_unique",
           "columns": [
@@ -2247,29 +2204,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "conversation_moderation_conversation_id_moderation_action_idx": {
-          "name": "conversation_moderation_conversation_id_moderation_action_idx",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "moderation_action",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "conversation_moderation_conversation_id_conversation_id_fk": {
           "name": "conversation_moderation_conversation_id_conversation_id_fk",
@@ -2609,9 +2544,15 @@
           "name": "conversation_feed_idx",
           "columns": [
             {
-              "expression": "created_at",
-              "isExpression": false,
+              "expression": "\"created_at\" DESC",
               "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "\"id\" DESC",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
@@ -2658,9 +2599,15 @@
               "nulls": "last"
             },
             {
-              "expression": "created_at",
-              "isExpression": false,
+              "expression": "\"created_at\" DESC",
               "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "\"id\" DESC",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
@@ -2685,15 +2632,15 @@
               "nulls": "last"
             },
             {
-              "expression": "created_at",
-              "isExpression": false,
+              "expression": "\"created_at\" DESC",
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             },
             {
-              "expression": "id",
-              "isExpression": false,
+              "expression": "\"id\" DESC",
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
@@ -2832,23 +2779,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "conversation_topic_index": {
-          "name": "conversation_topic_index",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "conversation_topic_conversation_id_conversation_id_fk": {
           "name": "conversation_topic_conversation_id_conversation_id_fk",
@@ -3340,15 +3271,15 @@
               "nulls": "last"
             },
             {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": false,
+              "expression": "\"created_at\" DESC",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             },
             {
-              "expression": "id",
-              "isExpression": false,
-              "asc": false,
+              "expression": "\"id\" DESC",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
@@ -3367,15 +3298,15 @@
               "nulls": "last"
             },
             {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": false,
+              "expression": "\"created_at\" DESC",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             },
             {
-              "expression": "id",
-              "isExpression": false,
-              "asc": false,
+              "expression": "\"id\" DESC",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
@@ -3401,15 +3332,15 @@
               "nulls": "last"
             },
             {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": false,
+              "expression": "\"created_at\" DESC",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             },
             {
-              "expression": "id",
-              "isExpression": false,
-              "asc": false,
+              "expression": "\"id\" DESC",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
@@ -3921,23 +3852,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "followed_topic_index": {
-          "name": "followed_topic_index",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "followed_topic_user_id_user_id_fk": {
           "name": "followed_topic_user_id_user_id_fk",
@@ -4260,21 +4175,6 @@
         }
       },
       "indexes": {
-        "maxdiff_external_source_external_id_idx": {
-          "name": "maxdiff_external_source_external_id_idx",
-          "columns": [
-            {
-              "expression": "external_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "maxdiff_external_source_dedup_idx": {
           "name": "maxdiff_external_source_dedup_idx",
           "columns": [
@@ -4433,21 +4333,6 @@
         }
       },
       "indexes": {
-        "maxdiff_item_slug_idx": {
-          "name": "maxdiff_item_slug_idx",
-          "columns": [
-            {
-              "expression": "slug_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "maxdiff_item_conversation_active_idx": {
           "name": "maxdiff_item_conversation_active_idx",
           "columns": [
@@ -4733,7 +4618,29 @@
           "notNull": true
         }
       },
-      "indexes": {},
+      "indexes": {
+        "maxdiff_user_entity_score_result_score_idx": {
+          "name": "maxdiff_user_entity_score_result_score_idx",
+          "columns": [
+            {
+              "expression": "maxdiff_result_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "\"score\" DESC",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "maxdiff_user_entity_score_maxdiff_result_id_maxdiff_result_id_fk": {
           "name": "maxdiff_user_entity_score_maxdiff_result_id_maxdiff_result_id_fk",
@@ -5327,15 +5234,15 @@
               "nulls": "last"
             },
             {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": false,
+              "expression": "\"created_at\" DESC",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             },
             {
-              "expression": "id",
-              "isExpression": false,
-              "asc": false,
+              "expression": "\"id\" DESC",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
@@ -6132,12 +6039,6 @@
           "notNull": true,
           "default": 0
         },
-        "next_run_at": {
-          "name": "next_run_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": false
-        },
         "lease_owner": {
           "name": "lease_owner",
           "type": "varchar(100)",
@@ -6190,50 +6091,6 @@
         }
       },
       "indexes": {
-        "opinion_group_description_translation_work_due_idx": {
-          "name": "opinion_group_description_translation_work_due_idx",
-          "columns": [
-            {
-              "expression": "next_run_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "(\"opinion_group_description_translation_work\".\"lease_token\" is null AND \"opinion_group_description_translation_work\".\"next_run_at\" is not null)",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "opinion_group_description_translation_work_claim_idx": {
-          "name": "opinion_group_description_translation_work_claim_idx",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "next_run_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "(\"opinion_group_description_translation_work\".\"lease_token\" is null AND \"opinion_group_description_translation_work\".\"next_run_at\" is not null)",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "opinion_group_description_translation_work_lease_expiry_idx": {
           "name": "opinion_group_description_translation_work_lease_expiry_idx",
           "columns": [
@@ -6345,12 +6202,6 @@
           "notNull": true,
           "default": 0
         },
-        "next_run_at": {
-          "name": "next_run_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": false
-        },
         "lease_owner": {
           "name": "lease_owner",
           "type": "varchar(100)",
@@ -6403,50 +6254,6 @@
         }
       },
       "indexes": {
-        "opinion_group_lineage_description_work_due_idx": {
-          "name": "opinion_group_lineage_description_work_due_idx",
-          "columns": [
-            {
-              "expression": "next_run_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "(\"opinion_group_lineage_description_work\".\"lease_token\" is null AND \"opinion_group_lineage_description_work\".\"next_run_at\" is not null)",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "opinion_group_lineage_description_work_claim_idx": {
-          "name": "opinion_group_lineage_description_work_claim_idx",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "next_run_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "(\"opinion_group_lineage_description_work\".\"lease_token\" is null AND \"opinion_group_lineage_description_work\".\"next_run_at\" is not null)",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "opinion_group_lineage_description_work_lease_expiry_idx": {
           "name": "opinion_group_lineage_description_work_lease_expiry_idx",
           "columns": [
@@ -7621,36 +7428,6 @@
         }
       },
       "indexes": {
-        "opinion_createdAt_idx": {
-          "name": "opinion_createdAt_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "opinion_slugId_idx": {
-          "name": "opinion_slugId_idx",
-          "columns": [
-            {
-              "expression": "slug_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "opinion_authorId_idx": {
           "name": "opinion_authorId_idx",
           "columns": [
@@ -7676,15 +7453,15 @@
               "nulls": "last"
             },
             {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": false,
+              "expression": "\"created_at\" DESC",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             },
             {
-              "expression": "id",
-              "isExpression": false,
-              "asc": false,
+              "expression": "\"id\" DESC",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
@@ -7725,15 +7502,15 @@
               "nulls": "last"
             },
             {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": false,
+              "expression": "\"created_at\" DESC",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             },
             {
-              "expression": "id",
-              "isExpression": false,
-              "asc": false,
+              "expression": "\"id\" DESC",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
@@ -8429,21 +8206,6 @@
         }
       },
       "indexes": {
-        "ranking_score_entity_score_idx": {
-          "name": "ranking_score_entity_score_idx",
-          "columns": [
-            {
-              "expression": "ranking_score_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "ranking_score_entity_slug_idx": {
           "name": "ranking_score_entity_slug_idx",
           "columns": [
@@ -10631,23 +10393,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "user_display_language_user_idx": {
-          "name": "user_display_language_user_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "user_display_language_user_id_user_id_fk": {
           "name": "user_display_language_user_id_user_id_fk",
@@ -10804,23 +10550,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "user_idx_organization": {
-          "name": "user_idx_organization",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "user_organization_mapping_user_id_user_id_fk": {
           "name": "user_organization_mapping_user_id_user_id_fk",
@@ -10907,23 +10637,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "user_spoken_languages_user_idx": {
-          "name": "user_spoken_languages_user_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "user_spoken_languages_user_id_user_id_fk": {
           "name": "user_spoken_languages_user_id_user_id_fk",
@@ -11046,23 +10760,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "user_isDeleted_idx": {
-          "name": "user_isDeleted_idx",
-          "columns": [
-            {
-              "expression": "is_deleted",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
@@ -11247,15 +10945,15 @@
               "nulls": "last"
             },
             {
-              "expression": "updated_at",
-              "isExpression": false,
-              "asc": false,
+              "expression": "\"updated_at\" DESC",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             },
             {
-              "expression": "id",
-              "isExpression": false,
-              "asc": false,
+              "expression": "\"id\" DESC",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],

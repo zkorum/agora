@@ -108,7 +108,6 @@ function groups(numUsersByKey: { "0": number; "1": number }): AnalysisFrameGroup
 const groupLabels: AnalysisFrameGroupLabels = {
   frameKey,
   groupDescriptionDisplay: {
-    requestedLocale: "en",
     displayedLocale: "en",
   },
   labels: {

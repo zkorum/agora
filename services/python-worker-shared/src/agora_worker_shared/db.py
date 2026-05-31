@@ -73,7 +73,6 @@ from agora_worker_shared.lineage_matching import (
     exact_matching_lineage_ids,
     match_lineages_by_representative_opinions,
 )
-from agora_worker_shared.retry_policy import RetryPolicy, next_retry_at
 from agora_worker_shared.survey_aggregates import (
     PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
     SurveyAggregateBuildResult,
@@ -142,12 +141,6 @@ class StoredInputSnapshot:
 
 
 @dataclass(frozen=True)
-class WorkStateSchedule:
-    conversation_id: int
-    next_run_at: datetime | None
-
-
-@dataclass(frozen=True)
 class LeaseExtensionResult:
     extended_work_state_ids: list[int]
 
@@ -158,9 +151,8 @@ class LeaseExtensionResult:
 
 @dataclass(frozen=True)
 class PersistComputedAnalysisResult:
-    analysis_schedules: list[WorkStateSchedule]
-    ai_description_due_conversation_ids: list[int]
-    ai_description_due_view_snapshot_ids: list[int]
+    ai_description_work_conversation_ids: list[int]
+    ai_description_work_view_snapshot_ids: list[int]
     checkpoint_activation_context: CheckpointActivationContext | None
 
 
@@ -217,7 +209,6 @@ class _LineageDescriptionWorkInsertValue(TypedDict):
     lineage_id: int
     conversation_id: int
     source_candidate_id: int
-    next_run_at: datetime | ColumnElement[datetime]
 
 
 def _max_rows_per_insert(*, column_count: int) -> int:
@@ -582,12 +573,13 @@ def _claim_work_items_batch(
 
     claims: list[ClaimedWorkItem] = []
     for conversation_id in conversation_ids_to_claim:
-        running_work_exists = (
+        active_running_work_exists = (
             select(running_work_state.id)
             .where(
                 and_(
                     running_work_state.conversation_id == AnalysisWorkState.conversation_id,
                     running_work_state.running_data_generation.is_not(None),
+                    running_work_state.lease_expires_at >= func.now(),
                 )
             )
             .exists()
@@ -600,12 +592,20 @@ def _claim_work_items_batch(
                 AnalysisWorkState.lease_expires_at < func.now(),
             ),
         )
+        expired_unpersisted_condition = and_(
+            AnalysisWorkState.running_data_generation.is_not(None),
+            AnalysisWorkState.persisted_analysis_snapshot_id.is_(None),
+            AnalysisWorkState.lease_expires_at < func.now(),
+        )
         fresh_condition = and_(
-            AnalysisWorkState.running_data_generation.is_(None),
+            or_(
+                AnalysisWorkState.running_data_generation.is_(None),
+                expired_unpersisted_condition,
+            ),
             AnalysisWorkState.persisted_analysis_snapshot_id.is_(None),
             Conversation.analysis_data_generation
             > AnalysisWorkState.last_completed_data_generation,
-            ~running_work_exists,
+            ~active_running_work_exists,
             or_(
                 AnalysisWorkState.non_retryable_generation.is_(None),
                 Conversation.analysis_data_generation > AnalysisWorkState.non_retryable_generation,
@@ -624,16 +624,12 @@ def _claim_work_items_batch(
                     AnalysisWorkState.conversation_id == conversation_id,
                     Conversation.current_content_id.is_not(None),
                     Conversation.conversation_type == ConversationType.polis,
-                    or_(
-                        AnalysisWorkState.next_run_at.is_(None),
-                        AnalysisWorkState.next_run_at <= func.now(),
-                    ),
                     or_(resume_condition, fresh_condition),
                 )
             )
             .order_by(
                 case((resume_condition, 0), else_=1),
-                AnalysisWorkState.next_run_at.asc().nulls_first(),
+                AnalysisWorkState.updated_at.asc(),
                 AnalysisWorkState.id,
             )
             .limit(1)
@@ -662,7 +658,6 @@ def _claim_work_items_batch(
                 continue
 
             lease_token = f"{worker_id}:{uuid.uuid4()}"
-            work_state.next_run_at = None
             work_state.lease_owner = worker_id
             work_state.lease_token = lease_token
             work_state.lease_expires_at = lease_expires_at
@@ -691,7 +686,6 @@ def _claim_work_items_batch(
         work_state.running_data_generation = data_generation
         work_state.persisted_analysis_snapshot_id = None
         work_state.dirty_since = None
-        work_state.next_run_at = None
         work_state.attempt_generation = data_generation
         work_state.attempt_count = attempt_count
         work_state.lease_owner = worker_id
@@ -757,7 +751,6 @@ def complete_non_processable_work_items_batch(
                 or_(
                     current_generation > AnalysisWorkState.last_completed_data_generation,
                     AnalysisWorkState.dirty_since.is_not(None),
-                    AnalysisWorkState.next_run_at.is_not(None),
                 ),
             )
         )
@@ -773,7 +766,6 @@ def complete_non_processable_work_items_batch(
             running_data_generation=None,
             persisted_analysis_snapshot_id=None,
             dirty_since=None,
-            next_run_at=None,
             non_retryable_generation=None,
             non_retryable_analysis_engine_epoch=None,
             lease_owner=None,
@@ -850,7 +842,6 @@ def recover_expired_running_work(engine: Engine) -> list[int]:
         )
         .values(
             running_data_generation=None,
-            next_run_at=func.now(),
             persisted_analysis_snapshot_id=None,
             lease_owner=None,
             lease_token=None,
@@ -869,7 +860,7 @@ def recover_expired_running_work(engine: Engine) -> list[int]:
     )
 
 
-def fetch_due_work_conversation_ids(
+def fetch_claimable_work_conversation_ids(
     engine: Engine,
     *,
     limit: int,
@@ -884,11 +875,10 @@ def fetch_due_work_conversation_ids(
         select(AnalysisWorkState.conversation_id)
         .where(
             and_(
-                AnalysisWorkState.running_data_generation.is_(None),
                 current_generation > AnalysisWorkState.last_completed_data_generation,
                 or_(
-                    AnalysisWorkState.next_run_at.is_(None),
-                    AnalysisWorkState.next_run_at <= func.now(),
+                    AnalysisWorkState.running_data_generation.is_(None),
+                    AnalysisWorkState.lease_expires_at < func.now(),
                 ),
                 or_(
                     AnalysisWorkState.non_retryable_generation.is_(None),
@@ -901,7 +891,7 @@ def fetch_due_work_conversation_ids(
                 ),
             )
         )
-        .order_by(AnalysisWorkState.next_run_at.asc().nulls_first())
+        .order_by(AnalysisWorkState.updated_at.asc(), AnalysisWorkState.id)
         .limit(limit)
     )
 
@@ -2316,7 +2306,6 @@ def _create_lineage_description_work_rows(
                 "lineage_id": row.lineage_id,
                 "conversation_id": conversation_id,
                 "source_candidate_id": row.candidate_id,
-                "next_run_at": func.now(),
             }
 
     if not work_values_by_lineage_id:
@@ -2331,10 +2320,6 @@ def _create_lineage_description_work_rows(
             set_={
                 "conversation_id": insert_query.excluded.conversation_id,
                 "source_candidate_id": insert_query.excluded.source_candidate_id,
-                "next_run_at": func.coalesce(
-                    OpinionGroupLineageDescriptionWork.next_run_at,
-                    insert_query.excluded.next_run_at,
-                ),
                 "updated_at": func.now(),
             },
             where=OpinionGroupLineageDescriptionWork.lease_token.is_(None),
@@ -3222,7 +3207,7 @@ def persist_empty_vote_matrix_results_batch(
     *,
     claims: list[ClaimedWorkItem],
     stored_input_snapshots_by_conversation_id: dict[int, StoredInputSnapshot],
-) -> list[WorkStateSchedule]:
+) -> list[int]:
     if not claims:
         return []
 
@@ -3345,10 +3330,7 @@ def persist_empty_vote_matrix_results_batch(
             .where(Conversation.id == AnalysisWorkState.conversation_id)
             .scalar_subquery()
         )
-        next_run_at = case(
-            (current_generation > completed_generation, func.now()),
-            else_=None,
-        )
+        newer_generation_exists = current_generation > completed_generation
         work_state_update = (
             update(AnalysisWorkState)
             .where(
@@ -3371,7 +3353,6 @@ def persist_empty_vote_matrix_results_batch(
                     (current_generation > completed_generation, func.now()),
                     else_=None,
                 ),
-                next_run_at=next_run_at,
                 non_retryable_generation=None,
                 non_retryable_analysis_engine_epoch=None,
                 lease_owner=None,
@@ -3379,24 +3360,28 @@ def persist_empty_vote_matrix_results_batch(
                 lease_expires_at=None,
                 updated_at=func.now(),
             )
-            .returning(AnalysisWorkState.conversation_id, AnalysisWorkState.next_run_at)
+            .returning(
+                AnalysisWorkState.conversation_id,
+                newer_generation_exists.label("newer_generation_exists"),
+            )
         )
         completed_rows = session.execute(work_state_update).all()
         session.commit()
 
-    immediate_rerun_count = sum(1 for row in completed_rows if row.next_run_at is not None)
-    if immediate_rerun_count:
+    newer_generation_count = sum(
+        1 for row in completed_rows if row.newer_generation_exists
+    )
+    if newer_generation_count:
         log.info(
-            "[MathUpdaterDB] Empty-matrix completion scheduled immediate rerun rows=%d claims=%s",
-            immediate_rerun_count,
+            "[MathUpdaterDB] Empty-matrix completion found newer math generation rows=%d "
+            "claims=%s",
+            newer_generation_count,
             _format_claims_for_log(claims),
         )
     return [
-        WorkStateSchedule(
-            conversation_id=row.conversation_id,
-            next_run_at=row.next_run_at,
-        )
+        row.conversation_id
         for row in completed_rows
+        if row.newer_generation_exists
     ]
 
 
@@ -3411,9 +3396,8 @@ def persist_computed_analysis_results_batch(
 ) -> PersistComputedAnalysisResult:
     if not claims:
         return PersistComputedAnalysisResult(
-            analysis_schedules=[],
-            ai_description_due_conversation_ids=[],
-            ai_description_due_view_snapshot_ids=[],
+            ai_description_work_conversation_ids=[],
+            ai_description_work_view_snapshot_ids=[],
             checkpoint_activation_context=None,
         )
 
@@ -3929,7 +3913,7 @@ def persist_computed_analysis_results_batch(
             ],
         )
 
-        ai_description_due_conversation_ids = _create_lineage_description_work_rows(
+        ai_description_work_conversation_ids = _create_lineage_description_work_rows(
             session,
             persisted_view_snapshots_by_pair=persisted_view_snapshots_by_pair,
             eager_ai_candidate_ids_by_pair=_eager_ai_candidate_ids_by_pair(
@@ -3940,7 +3924,7 @@ def persist_computed_analysis_results_batch(
         )
         log.info(
             "[MathUpdaterDB] Created AI description lineage work conversation_count=%d",
-            len(ai_description_due_conversation_ids),
+            len(ai_description_work_conversation_ids),
         )
 
         persisted_snapshot_id = case(
@@ -3976,9 +3960,8 @@ def persist_computed_analysis_results_batch(
         log.info("[MathUpdaterDB] Persist computed batch committed; enrichment first pass pending")
 
     return PersistComputedAnalysisResult(
-        analysis_schedules=[],
-        ai_description_due_conversation_ids=ai_description_due_conversation_ids,
-        ai_description_due_view_snapshot_ids=[
+        ai_description_work_conversation_ids=ai_description_work_conversation_ids,
+        ai_description_work_view_snapshot_ids=[
             persisted.view_snapshot_id
             for persisted in persisted_view_snapshots_by_pair.values()
             if persisted.conversation_state.ai_labeling_enabled
@@ -3997,7 +3980,7 @@ def complete_computed_analysis_work_items_batch(
     *,
     claims: list[ClaimedWorkItem],
     require_display_safe_activation: bool = False,
-) -> list[WorkStateSchedule]:
+) -> list[int]:
     if not claims:
         return []
 
@@ -4010,10 +3993,7 @@ def complete_computed_analysis_work_items_batch(
         .where(Conversation.id == AnalysisWorkState.conversation_id)
         .scalar_subquery()
     )
-    next_run_at = case(
-        (current_generation > completed_generation, func.now()),
-        else_=None,
-    )
+    newer_generation_exists = current_generation > completed_generation
     completion_filters: list[ColumnElement[bool]] = [
         AnalysisWorkState.id.in_([claim.id for claim in claims]),
         tuple_(AnalysisWorkState.id, AnalysisWorkState.lease_token).in_(
@@ -4065,7 +4045,6 @@ def complete_computed_analysis_work_items_batch(
                 (current_generation > completed_generation, func.now()),
                 else_=None,
             ),
-            next_run_at=next_run_at,
             non_retryable_generation=None,
             non_retryable_analysis_engine_epoch=None,
             lease_owner=None,
@@ -4075,7 +4054,10 @@ def complete_computed_analysis_work_items_batch(
             last_error_message=None,
             updated_at=func.now(),
         )
-        .returning(AnalysisWorkState.conversation_id, AnalysisWorkState.next_run_at)
+        .returning(
+            AnalysisWorkState.conversation_id,
+            newer_generation_exists.label("newer_generation_exists"),
+        )
     )
 
     with Session(engine) as session:
@@ -4083,42 +4065,33 @@ def complete_computed_analysis_work_items_batch(
         completed_rows = session.execute(work_state_update).all()
         session.commit()
 
-    immediate_rerun_count = sum(1 for row in completed_rows if row.next_run_at is not None)
+    newer_generation_count = sum(
+        1 for row in completed_rows if row.newer_generation_exists
+    )
     log.info(
-        "[MathUpdaterDB] Completed computed analysis work rows=%d immediate_rerun=%d claims=%s",
+        "[MathUpdaterDB] Completed computed analysis work rows=%d newer_generation=%d "
+        "claims=%s",
         len(completed_rows),
-        immediate_rerun_count,
+        newer_generation_count,
         _format_claims_for_log(claims),
     )
     return [
-        WorkStateSchedule(
-            conversation_id=row.conversation_id,
-            next_run_at=row.next_run_at,
-        )
+        row.conversation_id
         for row in completed_rows
+        if row.newer_generation_exists
     ]
 
 
-def retry_scheduled_work_items_batch(
+def release_retryable_work_items_batch(
     engine: Engine,
     *,
     claims: list[ClaimedWorkItem],
-    retry_policy: RetryPolicy,
     error_code: str,
     error_message: str,
-) -> list[WorkStateSchedule]:
+) -> list[int]:
     if not claims:
         return []
 
-    now = datetime.now(UTC)
-    retry_at_by_work_state_id = {
-        claim.id: next_retry_at(
-            now=now,
-            attempt_count=claim.attempt_count,
-            policy=retry_policy,
-        )
-        for claim in claims
-    }
     claim_pairs = [(claim.id, claim.lease_token) for claim in claims]
     failed_generation = case(
         {claim.id: claim.data_generation for claim in claims},
@@ -4128,10 +4101,6 @@ def retry_scheduled_work_items_batch(
         select(Conversation.analysis_data_generation)
         .where(Conversation.id == AnalysisWorkState.conversation_id)
         .scalar_subquery()
-    )
-    next_run_at = case(
-        (current_generation > failed_generation, func.now()),
-        else_=case(retry_at_by_work_state_id, value=AnalysisWorkState.id),
     )
     query = (
         update(AnalysisWorkState)
@@ -4145,7 +4114,6 @@ def retry_scheduled_work_items_batch(
         .values(
             running_data_generation=None,
             persisted_analysis_snapshot_id=None,
-            next_run_at=next_run_at,
             dirty_since=case(
                 (current_generation > failed_generation, func.now()),
                 else_=AnalysisWorkState.dirty_since,
@@ -4157,7 +4125,7 @@ def retry_scheduled_work_items_batch(
             last_error_message=error_message,
             updated_at=func.now(),
         )
-        .returning(AnalysisWorkState.conversation_id, AnalysisWorkState.next_run_at)
+        .returning(AnalysisWorkState.conversation_id)
     )
 
     with Session(engine) as session:
@@ -4165,21 +4133,16 @@ def retry_scheduled_work_items_batch(
         rows = session.execute(query).all()
         session.commit()
 
-    immediate_rerun_count = sum(1 for row in rows if row.next_run_at is not None)
     if rows:
         log.info(
-            "[MathUpdaterDB] Retry scheduled analysis work rows=%d immediate_rerun=%d "
+            "[MathUpdaterDB] Released retryable analysis work rows=%d "
             "error_code=%s claims=%s",
             len(rows),
-            immediate_rerun_count,
             error_code,
             _format_claims_for_log(claims),
         )
     return [
-        WorkStateSchedule(
-            conversation_id=row.conversation_id,
-            next_run_at=row.next_run_at,
-        )
+        row.conversation_id
         for row in rows
     ]
 
@@ -4191,7 +4154,7 @@ def mark_non_retryable_work_items_batch(
     analysis_engine_epoch: int,
     error_code: str,
     error_message: str,
-) -> list[WorkStateSchedule]:
+) -> list[int]:
     if not claims:
         return []
 
@@ -4219,10 +4182,6 @@ def mark_non_retryable_work_items_batch(
         .values(
             running_data_generation=None,
             persisted_analysis_snapshot_id=None,
-            next_run_at=case(
-                (newer_generation_exists, func.now()),
-                else_=None,
-            ),
             dirty_since=case(
                 (newer_generation_exists, func.now()),
                 else_=AnalysisWorkState.dirty_since,
@@ -4242,7 +4201,10 @@ def mark_non_retryable_work_items_batch(
             last_error_message=error_message,
             updated_at=func.now(),
         )
-        .returning(AnalysisWorkState.conversation_id, AnalysisWorkState.next_run_at)
+        .returning(
+            AnalysisWorkState.conversation_id,
+            newer_generation_exists.label("newer_generation_exists"),
+        )
     )
 
     with Session(engine) as session:
@@ -4250,20 +4212,18 @@ def mark_non_retryable_work_items_batch(
         rows = session.execute(query).all()
         session.commit()
 
-    immediate_rerun_count = sum(1 for row in rows if row.next_run_at is not None)
+    newer_generation_count = sum(1 for row in rows if row.newer_generation_exists)
     if rows:
         log.info(
             "[MathUpdaterDB] Marked analysis work non-retryable rows=%d "
-            "immediate_rerun=%d error_code=%s claims=%s",
+            "newer_generation=%d error_code=%s claims=%s",
             len(rows),
-            immediate_rerun_count,
+            newer_generation_count,
             error_code,
             _format_claims_for_log(claims),
         )
     return [
-        WorkStateSchedule(
-            conversation_id=row.conversation_id,
-            next_run_at=row.next_run_at,
-        )
+        row.conversation_id
         for row in rows
+        if row.newer_generation_exists
     ]

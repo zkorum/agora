@@ -6,7 +6,8 @@ import time
 import uuid
 
 from agora_worker_shared.ai_description_work import (
-    fetch_due_ai_description_work_conversation_ids,
+    fetch_claimable_ai_description_work_conversation_ids,
+    materialize_requested_lineage_description_work,
     recover_expired_ai_description_work,
 )
 from agora_worker_shared.config import (
@@ -18,7 +19,6 @@ from agora_worker_shared.description_retry_processor import process_ai_descripti
 from agora_worker_shared.description_services import build_description_generator
 from agora_worker_shared.logging_utils import LOG_FORMAT, configure_worker_logging
 from agora_worker_shared.postgres_engine import create_ready_postgres_engine
-from agora_worker_shared.retry_policy import RetryPolicy
 from agora_worker_shared.schema_readiness import (
     StartupSchemaRetryState,
     handle_startup_schema_retry,
@@ -119,12 +119,6 @@ def main() -> None:
         log.info("%s Shutdown complete", LOG_PREFIX)
         return
     log.info("%s PostgreSQL connected", LOG_PREFIX)
-    retry_policy = RetryPolicy(
-        burst_attempts=settings.retry_burst_attempts,
-        burst_interval_seconds=settings.retry_burst_seconds,
-        cooldown_seconds=settings.retry_cooldown_seconds,
-    )
-
     monotonic_start = time.monotonic()
     last_recover = monotonic_start - settings.running_recovery_interval_seconds
     last_no_claim_warning = monotonic_start - NO_CLAIM_LOG_INTERVAL_SECONDS
@@ -162,8 +156,21 @@ def main() -> None:
                 log.exception("%s Running-work recovery failed", LOG_PREFIX)
             last_recover = monotonic_now
 
+        materialized_ids: list[int] = []
         try:
-            due_ids = fetch_due_ai_description_work_conversation_ids(
+            materialized_ids = materialize_requested_lineage_description_work(
+                primary_engine,
+                limit=settings.db_claim_batch_size,
+                require_activated_view_snapshot=True,
+                include_checkpoints=True,
+            )
+            if materialized_ids:
+                log.info(
+                    "%s Materialized requested lineage work for %d conversation(s)",
+                    LOG_PREFIX,
+                    len(materialized_ids),
+                )
+            claimable_ids = fetch_claimable_ai_description_work_conversation_ids(
                 read_engine,
                 limit=settings.db_claim_batch_size,
                 ai_description_epoch=settings.ai_description_epoch,
@@ -172,6 +179,9 @@ def main() -> None:
                 include_translations=False,
                 require_activated_view_snapshot=True,
             )
+            claimable_ids = sorted({*claimable_ids, *materialized_ids})[
+                : settings.db_claim_batch_size
+            ]
         except Exception as error:
             retry_decision = handle_startup_schema_retry(
                 state=schema_retry_state,
@@ -183,32 +193,31 @@ def main() -> None:
             if retry_decision.should_retry:
                 time.sleep(settings.worker_poll_idle_sleep_seconds)
                 continue
-            log.exception("%s Due lineage scan failed", LOG_PREFIX)
+            log.exception("%s Claimable lineage scan failed", LOG_PREFIX)
             time.sleep(settings.worker_poll_idle_sleep_seconds)
             continue
         schema_retry_state = mark_startup_schema_ready(state=schema_retry_state)
-        if not due_ids:
+        if not claimable_ids:
             time.sleep(settings.worker_poll_idle_sleep_seconds)
             continue
 
         log.debug(
-            "%s Found due lineage conversation(s) source=read_replica count=%d ids=%s",
+            "%s Found claimable lineage conversation(s) source=read_replica count=%d ids=%s",
             LOG_PREFIX,
-            len(due_ids),
-            ",".join(str(conversation_id) for conversation_id in due_ids),
+            len(claimable_ids),
+            ",".join(str(conversation_id) for conversation_id in claimable_ids),
         )
 
         batch_started_at = time.perf_counter()
         processed_count = process_ai_description_conversation_ids(
             primary_engine=primary_engine,
             worker_id=worker_id,
-            conversation_ids=due_ids,
+            conversation_ids=claimable_ids,
             lease_ttl_seconds=settings.lease_ttl_seconds,
             heartbeat_interval_seconds=settings.heartbeat_interval_seconds,
             claim_limit=settings.db_claim_batch_size,
             max_workers=settings.max_ai_description_concurrency,
             ai_description_epoch=settings.ai_description_epoch,
-            retry_policy=retry_policy,
             description_generator=description_generator,
             description_translator=None,
             claim_lineage_descriptions=True,
@@ -227,11 +236,11 @@ def main() -> None:
             elapsed_ms = (time.perf_counter() - batch_started_at) * 1000
             if monotonic_now - last_no_claim_warning >= NO_CLAIM_LOG_INTERVAL_SECONDS:
                 log.warning(
-                    "%s Due lineage conversations yielded no claimable work; "
+                    "%s Claimable lineage conversations yielded no claimed work; "
                     "sleeping idle interval conversation_count=%d ids=%s batch_ms=%.1f",
                     LOG_PREFIX,
-                    len(due_ids),
-                    ",".join(str(conversation_id) for conversation_id in due_ids),
+                    len(claimable_ids),
+                    ",".join(str(conversation_id) for conversation_id in claimable_ids),
                     elapsed_ms,
                 )
                 last_no_claim_warning = monotonic_now
@@ -239,8 +248,8 @@ def main() -> None:
                 log.debug(
                     "%s No lineage work item processed conversation_count=%d ids=%s batch_ms=%.1f",
                     LOG_PREFIX,
-                    len(due_ids),
-                    ",".join(str(conversation_id) for conversation_id in due_ids),
+                    len(claimable_ids),
+                    ",".join(str(conversation_id) for conversation_id in claimable_ids),
                     elapsed_ms,
                 )
             _sleep_before_retry(settings.worker_poll_idle_sleep_seconds)

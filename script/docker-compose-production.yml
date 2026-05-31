@@ -38,6 +38,7 @@ services:
       SCORING_WORKER_POLL_INTERVAL_SECONDS: "2"
       SCORING_WORKER_BATCH_SIZE: "50"
       SCORING_WORKER_RECONCILE_INTERVAL_SECONDS: "300"
+    stop_grace_period: 10m
     restart: unless-stopped
     logging:
       driver: awslogs
@@ -51,6 +52,7 @@ services:
       IMPORT_WORKER_CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
       IMPORT_WORKER_CONNECTION_STRING_READ: "postgres://postgres:CHANGEME@postgres-replica:5432/agora"
       IMPORT_WORKER_VALKEY_URL: "valkey://valkey:6379"
+    stop_grace_period: 10m
     restart: unless-stopped
     logging:
       driver: awslogs

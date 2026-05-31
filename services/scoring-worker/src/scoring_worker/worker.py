@@ -237,6 +237,16 @@ def _run_worker_once() -> None:
             time.sleep(settings.poll_interval_seconds)
             continue
 
+        if not _running:
+            for item in raw_batch:
+                mark_dirty(vk, member=item.member, weight=item.weight)
+            log.info(
+                "[Worker] Requeued %d unprocessed conversation(s) "
+                "reason=shutdown_before_processing",
+                len(raw_batch),
+            )
+            break
+
         to_process: list[DirtyConversation] = []
         for item in raw_batch:
             retry_after = backoff_until.get(item.conversation_id)

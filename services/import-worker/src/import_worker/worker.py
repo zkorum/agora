@@ -61,8 +61,8 @@ class SyncValkeyClient:
     def rpush(self, name: str, *values: str) -> int:
         return INT_RESULT.validate_python(self._client.rpush(name, *values))
 
-    def zadd(self, name: str, mapping: dict[str, int]) -> int:
-        return INT_RESULT.validate_python(self._client.zadd(name, mapping))
+    def zadd(self, name: str, mapping: dict[str, int], nx: bool = False) -> int:
+        return INT_RESULT.validate_python(self._client.zadd(name, mapping, nx=nx))
 
     def close(self) -> None:
         self._client.close()
@@ -153,12 +153,17 @@ def _schedule_analysis(
     if schedule is None:
         return
     LOGGER.info(
-        "Scheduling analysis after import conversationId=%s conversationSlugId=%s dueAtMs=%s",
+        "Queueing imported conversation for math work conversationId=%s "
+        "conversationSlugId=%s enqueuedAtMs=%s",
         schedule.conversation_id,
         schedule.conversation_slug_id,
-        schedule.due_at_ms,
+        schedule.enqueued_at_ms,
     )
-    vk.zadd(ANALYSIS_DIRTY_KEY, {str(schedule.conversation_id): schedule.due_at_ms})
+    vk.zadd(
+        ANALYSIS_DIRTY_KEY,
+        {str(schedule.conversation_id): schedule.enqueued_at_ms},
+        nx=True,
+    )
 
 
 def _push_result_events(vk: ImportValkeyClient, *, processed: ProcessedImport) -> None:

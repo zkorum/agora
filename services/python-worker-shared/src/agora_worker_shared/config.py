@@ -190,7 +190,6 @@ class Settings(BaseSettings):
 
     valkey_url: AnyUrl = DEFAULT_VALKEY_URL
 
-    valkey_pop_batch_size: int = Field(default=50, ge=1)
     db_claim_batch_size: int = Field(default=8, ge=1)
     db_write_batch_size: int = Field(default=10, ge=1)
     max_compute_concurrency: int = Field(default=4, ge=1)

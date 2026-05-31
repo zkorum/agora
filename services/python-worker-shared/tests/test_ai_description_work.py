@@ -11,33 +11,34 @@ from sqlalchemy.pool import StaticPool
 
 from agora_worker_shared.ai_description_work import (
     DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE,
+    CandidateLocaleRequestRow,
     ClaimedDescriptionTranslationWorkItem,
     ClaimedLineageDescriptionWorkItem,
     LineageDescriptionWorkDemand,
-    PendingLocaleStatusRow,
     RequiredLineageDescriptionRow,
     TranslationWorkDemand,
     claim_ai_description_locale_work_items_batch,
     claim_first_pass_ai_description_locale_work_items_batch,
-    claimable_immediate_retry_at,
     complete_non_processable_ai_description_work_batch,
     description_translation_work_claim_batches,
     extend_ai_description_locale_work_leases,
-    fetch_due_ai_description_work_conversation_ids,
+    fetch_claimable_ai_description_work_conversation_ids,
     finalize_first_pass_ai_description_work_batch,
-    lineage_description_work_demands_for_statuses,
+    lineage_description_work_demands_for_candidate_requests,
     materialize_requested_description_translation_work,
     process_ai_description_locale_work_item,
     process_description_translation_work_items_batch,
     queue_ai_description_content_updated_events,
     recover_expired_ai_description_work,
     retry_ai_description_locale_work_item,
-    translation_work_demands_for_statuses,
+    translation_work_demands_for_candidate_requests,
 )
 from agora_worker_shared.db import (
     ClaimedWorkItem,
+    claim_work_items_batch,
     complete_computed_analysis_work_items_batch,
     extend_postgres_leases,
+    fetch_claimable_work_conversation_ids,
     recover_expired_running_work,
 )
 from agora_worker_shared.description_input import DescriptionOutputError
@@ -59,6 +60,7 @@ from agora_worker_shared.generated_models import (
     ConversationViewSnapshotReasonEnum,
     OpinionGroup,
     OpinionGroupCandidate,
+    OpinionGroupCandidateAssessment,
     OpinionGroupCandidateDescriptionLocaleRequest,
     OpinionGroupDescription,
     OpinionGroupDescriptionTranslation,
@@ -69,7 +71,7 @@ from agora_worker_shared.generated_models import (
     ParticipationMode,
     RealtimeEventOutbox,
 )
-from agora_worker_shared.retry_policy import RetryPolicy
+from agora_worker_shared.generated_shared_types import SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES
 
 if TYPE_CHECKING:
     from agora_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
@@ -189,6 +191,18 @@ def _insert_non_processable_ai_work_state(
         )
     )
     session.add(
+        OpinionGroupCandidateAssessment(
+            id=901,
+            candidate_id=401,
+            silhouette_score=0.8,
+            coefficient_of_variation=None,
+            balance_score=0.8,
+            selection_score=0.8,
+            hidden_reason=None,
+            created_at=NOW,
+        )
+    )
+    session.add(
         OpinionGroupLineage(
             id=301,
             scope_id=701,
@@ -225,7 +239,6 @@ def _insert_non_processable_ai_work_state(
             conversation_id=10,
             source_candidate_id=401,
             attempt_count=1,
-            next_run_at=None if leased_lineage_work else NOW,
             lease_owner="worker-1" if leased_lineage_work else None,
             lease_token="token-1" if leased_lineage_work else None,
             lease_expires_at=NOW + timedelta(minutes=10) if leased_lineage_work else None,
@@ -243,7 +256,6 @@ def _insert_non_processable_ai_work_state(
             conversation_id=10,
             locale="fr",
             attempt_count=1,
-            next_run_at=NOW,
             lease_owner=None,
             lease_token=None,
             lease_expires_at=None,
@@ -257,20 +269,18 @@ def _insert_non_processable_ai_work_state(
     session.commit()
 
 
-def _status(
+def _candidate_locale_request(
     *,
-    status_id: int,
+    request_id: int,
     conversation_id: int = 10,
+    candidate_id: int | None = None,
     locale: str = "en",
-    next_run_at: datetime | None = NOW,
-) -> PendingLocaleStatusRow:
-    return PendingLocaleStatusRow(
-        id=status_id,
+) -> CandidateLocaleRequestRow:
+    return CandidateLocaleRequestRow(
+        id=request_id,
         conversation_id=conversation_id,
-        conversation_view_snapshot_id=100 + status_id,
-        analysis_snapshot_result_id=200 + status_id,
+        candidate_id=candidate_id or 1000 + request_id,
         locale=locale,
-        next_run_at=next_run_at,
     )
 
 
@@ -294,16 +304,72 @@ def _translation_claim(
     )
 
 
+def _insert_attempted_eager_translation_work(session: Session) -> None:
+    existing_work_by_locale = {
+        work.locale: work
+        for work in session.execute(
+            select(OpinionGroupDescriptionTranslationWork)
+        ).scalars()
+    }
+    next_id = 10_000
+    for locale in SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES:
+        existing_work = existing_work_by_locale.get(locale)
+        if existing_work is not None:
+            existing_work.attempt_count = 1
+            continue
+        session.add(
+            OpinionGroupDescriptionTranslationWork(
+                id=next_id,
+                description_id=501,
+                conversation_id=10,
+                locale=locale,
+                attempt_count=1,
+                lease_owner=None,
+                lease_token=None,
+                lease_expires_at=None,
+                non_retryable_ai_description_epoch=None,
+                last_error_code=None,
+                last_error_message=None,
+                created_at=NOW,
+                updated_at=NOW,
+            )
+        )
+        next_id += 1
+
+
+def _insert_all_eager_translations(session: Session) -> None:
+    existing_locales = {
+        translation.locale
+        for translation in session.execute(
+            select(OpinionGroupDescriptionTranslation)
+        ).scalars()
+    }
+    next_id = 20_000
+    for locale in SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES:
+        if locale in existing_locales:
+            continue
+        session.add(
+            OpinionGroupDescriptionTranslation(
+                id=next_id,
+                description_id=501,
+                locale=locale,
+                label=f"Label {locale}",
+                summary=f"Summary {locale}",
+                created_at=NOW,
+            )
+        )
+        next_id += 1
+
+
 def test_lineage_description_work_demands_are_unique_and_skip_ready_lineages() -> None:
-    later = NOW + timedelta(minutes=5)
-    statuses = [
-        _status(status_id=1, next_run_at=NOW),
-        _status(status_id=2, next_run_at=later),
+    requests = [
+        _candidate_locale_request(request_id=1, candidate_id=1000),
+        _candidate_locale_request(request_id=2, candidate_id=2000),
     ]
 
-    demands = lineage_description_work_demands_for_statuses(
-        statuses=statuses,
-        lineage_rows_by_status_id={
+    demands = lineage_description_work_demands_for_candidate_requests(
+        requests=requests,
+        lineage_rows_by_request_id={
             1: [
                 RequiredLineageDescriptionRow(
                     lineage_id=10,
@@ -336,32 +402,30 @@ def test_lineage_description_work_demands_are_unique_and_skip_ready_lineages() -
             lineage_id=10,
             conversation_id=10,
             source_candidate_id=1000,
-            next_run_at=NOW,
         ),
         LineageDescriptionWorkDemand(
             lineage_id=12,
             conversation_id=10,
             source_candidate_id=2001,
-            next_run_at=later,
         ),
     ]
 
 
 def test_translation_work_demands_are_unique_per_description_locale() -> None:
-    statuses = [
-        _status(status_id=1, locale="fr", next_run_at=NOW),
-        _status(status_id=2, locale="fr", next_run_at=NOW + timedelta(minutes=5)),
-        _status(status_id=3, locale="es", next_run_at=NOW + timedelta(minutes=10)),
+    requests = [
+        _candidate_locale_request(request_id=1, locale="fr"),
+        _candidate_locale_request(request_id=2, locale="fr"),
+        _candidate_locale_request(request_id=3, locale="es"),
     ]
 
-    demands = translation_work_demands_for_statuses(
-        statuses=statuses,
-        description_ids_by_status_id={
+    demands = translation_work_demands_for_candidate_requests(
+        requests=requests,
+        description_ids_by_request_id={
             1: {10, 20},
             2: {10, 30},
             3: {10},
         },
-        translated_description_ids_by_status_id={
+        translated_description_ids_by_request_id={
             1: {20},
             2: set(),
             3: {10},
@@ -373,13 +437,11 @@ def test_translation_work_demands_are_unique_per_description_locale() -> None:
             description_id=10,
             conversation_id=10,
             locale="fr",
-            next_run_at=NOW,
         ),
         TranslationWorkDemand(
             description_id=30,
             conversation_id=10,
             locale="fr",
-            next_run_at=NOW + timedelta(minutes=5),
         ),
     ]
 
@@ -448,7 +510,6 @@ def test_process_translation_work_items_batch_persists_multiple_translations() -
                 OpinionGroupDescriptionTranslationWork.id == 202
             )
         ).scalar_one()
-        first_work.next_run_at = None
         first_work.lease_owner = "worker-1"
         first_work.lease_token = "token-translation-1"
         first_work.lease_expires_at = NOW + timedelta(minutes=10)
@@ -459,7 +520,6 @@ def test_process_translation_work_items_batch_persists_multiple_translations() -
                 conversation_id=10,
                 locale="fr",
                 attempt_count=1,
-                next_run_at=None,
                 lease_owner="worker-1",
                 lease_token="token-translation-2",
                 lease_expires_at=NOW + timedelta(minutes=10),
@@ -534,7 +594,6 @@ def test_process_translation_work_items_batch_persists_multiple_translations() -
     ]
     assert [translation.label for translation in translations] == ["Group one fr", "Group two fr"]
     assert all(work_row.lease_token is None for work_row in work_rows)
-    assert all(work_row.next_run_at is None for work_row in work_rows)
     assert [schedule.conversation_id for schedule in result.schedules] == [10, 10]
     assert result.translated_description_ids == [501, 502]
 
@@ -556,6 +615,7 @@ def test_content_update_events_coalesce_locales_per_snapshot() -> None:
                 updated_at=NOW,
             )
         )
+        _insert_all_eager_translations(session)
         session.commit()
 
     queue_ai_description_content_updated_events(
@@ -593,7 +653,6 @@ def test_process_translation_work_items_batch_rejects_output_mismatch() -> None:
         translation_work = session.execute(
             select(OpinionGroupDescriptionTranslationWork)
         ).scalar_one()
-        translation_work.next_run_at = None
         translation_work.lease_owner = "worker-1"
         translation_work.lease_token = "token-translation"
         translation_work.lease_expires_at = NOW + timedelta(minutes=10)
@@ -631,15 +690,6 @@ def test_process_translation_work_items_batch_rejects_output_mismatch() -> None:
     assert translation_work.lease_token == "token-translation"
 
 
-def test_immediate_retry_time_is_claimable_with_second_precision() -> None:
-    now = datetime(2026, 5, 21, 12, 0, 0, 838633, tzinfo=UTC)
-
-    retry_at = claimable_immediate_retry_at(now)
-
-    assert retry_at == datetime(2026, 5, 21, 12, 0, 0, tzinfo=UTC)
-    assert retry_at <= now
-
-
 def test_non_processable_ai_cleanup_fallbacks_statuses_without_activation() -> None:
     engine = _create_engine()
     with Session(engine) as session:
@@ -659,8 +709,8 @@ def test_non_processable_ai_cleanup_fallbacks_statuses_without_activation() -> N
 
     assert completed_ids == [10]
     assert view_snapshot.activated_at is None
-    assert lineage_work.next_run_at is None
-    assert translation_work.next_run_at is None
+    assert lineage_work.lease_token is None
+    assert translation_work.lease_token is None
 
 
 def test_pending_translation_blocks_snapshot_activation() -> None:
@@ -681,8 +731,8 @@ def test_pending_translation_blocks_snapshot_activation() -> None:
     with Session(engine) as session:
         view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
 
-    assert result.activated_view_snapshot_ids == [20]
-    assert view_snapshot.activated_at is not None
+    assert result.activated_view_snapshot_ids == []
+    assert view_snapshot.activated_at is None
 
 
 def test_claiming_first_pass_work_does_not_activate_snapshot() -> None:
@@ -699,7 +749,7 @@ def test_claiming_first_pass_work_does_not_activate_snapshot() -> None:
         conversation_ids=[10],
         conversation_view_snapshot_ids=[20],
         lease_ttl_seconds=120,
-        limit=10,
+        limit=1,
         ai_description_epoch=1,
         translation_enabled=True,
         claim_lineage_descriptions=False,
@@ -726,7 +776,6 @@ def test_first_pass_claiming_allows_one_immediate_lineage_retry() -> None:
         lineage.system_description_id = None
         lineage_work = session.execute(select(OpinionGroupLineageDescriptionWork)).scalar_one()
         lineage_work.attempt_count = 1
-        lineage_work.next_run_at = NOW
         session.commit()
 
     claims = claim_first_pass_ai_description_locale_work_items_batch(
@@ -790,6 +839,16 @@ def test_first_pass_claiming_uses_materialized_auto_and_facilitator_work() -> No
                     raw_output=None,
                     created_at=NOW,
                 ),
+                OpinionGroupCandidateAssessment(
+                    id=902,
+                    candidate_id=402,
+                    silhouette_score=0.7,
+                    coefficient_of_variation=None,
+                    balance_score=0.7,
+                    selection_score=0.7,
+                    hidden_reason=None,
+                    created_at=NOW,
+                ),
                 OpinionGroupCandidate(
                     id=403,
                     snapshot_result_id=50,
@@ -798,6 +857,16 @@ def test_first_pass_claiming_uses_materialized_auto_and_facilitator_work() -> No
                     outcome=AnalysisResultOutcomeEnum.success,
                     outcome_reason=None,
                     raw_output=None,
+                    created_at=NOW,
+                ),
+                OpinionGroupCandidateAssessment(
+                    id=903,
+                    candidate_id=403,
+                    silhouette_score=0.9,
+                    coefficient_of_variation=None,
+                    balance_score=0.9,
+                    selection_score=0.9,
+                    hidden_reason=None,
                     created_at=NOW,
                 ),
                 OpinionGroupLineage(
@@ -840,7 +909,6 @@ def test_first_pass_claiming_uses_materialized_auto_and_facilitator_work() -> No
                     conversation_id=10,
                     source_candidate_id=401,
                     attempt_count=0,
-                    next_run_at=NOW,
                     lease_owner=None,
                     lease_token=None,
                     lease_expires_at=None,
@@ -856,7 +924,6 @@ def test_first_pass_claiming_uses_materialized_auto_and_facilitator_work() -> No
                     conversation_id=10,
                     source_candidate_id=403,
                     attempt_count=0,
-                    next_run_at=NOW,
                     lease_owner=None,
                     lease_token=None,
                     lease_expires_at=None,
@@ -906,7 +973,6 @@ def test_first_pass_claiming_stops_after_one_lineage_retry() -> None:
         lineage.system_description_id = None
         lineage_work = session.execute(select(OpinionGroupLineageDescriptionWork)).scalar_one()
         lineage_work.attempt_count = 2
-        lineage_work.next_run_at = NOW
         session.commit()
 
     claims = claim_first_pass_ai_description_locale_work_items_batch(
@@ -933,7 +999,6 @@ def test_first_pass_claiming_allows_one_immediate_translation_retry() -> None:
             select(OpinionGroupDescriptionTranslationWork)
         ).scalar_one()
         translation_work.attempt_count = 1
-        translation_work.next_run_at = NOW
         session.commit()
 
     claims = claim_first_pass_ai_description_locale_work_items_batch(
@@ -942,7 +1007,7 @@ def test_first_pass_claiming_allows_one_immediate_translation_retry() -> None:
         conversation_ids=[10],
         conversation_view_snapshot_ids=[20],
         lease_ttl_seconds=120,
-        limit=10,
+        limit=1,
         ai_description_epoch=1,
         translation_enabled=True,
         claim_lineage_descriptions=False,
@@ -953,7 +1018,7 @@ def test_first_pass_claiming_allows_one_immediate_translation_retry() -> None:
     assert claims[0].attempt_count == 2
 
 
-def test_first_pass_finalization_warns_and_activates_pending_translation() -> None:
+def test_first_pass_finalization_blocks_pending_translation() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
@@ -974,11 +1039,11 @@ def test_first_pass_finalization_warns_and_activates_pending_translation() -> No
         view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
 
     assert result.fallback_status_count == 1
-    assert result.activated_view_snapshot_ids == [20]
-    assert view_snapshot.activated_at is not None
+    assert result.activated_view_snapshot_ids == []
+    assert view_snapshot.activated_at is None
 
 
-def test_first_pass_finalization_activates_pending_translation_after_generation_advances() -> None:
+def test_first_pass_finalization_blocks_pending_translation_after_generation_advances() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
@@ -1001,11 +1066,11 @@ def test_first_pass_finalization_activates_pending_translation_after_generation_
         view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
 
     assert result.fallback_status_count == 1
-    assert result.activated_view_snapshot_ids == [20]
-    assert view_snapshot.activated_at is not None
+    assert result.activated_view_snapshot_ids == []
+    assert view_snapshot.activated_at is None
 
 
-def test_first_pass_finalization_warns_and_activates_pending_english() -> None:
+def test_first_pass_finalization_blocks_pending_english() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
@@ -1028,6 +1093,34 @@ def test_first_pass_finalization_warns_and_activates_pending_english() -> None:
         view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
 
     assert result.fallback_status_count == 1
+    assert result.activated_view_snapshot_ids == []
+    assert view_snapshot.activated_at is None
+
+
+def test_first_pass_finalization_without_ai_generator_bypasses_description_gate() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        lineage = session.execute(select(OpinionGroupLineage)).scalar_one()
+        lineage.system_description_id = None
+        lineage_work = session.execute(select(OpinionGroupLineageDescriptionWork)).scalar_one()
+        lineage_work.attempt_count = 0
+        session.commit()
+
+    result = finalize_first_pass_ai_description_work_batch(
+        engine,
+        conversation_ids=[10],
+        conversation_view_snapshot_ids=[20],
+        translation_enabled=False,
+        require_ai_descriptions=False,
+    )
+
+    with Session(engine) as session:
+        view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
+
+    assert result.fallback_status_count == 0
     assert result.activated_view_snapshot_ids == [20]
     assert view_snapshot.activated_at is not None
 
@@ -1046,7 +1139,7 @@ def test_first_pass_finalization_ignores_ready_english_work() -> None:
         engine,
         conversation_ids=[10],
         conversation_view_snapshot_ids=[20],
-        translation_enabled=True,
+        translation_enabled=False,
     )
 
     with Session(engine) as session:
@@ -1062,8 +1155,10 @@ def test_first_pass_finalization_ignores_ready_translation_work() -> None:
         _insert_non_processable_ai_work_state(session)
         conversation = session.execute(select(Conversation)).scalar_one()
         conversation.current_content_id = 40
+        _insert_attempted_eager_translation_work(session)
         translation_work = session.execute(
             select(OpinionGroupDescriptionTranslationWork)
+            .where(OpinionGroupDescriptionTranslationWork.locale == "fr")
         ).scalar_one()
         translation_work.attempt_count = 0
         session.add(
@@ -1076,6 +1171,7 @@ def test_first_pass_finalization_ignores_ready_translation_work() -> None:
                 created_at=NOW,
             )
         )
+        _insert_all_eager_translations(session)
         session.commit()
 
     result = finalize_first_pass_ai_description_work_batch(
@@ -1096,6 +1192,7 @@ def test_activation_does_not_publish_content_count_snapshots() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
+        _insert_attempted_eager_translation_work(session)
         session.add(
             ConversationViewSnapshot(
                 id=21,
@@ -1180,14 +1277,15 @@ def test_newer_content_snapshot_does_not_stale_first_pass_translation() -> None:
         claim_lineage_descriptions=False,
     )
 
-    assert len(claims) == 1
-    assert isinstance(claims[0], ClaimedDescriptionTranslationWorkItem)
+    assert len(claims) == len(SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES)
+    assert all(isinstance(claim, ClaimedDescriptionTranslationWorkItem) for claim in claims)
 
 
 def test_translation_fallback_allows_first_pass_activation() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
+        _insert_attempted_eager_translation_work(session)
         session.commit()
 
     result = finalize_first_pass_ai_description_work_batch(
@@ -1204,7 +1302,7 @@ def test_translation_fallback_allows_first_pass_activation() -> None:
     assert view_snapshot.activated_at is not None
 
 
-def test_materialize_requested_translation_work_marks_missing_translation_due() -> None:
+def test_materialize_requested_translation_work_creates_missing_translation_work() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
@@ -1222,11 +1320,13 @@ def test_materialize_requested_translation_work_marks_missing_translation_due() 
 
     with Session(engine) as session:
         translation_work = session.execute(
-            select(OpinionGroupDescriptionTranslationWork)
+            select(OpinionGroupDescriptionTranslationWork).where(
+                OpinionGroupDescriptionTranslationWork.locale == "fr"
+            )
         ).scalar_one()
 
     assert materialized_ids == [10]
-    assert translation_work.next_run_at is not None
+    assert translation_work.lease_token is None
 
 
 def test_materialize_requested_translation_work_skips_ready_translation() -> None:
@@ -1247,6 +1347,7 @@ def test_materialize_requested_translation_work_skips_ready_translation() -> Non
                 created_at=NOW,
             )
         )
+        _insert_all_eager_translations(session)
         session.commit()
 
     materialized_ids = materialize_requested_description_translation_work(
@@ -1254,7 +1355,7 @@ def test_materialize_requested_translation_work_skips_ready_translation() -> Non
         limit=10,
         require_activated_view_snapshot=True,
     )
-    due_ids = fetch_due_ai_description_work_conversation_ids(
+    claimable_ids = fetch_claimable_ai_description_work_conversation_ids(
         engine,
         limit=10,
         ai_description_epoch=1,
@@ -1264,7 +1365,7 @@ def test_materialize_requested_translation_work_skips_ready_translation() -> Non
     )
 
     assert materialized_ids == []
-    assert due_ids == []
+    assert claimable_ids == []
 
 
 def test_translation_retry_fallback_does_not_activate_first_pass_snapshot() -> None:
@@ -1279,7 +1380,6 @@ def test_translation_retry_fallback_does_not_activate_first_pass_snapshot() -> N
         translation_work.lease_owner = "worker-1"
         translation_work.lease_token = "token-translation"
         translation_work.lease_expires_at = NOW + timedelta(minutes=10)
-        translation_work.next_run_at = None
         session.commit()
 
     schedule = retry_ai_description_locale_work_item(
@@ -1293,14 +1393,8 @@ def test_translation_retry_fallback_does_not_activate_first_pass_snapshot() -> N
             attempt_count=1,
             lease_token="token-translation",
         ),
-        retry_policy=RetryPolicy(
-            burst_attempts=10,
-            burst_interval_seconds=10,
-            cooldown_seconds=300,
-        ),
         error_code="ai_description_retryable",
         error_message="temporary translation failure",
-        force_cooldown=True,
     )
 
     with Session(engine) as session:
@@ -1309,10 +1403,9 @@ def test_translation_retry_fallback_does_not_activate_first_pass_snapshot() -> N
             select(OpinionGroupDescriptionTranslationWork)
         ).scalar_one()
 
-    assert schedule.retry_scheduled_at is not None
+    assert schedule.retry_released_at is not None
     assert view_snapshot.activated_at is None
     assert translation_work.lease_token is None
-    assert translation_work.next_run_at is not None
 
 
 def test_stale_non_checkpoint_retry_work_is_not_claimable() -> None:
@@ -1347,7 +1440,7 @@ def test_stale_non_checkpoint_retry_work_is_not_claimable() -> None:
         )
         session.commit()
 
-    due_conversation_ids = fetch_due_ai_description_work_conversation_ids(
+    claimable_conversation_ids = fetch_claimable_ai_description_work_conversation_ids(
         engine,
         limit=10,
         ai_description_epoch=1,
@@ -1363,7 +1456,7 @@ def test_stale_non_checkpoint_retry_work_is_not_claimable() -> None:
         translation_enabled=True,
     )
 
-    assert due_conversation_ids == []
+    assert claimable_conversation_ids == []
     assert claims == []
 
 
@@ -1377,7 +1470,7 @@ def test_retry_claim_requires_activated_view_snapshot() -> None:
         lineage.system_description_id = None
         session.commit()
 
-    unactivated_due_ids = fetch_due_ai_description_work_conversation_ids(
+    unactivated_claimable_ids = fetch_claimable_ai_description_work_conversation_ids(
         engine,
         limit=10,
         ai_description_epoch=1,
@@ -1400,7 +1493,7 @@ def test_retry_claim_requires_activated_view_snapshot() -> None:
         view_snapshot.activated_at = NOW
         session.commit()
 
-    activated_due_ids = fetch_due_ai_description_work_conversation_ids(
+    activated_claimable_ids = fetch_claimable_ai_description_work_conversation_ids(
         engine,
         limit=10,
         ai_description_epoch=1,
@@ -1418,9 +1511,9 @@ def test_retry_claim_requires_activated_view_snapshot() -> None:
         require_activated_view_snapshot=True,
     )
 
-    assert unactivated_due_ids == []
+    assert unactivated_claimable_ids == []
     assert unactivated_claims == []
-    assert activated_due_ids == [10]
+    assert activated_claimable_ids == [10]
     assert len(activated_claims) == 1
     assert isinstance(activated_claims[0], ClaimedLineageDescriptionWorkItem)
 
@@ -1495,7 +1588,6 @@ def test_recover_expired_work_can_target_unactivated_first_pass() -> None:
         lineage = session.execute(select(OpinionGroupLineage)).scalar_one()
         lineage.system_description_id = None
         lineage_work = session.execute(select(OpinionGroupLineageDescriptionWork)).scalar_one()
-        lineage_work.next_run_at = None
         lineage_work.lease_owner = "worker-1"
         lineage_work.lease_token = "token-1"
         lineage_work.lease_expires_at = NOW - timedelta(seconds=1)
@@ -1512,7 +1604,6 @@ def test_recover_expired_work_can_target_unactivated_first_pass() -> None:
 
     assert recovered_ids == [10]
     assert lineage_work.lease_token is None
-    assert lineage_work.next_run_at is not None
 
 
 def test_unactivated_recovery_does_not_claim_activated_retry_work() -> None:
@@ -1526,7 +1617,6 @@ def test_unactivated_recovery_does_not_claim_activated_retry_work() -> None:
         lineage = session.execute(select(OpinionGroupLineage)).scalar_one()
         lineage.system_description_id = None
         lineage_work = session.execute(select(OpinionGroupLineageDescriptionWork)).scalar_one()
-        lineage_work.next_run_at = None
         lineage_work.lease_owner = "worker-1"
         lineage_work.lease_token = "token-1"
         lineage_work.lease_expires_at = NOW - timedelta(seconds=1)
@@ -1562,7 +1652,6 @@ def test_completion_releases_stale_unactivated_first_pass_after_new_votes() -> N
                 running_data_generation=1,
                 persisted_analysis_snapshot_id=30,
                 dirty_since=None,
-                next_run_at=None,
                 attempt_generation=1,
                 attempt_count=1,
                 non_retryable_generation=None,
@@ -1620,12 +1709,119 @@ def test_completion_releases_stale_unactivated_first_pass_after_new_votes() -> N
     assert blocked_running_generation == 1
     assert blocked_persisted_snapshot_id == 30
     assert blocked_lease_token == "analysis-token"
-    assert len(stale_schedules) == 1
-    assert stale_schedules[0].conversation_id == 10
-    assert stale_schedules[0].next_run_at is not None
+    assert stale_schedules == [10]
     assert stale_last_completed_generation == 1
     assert stale_running_generation is None
     assert stale_persisted_snapshot_id is None
+
+
+def test_expired_unpersisted_analysis_work_is_claimable_immediately() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        session.add(
+            AnalysisWorkState(
+                id=901,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                last_completed_data_generation=0,
+                running_data_generation=1,
+                persisted_analysis_snapshot_id=None,
+                dirty_since=None,
+                attempt_generation=1,
+                attempt_count=1,
+                non_retryable_generation=None,
+                non_retryable_analysis_engine_epoch=None,
+                lease_owner="math-updater",
+                lease_token="analysis-token",
+                lease_expires_at=datetime.now(UTC) - timedelta(seconds=1),
+                last_error_kind=None,
+                last_error_code=None,
+                last_error_message=None,
+                last_error_stack_hash=None,
+                created_at=NOW,
+                updated_at=NOW,
+            )
+        )
+        session.commit()
+
+    claimable_ids = fetch_claimable_work_conversation_ids(
+        engine,
+        limit=10,
+        analysis_engine_epoch=1,
+    )
+    claims = claim_work_items_batch(
+        engine,
+        worker_id="math-updater-2",
+        conversation_ids=[10],
+        lease_ttl_seconds=60,
+        limit=10,
+        analysis_engine_epoch=1,
+    )
+    claimable_after_claim_ids = fetch_claimable_work_conversation_ids(
+        engine,
+        limit=10,
+        analysis_engine_epoch=1,
+    )
+
+    assert claimable_ids == [10]
+    assert len(claims) == 1
+    assert claims[0].conversation_id == 10
+    assert claims[0].data_generation == 1
+    assert claims[0].attempt_count == 2
+    assert claimable_after_claim_ids == []
+
+
+def test_active_analysis_lease_blocks_duplicate_claim() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        session.add(
+            AnalysisWorkState(
+                id=901,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                last_completed_data_generation=0,
+                running_data_generation=1,
+                persisted_analysis_snapshot_id=None,
+                dirty_since=None,
+                attempt_generation=1,
+                attempt_count=1,
+                non_retryable_generation=None,
+                non_retryable_analysis_engine_epoch=None,
+                lease_owner="math-updater",
+                lease_token="analysis-token",
+                lease_expires_at=datetime.now(UTC) + timedelta(minutes=10),
+                last_error_kind=None,
+                last_error_code=None,
+                last_error_message=None,
+                last_error_stack_hash=None,
+                created_at=NOW,
+                updated_at=NOW,
+            )
+        )
+        session.commit()
+
+    claimable_ids = fetch_claimable_work_conversation_ids(
+        engine,
+        limit=10,
+        analysis_engine_epoch=1,
+    )
+    claims = claim_work_items_batch(
+        engine,
+        worker_id="math-updater-2",
+        conversation_ids=[10],
+        lease_ttl_seconds=60,
+        limit=10,
+        analysis_engine_epoch=1,
+    )
+
+    assert claimable_ids == []
+    assert claims == []
 
 
 def test_extend_postgres_leases_only_extends_active_owned_claims() -> None:
@@ -1642,7 +1838,6 @@ def test_extend_postgres_leases_only_extends_active_owned_claims() -> None:
                     running_data_generation=1,
                     persisted_analysis_snapshot_id=None,
                     dirty_since=None,
-                    next_run_at=None,
                     attempt_generation=1,
                     attempt_count=1,
                     non_retryable_generation=None,
@@ -1665,7 +1860,6 @@ def test_extend_postgres_leases_only_extends_active_owned_claims() -> None:
                     running_data_generation=2,
                     persisted_analysis_snapshot_id=None,
                     dirty_since=None,
-                    next_run_at=None,
                     attempt_generation=2,
                     attempt_count=1,
                     non_retryable_generation=None,
@@ -1731,7 +1925,6 @@ def test_extend_ai_description_locale_work_leases_only_extends_active_claims() -
         _insert_non_processable_ai_work_state(session, leased_lineage_work=True)
         translation_work = session.get(OpinionGroupDescriptionTranslationWork, 202)
         assert translation_work is not None
-        translation_work.next_run_at = None
         translation_work.lease_owner = "worker-1"
         translation_work.lease_token = "token-translation"
         translation_work.lease_expires_at = NOW + timedelta(seconds=1)
@@ -1742,7 +1935,6 @@ def test_extend_ai_description_locale_work_leases_only_extends_active_claims() -
                 conversation_id=10,
                 locale="es",
                 attempt_count=1,
-                next_run_at=None,
                 lease_owner="worker-1",
                 lease_token="other-token",
                 lease_expires_at=NOW + timedelta(seconds=1),
@@ -1810,7 +2002,6 @@ def test_recover_expired_persisted_analysis_work_keeps_resume_state() -> None:
                 running_data_generation=1,
                 persisted_analysis_snapshot_id=30,
                 dirty_since=None,
-                next_run_at=None,
                 attempt_generation=1,
                 attempt_count=1,
                 non_retryable_generation=None,
@@ -1837,7 +2028,6 @@ def test_recover_expired_persisted_analysis_work_keeps_resume_state() -> None:
     assert recovered_state.running_data_generation == 1
     assert recovered_state.persisted_analysis_snapshot_id == 30
     assert recovered_state.lease_token == "analysis-token"
-    assert recovered_state.next_run_at is None
 
 
 def test_claimed_non_processable_lineage_work_does_not_call_generator() -> None:
@@ -1870,4 +2060,3 @@ def test_claimed_non_processable_lineage_work_does_not_call_generator() -> None:
 
     assert view_snapshot.activated_at is None
     assert lineage_work.lease_token is None
-    assert lineage_work.next_run_at is None

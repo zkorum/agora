@@ -28,7 +28,11 @@ import {
     voteTable,
 } from "@/shared-backend/schema.js";
 import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
-import { wakeScheduledAnalysisForConversation } from "@/shared-backend/analysisScheduler.js";
+import {
+    enqueueScheduledConversationForMathWork,
+    hasActiveVotesForMathWork,
+    hasSurveyResponsesForMathWork,
+} from "@/shared-backend/analysisScheduler.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import {
     getSurveyQuestionContentTranslations,
@@ -178,13 +182,28 @@ async function refreshConversationAnalysisForSurveyChange({
         return;
     }
 
+    const hasActiveVotes = await hasActiveVotesForMathWork({
+        db,
+        conversationId: conversation.conversationId,
+    });
+    const hasSurveyResponses = await hasSurveyResponsesForMathWork({
+        db,
+        conversationId: conversation.conversationId,
+    });
+    if (!hasActiveVotes && !hasSurveyResponses) {
+        log.info(
+            `[Survey] Skipping math work schedule for survey change without active inputs conversationId=${String(conversation.conversationId)} conversationSlugId=${conversation.slugId}`,
+        );
+        return;
+    }
+
     await scheduleConversationAnalysisRefresh({
         db,
         conversationId: conversation.conversationId,
         log,
-        wakeStrategy: "caller_will_wake",
+        queueStrategy: "caller_will_enqueue",
     });
-    await wakeScheduledAnalysisForConversation({
+    await enqueueScheduledConversationForMathWork({
         db,
         valkey,
         conversationId: conversation.conversationId,

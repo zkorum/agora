@@ -54,8 +54,7 @@ from agora_worker_shared.generated_models import (
     OpinionGroupVariant,
     RealtimeEventOutbox,
 )
-from agora_worker_shared.retry_policy import RetryPolicy, next_cooldown_retry_at, next_retry_at
-from agora_worker_shared.valkey_client import datetime_to_epoch_ms
+from agora_worker_shared.generated_shared_types import SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES
 
 log = logging.getLogger(__name__)
 POSTGRES_INSERT_BIND_PARAM_LIMIT = 60_000
@@ -77,7 +76,7 @@ if TYPE_CHECKING:
 
     from sqlalchemy import Engine
     from sqlalchemy.orm.attributes import InstrumentedAttribute
-    from sqlalchemy.sql.elements import ColumnElement
+    from sqlalchemy.sql.elements import ColumnElement, UnaryExpression
 
     from agora_worker_shared.description_translation import DescriptionTranslation
 
@@ -89,12 +88,10 @@ if TYPE_CHECKING:
         [list[DescriptionForTranslation], list[str]],
         list[DescriptionTranslation],
     ]
-    type _NextRunExpression = (
-        ColumnElement[datetime | None] | InstrumentedAttribute[datetime | None]
-    )
     type _OrderByExpression = (
         ColumnElement[bool]
         | ColumnElement[datetime | None]
+        | UnaryExpression[datetime]
         | InstrumentedAttribute[int]
     )
 
@@ -128,16 +125,15 @@ type ClaimedAiDescriptionLocaleWorkItem = (
 
 
 @dataclass(frozen=True)
-class WorkStateSchedule:
+class AiDescriptionWorkResult:
     conversation_id: int
-    next_run_at: datetime | None
-    retry_scheduled_at: datetime | None = None
+    retry_released_at: datetime | None = None
 
 
 @dataclass(frozen=True)
-class DueAiDescriptionWorkConversationRow:
+class ClaimableAiDescriptionWorkConversationRow:
     conversation_id: int
-    next_run_at: datetime | None
+    updated_at: datetime
     priority: int
 
 
@@ -163,14 +159,14 @@ class FirstPassPendingStatusError(RuntimeError):
 
 @dataclass(frozen=True)
 class DescriptionTranslationBatchProcessResult:
-    schedules: list[WorkStateSchedule]
+    schedules: list[AiDescriptionWorkResult]
     translated_description_ids: list[int]
     missing_description_ids: list[int] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
 class LineageDescriptionBatchProcessResult:
-    schedules: list[WorkStateSchedule]
+    schedules: list[AiDescriptionWorkResult]
     generated_lineage_ids: list[int]
     missing_lineage_ids: list[int] = field(default_factory=list)
 
@@ -193,12 +189,6 @@ class _TranslationDescriptionContext:
     lineage_id: int
     source_candidate_id: int
     conversation_title: str | None
-
-
-def claimable_immediate_retry_at(now: datetime) -> datetime:
-    # Work-state timestamps are stored with second precision; flooring avoids
-    # rounding an immediate retry into the next second and missing the next claim.
-    return now.replace(microsecond=0)
 
 
 def _format_ids_for_log(ids: Sequence[int]) -> str:
@@ -236,22 +226,27 @@ def lineage_description_work_claim_batches(
 
 
 @dataclass(frozen=True)
-class PendingLocaleStatusRow:
-    id: int
-    conversation_id: int
-    conversation_view_snapshot_id: int
-    analysis_snapshot_result_id: int
-    locale: str
-    next_run_at: datetime | None
-
-
-@dataclass(frozen=True)
 class CandidateLocaleRequestRow:
     id: int
     conversation_id: int
     candidate_id: int
     locale: str
-    next_run_at: datetime
+
+
+@dataclass(frozen=True)
+class EagerDescriptionCandidateRow:
+    conversation_id: int
+    candidate_id: int
+
+
+@dataclass(frozen=True)
+class EagerCandidateOptionRow:
+    conversation_id: int
+    conversation_view_snapshot_id: int
+    candidate_id: int
+    group_count: int
+    preferred_group_count: int | None
+    selection_score: float
 
 
 @dataclass(frozen=True)
@@ -266,7 +261,6 @@ class LineageDescriptionWorkDemand:
     lineage_id: int
     conversation_id: int
     source_candidate_id: int
-    next_run_at: datetime | None
 
 
 @dataclass(frozen=True)
@@ -274,7 +268,6 @@ class TranslationWorkDemand:
     description_id: int
     conversation_id: int
     locale: str
-    next_run_at: datetime | None
 
 
 @dataclass(frozen=True)
@@ -282,14 +275,12 @@ class _LineageDescriptionWorkInsert:
     lineage_id: int
     conversation_id: int
     source_candidate_id: int
-    next_run_at: datetime | ColumnElement[datetime]
 
     def to_insert_value(self, *, include_timestamps: bool = False) -> dict[str, object]:
         value: dict[str, object] = {
             "lineage_id": self.lineage_id,
             "conversation_id": self.conversation_id,
             "source_candidate_id": self.source_candidate_id,
-            "next_run_at": self.next_run_at,
         }
         if include_timestamps:
             value["created_at"] = func.now()
@@ -302,14 +293,12 @@ class _TranslationWorkInsert:
     description_id: int
     conversation_id: int
     locale: str
-    next_run_at: datetime | ColumnElement[datetime]
 
     def to_insert_value(self, *, include_timestamps: bool = False) -> dict[str, object]:
         value: dict[str, object] = {
             "description_id": self.description_id,
             "conversation_id": self.conversation_id,
             "locale": self.locale,
-            "next_run_at": self.next_run_at,
         }
         if include_timestamps:
             value["created_at"] = func.now()
@@ -483,14 +472,10 @@ def complete_non_processable_ai_description_work_batch(
                                 OpinionGroupLineageDescriptionWork.lease_token.is_(None),
                                 OpinionGroupLineageDescriptionWork.lease_expires_at < func.now(),
                             ),
-                            or_(
-                                OpinionGroupLineageDescriptionWork.next_run_at.is_not(None),
-                                OpinionGroupLineageDescriptionWork.lease_token.is_not(None),
-                            ),
+                            OpinionGroupLineageDescriptionWork.lease_token.is_not(None),
                         )
                     )
                     .values(
-                        next_run_at=None,
                         lease_owner=None,
                         lease_token=None,
                         lease_expires_at=None,
@@ -517,14 +502,10 @@ def complete_non_processable_ai_description_work_batch(
                                 OpinionGroupDescriptionTranslationWork.lease_expires_at
                                 < func.now(),
                             ),
-                            or_(
-                                OpinionGroupDescriptionTranslationWork.next_run_at.is_not(None),
-                                OpinionGroupDescriptionTranslationWork.lease_token.is_not(None),
-                            ),
+                            OpinionGroupDescriptionTranslationWork.lease_token.is_not(None),
                         )
                     )
                     .values(
-                        next_run_at=None,
                         lease_owner=None,
                         lease_token=None,
                         lease_expires_at=None,
@@ -548,9 +529,9 @@ def finalize_first_pass_ai_description_work_batch(
     conversation_view_snapshot_ids: list[int],
     translation_enabled: bool,
     fallback_pending_statuses: bool = False,
+    require_ai_descriptions: bool = True,
     checkpoint_activation_context: CheckpointActivationContext | None = None,
 ) -> FirstPassFinalizeResult:
-    del translation_enabled
     if not conversation_ids or not conversation_view_snapshot_ids:
         return FirstPassFinalizeResult(
             fallback_status_count=0,
@@ -561,23 +542,43 @@ def finalize_first_pass_ai_description_work_batch(
     unique_view_snapshot_ids = sorted(set(conversation_view_snapshot_ids))
     with Session(engine) as session:
         fallback_status_count = 0
-        pending_counts = _first_pass_pending_work_counts(
-            session,
-            conversation_ids=unique_conversation_ids,
-            conversation_view_snapshot_ids=unique_view_snapshot_ids,
-        )
-        if pending_counts.total > 0:
-            fallback_status_count = pending_counts.total
-            log.warning(
-                "[MathUpdaterDB] First-pass snapshot activation found pending expected "
-                "AI description work english=%d translation=%d conversation_ids=%s "
-                "view_snapshot_ids=%s fallbackPendingStatuses=%s",
-                pending_counts.english,
-                pending_counts.translation,
-                _format_ids_for_log(unique_conversation_ids),
-                _format_ids_for_log(unique_view_snapshot_ids),
-                fallback_pending_statuses,
+        if require_ai_descriptions:
+            _materialize_eager_lineage_description_work(
+                session,
+                conversation_ids=unique_conversation_ids,
+                conversation_view_snapshot_ids=unique_view_snapshot_ids,
+                require_unactivated_view_snapshot=True,
             )
+            if translation_enabled:
+                _materialize_eager_translation_work(
+                    session,
+                    conversation_ids=unique_conversation_ids,
+                    conversation_view_snapshot_ids=unique_view_snapshot_ids,
+                    require_unactivated_view_snapshot=True,
+                )
+            pending_counts = _first_pass_pending_work_counts(
+                session,
+                conversation_ids=unique_conversation_ids,
+                conversation_view_snapshot_ids=unique_view_snapshot_ids,
+                include_translations=translation_enabled,
+            )
+            if pending_counts.total > 0:
+                fallback_status_count = pending_counts.total
+                log.warning(
+                    "[MathUpdaterDB] First-pass snapshot activation found pending expected "
+                    "AI description work english=%d translation=%d conversation_ids=%s "
+                    "view_snapshot_ids=%s fallbackPendingStatuses=%s",
+                    pending_counts.english,
+                    pending_counts.translation,
+                    _format_ids_for_log(unique_conversation_ids),
+                    _format_ids_for_log(unique_view_snapshot_ids),
+                    fallback_pending_statuses,
+                )
+                session.commit()
+                return FirstPassFinalizeResult(
+                    fallback_status_count=fallback_status_count,
+                    activated_view_snapshot_ids=[],
+                )
         activated_view_snapshot_ids = _activate_first_pass_display_safe_view_snapshots(
             session,
             conversation_ids=unique_conversation_ids,
@@ -592,7 +593,7 @@ def finalize_first_pass_ai_description_work_batch(
     )
 
 
-def fetch_due_ai_description_work_conversation_ids(
+def fetch_claimable_ai_description_work_conversation_ids(
     engine: Engine,
     *,
     limit: int,
@@ -603,7 +604,7 @@ def fetch_due_ai_description_work_conversation_ids(
     require_activated_view_snapshot: bool = False,
 ) -> list[int]:
     with Session(engine) as session:
-        rows: list[DueAiDescriptionWorkConversationRow] = []
+        rows: list[ClaimableAiDescriptionWorkConversationRow] = []
         if include_lineage_descriptions:
             lineage_latest_candidate_exists = _lineage_work_relevant_candidate_filter(
                 conversation_view_snapshot_ids=None,
@@ -613,7 +614,7 @@ def fetch_due_ai_description_work_conversation_ids(
             lineage_rows = session.execute(
                 select(
                     OpinionGroupLineageDescriptionWork.conversation_id,
-                    OpinionGroupLineageDescriptionWork.next_run_at,
+                    OpinionGroupLineageDescriptionWork.updated_at,
                     lineage_latest_candidate_exists.label("has_latest_candidate"),
                 )
                 .join(
@@ -629,8 +630,6 @@ def fetch_due_ai_description_work_conversation_ids(
                         Conversation.ai_labeling_enabled.is_(True),
                         OpinionGroupLineage.system_description_id.is_(None),
                         OpinionGroupLineageDescriptionWork.lease_token.is_(None),
-                        OpinionGroupLineageDescriptionWork.next_run_at.is_not(None),
-                        OpinionGroupLineageDescriptionWork.next_run_at <= func.now(),
                         _lineage_work_relevant_candidate_filter(
                             conversation_view_snapshot_ids=None,
                             require_activated_view_snapshot=require_activated_view_snapshot,
@@ -647,13 +646,16 @@ def fetch_due_ai_description_work_conversation_ids(
                         ),
                     )
                 )
-                .order_by(OpinionGroupLineageDescriptionWork.next_run_at.asc())
+                .order_by(
+                    OpinionGroupLineageDescriptionWork.updated_at.asc(),
+                    OpinionGroupLineageDescriptionWork.id,
+                )
                 .limit(limit)
             )
             rows.extend(
-                DueAiDescriptionWorkConversationRow(
+                ClaimableAiDescriptionWorkConversationRow(
                     conversation_id=row.conversation_id,
-                    next_run_at=row.next_run_at,
+                    updated_at=row.updated_at,
                     priority=0 if row.has_latest_candidate else 1,
                 )
                 for row in lineage_rows
@@ -667,7 +669,7 @@ def fetch_due_ai_description_work_conversation_ids(
             translation_rows = session.execute(
                 select(
                     OpinionGroupDescriptionTranslationWork.conversation_id,
-                    OpinionGroupDescriptionTranslationWork.next_run_at,
+                    OpinionGroupDescriptionTranslationWork.updated_at,
                     translation_latest_candidate_exists.label("has_latest_candidate"),
                 )
                 .join(
@@ -678,8 +680,6 @@ def fetch_due_ai_description_work_conversation_ids(
                     and_(
                         Conversation.ai_labeling_enabled.is_(True),
                         OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
-                        OpinionGroupDescriptionTranslationWork.next_run_at.is_not(None),
-                        OpinionGroupDescriptionTranslationWork.next_run_at <= func.now(),
                         _translation_work_relevant_candidate_filter(
                             conversation_view_snapshot_ids=None,
                             require_activated_view_snapshot=require_activated_view_snapshot,
@@ -706,36 +706,37 @@ def fetch_due_ai_description_work_conversation_ids(
                         ),
                     )
                 )
-                .order_by(OpinionGroupDescriptionTranslationWork.next_run_at.asc())
+                .order_by(
+                    OpinionGroupDescriptionTranslationWork.updated_at.asc(),
+                    OpinionGroupDescriptionTranslationWork.id,
+                )
                 .limit(limit)
             )
             rows.extend(
-                DueAiDescriptionWorkConversationRow(
+                ClaimableAiDescriptionWorkConversationRow(
                     conversation_id=row.conversation_id,
-                    next_run_at=row.next_run_at,
+                    updated_at=row.updated_at,
                     priority=0 if row.has_latest_candidate else 1,
                 )
                 for row in translation_rows
             )
-    due_conversation_ids: list[int] = []
+    claimable_conversation_ids: list[int] = []
     seen_conversation_ids: set[int] = set()
     sorted_rows = sorted(
         rows,
         key=lambda row: (
             row.priority,
-            datetime_to_epoch_ms(row.next_run_at)
-            if row.next_run_at is not None
-            else float("-inf")
+            row.updated_at.timestamp(),
         ),
     )
     for row in sorted_rows:
         if row.conversation_id in seen_conversation_ids:
             continue
         seen_conversation_ids.add(row.conversation_id)
-        due_conversation_ids.append(row.conversation_id)
-        if len(due_conversation_ids) >= limit:
+        claimable_conversation_ids.append(row.conversation_id)
+        if len(claimable_conversation_ids) >= limit:
             break
-    return due_conversation_ids
+    return claimable_conversation_ids
 
 
 def recover_expired_ai_description_work(
@@ -791,7 +792,6 @@ def recover_expired_ai_description_work(
                         lease_owner=None,
                         lease_token=None,
                         lease_expires_at=None,
-                        next_run_at=func.now(),
                         updated_at=func.now(),
                     )
                     .returning(OpinionGroupLineageDescriptionWork.conversation_id)
@@ -818,7 +818,6 @@ def recover_expired_ai_description_work(
                         lease_owner=None,
                         lease_token=None,
                         lease_expires_at=None,
-                        next_run_at=func.now(),
                         updated_at=func.now(),
                     )
                     .returning(OpinionGroupDescriptionTranslationWork.conversation_id)
@@ -840,7 +839,14 @@ def materialize_requested_description_translation_work(
         return []
 
     with Session(engine) as session:
-        conversation_ids = _materialize_translation_work_for_candidate_locale_requests(
+        eager_conversation_ids = _materialize_eager_translation_work(
+            session,
+            conversation_ids=None,
+            conversation_view_snapshot_ids=None,
+            limit=limit,
+            require_activated_view_snapshot=require_activated_view_snapshot,
+        )
+        requested_conversation_ids = _materialize_translation_work_for_candidate_locale_requests(
             session,
             conversation_ids=None,
             conversation_view_snapshot_ids=None,
@@ -850,7 +856,40 @@ def materialize_requested_description_translation_work(
         )
         session.commit()
 
-    return conversation_ids
+    return sorted({*eager_conversation_ids, *requested_conversation_ids})
+
+
+def materialize_requested_lineage_description_work(
+    engine: Engine,
+    *,
+    limit: int,
+    require_activated_view_snapshot: bool = False,
+    include_checkpoints: bool = False,
+) -> list[int]:
+    if limit <= 0:
+        return []
+
+    with Session(engine) as session:
+        eager_conversation_ids = _materialize_eager_lineage_description_work(
+            session,
+            conversation_ids=None,
+            conversation_view_snapshot_ids=None,
+            limit=limit,
+            require_activated_view_snapshot=require_activated_view_snapshot,
+        )
+        requested_conversation_ids = (
+            _materialize_lineage_description_work_for_candidate_locale_requests(
+                session,
+                conversation_ids=None,
+                conversation_view_snapshot_ids=None,
+                limit=limit,
+                require_activated_view_snapshot=require_activated_view_snapshot,
+                include_checkpoints=include_checkpoints,
+            )
+        )
+        session.commit()
+
+    return sorted({*eager_conversation_ids, *requested_conversation_ids})
 
 
 def fetch_ai_description_view_snapshot_ids_for_analysis_snapshots(
@@ -982,7 +1021,6 @@ def _fetch_candidate_locale_request_rows(
             conversation_id=row.conversation_id,
             candidate_id=row.candidate_id,
             locale=row.locale,
-            next_run_at=row.updated_at,
         )
         for row in rows
     ]
@@ -993,6 +1031,7 @@ def _first_pass_pending_work_counts(
     *,
     conversation_ids: list[int],
     conversation_view_snapshot_ids: list[int],
+    include_translations: bool = True,
 ) -> FirstPassPendingStatusCounts:
     if not conversation_ids or not conversation_view_snapshot_ids:
         return FirstPassPendingStatusCounts(english=0, translation=0)
@@ -1018,31 +1057,33 @@ def _first_pass_pending_work_counts(
             )
         )
     ).scalar_one()
-    translation_count = session.execute(
-        select(func.count(OpinionGroupDescriptionTranslationWork.id)).where(
-            and_(
-                OpinionGroupDescriptionTranslationWork.conversation_id.in_(
-                    sorted(set(conversation_ids))
-                ),
-                OpinionGroupDescriptionTranslationWork.attempt_count == 0,
-                OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
-                ~select(OpinionGroupDescriptionTranslation.id)
-                .where(
-                    and_(
-                        OpinionGroupDescriptionTranslation.description_id
-                        == OpinionGroupDescriptionTranslationWork.description_id,
-                        OpinionGroupDescriptionTranslation.locale
-                        == OpinionGroupDescriptionTranslationWork.locale,
+    translation_count = 0
+    if include_translations:
+        translation_count = session.execute(
+            select(func.count(OpinionGroupDescriptionTranslationWork.id)).where(
+                and_(
+                    OpinionGroupDescriptionTranslationWork.conversation_id.in_(
+                        sorted(set(conversation_ids))
+                    ),
+                    OpinionGroupDescriptionTranslationWork.attempt_count == 0,
+                    OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
+                    ~select(OpinionGroupDescriptionTranslation.id)
+                    .where(
+                        and_(
+                            OpinionGroupDescriptionTranslation.description_id
+                            == OpinionGroupDescriptionTranslationWork.description_id,
+                            OpinionGroupDescriptionTranslation.locale
+                            == OpinionGroupDescriptionTranslationWork.locale,
+                        )
                     )
+                    .exists(),
+                    _translation_work_relevant_candidate_filter(
+                        conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+                        require_unactivated_view_snapshot=True,
+                    ),
                 )
-                .exists(),
-                _translation_work_relevant_candidate_filter(
-                    conversation_view_snapshot_ids=conversation_view_snapshot_ids,
-                    require_unactivated_view_snapshot=True,
-                ),
             )
-        )
-    ).scalar_one()
+        ).scalar_one()
     return FirstPassPendingStatusCounts(
         english=english_count,
         translation=translation_count,
@@ -1054,12 +1095,14 @@ def fetch_first_pass_pending_work_counts(
     *,
     conversation_ids: list[int],
     conversation_view_snapshot_ids: list[int],
+    include_translations: bool = True,
 ) -> FirstPassPendingStatusCounts:
     with Session(engine) as session:
         return _first_pass_pending_work_counts(
             session,
             conversation_ids=conversation_ids,
             conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+            include_translations=include_translations,
         )
 
 
@@ -1457,6 +1500,21 @@ def _fetch_required_lineage_description_rows_for_candidate(
     *,
     candidate_id: int,
 ) -> list[RequiredLineageDescriptionRow]:
+    rows_by_candidate_id = _fetch_required_lineage_description_rows_by_candidate(
+        session,
+        candidate_ids=[candidate_id],
+    )
+    return rows_by_candidate_id.get(candidate_id, [])
+
+
+def _fetch_required_lineage_description_rows_by_candidate(
+    session: Session,
+    *,
+    candidate_ids: list[int],
+) -> dict[int, list[RequiredLineageDescriptionRow]]:
+    if not candidate_ids:
+        return {}
+
     rows = session.execute(
         select(
             OpinionGroup.lineage_id,
@@ -1466,22 +1524,25 @@ def _fetch_required_lineage_description_rows_for_candidate(
         .join(OpinionGroupLineage, OpinionGroupLineage.id == OpinionGroup.lineage_id)
         .where(
             and_(
-                OpinionGroup.candidate_id == candidate_id,
+                OpinionGroup.candidate_id.in_(sorted(set(candidate_ids))),
                 OpinionGroup.lineage_id.is_not(None),
             )
         )
         .order_by(OpinionGroup.candidate_id, OpinionGroup.id)
     ).all()
 
-    return [
-        RequiredLineageDescriptionRow(
-            lineage_id=row.lineage_id,
-            candidate_id=row.candidate_id,
-            system_description_id=row.system_description_id,
+    rows_by_candidate_id: dict[int, list[RequiredLineageDescriptionRow]] = {}
+    for row in rows:
+        if row.lineage_id is None:
+            continue
+        rows_by_candidate_id.setdefault(row.candidate_id, []).append(
+            RequiredLineageDescriptionRow(
+                lineage_id=row.lineage_id,
+                candidate_id=row.candidate_id,
+                system_description_id=row.system_description_id,
+            )
         )
-        for row in rows
-        if row.lineage_id is not None
-    ]
+    return rows_by_candidate_id
 
 
 def _required_system_description_ids_for_candidate(
@@ -1518,7 +1579,6 @@ def lineage_description_work_demands_for_candidate_requests(
                 lineage_id=row.lineage_id,
                 conversation_id=request.conversation_id,
                 source_candidate_id=row.candidate_id,
-                next_run_at=request.next_run_at,
             )
 
     return list(demands_by_lineage_id.values())
@@ -1547,58 +1607,58 @@ def translation_work_demands_for_candidate_requests(
                 description_id=description_id,
                 conversation_id=request.conversation_id,
                 locale=request.locale,
-                next_run_at=request.next_run_at,
             )
 
     return list(demands_by_description_locale.values())
 
 
-def lineage_description_work_demands_for_statuses(
+def lineage_description_work_demands_for_eager_candidates(
     *,
-    statuses: Sequence[PendingLocaleStatusRow],
-    lineage_rows_by_status_id: Mapping[int, Sequence[RequiredLineageDescriptionRow]],
+    candidates: Sequence[EagerDescriptionCandidateRow],
+    lineage_rows_by_candidate_id: Mapping[int, Sequence[RequiredLineageDescriptionRow]],
 ) -> list[LineageDescriptionWorkDemand]:
     demands_by_lineage_id: dict[int, LineageDescriptionWorkDemand] = {}
-    for status in statuses:
-        for row in lineage_rows_by_status_id.get(status.id, ()):
+    for candidate in candidates:
+        for row in lineage_rows_by_candidate_id.get(candidate.candidate_id, ()):
             if row.system_description_id is not None:
                 continue
             if row.lineage_id in demands_by_lineage_id:
                 continue
             demands_by_lineage_id[row.lineage_id] = LineageDescriptionWorkDemand(
                 lineage_id=row.lineage_id,
-                conversation_id=status.conversation_id,
+                conversation_id=candidate.conversation_id,
                 source_candidate_id=row.candidate_id,
-                next_run_at=status.next_run_at,
             )
     return list(demands_by_lineage_id.values())
 
 
-def translation_work_demands_for_statuses(
+def translation_work_demands_for_eager_candidates(
     *,
-    statuses: Sequence[PendingLocaleStatusRow],
-    description_ids_by_status_id: Mapping[int, set[int]],
-    translated_description_ids_by_status_id: Mapping[int, set[int]],
+    candidates: Sequence[EagerDescriptionCandidateRow],
+    lineage_rows_by_candidate_id: Mapping[int, Sequence[RequiredLineageDescriptionRow]],
+    translated_description_ids_by_locale: Mapping[str, set[int]],
 ) -> list[TranslationWorkDemand]:
     demands_by_description_locale: dict[tuple[int, str], TranslationWorkDemand] = {}
-    for status in statuses:
-        description_ids = description_ids_by_status_id.get(status.id, set())
-        if not description_ids:
+    for candidate in candidates:
+        lineage_rows = lineage_rows_by_candidate_id.get(candidate.candidate_id, ())
+        if not lineage_rows or any(row.system_description_id is None for row in lineage_rows):
             continue
-        translated_description_ids = translated_description_ids_by_status_id.get(
-            status.id,
-            set(),
-        )
-        for description_id in sorted(description_ids - translated_description_ids):
-            key = (description_id, status.locale)
-            if key in demands_by_description_locale:
-                continue
-            demands_by_description_locale[key] = TranslationWorkDemand(
-                description_id=description_id,
-                conversation_id=status.conversation_id,
-                locale=status.locale,
-                next_run_at=status.next_run_at,
-            )
+        description_ids = {
+            row.system_description_id
+            for row in lineage_rows
+            if row.system_description_id is not None
+        }
+        for locale in SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES:
+            translated_description_ids = translated_description_ids_by_locale.get(locale, set())
+            for description_id in sorted(description_ids - translated_description_ids):
+                key = (description_id, locale)
+                if key in demands_by_description_locale:
+                    continue
+                demands_by_description_locale[key] = TranslationWorkDemand(
+                    description_id=description_id,
+                    conversation_id=candidate.conversation_id,
+                    locale=locale,
+                )
     return list(demands_by_description_locale.values())
 
 
@@ -1617,7 +1677,6 @@ def _insert_or_reactivate_lineage_description_work(
             lineage_id=demand.lineage_id,
             conversation_id=demand.conversation_id,
             source_candidate_id=demand.source_candidate_id,
-            next_run_at=demand.next_run_at or func.now(),
         )
         values.append(value)
         value_by_lineage_id[demand.lineage_id] = value
@@ -1647,17 +1706,13 @@ def _insert_or_reactivate_lineage_description_work(
                 .values(
                     conversation_id=value.conversation_id,
                     source_candidate_id=value.source_candidate_id,
-                    next_run_at=func.coalesce(
-                        OpinionGroupLineageDescriptionWork.next_run_at,
-                        value.next_run_at,
-                    ),
                     updated_at=func.now(),
                 )
             )
         return
 
     insert_values = [value.to_insert_value() for value in values]
-    for chunk in _iter_chunks(insert_values, chunk_size=_max_rows_per_insert(column_count=4)):
+    for chunk in _iter_chunks(insert_values, chunk_size=_max_rows_per_insert(column_count=3)):
         insert_query = pg_insert(OpinionGroupLineageDescriptionWork).values(chunk)
         session.execute(insert_query.on_conflict_do_nothing())
 
@@ -1671,11 +1726,10 @@ def _insert_or_reactivate_lineage_description_work(
             OpinionGroupLineageDescriptionWork.lineage_id,
         )
         .where(
-            and_(
-                OpinionGroupLineageDescriptionWork.lineage_id.in_(lineage_ids),
-                OpinionGroupLineageDescriptionWork.lease_token.is_(None),
-                OpinionGroupLineageDescriptionWork.next_run_at.is_(None),
-            )
+                and_(
+                    OpinionGroupLineageDescriptionWork.lineage_id.in_(lineage_ids),
+                    OpinionGroupLineageDescriptionWork.lease_token.is_(None),
+                )
         )
         .order_by(OpinionGroupLineageDescriptionWork.lineage_id)
         .with_for_update(
@@ -1691,7 +1745,6 @@ def _insert_or_reactivate_lineage_description_work(
             .values(
                 conversation_id=value.conversation_id,
                 source_candidate_id=value.source_candidate_id,
-                next_run_at=value.next_run_at,
                 updated_at=func.now(),
             )
         )
@@ -1712,7 +1765,6 @@ def _insert_or_reactivate_translation_work(
             description_id=demand.description_id,
             conversation_id=demand.conversation_id,
             locale=demand.locale,
-            next_run_at=demand.next_run_at or func.now(),
         )
         values.append(value)
         value_by_description_locale[(demand.description_id, demand.locale)] = value
@@ -1745,17 +1797,13 @@ def _insert_or_reactivate_translation_work(
                 )
                 .values(
                     conversation_id=value.conversation_id,
-                    next_run_at=func.coalesce(
-                        OpinionGroupDescriptionTranslationWork.next_run_at,
-                        value.next_run_at,
-                    ),
                     updated_at=func.now(),
                 )
             )
         return
 
     insert_values = [value.to_insert_value() for value in values]
-    for chunk in _iter_chunks(insert_values, chunk_size=_max_rows_per_insert(column_count=4)):
+    for chunk in _iter_chunks(insert_values, chunk_size=_max_rows_per_insert(column_count=3)):
         insert_query = pg_insert(OpinionGroupDescriptionTranslationWork).values(chunk)
         session.execute(
             insert_query.on_conflict_do_nothing(
@@ -1787,7 +1835,6 @@ def _insert_or_reactivate_translation_work(
                         OpinionGroupDescriptionTranslationWork.locale,
                     ).in_(chunk),
                     OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
-                    OpinionGroupDescriptionTranslationWork.next_run_at.is_(None),
                 )
             )
             .order_by(
@@ -1806,7 +1853,6 @@ def _insert_or_reactivate_translation_work(
                 .where(OpinionGroupDescriptionTranslationWork.id == row.id)
                 .values(
                     conversation_id=value.conversation_id,
-                    next_run_at=value.next_run_at,
                     updated_at=func.now(),
                 )
             )
@@ -1843,6 +1889,229 @@ def _materialize_lineage_description_work_for_candidate_locale_requests(
         lineage_rows_by_request_id=lineage_rows_by_request_id,
     )
     _insert_or_reactivate_lineage_description_work(session, demands=demands)
+    return sorted({demand.conversation_id for demand in demands})
+
+
+def _select_eager_candidates(
+    rows: Sequence[EagerCandidateOptionRow],
+) -> list[EagerDescriptionCandidateRow]:
+    rows_by_view_snapshot_id: dict[int, list[EagerCandidateOptionRow]] = {}
+    for row in rows:
+        rows_by_view_snapshot_id.setdefault(row.conversation_view_snapshot_id, []).append(row)
+
+    candidates_by_id: dict[int, EagerDescriptionCandidateRow] = {}
+    for view_snapshot_rows in rows_by_view_snapshot_id.values():
+        auto_row = sorted(
+            view_snapshot_rows,
+            key=lambda row: (row.selection_score, row.group_count),
+            reverse=True,
+        )[0]
+        candidates_by_id[auto_row.candidate_id] = EagerDescriptionCandidateRow(
+            conversation_id=auto_row.conversation_id,
+            candidate_id=auto_row.candidate_id,
+        )
+
+        preferred_group_count = auto_row.preferred_group_count
+        if preferred_group_count is None:
+            continue
+        facilitator_row = next(
+            (
+                row
+                for row in view_snapshot_rows
+                if row.group_count == preferred_group_count
+            ),
+            None,
+        )
+        if facilitator_row is None:
+            continue
+        candidates_by_id[facilitator_row.candidate_id] = EagerDescriptionCandidateRow(
+            conversation_id=facilitator_row.conversation_id,
+            candidate_id=facilitator_row.candidate_id,
+        )
+
+    return list(candidates_by_id.values())
+
+
+def _fetch_eager_description_candidates(
+    session: Session,
+    *,
+    conversation_ids: list[int] | None,
+    conversation_view_snapshot_ids: list[int] | None = None,
+    require_activated_view_snapshot: bool = False,
+    require_unactivated_view_snapshot: bool = False,
+    limit: int | None = None,
+) -> list[EagerDescriptionCandidateRow]:
+    if conversation_ids is not None and not conversation_ids:
+        return []
+    if conversation_view_snapshot_ids is not None and not conversation_view_snapshot_ids:
+        return []
+
+    conversation_filter: ColumnElement[bool] = (
+        AnalysisSnapshotResult.conversation_id.in_(sorted(set(conversation_ids)))
+        if conversation_ids is not None
+        else true()
+    )
+    query = (
+        select(
+            AnalysisSnapshotResult.conversation_id,
+            ConversationViewSnapshot.id.label("conversation_view_snapshot_id"),
+            OpinionGroupCandidate.id.label("candidate_id"),
+            OpinionGroupVariant.group_count,
+            Conversation.preferred_opinion_group_count,
+            OpinionGroupCandidateAssessment.selection_score,
+        )
+        .join(
+            OpinionGroupCandidate,
+            OpinionGroupCandidate.snapshot_result_id == AnalysisSnapshotResult.id,
+        )
+        .join(
+            OpinionGroupVariant,
+            OpinionGroupVariant.id == OpinionGroupCandidate.opinion_group_variant_id,
+        )
+        .join(
+            OpinionGroupCandidateAssessment,
+            OpinionGroupCandidateAssessment.candidate_id == OpinionGroupCandidate.id,
+        )
+        .join(Conversation, Conversation.id == AnalysisSnapshotResult.conversation_id)
+        .join(
+            ConversationViewSnapshot,
+            and_(
+                ConversationViewSnapshot.conversation_id
+                == AnalysisSnapshotResult.conversation_id,
+                ConversationViewSnapshot.analysis_snapshot_id
+                == AnalysisSnapshotResult.analysis_snapshot_id,
+                ConversationViewSnapshot.opinion_group_spec_id
+                == AnalysisSnapshotResult.opinion_group_spec_id,
+            ),
+        )
+        .where(
+            and_(
+                conversation_filter,
+                Conversation.ai_labeling_enabled.is_(True),
+                _processable_conversation_condition(),
+                AnalysisSnapshotResult.outcome == AnalysisResultOutcomeEnum.success,
+                OpinionGroupCandidate.outcome == AnalysisResultOutcomeEnum.success,
+                OpinionGroupCandidateAssessment.hidden_reason.is_(None),
+                OpinionGroupCandidateAssessment.selection_score.is_not(None),
+                ConversationViewSnapshot.view_reason
+                == ConversationViewSnapshotReasonEnum.analysis_completed,
+                _latest_or_checkpoint_view_snapshot_filter(
+                    conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+                    require_activated_view_snapshot=require_activated_view_snapshot,
+                    require_unactivated_view_snapshot=require_unactivated_view_snapshot,
+                    scope="latest",
+                ),
+            )
+        )
+        .order_by(
+            ConversationViewSnapshot.created_at.desc(),
+            ConversationViewSnapshot.id.desc(),
+            OpinionGroupCandidate.id,
+        )
+    )
+    if limit is not None:
+        query = query.limit(limit)
+
+    rows = session.execute(query).all()
+    return _select_eager_candidates(
+        [
+            EagerCandidateOptionRow(
+                conversation_id=row.conversation_id,
+                conversation_view_snapshot_id=row.conversation_view_snapshot_id,
+                candidate_id=row.candidate_id,
+                group_count=row.group_count,
+                preferred_group_count=row.preferred_opinion_group_count,
+                selection_score=row.selection_score,
+            )
+            for row in rows
+            if row.selection_score is not None
+        ]
+    )
+
+
+def _materialize_eager_lineage_description_work(
+    session: Session,
+    *,
+    conversation_ids: list[int] | None,
+    conversation_view_snapshot_ids: list[int] | None = None,
+    require_activated_view_snapshot: bool = False,
+    require_unactivated_view_snapshot: bool = False,
+    limit: int | None = None,
+) -> list[int]:
+    candidates = _fetch_eager_description_candidates(
+        session,
+        conversation_ids=conversation_ids,
+        conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+        require_activated_view_snapshot=require_activated_view_snapshot,
+        require_unactivated_view_snapshot=require_unactivated_view_snapshot,
+        limit=limit,
+    )
+    lineage_rows_by_candidate_id = _fetch_required_lineage_description_rows_by_candidate(
+        session,
+        candidate_ids=[candidate.candidate_id for candidate in candidates],
+    )
+    demands = lineage_description_work_demands_for_eager_candidates(
+        candidates=candidates,
+        lineage_rows_by_candidate_id=lineage_rows_by_candidate_id,
+    )
+    _insert_or_reactivate_lineage_description_work(session, demands=demands)
+    return sorted({demand.conversation_id for demand in demands})
+
+
+def _materialize_eager_translation_work(
+    session: Session,
+    *,
+    conversation_ids: list[int] | None,
+    conversation_view_snapshot_ids: list[int] | None = None,
+    require_activated_view_snapshot: bool = False,
+    require_unactivated_view_snapshot: bool = False,
+    limit: int | None = None,
+) -> list[int]:
+    candidates = _fetch_eager_description_candidates(
+        session,
+        conversation_ids=conversation_ids,
+        conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+        require_activated_view_snapshot=require_activated_view_snapshot,
+        require_unactivated_view_snapshot=require_unactivated_view_snapshot,
+        limit=limit,
+    )
+    lineage_rows_by_candidate_id = _fetch_required_lineage_description_rows_by_candidate(
+        session,
+        candidate_ids=[candidate.candidate_id for candidate in candidates],
+    )
+    description_ids = sorted(
+        {
+            row.system_description_id
+            for rows in lineage_rows_by_candidate_id.values()
+            for row in rows
+            if row.system_description_id is not None
+        }
+    )
+    translated_description_ids_by_locale: dict[str, set[int]] = {}
+    if description_ids:
+        translation_rows = session.execute(
+            select(
+                OpinionGroupDescriptionTranslation.description_id,
+                OpinionGroupDescriptionTranslation.locale,
+            ).where(
+                and_(
+                    OpinionGroupDescriptionTranslation.description_id.in_(description_ids),
+                    OpinionGroupDescriptionTranslation.locale.in_(
+                        SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES
+                    ),
+                )
+            )
+        ).all()
+        for row in translation_rows:
+            translated_description_ids_by_locale.setdefault(row.locale, set()).add(
+                row.description_id
+            )
+    demands = translation_work_demands_for_eager_candidates(
+        candidates=candidates,
+        lineage_rows_by_candidate_id=lineage_rows_by_candidate_id,
+        translated_description_ids_by_locale=translated_description_ids_by_locale,
+    )
+    _insert_or_reactivate_translation_work(session, demands=demands)
     return sorted({demand.conversation_id for demand in demands})
 
 
@@ -2030,16 +2299,6 @@ def _translation_work_view_snapshot_filter(
     )
 
 
-def _next_run_claim_filter(
-    next_run_at: _NextRunExpression,
-    *,
-    require_due: bool,
-) -> ColumnElement[bool]:
-    if not require_due:
-        return true()
-    return and_(next_run_at.is_not(None), next_run_at <= func.now())
-
-
 def _claim_ai_description_locale_work_items_batch(
     engine: Engine,
     *,
@@ -2063,7 +2322,7 @@ def _claim_ai_description_locale_work_items_batch(
         or (not claim_lineage_descriptions and not claim_translations)
     ):
         return []
-    del require_pending_status
+    del require_pending_status, require_due
 
     unique_conversation_ids = list(dict.fromkeys(conversation_ids))
     require_unactivated_view_snapshot = (
@@ -2085,11 +2344,11 @@ def _claim_ai_description_locale_work_items_batch(
         conversation_view_snapshot_ids is None and require_activated_view_snapshot
     )
     lineage_order_by: list[_OrderByExpression] = [
-        OpinionGroupLineageDescriptionWork.next_run_at.asc(),
+        OpinionGroupLineageDescriptionWork.updated_at.asc(),
         OpinionGroupLineageDescriptionWork.id,
     ]
     translation_order_by: list[_OrderByExpression] = [
-        OpinionGroupDescriptionTranslationWork.next_run_at.asc(),
+        OpinionGroupDescriptionTranslationWork.updated_at.asc(),
         OpinionGroupDescriptionTranslationWork.id,
     ]
     if should_prioritize_latest:
@@ -2112,6 +2371,13 @@ def _claim_ai_description_locale_work_items_batch(
 
     with Session(engine) as session:
         if claim_lineage_descriptions:
+            _materialize_eager_lineage_description_work(
+                session,
+                conversation_ids=unique_conversation_ids,
+                conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+                require_activated_view_snapshot=require_activated_view_snapshot,
+                require_unactivated_view_snapshot=require_unactivated_view_snapshot,
+            )
             _materialize_lineage_description_work_for_candidate_locale_requests(
                 session,
                 conversation_ids=unique_conversation_ids,
@@ -2119,6 +2385,13 @@ def _claim_ai_description_locale_work_items_batch(
                 require_activated_view_snapshot=require_activated_view_snapshot,
             )
         if translation_enabled and claim_translations:
+            _materialize_eager_translation_work(
+                session,
+                conversation_ids=unique_conversation_ids,
+                conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+                require_activated_view_snapshot=require_activated_view_snapshot,
+                require_unactivated_view_snapshot=require_unactivated_view_snapshot,
+            )
             _materialize_translation_work_for_candidate_locale_requests(
                 session,
                 conversation_ids=unique_conversation_ids,
@@ -2126,12 +2399,50 @@ def _claim_ai_description_locale_work_items_batch(
                 require_activated_view_snapshot=require_activated_view_snapshot,
             )
 
+        eager_candidates = _fetch_eager_description_candidates(
+            session,
+            conversation_ids=unique_conversation_ids,
+            conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+            require_activated_view_snapshot=require_activated_view_snapshot,
+            require_unactivated_view_snapshot=require_unactivated_view_snapshot,
+        )
+        eager_candidate_ids_by_conversation_id: dict[int, set[int]] = {}
+        for candidate in eager_candidates:
+            eager_candidate_ids_by_conversation_id.setdefault(
+                candidate.conversation_id,
+                set(),
+            ).add(candidate.candidate_id)
+        eager_lineage_rows_by_candidate_id = _fetch_required_lineage_description_rows_by_candidate(
+            session,
+            candidate_ids=[candidate.candidate_id for candidate in eager_candidates],
+        )
+        eager_description_ids_by_conversation_id: dict[int, set[int]] = {}
+        for candidate in eager_candidates:
+            for row in eager_lineage_rows_by_candidate_id.get(candidate.candidate_id, ()):
+                if row.system_description_id is not None:
+                    eager_description_ids_by_conversation_id.setdefault(
+                        candidate.conversation_id,
+                        set(),
+                    ).add(row.system_description_id)
+
         for conversation_id in unique_conversation_ids:
             remaining_claim_limit = limit - len(claims)
             if remaining_claim_limit <= 0:
                 break
 
             if claim_lineage_descriptions:
+                conversation_lineage_order_by = list(lineage_order_by)
+                eager_candidate_ids = eager_candidate_ids_by_conversation_id.get(
+                    conversation_id,
+                    set(),
+                )
+                if eager_candidate_ids:
+                    conversation_lineage_order_by.insert(
+                        0,
+                        OpinionGroupLineageDescriptionWork.source_candidate_id.in_(
+                            sorted(eager_candidate_ids)
+                        ).desc(),
+                    )
                 claimable_lineage_rows = session.execute(
                     select(
                         OpinionGroupLineageDescriptionWork.id,
@@ -2157,10 +2468,6 @@ def _claim_ai_description_locale_work_items_batch(
                             OpinionGroupLineage.system_description_id.is_(None),
                             OpinionGroupLineageDescriptionWork.lease_token.is_(None),
                             lineage_attempt_filter,
-                            _next_run_claim_filter(
-                                OpinionGroupLineageDescriptionWork.next_run_at,
-                                require_due=require_due,
-                            ),
                             _lineage_work_view_snapshot_filter(
                                 conversation_view_snapshot_ids,
                                 require_activated_view_snapshot=require_activated_view_snapshot,
@@ -2180,7 +2487,7 @@ def _claim_ai_description_locale_work_items_batch(
                             ),
                         )
                     )
-                    .order_by(*lineage_order_by)
+                    .order_by(*conversation_lineage_order_by)
                     .limit(remaining_claim_limit)
                     .with_for_update(
                         skip_locked=True,
@@ -2204,10 +2511,6 @@ def _claim_ai_description_locale_work_items_batch(
                                     == claimable_lineage_row.id,
                                     OpinionGroupLineageDescriptionWork.lease_token.is_(None),
                                     lineage_attempt_filter,
-                                    _next_run_claim_filter(
-                                        OpinionGroupLineageDescriptionWork.next_run_at,
-                                        require_due=require_due,
-                                    ),
                                     _lineage_work_view_snapshot_filter(
                                         conversation_view_snapshot_ids,
                                         require_activated_view_snapshot=(
@@ -2221,7 +2524,6 @@ def _claim_ai_description_locale_work_items_batch(
                             )
                             .values(
                                 attempt_count=attempt_count,
-                                next_run_at=None,
                                 lease_owner=worker_id,
                                 lease_token=lease_token,
                                 lease_expires_at=lease_expires_at,
@@ -2262,6 +2564,18 @@ def _claim_ai_description_locale_work_items_batch(
             if not translation_enabled or not claim_translations:
                 continue
 
+            conversation_translation_order_by = list(translation_order_by)
+            eager_description_ids = eager_description_ids_by_conversation_id.get(
+                conversation_id,
+                set(),
+            )
+            if eager_description_ids:
+                conversation_translation_order_by.insert(
+                    0,
+                    OpinionGroupDescriptionTranslationWork.description_id.in_(
+                        sorted(eager_description_ids)
+                    ).desc(),
+                )
             claimable_translation_rows = session.execute(
                 select(
                     OpinionGroupDescriptionTranslationWork.id,
@@ -2282,10 +2596,6 @@ def _claim_ai_description_locale_work_items_batch(
                         _processable_conversation_condition(),
                         OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
                         translation_attempt_filter,
-                        _next_run_claim_filter(
-                            OpinionGroupDescriptionTranslationWork.next_run_at,
-                            require_due=require_due,
-                        ),
                         _translation_work_view_snapshot_filter(
                             conversation_view_snapshot_ids,
                             require_activated_view_snapshot=require_activated_view_snapshot,
@@ -2313,7 +2623,7 @@ def _claim_ai_description_locale_work_items_batch(
                         ),
                     )
                 )
-                .order_by(*translation_order_by)
+                .order_by(*conversation_translation_order_by)
                 .limit(remaining_claim_limit)
                 .with_for_update(
                     skip_locked=True,
@@ -2334,10 +2644,6 @@ def _claim_ai_description_locale_work_items_batch(
                                 == claimable_translation_row.id,
                                 OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
                                 translation_attempt_filter,
-                                _next_run_claim_filter(
-                                    OpinionGroupDescriptionTranslationWork.next_run_at,
-                                    require_due=require_due,
-                                ),
                                 _translation_work_view_snapshot_filter(
                                     conversation_view_snapshot_ids,
                                     require_activated_view_snapshot=require_activated_view_snapshot,
@@ -2359,7 +2665,6 @@ def _claim_ai_description_locale_work_items_batch(
                         )
                     .values(
                         attempt_count=attempt_count,
-                        next_run_at=None,
                         lease_owner=worker_id,
                         lease_token=lease_token,
                         lease_expires_at=lease_expires_at,
@@ -2539,7 +2844,7 @@ def process_ai_description_locale_work_item(
     generate_descriptions: DescriptionGenerator,
     translate_descriptions: DescriptionTranslator | None,
     require_activated_view_snapshot: bool = False,
-) -> WorkStateSchedule:
+) -> AiDescriptionWorkResult:
     if isinstance(claim, ClaimedLineageDescriptionWorkItem):
         started_at = time.perf_counter()
         with Session(engine) as session:
@@ -2551,7 +2856,7 @@ def process_ai_description_locale_work_item(
                     claim.lineage_id,
                     claim.attempt_count,
                 )
-                schedule = _get_conversation_schedule(
+                schedule = _get_conversation_work_result(
                     session,
                     conversation_id=claim.conversation_id,
                     require_activated_view_snapshot=require_activated_view_snapshot,
@@ -2589,7 +2894,7 @@ def process_ai_description_locale_work_item(
                     claim.lineage_id,
                     claim.attempt_count,
                 )
-                schedule = _get_conversation_schedule(
+                schedule = _get_conversation_work_result(
                     session,
                     conversation_id=claim.conversation_id,
                     require_activated_view_snapshot=require_activated_view_snapshot,
@@ -2612,12 +2917,17 @@ def process_ai_description_locale_work_item(
                     generated=generated_descriptions,
                 )
             _mark_lineage_description_work_complete(session, claim=claim)
+            _materialize_eager_translation_work(
+                session,
+                conversation_ids=[claim.conversation_id],
+                require_activated_view_snapshot=require_activated_view_snapshot,
+            )
             _materialize_translation_work_for_candidate_locale_requests(
                 session,
                 conversation_ids=[claim.conversation_id],
                 require_activated_view_snapshot=require_activated_view_snapshot,
             )
-            schedule = _get_conversation_schedule(
+            schedule = _get_conversation_work_result(
                 session,
                 conversation_id=claim.conversation_id,
                 require_activated_view_snapshot=require_activated_view_snapshot,
@@ -2626,8 +2936,7 @@ def process_ai_description_locale_work_item(
             log.info(
                 "[AiDescriptionWorkDB] Completed lineage description work "
                 "conversationSlugId=%s conversationId=%d lineageId=%d "
-                "attemptCount=%d providerMs=%.1f totalMs=%.1f generated=%s "
-                "nextRunAt=%s",
+                "attemptCount=%d providerMs=%.1f totalMs=%.1f generated=%s",
                 claim.conversation_slug_id,
                 claim.conversation_id,
                 claim.lineage_id,
@@ -2635,7 +2944,6 @@ def process_ai_description_locale_work_item(
                 provider_ms,
                 (time.perf_counter() - started_at) * 1000,
                 lineage_request is not None,
-                schedule.next_run_at.isoformat() if schedule.next_run_at is not None else "none",
             )
             return schedule
 
@@ -2654,7 +2962,7 @@ def process_ai_description_locale_work_item(
                 claim.locale,
                 claim.attempt_count,
             )
-            schedule = _get_conversation_schedule(
+            schedule = _get_conversation_work_result(
                 session,
                 conversation_id=claim.conversation_id,
                 require_activated_view_snapshot=require_activated_view_snapshot,
@@ -2693,7 +3001,7 @@ def process_ai_description_locale_work_item(
                 claim.locale,
                 claim.attempt_count,
             )
-            schedule = _get_conversation_schedule(
+            schedule = _get_conversation_work_result(
                 session,
                 conversation_id=claim.conversation_id,
                 require_activated_view_snapshot=require_activated_view_snapshot,
@@ -2715,7 +3023,7 @@ def process_ai_description_locale_work_item(
                 translations=translations,
             )
         _mark_translation_work_complete(session, claim=claim)
-        schedule = _get_conversation_schedule(
+        schedule = _get_conversation_work_result(
             session,
             conversation_id=claim.conversation_id,
             require_activated_view_snapshot=require_activated_view_snapshot,
@@ -2724,7 +3032,7 @@ def process_ai_description_locale_work_item(
         log.info(
             "[AiDescriptionWorkDB] Completed translation work conversationSlugId=%s "
             "conversationId=%d descriptionId=%d locale=%s attemptCount=%d "
-            "providerMs=%.1f totalMs=%.1f translated=%s nextRunAt=%s",
+            "providerMs=%.1f totalMs=%.1f translated=%s",
             claim.conversation_slug_id,
             claim.conversation_id,
             claim.description_id,
@@ -2733,7 +3041,6 @@ def process_ai_description_locale_work_item(
             provider_ms,
             (time.perf_counter() - started_at) * 1000,
             description_request is not None,
-            schedule.next_run_at.isoformat() if schedule.next_run_at is not None else "none",
         )
         return schedule
 
@@ -2752,7 +3059,7 @@ def process_lineage_description_work_items_batch(
         )
 
     started_at = time.perf_counter()
-    schedules: list[WorkStateSchedule] = []
+    schedules: list[AiDescriptionWorkResult] = []
     processable_claims: list[ClaimedLineageDescriptionWorkItem] = []
     request_by_claim_id: dict[int, _LineageDescriptionRequest] = {}
 
@@ -2768,7 +3075,7 @@ def process_lineage_description_work_items_batch(
                     claim.attempt_count,
                 )
                 schedules.append(
-                    _get_conversation_schedule(
+                    _get_conversation_work_result(
                         session,
                         conversation_id=claim.conversation_id,
                         require_activated_view_snapshot=require_activated_view_snapshot,
@@ -2837,7 +3144,7 @@ def process_lineage_description_work_items_batch(
                     claim.attempt_count,
                 )
                 schedules.append(
-                    _get_conversation_schedule(
+                    _get_conversation_work_result(
                         session,
                         conversation_id=claim.conversation_id,
                         require_activated_view_snapshot=require_activated_view_snapshot,
@@ -2869,13 +3176,18 @@ def process_lineage_description_work_items_batch(
 
         affected_conversation_ids = sorted({claim.conversation_id for claim in completed_claims})
         if affected_conversation_ids:
+            _materialize_eager_translation_work(
+                session,
+                conversation_ids=affected_conversation_ids,
+                require_activated_view_snapshot=require_activated_view_snapshot,
+            )
             _materialize_translation_work_for_candidate_locale_requests(
                 session,
                 conversation_ids=affected_conversation_ids,
                 require_activated_view_snapshot=require_activated_view_snapshot,
             )
             schedule_by_conversation_id = {
-                conversation_id: _get_conversation_schedule(
+                conversation_id: _get_conversation_work_result(
                     session,
                     conversation_id=conversation_id,
                     require_activated_view_snapshot=require_activated_view_snapshot,
@@ -2952,7 +3264,7 @@ def process_description_translation_work_items_batch(
         raise ValueError(msg)
 
     started_at = time.perf_counter()
-    schedules: list[WorkStateSchedule] = []
+    schedules: list[AiDescriptionWorkResult] = []
     claim_by_description_id: dict[int, ClaimedDescriptionTranslationWorkItem] = {}
     descriptions: list[DescriptionForTranslation] = []
     processable_claims: list[ClaimedDescriptionTranslationWorkItem] = []
@@ -2970,7 +3282,7 @@ def process_description_translation_work_items_batch(
                     claim.attempt_count,
                 )
                 schedules.append(
-                    _get_conversation_schedule(
+                    _get_conversation_work_result(
                         session,
                         conversation_id=claim.conversation_id,
                         require_activated_view_snapshot=require_activated_view_snapshot,
@@ -3027,7 +3339,7 @@ def process_description_translation_work_items_batch(
                     claim.attempt_count,
                 )
                 schedules.append(
-                    _get_conversation_schedule(
+                    _get_conversation_work_result(
                         session,
                         conversation_id=claim.conversation_id,
                         require_activated_view_snapshot=require_activated_view_snapshot,
@@ -3076,7 +3388,7 @@ def process_description_translation_work_items_batch(
         affected_conversation_ids = sorted({claim.conversation_id for claim in completed_claims})
         if affected_conversation_ids:
             schedule_by_conversation_id = {
-                conversation_id: _get_conversation_schedule(
+                conversation_id: _get_conversation_work_result(
                     session,
                     conversation_id=conversation_id,
                     require_activated_view_snapshot=require_activated_view_snapshot,
@@ -3141,7 +3453,7 @@ def _complete_claimed_non_processable_ai_description_work(
     *,
     claim: ClaimedAiDescriptionLocaleWorkItem,
     require_activated_view_snapshot: bool = False,
-) -> WorkStateSchedule:
+) -> AiDescriptionWorkResult:
     if isinstance(claim, ClaimedLineageDescriptionWorkItem):
         session.execute(
             update(OpinionGroupLineageDescriptionWork)
@@ -3152,7 +3464,6 @@ def _complete_claimed_non_processable_ai_description_work(
                 )
             )
             .values(
-                next_run_at=None,
                 lease_owner=None,
                 lease_token=None,
                 lease_expires_at=None,
@@ -3171,7 +3482,6 @@ def _complete_claimed_non_processable_ai_description_work(
                 )
             )
             .values(
-                next_run_at=None,
                 lease_owner=None,
                 lease_token=None,
                 lease_expires_at=None,
@@ -3181,7 +3491,7 @@ def _complete_claimed_non_processable_ai_description_work(
             )
         )
 
-    return _get_conversation_schedule(
+    return _get_conversation_work_result(
         session,
         conversation_id=claim.conversation_id,
         require_activated_view_snapshot=require_activated_view_snapshot,
@@ -3192,26 +3502,11 @@ def retry_ai_description_locale_work_item(
     engine: Engine,
     *,
     claim: ClaimedAiDescriptionLocaleWorkItem,
-    retry_policy: RetryPolicy,
     error_code: str,
     error_message: str,
-    retry_immediately_without_fallback: bool = False,
-    force_cooldown: bool = False,
     require_activated_view_snapshot: bool = False,
-) -> WorkStateSchedule:
+) -> AiDescriptionWorkResult:
     now = datetime.now(UTC)
-    retry_at = (
-        claimable_immediate_retry_at(now)
-        if retry_immediately_without_fallback
-        else next_cooldown_retry_at(now=now, policy=retry_policy)
-        if force_cooldown
-        else next_retry_at(
-            now=now,
-            attempt_count=claim.attempt_count,
-            policy=retry_policy,
-        )
-    )
-    delay_seconds = max(0.0, (retry_at - now).total_seconds())
     with Session(engine) as session:
         if isinstance(claim, ClaimedLineageDescriptionWorkItem):
             session.execute(
@@ -3223,7 +3518,6 @@ def retry_ai_description_locale_work_item(
                     )
                 )
                 .values(
-                    next_run_at=retry_at,
                     lease_owner=None,
                     lease_token=None,
                     lease_expires_at=None,
@@ -3242,7 +3536,6 @@ def retry_ai_description_locale_work_item(
                     )
                 )
                 .values(
-                    next_run_at=retry_at,
                     lease_owner=None,
                     lease_token=None,
                     lease_expires_at=None,
@@ -3251,7 +3544,7 @@ def retry_ai_description_locale_work_item(
                     updated_at=func.now(),
                 )
             )
-        schedule = _get_conversation_schedule(
+        schedule = _get_conversation_work_result(
             session,
             conversation_id=claim.conversation_id,
             require_activated_view_snapshot=require_activated_view_snapshot,
@@ -3266,10 +3559,9 @@ def retry_ai_description_locale_work_item(
             retry_target_name = "descriptionId"
             retry_target_id = claim.description_id
         log.info(
-            "[AiDescriptionWorkDB] Scheduled AI description retry kind=%s "
+            "[AiDescriptionWorkDB] Released AI description work for retry kind=%s "
             "conversationSlugId=%s conversationId=%d locale=%s %s=%d attemptCount=%d "
-            "retryAt=%s delaySeconds=%.1f immediate=%s forceCooldown=%s "
-            "fallbackMarked=%s",
+            "retryReleasedAt=%s fallbackMarked=%s",
             retry_kind,
             claim.conversation_slug_id,
             claim.conversation_id,
@@ -3277,16 +3569,12 @@ def retry_ai_description_locale_work_item(
             retry_target_name,
             retry_target_id,
             claim.attempt_count,
-            retry_at.isoformat(),
-            delay_seconds,
-            retry_immediately_without_fallback,
-            force_cooldown,
+            now.isoformat(),
             False,
         )
-        return WorkStateSchedule(
+        return AiDescriptionWorkResult(
             conversation_id=schedule.conversation_id,
-            next_run_at=schedule.next_run_at,
-            retry_scheduled_at=retry_at,
+            retry_released_at=now,
         )
 
 
@@ -3298,7 +3586,7 @@ def mark_non_retryable_ai_description_locale_work_item(
     error_code: str,
     error_message: str,
     require_activated_view_snapshot: bool = False,
-) -> WorkStateSchedule:
+) -> AiDescriptionWorkResult:
     with Session(engine) as session:
         if isinstance(claim, ClaimedLineageDescriptionWorkItem):
             session.execute(
@@ -3310,7 +3598,6 @@ def mark_non_retryable_ai_description_locale_work_item(
                     )
                 )
                 .values(
-                    next_run_at=None,
                     lease_owner=None,
                     lease_token=None,
                     lease_expires_at=None,
@@ -3330,7 +3617,6 @@ def mark_non_retryable_ai_description_locale_work_item(
                     )
                 )
                 .values(
-                    next_run_at=None,
                     lease_owner=None,
                     lease_token=None,
                     lease_expires_at=None,
@@ -3340,7 +3626,7 @@ def mark_non_retryable_ai_description_locale_work_item(
                     updated_at=func.now(),
                 )
             )
-        schedule = _get_conversation_schedule(
+        schedule = _get_conversation_work_result(
             session,
             conversation_id=claim.conversation_id,
             require_activated_view_snapshot=require_activated_view_snapshot,
@@ -3363,7 +3649,6 @@ def _mark_lineage_description_work_complete(
             )
         )
         .values(
-            next_run_at=None,
             lease_owner=None,
             lease_token=None,
             lease_expires_at=None,
@@ -3389,7 +3674,6 @@ def _mark_translation_work_complete(
             )
         )
         .values(
-            next_run_at=None,
             lease_owner=None,
             lease_token=None,
             lease_expires_at=None,
@@ -3401,47 +3685,14 @@ def _mark_translation_work_complete(
     )
 
 
-def _get_conversation_schedule(
+def _get_conversation_work_result(
     session: Session,
     *,
     conversation_id: int,
     require_activated_view_snapshot: bool = False,
-) -> WorkStateSchedule:
-    lineage_next_run_at = session.execute(
-        select(func.min(OpinionGroupLineageDescriptionWork.next_run_at)).where(
-            and_(
-                OpinionGroupLineageDescriptionWork.conversation_id == conversation_id,
-                OpinionGroupLineageDescriptionWork.next_run_at.is_not(None),
-                OpinionGroupLineageDescriptionWork.lease_token.is_(None),
-                _lineage_work_relevant_candidate_filter(
-                    conversation_view_snapshot_ids=None,
-                    require_activated_view_snapshot=require_activated_view_snapshot,
-                ),
-            )
-        )
-    ).scalar_one_or_none()
-    translation_next_run_at = session.execute(
-        select(func.min(OpinionGroupDescriptionTranslationWork.next_run_at)).where(
-            and_(
-                OpinionGroupDescriptionTranslationWork.conversation_id == conversation_id,
-                OpinionGroupDescriptionTranslationWork.next_run_at.is_not(None),
-                OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
-                _translation_work_relevant_candidate_filter(
-                    conversation_view_snapshot_ids=None,
-                    require_activated_view_snapshot=require_activated_view_snapshot,
-                ),
-            )
-        )
-    ).scalar_one_or_none()
-    next_run_values = [
-        next_run_at
-        for next_run_at in (lineage_next_run_at, translation_next_run_at)
-        if next_run_at is not None
-    ]
-    return WorkStateSchedule(
-        conversation_id=conversation_id,
-        next_run_at=min(next_run_values) if next_run_values else None,
-    )
+) -> AiDescriptionWorkResult:
+    del session, require_activated_view_snapshot
+    return AiDescriptionWorkResult(conversation_id=conversation_id)
 
 
 def _fetch_base_description_request_for_lineage_work(

@@ -13,7 +13,13 @@ RUN uv sync --frozen --no-dev
 
 FROM python:3.13-slim
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends tini && \
+    rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY --from=build /app/.venv ./.venv
 ENV PATH="/app/.venv/bin:$PATH"
+STOPSIGNAL SIGTERM
+ENTRYPOINT ["tini", "--"]
 CMD ["python", "-m", "import_worker.worker"]

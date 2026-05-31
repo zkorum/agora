@@ -42,9 +42,9 @@ export const VALKEY_QUEUE_KEYS = {
     SCORING_DIRTY_SOLIDAGO: "scoring:dirty:solidago",
 
     /**
-     * Opinion-group analysis dirty set: conversations needing analysis refresh.
+     * Opinion-group analysis queue: conversations that may need math work.
      * Used by: API/shared-backend scheduler (ZADD), math-updater Python worker (ZPOPMIN)
-     * Pattern: Sorted set of conversationId strings. Score = due timestamp in milliseconds.
+     * Pattern: Sorted set of conversationId strings. Score = enqueue timestamp in milliseconds.
      */
     ANALYSIS_DIRTY: "analysis:dirty",
 

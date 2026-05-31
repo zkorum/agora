@@ -4,11 +4,11 @@ Python worker that computes opinion-group analysis for Agora conversations.
 
 ## Overview
 
-The math-updater consumes dirty conversation IDs from Valkey, claims due work in PostgreSQL, builds immutable input snapshots, runs `red-dwarf` locally, and persists opinion-group analysis results. It also optionally generates and translates opinion-group labels and summaries.
+The math-updater consumes queued conversation IDs from Valkey, claims work in PostgreSQL, builds immutable input snapshots, runs `red-dwarf` locally, and persists opinion-group analysis results. It also optionally generates and translates opinion-group labels and summaries.
 
 ## Responsibilities
 
-- Consume due conversation IDs from the `analysis:dirty` Valkey sorted set.
+- Consume queued conversation IDs from the `analysis:dirty` Valkey sorted set.
 - Claim and lease analysis work in PostgreSQL.
 - Build input snapshots from conversation opinions and votes.
 - Run `red-dwarf` locally for Polis-style opinion-group analysis.
@@ -26,8 +26,7 @@ Environment variables use the `MATH_UPDATER_` prefix.
 | `MATH_UPDATER_CONNECTION_STRING`                 | Required                  | PostgreSQL primary DSN               |
 | `MATH_UPDATER_CONNECTION_STRING_READ`            | Same as primary           | PostgreSQL read replica DSN          |
 | `MATH_UPDATER_VALKEY_URL`                        | `valkey://localhost:6379` | Valkey connection URL                |
-| `MATH_UPDATER_VALKEY_POP_BATCH_SIZE`             | `50`                      | Max Valkey items popped per cycle    |
-| `MATH_UPDATER_DB_CLAIM_BATCH_SIZE`               | `8`                       | Max DB work items claimed per cycle  |
+| `MATH_UPDATER_DB_CLAIM_BATCH_SIZE`               | `8`                       | Max conversations popped and claimed per cycle |
 | `MATH_UPDATER_DB_WRITE_BATCH_SIZE`               | `10`                      | Max results persisted per DB batch   |
 | `MATH_UPDATER_MAX_COMPUTE_CONCURRENCY`           | `4`                       | Max concurrent analysis computations |
 | `MATH_UPDATER_LEASE_TTL_SECONDS`                 | `45`                      | DB work lease TTL                    |
@@ -123,7 +122,7 @@ Retry workers are built and deployed as separate services/images.
 ## Related Services
 
 - [`api`](../api): creates dirty analysis work and serves analysis results.
-- [`import-worker`](../import-worker): imports conversations and wakes analysis by adding to `analysis:dirty`.
+- [`import-worker`](../import-worker): imports conversations and queues math work by adding to `analysis:dirty`.
 - [`scoring-worker`](../scoring-worker): computes MaxDiff community rankings.
 - [`shared-backend`](../shared-backend): source schema for generated SQLAlchemy models.
 
