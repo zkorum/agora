@@ -301,6 +301,46 @@ class TranslationWorkDemand:
 
 
 @dataclass(frozen=True)
+class _LineageDescriptionWorkInsert:
+    lineage_id: int
+    conversation_id: int
+    source_candidate_id: int
+    next_run_at: datetime | ColumnElement[datetime]
+
+    def to_insert_value(self, *, include_timestamps: bool = False) -> dict[str, object]:
+        value: dict[str, object] = {
+            "lineage_id": self.lineage_id,
+            "conversation_id": self.conversation_id,
+            "source_candidate_id": self.source_candidate_id,
+            "next_run_at": self.next_run_at,
+        }
+        if include_timestamps:
+            value["created_at"] = func.now()
+            value["updated_at"] = func.now()
+        return value
+
+
+@dataclass(frozen=True)
+class _TranslationWorkInsert:
+    description_id: int
+    conversation_id: int
+    locale: str
+    next_run_at: datetime | ColumnElement[datetime]
+
+    def to_insert_value(self, *, include_timestamps: bool = False) -> dict[str, object]:
+        value: dict[str, object] = {
+            "description_id": self.description_id,
+            "conversation_id": self.conversation_id,
+            "locale": self.locale,
+            "next_run_at": self.next_run_at,
+        }
+        if include_timestamps:
+            value["created_at"] = func.now()
+            value["updated_at"] = func.now()
+        return value
+
+
+@dataclass(frozen=True)
 class _LineageDescriptionRequest:
     group_key: str
     conversation: ConversationDescriptionInput
@@ -312,6 +352,7 @@ def _latest_or_checkpoint_expectation_condition(
     require_activated_view_snapshot: bool = False,
     require_unactivated_view_snapshot: bool = False,
     expectation_scope: str = "latest_or_checkpoint",
+    stale_checkpoints_require_explicit_lazy_demand: bool = False,
 ) -> ColumnElement[bool]:
     if require_activated_view_snapshot and require_unactivated_view_snapshot:
         return false()
@@ -354,7 +395,26 @@ def _latest_or_checkpoint_expectation_condition(
         )
         .exists()
     )
-    if expectation_scope == "latest":
+    if (
+        stale_checkpoints_require_explicit_lazy_demand
+        and expectation_scope == "latest_or_checkpoint"
+    ):
+        scope_condition = or_(
+            ~newer_view_snapshot_exists,
+            and_(
+                checkpoint_exists,
+                OpinionGroupDescriptionLocaleExpectation.retry_demand_due_at.is_not(None),
+            ),
+        )
+    elif stale_checkpoints_require_explicit_lazy_demand and expectation_scope == "checkpoint":
+        scope_condition = and_(
+            checkpoint_exists,
+            or_(
+                ~newer_view_snapshot_exists,
+                OpinionGroupDescriptionLocaleExpectation.retry_demand_due_at.is_not(None),
+            ),
+        )
+    elif expectation_scope == "latest":
         scope_condition = and_(~checkpoint_exists, ~newer_view_snapshot_exists)
     elif expectation_scope == "checkpoint":
         scope_condition = checkpoint_exists
@@ -1645,6 +1705,7 @@ def _fetch_pending_locale_expectation_rows(
                 _latest_or_checkpoint_expectation_condition(
                     conversation_view_snapshot_ids=conversation_view_snapshot_ids,
                     require_activated_view_snapshot=require_activated_view_snapshot,
+                    stale_checkpoints_require_explicit_lazy_demand=True,
                 ),
             )
         )
@@ -1672,9 +1733,9 @@ def _fetch_required_lineage_description_rows_for_expectation(
     *,
     expectation: PendingLocaleStatusRow,
 ) -> list[RequiredLineageDescriptionRow]:
-    required_candidate_ids = _fetch_required_candidate_ids_for_result(
+    required_candidate_ids = _fetch_ai_candidate_ids_for_expectation(
         session,
-        analysis_snapshot_result_id=expectation.analysis_snapshot_result_id,
+        expectation=expectation,
     )
     if not required_candidate_ids:
         return []
@@ -1718,7 +1779,7 @@ def _required_system_description_ids_for_expectation(
     description_ids = {
         row.system_description_id for row in lineage_rows if row.system_description_id is not None
     }
-    all_lineages_have_descriptions = all(
+    all_lineages_have_descriptions = bool(lineage_rows) and all(
         row.system_description_id is not None for row in lineage_rows
     )
     return description_ids, all_lineages_have_descriptions
@@ -1832,27 +1893,29 @@ def _ensure_lineage_description_work_for_pending_expectations(
     if not demands:
         return
 
-    values: list[dict[str, object]] = []
-    value_by_lineage_id: dict[int, dict[str, object]] = {}
+    values: list[_LineageDescriptionWorkInsert] = []
+    value_by_lineage_id: dict[int, _LineageDescriptionWorkInsert] = {}
     for demand in demands:
-        value: dict[str, object] = {
-            "lineage_id": demand.lineage_id,
-            "conversation_id": demand.conversation_id,
-            "source_candidate_id": demand.source_candidate_id,
-            "next_run_at": demand.next_run_at or func.now(),
-        }
+        value = _LineageDescriptionWorkInsert(
+            lineage_id=demand.lineage_id,
+            conversation_id=demand.conversation_id,
+            source_candidate_id=demand.source_candidate_id,
+            next_run_at=demand.next_run_at or func.now(),
+        )
         values.append(value)
         value_by_lineage_id[demand.lineage_id] = value
     if session.get_bind().dialect.name == "sqlite":
         for value in values:
             existing_row = session.execute(
                 select(OpinionGroupLineageDescriptionWork.id).where(
-                    OpinionGroupLineageDescriptionWork.lineage_id == value["lineage_id"]
+                    OpinionGroupLineageDescriptionWork.lineage_id == value.lineage_id
                 )
             ).first()
             if existing_row is None:
                 session.execute(
-                    sqlalchemy_insert(OpinionGroupLineageDescriptionWork).values(value)
+                    sqlalchemy_insert(OpinionGroupLineageDescriptionWork).values(
+                        value.to_insert_value(include_timestamps=True)
+                    )
                 )
                 continue
 
@@ -1865,18 +1928,19 @@ def _ensure_lineage_description_work_for_pending_expectations(
                     )
                 )
                 .values(
-                    conversation_id=value["conversation_id"],
-                    source_candidate_id=value["source_candidate_id"],
+                    conversation_id=value.conversation_id,
+                    source_candidate_id=value.source_candidate_id,
                     next_run_at=func.coalesce(
                         OpinionGroupLineageDescriptionWork.next_run_at,
-                        value["next_run_at"],
+                        value.next_run_at,
                     ),
                     updated_at=func.now(),
                 )
             )
         return
 
-    for chunk in _iter_chunks(values, chunk_size=_max_rows_per_insert(column_count=4)):
+    insert_values = [value.to_insert_value() for value in values]
+    for chunk in _iter_chunks(insert_values, chunk_size=_max_rows_per_insert(column_count=4)):
         insert_query = pg_insert(OpinionGroupLineageDescriptionWork).values(chunk)
         session.execute(insert_query.on_conflict_do_nothing())
 
@@ -1908,9 +1972,9 @@ def _ensure_lineage_description_work_for_pending_expectations(
             update(OpinionGroupLineageDescriptionWork)
             .where(OpinionGroupLineageDescriptionWork.id == row.id)
             .values(
-                conversation_id=value["conversation_id"],
-                source_candidate_id=value["source_candidate_id"],
-                next_run_at=value["next_run_at"],
+                conversation_id=value.conversation_id,
+                source_candidate_id=value.source_candidate_id,
+                next_run_at=value.next_run_at,
                 updated_at=func.now(),
             )
         )
@@ -1966,15 +2030,15 @@ def _ensure_translation_work_for_pending_expectations(
     if not demands:
         return
 
-    values: list[dict[str, object]] = []
-    value_by_description_locale: dict[tuple[int, str], dict[str, object]] = {}
+    values: list[_TranslationWorkInsert] = []
+    value_by_description_locale: dict[tuple[int, str], _TranslationWorkInsert] = {}
     for demand in demands:
-        value: dict[str, object] = {
-            "description_id": demand.description_id,
-            "conversation_id": demand.conversation_id,
-            "locale": demand.locale,
-            "next_run_at": demand.next_run_at or func.now(),
-        }
+        value = _TranslationWorkInsert(
+            description_id=demand.description_id,
+            conversation_id=demand.conversation_id,
+            locale=demand.locale,
+            next_run_at=demand.next_run_at or func.now(),
+        )
         values.append(value)
         value_by_description_locale[(demand.description_id, demand.locale)] = value
     if session.get_bind().dialect.name == "sqlite":
@@ -1983,14 +2047,16 @@ def _ensure_translation_work_for_pending_expectations(
                 select(OpinionGroupDescriptionTranslationWork.id).where(
                     and_(
                         OpinionGroupDescriptionTranslationWork.description_id
-                        == value["description_id"],
-                        OpinionGroupDescriptionTranslationWork.locale == value["locale"],
+                        == value.description_id,
+                        OpinionGroupDescriptionTranslationWork.locale == value.locale,
                     )
                 )
             ).first()
             if existing_row is None:
                 session.execute(
-                    sqlalchemy_insert(OpinionGroupDescriptionTranslationWork).values(value)
+                    sqlalchemy_insert(OpinionGroupDescriptionTranslationWork).values(
+                        value.to_insert_value(include_timestamps=True)
+                    )
                 )
                 continue
 
@@ -2003,17 +2069,18 @@ def _ensure_translation_work_for_pending_expectations(
                     )
                 )
                 .values(
-                    conversation_id=value["conversation_id"],
+                    conversation_id=value.conversation_id,
                     next_run_at=func.coalesce(
                         OpinionGroupDescriptionTranslationWork.next_run_at,
-                        value["next_run_at"],
+                        value.next_run_at,
                     ),
                     updated_at=func.now(),
                 )
             )
         return
 
-    for chunk in _iter_chunks(values, chunk_size=_max_rows_per_insert(column_count=4)):
+    insert_values = [value.to_insert_value() for value in values]
+    for chunk in _iter_chunks(insert_values, chunk_size=_max_rows_per_insert(column_count=4)):
         insert_query = pg_insert(OpinionGroupDescriptionTranslationWork).values(chunk)
         session.execute(
             insert_query.on_conflict_do_nothing(
@@ -2063,8 +2130,8 @@ def _ensure_translation_work_for_pending_expectations(
                 update(OpinionGroupDescriptionTranslationWork)
                 .where(OpinionGroupDescriptionTranslationWork.id == row.id)
                 .values(
-                    conversation_id=value["conversation_id"],
-                    next_run_at=value["next_run_at"],
+                    conversation_id=value.conversation_id,
+                    next_run_at=value.next_run_at,
                     updated_at=func.now(),
                 )
             )
@@ -2112,6 +2179,7 @@ def _lineage_work_relevant_expectation_filter(
                     require_activated_view_snapshot=require_activated_view_snapshot,
                     require_unactivated_view_snapshot=require_unactivated_view_snapshot,
                     expectation_scope=expectation_scope,
+                    stale_checkpoints_require_explicit_lazy_demand=True,
                 ),
             )
         )
@@ -2185,6 +2253,7 @@ def _translation_work_relevant_expectation_filter(
                     require_activated_view_snapshot=require_activated_view_snapshot,
                     require_unactivated_view_snapshot=require_unactivated_view_snapshot,
                     expectation_scope=expectation_scope,
+                    stale_checkpoints_require_explicit_lazy_demand=True,
                 ),
             )
         )
@@ -3684,12 +3753,25 @@ def _refresh_english_locale_expectations(
             )
         )
 
+    translation_activation_view_snapshot_ids = ready_view_snapshot_ids
+    if require_activated_view_snapshot:
+        translation_activation_view_snapshot_ids = [
+            view_snapshot_id
+            for view_snapshot_id in ready_view_snapshot_ids
+            if not _view_snapshot_has_newer_analysis_completed(
+                session,
+                conversation_view_snapshot_id=view_snapshot_id,
+            )
+        ]
+    if not translation_activation_view_snapshot_ids:
+        return
+
     translation_expectation_rows = session.execute(
         select(OpinionGroupDescriptionLocaleExpectation.id)
         .where(
             and_(
                 OpinionGroupDescriptionLocaleExpectation.conversation_view_snapshot_id.in_(
-                    sorted(set(ready_view_snapshot_ids))
+                    sorted(set(translation_activation_view_snapshot_ids))
                 ),
                 OpinionGroupDescriptionLocaleExpectation.expectation_kind
                 == AiDescriptionLocaleExpectationKindEnum.translation,
@@ -4571,16 +4653,84 @@ def _fetch_description_for_translation_work(
     )
 
 
-def _fetch_required_candidate_ids_for_result(
+def _fetch_ai_candidate_ids_for_expectation(
     session: Session,
     *,
-    analysis_snapshot_result_id: int,
+    expectation: PendingLocaleStatusRow,
+) -> list[int]:
+    if _view_snapshot_has_newer_analysis_completed(
+        session,
+        conversation_view_snapshot_id=expectation.conversation_view_snapshot_id,
+    ):
+        return _fetch_explicit_lazy_candidate_ids_for_expectation(
+            session,
+            expectation=expectation,
+        )
+
+    return _fetch_live_eager_candidate_ids_for_expectation(
+        session,
+        expectation=expectation,
+    )
+
+
+def _view_snapshot_has_newer_analysis_completed(
+    session: Session,
+    *,
+    conversation_view_snapshot_id: int,
+) -> bool:
+    snapshot_row = session.execute(
+        select(
+            ConversationViewSnapshot.conversation_id,
+            ConversationViewSnapshot.opinion_group_spec_id,
+            ConversationViewSnapshot.created_at,
+        ).where(ConversationViewSnapshot.id == conversation_view_snapshot_id)
+    ).first()
+    if snapshot_row is None:
+        return True
+
+    newer_row = session.execute(
+        select(ConversationViewSnapshot.id)
+        .where(
+            and_(
+                ConversationViewSnapshot.conversation_id == snapshot_row.conversation_id,
+                ConversationViewSnapshot.opinion_group_spec_id
+                == snapshot_row.opinion_group_spec_id,
+                ConversationViewSnapshot.view_reason
+                == ConversationViewSnapshotReasonEnum.analysis_completed,
+                or_(
+                    ConversationViewSnapshot.created_at > snapshot_row.created_at,
+                    and_(
+                        ConversationViewSnapshot.created_at == snapshot_row.created_at,
+                        ConversationViewSnapshot.id > conversation_view_snapshot_id,
+                    ),
+                ),
+            )
+        )
+        .limit(1)
+    ).first()
+    return newer_row is not None
+
+
+def _fetch_live_eager_candidate_ids_for_expectation(
+    session: Session,
+    *,
+    expectation: PendingLocaleStatusRow,
 ) -> list[int]:
     candidate_rows = session.execute(
         select(
             OpinionGroupCandidate.id.label("candidate_id"),
             OpinionGroupVariant.group_count,
             OpinionGroupCandidateAssessment.selection_score,
+            ConversationViewSnapshot.preferred_opinion_group_count,
+        )
+        .select_from(ConversationViewSnapshot)
+        .join(
+            AnalysisSnapshotResult,
+            AnalysisSnapshotResult.id == expectation.analysis_snapshot_result_id,
+        )
+        .join(
+            OpinionGroupCandidate,
+            OpinionGroupCandidate.snapshot_result_id == AnalysisSnapshotResult.id,
         )
         .join(
             OpinionGroupVariant,
@@ -4592,16 +4742,17 @@ def _fetch_required_candidate_ids_for_result(
         )
         .where(
             and_(
-                OpinionGroupCandidate.snapshot_result_id == analysis_snapshot_result_id,
+                ConversationViewSnapshot.id == expectation.conversation_view_snapshot_id,
                 OpinionGroupCandidate.outcome == AnalysisResultOutcomeEnum.success,
                 OpinionGroupCandidateAssessment.hidden_reason.is_(None),
             )
         )
         .order_by(OpinionGroupVariant.group_count.asc())
     ).all()
-    return _select_required_candidate_ids_from_options(
-        session,
-        analysis_snapshot_result_id=analysis_snapshot_result_id,
+    preferred_group_count = (
+        candidate_rows[0].preferred_opinion_group_count if candidate_rows else None
+    )
+    return _select_eager_candidate_ids_from_options(
         options=[
             _CandidateOption(
                 candidate_id=row.candidate_id,
@@ -4610,31 +4761,97 @@ def _fetch_required_candidate_ids_for_result(
             )
             for row in candidate_rows
         ],
+        preferred_group_count=preferred_group_count,
     )
 
 
-def _select_required_candidate_ids_from_options(
+def _fetch_explicit_lazy_candidate_ids_for_expectation(
     session: Session,
     *,
-    analysis_snapshot_result_id: int,
+    expectation: PendingLocaleStatusRow,
+) -> list[int]:
+    if expectation.next_run_at is None:
+        return []
+
+    if expectation.locale == "en":
+        rows = session.execute(
+            select(OpinionGroupLineageDescriptionWork.source_candidate_id)
+            .join(
+                OpinionGroupCandidate,
+                OpinionGroupCandidate.id
+                == OpinionGroupLineageDescriptionWork.source_candidate_id,
+            )
+            .join(
+                OpinionGroup,
+                and_(
+                    OpinionGroup.candidate_id == OpinionGroupCandidate.id,
+                    OpinionGroup.lineage_id
+                    == OpinionGroupLineageDescriptionWork.lineage_id,
+                ),
+            )
+            .where(
+                and_(
+                    OpinionGroupLineageDescriptionWork.conversation_id
+                    == expectation.conversation_id,
+                    OpinionGroupCandidate.snapshot_result_id
+                    == expectation.analysis_snapshot_result_id,
+                )
+            )
+            .distinct()
+            .order_by(OpinionGroupLineageDescriptionWork.source_candidate_id)
+        ).all()
+        return [row.source_candidate_id for row in rows]
+
+    rows = session.execute(
+        select(OpinionGroup.candidate_id)
+        .join(OpinionGroupCandidate, OpinionGroupCandidate.id == OpinionGroup.candidate_id)
+        .join(OpinionGroupLineage, OpinionGroupLineage.id == OpinionGroup.lineage_id)
+        .join(
+            OpinionGroupDescriptionTranslationWork,
+            OpinionGroupDescriptionTranslationWork.description_id
+            == OpinionGroupLineage.system_description_id,
+        )
+        .where(
+            and_(
+                OpinionGroupDescriptionTranslationWork.conversation_id
+                == expectation.conversation_id,
+                OpinionGroupDescriptionTranslationWork.locale == expectation.locale,
+                OpinionGroupCandidate.snapshot_result_id
+                == expectation.analysis_snapshot_result_id,
+            )
+        )
+        .distinct()
+        .order_by(OpinionGroup.candidate_id)
+    ).all()
+    return [row.candidate_id for row in rows]
+
+
+def _select_eager_candidate_ids_from_options(
+    *,
     options: Sequence[_CandidateOption],
+    preferred_group_count: int | None,
 ) -> list[int]:
     if not options:
         return []
 
-    result_row = session.execute(
-        select(AnalysisSnapshotResult.variants_enabled).where(
-            AnalysisSnapshotResult.id == analysis_snapshot_result_id
-        )
-    ).first()
-    if result_row is not None and result_row.variants_enabled:
-        return sorted({option.candidate_id for option in options})
-
-    selected = max(
+    auto_candidate = max(
         options,
         key=lambda option: (
             option.selection_score if option.selection_score is not None else float("-inf"),
             option.group_count,
         ),
     )
-    return [selected.candidate_id]
+    candidate_ids = [auto_candidate.candidate_id]
+    if preferred_group_count is None:
+        return candidate_ids
+
+    facilitator_candidate = next(
+        (option for option in options if option.group_count == preferred_group_count),
+        None,
+    )
+    if (
+        facilitator_candidate is not None
+        and facilitator_candidate.candidate_id not in candidate_ids
+    ):
+        candidate_ids.append(facilitator_candidate.candidate_id)
+    return sorted(candidate_ids)

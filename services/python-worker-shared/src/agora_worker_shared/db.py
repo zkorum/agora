@@ -216,6 +216,13 @@ class _CheckpointReasonInsertValue(TypedDict):
     created_at: datetime
 
 
+class _LineageDescriptionWorkInsertValue(TypedDict):
+    lineage_id: int
+    conversation_id: int
+    source_candidate_id: int
+    next_run_at: datetime | ColumnElement[datetime]
+
+
 def _max_rows_per_insert(*, column_count: int) -> int:
     return max(1, POSTGRES_INSERT_BIND_PARAM_LIMIT // column_count)
 
@@ -1598,6 +1605,47 @@ def _select_artifact_candidate(
     )
 
 
+def _select_eager_ai_candidate_ids(
+    *,
+    options: list[_CheckpointCandidateOption],
+    preferred_group_count: int | None,
+) -> set[int]:
+    auto_candidate = _select_checkpoint_candidate(options)
+    if auto_candidate is None:
+        return set()
+
+    candidate_ids = {auto_candidate.candidate_id}
+    if preferred_group_count is None:
+        return candidate_ids
+
+    facilitator_candidate = next(
+        (
+            option
+            for option in options
+            if option.group_count == preferred_group_count
+            and option.selection_score is not None
+        ),
+        None,
+    )
+    if facilitator_candidate is not None:
+        candidate_ids.add(facilitator_candidate.candidate_id)
+    return candidate_ids
+
+
+def _eager_ai_candidate_ids_by_pair(
+    *,
+    persisted_view_snapshots_by_pair: dict[tuple[int, int], _PersistedConversationViewSnapshot],
+    current_options_by_pair: dict[tuple[int, int], list[_CheckpointCandidateOption]],
+) -> dict[tuple[int, int], set[int]]:
+    return {
+        pair: _select_eager_ai_candidate_ids(
+            options=current_options_by_pair.get(pair, []),
+            preferred_group_count=persisted.conversation_state.preferred_opinion_group_count,
+        )
+        for pair, persisted in persisted_view_snapshots_by_pair.items()
+    }
+
+
 def _fetch_premium_analysis_conversation_ids(
     session: Session,
     *,
@@ -2312,13 +2360,13 @@ def _create_lineage_description_work_rows(
     session: Session,
     *,
     persisted_view_snapshots_by_pair: dict[tuple[int, int], _PersistedConversationViewSnapshot],
-    artifact_candidate_ids_by_pair: dict[tuple[int, int], set[int]],
+    eager_ai_candidate_ids_by_pair: dict[tuple[int, int], set[int]],
     ai_generation_expected: bool,
 ) -> None:
     if not ai_generation_expected or not persisted_view_snapshots_by_pair:
         return
 
-    work_values_by_lineage_id: dict[int, dict[str, object]] = {}
+    work_values_by_lineage_id: dict[int, _LineageDescriptionWorkInsertValue] = {}
     for pair, persisted in persisted_view_snapshots_by_pair.items():
         if persisted.selected_candidate is None:
             continue
@@ -2326,7 +2374,7 @@ def _create_lineage_description_work_rows(
         if not persisted.conversation_state.ai_labeling_enabled:
             continue
         conversation_id, _opinion_group_spec_id = pair
-        candidate_ids = artifact_candidate_ids_by_pair.get(pair, set())
+        candidate_ids = eager_ai_candidate_ids_by_pair.get(pair, set())
         if not candidate_ids:
             continue
 
@@ -3968,7 +4016,10 @@ def persist_computed_analysis_results_batch(
         _create_lineage_description_work_rows(
             session,
             persisted_view_snapshots_by_pair=persisted_view_snapshots_by_pair,
-            artifact_candidate_ids_by_pair=allowed_candidate_ids_by_pair,
+            eager_ai_candidate_ids_by_pair=_eager_ai_candidate_ids_by_pair(
+                persisted_view_snapshots_by_pair=persisted_view_snapshots_by_pair,
+                current_options_by_pair=current_options_by_pair,
+            ),
             ai_generation_expected=ai_generation_expected,
         )
 

@@ -784,6 +784,180 @@ def test_first_pass_claiming_treats_fallback_statuses_as_terminal() -> None:
     assert claims == []
 
 
+def test_stale_checkpoint_fallback_work_is_not_retried_without_lazy_demand() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
+        view_snapshot.activated_at = NOW
+        lineage = session.execute(select(OpinionGroupLineage)).scalar_one()
+        lineage.system_description_id = None
+        lineage_work = session.execute(select(OpinionGroupLineageDescriptionWork)).scalar_one()
+        lineage_work.next_run_at = NOW
+        english_expectation = session.execute(
+            select(OpinionGroupDescriptionLocaleExpectation).where(
+                OpinionGroupDescriptionLocaleExpectation.locale == "en"
+            )
+        ).scalar_one()
+        english_expectation.retry_demand_due_at = None
+        session.add(
+            ConversationViewSnapshotCheckpointReason(
+                id=901,
+                conversation_view_snapshot_id=20,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                reason=ConversationViewSnapshotCheckpointReasonEnum.first_displayable_analysis,
+                group_count=None,
+                previous_group_count=None,
+                participant_count=None,
+                participant_milestone=None,
+                vote_count=None,
+                vote_milestone=None,
+                created_at=NOW,
+            )
+        )
+        session.add(
+            ConversationViewSnapshot(
+                id=21,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                analysis_snapshot_id=30,
+                survey_aggregate_snapshot_id=None,
+                conversation_content_id=40,
+                view_reason=ConversationViewSnapshotReasonEnum.analysis_completed,
+                is_closed=False,
+                opinion_count=2,
+                vote_count=2,
+                participant_count=2,
+                total_opinion_count=2,
+                total_vote_count=2,
+                total_participant_count=2,
+                moderated_opinion_count=0,
+                hidden_opinion_count=0,
+                activated_at=NOW,
+                created_at=NOW + timedelta(seconds=1),
+            )
+        )
+        session.commit()
+
+    due_conversation_ids = fetch_due_ai_description_work_conversation_ids(
+        engine,
+        limit=10,
+        ai_description_epoch=1,
+        translation_enabled=False,
+        require_activated_view_snapshot=True,
+    )
+    claims = claim_ai_description_locale_work_items_batch(
+        engine,
+        worker_id="retry-worker:test",
+        conversation_ids=[10],
+        lease_ttl_seconds=120,
+        limit=10,
+        ai_description_epoch=1,
+        translation_enabled=False,
+        require_activated_view_snapshot=True,
+    )
+
+    assert due_conversation_ids == []
+    assert claims == []
+
+
+def test_stale_checkpoint_english_completion_does_not_activate_all_translations() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
+        view_snapshot.activated_at = NOW
+        english_expectation = session.execute(
+            select(OpinionGroupDescriptionLocaleExpectation).where(
+                OpinionGroupDescriptionLocaleExpectation.locale == "en"
+            )
+        ).scalar_one()
+        english_expectation.retry_demand_due_at = NOW
+        session.add(
+            OpinionGroupDescriptionLocaleExpectation(
+                id=103,
+                conversation_view_snapshot_id=20,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                analysis_snapshot_result_id=50,
+                locale="es",
+                expectation_kind=AiDescriptionLocaleExpectationKindEnum.translation,
+                retry_demand_due_at=None,
+                created_at=NOW,
+                updated_at=NOW,
+            )
+        )
+        session.add(
+            ConversationViewSnapshotCheckpointReason(
+                id=901,
+                conversation_view_snapshot_id=20,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                reason=ConversationViewSnapshotCheckpointReasonEnum.first_displayable_analysis,
+                group_count=None,
+                previous_group_count=None,
+                participant_count=None,
+                participant_milestone=None,
+                vote_count=None,
+                vote_milestone=None,
+                created_at=NOW,
+            )
+        )
+        session.add(
+            ConversationViewSnapshot(
+                id=21,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                analysis_snapshot_id=30,
+                survey_aggregate_snapshot_id=None,
+                conversation_content_id=40,
+                view_reason=ConversationViewSnapshotReasonEnum.analysis_completed,
+                is_closed=False,
+                opinion_count=2,
+                vote_count=2,
+                participant_count=2,
+                total_opinion_count=2,
+                total_vote_count=2,
+                total_participant_count=2,
+                moderated_opinion_count=0,
+                hidden_opinion_count=0,
+                activated_at=NOW,
+                created_at=NOW + timedelta(seconds=1),
+            )
+        )
+        session.commit()
+
+    claims = claim_ai_description_locale_work_items_batch(
+        engine,
+        worker_id="retry-worker:test",
+        conversation_ids=[10],
+        lease_ttl_seconds=120,
+        limit=10,
+        ai_description_epoch=1,
+        translation_enabled=False,
+        require_activated_view_snapshot=True,
+    )
+
+    with Session(engine) as session:
+        expectations = session.execute(
+            select(OpinionGroupDescriptionLocaleExpectation).order_by(
+                OpinionGroupDescriptionLocaleExpectation.locale
+            )
+        ).scalars().all()
+
+    assert claims == []
+    assert [(row.locale, row.retry_demand_due_at) for row in expectations] == [
+        ("en", None),
+        ("es", None),
+        ("fr", None),
+    ]
+
+
 def test_first_pass_claiming_allows_one_immediate_lineage_retry() -> None:
     engine = _create_engine()
     with Session(engine) as session:
@@ -811,6 +985,125 @@ def test_first_pass_claiming_allows_one_immediate_lineage_retry() -> None:
     assert len(claims) == 1
     assert isinstance(claims[0], ClaimedLineageDescriptionWorkItem)
     assert claims[0].attempt_count == 2
+
+
+def test_first_pass_claiming_creates_only_auto_and_facilitator_preference_work() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        conversation.preferred_opinion_group_count = 2
+        view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
+        view_snapshot.preferred_opinion_group_count = 2
+        result = session.execute(select(AnalysisSnapshotResult)).scalar_one()
+        result.variants_enabled = True
+        lineage = session.execute(select(OpinionGroupLineage)).scalar_one()
+        lineage.system_description_id = None
+        existing_lineage_work = session.execute(
+            select(OpinionGroupLineageDescriptionWork)
+        ).scalar_one()
+        existing_translation_work = session.execute(
+            select(OpinionGroupDescriptionTranslationWork)
+        ).scalar_one()
+        session.delete(existing_lineage_work)
+        session.delete(existing_translation_work)
+        session.add_all(
+            [
+                OpinionGroupVariant(
+                    id=602,
+                    opinion_group_spec_id=1,
+                    group_count=3,
+                    created_at=NOW,
+                ),
+                OpinionGroupVariant(
+                    id=603,
+                    opinion_group_spec_id=1,
+                    group_count=4,
+                    created_at=NOW,
+                ),
+                OpinionGroupCandidate(
+                    id=402,
+                    snapshot_result_id=50,
+                    opinion_group_variant_id=602,
+                    scope_id=702,
+                    outcome=AnalysisResultOutcomeEnum.success,
+                    outcome_reason=None,
+                    raw_output=None,
+                    created_at=NOW,
+                ),
+                OpinionGroupCandidate(
+                    id=403,
+                    snapshot_result_id=50,
+                    opinion_group_variant_id=603,
+                    scope_id=703,
+                    outcome=AnalysisResultOutcomeEnum.success,
+                    outcome_reason=None,
+                    raw_output=None,
+                    created_at=NOW,
+                ),
+                OpinionGroupLineage(
+                    id=302,
+                    scope_id=702,
+                    system_description_id=None,
+                    admin_description_id=None,
+                    created_at=NOW,
+                ),
+                OpinionGroupLineage(
+                    id=303,
+                    scope_id=703,
+                    system_description_id=None,
+                    admin_description_id=None,
+                    created_at=NOW,
+                ),
+                OpinionGroup(
+                    id=802,
+                    candidate_id=402,
+                    scope_id=702,
+                    lineage_id=302,
+                    key="1",
+                    external_id=1,
+                    num_users=1,
+                    created_at=NOW,
+                ),
+                OpinionGroup(
+                    id=803,
+                    candidate_id=403,
+                    scope_id=703,
+                    lineage_id=303,
+                    key="2",
+                    external_id=2,
+                    num_users=1,
+                    created_at=NOW,
+                ),
+            ]
+        )
+        session.commit()
+
+    claims = claim_first_pass_ai_description_locale_work_items_batch(
+        engine,
+        worker_id="math-updater:test",
+        conversation_ids=[10],
+        conversation_view_snapshot_ids=[20],
+        lease_ttl_seconds=120,
+        limit=10,
+        ai_description_epoch=1,
+        translation_enabled=False,
+    )
+
+    with Session(engine) as session:
+        work_rows = session.execute(
+            select(OpinionGroupLineageDescriptionWork).order_by(
+                OpinionGroupLineageDescriptionWork.source_candidate_id
+            )
+        ).scalars().all()
+
+    assert {
+        claim.source_candidate_id
+        for claim in claims
+        if isinstance(claim, ClaimedLineageDescriptionWorkItem)
+    } == {401, 403}
+    assert [work.source_candidate_id for work in work_rows] == [401, 403]
 
 
 def test_first_pass_claiming_stops_after_one_lineage_retry() -> None:
