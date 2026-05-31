@@ -96,6 +96,7 @@ import {
   useSurveyConfigDeleteMutation,
   useSurveyConfigUpdateMutation,
 } from "src/utils/api/survey/useSurveyQueries";
+import { getConversationEditReturnPath } from "src/utils/router/conversationEditReturn";
 import { getSingleRouteParam } from "src/utils/router/params";
 import {
   areSurveyConfigsEqual,
@@ -234,6 +235,7 @@ onMounted(async () => {
     await router.replace({
       name: "/conversation/[conversationSlugId]/edit/",
       params: { conversationSlugId },
+      query: route.query,
     });
     return;
   }
@@ -246,6 +248,7 @@ onMounted(async () => {
     await router.replace({
       name: "/conversation/[conversationSlugId]/edit/",
       params: { conversationSlugId },
+      query: route.query,
     });
     return;
   }
@@ -268,10 +271,11 @@ function showSurveyValidationError(): void {
 }
 
 async function redirectToConversation(): Promise<void> {
-  await router.replace({
-    name: "/conversation/[postSlugId]/",
-    params: { postSlugId: conversationSlugId },
+  const returnPath = getConversationEditReturnPath({
+    conversationSlugId,
+    returnTo: route.query.returnTo,
   });
+  await router.replace(returnPath);
 }
 
 function requestDeleteSurvey(): void {

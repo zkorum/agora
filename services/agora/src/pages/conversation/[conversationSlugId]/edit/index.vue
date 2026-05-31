@@ -136,6 +136,7 @@ import type {
 } from "src/shared/types/zod";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
 import { useUpdateConversationMutation } from "src/utils/api/post/useConversationMutations";
+import { getConversationEditReturnPath } from "src/utils/router/conversationEditReturn";
 import { getSingleRouteParam } from "src/utils/router/params";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, nextTick, onMounted, ref } from "vue";
@@ -355,10 +356,11 @@ async function performSave(): Promise<void> {
 
     if (response.success) {
       showNotifyMessage(t("updateSuccess"));
-      await router.push({
-        name: "/conversation/[postSlugId]/",
-        params: { postSlugId: conversationSlugId },
+      const returnPath = getConversationEditReturnPath({
+        conversationSlugId,
+        returnTo: route.query.returnTo,
       });
+      await router.push(returnPath);
     } else {
       // Map the error using discriminated union for type safety
       // Declare errorMsg outside switch to avoid lexical declaration error
@@ -424,6 +426,7 @@ async function openSurveyEditor(): Promise<void> {
   await router.push({
     name: "/conversation/[conversationSlugId]/edit/survey/",
     params: { conversationSlugId },
+    query: route.query,
   });
 }
 

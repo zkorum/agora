@@ -246,6 +246,7 @@ async function editConversationCallback() {
   await router.push({
     name: "/conversation/[conversationSlugId]/edit/",
     params: { conversationSlugId: props.postSlugId },
+    query: { returnTo: route.fullPath },
   });
 }
 
