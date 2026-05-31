@@ -7,8 +7,8 @@ import uuid
 from typing import TYPE_CHECKING
 
 from agora_worker_shared.ai_description_work import (
-    activate_pending_translation_expectations,
     fetch_due_ai_description_work_conversation_ids,
+    materialize_requested_description_translation_work,
     recover_expired_ai_description_work,
 )
 from agora_worker_shared.config import (
@@ -43,6 +43,7 @@ log = logging.getLogger(__name__)
 
 _running = True
 LOG_PREFIX = "[DescriptionTranslationRetryWorker]"
+NO_CLAIM_LOG_INTERVAL_SECONDS = 60.0
 
 
 def _sleep_before_retry(seconds: float) -> None:
@@ -135,6 +136,7 @@ def main() -> None:
 
     monotonic_start = time.monotonic()
     last_recover = monotonic_start - settings.running_recovery_interval_seconds
+    last_no_claim_warning = monotonic_start - NO_CLAIM_LOG_INTERVAL_SECONDS
     schema_retry_state = StartupSchemaRetryState()
 
     while _running:
@@ -170,16 +172,16 @@ def main() -> None:
             last_recover = monotonic_now
 
         try:
-            activated_ids = activate_pending_translation_expectations(
+            materialized_ids = materialize_requested_description_translation_work(
                 primary_engine,
                 limit=settings.db_claim_batch_size,
                 require_activated_view_snapshot=True,
             )
-            if activated_ids:
+            if materialized_ids:
                 log.info(
-                    "%s Activated translation expectations for %d conversation(s)",
+                    "%s Materialized requested translation work for %d conversation(s)",
                     LOG_PREFIX,
-                    len(activated_ids),
+                    len(materialized_ids),
                 )
         except Exception as error:
             retry_decision = handle_startup_schema_retry(
@@ -192,7 +194,7 @@ def main() -> None:
             if retry_decision.should_retry:
                 time.sleep(settings.worker_poll_idle_sleep_seconds)
                 continue
-            log.exception("%s Translation expectation activation failed", LOG_PREFIX)
+            log.exception("%s Translation request materialization failed", LOG_PREFIX)
 
         try:
             due_ids = fetch_due_ai_description_work_conversation_ids(
@@ -256,13 +258,27 @@ def main() -> None:
                 (time.perf_counter() - batch_started_at) * 1000,
             )
         else:
-            log.debug(
-                "%s No translation work item processed conversation_count=%d ids=%s batch_ms=%.1f",
-                LOG_PREFIX,
-                len(due_ids),
-                ",".join(str(conversation_id) for conversation_id in due_ids),
-                (time.perf_counter() - batch_started_at) * 1000,
-            )
+            elapsed_ms = (time.perf_counter() - batch_started_at) * 1000
+            if monotonic_now - last_no_claim_warning >= NO_CLAIM_LOG_INTERVAL_SECONDS:
+                log.warning(
+                    "%s Due translation conversations yielded no claimable work; "
+                    "sleeping idle interval conversation_count=%d ids=%s batch_ms=%.1f",
+                    LOG_PREFIX,
+                    len(due_ids),
+                    ",".join(str(conversation_id) for conversation_id in due_ids),
+                    elapsed_ms,
+                )
+                last_no_claim_warning = monotonic_now
+            else:
+                log.debug(
+                    "%s No translation work item processed "
+                    "conversation_count=%d ids=%s batch_ms=%.1f",
+                    LOG_PREFIX,
+                    len(due_ids),
+                    ",".join(str(conversation_id) for conversation_id in due_ids),
+                    elapsed_ms,
+                )
+            _sleep_before_retry(settings.worker_poll_idle_sleep_seconds)
 
     primary_engine.dispose()
     read_engine.dispose()

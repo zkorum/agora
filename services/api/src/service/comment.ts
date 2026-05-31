@@ -87,7 +87,7 @@ import {
     getOpinionGroupAnalysisSelection,
     getSelectedOpinionGroupCandidate,
 } from "./opinionGroupAnalysis.js";
-import { ensureAiDescriptionLocaleExpectationForConversationViewSnapshot } from "./conversationViewSnapshot.js";
+import { ensureAiDescriptionLocaleRequestForConversationViewSnapshot } from "./conversationViewSnapshot.js";
 import { alias } from "drizzle-orm/pg-core";
 import {
     type SupportedDisplayLanguageCodes,
@@ -1543,7 +1543,7 @@ function createAnalysisFrameManifest({
     };
 }
 
-async function ensureAiDescriptionExpectationForAnalysisFrameManifest({
+async function ensureAiDescriptionRequestForAnalysisFrameManifest({
     db,
     conversationSlugId,
     manifest,
@@ -1558,7 +1558,7 @@ async function ensureAiDescriptionExpectationForAnalysisFrameManifest({
         return;
     }
 
-    await ensureAiDescriptionLocaleExpectationForConversationViewSnapshot({
+    await ensureAiDescriptionLocaleRequestForConversationViewSnapshot({
         db,
         conversationSlugId,
         conversationViewSnapshotId: manifest.frameKey.conversationViewSnapshotId,
@@ -1594,7 +1594,7 @@ export async function fetchAnalysisFrameManifestByConversationSlugId({
         checkpointViewSnapshotId,
     });
 
-    await ensureAiDescriptionExpectationForAnalysisFrameManifest({
+    await ensureAiDescriptionRequestForAnalysisFrameManifest({
         db: getPrimaryDb(db),
         conversationSlugId,
         manifest,
@@ -1620,7 +1620,7 @@ export async function fetchAnalysisFrameManifestByConversationSlugId({
         analysisView,
         checkpointViewSnapshotId,
     });
-    await ensureAiDescriptionExpectationForAnalysisFrameManifest({
+    await ensureAiDescriptionRequestForAnalysisFrameManifest({
         db: getPrimaryDb(db),
         conversationSlugId,
         manifest: primaryManifest,
@@ -2041,7 +2041,7 @@ export async function fetchAnalysisFrameGroupLabelsByFrameKey({
     freshnessOptions: AnalysisFreshnessOptions | null;
 }): Promise<AnalysisFrameGroupLabels> {
     const requestedLocale = getSupportedDisplayLanguage(displayLanguage);
-    await ensureAiDescriptionLocaleExpectationForConversationViewSnapshot({
+    await ensureAiDescriptionLocaleRequestForConversationViewSnapshot({
         db: getPrimaryDb(db),
         conversationSlugId,
         conversationViewSnapshotId: frameKey.conversationViewSnapshotId,

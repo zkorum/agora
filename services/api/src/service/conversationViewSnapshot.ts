@@ -3,23 +3,23 @@ import {
     and,
     desc,
     eq,
+    gt,
     inArray,
     isNotNull,
     isNull,
-    lt,
-    ne,
     or,
 } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     analysisSnapshotResultTable,
-    analysisWorkStateTable,
     conversationTable,
     conversationViewSnapshotCheckpointReasonTable,
+    opinionGroupCandidateAssessmentTable,
     opinionGroupCandidateTable,
+    opinionGroupCandidateDescriptionLocaleRequestTable,
     opinionGroupDescriptionTranslationTable,
     opinionGroupDescriptionTranslationWorkTable,
-    opinionGroupDescriptionLocaleExpectationTable,
     opinionGroupLineageDescriptionWorkTable,
     opinionGroupLineageTable,
     opinionGroupTable,
@@ -29,7 +29,6 @@ import {
 import { calculateConversationCounters } from "@/shared-backend/conversationCounters.js";
 import {
     type SupportedDisplayLanguageCodes,
-    ZodSupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
 import type { FetchAnalysisCheckpointsResponse } from "@/shared/types/dto.js";
 import {
@@ -51,12 +50,157 @@ interface LatestSnapshotRefs {
     variantsEnabled: boolean;
 }
 
-type AiDescriptionLocaleExpectationKind = "english_description" | "translation";
+async function upsertCandidateDescriptionLocaleRequest({
+    db,
+    candidateId,
+    locale,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    candidateId: number;
+    locale: SupportedDisplayLanguageCodes;
+    now: Date;
+}): Promise<boolean> {
+    const rows = await db
+        .insert(opinionGroupCandidateDescriptionLocaleRequestTable)
+        .values({
+            candidateId,
+            locale,
+            createdAt: now,
+            updatedAt: now,
+        })
+        .onConflictDoUpdate({
+            target: [
+                opinionGroupCandidateDescriptionLocaleRequestTable.candidateId,
+                opinionGroupCandidateDescriptionLocaleRequestTable.locale,
+            ],
+            set: { updatedAt: now },
+        })
+        .returning({ id: opinionGroupCandidateDescriptionLocaleRequestTable.id });
 
-function getAiDescriptionLocaleExpectationKind(
-    locale: SupportedDisplayLanguageCodes,
-): AiDescriptionLocaleExpectationKind {
-    return locale === "en" ? "english_description" : "translation";
+    return rows.length > 0;
+}
+
+async function ensureLineageDescriptionWorkForCandidate({
+    db,
+    conversationId,
+    candidateId,
+    lineageIds,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    conversationId: number;
+    candidateId: number;
+    lineageIds: number[];
+    now: Date;
+}): Promise<boolean> {
+    if (lineageIds.length === 0) {
+        return false;
+    }
+
+    await db
+        .insert(opinionGroupLineageDescriptionWorkTable)
+        .values(
+            lineageIds.map((lineageId) => ({
+                lineageId,
+                conversationId,
+                sourceCandidateId: candidateId,
+                nextRunAt: now,
+            })),
+        )
+        .onConflictDoNothing();
+    const updatedWorkRows = await db
+        .update(opinionGroupLineageDescriptionWorkTable)
+        .set({
+            conversationId,
+            sourceCandidateId: candidateId,
+            nextRunAt: now,
+            updatedAt: now,
+        })
+        .where(
+            and(
+                inArray(
+                    opinionGroupLineageDescriptionWorkTable.lineageId,
+                    lineageIds,
+                ),
+                isNull(opinionGroupLineageDescriptionWorkTable.leaseToken),
+                isNull(opinionGroupLineageDescriptionWorkTable.nextRunAt),
+            ),
+        )
+        .returning({ id: opinionGroupLineageDescriptionWorkTable.id });
+    return updatedWorkRows.length > 0;
+}
+
+async function ensureDescriptionTranslationWorkForCandidate({
+    db,
+    conversationId,
+    locale,
+    descriptionIds,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    conversationId: number;
+    locale: SupportedDisplayLanguageCodes;
+    descriptionIds: number[];
+    now: Date;
+}): Promise<boolean> {
+    if (descriptionIds.length === 0) {
+        return false;
+    }
+
+    const translatedRows = await db
+        .select({ descriptionId: opinionGroupDescriptionTranslationTable.descriptionId })
+        .from(opinionGroupDescriptionTranslationTable)
+        .where(
+            and(
+                inArray(
+                    opinionGroupDescriptionTranslationTable.descriptionId,
+                    descriptionIds,
+                ),
+                eq(opinionGroupDescriptionTranslationTable.locale, locale),
+            ),
+        );
+    const translatedDescriptionIds = new Set(
+        translatedRows.map((row) => row.descriptionId),
+    );
+    const missingTranslationDescriptionIds = descriptionIds.filter(
+        (descriptionId) => !translatedDescriptionIds.has(descriptionId),
+    );
+    if (missingTranslationDescriptionIds.length === 0) {
+        return false;
+    }
+
+    await db
+        .insert(opinionGroupDescriptionTranslationWorkTable)
+        .values(
+            missingTranslationDescriptionIds.map((descriptionId) => ({
+                descriptionId,
+                conversationId,
+                locale,
+                nextRunAt: now,
+            })),
+        )
+        .onConflictDoNothing();
+    const updatedTranslationWorkRows = await db
+        .update(opinionGroupDescriptionTranslationWorkTable)
+        .set({
+            conversationId,
+            nextRunAt: now,
+            updatedAt: now,
+        })
+        .where(
+            and(
+                inArray(
+                    opinionGroupDescriptionTranslationWorkTable.descriptionId,
+                    missingTranslationDescriptionIds,
+                ),
+                eq(opinionGroupDescriptionTranslationWorkTable.locale, locale),
+                isNull(opinionGroupDescriptionTranslationWorkTable.leaseToken),
+                isNull(opinionGroupDescriptionTranslationWorkTable.nextRunAt),
+            ),
+        )
+        .returning({ id: opinionGroupDescriptionTranslationWorkTable.id });
+    return updatedTranslationWorkRows.length > 0;
 }
 
 export async function fetchAnalysisCheckpointsByConversationSlugId({
@@ -397,204 +541,7 @@ export async function createConversationViewSnapshotsFromCurrentState({
     return currentOpinionGroupSpecIds.length;
 }
 
-export async function ensureAiDescriptionLocaleExpectationsForLatestAnalysisSnapshots({
-    db,
-    conversationId,
-}: {
-    db: PostgresJsDatabase;
-    conversationId: number;
-}): Promise<boolean> {
-    const specRows = await db
-        .select({
-            id: opinionGroupSpecTable.id,
-            key: opinionGroupSpecTable.key,
-        })
-        .from(opinionGroupSpecTable)
-        .orderBy(
-            opinionGroupSpecTable.key,
-            desc(opinionGroupSpecTable.version),
-        );
-    const currentOpinionGroupSpecIds = getCurrentOpinionGroupSpecIds(specRows);
-    if (currentOpinionGroupSpecIds.length === 0) {
-        return false;
-    }
-
-    const pendingAnalysisRows = await db
-        .select({ id: analysisWorkStateTable.id })
-        .from(analysisWorkStateTable)
-        .innerJoin(
-            conversationTable,
-            eq(conversationTable.id, analysisWorkStateTable.conversationId),
-        )
-        .where(
-            and(
-                eq(analysisWorkStateTable.conversationId, conversationId),
-                inArray(
-                    analysisWorkStateTable.opinionGroupSpecId,
-                    currentOpinionGroupSpecIds,
-                ),
-                or(
-                    isNotNull(analysisWorkStateTable.runningDataGeneration),
-                    lt(
-                        analysisWorkStateTable.lastCompletedDataGeneration,
-                        conversationTable.analysisDataGeneration,
-                    ),
-                ),
-            ),
-        )
-        .limit(1);
-    if (pendingAnalysisRows.length > 0) {
-        return false;
-    }
-
-    const snapshotRows = await db
-        .select({
-            viewSnapshotId: conversationViewSnapshotTable.id,
-            opinionGroupSpecId:
-                conversationViewSnapshotTable.opinionGroupSpecId,
-            resultId: analysisSnapshotResultTable.id,
-            resultOutcome: analysisSnapshotResultTable.outcome,
-        })
-        .from(conversationViewSnapshotTable)
-        .innerJoin(
-            analysisSnapshotResultTable,
-            and(
-                eq(
-                    analysisSnapshotResultTable.analysisSnapshotId,
-                    conversationViewSnapshotTable.analysisSnapshotId,
-                ),
-                eq(
-                    analysisSnapshotResultTable.opinionGroupSpecId,
-                    conversationViewSnapshotTable.opinionGroupSpecId,
-                ),
-            ),
-        )
-        .where(
-            and(
-                eq(
-                    conversationViewSnapshotTable.conversationId,
-                    conversationId,
-                ),
-                inArray(
-                    conversationViewSnapshotTable.opinionGroupSpecId,
-                    currentOpinionGroupSpecIds,
-                ),
-                isNotNull(conversationViewSnapshotTable.activatedAt),
-            ),
-        )
-        .orderBy(
-            desc(conversationViewSnapshotTable.createdAt),
-            desc(conversationViewSnapshotTable.id),
-        );
-
-    const latestSnapshotBySpecId = new Map<
-        number,
-        {
-            viewSnapshotId: number;
-            resultId: number | null;
-            resultOutcome: string | null;
-        }
-    >();
-    for (const row of snapshotRows) {
-        if (!latestSnapshotBySpecId.has(row.opinionGroupSpecId)) {
-            latestSnapshotBySpecId.set(row.opinionGroupSpecId, {
-                viewSnapshotId: row.viewSnapshotId,
-                resultId: row.resultId,
-                resultOutcome: row.resultOutcome,
-            });
-        }
-    }
-    if (latestSnapshotBySpecId.size === 0) {
-        return false;
-    }
-
-    let didQueueAiDescriptionWork = false;
-    for (const [opinionGroupSpecId, snapshot] of latestSnapshotBySpecId) {
-        if (
-            snapshot.resultId === null ||
-            snapshot.resultOutcome !== "success"
-        ) {
-            continue;
-        }
-        const resultId = snapshot.resultId;
-
-        await db
-            .update(opinionGroupDescriptionLocaleExpectationTable)
-            .set({ retryDemandDueAt: null, updatedAt: new Date() })
-            .where(
-                and(
-                    eq(
-                        opinionGroupDescriptionLocaleExpectationTable.conversationId,
-                        conversationId,
-                    ),
-                    eq(
-                        opinionGroupDescriptionLocaleExpectationTable.opinionGroupSpecId,
-                        opinionGroupSpecId,
-                    ),
-                    ne(
-                        opinionGroupDescriptionLocaleExpectationTable.conversationViewSnapshotId,
-                        snapshot.viewSnapshotId,
-                    ),
-                    isNotNull(
-                        opinionGroupDescriptionLocaleExpectationTable.retryDemandDueAt,
-                    ),
-                ),
-            );
-
-        const now = new Date();
-        const insertedRows = await db
-            .insert(opinionGroupDescriptionLocaleExpectationTable)
-            .values(
-                ZodSupportedDisplayLanguageCodes.options.map((locale) => ({
-                    conversationViewSnapshotId: snapshot.viewSnapshotId,
-                    conversationId,
-                    opinionGroupSpecId,
-                    analysisSnapshotResultId: resultId,
-                    locale,
-                    expectationKind: getAiDescriptionLocaleExpectationKind(locale),
-                    retryDemandDueAt: locale === "en" ? now : null,
-                })),
-            )
-            .onConflictDoUpdate({
-                target: [
-                    opinionGroupDescriptionLocaleExpectationTable.conversationViewSnapshotId,
-                    opinionGroupDescriptionLocaleExpectationTable.locale,
-                ],
-                set: {
-                    analysisSnapshotResultId: resultId,
-                    updatedAt: now,
-                },
-            })
-            .returning({ id: opinionGroupDescriptionLocaleExpectationTable.id });
-        if (insertedRows.length > 0) {
-            didQueueAiDescriptionWork = true;
-        }
-
-        const updatedRows = await db
-            .update(opinionGroupDescriptionLocaleExpectationTable)
-            .set({
-                retryDemandDueAt: now,
-                updatedAt: now,
-            })
-            .where(
-                and(
-                    eq(
-                        opinionGroupDescriptionLocaleExpectationTable.conversationViewSnapshotId,
-                        snapshot.viewSnapshotId,
-                    ),
-                    eq(opinionGroupDescriptionLocaleExpectationTable.locale, "en"),
-                ),
-            )
-            .returning({ id: opinionGroupDescriptionLocaleExpectationTable.id });
-        if (updatedRows.length > 0) {
-            didQueueAiDescriptionWork = true;
-        }
-    }
-
-    return didQueueAiDescriptionWork;
-}
-
-export async function ensureAiDescriptionLocaleExpectationForConversationViewSnapshot({
+export async function ensureAiDescriptionLocaleRequestForConversationViewSnapshot({
     db,
     conversationSlugId,
     conversationViewSnapshotId,
@@ -607,14 +554,20 @@ export async function ensureAiDescriptionLocaleExpectationForConversationViewSna
     candidateId: number;
     requestedLocale: SupportedDisplayLanguageCodes;
 }): Promise<boolean> {
+    const newerConversationViewSnapshotTable = alias(
+        conversationViewSnapshotTable,
+        "newerConversationViewSnapshot",
+    );
     const snapshotRows = await db
         .select({
             conversationId: conversationTable.id,
             aiLabelingEnabled: conversationTable.aiLabelingEnabled,
             opinionGroupSpecId: conversationViewSnapshotTable.opinionGroupSpecId,
+            viewSnapshotCreatedAt: conversationViewSnapshotTable.createdAt,
             resultId: analysisSnapshotResultTable.id,
             resultOutcome: analysisSnapshotResultTable.outcome,
             candidateId: opinionGroupCandidateTable.id,
+            checkpointReasonId: conversationViewSnapshotCheckpointReasonTable.id,
         })
         .from(conversationViewSnapshotTable)
         .innerJoin(
@@ -644,12 +597,27 @@ export async function ensureAiDescriptionLocaleExpectationForConversationViewSna
                 eq(opinionGroupCandidateTable.id, candidateId),
             ),
         )
+        .innerJoin(
+            opinionGroupCandidateAssessmentTable,
+            eq(
+                opinionGroupCandidateAssessmentTable.candidateId,
+                opinionGroupCandidateTable.id,
+            ),
+        )
+        .leftJoin(
+            conversationViewSnapshotCheckpointReasonTable,
+            eq(
+                conversationViewSnapshotCheckpointReasonTable.conversationViewSnapshotId,
+                conversationViewSnapshotTable.id,
+            ),
+        )
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
                 eq(conversationViewSnapshotTable.id, conversationViewSnapshotId),
                 isNotNull(conversationViewSnapshotTable.activatedAt),
                 eq(opinionGroupCandidateTable.outcome, "success"),
+                isNull(opinionGroupCandidateAssessmentTable.hiddenReason),
             ),
         )
         .limit(1);
@@ -663,8 +631,44 @@ export async function ensureAiDescriptionLocaleExpectationForConversationViewSna
         return false;
     }
 
+    const newerSnapshotRows = await db
+        .select({ id: newerConversationViewSnapshotTable.id })
+        .from(newerConversationViewSnapshotTable)
+        .where(
+            and(
+                eq(
+                    newerConversationViewSnapshotTable.conversationId,
+                    snapshot.conversationId,
+                ),
+                eq(
+                    newerConversationViewSnapshotTable.opinionGroupSpecId,
+                    snapshot.opinionGroupSpecId,
+                ),
+                eq(newerConversationViewSnapshotTable.viewReason, "analysis_completed"),
+                or(
+                    gt(
+                        newerConversationViewSnapshotTable.createdAt,
+                        snapshot.viewSnapshotCreatedAt,
+                    ),
+                    and(
+                        eq(
+                            newerConversationViewSnapshotTable.createdAt,
+                            snapshot.viewSnapshotCreatedAt,
+                        ),
+                        gt(
+                            newerConversationViewSnapshotTable.id,
+                            conversationViewSnapshotId,
+                        ),
+                    ),
+                ),
+            ),
+        )
+        .limit(1);
+    if (snapshot.checkpointReasonId === null && newerSnapshotRows.length > 0) {
+        return false;
+    }
+
     const now = new Date();
-    const resultId = snapshot.resultId;
     const lineageRows = await db
         .select({
             lineageId: opinionGroupLineageTable.id,
@@ -683,64 +687,20 @@ export async function ensureAiDescriptionLocaleExpectationForConversationViewSna
     const missingEnglishLineageIds = lineageRows
         .filter((row) => row.systemDescriptionId === null)
         .map((row) => row.lineageId);
-    let didQueueAiDescriptionWork = false;
+    let didQueueAiDescriptionWork = await upsertCandidateDescriptionLocaleRequest({
+        db,
+        candidateId: snapshot.candidateId,
+        locale: requestedLocale,
+        now,
+    });
     if (missingEnglishLineageIds.length > 0) {
-        const englishRows = await db
-            .insert(opinionGroupDescriptionLocaleExpectationTable)
-            .values({
-                conversationViewSnapshotId,
-                conversationId: snapshot.conversationId,
-                opinionGroupSpecId: snapshot.opinionGroupSpecId,
-                analysisSnapshotResultId: resultId,
-                locale: "en",
-                expectationKind: "english_description",
-                retryDemandDueAt: now,
-            })
-            .onConflictDoUpdate({
-                target: [
-                    opinionGroupDescriptionLocaleExpectationTable.conversationViewSnapshotId,
-                    opinionGroupDescriptionLocaleExpectationTable.locale,
-                ],
-                set: {
-                    analysisSnapshotResultId: resultId,
-                    retryDemandDueAt: now,
-                    updatedAt: now,
-                },
-            })
-            .returning({ id: opinionGroupDescriptionLocaleExpectationTable.id });
-        didQueueAiDescriptionWork ||= englishRows.length > 0;
-
-        await db
-            .insert(opinionGroupLineageDescriptionWorkTable)
-            .values(
-                missingEnglishLineageIds.map((lineageId) => ({
-                    lineageId,
-                    conversationId: snapshot.conversationId,
-                    sourceCandidateId: snapshot.candidateId,
-                    nextRunAt: now,
-                })),
-            )
-            .onConflictDoNothing();
-        const updatedWorkRows = await db
-            .update(opinionGroupLineageDescriptionWorkTable)
-            .set({
-                conversationId: snapshot.conversationId,
-                sourceCandidateId: snapshot.candidateId,
-                nextRunAt: now,
-                updatedAt: now,
-            })
-            .where(
-                and(
-                    inArray(
-                        opinionGroupLineageDescriptionWorkTable.lineageId,
-                        missingEnglishLineageIds,
-                    ),
-                    isNull(opinionGroupLineageDescriptionWorkTable.leaseToken),
-                    isNull(opinionGroupLineageDescriptionWorkTable.nextRunAt),
-                ),
-            )
-            .returning({ id: opinionGroupLineageDescriptionWorkTable.id });
-        didQueueAiDescriptionWork ||= updatedWorkRows.length > 0;
+        didQueueAiDescriptionWork ||= await ensureLineageDescriptionWorkForCandidate({
+            db,
+            conversationId: snapshot.conversationId,
+            candidateId: snapshot.candidateId,
+            lineageIds: missingEnglishLineageIds,
+            now,
+        });
     }
 
     if (requestedLocale === "en") {
@@ -751,86 +711,18 @@ export async function ensureAiDescriptionLocaleExpectationForConversationViewSna
         .map((row) => row.systemDescriptionId)
         .filter((descriptionId): descriptionId is number => descriptionId !== null);
     const englishReady = descriptionIds.length === lineageRows.length;
-    const requestedRows = await db
-        .insert(opinionGroupDescriptionLocaleExpectationTable)
-        .values({
-            conversationViewSnapshotId,
-            conversationId: snapshot.conversationId,
-            opinionGroupSpecId: snapshot.opinionGroupSpecId,
-            analysisSnapshotResultId: resultId,
-            locale: requestedLocale,
-            expectationKind: "translation",
-            retryDemandDueAt: englishReady ? now : null,
-        })
-        .onConflictDoUpdate({
-            target: [
-                opinionGroupDescriptionLocaleExpectationTable.conversationViewSnapshotId,
-                opinionGroupDescriptionLocaleExpectationTable.locale,
-            ],
-            set: {
-                analysisSnapshotResultId: resultId,
-                ...(englishReady ? { retryDemandDueAt: now } : {}),
-                updatedAt: now,
-            },
-        })
-        .returning({ id: opinionGroupDescriptionLocaleExpectationTable.id });
-
-    didQueueAiDescriptionWork ||= requestedRows.length > 0;
     if (!englishReady) {
         return didQueueAiDescriptionWork;
     }
 
-    const translatedRows = await db
-        .select({ descriptionId: opinionGroupDescriptionTranslationTable.descriptionId })
-        .from(opinionGroupDescriptionTranslationTable)
-        .where(
-            and(
-                inArray(
-                    opinionGroupDescriptionTranslationTable.descriptionId,
-                    descriptionIds,
-                ),
-                eq(opinionGroupDescriptionTranslationTable.locale, requestedLocale),
-            ),
-        );
-    const translatedDescriptionIds = new Set(
-        translatedRows.map((row) => row.descriptionId),
-    );
-    const missingTranslationDescriptionIds = descriptionIds.filter(
-        (descriptionId) => !translatedDescriptionIds.has(descriptionId),
-    );
-    if (missingTranslationDescriptionIds.length === 0) {
-        return didQueueAiDescriptionWork;
-    }
-
-    await db
-        .insert(opinionGroupDescriptionTranslationWorkTable)
-        .values(
-            missingTranslationDescriptionIds.map((descriptionId) => ({
-                descriptionId,
-                conversationId: snapshot.conversationId,
-                locale: requestedLocale,
-                nextRunAt: now,
-            })),
-        )
-        .onConflictDoNothing();
-    const updatedTranslationWorkRows = await db
-        .update(opinionGroupDescriptionTranslationWorkTable)
-        .set({
+    return (
+        didQueueAiDescriptionWork ||
+        (await ensureDescriptionTranslationWorkForCandidate({
+            db,
             conversationId: snapshot.conversationId,
-            nextRunAt: now,
-            updatedAt: now,
-        })
-        .where(
-            and(
-                inArray(
-                    opinionGroupDescriptionTranslationWorkTable.descriptionId,
-                    missingTranslationDescriptionIds,
-                ),
-                eq(opinionGroupDescriptionTranslationWorkTable.locale, requestedLocale),
-                isNull(opinionGroupDescriptionTranslationWorkTable.leaseToken),
-                isNull(opinionGroupDescriptionTranslationWorkTable.nextRunAt),
-            ),
-        )
-        .returning({ id: opinionGroupDescriptionTranslationWorkTable.id });
-    return didQueueAiDescriptionWork || updatedTranslationWorkRows.length > 0;
+            locale: requestedLocale,
+            descriptionIds,
+            now,
+        }))
+    );
 }

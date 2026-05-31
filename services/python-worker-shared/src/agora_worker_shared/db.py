@@ -15,7 +15,6 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session, aliased
 
 from agora_worker_shared.generated_models import (
-    AiDescriptionLocaleExpectationKindEnum,
     AnalysisCompressionEnum,
     AnalysisInputSnapshot,
     AnalysisInsufficientDataReasonEnum,
@@ -35,7 +34,6 @@ from agora_worker_shared.generated_models import (
     OpinionGroupCandidate,
     OpinionGroupCandidateAssessment,
     OpinionGroupCandidateOpinionMetrics,
-    OpinionGroupDescriptionLocaleExpectation,
     OpinionGroupLineage,
     OpinionGroupLineageDescriptionWork,
     OpinionGroupLineageScope,
@@ -67,7 +65,6 @@ from agora_worker_shared.generated_models import (
 from agora_worker_shared.generated_models import (
     PremiumFeature as PremiumFeatureEnum,
 )
-from agora_worker_shared.generated_shared_types import SUPPORTED_DISPLAY_LANGUAGE_CODES
 from agora_worker_shared.input_snapshot import PreparedInputSnapshot, VoteInputRow
 from agora_worker_shared.lineage_matching import (
     NewLineageGroup,
@@ -2275,96 +2272,15 @@ def _fetch_displayable_group_counts_by_view_snapshot_id(
     return group_counts_by_view_snapshot_id
 
 
-def _create_ai_description_locale_expectation_rows(
-    session: Session,
-    *,
-    persisted_view_snapshots_by_pair: dict[tuple[int, int], _PersistedConversationViewSnapshot],
-    result_id_by_conversation_id: dict[int, int],
-    ai_generation_expected: bool,
-    translation_expected: bool,
-) -> list[int]:
-    if not ai_generation_expected or not persisted_view_snapshots_by_pair:
-        return []
-
-    current_snapshot_id_by_pair = {
-        pair: persisted.view_snapshot_id
-        for pair, persisted in persisted_view_snapshots_by_pair.items()
-    }
-    for (
-        conversation_id,
-        opinion_group_spec_id,
-    ), current_snapshot_id in current_snapshot_id_by_pair.items():
-        session.execute(
-            update(OpinionGroupDescriptionLocaleExpectation)
-            .where(
-                and_(
-                    OpinionGroupDescriptionLocaleExpectation.conversation_id == conversation_id,
-                    OpinionGroupDescriptionLocaleExpectation.opinion_group_spec_id
-                    == opinion_group_spec_id,
-                    OpinionGroupDescriptionLocaleExpectation.conversation_view_snapshot_id
-                    != current_snapshot_id,
-                    OpinionGroupDescriptionLocaleExpectation.conversation_view_snapshot_id.not_in(
-                        select(
-                            ConversationViewSnapshotCheckpointReason.conversation_view_snapshot_id
-                        )
-                    ),
-                    OpinionGroupDescriptionLocaleExpectation.retry_demand_due_at.is_not(None),
-                )
-            )
-            .values(
-                retry_demand_due_at=None,
-                updated_at=func.now(),
-            )
-        )
-
-    locale_expectation_values: list[dict[str, object]] = []
-    due_conversation_ids: set[int] = set()
-    for pair, persisted in persisted_view_snapshots_by_pair.items():
-        conversation_id, opinion_group_spec_id = pair
-        if persisted.selected_candidate is None:
-            continue
-
-        if not persisted.conversation_state.ai_labeling_enabled:
-            continue
-
-        result_id = result_id_by_conversation_id[conversation_id]
-        due_conversation_ids.add(conversation_id)
-        for locale in SUPPORTED_DISPLAY_LANGUAGE_CODES:
-            if locale != "en" and not translation_expected:
-                continue
-            locale_expectation_values.append(
-                {
-                    "conversation_view_snapshot_id": persisted.view_snapshot_id,
-                    "conversation_id": conversation_id,
-                    "opinion_group_spec_id": opinion_group_spec_id,
-                    "analysis_snapshot_result_id": result_id,
-                    "locale": locale,
-                    "expectation_kind": AiDescriptionLocaleExpectationKindEnum.english_description
-                    if locale == "en"
-                    else AiDescriptionLocaleExpectationKindEnum.translation,
-                    "retry_demand_due_at": func.now() if locale == "en" else None,
-                }
-            )
-
-    if locale_expectation_values:
-        session.execute(
-            sqlalchemy_insert(OpinionGroupDescriptionLocaleExpectation).values(
-                locale_expectation_values
-            )
-        )
-
-    return sorted(due_conversation_ids)
-
-
 def _create_lineage_description_work_rows(
     session: Session,
     *,
     persisted_view_snapshots_by_pair: dict[tuple[int, int], _PersistedConversationViewSnapshot],
     eager_ai_candidate_ids_by_pair: dict[tuple[int, int], set[int]],
     ai_generation_expected: bool,
-) -> None:
+) -> list[int]:
     if not ai_generation_expected or not persisted_view_snapshots_by_pair:
-        return
+        return []
 
     work_values_by_lineage_id: dict[int, _LineageDescriptionWorkInsertValue] = {}
     for pair, persisted in persisted_view_snapshots_by_pair.items():
@@ -2404,7 +2320,7 @@ def _create_lineage_description_work_rows(
             }
 
     if not work_values_by_lineage_id:
-        return
+        return []
 
     insert_query = pg_insert(OpinionGroupLineageDescriptionWork).values(
         list(work_values_by_lineage_id.values())
@@ -2424,6 +2340,7 @@ def _create_lineage_description_work_rows(
             where=OpinionGroupLineageDescriptionWork.lease_token.is_(None),
         )
     )
+    return sorted({value["conversation_id"] for value in work_values_by_lineage_id.values()})
 
 
 def _fetch_existing_checkpoint_reason_rows(
@@ -3491,7 +3408,6 @@ def persist_computed_analysis_results_batch(
     prepared_input_snapshots_by_conversation_id: dict[int, PreparedInputSnapshot],
     bundles_by_conversation_id: dict[int, ComputedAnalysisBundle],
     ai_generation_expected: bool,
-    translation_expected: bool,
 ) -> PersistComputedAnalysisResult:
     if not claims:
         return PersistComputedAnalysisResult(
@@ -4013,7 +3929,7 @@ def persist_computed_analysis_results_batch(
             ],
         )
 
-        _create_lineage_description_work_rows(
+        ai_description_due_conversation_ids = _create_lineage_description_work_rows(
             session,
             persisted_view_snapshots_by_pair=persisted_view_snapshots_by_pair,
             eager_ai_candidate_ids_by_pair=_eager_ai_candidate_ids_by_pair(
@@ -4022,16 +3938,8 @@ def persist_computed_analysis_results_batch(
             ),
             ai_generation_expected=ai_generation_expected,
         )
-
-        ai_description_due_conversation_ids = _create_ai_description_locale_expectation_rows(
-            session,
-            persisted_view_snapshots_by_pair=persisted_view_snapshots_by_pair,
-            result_id_by_conversation_id=result_id_by_conversation_id,
-            ai_generation_expected=ai_generation_expected,
-            translation_expected=translation_expected,
-        )
         log.info(
-            "[MathUpdaterDB] Created AI description locale work conversation_count=%d",
+            "[MathUpdaterDB] Created AI description lineage work conversation_count=%d",
             len(ai_description_due_conversation_ids),
         )
 

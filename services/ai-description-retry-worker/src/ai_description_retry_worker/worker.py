@@ -37,6 +37,7 @@ log = logging.getLogger(__name__)
 
 _running = True
 LOG_PREFIX = "[AiDescriptionRetryWorker]"
+NO_CLAIM_LOG_INTERVAL_SECONDS = 60.0
 
 
 def _sleep_before_retry(seconds: float) -> None:
@@ -126,6 +127,7 @@ def main() -> None:
 
     monotonic_start = time.monotonic()
     last_recover = monotonic_start - settings.running_recovery_interval_seconds
+    last_no_claim_warning = monotonic_start - NO_CLAIM_LOG_INTERVAL_SECONDS
     schema_retry_state = StartupSchemaRetryState()
 
     while _running:
@@ -222,13 +224,26 @@ def main() -> None:
                 (time.perf_counter() - batch_started_at) * 1000,
             )
         else:
-            log.debug(
-                "%s No lineage work item processed conversation_count=%d ids=%s batch_ms=%.1f",
-                LOG_PREFIX,
-                len(due_ids),
-                ",".join(str(conversation_id) for conversation_id in due_ids),
-                (time.perf_counter() - batch_started_at) * 1000,
-            )
+            elapsed_ms = (time.perf_counter() - batch_started_at) * 1000
+            if monotonic_now - last_no_claim_warning >= NO_CLAIM_LOG_INTERVAL_SECONDS:
+                log.warning(
+                    "%s Due lineage conversations yielded no claimable work; "
+                    "sleeping idle interval conversation_count=%d ids=%s batch_ms=%.1f",
+                    LOG_PREFIX,
+                    len(due_ids),
+                    ",".join(str(conversation_id) for conversation_id in due_ids),
+                    elapsed_ms,
+                )
+                last_no_claim_warning = monotonic_now
+            else:
+                log.debug(
+                    "%s No lineage work item processed conversation_count=%d ids=%s batch_ms=%.1f",
+                    LOG_PREFIX,
+                    len(due_ids),
+                    ",".join(str(conversation_id) for conversation_id in due_ids),
+                    elapsed_ms,
+                )
+            _sleep_before_retry(settings.worker_poll_idle_sleep_seconds)
 
     primary_engine.dispose()
     read_engine.dispose()

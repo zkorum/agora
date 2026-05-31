@@ -114,11 +114,6 @@ class VoteEnumSimple(StrEnum):
     disagree = "disagree"
 
 
-class AiDescriptionLocaleExpectationKindEnum(StrEnum):
-    english_description = "english_description"
-    translation = "translation"
-
-
 class OpinionGroupReducerEnum(StrEnum):
     pca = "pca"
 
@@ -444,6 +439,16 @@ class OpinionGroupCandidateAssessment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
+class OpinionGroupCandidateDescriptionLocaleRequest(Base):
+    __tablename__ = "opinion_group_candidate_description_locale_request"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    candidate_id: Mapped[int] = mapped_column(Integer)
+    locale: Mapped[str] = mapped_column(String(10))
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
 class OpinionGroupCandidateOpinionMetrics(Base):
     __tablename__ = "opinion_group_candidate_opinion_metrics"
 
@@ -480,27 +485,6 @@ class OpinionGroupCandidate(Base):
     )
     raw_output: Mapped[Any | None] = mapped_column(JSON(none_as_null=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
-
-
-class OpinionGroupDescriptionLocaleExpectation(Base):
-    __tablename__ = "opinion_group_description_locale_expectation"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    conversation_view_snapshot_id: Mapped[int] = mapped_column(Integer)
-    conversation_id: Mapped[int] = mapped_column(Integer)
-    opinion_group_spec_id: Mapped[int] = mapped_column(Integer)
-    analysis_snapshot_result_id: Mapped[int] = mapped_column(Integer)
-    locale: Mapped[str] = mapped_column(String(10))
-    expectation_kind: Mapped[AiDescriptionLocaleExpectationKindEnum] = mapped_column(
-        SaEnum(
-            AiDescriptionLocaleExpectationKindEnum,
-            values_callable=_enum_values,
-            native_enum=False,
-        ),
-    )
-    retry_demand_due_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime)
-    updated_at: Mapped[datetime] = mapped_column(DateTime)
 
 
 class OpinionGroupDescription(Base):

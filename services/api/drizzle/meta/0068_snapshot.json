@@ -1,5 +1,5 @@
 {
-  "id": "5de11041-9aa8-4a7b-880b-c91a1aae0af5",
+  "id": "3a7ec019-0c2d-4bf6-a056-5799f8f93432",
   "prevId": "6b6d58a8-3179-4c3e-b91b-c299bb5c8fe5",
   "version": "7",
   "dialect": "postgresql",
@@ -5552,6 +5552,129 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.opinion_group_candidate_description_locale_request": {
+      "name": "opinion_group_candidate_description_locale_request",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "opinion_group_candidate_description_locale_request_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "candidate_id": {
+          "name": "candidate_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "locale": {
+          "name": "locale",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "opinion_group_candidate_description_locale_request_updated_idx": {
+          "name": "opinion_group_candidate_description_locale_request_updated_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "og_candidate_desc_locale_request_translation_updated_idx": {
+          "name": "og_candidate_desc_locale_request_translation_updated_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"opinion_group_candidate_description_locale_request\".\"locale\" <> 'en'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "opinion_group_candidate_description_locale_request_candidate_id_opinion_group_candidate_id_fk": {
+          "name": "opinion_group_candidate_description_locale_request_candidate_id_opinion_group_candidate_id_fk",
+          "tableFrom": "opinion_group_candidate_description_locale_request",
+          "tableTo": "opinion_group_candidate",
+          "columnsFrom": [
+            "candidate_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "opinion_group_candidate_description_locale_request_unique": {
+          "name": "opinion_group_candidate_description_locale_request_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "candidate_id",
+            "locale"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.opinion_group_candidate_opinion_metrics": {
       "name": "opinion_group_candidate_opinion_metrics",
       "schema": "",
@@ -5820,210 +5943,6 @@
         "opinion_group_candidate_reason_check": {
           "name": "opinion_group_candidate_reason_check",
           "value": "(\"opinion_group_candidate\".\"outcome\" = 'insufficient_data' AND \"opinion_group_candidate\".\"outcome_reason\" IS NOT NULL) OR (\"opinion_group_candidate\".\"outcome\" = 'success' AND \"opinion_group_candidate\".\"outcome_reason\" IS NULL)"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.opinion_group_description_locale_expectation": {
-      "name": "opinion_group_description_locale_expectation",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "opinion_group_description_locale_expectation_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "conversation_view_snapshot_id": {
-          "name": "conversation_view_snapshot_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "conversation_id": {
-          "name": "conversation_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "opinion_group_spec_id": {
-          "name": "opinion_group_spec_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "analysis_snapshot_result_id": {
-          "name": "analysis_snapshot_result_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "locale": {
-          "name": "locale",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "expectation_kind": {
-          "name": "expectation_kind",
-          "type": "ai_description_locale_expectation_kind_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "retry_demand_due_at": {
-          "name": "retry_demand_due_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "opinion_group_description_locale_expectation_due_idx": {
-          "name": "opinion_group_description_locale_expectation_due_idx",
-          "columns": [
-            {
-              "expression": "retry_demand_due_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"opinion_group_description_locale_expectation\".\"retry_demand_due_at\" is not null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "opinion_group_description_locale_expectation_lookup_idx": {
-          "name": "opinion_group_description_locale_expectation_lookup_idx",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "expectation_kind",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "locale",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "conversation_view_snapshot_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "opinion_group_description_locale_expectation_conversation_view_snapshot_id_conversation_view_snapshot_id_fk": {
-          "name": "opinion_group_description_locale_expectation_conversation_view_snapshot_id_conversation_view_snapshot_id_fk",
-          "tableFrom": "opinion_group_description_locale_expectation",
-          "tableTo": "conversation_view_snapshot",
-          "columnsFrom": [
-            "conversation_view_snapshot_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "opinion_group_description_locale_expectation_conversation_id_conversation_id_fk": {
-          "name": "opinion_group_description_locale_expectation_conversation_id_conversation_id_fk",
-          "tableFrom": "opinion_group_description_locale_expectation",
-          "tableTo": "conversation",
-          "columnsFrom": [
-            "conversation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "opinion_group_description_locale_expectation_opinion_group_spec_id_opinion_group_spec_id_fk": {
-          "name": "opinion_group_description_locale_expectation_opinion_group_spec_id_opinion_group_spec_id_fk",
-          "tableFrom": "opinion_group_description_locale_expectation",
-          "tableTo": "opinion_group_spec",
-          "columnsFrom": [
-            "opinion_group_spec_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "opinion_group_description_locale_expectation_analysis_snapshot_result_id_analysis_snapshot_result_id_fk": {
-          "name": "opinion_group_description_locale_expectation_analysis_snapshot_result_id_analysis_snapshot_result_id_fk",
-          "tableFrom": "opinion_group_description_locale_expectation",
-          "tableTo": "analysis_snapshot_result",
-          "columnsFrom": [
-            "analysis_snapshot_result_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "opinion_group_description_locale_expectation_unique": {
-          "name": "opinion_group_description_locale_expectation_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "conversation_view_snapshot_id",
-            "locale"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {
-        "opinion_group_description_locale_expectation_kind_check": {
-          "name": "opinion_group_description_locale_expectation_kind_check",
-          "value": "((\"opinion_group_description_locale_expectation\".\"locale\" = 'en' AND \"opinion_group_description_locale_expectation\".\"expectation_kind\" = 'english_description') OR (\"opinion_group_description_locale_expectation\".\"locale\" <> 'en' AND \"opinion_group_description_locale_expectation\".\"expectation_kind\" = 'translation'))"
         }
       },
       "isRLSEnabled": false
@@ -11547,14 +11466,6 @@
     }
   },
   "enums": {
-    "public.ai_description_locale_expectation_kind_enum": {
-      "name": "ai_description_locale_expectation_kind_enum",
-      "schema": "public",
-      "values": [
-        "english_description",
-        "translation"
-      ]
-    },
     "public.analysis_compression_enum": {
       "name": "analysis_compression_enum",
       "schema": "public",

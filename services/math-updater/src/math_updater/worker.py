@@ -1577,7 +1577,6 @@ def _run_worker_once() -> None:
                         prepared_input_snapshots_by_conversation_id=snapshots_by_conversation_id,
                         bundles_by_conversation_id=bundles_by_conversation_id,
                         ai_generation_expected=True,
-                        translation_expected=True,
                     )
                     did_persist_computed_results = True
                     log.info(
@@ -1703,7 +1702,6 @@ def _run_worker_once() -> None:
                                     prepared_input_snapshots_by_conversation_id=snapshots_by_conversation_id,
                                     bundles_by_conversation_id=bundles_by_conversation_id,
                                     ai_generation_expected=True,
-                                    translation_expected=True,
                                 )
                                 ready_to_complete_isolated_claim = True
                                 if (

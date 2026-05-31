@@ -780,11 +780,6 @@ export const conversationViewSnapshotReasonEnum = pgEnum(
     ],
 );
 
-export const aiDescriptionLocaleExpectationKindEnum = pgEnum(
-    "ai_description_locale_expectation_kind_enum",
-    ["english_description", "translation"],
-);
-
 // One user == one account.
 // Inserting a record in that table means that the user has been successfully registered.
 // To one user can be associated multiple validated emails and devices.
@@ -3056,6 +3051,43 @@ export const opinionGroupCandidateTable = pgTable(
 );
 
 /** @service api, math-updater */
+export const opinionGroupCandidateDescriptionLocaleRequestTable = pgTable(
+    "opinion_group_candidate_description_locale_request",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        candidateId: integer("candidate_id")
+            .notNull()
+            .references(() => opinionGroupCandidateTable.id),
+        locale: varchar("locale", { length: 10 }).notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        unique("opinion_group_candidate_description_locale_request_unique").on(
+            t.candidateId,
+            t.locale,
+        ),
+        index("opinion_group_candidate_description_locale_request_updated_idx").on(
+            t.updatedAt,
+            t.id,
+        ),
+        index("og_candidate_desc_locale_request_translation_updated_idx")
+            .on(t.updatedAt, t.id)
+            .where(sql`${t.locale} <> 'en'`),
+    ],
+);
+
+/** @service api, math-updater */
 export const opinionGroupLineageDescriptionWorkTable = pgTable(
     "opinion_group_lineage_description_work",
     {
@@ -3290,78 +3322,6 @@ export const realtimeEventOutboxTable = pgTable(
             .where(
                 sql`${t.eventType} IN ('conversation_analysis_updated', 'conversation_settings_updated')`,
             ),
-    ],
-);
-
-// One row means a snapshot/locale is expected to eventually have generated
-// description content. This is not a display-readiness source of truth: API
-// readiness is derived from actual description/translation content and work rows.
-/** @service api, math-updater */
-export const opinionGroupDescriptionLocaleExpectationTable = pgTable(
-    "opinion_group_description_locale_expectation",
-    {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        conversationViewSnapshotId: integer("conversation_view_snapshot_id")
-            .notNull()
-            .references(() => conversationViewSnapshotTable.id),
-        conversationId: integer("conversation_id")
-            .notNull()
-            .references(() => conversationTable.id),
-        opinionGroupSpecId: integer("opinion_group_spec_id")
-            .notNull()
-            .references(() => opinionGroupSpecTable.id),
-        analysisSnapshotResultId: integer("analysis_snapshot_result_id")
-            .notNull()
-            .references(() => analysisSnapshotResultTable.id),
-        locale: varchar("locale", { length: 10 }).notNull(),
-        expectationKind:
-            aiDescriptionLocaleExpectationKindEnum(
-                "expectation_kind",
-            ).notNull(),
-        retryDemandDueAt: timestamp("retry_demand_due_at", {
-            mode: "date",
-            precision: 0,
-        }),
-        createdAt: timestamp("created_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-        updatedAt: timestamp("updated_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-    },
-    (t) => [
-        unique("opinion_group_description_locale_expectation_unique").on(
-            t.conversationViewSnapshotId,
-            t.locale,
-        ),
-        index("opinion_group_description_locale_expectation_due_idx")
-            .on(t.retryDemandDueAt)
-            .where(isNotNull(t.retryDemandDueAt)),
-        index("opinion_group_description_locale_expectation_lookup_idx").on(
-            t.conversationId,
-            t.expectationKind,
-            t.locale,
-            t.conversationViewSnapshotId,
-        ),
-        check(
-            "opinion_group_description_locale_expectation_kind_check",
-            sqlOr(
-                sqlAnd(
-                    sql`${t.locale} = 'en'`,
-                    sql`${t.expectationKind} = 'english_description'`,
-                ),
-                sqlAnd(
-                    sql`${t.locale} <> 'en'`,
-                    sql`${t.expectationKind} = 'translation'`,
-                ),
-            ),
-        ),
     ],
 );
 
