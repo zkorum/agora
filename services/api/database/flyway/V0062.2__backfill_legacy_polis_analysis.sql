@@ -319,6 +319,18 @@ BEGIN
                 'singleton_group',
                 backfill_conversation.polis_content_created_at
             );
+        ELSE
+            -- Legacy data contains only the current displayed candidate, so make it selectable.
+            INSERT INTO opinion_group_candidate_assessment (
+                candidate_id,
+                selection_score,
+                created_at
+            )
+            VALUES (
+                candidate_id,
+                1.0,
+                backfill_conversation.polis_content_created_at
+            );
         END IF;
 
         WITH inserted_snapshot_opinions AS (
