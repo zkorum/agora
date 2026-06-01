@@ -1,0 +1,16 @@
+.env
+.env.*
+.git/
+.gitignore
+.venv/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+__pycache__/
+.pytest_cache/
+dist/
+build/
+.DS_Store
+.vscode/
+.idea/
+Dockerfile*
