@@ -68,10 +68,6 @@ services:
       MATH_UPDATER_VALKEY_URL: "valkey://valkey:6379"
       # The main worker owns red-dwarf analysis and immediate AI-description first pass.
       # Retry workers below only process retry/backlog queues.
-      MATH_UPDATER_AWS_AI_LABEL_SUMMARY_REGION: "us-east-1"
-      MATH_UPDATER_AWS_DESCRIPTION_TRANSLATION_REGION: "us-east-1"
-      MATH_UPDATER_GOOGLE_CLOUD_TRANSLATION_LOCATION: "us-central1"
-      MATH_UPDATER_GOOGLE_CLOUD_TRANSLATION_ENDPOINT: "translate.googleapis.com"
       MATH_UPDATER_GOOGLE_APPLICATION_CREDENTIALS: "/secrets/service-account.json"
     volumes:
       - ./<name of service account>.json:/secrets/service-account.json:ro
@@ -89,7 +85,6 @@ services:
       AI_DESCRIPTION_RETRY_WORKER_CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
       AI_DESCRIPTION_RETRY_WORKER_CONNECTION_STRING_READ: "postgres://postgres:CHANGEME@postgres-replica:5432/agora"
       AI_DESCRIPTION_RETRY_WORKER_VALKEY_URL: "valkey://valkey:6379"
-      AI_DESCRIPTION_RETRY_WORKER_AWS_AI_LABEL_SUMMARY_REGION: "us-east-1"
     stop_grace_period: 10m
     restart: unless-stopped
     logging:
@@ -104,9 +99,6 @@ services:
       DESCRIPTION_TRANSLATION_RETRY_WORKER_CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
       DESCRIPTION_TRANSLATION_RETRY_WORKER_CONNECTION_STRING_READ: "postgres://postgres:CHANGEME@postgres-replica:5432/agora"
       DESCRIPTION_TRANSLATION_RETRY_WORKER_VALKEY_URL: "valkey://valkey:6379"
-      DESCRIPTION_TRANSLATION_RETRY_WORKER_AWS_DESCRIPTION_TRANSLATION_REGION: "us-east-1"
-      DESCRIPTION_TRANSLATION_RETRY_WORKER_GOOGLE_CLOUD_TRANSLATION_LOCATION: "us-central1"
-      DESCRIPTION_TRANSLATION_RETRY_WORKER_GOOGLE_CLOUD_TRANSLATION_ENDPOINT: "translate.googleapis.com"
       DESCRIPTION_TRANSLATION_RETRY_WORKER_GOOGLE_APPLICATION_CREDENTIALS: "/secrets/service-account.json"
     volumes:
       - ./<name of service account>.json:/secrets/service-account.json:ro
