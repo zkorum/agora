@@ -27,7 +27,7 @@
     "image:build:production": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker build -f Dockerfile.production -t agora-app-production:$tag .' --",
     "image:buildx:production": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker buildx build -f Dockerfile.production --platform linux/amd64 -t agora-app-production:$tag --load .' --",
     "image:tag": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker tag agora-app-production:$tag quay.io/zkorum/agora-app-production:$tag' --",
-    "image:push": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker image push quay.io/zkorum/agora-app-production:$tag' --"
+    "image:push": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker tag agora-app-production:$tag quay.io/zkorum/agora-app-production:$tag && docker image push quay.io/zkorum/agora-app-production:$tag' --"
   },
   "dependencies": {
     "@dicebear/collection": "^9.4.2",

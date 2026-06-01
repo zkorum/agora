@@ -1,5 +1,6 @@
 IMAGE ?= quay.io/zkorum/agora-import-worker
 TAG ?= latest
+TAG_ARG := $(or $(word 2,$(MAKECMDGOALS)),$(TAG))
 
 all: dev
 
@@ -16,7 +17,10 @@ typecheck:
 	uv run --extra dev basedpyright
 
 image-buildx:
-	docker buildx build --pull --platform linux/amd64 -t $(IMAGE):$(TAG) .
+	docker buildx build --pull --platform linux/amd64 -t $(IMAGE):$(TAG_ARG) .
 
 image-push:
-	docker push $(IMAGE):$(TAG)
+	docker push $(IMAGE):$(TAG_ARG)
+
+%:
+	@:
