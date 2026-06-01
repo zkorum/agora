@@ -5,6 +5,7 @@ WORKDIR /app
 ARG PIP_INSTALL_TARGET=.
 
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends git build-essential python3-dev && \
     rm -rf /var/lib/apt/lists/*
 
@@ -20,6 +21,7 @@ RUN pip install --no-cache-dir "$PIP_INSTALL_TARGET"
 FROM python:3.13-slim-bookworm
 
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends tini && \
     rm -rf /var/lib/apt/lists/*
 

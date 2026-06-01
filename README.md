@@ -43,7 +43,7 @@ For detailed information about each service, licenses, and documentation, see [C
 
 **[API](./services/api)** - A Fastify application supported by a PostgreSQL database. Main backend API handling user requests, authentication, voting, and conversation management.
 
-**[Math Updater](./services/math-updater)** - Background worker service that periodically updates Polis clustering mathematics and generates AI-powered cluster insights using LLM models.
+**[Math Updater](./services/math-updater)** - Python background worker that runs <a href="https://github.com/polis-community/red-dwarf"><u>red-dwarf</u></a> opinion-group analysis and generates AI-powered cluster insights using LLM models.
 
 **[AI Description Retry Worker](./services/ai-description-retry-worker)** - Python worker that retries and backfills AI-generated opinion-group labels and summaries requested by analysis views.
 
@@ -55,11 +55,13 @@ For detailed information about each service, licenses, and documentation, see [C
 
 ### Shared Libraries
 
-**[Shared](./services/shared)** - Common TypeScript code shared across all services.
+**[Shared](./services/shared)** - Common TypeScript code synced to TypeScript services and used as a source for generated Python worker artifacts.
 
 **[Shared App-API](./services/shared-app-api)** - TypeScript code shared specifically between the frontend (agora) and API service.
 
 **[Shared Backend](./services/shared-backend)** - Backend-specific TypeScript code for the API and source schema for generated Python worker artifacts.
+
+**[Python Worker Shared](./services/python-worker-shared)** - Shared Python package used by background workers for generated models/types, queue helpers, retry logic, AI providers, and red-dwarf integration.
 
 ### Development Tools
 

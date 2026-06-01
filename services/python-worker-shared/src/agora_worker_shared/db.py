@@ -3963,8 +3963,7 @@ def persist_computed_analysis_results_batch(
         ai_description_work_conversation_ids=ai_description_work_conversation_ids,
         ai_description_work_view_snapshot_ids=[
             persisted.view_snapshot_id
-            for persisted in persisted_view_snapshots_by_pair.values()
-            if persisted.conversation_state.ai_labeling_enabled
+            for persisted in first_pass_checkpoint_view_snapshots_by_pair.values()
         ],
         checkpoint_activation_context=CheckpointActivationContext(
             persisted_view_snapshots_by_pair=first_pass_checkpoint_view_snapshots_by_pair,
@@ -4075,6 +4074,14 @@ def complete_computed_analysis_work_items_batch(
         newer_generation_count,
         _format_claims_for_log(claims),
     )
+    if len(completed_rows) != len(claims) and newer_generation_count == 0:
+        log.warning(
+            "[MathUpdaterDB] Computed analysis completion was blocked rows=%d claims=%d "
+            "reason=display_safe_activation_pending claims=%s",
+            len(completed_rows),
+            len(claims),
+            _format_claims_for_log(claims),
+        )
     return [
         row.conversation_id
         for row in completed_rows

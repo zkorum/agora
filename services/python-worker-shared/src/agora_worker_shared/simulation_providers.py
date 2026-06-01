@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 SIMULATION_LOG_PREFIX = "[SimulationProvider]"
+DEFAULT_EVENT_SCENARIO = "python-worker"
 SIMULATION_EVENT_SCENARIO = "python-worker-simulation"
 
 
@@ -61,6 +62,7 @@ def log_simulation_startup(settings: Settings) -> None:
         phase="simulation-provider",
         action="startup",
         outcome="info",
+        scenario=SIMULATION_EVENT_SCENARIO,
         metadata={
             "aiMode": settings.ai_description_simulation_mode,
             "translationMode": settings.description_translation_simulation_mode,
@@ -107,6 +109,7 @@ def maybe_raise_simulated_claim_error(
                 action=action,
                 outcome="success",
                 conversation_slug_id=claim.conversation_slug_id,
+                scenario=SIMULATION_EVENT_SCENARIO,
                 metadata=metadata,
             )
             return
@@ -168,6 +171,7 @@ def generate_simulated_label_summaries(
         action="ai-generate-provider",
         outcome="success",
         count=len(conversation.groups),
+        scenario=SIMULATION_EVENT_SCENARIO,
         metadata={"titleLength": len(conversation.conversation_title)},
     )
     return ParsedLabelSummaryOutput(mode="simulation", clusters=clusters)
@@ -202,6 +206,7 @@ def generate_simulated_description_translations(
         action="translation-provider",
         outcome="success",
         count=len(translations),
+        scenario=SIMULATION_EVENT_SCENARIO,
         metadata={
             "descriptionCount": len(descriptions),
             "localeCount": len(target_language_codes),
@@ -218,11 +223,12 @@ def emit_load_event(
     conversation_slug_id: str | None = None,
     count: int | None = None,
     metadata: dict[str, str | int | bool | None] | None = None,
+    scenario: str = DEFAULT_EVENT_SCENARIO,
 ) -> None:
     payload: dict[str, object] = {
         "schemaVersion": 1,
         "timestamp": datetime.now(UTC).isoformat(),
-        "scenario": SIMULATION_EVENT_SCENARIO,
+        "scenario": scenario,
         "phase": phase,
         "action": action,
         "outcome": outcome,
@@ -298,5 +304,6 @@ def _log_simulated_failure(
         action=action,
         outcome=outcome,
         conversation_slug_id=claim.conversation_slug_id,
+        scenario=SIMULATION_EVENT_SCENARIO,
         metadata=metadata,
     )

@@ -2,6 +2,7 @@ FROM python:3.13-slim AS build
 
 WORKDIR /app
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends git && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=ghcr.io/astral-sh/uv:0.11.6 /uv /usr/local/bin/uv
@@ -14,6 +15,7 @@ RUN uv sync --frozen --no-dev
 FROM python:3.13-slim
 
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends tini && \
     rm -rf /var/lib/apt/lists/*
 

@@ -97,7 +97,11 @@ if TYPE_CHECKING:
     from agora_worker_shared.ai_description_work import ClaimedAiDescriptionLocaleWorkItem
     from agora_worker_shared.analysis_compute import ComputedAnalysisBundle
     from agora_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
-    from agora_worker_shared.db import ClaimedWorkItem, OpinionGroupConfigRecord
+    from agora_worker_shared.db import (
+        ClaimedWorkItem,
+        OpinionGroupConfigRecord,
+        PersistComputedAnalysisResult,
+    )
     from agora_worker_shared.description_input import ConversationDescriptionInput
     from agora_worker_shared.description_translation import (
         DescriptionForTranslation,
@@ -1029,6 +1033,70 @@ def _finalize_ai_description_first_pass_without_generator(
     )
 
 
+def process_or_finalize_ai_description_first_pass_after_persist(
+    *,
+    primary_engine: Engine,
+    vk: valkey_lib.Valkey,
+    worker_id: str,
+    analysis_claims: list[ClaimedWorkItem],
+    persist_result: PersistComputedAnalysisResult,
+    lease_ttl_seconds: int,
+    heartbeat_interval_seconds: int,
+    claim_limit: int,
+    max_workers: int,
+    ai_description_epoch: int,
+    description_generator: DescriptionGenerator | None,
+    description_translator: DescriptionTranslator | None,
+    simulation_runtime: SimulationRuntime | None,
+) -> bool:
+    conversation_view_snapshot_ids = persist_result.ai_description_work_view_snapshot_ids
+    if not conversation_view_snapshot_ids:
+        return True
+
+    conversation_ids = list(dict.fromkeys(claim.conversation_id for claim in analysis_claims))
+    log.info(
+        "[MathUpdater] Running AI description first pass after math persist "
+        "conversation_count=%d viewSnapshots=%s newAiWork=%d",
+        len(conversation_ids),
+        _format_ids(conversation_view_snapshot_ids),
+        len(persist_result.ai_description_work_conversation_ids),
+    )
+    try:
+        if description_generator is not None:
+            _process_ai_description_first_pass(
+                primary_engine=primary_engine,
+                vk=vk,
+                worker_id=worker_id,
+                analysis_claims=analysis_claims,
+                conversation_ids=conversation_ids,
+                conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+                lease_ttl_seconds=lease_ttl_seconds,
+                heartbeat_interval_seconds=heartbeat_interval_seconds,
+                claim_limit=claim_limit,
+                max_workers=max_workers,
+                ai_description_epoch=ai_description_epoch,
+                description_generator=description_generator,
+                description_translator=description_translator,
+                simulation_runtime=simulation_runtime,
+                checkpoint_activation_context=persist_result.checkpoint_activation_context,
+            )
+            return True
+
+        _finalize_ai_description_first_pass_without_generator(
+            primary_engine=primary_engine,
+            conversation_ids=conversation_ids,
+            conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+            checkpoint_activation_context=persist_result.checkpoint_activation_context,
+        )
+        return True
+    except Exception:
+        log.exception(
+            "[MathUpdater] AI description first pass failed after math persist claims=%s",
+            _format_claims(analysis_claims),
+        )
+        return False
+
+
 def _compute_claim_bundle(
     *,
     snapshot: PreparedInputSnapshot,
@@ -1712,47 +1780,23 @@ def _run_worker_once() -> None:
                         len(completed_result.ai_description_work_view_snapshot_ids),
                         (time.perf_counter() - persist_started_at) * 1000,
                     )
-                    ready_to_complete_computed_claims = True
-                    if (
-                        description_generator is not None
-                        and completed_result.ai_description_work_conversation_ids
-                    ):
-                        try:
-                            _process_ai_description_first_pass(
-                                primary_engine=primary_engine,
-                                vk=vk,
-                                worker_id=worker_id,
-                                analysis_claims=completed_claims,
-                                conversation_ids=completed_result.ai_description_work_conversation_ids,
-                                conversation_view_snapshot_ids=completed_result.ai_description_work_view_snapshot_ids,
-                                lease_ttl_seconds=settings.lease_ttl_seconds,
-                                heartbeat_interval_seconds=settings.heartbeat_interval_seconds,
-                                claim_limit=settings.db_claim_batch_size,
-                                max_workers=settings.max_ai_description_concurrency,
-                                ai_description_epoch=settings.ai_description_epoch,
-                                description_generator=description_generator,
-                                description_translator=description_translator,
-                                simulation_runtime=simulation_runtime,
-                                checkpoint_activation_context=(
-                                    completed_result.checkpoint_activation_context
-                                ),
-                            )
-                        except Exception:
-                            log.exception(
-                                "[MathUpdater] AI description first pass failed after math persist"
-                            )
-                            ready_to_complete_computed_claims = False
-                    elif completed_result.ai_description_work_conversation_ids:
-                        _finalize_ai_description_first_pass_without_generator(
+                    ready_to_complete_computed_claims = (
+                        process_or_finalize_ai_description_first_pass_after_persist(
                             primary_engine=primary_engine,
-                            conversation_ids=completed_result.ai_description_work_conversation_ids,
-                            conversation_view_snapshot_ids=(
-                                completed_result.ai_description_work_view_snapshot_ids
-                            ),
-                            checkpoint_activation_context=(
-                                completed_result.checkpoint_activation_context
-                            ),
+                            vk=vk,
+                            worker_id=worker_id,
+                            analysis_claims=completed_claims,
+                            persist_result=completed_result,
+                            lease_ttl_seconds=settings.lease_ttl_seconds,
+                            heartbeat_interval_seconds=settings.heartbeat_interval_seconds,
+                            claim_limit=settings.db_claim_batch_size,
+                            max_workers=settings.max_ai_description_concurrency,
+                            ai_description_epoch=settings.ai_description_epoch,
+                            description_generator=description_generator,
+                            description_translator=description_translator,
+                            simulation_runtime=simulation_runtime,
                         )
+                    )
                     computed_newer_generation_ids: list[int] = []
                     if ready_to_complete_computed_claims:
                         computed_newer_generation_ids = (
@@ -1839,50 +1883,25 @@ def _run_worker_once() -> None:
                                     bundles_by_conversation_id=bundles_by_conversation_id,
                                     ai_generation_expected=True,
                                 )
-                                ready_to_complete_isolated_claim = True
-                                if (
-                                    description_generator is not None
-                                    and isolated_result.ai_description_work_conversation_ids
-                                ):
-                                    try:
-                                        _process_ai_description_first_pass(
-                                            primary_engine=primary_engine,
-                                            vk=vk,
-                                            worker_id=worker_id,
-                                            analysis_claims=[claim],
-                                            conversation_ids=isolated_result.ai_description_work_conversation_ids,
-                                            conversation_view_snapshot_ids=isolated_result.ai_description_work_view_snapshot_ids,
-                                            lease_ttl_seconds=settings.lease_ttl_seconds,
-                                            heartbeat_interval_seconds=settings.heartbeat_interval_seconds,
-                                            claim_limit=settings.db_claim_batch_size,
-                                            max_workers=settings.max_ai_description_concurrency,
-                                            ai_description_epoch=settings.ai_description_epoch,
-                                            description_generator=description_generator,
-                                            description_translator=description_translator,
-                                            simulation_runtime=simulation_runtime,
-                                            checkpoint_activation_context=(
-                                                isolated_result.checkpoint_activation_context
-                                            ),
-                                        )
-                                    except Exception:
-                                        log.exception(
-                                            "[MathUpdater] Isolated AI description first pass "
-                                            "failed after math persist"
-                                        )
-                                        ready_to_complete_isolated_claim = False
-                                elif isolated_result.ai_description_work_conversation_ids:
-                                    _finalize_ai_description_first_pass_without_generator(
+                                ready_to_complete_isolated_claim = (
+                                    process_or_finalize_ai_description_first_pass_after_persist(
                                         primary_engine=primary_engine,
-                                        conversation_ids=(
-                                            isolated_result.ai_description_work_conversation_ids
+                                        vk=vk,
+                                        worker_id=worker_id,
+                                        analysis_claims=[claim],
+                                        persist_result=isolated_result,
+                                        lease_ttl_seconds=settings.lease_ttl_seconds,
+                                        heartbeat_interval_seconds=(
+                                            settings.heartbeat_interval_seconds
                                         ),
-                                        conversation_view_snapshot_ids=(
-                                            isolated_result.ai_description_work_view_snapshot_ids
-                                        ),
-                                        checkpoint_activation_context=(
-                                            isolated_result.checkpoint_activation_context
-                                        ),
+                                        claim_limit=settings.db_claim_batch_size,
+                                        max_workers=settings.max_ai_description_concurrency,
+                                        ai_description_epoch=settings.ai_description_epoch,
+                                        description_generator=description_generator,
+                                        description_translator=description_translator,
+                                        simulation_runtime=simulation_runtime,
                                     )
+                                )
                                 if ready_to_complete_isolated_claim:
                                     isolated_persist_newer_generation_ids = (
                                         complete_computed_analysis_work_items_batch(

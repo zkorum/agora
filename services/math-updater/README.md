@@ -11,7 +11,7 @@ The math-updater consumes queued conversation IDs from Valkey, claims work in Po
 - Consume queued conversation IDs from the `analysis:dirty` Valkey sorted set.
 - Claim and lease analysis work in PostgreSQL.
 - Build input snapshots from conversation opinions and votes.
-- Run `red-dwarf` locally for Polis-style opinion-group analysis.
+- Run <a href="https://github.com/polis-community/red-dwarf"><u>red-dwarf</u></a> locally for opinion-group analysis.
 - Persist analysis results, candidates, group membership, representative opinions, and opinion metrics.
 - Retry retryable failures and mark non-retryable work states.
 - Recover expired running work leases.
