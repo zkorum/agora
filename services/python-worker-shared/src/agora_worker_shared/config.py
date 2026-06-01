@@ -212,7 +212,7 @@ class Settings(BaseSettings):
     description_translation_simulation_mode: SimulationMode = "off"
     simulation_retryable_failure_attempts: int = Field(default=1, ge=1)
 
-    aws_ai_label_summary_enable: bool = False
+    aws_ai_label_summary_enable: bool = True
     aws_ai_label_summary_region: str = Field(default="us-east-1", min_length=1)
     aws_ai_label_summary_model_id: str = Field(
         default="mistral.mistral-large-3-675b-instruct",
@@ -225,7 +225,7 @@ class Settings(BaseSettings):
         default=DEFAULT_AWS_AI_LABEL_SUMMARY_PROMPT,
         min_length=1,
     )
-    aws_description_translation_enable: bool = False
+    aws_description_translation_enable: bool = True
     aws_description_translation_region: str = Field(default="us-east-1", min_length=1)
     aws_description_translation_model_id: str = Field(
         default="mistral.mistral-large-3-675b-instruct",
@@ -293,6 +293,14 @@ class Settings(BaseSettings):
             self.google_cloud_service_account_aws_secret_key is not None
             or self.google_application_credentials is not None
         )
+
+    @property
+    def bedrock_label_summary_configured(self) -> bool:
+        return self.aws_ai_label_summary_enable
+
+    @property
+    def bedrock_description_translation_configured(self) -> bool:
+        return self.aws_description_translation_enable
 
     @property
     def ai_description_simulation_enabled(self) -> bool:
@@ -374,11 +382,11 @@ def validate_ai_description_config(settings: Settings) -> None:
             "MATH_UPDATER_SIMULATION_PROVIDERS_ENABLE=true."
         )
         raise MathUpdaterConfigError(msg)
-    if settings.ai_description_simulation_enabled and settings.aws_ai_label_summary_enable:
+    if settings.ai_description_simulation_enabled and settings.bedrock_label_summary_configured:
         msg = "AI description simulation cannot be enabled with real AI summaries."
         raise MathUpdaterConfigError(msg)
     real_translation_configured = (
-        settings.aws_description_translation_enable
+        settings.bedrock_description_translation_configured
         or settings.google_translation_credentials_configured
     )
     if settings.description_translation_simulation_enabled and real_translation_configured:
@@ -389,12 +397,12 @@ def validate_ai_description_config(settings: Settings) -> None:
         raise MathUpdaterConfigError(msg)
 
     ai_generation_available = (
-        settings.aws_ai_label_summary_enable
+        settings.bedrock_label_summary_configured
         or settings.ai_description_simulation_enabled
     )
     is_translation_retry_worker = isinstance(settings, DescriptionTranslationWorkerSettings)
     if (
-        settings.aws_description_translation_enable
+        settings.bedrock_description_translation_configured
         and not ai_generation_available
         and not is_translation_retry_worker
     ):

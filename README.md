@@ -45,6 +45,10 @@ For detailed information about each service, licenses, and documentation, see [C
 
 **[Math Updater](./services/math-updater)** - Background worker service that periodically updates Polis clustering mathematics and generates AI-powered cluster insights using LLM models.
 
+**[AI Description Retry Worker](./services/ai-description-retry-worker)** - Python worker that retries and backfills AI-generated opinion-group labels and summaries requested by analysis views.
+
+**[Description Translation Retry Worker](./services/description-translation-retry-worker)** - Python worker that retries and backfills translated opinion-group labels and summaries for requested display languages.
+
 **[Import Worker](./services/import-worker)** - Python worker that consumes conversation import jobs and imports Polis URLs or CSV archives.
 
 **[Scoring Worker](./services/scoring-worker)** - Python worker that runs [Solidago](https://solidago.tournesol.app/) algorithm to produce community rankings from MaxDiff (Best-Worst Scaling) comparisons. Uses Valkey for job queuing and supports parallel scoring.

@@ -8,6 +8,8 @@ This directory contains all Agora services and shared code packages.
 - **api/** - Main Fastify backend API
 - **import-worker/** - Python worker for conversation imports
 - **math-updater/** - Python worker for opinion-group analysis
+- **ai-description-retry-worker/** - Python worker for AI label/summary retry and backlog work
+- **description-translation-retry-worker/** - Python worker for label/summary translation retry and backlog work
 - **scoring-worker/** - Python worker for MaxDiff rankings
 - **llm/** - LLM service for AI-generated summaries
 - **images/** - Image processing service

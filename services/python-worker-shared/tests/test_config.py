@@ -138,7 +138,8 @@ def test_settings_accepts_valid_minimal_config(
     settings = Settings(connection_string=VALID_DSN)
 
     assert settings.read_dsn == VALID_DSN
-    assert settings.aws_ai_label_summary_enable is False
+    assert settings.bedrock_label_summary_configured is True
+    assert settings.bedrock_description_translation_configured is True
     assert settings.agora_dev_mode is False
     assert settings.simulation_providers_enable is False
     assert settings.ai_description_simulation_mode == "off"
@@ -182,7 +183,6 @@ def test_ai_description_config_allows_real_ai_without_dev_mode(
     isolate_settings_env(monkeypatch, tmp_path)
     settings = Settings(
         connection_string=VALID_DSN,
-        aws_ai_label_summary_enable=True,
     )
 
     validate_ai_description_config(settings)
@@ -195,6 +195,7 @@ def test_ai_description_config_rejects_translation_without_ai(
     isolate_settings_env(monkeypatch, tmp_path)
     settings = Settings(
         connection_string=VALID_DSN,
+        aws_ai_label_summary_enable=False,
         google_application_credentials="/tmp/google-service-account.json",
     )
 
@@ -209,39 +210,23 @@ def test_ai_description_config_allows_translation_with_ai(
     isolate_settings_env(monkeypatch, tmp_path)
     settings = Settings(
         connection_string=VALID_DSN,
-        aws_ai_label_summary_enable=True,
         google_application_credentials="/tmp/google-service-account.json",
     )
 
     validate_ai_description_config(settings)
 
 
-def test_ai_description_config_rejects_bedrock_translation_without_ai(
+def test_ai_description_config_treats_enable_flag_as_provider_config(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     isolate_settings_env(monkeypatch, tmp_path)
     settings = Settings(
         connection_string=VALID_DSN,
-        aws_description_translation_enable=True,
+        aws_ai_label_summary_enable=False,
     )
 
-    with pytest.raises(MathUpdaterConfigError):
-        validate_ai_description_config(settings)
-
-
-def test_ai_description_config_allows_bedrock_translation_with_ai(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    isolate_settings_env(monkeypatch, tmp_path)
-    settings = Settings(
-        connection_string=VALID_DSN,
-        aws_ai_label_summary_enable=True,
-        aws_description_translation_enable=True,
-    )
-
-    validate_ai_description_config(settings)
+    assert settings.bedrock_label_summary_configured is False
 
 
 def test_ai_description_config_rejects_simulation_outside_dev(
@@ -253,6 +238,7 @@ def test_ai_description_config_rejects_simulation_outside_dev(
         connection_string=VALID_DSN,
         simulation_providers_enable=True,
         ai_description_simulation_mode="success",
+        aws_ai_label_summary_enable=False,
     )
 
     with pytest.raises(MathUpdaterConfigError):
@@ -270,6 +256,8 @@ def test_ai_description_config_allows_simulation_in_dev(
         simulation_providers_enable=True,
         ai_description_simulation_mode="success",
         description_translation_simulation_mode="success",
+        aws_ai_label_summary_enable=False,
+        aws_description_translation_enable=False,
     )
 
     validate_ai_description_config(settings)
@@ -298,7 +286,6 @@ def test_ai_description_config_rejects_mixed_real_and_simulated_ai(
     settings = Settings(
         agora_dev_mode=True,
         connection_string=VALID_DSN,
-        aws_ai_label_summary_enable=True,
         simulation_providers_enable=True,
         ai_description_simulation_mode="success",
     )
@@ -343,14 +330,14 @@ def test_ai_description_retry_worker_settings_read_service_prefix(
     isolate_settings_env(monkeypatch, tmp_path)
     tmp_path.joinpath(".env").write_text(
         f"AI_DESCRIPTION_RETRY_WORKER_CONNECTION_STRING={VALID_DSN}\n"
-        "AI_DESCRIPTION_RETRY_WORKER_AWS_AI_LABEL_SUMMARY_ENABLE=true\n",
+        "AI_DESCRIPTION_RETRY_WORKER_AWS_AI_LABEL_SUMMARY_ENABLE=false\n",
         encoding="utf-8",
     )
 
     settings = AiDescriptionWorkerSettings()
 
     assert settings.connection_string == VALID_DSN
-    assert settings.aws_ai_label_summary_enable is True
+    assert settings.bedrock_label_summary_configured is False
 
 
 def test_description_translation_retry_worker_settings_read_service_prefix(
