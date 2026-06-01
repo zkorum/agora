@@ -43,10 +43,12 @@ cp env.example .env.dev
 Edit the files with your configuration values. Environment variables are accessed via the typed `processEnv` export, which wraps `import.meta.env` at runtime.
 
 **Build Process**:
+
 - Development: `pnpm dev` automatically loads `.env.dev` via Quasar/Vite
 - Production builds: `pnpm build:staging` and `pnpm build:production` use `env-cmd` to load the appropriate env file before building
 
 We use `env-cmd` because:
+
 - Quasar has no built-in support for staging environments (only dev/production)
 - It's consistent with Docker environments
 - It ensures all variables (including `VITE_STAGING`) are available when `quasar.config.ts` evaluates
@@ -81,6 +83,10 @@ For full documentation including variable descriptions and validation rules, see
 
 Start the app with:
 `pnpm dev` in the `services/agora` directory or running `make dev-app` at the root of this project.
+
+`make dev-app` captures Quasar dev-server output in `.local/logs/latest/agora.log`. In dev mode, the frontend also forwards browser console calls, runtime errors, unhandled promise rejections, and route changes to `.local/logs/latest/agora-browser.jsonl` through the `devBrowserLogger` boot file. Use `logBrowserEvent` from `src/utils/devLogger.ts` for additional structured browser events while debugging.
+
+Direct `pnpm dev` still works, but it does not create durable log files unless you wrap it with `scripts/dev-log-runner.mjs` from the repository root.
 
 ## Logos
 

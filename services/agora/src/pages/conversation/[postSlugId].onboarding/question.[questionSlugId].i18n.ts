@@ -20,6 +20,7 @@ export interface ConversationSurveyQuestionTranslations {
   optionalMultiChoiceAtLeastDescription: string;
   chooseOneOptionDescription: string;
   chooseZeroOrOneOptionDescription: string;
+  publicAggregateSuppressionNotice: string;
   writeAnswerDescription: string;
   freeTextHelp: string;
   conversationClosedMessage: string;
@@ -53,6 +54,8 @@ export const conversationSurveyQuestionTranslations: Record<
       "Leave blank or choose at least {min} options.",
     chooseOneOptionDescription: "Choose one option.",
     chooseZeroOrOneOptionDescription: "Choose zero or one option.",
+    publicAggregateSuppressionNotice:
+      "Public results may hide very small groups to protect participants' privacy.",
     writeAnswerDescription: "Write your answer below.",
     freeTextHelp:
       "{count} / {max} characters. Minimum {min} when answered.",
@@ -83,6 +86,8 @@ export const conversationSurveyQuestionTranslations: Record<
       "اتركه فارغًا أو اختر {min} خيارات على الأقل.",
     chooseOneOptionDescription: "اختر خيارًا واحدًا.",
     chooseZeroOrOneOptionDescription: "اختر صفرًا أو خيارًا واحدًا.",
+    publicAggregateSuppressionNotice:
+      "قد تخفي النتائج العامة المجموعات الصغيرة جدًا لحماية خصوصية المشاركين.",
     writeAnswerDescription: "اكتب إجابتك أدناه.",
     freeTextHelp:
       "{count} / {max} حرفًا. الحد الأدنى {min} عند الإجابة.",
@@ -113,6 +118,8 @@ export const conversationSurveyQuestionTranslations: Record<
       "Déjalo en blanco o elige al menos {min} opciones.",
     chooseOneOptionDescription: "Elige una opción.",
     chooseZeroOrOneOptionDescription: "Elige cero o una opción.",
+    publicAggregateSuppressionNotice:
+      "Los resultados públicos pueden ocultar grupos muy pequeños para proteger la privacidad de los participantes.",
     writeAnswerDescription: "Escribe tu respuesta abajo.",
     freeTextHelp:
       "{count} / {max} caracteres. Mínimo {min} al responder.",
@@ -143,6 +150,8 @@ export const conversationSurveyQuestionTranslations: Record<
       "خالی بگذارید یا حداقل {min} گزینه را انتخاب کنید.",
     chooseOneOptionDescription: "یک گزینه انتخاب کنید.",
     chooseZeroOrOneOptionDescription: "صفر یا یک گزینه را انتخاب کنید.",
+    publicAggregateSuppressionNotice:
+      "برای حفظ حریم خصوصی شرکت‌کنندگان، نتایج عمومی ممکن است گروه‌های بسیار کوچک را پنهان کند.",
     writeAnswerDescription: "پاسخ خود را در پایین بنویسید.",
     freeTextHelp:
       "{count} / {max} نویسه. حداقل {min} هنگام پاسخ‌دادن.",
@@ -173,6 +182,8 @@ export const conversationSurveyQuestionTranslations: Record<
       "Laissez vide ou choisissez au moins {min} options.",
     chooseOneOptionDescription: "Choisissez une option.",
     chooseZeroOrOneOptionDescription: "Choisissez zéro ou une option.",
+    publicAggregateSuppressionNotice:
+      "Les résultats publics peuvent masquer les très petits groupes pour protéger la vie privée des participants.",
     writeAnswerDescription: "Écrivez votre réponse ci-dessous.",
     freeTextHelp:
       "{count} / {max} caractères. Minimum {min} si vous répondez.",
@@ -203,6 +214,8 @@ export const conversationSurveyQuestionTranslations: Record<
       "השאירו ריק או בחרו לפחות {min} אפשרויות.",
     chooseOneOptionDescription: "בחרו אפשרות אחת.",
     chooseZeroOrOneOptionDescription: "בחרו אפס או אפשרות אחת.",
+    publicAggregateSuppressionNotice:
+      "תוצאות ציבוריות עשויות להסתיר קבוצות קטנות מאוד כדי להגן על פרטיות המשתתפים.",
     writeAnswerDescription: "כתבו את התשובה שלכם למטה.",
     freeTextHelp:
       "{count} / {max} תווים. מינימום {min} כשעונים.",
@@ -233,6 +246,8 @@ export const conversationSurveyQuestionTranslations: Record<
       "空欄のままにするか、少なくとも {min} 個選んでください。",
     chooseOneOptionDescription: "1 つ選んでください。",
     chooseZeroOrOneOptionDescription: "0 個または 1 個の選択肢を選んでください。",
+    publicAggregateSuppressionNotice:
+      "参加者のプライバシーを守るため、公開結果では非常に小さなグループが非表示になる場合があります。",
     writeAnswerDescription: "下に回答を入力してください。",
     freeTextHelp:
       "{count} / {max} 文字。回答する場合の最小文字数は {min} です。",
@@ -263,6 +278,8 @@ export const conversationSurveyQuestionTranslations: Record<
       "Бош калтырыңыз же жок дегенде {min} вариант тандаңыз.",
     chooseOneOptionDescription: "Бир вариант тандаңыз.",
     chooseZeroOrOneOptionDescription: "Нөл же бир вариант тандаңыз.",
+    publicAggregateSuppressionNotice:
+      "Катышуучулардын купуялуулугун коргоо үчүн коомдук жыйынтыктар өтө чакан топторду жашырышы мүмкүн.",
     writeAnswerDescription: "Төмөндө жообуңузду жазыңыз.",
     freeTextHelp:
       "{count} / {max} белги. Жооп берсеңиз, кеминде {min} керек.",
@@ -294,6 +311,8 @@ export const conversationSurveyQuestionTranslations: Record<
       "Оставьте пустым или выберите как минимум {min} вариантов.",
     chooseOneOptionDescription: "Выберите один вариант.",
     chooseZeroOrOneOptionDescription: "Выберите ноль или один вариант.",
+    publicAggregateSuppressionNotice:
+      "В публичных результатах очень маленькие группы могут скрываться для защиты приватности участников.",
     writeAnswerDescription: "Напишите ваш ответ ниже.",
     freeTextHelp:
       "{count} / {max} символов. Минимум {min}, если отвечаете.",
@@ -323,6 +342,8 @@ export const conversationSurveyQuestionTranslations: Record<
       "可留空，或至少选择 {min} 个选项。",
     chooseOneOptionDescription: "请选择一个选项。",
     chooseZeroOrOneOptionDescription: "请选择零个或一个选项。",
+    publicAggregateSuppressionNotice:
+      "为保护参与者隐私，公开结果可能会隐藏非常小的群体。",
     writeAnswerDescription: "请在下方填写你的回答。",
     freeTextHelp:
       "{count} / {max} 个字符。作答时最少需要 {min} 个字符。",
@@ -351,6 +372,8 @@ export const conversationSurveyQuestionTranslations: Record<
       "可留空，或至少選擇 {min} 個選項。",
     chooseOneOptionDescription: "請選擇一個選項。",
     chooseZeroOrOneOptionDescription: "請選擇零個或一個選項。",
+    publicAggregateSuppressionNotice:
+      "為保護參與者隱私，公開結果可能會隱藏非常小的群體。",
     writeAnswerDescription: "請在下方填寫你的回答。",
     freeTextHelp:
       "{count} / {max} 個字元。作答時最少需要 {min} 個字元。",

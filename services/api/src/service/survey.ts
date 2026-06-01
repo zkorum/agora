@@ -1,10 +1,20 @@
 import { httpErrors } from "@fastify/sensible";
-import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull, or } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { generateRandomSlugId } from "@/crypto.js";
 import {
     conversationTable,
+    maxdiffComparisonTable,
+    maxdiffResultTable,
+    opinionModerationTable,
+    opinionGroupLineageTable,
+    opinionGroupTable,
+    opinionTable,
     organizationTable,
+    surveyAggregateOptionTable,
+    surveyAggregateQuestionTable,
+    surveyAggregateResultTable,
+    surveyAggregateSnapshotTable,
     surveyAnswerOptionTable,
     surveyAnswerTable,
     surveyConfigTable,
@@ -15,8 +25,14 @@ import {
     surveyQuestionOptionTable,
     surveyQuestionTable,
     surveyResponseTable,
+    voteTable,
 } from "@/shared-backend/schema.js";
-import { reconcileConversationCounters } from "@/shared-backend/conversationCounters.js";
+import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
+import {
+    enqueueScheduledConversationForMathWork,
+    hasActiveVotesForMathWork,
+    hasSurveyResponsesForMathWork,
+} from "@/shared-backend/analysisScheduler.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import {
     getSurveyQuestionContentTranslations,
@@ -39,9 +55,11 @@ import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
 import {
     countHtmlPlainTextCharacters,
     htmlToCountedText,
+    PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
 } from "@/shared/shared.js";
 import {
     zodSurveyQuestionConstraints,
+    type AnalysisView,
     type ConversationType,
     type ParticipationBlockedReason,
     type SurveyAnswerDraft,
@@ -63,20 +81,24 @@ import {
     ZodSupportedDisplayLanguageCodes,
     type SupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
-import { config, log } from "@/app.js";
-import { checkFeatureManagementAccess } from "@/shared-app-api/featureAccess.js";
+import { log } from "@/app.js";
 import {
     getConversationViewAccessLevelForConversation,
     isConversationOwner,
 } from "@/service/conversationAccess.js";
 import {
-    PUBLIC_SURVEY_SUPPRESSION_THRESHOLD,
-    buildSurveyAggregateRows,
     buildSurveyCompletionCounts,
     loadSurveyExportContext,
-    type SurveyExportContext,
 } from "./conversationExport/generators/surveyShared.js";
 import { checkConversationParticipation } from "./participationGate.js";
+import {
+    getDescriptionTextsByGroupId,
+    getSelectedOpinionGroupCandidate,
+} from "./opinionGroupAnalysis.js";
+import {
+    getPremiumEntitlementSubjectForConversation,
+    requirePremiumAccess,
+} from "./premiumEntitlement.js";
 
 interface ConversationAccessContext {
     conversationId: number;
@@ -89,65 +111,6 @@ interface ConversationAccessContext {
     currentContentId: number | null;
     isClosed: boolean;
     requiresEventTicket: (typeof conversationTable.$inferSelect)["requiresEventTicket"];
-}
-
-export function assertSurveyFeatureAllowedForConversation({
-    organizationName,
-    hasExistingSurvey,
-    userId,
-}: {
-    organizationName: string | null;
-    hasExistingSurvey: boolean;
-    userId: string;
-}): void {
-    const surveyAccess = checkFeatureManagementAccess({
-        hasExistingFeature: hasExistingSurvey,
-        featureEnabled: config.SURVEY_ENABLED,
-        isOrgOnly: config.IS_SURVEY_ORG_ONLY,
-        allowedOrgs: config.SURVEY_ALLOWED_ORGS,
-        allowedUsers: config.SURVEY_ALLOWED_USERS,
-        postAsOrganization: organizationName !== null,
-        organizationName: organizationName ?? "",
-        userId,
-    });
-    if (surveyAccess.allowed) {
-        return;
-    }
-
-    switch (surveyAccess.reason) {
-        case "disabled":
-            throw httpErrors.serviceUnavailable(
-                "Survey feature is currently disabled",
-            );
-        case "org_required":
-            throw httpErrors.forbidden(
-                "Survey configuration is restricted to organization conversations",
-            );
-        case "org_not_in_whitelist":
-            throw httpErrors.forbidden(
-                "This organization is not allowed to configure surveys",
-            );
-        case "user_not_in_whitelist":
-            throw httpErrors.forbidden(
-                "This user is not allowed to configure surveys",
-            );
-    }
-}
-
-function assertSurveyFeatureAllowed({
-    conversation,
-    hasExistingSurvey,
-    userId,
-}: {
-    conversation: ConversationAccessContext;
-    hasExistingSurvey: boolean;
-    userId: string;
-}): void {
-    assertSurveyFeatureAllowedForConversation({
-        organizationName: conversation.organizationName,
-        hasExistingSurvey,
-        userId,
-    });
 }
 
 interface SurveyConfigUpdateEffect {
@@ -219,9 +182,122 @@ async function refreshConversationAnalysisForSurveyChange({
         return;
     }
 
-    await reconcileConversationCounters({
+    const hasActiveVotes = await hasActiveVotesForMathWork({
         db,
         conversationId: conversation.conversationId,
+    });
+    const hasSurveyResponses = await hasSurveyResponsesForMathWork({
+        db,
+        conversationId: conversation.conversationId,
+    });
+    if (!hasActiveVotes && !hasSurveyResponses) {
+        log.info(
+            `[Survey] Skipping math work schedule for survey change without active inputs conversationId=${String(conversation.conversationId)} conversationSlugId=${conversation.slugId}`,
+        );
+        return;
+    }
+
+    await scheduleConversationAnalysisRefresh({
+        db,
+        conversationId: conversation.conversationId,
+        log,
+        queueStrategy: "caller_will_enqueue",
+    });
+    await enqueueScheduledConversationForMathWork({
+        db,
+        valkey,
+        conversationId: conversation.conversationId,
+        log,
+    });
+}
+
+async function hasParticipantAnalysisInput({
+    db,
+    conversation,
+    participantId,
+}: {
+    db: PostgresJsDatabase;
+    conversation: SurveyAnalysisRefreshContext;
+    participantId: string;
+}): Promise<boolean> {
+    if (conversation.conversationType === "maxdiff") {
+        const rows = await db
+            .select({ id: maxdiffResultTable.id })
+            .from(maxdiffResultTable)
+            .innerJoin(
+                maxdiffComparisonTable,
+                eq(maxdiffComparisonTable.maxdiffResultId, maxdiffResultTable.id),
+            )
+            .where(
+                and(
+                    eq(
+                        maxdiffResultTable.conversationId,
+                        conversation.conversationId,
+                    ),
+                    eq(maxdiffResultTable.participantId, participantId),
+                    isNull(maxdiffComparisonTable.deletedAt),
+                ),
+            )
+            .limit(1);
+        return rows.length > 0;
+    }
+
+    const rows = await db
+        .select({ id: voteTable.id })
+        .from(voteTable)
+        .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
+        .leftJoin(
+            opinionModerationTable,
+            eq(opinionModerationTable.opinionId, opinionTable.id),
+        )
+        .where(
+            and(
+                eq(opinionTable.conversationId, conversation.conversationId),
+                eq(voteTable.authorId, participantId),
+                isNotNull(voteTable.currentContentId),
+                isNotNull(opinionTable.currentContentId),
+                isNull(opinionModerationTable.id),
+            ),
+        )
+        .limit(1);
+    return rows.length > 0;
+}
+
+async function refreshConversationAnalysisForParticipantSurveyTransition({
+    db,
+    conversation,
+    participantId,
+    previousSurveyGateStatus,
+    nextSurveyGateStatus,
+    valkey,
+}: {
+    db: PostgresJsDatabase;
+    conversation: SurveyAnalysisRefreshContext;
+    participantId: string;
+    previousSurveyGateStatus: InternalSurveyGateStatus;
+    nextSurveyGateStatus: InternalSurveyGateStatus;
+    valkey: Valkey | undefined;
+}): Promise<void> {
+    const hasAnalysisInput = await hasParticipantAnalysisInput({
+        db,
+        conversation,
+        participantId,
+    });
+
+    if (!hasAnalysisInput) {
+        log.info(
+            `[Survey] Skipped analysis refresh for survey transition without participant input conversationId=${String(conversation.conversationId)} conversationSlugId=${conversation.slugId} conversationType=${conversation.conversationType} participantId=${participantId} previousSurveyGateStatus=${previousSurveyGateStatus} nextSurveyGateStatus=${nextSurveyGateStatus}`,
+        );
+        return;
+    }
+
+    log.info(
+        `[Survey] Scheduling analysis refresh for participant survey transition conversationId=${String(conversation.conversationId)} conversationSlugId=${conversation.slugId} conversationType=${conversation.conversationType} participantId=${participantId} previousSurveyGateStatus=${previousSurveyGateStatus} nextSurveyGateStatus=${nextSurveyGateStatus}`,
+    );
+    await refreshConversationAnalysisForSurveyChange({
+        db,
+        conversation,
+        valkey,
     });
 }
 
@@ -270,6 +346,7 @@ export interface ActiveSurveyQuestionRecord {
     currentSemanticVersion: number;
     displayOrder: number;
     isRequired: boolean;
+    isPublicAggregateSuppressionEnabled: boolean;
     questionText: string;
     constraints: SurveyQuestionConstraints;
     sourceLanguageCode?: string | null;
@@ -409,6 +486,8 @@ export function surveyQuestionToConfig({
                 ...baseQuestion,
                 questionType: "choice",
                 choiceDisplay: question.choiceDisplay,
+                isPublicAggregateSuppressionEnabled:
+                    question.isPublicAggregateSuppressionEnabled,
                 constraints: question.constraints,
                 options: question.options.map((option) => ({
                     optionSlugId: option.slugId,
@@ -520,7 +599,10 @@ function validateIntegerSurveyTextAnswer({
         return false;
     }
 
-    return parsedValue >= minValue && (maxValue === undefined || parsedValue <= maxValue);
+    return (
+        parsedValue >= minValue &&
+        (maxValue === undefined || parsedValue <= maxValue)
+    );
 }
 
 export function validateSurveyAnswer({
@@ -619,7 +701,10 @@ export function deriveSurveyQuestionFormItem({
               });
     const isPassed =
         storedAnswer !== undefined &&
-        isStoredSurveyAnswerPassed({ question: effectiveQuestion, storedAnswer });
+        isStoredSurveyAnswerPassed({
+            question: effectiveQuestion,
+            storedAnswer,
+        });
     const isStale =
         effectiveQuestion.isRequired &&
         storedAnswer !== undefined &&
@@ -627,11 +712,17 @@ export function deriveSurveyQuestionFormItem({
         candidateAnswer !== undefined &&
         (storedAnswer.answeredQuestionSemanticVersion !==
             effectiveQuestion.currentSemanticVersion ||
-            !validateSurveyAnswer({ question: effectiveQuestion, answer: candidateAnswer }));
+            !validateSurveyAnswer({
+                question: effectiveQuestion,
+                answer: candidateAnswer,
+            }));
     const currentAnswer = isStale ? undefined : candidateAnswer;
     const isCurrentAnswerValid =
         currentAnswer !== undefined &&
-        validateSurveyAnswer({ question: effectiveQuestion, answer: currentAnswer });
+        validateSurveyAnswer({
+            question: effectiveQuestion,
+            answer: currentAnswer,
+        });
 
     return {
         ...surveyQuestionToConfig({ question: effectiveQuestion }),
@@ -928,6 +1019,8 @@ export async function getActiveSurveyConfigRecord({
             currentSemanticVersion: surveyQuestionTable.currentSemanticVersion,
             displayOrder: surveyQuestionTable.displayOrder,
             isRequired: surveyQuestionTable.isRequired,
+            isPublicAggregateSuppressionEnabled:
+                surveyQuestionTable.isPublicAggregateSuppressionEnabled,
             questionText: surveyQuestionContentTable.questionText,
             constraints: surveyQuestionContentTable.constraints,
             sourceLanguageCode: surveyQuestionContentTable.sourceLanguageCode,
@@ -955,18 +1048,19 @@ export async function getActiveSurveyConfigRecord({
         questionIds.length === 0
             ? []
             : await db
-                   .select({
-                       questionId: surveyQuestionOptionTable.surveyQuestionId,
-                       optionId: surveyQuestionOptionTable.id,
-                       optionSlugId: surveyQuestionOptionTable.slugId,
-                       currentContentId: surveyQuestionOptionTable.currentContentId,
-                       displayOrder: surveyQuestionOptionTable.displayOrder,
-                       optionText: surveyQuestionOptionContentTable.optionText,
-                       sourceLanguageCode:
-                           surveyQuestionOptionContentTable.sourceLanguageCode,
-                       sourceLanguageConfidence:
-                           surveyQuestionOptionContentTable.sourceLanguageConfidence,
-                   })
+                  .select({
+                      questionId: surveyQuestionOptionTable.surveyQuestionId,
+                      optionId: surveyQuestionOptionTable.id,
+                      optionSlugId: surveyQuestionOptionTable.slugId,
+                      currentContentId:
+                          surveyQuestionOptionTable.currentContentId,
+                      displayOrder: surveyQuestionOptionTable.displayOrder,
+                      optionText: surveyQuestionOptionContentTable.optionText,
+                      sourceLanguageCode:
+                          surveyQuestionOptionContentTable.sourceLanguageCode,
+                      sourceLanguageConfidence:
+                          surveyQuestionOptionContentTable.sourceLanguageConfidence,
+                  })
                   .from(surveyQuestionOptionTable)
                   .innerJoin(
                       surveyQuestionOptionContentTable,
@@ -975,16 +1069,16 @@ export async function getActiveSurveyConfigRecord({
                           surveyQuestionOptionContentTable.id,
                       ),
                   )
-                   .where(
-                       and(
-                           inArray(
-                               surveyQuestionOptionTable.surveyQuestionId,
-                               questionIds,
-                           ),
-                           isNotNull(surveyQuestionOptionTable.currentContentId),
-                       ),
-                   )
-                   .orderBy(asc(surveyQuestionOptionTable.displayOrder));
+                  .where(
+                      and(
+                          inArray(
+                              surveyQuestionOptionTable.surveyQuestionId,
+                              questionIds,
+                          ),
+                          isNotNull(surveyQuestionOptionTable.currentContentId),
+                      ),
+                  )
+                  .orderBy(asc(surveyQuestionOptionTable.displayOrder));
 
     const optionsByQuestionId = new Map<number, ActiveSurveyOptionRecord[]>();
     for (const option of optionRows) {
@@ -1015,6 +1109,8 @@ export async function getActiveSurveyConfigRecord({
             currentSemanticVersion: question.currentSemanticVersion,
             displayOrder: question.displayOrder,
             isRequired: question.isRequired,
+            isPublicAggregateSuppressionEnabled:
+                question.isPublicAggregateSuppressionEnabled,
             questionText: question.questionText,
             constraints: zodSurveyQuestionConstraints.parse(
                 question.constraints,
@@ -1061,7 +1157,9 @@ function buildSurveyDetectionCorpus({
         question.questionText,
         ...question.options
             .map((option) => option.optionText)
-            .filter((optionText) => hasLexicalSurveyContent({ text: optionText })),
+            .filter((optionText) =>
+                hasLexicalSurveyContent({ text: optionText }),
+            ),
     ]);
 
     return texts
@@ -1151,15 +1249,15 @@ function applySurveyTranslationsToActiveSurveyConfig({
             questionText:
                 question.currentContentId == null
                     ? question.questionText
-                    : questionTranslations.get(question.currentContentId) ??
-                      question.questionText,
+                    : (questionTranslations.get(question.currentContentId) ??
+                      question.questionText),
             options: question.options.map((option) => ({
                 ...option,
                 optionText:
                     option.currentContentId == null
                         ? option.optionText
-                        : optionTranslations.get(option.currentContentId) ??
-                          option.optionText,
+                        : (optionTranslations.get(option.currentContentId) ??
+                          option.optionText),
             })),
         })),
     };
@@ -1181,7 +1279,9 @@ async function ensureSurveyTranslations({
     });
 
     if (sourceLanguage === undefined) {
-        const detectionCorpus = buildSurveyDetectionCorpus({ activeSurveyConfig });
+        const detectionCorpus = buildSurveyDetectionCorpus({
+            activeSurveyConfig,
+        });
         if (detectionCorpus.length > 0) {
             sourceLanguage = await detectLanguage({
                 client: googleCloudCredentials.client,
@@ -1211,18 +1311,22 @@ async function ensureSurveyTranslations({
             continue;
         }
 
-        const questionTranslations = await getSurveyQuestionContentTranslations({
-            db,
-            surveyQuestionContentIds: collectSurveyQuestionContentIds({
-                activeSurveyConfig,
-            }),
-            displayLanguageCode,
-        });
+        const questionTranslations = await getSurveyQuestionContentTranslations(
+            {
+                db,
+                surveyQuestionContentIds: collectSurveyQuestionContentIds({
+                    activeSurveyConfig,
+                }),
+                displayLanguageCode,
+            },
+        );
         const optionTranslations =
             await getSurveyQuestionOptionContentTranslations({
                 db,
                 surveyQuestionOptionContentIds:
-                    collectSurveyQuestionOptionContentIds({ activeSurveyConfig }),
+                    collectSurveyQuestionOptionContentIds({
+                        activeSurveyConfig,
+                    }),
                 displayLanguageCode,
             });
 
@@ -1292,7 +1396,9 @@ async function ensureSurveyTranslations({
         if (missingOptionTranslations.length > 0) {
             const translatedOptionTexts = await batchTranslateTexts({
                 client: googleCloudCredentials.client,
-                texts: missingOptionTranslations.map((option) => option.optionText),
+                texts: missingOptionTranslations.map(
+                    (option) => option.optionText,
+                ),
                 sourceLanguageCode: sourceLanguage?.languageCode,
                 targetLanguageCode: displayLanguageCode,
                 projectId: googleCloudCredentials.config.projectId,
@@ -1353,9 +1459,10 @@ async function localizeActiveSurveyConfigRecord({
         }),
         optionTranslations: await getSurveyQuestionOptionContentTranslations({
             db,
-            surveyQuestionOptionContentIds: collectSurveyQuestionOptionContentIds({
-                activeSurveyConfig,
-            }),
+            surveyQuestionOptionContentIds:
+                collectSurveyQuestionOptionContentIds({
+                    activeSurveyConfig,
+                }),
             displayLanguageCode: displayLanguage,
         }),
     });
@@ -1646,11 +1753,17 @@ async function insertSurveyQuestion({
             conversationId,
             questionType: question.questionType,
             choiceDisplay:
-                question.questionType === "free_text" ? "auto" : question.choiceDisplay,
+                question.questionType === "free_text"
+                    ? "auto"
+                    : question.choiceDisplay,
             currentContentId: null,
             currentSemanticVersion: 1,
             displayOrder: question.displayOrder,
             isRequired: question.isRequired,
+            isPublicAggregateSuppressionEnabled:
+                question.questionType === "choice"
+                    ? question.isPublicAggregateSuppressionEnabled
+                    : false,
             createdAt: now,
             updatedAt: now,
         })
@@ -1753,15 +1866,19 @@ async function replaceSurveyConfigById({
 
     // Temporarily move active rows away from their current display orders so
     // reorders and inserts cannot collide with the partial unique indexes.
-    for (const [index, existingQuestion] of
-        existingSurveyConfig.questions.entries()) {
+    for (const [
+        index,
+        existingQuestion,
+    ] of existingSurveyConfig.questions.entries()) {
         await db
             .update(surveyQuestionTable)
             .set({ displayOrder: -(index + 1) })
             .where(eq(surveyQuestionTable.id, existingQuestion.id));
 
-        for (const [optionIndex, existingOption] of
-            existingQuestion.options.entries()) {
+        for (const [
+            optionIndex,
+            existingOption,
+        ] of existingQuestion.options.entries()) {
             await db
                 .update(surveyQuestionOptionTable)
                 .set({ displayOrder: -(optionIndex + 1) })
@@ -1799,6 +1916,17 @@ async function replaceSurveyConfigById({
                 now,
             });
             continue;
+        }
+
+        if (
+            existingQuestion.questionType === "choice" &&
+            existingQuestion.isPublicAggregateSuppressionEnabled &&
+            (question.questionType !== "choice" ||
+                !question.isPublicAggregateSuppressionEnabled)
+        ) {
+            throw httpErrors.badRequest(
+                "Public aggregate suppression cannot be disabled after it was enabled",
+            );
         }
 
         let semanticChanged = false;
@@ -2001,6 +2129,10 @@ async function replaceSurveyConfigById({
                     : existingQuestion.currentSemanticVersion,
                 displayOrder: question.displayOrder,
                 isRequired: question.isRequired,
+                isPublicAggregateSuppressionEnabled:
+                    question.questionType === "choice"
+                        ? question.isPublicAggregateSuppressionEnabled
+                        : false,
                 updatedAt: now,
             })
             .where(eq(surveyQuestionTable.id, existingQuestion.id));
@@ -2273,18 +2405,287 @@ export async function checkSurveyStatus({
     };
 }
 
+interface SurveyAggregateRowsFromSnapshot {
+    suppressedRows: SurveyAggregateRow[];
+    fullRows: SurveyAggregateRow[];
+    hasPublicAggregateSuppressionEnabled: boolean;
+}
+
+async function fetchSurveyAggregateRowsFromSnapshot({
+    db,
+    surveyAggregateSnapshotId,
+    selectedCandidateId,
+    displayLanguage,
+    useSystemDescriptions,
+    currentPublicSuppressionByQuestionId,
+}: {
+    db: PostgresJsDatabase;
+    surveyAggregateSnapshotId: number;
+    selectedCandidateId: number;
+    displayLanguage: SupportedDisplayLanguageCodes;
+    useSystemDescriptions: boolean;
+    currentPublicSuppressionByQuestionId: Map<string, boolean> | undefined;
+}): Promise<SurveyAggregateRowsFromSnapshot> {
+    const aggregateRows = await db
+        .select({
+            scope: surveyAggregateResultTable.scope,
+            groupId: surveyAggregateResultTable.groupId,
+            groupKey: opinionGroupTable.key,
+            systemDescriptionId: opinionGroupLineageTable.systemDescriptionId,
+            adminDescriptionId: opinionGroupLineageTable.adminDescriptionId,
+            questionId: surveyAggregateQuestionTable.questionSlugId,
+            questionType: surveyAggregateQuestionTable.questionType,
+            question: surveyAggregateQuestionTable.questionText,
+            questionOrder: surveyAggregateQuestionTable.questionOrder,
+            isPublicAggregateSuppressionEnabled:
+                surveyAggregateQuestionTable.isPublicAggregateSuppressionEnabled,
+            optionId: surveyAggregateOptionTable.optionSlugId,
+            option: surveyAggregateOptionTable.optionText,
+            optionOrder: surveyAggregateOptionTable.optionOrder,
+            suppressedCount: surveyAggregateResultTable.suppressedCount,
+            suppressedPercentage:
+                surveyAggregateResultTable.suppressedPercentage,
+            fullCount: surveyAggregateResultTable.fullCount,
+            fullPercentage: surveyAggregateResultTable.fullPercentage,
+            isSuppressed: surveyAggregateResultTable.isSuppressed,
+            suppressionReason: surveyAggregateResultTable.suppressionReason,
+        })
+        .from(surveyAggregateResultTable)
+        .innerJoin(
+            surveyAggregateQuestionTable,
+            eq(
+                surveyAggregateQuestionTable.id,
+                surveyAggregateResultTable.surveyAggregateQuestionId,
+            ),
+        )
+        .innerJoin(
+            surveyAggregateOptionTable,
+            eq(
+                surveyAggregateOptionTable.id,
+                surveyAggregateResultTable.surveyAggregateOptionId,
+            ),
+        )
+        .leftJoin(
+            opinionGroupTable,
+            eq(opinionGroupTable.id, surveyAggregateResultTable.groupId),
+        )
+        .leftJoin(
+            opinionGroupLineageTable,
+            eq(opinionGroupLineageTable.id, opinionGroupTable.lineageId),
+        )
+        .where(
+            and(
+                eq(
+                    surveyAggregateResultTable.surveyAggregateSnapshotId,
+                    surveyAggregateSnapshotId,
+                ),
+                or(
+                    eq(surveyAggregateResultTable.scope, "overall"),
+                    and(
+                        eq(surveyAggregateResultTable.scope, "opinion_group"),
+                        eq(
+                            surveyAggregateResultTable.candidateId,
+                            selectedCandidateId,
+                        ),
+                    ),
+                ),
+            ),
+        )
+        .orderBy(
+            asc(surveyAggregateQuestionTable.questionOrder),
+            asc(surveyAggregateQuestionTable.questionSlugId),
+            asc(surveyAggregateResultTable.scope),
+            asc(opinionGroupTable.key),
+            asc(surveyAggregateOptionTable.optionOrder),
+            asc(surveyAggregateOptionTable.optionSlugId),
+        );
+
+    const groupsById = new Map<
+        number,
+        {
+            groupId: number;
+            systemDescriptionId: number | null;
+            adminDescriptionId: number | null;
+        }
+    >();
+    for (const row of aggregateRows) {
+        if (row.scope !== "opinion_group") {
+            continue;
+        }
+        if (row.groupId === null || row.groupKey === null) {
+            throw httpErrors.internalServerError(
+                "Survey aggregate group row is missing opinion group metadata",
+            );
+        }
+        groupsById.set(row.groupId, {
+            groupId: row.groupId,
+            systemDescriptionId: row.systemDescriptionId,
+            adminDescriptionId: row.adminDescriptionId,
+        });
+    }
+
+    const descriptionsByGroupId = await getDescriptionTextsByGroupId({
+        db,
+        groups: Array.from(groupsById.values()),
+        displayLanguage,
+        includeSystemDescriptions: useSystemDescriptions,
+    });
+
+    const suppressedRows: SurveyAggregateRow[] = [];
+    const fullRows: SurveyAggregateRow[] = [];
+    let hasPublicAggregateSuppressionEnabled = false;
+
+    for (const row of aggregateRows) {
+        const isPublicAggregateSuppressionEnabled =
+            currentPublicSuppressionByQuestionId?.get(row.questionId) ??
+            row.isPublicAggregateSuppressionEnabled;
+        hasPublicAggregateSuppressionEnabled ||=
+            isPublicAggregateSuppressionEnabled;
+
+        const fullCount = row.fullCount;
+        const fullPercentage = row.fullPercentage ?? undefined;
+        let suppressedCount: number | undefined;
+        let suppressedPercentage: number | undefined;
+        let suppressedReason: SurveyAggregateRow["suppressionReason"];
+        if (row.isSuppressed) {
+            if (row.suppressionReason === null) {
+                throw httpErrors.internalServerError(
+                    "Suppressed survey aggregate row is missing suppression reason",
+                );
+            }
+            suppressedReason = row.suppressionReason;
+        } else {
+            if (row.suppressedCount === null) {
+                throw httpErrors.internalServerError(
+                    "Unsuppressed survey aggregate row is missing count",
+                );
+            }
+            suppressedCount = row.suppressedCount;
+            suppressedPercentage = row.suppressedPercentage ?? undefined;
+        }
+
+        const displayedCount = isPublicAggregateSuppressionEnabled
+            ? suppressedCount
+            : fullCount;
+        const displayedPercentage = isPublicAggregateSuppressionEnabled
+            ? suppressedPercentage
+            : fullPercentage;
+        const displayedIsSuppressed =
+            isPublicAggregateSuppressionEnabled && row.isSuppressed;
+        const displayedSuppressionReason = isPublicAggregateSuppressionEnabled
+            ? suppressedReason
+            : undefined;
+
+        if (row.scope === "overall") {
+            suppressedRows.push({
+                scope: "overall",
+                clusterId: "",
+                clusterLabel: "",
+                questionId: row.questionId,
+                questionType: row.questionType,
+                question: row.question,
+                optionId: row.optionId,
+                option: row.option,
+                count: displayedCount,
+                percentage: displayedPercentage,
+                isSuppressed: displayedIsSuppressed,
+                isPublicAggregateSuppressionEnabled,
+                suppressionReason: displayedSuppressionReason,
+            });
+            fullRows.push({
+                scope: "overall",
+                clusterId: "",
+                clusterLabel: "",
+                questionId: row.questionId,
+                questionType: row.questionType,
+                question: row.question,
+                optionId: row.optionId,
+                option: row.option,
+                count: fullCount,
+                percentage: fullPercentage,
+                isSuppressed: false,
+                isPublicAggregateSuppressionEnabled,
+                suppressionReason: undefined,
+            });
+            continue;
+        }
+
+        if (row.groupId === null || row.groupKey === null) {
+            throw httpErrors.internalServerError(
+                "Survey aggregate group row is missing opinion group metadata",
+            );
+        }
+
+        const description = descriptionsByGroupId.get(row.groupId);
+        const clusterLabel = description?.label ?? `Group ${row.groupKey}`;
+        suppressedRows.push({
+            scope: "cluster",
+            clusterId: row.groupKey,
+            clusterLabel,
+            questionId: row.questionId,
+            questionType: row.questionType,
+            question: row.question,
+            optionId: row.optionId,
+            option: row.option,
+            count: displayedCount,
+            percentage: displayedPercentage,
+            isSuppressed: displayedIsSuppressed,
+            isPublicAggregateSuppressionEnabled,
+            suppressionReason: displayedSuppressionReason,
+        });
+        fullRows.push({
+            scope: "cluster",
+            clusterId: row.groupKey,
+            clusterLabel,
+            questionId: row.questionId,
+            questionType: row.questionType,
+            question: row.question,
+            optionId: row.optionId,
+            option: row.option,
+            count: fullCount,
+            percentage: fullPercentage,
+            isSuppressed: false,
+            isPublicAggregateSuppressionEnabled,
+            suppressionReason: undefined,
+        });
+    }
+
+    return {
+        suppressedRows,
+        fullRows,
+        hasPublicAggregateSuppressionEnabled,
+    };
+}
+
+function getCurrentPublicSuppressionByQuestionId({
+    activeSurveyConfig,
+}: {
+    activeSurveyConfig: ActiveSurveyConfigRecord;
+}): Map<string, boolean> {
+    return new Map(
+        activeSurveyConfig.questions
+            .filter((question) => question.questionType === "choice")
+            .map((question) => [
+                question.slugId,
+                question.isPublicAggregateSuppressionEnabled,
+            ]),
+    );
+}
+
 export async function fetchSurveyAggregatedResults({
     db,
     conversationSlugId,
+    analysisView,
+    checkpointViewSnapshotId,
     userId,
     displayLanguage,
-    googleCloudCredentials,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
+    analysisView: AnalysisView | undefined;
+    checkpointViewSnapshotId: number | undefined;
     userId: string | undefined;
     displayLanguage: SupportedDisplayLanguageCodes;
-    googleCloudCredentials: GoogleCloudCredentials | undefined;
 }): Promise<{
     hasSurvey: boolean;
     accessLevel: SurveyResultsAccessLevel;
@@ -2302,38 +2703,83 @@ export async function fetchSurveyAggregatedResults({
         authorId: conversation.authorId,
         organizationId: conversation.organizationId,
     });
-    const context = await loadSurveyExportContext({
+    const activeSurveyConfig = await getActiveSurveyConfigRecord({
         db,
         conversationId: conversation.conversationId,
     });
-    const localizedActiveSurveyConfig =
-        context.activeSurveyConfig === undefined
-            ? undefined
-            : await localizeActiveSurveyConfigRecord({
-                  db,
-                  activeSurveyConfig: context.activeSurveyConfig,
-                  displayLanguage,
-                  googleCloudCredentials,
-              });
-    const localizedContext = {
-        ...context,
-        activeSurveyConfig: localizedActiveSurveyConfig,
-    } satisfies SurveyExportContext;
+    if (checkpointViewSnapshotId === undefined && activeSurveyConfig === undefined) {
+        return {
+            hasSurvey: false,
+            accessLevel,
+            suppressionThreshold: PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
+            suppressedRows: [],
+            fullRows: undefined,
+        };
+    }
+
+    const selectedCandidate = await getSelectedOpinionGroupCandidate({
+        db,
+        conversationId: conversation.conversationId,
+        analysisView,
+        checkpointViewSnapshotId,
+        displayLanguage,
+    });
+    if (selectedCandidate?.surveyAggregateSnapshotId == null) {
+        return {
+            hasSurvey: false,
+            accessLevel,
+            suppressionThreshold: PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
+            suppressedRows: [],
+            fullRows: undefined,
+        };
+    }
+
+    const snapshotRows = await db
+        .select({
+            suppressionThreshold:
+                surveyAggregateSnapshotTable.suppressionThreshold,
+        })
+        .from(surveyAggregateSnapshotTable)
+        .where(
+            eq(
+                surveyAggregateSnapshotTable.id,
+                selectedCandidate.surveyAggregateSnapshotId,
+            ),
+        )
+        .limit(1);
+    if (snapshotRows.length === 0) {
+        return {
+            hasSurvey: false,
+            accessLevel,
+            suppressionThreshold: PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
+            suppressedRows: [],
+            fullRows: undefined,
+        };
+    }
+
+    const aggregateRows = await fetchSurveyAggregateRowsFromSnapshot({
+        db,
+        surveyAggregateSnapshotId: selectedCandidate.surveyAggregateSnapshotId,
+        selectedCandidateId: selectedCandidate.candidateId,
+        displayLanguage,
+        useSystemDescriptions: selectedCandidate.useSystemDescriptions,
+        currentPublicSuppressionByQuestionId:
+            activeSurveyConfig === undefined
+                ? undefined
+                : getCurrentPublicSuppressionByQuestionId({
+                      activeSurveyConfig,
+                  }),
+    });
 
     return {
-        hasSurvey: localizedContext.activeSurveyConfig !== undefined,
+        hasSurvey: true,
         accessLevel,
-        suppressionThreshold: PUBLIC_SURVEY_SUPPRESSION_THRESHOLD,
-        suppressedRows: buildSurveyAggregateRows({
-            context: localizedContext,
-            includeSuppression: true,
-        }),
+        suppressionThreshold: snapshotRows[0].suppressionThreshold,
+        suppressedRows: aggregateRows.suppressedRows,
         fullRows:
-            accessLevel === "owner"
-                ? buildSurveyAggregateRows({
-                      context: localizedContext,
-                      includeSuppression: false,
-                  })
+            accessLevel === "owner" &&
+            aggregateRows.hasPublicAggregateSuppressionEnabled
+                ? aggregateRows.fullRows
                 : undefined,
     };
 }
@@ -2695,9 +3141,12 @@ export async function saveSurveyAnswer({
             isOptional: activeSurveyConfig.isOptional,
         })
     ) {
-        await refreshConversationAnalysisForSurveyChange({
+        await refreshConversationAnalysisForParticipantSurveyTransition({
             db,
             conversation,
+            participantId,
+            previousSurveyGateStatus: previousSurveyGate.status,
+            nextSurveyGateStatus: nextSurveyGate.status,
             valkey,
         });
     }
@@ -2802,9 +3251,12 @@ export async function withdrawSurveyResponse({
             isOptional: previousSurveyState.activeSurveyConfig.isOptional,
         })
     ) {
-        await refreshConversationAnalysisForSurveyChange({
+        await refreshConversationAnalysisForParticipantSurveyTransition({
             db,
             conversation,
+            participantId,
+            previousSurveyGateStatus: previousSurveyGate.status,
+            nextSurveyGateStatus: nextSurveyGate.status,
             valkey,
         });
     }
@@ -2854,10 +3306,12 @@ export async function updateSurveyConfigByAuthor({
         db,
         conversationId: conversation.conversationId,
     });
-    assertSurveyFeatureAllowed({
-        conversation,
-        hasExistingSurvey: existingSurveyConfig !== undefined,
-        userId,
+    await requirePremiumAccess({
+        db,
+        subject: getPremiumEntitlementSubjectForConversation({ conversation }),
+        features: ["survey"],
+        mode: existingSurveyConfig === undefined ? "creation" : "edit",
+        now,
     });
 
     const surveyConfigUpdateEffect = await db.transaction(async (tx) => {
@@ -2936,16 +3390,6 @@ export async function deleteSurveyConfigByAuthor({
             "Only conversation owners can delete the survey",
         );
     }
-    const existingSurveyConfig = await getActiveSurveyConfigRecord({
-        db,
-        conversationId: conversation.conversationId,
-    });
-    assertSurveyFeatureAllowed({
-        conversation,
-        hasExistingSurvey: existingSurveyConfig !== undefined,
-        userId,
-    });
-
     const surveyConfigUpdateEffect = await db.transaction(async (tx) => {
         return await setSurveyConfigForConversation({
             db: tx,

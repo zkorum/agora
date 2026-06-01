@@ -1,0 +1,64 @@
+[project]
+name = "agora-import-worker"
+version = "0.1.0"
+description = "Conversation import worker"
+requires-python = ">=3.13"
+dependencies = [
+    "psycopg[binary]>=3.2",
+    "pydantic>=2.12",
+    "pydantic-settings>=2.0",
+    "red-dwarf @ git+https://github.com/nicobao/red-dwarf.git@6563d9c91ddc4a284adc65620ce033020733d28b",
+    "sqlalchemy[postgresql-psycopg]>=2.0",
+    "valkey>=6.0",
+]
+
+[tool.uv]
+required-version = ">=0.11.6"
+exclude-newer = "5 days"
+
+[project.optional-dependencies]
+dev = [
+    "basedpyright>=1.29",
+    "datamodel-code-generator>=0.57",
+    "pytest>=8.0",
+    "ruff>=0.9",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/import_worker"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint.per-file-ignores]
+"src/import_worker/generated_models.py" = ["TCH003"]
+
+[tool.ruff.lint]
+select = [
+    "F",
+    "E",
+    "W",
+    "I",
+    "N",
+    "UP",
+    "B",
+    "A",
+    "SIM",
+    "TCH",
+    "RUF",
+]
+
+[tool.basedpyright]
+typeCheckingMode = "strict"
+pythonVersion = "3.13"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

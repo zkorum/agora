@@ -67,14 +67,18 @@ export const AUTH_METHOD_STRENGTH = {
  * Hard verification methods (can add devices, upgrade guests)
  */
 export const HARD_AUTH_METHODS: ReadonlySet<AuthMethod> = new Set(
-    zodAuthMethod.options.filter((method) => AUTH_METHOD_STRENGTH[method] === "hard"),
+    zodAuthMethod.options.filter(
+        (method) => AUTH_METHOD_STRENGTH[method] === "hard",
+    ),
 );
 
 /**
  * Soft verification methods (cannot add devices alone)
  */
 export const SOFT_AUTH_METHODS: ReadonlySet<AuthMethod> = new Set(
-    zodAuthMethod.options.filter((method) => AUTH_METHOD_STRENGTH[method] === "soft"),
+    zodAuthMethod.options.filter(
+        (method) => AUTH_METHOD_STRENGTH[method] === "soft",
+    ),
 );
 
 /**
@@ -107,7 +111,9 @@ export const zodDeviceCredentialAssociation = z.enum([
     "device_missing_credential_available",
     "device_missing_credential_owned",
 ]);
-export type DeviceCredentialAssociation = z.infer<typeof zodDeviceCredentialAssociation>;
+export type DeviceCredentialAssociation = z.infer<
+    typeof zodDeviceCredentialAssociation
+>;
 
 // ============================================================================
 // Credential State Patterns
@@ -129,38 +135,49 @@ export type CredentialState = z.infer<typeof zodCredentialState>;
  * Discriminated union based on device-credential relationship.
  * Metadata can include credential-specific information (phoneHash, nullifier, etc).
  */
-export const zodCredentialAuthState = z.discriminatedUnion("deviceCredentialAssociation", [
-    // Device unknown + credential available
-    z.object({
-        deviceCredentialAssociation: z.literal("device_unknown_credential_available"),
-        metadata: z.record(z.string(), z.unknown()).optional(),
-    }),
-    // Device unknown + credential owned
-    z.object({
-        deviceCredentialAssociation: z.literal("device_unknown_credential_owned"),
-        userId: z.string(),
-        isRegistered: z.boolean(),
-        metadata: z.record(z.string(), z.unknown()).optional(),
-    }),
-    // Device owns credential
-    z.object({
-        deviceCredentialAssociation: z.literal("device_owns_credential"),
-        userId: z.string(),
-        metadata: z.record(z.string(), z.unknown()).optional(),
-    }),
-    // Device missing credential + credential available
-    z.object({
-        deviceCredentialAssociation: z.literal("device_missing_credential_available"),
-        metadata: z.record(z.string(), z.unknown()).optional(),
-    }),
-    // Device missing credential + credential owned
-    z.object({
-        deviceCredentialAssociation: z.literal("device_missing_credential_owned"),
-        userId: z.string(),
-        isRegistered: z.boolean(),
-        metadata: z.record(z.string(), z.unknown()).optional(),
-    }),
-]);
+export const zodCredentialAuthState = z.discriminatedUnion(
+    "deviceCredentialAssociation",
+    [
+        // Device unknown + credential available
+        z.object({
+            deviceCredentialAssociation: z.literal(
+                "device_unknown_credential_available",
+            ),
+            metadata: z.record(z.string(), z.unknown()).optional(),
+        }),
+        // Device unknown + credential owned
+        z.object({
+            deviceCredentialAssociation: z.literal(
+                "device_unknown_credential_owned",
+            ),
+            userId: z.string(),
+            isRegistered: z.boolean(),
+            metadata: z.record(z.string(), z.unknown()).optional(),
+        }),
+        // Device owns credential
+        z.object({
+            deviceCredentialAssociation: z.literal("device_owns_credential"),
+            userId: z.string(),
+            metadata: z.record(z.string(), z.unknown()).optional(),
+        }),
+        // Device missing credential + credential available
+        z.object({
+            deviceCredentialAssociation: z.literal(
+                "device_missing_credential_available",
+            ),
+            metadata: z.record(z.string(), z.unknown()).optional(),
+        }),
+        // Device missing credential + credential owned
+        z.object({
+            deviceCredentialAssociation: z.literal(
+                "device_missing_credential_owned",
+            ),
+            userId: z.string(),
+            isRegistered: z.boolean(),
+            metadata: z.record(z.string(), z.unknown()).optional(),
+        }),
+    ],
+);
 export type CredentialAuthState = z.infer<typeof zodCredentialAuthState>;
 
 // ============================================================================

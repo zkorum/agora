@@ -3,6 +3,8 @@ TODO
 *.log
 emailrecovery
 .env*
+*.env
+!services/*/scenarios/env.simulated-*
 
 # ide
 .lvimrc
@@ -14,6 +16,7 @@ private-keys/
 *.staging.key
 
 services/app-native
+services/python-bridge/
 
 # doc
 doc/.*
@@ -47,6 +50,13 @@ lerna-debug.log*
 # Tests
 /coverage
 /.nyc_output
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
 
 # IDEs and editors
 /.idea

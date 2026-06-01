@@ -16,7 +16,11 @@ import {
   type SurveyResultsAggregatedResponse,
   type SurveyStatusCheckResponse,
 } from "src/shared/types/dto";
-import type { SurveyAnswerSubmission, SurveyConfig } from "src/shared/types/zod";
+import type {
+  AnalysisView,
+  SurveyAnswerSubmission,
+  SurveyConfig,
+} from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 
 import { api } from "../client";
@@ -232,11 +236,19 @@ export function useBackendSurveyApi() {
 
   async function fetchSurveyResultsAggregated({
     conversationSlugId,
+    analysisView,
+    checkpointViewSnapshotId,
   }: {
     conversationSlugId: string;
+    analysisView?: AnalysisView;
+    checkpointViewSnapshotId?: number;
   }): Promise<AxiosSuccessResponse<SurveyResultsAggregatedResponse> | AxiosErrorResponse> {
     try {
-      const params = { conversationSlugId };
+      const params = Dto.surveyResultsAggregatedRequest.parse({
+        conversationSlugId,
+        analysisView,
+        checkpointViewSnapshotId,
+      });
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1SurveyResultsAggregatedPost(params);
       const config = await createOptionalAuthConfig({ url, options });

@@ -1,6 +1,6 @@
 """TDD tests for entity ID mapping (string slugId ↔ int).
 
-Solidago expects integer entity IDs internally. python-bridge maps
+Solidago expects integer entity IDs internally. The scoring worker maps
 string slugIds to sequential ints at the boundary, and maps back
 in the response. These tests verify correctness of the mapping,
 round-trip fidelity, and integration with bws_to_pairwise output.
@@ -195,7 +195,8 @@ class TestMapScoresFromSolidago:
             (2, (3.0, 0.7, 0.9)),
         ]
         result = map_scores_from_solidago(
-            solidago_scores=solidago_scores, mapper=mapper,
+            solidago_scores=solidago_scores,
+            mapper=mapper,
         )
         assert len(result) == 3
         score_by_id = {s.entity_id: s for s in result}
@@ -214,7 +215,8 @@ class TestMapScoresFromSolidago:
         mapper = EntityIdMapper(entity_ids=["item1"])
         solidago_scores = [(0, (42.5, 3.14, 2.71))]
         result = map_scores_from_solidago(
-            solidago_scores=solidago_scores, mapper=mapper,
+            solidago_scores=solidago_scores,
+            mapper=mapper,
         )
         assert result[0].entity_id == "item1"
         assert result[0].score == 42.5
@@ -230,7 +232,8 @@ class TestMapScoresFromSolidago:
             (2, (-1.0, 0.5, 0.5)),
         ]
         result = map_scores_from_solidago(
-            solidago_scores=solidago_scores, mapper=mapper,
+            solidago_scores=solidago_scores,
+            mapper=mapper,
         )
         assert len(result) == 2
         ids = {s.entity_id for s in result}
@@ -269,7 +272,8 @@ class TestRoundTrip:
 
         # Map back to strings
         result = map_scores_from_solidago(
-            solidago_scores=fake_solidago_output, mapper=mapper,
+            solidago_scores=fake_solidago_output,
+            mapper=mapper,
         )
 
         # Verify round-trip: every entity present with correct score

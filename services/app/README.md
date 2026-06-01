@@ -1,6 +1,6 @@
-# Agora App (`services/app`)
+# Agora Landing (`services/app`)
 
-Modern SvelteKit frontend for Agora Citizen Network, progressively replacing `services/agora` (Vue/Quasar).
+SvelteKit landing page and blog for Agora Citizen Network.
 
 ## Why SvelteKit?
 
@@ -31,7 +31,7 @@ pnpm install
 pnpm dev
 
 # Or from repo root:
-make dev-app-new
+make dev-landing
 ```
 
 ## Scripts
@@ -60,46 +60,33 @@ src/
   app.html              # HTML shell
   app.css               # Tailwind CSS v4 entry
   lib/
-    ui/{app}/           # Design system (Bits UI wrappers)
+    ui/                 # Design system (Bits UI wrappers)
       shared/           # Core design system (Button, Dialog, Icons)
       landing/          # Landing-specific UI (if needed)
-      facilitator/      # Facilitator-specific UI (if needed)
-      participant/      # Participant-specific UI (if needed)
-    components/{app}/   # Application features (business logic)
-      shared/           # Reusable across apps
+    components/         # Application features (business logic)
+      shared/           # Reusable landing/blog components
       landing/          # Landing page sections
-      facilitator/      # Facilitator app components
-      participant/      # Participant app components
-    logic/{app}/        # Pure TS functions + colocated tests
+    logic/              # Pure TS functions + colocated tests
       shared/           # Shared utilities (usually starts here)
       landing/          # Landing-specific logic (if needed)
-      facilitator/      # Facilitator-specific logic (if needed)
-      participant/      # Participant-specific logic (if needed)
-    state/{app}/        # Reactive state (.svelte.ts)
+    state/              # Reactive state (.svelte.ts)
       shared/           # Global config, feature flags (usually starts here)
       landing/          # Landing-specific state (if needed)
-      facilitator/      # Facilitator-specific state (if needed)
-      participant/      # Participant-specific state (if needed)
-    server/{app}/       # Server-only code
+    server/             # Server-only code
       landing/          # Blog, marketing data
-      facilitator/      # Facilitator data fetching
-      participant/      # Participant data fetching
+    posts/              # Markdown blog posts by locale
     paraglide/          # Generated i18n runtime
     assets/             # Vite-processed images (enhanced:img, cache-busted)
   routes/
     +layout.svelte      # Root layout
     +page.svelte        # Landing page (/)
     blog/               # Blog (/blog)
-    facilitator/        # Facilitator app (/facilitator)
-    participant/        # Participant app (/participant)
-  content/
-    blog/               # Markdown blog posts by locale
 messages/               # Paraglide translation files
 static/                 # Unprocessed static files (favicons, OG images, blog images)
 tests/                  # Playwright E2E tests
 ```
 
-Apps: `shared/`, `landing/`, `facilitator/`, `participant/`
+Feature areas: `shared/`, `landing/`
 
 ## Coding Guidelines
 
@@ -134,9 +121,6 @@ import { config } from "$state/shared/config";
 // ❌ BAD - barrel imports (breaks tree-shaking)
 import { Button, Dialog } from "$ui/shared";
 
-// ❌ BAD - cross-feature imports
-import { Something } from "$components/facilitator/something"; // from landing
-
 // ❌ BAD - direct Bits UI (always use $ui/ wrappers)
 import { Button } from "bits-ui";
 ```
@@ -144,19 +128,10 @@ import { Button } from "bits-ui";
 **Rules:**
 
 - **No barrel files** (`index.ts` re-exports) - breaks tree-shaking
-- **No cross-feature imports** - each feature imports only from itself or `shared/`
+- **No cross-feature imports** - landing-specific code imports only from `landing/` or `shared/`
 - **Never import Bits UI directly** - always use `$ui/` wrappers
 
-**Forbidden cross-feature imports:**
-
-- `landing/` ↛ `facilitator/`
-- `landing/` ↛ `participant/`
-- `facilitator/` ↛ `landing/`
-- `facilitator/` ↛ `participant/`
-- `participant/` ↛ `landing/`
-- `participant/` ↛ `facilitator/`
-
-**Rule:** If you need to import across features, move the code to `shared/` first.
+**Rule:** If landing/blog code needs the same utility or component, move it to `shared/` first.
 
 ### ui/ vs components/
 
@@ -561,17 +536,15 @@ For production deployment, configure:
 
 - `ORIGIN` - The app's public URL (required for SSR)
 
-## Migration from services/agora
+## Scope
 
-This service will progressively take over features from `services/agora`:
+This service owns the public landing and content experience:
 
-| Feature        | Status      |
-| -------------- | ----------- |
-| Landing page   | ✅ Complete |
-| Blog           | ✅ Complete |
-| Auth/Login     | 🔜 Planned  |
-| Conversations  | 🔜 Planned  |
-| User dashboard | 🔜 Planned  |
+| Feature               | Status      |
+| --------------------- | ----------- |
+| Landing page          | ✅ Complete |
+| Blog                  | ✅ Complete |
+| Explore conversations | 🔜 Planned  |
 
 ## Future: API Client Strategy
 
@@ -601,9 +574,9 @@ src/lib/
 
 **Barrel files exception:** For generated API code, barrel files are OK (generated code is tree-shakeable by design).
 
-### Shared Code After Migration
+### Shared Code if API Usage Grows
 
-After migrating to @hey-api, only ~300 lines of shared code needed:
+If this service needs more backend API access, keep the shared surface small:
 
 | Keep                             | Delete                               |
 | -------------------------------- | ------------------------------------ |

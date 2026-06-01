@@ -99,7 +99,8 @@ function normalizeTargetLanguageCodeForGoogle({
 }: {
     targetLanguageCode: string;
 }): string {
-    const mappedLanguageCode = DISPLAY_LANGUAGE_TO_GOOGLE_CODE[targetLanguageCode];
+    const mappedLanguageCode =
+        DISPLAY_LANGUAGE_TO_GOOGLE_CODE[targetLanguageCode];
     if (mappedLanguageCode !== undefined) {
         return mappedLanguageCode;
     }
@@ -109,7 +110,11 @@ function normalizeTargetLanguageCodeForGoogle({
     });
 }
 
-function getLanguageComparisonKey({ languageCode }: { languageCode: string }): string {
+function getLanguageComparisonKey({
+    languageCode,
+}: {
+    languageCode: string;
+}): string {
     const normalizedLanguageCode = normalizeSourceLanguageCodeForGoogle({
         sourceLanguageCode: languageCode,
     });
@@ -283,7 +288,8 @@ export async function translateText({
             }),
         });
 
-        const simplifiedText = simplifiedResponse.translations?.[0]?.translatedText;
+        const simplifiedText =
+            simplifiedResponse.translations?.[0]?.translatedText;
         if (simplifiedText == null) {
             throw new Error(
                 `Translation failed at Simplified Chinese step for "${text}"`,

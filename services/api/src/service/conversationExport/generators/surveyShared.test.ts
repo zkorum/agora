@@ -29,6 +29,7 @@ const surveyConfig: ActiveSurveyConfigRecord = {
             currentSemanticVersion: 1,
             displayOrder: 0,
             isRequired: true,
+            isPublicAggregateSuppressionEnabled: true,
             questionText: "Where are you from?",
             constraints: {
                 type: "choice",
@@ -58,6 +59,7 @@ const surveyConfig: ActiveSurveyConfigRecord = {
             currentSemanticVersion: 1,
             displayOrder: 1,
             isRequired: false,
+            isPublicAggregateSuppressionEnabled: false,
             questionText: "Anything else?",
             constraints: {
                 type: "free_text",
@@ -158,18 +160,20 @@ describe("buildSurveyParticipantResponseRows", () => {
                 "question-slug-id": "qMono001",
                 "question-order": 1,
                 "question-type": "choice",
-                "question-text": "Where are you from?",
-                "is-required": 1,
-                "question-semantic-version": 1,
+            "question-text": "Where are you from?",
+            "is-required": 1,
+            "is-public-aggregate-suppression-enabled": 1,
+            "question-semantic-version": 1,
             },
             {
                 "question-id": 1,
                 "question-slug-id": "qText001",
                 "question-order": 2,
                 "question-type": "free_text",
-                "question-text": "Anything else?",
-                "is-required": 0,
-                "question-semantic-version": 1,
+            "question-text": "Anything else?",
+            "is-required": 0,
+            "is-public-aggregate-suppression-enabled": 0,
+            "question-semantic-version": 1,
             },
         ]);
         expect(buildSurveyQuestionOptionRows({ context })).toEqual([
@@ -223,6 +227,35 @@ describe("buildSurveyParticipantResponseRows", () => {
         expect(rows[1]["participant-id"]).toBe(0);
         expect(rows[1]["question-id"]).toBe(1);
         expect(rows[1]["answer-text-plain"]).toBe("Hello world");
+    });
+
+    it("does not export survey-only responders", () => {
+        const context: SurveyExportContext = {
+            activeSurveyConfig: surveyConfig,
+            participantIds: new Set(["voter-1"]),
+            participantStates: [
+                createCompleteMonoChoiceState({
+                    participantId: "voter-1",
+                    responseId: 1,
+                    optionSlugId: "optYes01",
+                }),
+                createCompleteMonoChoiceState({
+                    participantId: "survey-only-1",
+                    responseId: 2,
+                    optionSlugId: "optNo001",
+                }),
+            ],
+            clusterMembershipByParticipantId: new Map(),
+        };
+
+        const rows = buildSurveyParticipantResponseRows({
+            context,
+            participantMap: createExportParticipantMap(),
+        });
+
+        expect(rows).toHaveLength(2);
+        expect(rows.every((row) => row["participant-id"] === 0)).toBe(true);
+        expect(rows[0]["option-id"]).toBe(0);
     });
 });
 
@@ -293,6 +326,54 @@ describe("buildSurveyAggregateRows", () => {
             rows.every(
                 (row) => row.suppressionReason === "count_below_threshold",
             ),
+        ).toBe(true);
+    });
+
+    it("keeps public aggregate counts when question suppression is disabled", () => {
+        const nonSuppressingSurveyConfig: ActiveSurveyConfigRecord = {
+            ...surveyConfig,
+            questions: surveyConfig.questions.map((question) =>
+                question.questionType === "choice"
+                    ? {
+                          ...question,
+                          isPublicAggregateSuppressionEnabled: false,
+                      }
+                    : question,
+            ),
+        };
+        const context: SurveyExportContext = {
+            activeSurveyConfig: nonSuppressingSurveyConfig,
+            participantIds: new Set(["user-1", "user-2", "user-3"]),
+            participantStates: [
+                createCompleteMonoChoiceState({
+                    participantId: "user-1",
+                    responseId: 1,
+                    optionSlugId: "optYes01",
+                }),
+                createCompleteMonoChoiceState({
+                    participantId: "user-2",
+                    responseId: 2,
+                    optionSlugId: "optYes01",
+                }),
+                createCompleteMonoChoiceState({
+                    participantId: "user-3",
+                    responseId: 3,
+                    optionSlugId: "optNo001",
+                }),
+            ],
+            clusterMembershipByParticipantId: new Map(),
+        };
+
+        const rows = buildSurveyAggregateRows({
+            context,
+            includeSuppression: true,
+        });
+
+        expect(rows).toHaveLength(2);
+        expect(rows.every((row) => !row.isSuppressed)).toBe(true);
+        expect(rows.map((row) => row.count)).toEqual([2, 1]);
+        expect(
+            rows.every((row) => !row.isPublicAggregateSuppressionEnabled),
         ).toBe(true);
     });
 
@@ -485,9 +566,9 @@ describe("buildSurveyAggregateRows", () => {
         );
 
         expect(suppressedClusterRows).toHaveLength(2);
-        expect(
-            suppressedClusterRows.every((row) => row.isSuppressed),
-        ).toBe(true);
+        expect(suppressedClusterRows.every((row) => row.isSuppressed)).toBe(
+            true,
+        );
         expect(
             suppressedClusterRows.every((row) => row.count === undefined),
         ).toBe(true);
@@ -676,6 +757,48 @@ describe("buildSurveyAggregateRows", () => {
             ),
         ).toBe(true);
     });
+
+    it("excludes survey-only responders from aggregate rows", () => {
+        const context: SurveyExportContext = {
+            activeSurveyConfig: surveyConfig,
+            participantIds: new Set(["voter-1"]),
+            participantStates: [
+                createCompleteMonoChoiceState({
+                    participantId: "voter-1",
+                    responseId: 1,
+                    optionSlugId: "optYes01",
+                }),
+                createCompleteMonoChoiceState({
+                    participantId: "survey-only-1",
+                    responseId: 2,
+                    optionSlugId: "optNo001",
+                }),
+            ],
+            clusterMembershipByParticipantId: new Map(),
+        };
+
+        const rows = buildSurveyAggregateRows({
+            context,
+            includeSuppression: false,
+        });
+
+        expect(
+            rows.some(
+                (row) =>
+                    row.scope === "overall" &&
+                    row.optionId === "optYes01" &&
+                    row.count === 1,
+            ),
+        ).toBe(true);
+        expect(
+            rows.some(
+                (row) =>
+                    row.scope === "overall" &&
+                    row.optionId === "optNo001" &&
+                    row.count === 0,
+            ),
+        ).toBe(true);
+    });
 });
 
 describe("buildSurveyCompletionCounts", () => {
@@ -730,6 +853,34 @@ describe("buildSurveyCompletionCounts", () => {
             completeValid: 1,
             needsUpdate: 1,
             notStarted: 3,
+            inProgress: 0,
+        });
+    });
+
+    it("ignores survey-only responders in completion counts", () => {
+        const context: SurveyExportContext = {
+            activeSurveyConfig: surveyConfig,
+            participantIds: new Set(["voter-1", "voter-2"]),
+            participantStates: [
+                createCompleteMonoChoiceState({
+                    participantId: "voter-1",
+                    responseId: 1,
+                    optionSlugId: "optYes01",
+                }),
+                createCompleteMonoChoiceState({
+                    participantId: "survey-only-1",
+                    responseId: 2,
+                    optionSlugId: "optNo001",
+                }),
+            ],
+            clusterMembershipByParticipantId: new Map(),
+        };
+
+        expect(buildSurveyCompletionCounts({ context })).toEqual({
+            total: 2,
+            completeValid: 1,
+            needsUpdate: 0,
+            notStarted: 1,
             inProgress: 0,
         });
     });

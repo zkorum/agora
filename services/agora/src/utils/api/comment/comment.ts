@@ -1,34 +1,67 @@
 import { storeToRefs } from "pinia";
-import {
-  type ApiV1OpinionCreatePostRequest,
-  type ApiV1OpinionFetchAnalysisByConversationPost200Response,
-  type ApiV1OpinionFetchByConversationPostRequest,
-  type ApiV1OpinionFetchBySlugIdListPostRequest,
-  type ApiV1OpinionFetchHiddenByConversationPostRequest,
-  type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem,
-  DefaultApiAxiosParamCreator,
-  DefaultApiFactory,
-} from "src/api";
-import { Dto } from "src/shared/types/dto";
 import type {
-  AnalysisOpinionItem,
-  OpinionItem,
-  PolisClusters,
-  PolisKey,
-} from "src/shared/types/zod";
+  ApiV1OpinionCreatePostRequest,
+  ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest,
+  ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest,
+  ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest,
+  ApiV1OpinionFetchByConversationPostRequest,
+  ApiV1OpinionFetchBySlugIdListPostRequest,
+  ApiV1OpinionFetchHiddenByConversationPostRequest,
+  ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem,
+} from "src/api";
+import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
+import type {
+  AnalysisFrameGroupLabels,
+  AnalysisFrameGroups,
+  AnalysisFrameKey,
+  AnalysisFrameManifest,
+  AnalysisFrameOpinionList,
+  AnalysisFrameOpinionListKind,
+  AnalysisFreshnessRequest,
+  FetchAnalysisCheckpointsResponse,
+  FetchCommentStatsResponse,
+} from "src/shared/types/dto";
+import { Dto } from "src/shared/types/dto";
+import type { AnalysisView, OpinionItem, PolisKey } from "src/shared/types/zod";
 import { zodOpinionItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { shouldHideGroupAnalysis } from "src/utils/component/opinion";
 
 import { useBackendAuthApi } from "../auth";
 import { api } from "../client";
 import { useCommonApi } from "../common";
 
-export type CommentTabFilters = "new" | "moderated" | "discover" | "hidden" | "my_votes";
+export {
+  type AnalysisData,
+  buildAnalysisDataFromFrame,
+  buildEmptyAnalysisDataFromManifest,
+  hasManifestFrame,
+} from "./analysisData";
+
+export type CommentTabFilters =
+  | "new"
+  | "moderated"
+  | "discover"
+  | "hidden"
+  | "my_votes";
+
+type CreateNewCommentResult =
+  | {
+      success: true;
+      opinionSlugId: string;
+      opinionItem: OpinionItem;
+      authStateChanged: boolean;
+      needsCacheRefresh: boolean;
+    }
+  | {
+      success: false;
+      reason?: string;
+    };
 
 export function useBackendCommentApi() {
   const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
-  const { isGuestOrLoggedIn, isAuthInitialized } = storeToRefs(useAuthenticationStore());
+  const { isGuestOrLoggedIn, isAuthInitialized } = storeToRefs(
+    useAuthenticationStore()
+  );
   const { updateAuthState } = useBackendAuthApi();
 
   function createLocalCommentObject(
@@ -71,6 +104,25 @@ export function useBackendCommentApi() {
     );
 
     return createLocalCommentObject(response.data);
+  }
+
+  async function fetchCommentStatsForPost(
+    postSlugId: string
+  ): Promise<FetchCommentStatsResponse> {
+    const params = {
+      conversationSlugId: postSlugId,
+    };
+
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1OpinionFetchCommentStatsByConversationPost(
+      params,
+      createRawAxiosRequestConfig({ timeoutProfile: "extended" })
+    );
+
+    return Dto.fetchCommentStatsResponse.parse(response.data);
   }
 
   async function fetchCommentsForPost(
@@ -121,13 +173,7 @@ export function useBackendCommentApi() {
   async function createNewComment(
     commentBody: string,
     postSlugId: string
-  ): Promise<{
-    success: boolean;
-    opinionSlugId?: string;
-    reason?: string;
-    authStateChanged?: boolean;
-    needsCacheRefresh?: boolean;
-  }> {
+  ): Promise<CreateNewCommentResult> {
     const params: ApiV1OpinionCreatePostRequest = {
       opinionBody: commentBody,
       conversationSlugId: postSlugId,
@@ -155,6 +201,7 @@ export function useBackendCommentApi() {
       return {
         success: true,
         opinionSlugId: data.opinionSlugId,
+        opinionItem: data.opinionItem,
         authStateChanged,
         needsCacheRefresh,
       };
@@ -207,67 +254,208 @@ export function useBackendCommentApi() {
     return opinionItemList;
   }
 
-  async function fetchAnalysisData(params: {
+  async function fetchAnalysisFrameManifest(params: {
     conversationSlugId: string;
-  }): Promise<{
-    consensusAgree: AnalysisOpinionItem[];
-    consensusDisagree: AnalysisOpinionItem[];
-    controversial: AnalysisOpinionItem[];
-    polisClusters: Partial<PolisClusters>;
-    hasVotedOnAllAvailableOpinions?: boolean;
-  }> {
-    let data: ApiV1OpinionFetchAnalysisByConversationPost200Response;
-    // Use authenticated endpoint only if auth is initialized AND user is logged in/guest
+    analysisView?: AnalysisView;
+    checkpointViewSnapshotId?: number;
+    freshness: AnalysisFreshnessRequest | null;
+  }): Promise<AnalysisFrameManifest> {
+    const requestParams: ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest =
+      {
+        conversationSlugId: params.conversationSlugId,
+        analysisView: params.analysisView,
+        checkpointViewSnapshotId: params.checkpointViewSnapshotId,
+        freshness: params.freshness,
+      };
+
     if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisByConversationPost(
-          params
+        await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameManifestByConversationPost(
+          requestParams
         );
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1OpinionFetchAnalysisByConversationPost(
-        params,
+      ).apiV1OpinionFetchAnalysisFrameManifestByConversationPost(
+        requestParams,
         createRawAxiosRequestConfig({
-          encodedUcan: encodedUcan,
+          encodedUcan,
           timeoutProfile: "extended",
         })
       );
-      data = response.data;
-    } else {
+      return Dto.analysisFrameManifest.parse(response.data);
+    }
+
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1OpinionFetchAnalysisFrameManifestByConversationPost(
+      requestParams,
+      createRawAxiosRequestConfig({ timeoutProfile: "extended" })
+    );
+    return Dto.analysisFrameManifest.parse(response.data);
+  }
+
+  async function fetchAnalysisFrameGroups(params: {
+    conversationSlugId: string;
+    frameKey: AnalysisFrameKey;
+    freshness: AnalysisFreshnessRequest | null;
+  }): Promise<AnalysisFrameGroups> {
+    const requestParams: ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest =
+      {
+        conversationSlugId: params.conversationSlugId,
+        frameKey: params.frameKey,
+        freshness: params.freshness,
+      };
+
+    if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameGroupsByFramePost(
+          requestParams
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1OpinionFetchAnalysisByConversationPost(
-        params,
-        createRawAxiosRequestConfig({ timeoutProfile: "extended" })
+      ).apiV1OpinionFetchAnalysisFrameGroupsByFramePost(
+        requestParams,
+        createRawAxiosRequestConfig({
+          encodedUcan,
+          timeoutProfile: "extended",
+        })
       );
-      data = response.data;
+      return Dto.analysisFrameGroups.parse(response.data);
     }
 
-    // Use zod to parse and validate - zodDateTimeFlexible handles date conversion automatically
-    const parsedData = Dto.fetchAnalysisResponse.parse(data);
-    const polisClusters = parsedData.clusters ?? {};
-    const hideGroupAnalysis = shouldHideGroupAnalysis(polisClusters);
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1OpinionFetchAnalysisFrameGroupsByFramePost(
+      requestParams,
+      createRawAxiosRequestConfig({ timeoutProfile: "extended" })
+    );
+    return Dto.analysisFrameGroups.parse(response.data);
+  }
 
-    return {
-      consensusAgree: hideGroupAnalysis ? [] : parsedData.consensusAgree,
-      consensusDisagree: hideGroupAnalysis ? [] : parsedData.consensusDisagree,
-      controversial: hideGroupAnalysis ? [] : parsedData.controversial,
-      polisClusters: hideGroupAnalysis ? {} : polisClusters,
-      hasVotedOnAllAvailableOpinions: parsedData.hasVotedOnAllAvailableOpinions,
-    };
+  async function fetchAnalysisFrameGroupLabels(params: {
+    conversationSlugId: string;
+    frameKey: AnalysisFrameKey;
+    freshness: AnalysisFreshnessRequest | null;
+  }): Promise<AnalysisFrameGroupLabels> {
+    const requestParams: ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest =
+      {
+        conversationSlugId: params.conversationSlugId,
+        frameKey: params.frameKey,
+        freshness: params.freshness,
+      };
+
+    if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost(
+          requestParams
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost(
+        requestParams,
+        createRawAxiosRequestConfig({
+          encodedUcan,
+          timeoutProfile: "extended",
+        })
+      );
+      return Dto.analysisFrameGroupLabels.parse(response.data);
+    }
+
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost(
+      requestParams,
+      createRawAxiosRequestConfig({ timeoutProfile: "extended" })
+    );
+    return Dto.analysisFrameGroupLabels.parse(response.data);
+  }
+
+  async function fetchAnalysisFrameOpinionList(params: {
+    conversationSlugId: string;
+    frameKey: AnalysisFrameKey;
+    kind: AnalysisFrameOpinionListKind;
+    freshness: AnalysisFreshnessRequest | null;
+  }): Promise<AnalysisFrameOpinionList> {
+    const requestParams: ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest =
+      {
+        conversationSlugId: params.conversationSlugId,
+        frameKey: params.frameKey,
+        kind: params.kind,
+        freshness: params.freshness,
+      };
+
+    if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameOpinionListByFramePost(
+          requestParams
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1OpinionFetchAnalysisFrameOpinionListByFramePost(
+        requestParams,
+        createRawAxiosRequestConfig({
+          encodedUcan,
+          timeoutProfile: "extended",
+        })
+      );
+      return Dto.analysisFrameOpinionList.parse(response.data);
+    }
+
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1OpinionFetchAnalysisFrameOpinionListByFramePost(
+      requestParams,
+      createRawAxiosRequestConfig({ timeoutProfile: "extended" })
+    );
+    return Dto.analysisFrameOpinionList.parse(response.data);
+  }
+
+  async function fetchAnalysisCheckpoints(params: {
+    conversationSlugId: string;
+  }): Promise<FetchAnalysisCheckpointsResponse> {
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1OpinionFetchAnalysisCheckpointsByConversationPost(
+      { conversationSlugId: params.conversationSlugId },
+      createRawAxiosRequestConfig({ timeoutProfile: "extended" })
+    );
+
+    return Dto.fetchAnalysisCheckpointsResponse.parse(response.data);
   }
 
   return {
     createNewComment,
     fetchCommentsForPost,
     fetchHiddenCommentsForPost,
+    fetchCommentStatsForPost,
     deleteCommentBySlugId,
     fetchOpinionsBySlugIdList,
-    fetchAnalysisData,
+    fetchAnalysisFrameManifest,
+    fetchAnalysisFrameGroups,
+    fetchAnalysisFrameGroupLabels,
+    fetchAnalysisFrameOpinionList,
+    fetchAnalysisCheckpoints,
   };
 }

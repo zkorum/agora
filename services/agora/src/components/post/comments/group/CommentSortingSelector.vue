@@ -1,18 +1,14 @@
 <template>
   <div>
-    <ZKButton button-type="standardButton" @click="showDialog = true">
-      <div class="buttonGrid gradientFont">
-        <div class="buttonItem">{{ currentFilterAlgorithm }}</div>
-
-        <div class="buttonItem">
-          <q-icon
-            name="mdi-chevron-down"
-            size="1.3rem"
-            class="iconStyle gradientFont"
-          />
-        </div>
-      </div>
-    </ZKButton>
+    <ZKDropdownSelectorButton
+      :label="currentFilterAlgorithm"
+      :accessibility-label="t('filterTitle')"
+      button-type="standardButton"
+      icon-name="mdi-chevron-down"
+      icon-size="1.3rem"
+      label-overflow="wrap"
+      @click="showDialog = true"
+    />
 
     <q-dialog v-model="showDialog" position="bottom">
       <ZKBottomDialogContainer :title="t('filterTitle')">
@@ -47,7 +43,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKDropdownSelectorButton from "src/components/ui-library/ZKDropdownSelectorButton.vue";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -144,17 +140,6 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
 </script>
 
 <style lang="scss" scoped>
-.gradientFont {
-  background-image: $gradient-hero;
-  color: transparent;
-  background-clip: text;
-}
-
-.iconStyle {
-  padding-bottom: 0rem;
-  padding-left: 0.2rem;
-}
-
 .optionListStyle {
   display: flex;
   flex-direction: column;
@@ -175,18 +160,4 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
   padding-left: 0.5rem;
 }
 
-.buttonGrid {
-  display: grid;
-  grid-template-columns: auto auto;
-  grid-template-rows: 1fr;
-  gap: 0px 0px;
-  grid-template-areas: ". .";
-}
-
-.buttonItem {
-  font-weight: var(--font-weight-medium);
-  display: flex;
-  align-items: center;
-  line-height: normal;
-}
 </style>

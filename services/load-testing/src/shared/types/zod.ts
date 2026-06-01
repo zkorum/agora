@@ -50,6 +50,24 @@ export const zodParticipationMode = z.enum([
     "guest",
 ]);
 export const zodConversationType = z.enum(["polis", "maxdiff"]);
+export const zodConversationViewSnapshotCheckpointReason = z.enum([
+    "first_displayable_analysis",
+    "first_group_count_available",
+    "default_group_count_changed",
+    "major_participation_milestone",
+    "major_vote_milestone",
+    "conversation_closed",
+]);
+export const zodPremiumFeature = z.enum([
+    "survey",
+    "event_ticket",
+    "analysis_variants",
+]);
+export const zodGrantablePremiumFeature = z.enum([
+    "survey",
+    "event_ticket",
+    "analysis_variants",
+]);
 export const zodParticipationBlockedReason = z.enum([
     "conversation_locked",
     "conversation_closed",
@@ -524,6 +542,7 @@ const zodSurveyQuestionBase = z
 const zodSurveyChoiceQuestionBase = zodSurveyQuestionBase
     .extend({
         choiceDisplay: zodSurveyChoiceDisplay,
+        isPublicAggregateSuppressionEnabled: z.boolean().optional().default(false),
         options: z.array(zodSurveyQuestionOption).min(2),
     })
     .strict();
@@ -711,6 +730,10 @@ export const zodSurveyAggregateRow = z
         count: z.number().int().nonnegative().optional(),
         percentage: z.number().min(0).max(100).optional(),
         isSuppressed: z.boolean(),
+        isPublicAggregateSuppressionEnabled: z
+            .boolean()
+            .optional()
+            .default(false),
         suppressionReason: zodSurveyAggregateSuppressionReason.optional(),
     })
     .strict();
@@ -750,13 +773,13 @@ export const zodSurveyAnswerDraft = z.discriminatedUnion("questionType", [
 export const zodSurveyAnswerSubmission = zodSurveyAnswerDraft;
 
 const zodSurveyQuestionFormItemFields = {
-        currentAnswer: zodSurveyAnswerDraft.optional(),
-        isPassed: z.boolean(),
-        isMissingRequired: z.boolean(),
-        isStale: z.boolean(),
-        isCurrentAnswerValid: z.boolean(),
-        currentSemanticVersion: z.number().int().positive(),
-        answeredQuestionSemanticVersion: z.number().int().positive().optional(),
+    currentAnswer: zodSurveyAnswerDraft.optional(),
+    isPassed: z.boolean(),
+    isMissingRequired: z.boolean(),
+    isStale: z.boolean(),
+    isCurrentAnswerValid: z.boolean(),
+    currentSemanticVersion: z.number().int().positive(),
+    answeredQuestionSemanticVersion: z.number().int().positive().optional(),
 } satisfies z.ZodRawShape;
 
 export const zodSurveyQuestionFormItem = z.discriminatedUnion("questionType", [
@@ -787,9 +810,17 @@ export const zodSurveyRouteResolution = z.discriminatedUnion("kind", [
         .strict(),
 ]);
 
+export const zodPreferredOpinionGroupCount = z
+    .number()
+    .int()
+    .min(2)
+    .max(6)
+    .nullable();
+
 export const zodConversationMetadata = z
     .object({
         conversationSlugId: zodSlugId,
+        conversationViewSnapshotId: z.number().int().positive().optional(),
         createdAt: zodDateTimeFlexible,
         updatedAt: zodDateTimeFlexible.optional(),
         lastReactedAt: zodDateTimeFlexible,
@@ -805,6 +836,8 @@ export const zodConversationMetadata = z
         participationMode: zodParticipationMode,
         conversationType: zodConversationType,
         isIndexed: z.boolean(),
+        aiLabelingEnabled: z.boolean(),
+        preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
         isClosed: z.boolean(),
         isEdited: z.boolean(),
         organization: zodOrganization.optional(),
@@ -818,6 +851,7 @@ export const zodConversationMetadataWithId = z
     .object({
         conversationId: z.number().int().nonnegative(),
         conversationSlugId: zodSlugId,
+        conversationViewSnapshotId: z.number().int().positive().optional(),
         createdAt: z.date(),
         updatedAt: z.date().optional(),
         lastReactedAt: z.date(),
@@ -833,6 +867,8 @@ export const zodConversationMetadataWithId = z
         participationMode: zodParticipationMode,
         conversationType: zodConversationType,
         isIndexed: z.boolean(),
+        aiLabelingEnabled: z.boolean(),
+        preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
         isClosed: z.boolean(),
         isEdited: z.boolean(),
         organization: zodOrganization.optional(),
@@ -852,6 +888,27 @@ export const zodConversationMetadataWithId = z
     })
     .strict();
 export const zodPolisKey = z.enum(["0", "1", "2", "3", "4", "5"]);
+export const zodAnalysisView = z.enum([
+    "facilitator_preference",
+    "auto",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+]);
+export const zodAnalysisViewOptionStatus = z.enum([
+    "recommended",
+    "available",
+    "discouraged",
+    "unavailable",
+    "locked",
+]);
+export const zodAnalysisViewOptionReason = z.enum([
+    "analysis_variants_not_available",
+    "fixed_group_count_unavailable",
+    "recommended_default_unavailable",
+]);
 
 // For API input validation - validates both HTML string length AND plain text character count
 export const zodOpinionContentInput = z
@@ -1553,6 +1610,16 @@ export type ExportRouteTarget = z.infer<typeof zodExportRouteTarget>;
 export type ImportRouteTarget = z.infer<typeof zodImportRouteTarget>;
 export type ClusterStats = z.infer<typeof zodClusterStats>;
 export type PolisKey = z.infer<typeof zodPolisKey>;
+export type AnalysisView = z.infer<typeof zodAnalysisView>;
+export type PreferredOpinionGroupCount = z.infer<
+    typeof zodPreferredOpinionGroupCount
+>;
+export type AnalysisViewOptionStatus = z.infer<
+    typeof zodAnalysisViewOptionStatus
+>;
+export type AnalysisViewOptionReason = z.infer<
+    typeof zodAnalysisViewOptionReason
+>;
 export type SupportedCountryCallingCode = z.infer<
     typeof zodSupportedCountryCallingCode
 >;
@@ -1613,6 +1680,13 @@ export type ProofData = z.infer<typeof zodProofData>;
 export type ZKProof = z.infer<typeof zodZKProof>;
 export type StatusResponse = z.infer<typeof zodStatusResponse>;
 export type ConversationType = z.infer<typeof zodConversationType>;
+export type ConversationViewSnapshotCheckpointReason = z.infer<
+    typeof zodConversationViewSnapshotCheckpointReason
+>;
+export type PremiumFeature = z.infer<typeof zodPremiumFeature>;
+export type GrantablePremiumFeature = z.infer<
+    typeof zodGrantablePremiumFeature
+>;
 
 // MaxDiff (Best-Worst Scaling) types
 export const zodMaxdiffComparison = z.object({

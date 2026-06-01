@@ -23,8 +23,11 @@
           />
 
           <div class="opinion-text">
-            <ZKHtmlContent
-              :html-body="opinionItem.opinion"
+            <AnalysisOpinionText
+              :opinion-item="opinionItem"
+              :post-slug-id="props.conversationSlugId"
+              :conversation-author-username="props.conversationAuthorUsername"
+              :conversation-organization-name="props.conversationOrganizationName"
               :compact-mode="false"
               :enable-links="true"
             />
@@ -176,7 +179,6 @@
 <script setup lang="ts">
 import OpinionIdentityCard from "src/components/post/comments/OpinionIdentityCard.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { AnalysisOpinionItem, PolisKey } from "src/shared/types/zod";
 import { calculatePercentage } from "src/shared/util";
@@ -185,6 +187,7 @@ import { formatClusterLabel } from "src/utils/component/opinion";
 import { useRouterNavigation } from "src/utils/router/navigation";
 import { computed } from "vue";
 
+import AnalysisOpinionText from "../common/AnalysisOpinionText.vue";
 import {
   type OpinionAnalysisDialogTranslations,
   opinionAnalysisDialogTranslations,
@@ -192,6 +195,8 @@ import {
 
 const props = defineProps<{
   conversationSlugId: string;
+  conversationAuthorUsername: string;
+  conversationOrganizationName: string;
   opinionItem: AnalysisOpinionItem;
   clusterLabels: Partial<Record<PolisKey, string>>;
 }>();

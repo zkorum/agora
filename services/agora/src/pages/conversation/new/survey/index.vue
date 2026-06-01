@@ -3,7 +3,10 @@
     <Teleport v-if="isActive && !isNavigatingAway" to="#page-header">
       <DefaultMenuBar :click-to-scroll-top="false">
         <template #left>
-          <BackButton :fallback-route="{ name: '/conversation/new/seed/' }" @click="handleBack" />
+          <BackButton
+            :fallback-route="{ name: '/conversation/new/seed/' }"
+            @click="handleBack"
+          />
         </template>
         <template #right>
           <PrimeButton
@@ -15,20 +18,27 @@
       </DefaultMenuBar>
     </Teleport>
 
-    <div class="container">
+    <div v-if="isSurveyCreationAllowed === true" class="container">
       <SurveyConfigEditor
         v-model:survey-config="surveyConfig"
         :texts="surveyEditorTexts"
         :display-language="locale"
-        :show-actions="isSurveyAllowed"
+        :show-actions="isSurveyCreationAllowed === true"
         :show-validation-errors="surveyValidationErrorMessage !== null"
         @clear-validation-error="clearSurveyValidationError"
       />
     </div>
+    <div v-else class="loading-container">
+      <q-spinner size="2rem" />
+    </div>
 
     <NewConversationRouteGuard
       ref="routeGuard"
-      :allowed-routes="['/conversation/new/create/', '/conversation/new/seed/', '/welcome/']"
+      :allowed-routes="[
+        '/conversation/new/create/',
+        '/conversation/new/seed/',
+        '/welcome/',
+      ]"
       :has-unsaved-changes="isDraftModified"
       :reset-draft="resetDraft"
     />
@@ -51,13 +61,9 @@ import NewConversationLayout from "src/components/newConversation/NewConversatio
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import SurveyConfigEditor from "src/components/survey/SurveyConfigEditor.vue";
 import { useConversationDraft } from "src/composables/conversation/draft";
+import { useCreateSurveyAccess } from "src/composables/conversation/useCreateSurveyAccess";
 import { usePublishConversationDraft } from "src/composables/conversation/usePublishConversationDraft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  checkFeatureAccess,
-  DEFAULT_FEATURE_ALLOWED_ORGS,
-  DEFAULT_FEATURE_ALLOWED_USERS,
-} from "src/shared-app-api/featureAccess";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
@@ -65,7 +71,6 @@ import {
   isHistoryBackToPath,
   navigateBackOrReplace,
 } from "src/utils/nav/historyBack";
-import { processEnv } from "src/utils/processEnv";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -81,7 +86,7 @@ defineOptions({
 });
 
 const router = useRouter();
-const { isLoggedIn, userId } = storeToRefs(useAuthenticationStore());
+const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { t, locale } = useComponentI18n<ConversationSurveyStepTranslations>(
   conversationSurveyStepTranslations
 );
@@ -97,22 +102,9 @@ const showLoginDialog = ref(false);
 const isSubmitButtonLoading = ref(false);
 const isNavigatingAway = ref(false);
 const surveyValidationErrorMessage = ref<string | null>(null);
+const { isSurveyCreationAllowed, refreshSurveyCreationAccess } =
+  useCreateSurveyAccess();
 
-const isSurveyAllowed = computed(() => {
-  const result = checkFeatureAccess({
-    featureEnabled: processEnv.VITE_SURVEY_ENABLED === "true",
-    isOrgOnly: processEnv.VITE_IS_SURVEY_ORG_ONLY === "true",
-    allowedOrgs:
-      processEnv.VITE_SURVEY_ALLOWED_ORGS ?? DEFAULT_FEATURE_ALLOWED_ORGS,
-    allowedUsers:
-      processEnv.VITE_SURVEY_ALLOWED_USERS ?? DEFAULT_FEATURE_ALLOWED_USERS,
-    postAsOrganization: conversationDraft.value.postAs.postAsOrganization,
-    organizationName: conversationDraft.value.postAs.organizationName,
-    userId: userId.value ?? "",
-  });
-
-  return result.allowed;
-});
 const surveyEditorTexts = computed(() => ({
   title: t("pageTitle"),
   description: t("pageDescription"),
@@ -154,14 +146,6 @@ const surveyEditorTexts = computed(() => ({
   }) => t("largeOptionCountWarning", { count, threshold }),
 }));
 
-onMounted(async () => {
-  if (!isSurveyAllowed.value) {
-    routeGuard.value?.unlockRoute();
-    isNavigatingAway.value = true;
-    await router.replace({ name: "/conversation/new/seed/" });
-  }
-});
-
 function clearSurveyValidationError(): void {
   surveyValidationErrorMessage.value = null;
 }
@@ -173,6 +157,17 @@ function showSurveyValidationError(): void {
 function onLoginCallback() {
   createNewConversationIntention();
 }
+
+onMounted(async () => {
+  const canCreateSurvey = await refreshSurveyCreationAccess();
+
+  if (!canCreateSurvey) {
+    surveyConfig.value = null;
+    routeGuard.value?.unlockRoute();
+    isNavigatingAway.value = true;
+    await router.replace({ name: "/conversation/new/seed/" });
+  }
+});
 
 async function handleBack(event: MouseEvent): Promise<void> {
   event.preventDefault();
@@ -203,6 +198,15 @@ async function publishConversation(): Promise<void> {
     return;
   }
 
+  const canCreateSurvey = await refreshSurveyCreationAccess();
+  if (!canCreateSurvey) {
+    surveyConfig.value = null;
+    routeGuard.value?.unlockRoute();
+    isNavigatingAway.value = true;
+    await router.replace({ name: "/conversation/new/seed/" });
+    return;
+  }
+
   isSubmitButtonLoading.value = true;
 
   const wasPublished = await publishConversationDraft({
@@ -230,5 +234,11 @@ async function publishConversation(): Promise<void> {
   gap: 1rem;
   padding-bottom: 1rem;
   padding-top: 0.5rem;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
 }
 </style>

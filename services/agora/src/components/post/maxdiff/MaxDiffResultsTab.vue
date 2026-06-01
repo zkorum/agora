@@ -159,6 +159,7 @@ import ShortcutBar from "src/components/post/analysis/shortcutBar/ShortcutBar.vu
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import type { RegisterChildRefreshHandler } from "src/composables/conversation/useConversationParentState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTabNavigation } from "src/composables/ui/useTabNavigation";
 import type { ExtendedConversation } from "src/shared/types/zod";
@@ -166,7 +167,7 @@ import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import { useMaxDiffLoadQuery } from "src/utils/api/maxdiff/useMaxDiffQueries";
 import type { MaxDiffShortcutItem } from "src/utils/component/analysis/maxdiffShortcutBar";
 import { maxdiffShortcutItemSchema } from "src/utils/component/analysis/maxdiffShortcutBar";
-import { computed, inject, onActivated, onMounted, ref, watch } from "vue";
+import { computed, inject, onActivated, onDeactivated, onMounted, onUnmounted, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 import { useRoute } from "vue-router";
 
@@ -232,14 +233,16 @@ function onTabChange(value: string): void {
 }
 
 // Inject parent refresh handler (same pattern as ConversationAnalysisTab)
-const registerChildRefreshHandler = inject<
-  (handler: () => Promise<void>) => void
->(
+const registerChildRefreshHandler = inject<RegisterChildRefreshHandler>(
   "registerChildRefreshHandler",
   () => {
     /* noop */
+    return () => {
+      /* noop */
+    };
   },
 );
+let unregisterChildRefreshHandler: (() => void) | undefined;
 
 const isGitHubLinked =
   props.conversationData.metadata.externalSourceConfig !== null;
@@ -419,9 +422,19 @@ async function handleChildRefresh(): Promise<void> {
   ]);
 }
 
+function registerRefreshHandler(): void {
+  unregisterChildRefreshHandler?.();
+  unregisterChildRefreshHandler = registerChildRefreshHandler(handleChildRefresh);
+}
+
+function unregisterRefreshHandler(): void {
+  unregisterChildRefreshHandler?.();
+  unregisterChildRefreshHandler = undefined;
+}
+
 // Register on initial setup and re-register on KeepAlive reactivation
 // (whichever tab activates last must own the handler)
-registerChildRefreshHandler(handleChildRefresh);
+registerRefreshHandler();
 
 const hasInitiallyLoaded = ref(false);
 
@@ -434,10 +447,14 @@ onMounted(async () => {
 // Silently refresh data when reactivated from KeepAlive (tab switch back)
 // Shows stale cached data immediately, then updates in background
 onActivated(async () => {
-  registerChildRefreshHandler(handleChildRefresh);
+  registerRefreshHandler();
   if (!hasInitiallyLoaded.value) return;
   await handleChildRefresh();
 });
+
+onDeactivated(unregisterRefreshHandler);
+
+onUnmounted(unregisterRefreshHandler);
 
 watch(currentTab, async (newTab, oldTab) => {
   if (oldTab === "Summary" && newTab !== "Summary") {

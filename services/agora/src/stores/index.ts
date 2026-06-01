@@ -12,6 +12,7 @@ import type { useNavigationStore } from "./navigation";
 import type { useNewPostDraftsStore } from "./newConversationDrafts";
 import type { useNewOpinionDraftsStore } from "./newOpinionDrafts";
 import type { useNotificationStore } from "./notification";
+import type { useOpinionUpdatesStore } from "./opinionUpdates";
 import type { useTopicStore } from "./topic";
 import type { useUserStore } from "./user";
 
@@ -37,6 +38,7 @@ type AllStoresState = {
   newOpinionDrafts: ReturnType<typeof useNewOpinionDraftsStore>;
   homeFeed: ReturnType<typeof useHomeFeedStore>;
   notification: ReturnType<typeof useNotificationStore>;
+  opinionUpdates: ReturnType<typeof useOpinionUpdatesStore>;
   topic: ReturnType<typeof useTopicStore>;
   navigation: ReturnType<typeof useNavigationStore>;
   language: ReturnType<typeof useLanguageStore>;

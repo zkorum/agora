@@ -30,11 +30,17 @@
 
       <template #body>
         <div v-if="!compactMode" class="statistical-subtitle">
-          {{ props.direction === "agree" ? t("subtitleAgree") : t("subtitleDisagree") }}
+          {{
+            props.direction === "agree"
+              ? t("subtitleAgree")
+              : t("subtitleDisagree")
+          }}
         </div>
 
         <VoteLegend
-          v-if="representativeItems.length > 0 && Object.keys(clusters).length > 1"
+          v-if="
+            representativeItems.length > 0 && Object.keys(clusters).length > 1
+          "
           :items="analysisLegendItems"
         />
 
@@ -47,42 +53,63 @@
           :message="emptyMessage"
         />
 
-        <template v-if="props.itemList.length > 0 && Object.keys(props.clusters).length > 1">
-          <ConsensusItem
-            v-for="consensusItem in representativeItems"
-            :key="consensusItem.opinion"
-            :conversation-slug-id="props.conversationSlugId"
-            :opinion-item="consensusItem"
-            :opinion-item-for-visualizer="consensusItem"
-            :cluster-labels="props.clusterLabels"
-          />
-
-          <div
-            v-if="additionalItems.length > 0"
-            class="reliability-divider"
+        <template
+          v-if="
+            props.itemList.length > 0 && Object.keys(props.clusters).length > 1
+          "
+        >
+          <TransitionGroup
+            name="analysis-statement"
+            tag="div"
+            class="analysis-statement-list"
           >
+            <div
+              v-for="consensusItem in representativeItems"
+              :key="consensusItem.opinionSlugId"
+              class="analysis-statement-list__item"
+            >
+              <ConsensusItem
+                :conversation-slug-id="props.conversationSlugId"
+                :conversation-author-username="props.conversationAuthorUsername"
+                :conversation-organization-name="
+                  props.conversationOrganizationName
+                "
+                :opinion-item="consensusItem"
+                :opinion-item-for-visualizer="consensusItem"
+                :cluster-labels="props.clusterLabels"
+              />
+            </div>
+          </TransitionGroup>
+
+          <div v-if="additionalItems.length > 0" class="reliability-divider">
             <span>{{ t("lowerRankedDivider") }}</span>
           </div>
 
-          <div
-            v-for="consensusItem in additionalItems"
-            :key="consensusItem.opinion"
-            class="muted-item"
+          <TransitionGroup
+            name="analysis-statement"
+            tag="div"
+            class="analysis-statement-list"
           >
-            <ConsensusItem
-              :conversation-slug-id="props.conversationSlugId"
-              :opinion-item="consensusItem"
-              :opinion-item-for-visualizer="consensusItem"
-              :cluster-labels="props.clusterLabels"
-            />
-          </div>
+            <div
+              v-for="consensusItem in additionalItems"
+              :key="consensusItem.opinionSlugId"
+              class="analysis-statement-list__item muted-item"
+            >
+              <ConsensusItem
+                :conversation-slug-id="props.conversationSlugId"
+                :conversation-author-username="props.conversationAuthorUsername"
+                :conversation-organization-name="
+                  props.conversationOrganizationName
+                "
+                :opinion-item="consensusItem"
+                :opinion-item-for-visualizer="consensusItem"
+                :cluster-labels="props.clusterLabels"
+              />
+            </div>
+          </TransitionGroup>
 
           <button
-            v-if="
-              !compactMode &&
-              remainingCount > 0 &&
-              !hasLoadedMore
-            "
+            v-if="!compactMode && remainingCount > 0 && !hasLoadedMore"
             class="load-more-button"
             @click="handleLoadMore"
           >
@@ -103,7 +130,9 @@
       :cancel-text="tWarning('cancelButton')"
       @confirm="hasLoadedMore = true"
     >
-      {{ warningDescriptionParts[0] }}<em>{{ tWarning('descriptionEmphasis') }}</em>{{ warningDescriptionParts[1] }}
+      {{ warningDescriptionParts[0]
+      }}<em>{{ tWarning("descriptionEmphasis") }}</em
+      >{{ warningDescriptionParts[1] }}
     </ZKConfirmDialog>
   </div>
 </template>
@@ -143,6 +172,8 @@ import {
 
 const props = defineProps<{
   conversationSlugId: string;
+  conversationAuthorUsername: string;
+  conversationOrganizationName: string;
   direction: "agree" | "disagree";
   itemList: AnalysisOpinionItem[];
   compactMode: boolean;
@@ -178,9 +209,7 @@ const keywordColor = computed(() =>
 const showInfoDialog = ref(false);
 
 const shortTitle = computed(() =>
-  props.direction === "agree"
-    ? t("agreementsTitle")
-    : t("disagreementsTitle")
+  props.direction === "agree" ? t("agreementsTitle") : t("disagreementsTitle")
 );
 
 const keyword = computed(() =>
@@ -260,6 +289,48 @@ function switchTab() {
 
 .muted-item {
   opacity: 0.55;
+}
+
+.analysis-statement-list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.analysis-statement-list__item {
+  width: 100%;
+}
+
+.analysis-statement-move,
+.analysis-statement-enter-active,
+.analysis-statement-leave-active {
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease;
+}
+
+.analysis-statement-enter-from,
+.analysis-statement-leave-to {
+  opacity: 0;
+  transform: translateY(0.35rem) scale(0.985);
+}
+
+.analysis-statement-leave-active {
+  position: absolute;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analysis-statement-move,
+  .analysis-statement-enter-active,
+  .analysis-statement-leave-active {
+    transition: opacity 120ms ease;
+  }
+
+  .analysis-statement-enter-from,
+  .analysis-statement-leave-to {
+    transform: none;
+  }
 }
 
 .load-more-button {

@@ -210,7 +210,8 @@ export async function checkConversationParticipation({
     skipLockCheck?: boolean;
     skipClosedCheck?: boolean;
 }): Promise<CheckConversationParticipationResult> {
-    const { getPostMetadataFromSlugId, isConversationIdLocked } = useCommonPost();
+    const { getPostMetadataFromSlugId, isConversationIdLocked } =
+        useCommonPost();
     const metadata = await getPostMetadataFromSlugId({
         db,
         conversationSlugId,
@@ -283,12 +284,11 @@ export async function checkConversationParticipation({
             conversationId: metadata.id,
             participantId,
         });
-        const surveyBlockedReason = getParticipationBlockedReasonFromSurveyGateStatus(
-            {
+        const surveyBlockedReason =
+            getParticipationBlockedReasonFromSurveyGateStatus({
                 surveyGateStatus: surveyGate.status,
                 isOptional: surveyGate.isOptional,
-            },
-        );
+            });
         if (surveyBlockedReason !== undefined) {
             return {
                 success: false,
@@ -298,18 +298,23 @@ export async function checkConversationParticipation({
     }
 
     if (participantId === undefined) {
-        if (!requiresRegisteredLoggedInUser({
-            participationMode: metadata.participationMode,
-        })) {
-            participantId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
-                db,
-                didWrite,
+        if (
+            !requiresRegisteredLoggedInUser({
                 participationMode: metadata.participationMode,
-                userAgent,
-                now,
-            });
+            })
+        ) {
+            participantId =
+                await authUtilService.getOrRegisterUserIdFromDeviceStatus({
+                    db,
+                    didWrite,
+                    participationMode: metadata.participationMode,
+                    userAgent,
+                    now,
+                });
         } else {
-            throw httpErrors.unauthorized("Device is not authorized to participate");
+            throw httpErrors.unauthorized(
+                "Device is not authorized to participate",
+            );
         }
     }
 

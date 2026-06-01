@@ -20,6 +20,9 @@ export interface EditConversationTranslations {
   loadingErrorMessage: string;
   createSurveyButton: string;
   editSurveyButton: string;
+  premiumEditRestrictedBanner: string;
+  premiumAccessExpiredError: string;
+  premiumAccessRequiredError: string;
 }
 
 export const editConversationTranslations: Record<
@@ -33,13 +36,13 @@ export const editConversationTranslations: Record<
     updateSuccess: "Conversation updated successfully",
     updateError: "Failed to update conversation",
     notFoundError: "Conversation not found",
-    notAuthorError: "You are not the author of this conversation",
+    notAuthorError: "You are not the facilitator of this conversation",
     conversationLockedError: "This conversation is locked and cannot be edited",
     notFoundErrorTitle: "Conversation not found",
     notFoundErrorMessage: "Failed to load conversation",
-    notAuthorErrorTitle: "You are not the author of this conversation",
+    notAuthorErrorTitle: "You are not the facilitator of this conversation",
     notAuthorErrorMessage:
-      "Only the original author can edit this conversation",
+      "Only the facilitator can edit this conversation",
     conversationLockedErrorTitle:
       "This conversation is locked and cannot be edited",
     conversationLockedErrorMessage:
@@ -50,6 +53,10 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "An error occurred while loading the conversation",
     createSurveyButton: "Create survey",
     editSurveyButton: "Edit survey",
+    premiumEditRestrictedBanner:
+      "Premium access has expired. You can still update normal settings, but premium content changes are disabled.",
+    premiumAccessExpiredError: "Premium access has expired for this change.",
+    premiumAccessRequiredError: "This setting is not available with your current plan.",
   },
   fr: {
     saveButton: "Enregistrer",
@@ -58,14 +65,14 @@ export const editConversationTranslations: Record<
     updateSuccess: "Conversation mise à jour avec succès",
     updateError: "Échec de la mise à jour de la conversation",
     notFoundError: "Conversation introuvable",
-    notAuthorError: "Vous n'êtes pas l'auteur de cette conversation",
+    notAuthorError: "Vous n'êtes pas le facilitateur de cette conversation",
     conversationLockedError:
       "Cette conversation est verrouillée et ne peut pas être modifiée",
     notFoundErrorTitle: "Conversation introuvable",
     notFoundErrorMessage: "Échec du chargement de la conversation",
-    notAuthorErrorTitle: "Vous n'êtes pas l'auteur de cette conversation",
+    notAuthorErrorTitle: "Vous n'êtes pas le facilitateur de cette conversation",
     notAuthorErrorMessage:
-      "Seul l'auteur original peut modifier cette conversation",
+      "Seul le facilitateur peut modifier cette conversation",
     conversationLockedErrorTitle:
       "Cette conversation est verrouillée et ne peut pas être modifiée",
     conversationLockedErrorMessage:
@@ -77,6 +84,10 @@ export const editConversationTranslations: Record<
       "Une erreur s'est produite lors du chargement de la conversation",
     createSurveyButton: "Créer un questionnaire",
     editSurveyButton: "Modifier le questionnaire",
+    premiumEditRestrictedBanner:
+      "L'accès premium a expiré. Vous pouvez toujours modifier les paramètres standards, mais les changements de contenu premium sont désactivés.",
+    premiumAccessExpiredError: "L'accès premium a expiré pour ce changement.",
+    premiumAccessRequiredError: "Ce paramètre n'est pas disponible avec votre offre actuelle.",
   },
   es: {
     saveButton: "Guardar",
@@ -85,14 +96,14 @@ export const editConversationTranslations: Record<
     updateSuccess: "Conversación actualizada exitosamente",
     updateError: "Error al actualizar la conversación",
     notFoundError: "Conversación no encontrada",
-    notAuthorError: "No eres el autor de esta conversación",
+    notAuthorError: "No eres el facilitador de esta conversación",
     conversationLockedError:
       "Esta conversación está bloqueada y no se puede editar",
     notFoundErrorTitle: "Conversación no encontrada",
     notFoundErrorMessage: "Error al cargar la conversación",
-    notAuthorErrorTitle: "No eres el autor de esta conversación",
+    notAuthorErrorTitle: "No eres el facilitador de esta conversación",
     notAuthorErrorMessage:
-      "Solo el autor original puede editar esta conversación",
+      "Solo el facilitador puede editar esta conversación",
     conversationLockedErrorTitle:
       "Esta conversación está bloqueada y no se puede editar",
     conversationLockedErrorMessage:
@@ -103,6 +114,10 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "Ocurrió un error al cargar la conversación",
     createSurveyButton: "Crear encuesta",
     editSurveyButton: "Editar encuesta",
+    premiumEditRestrictedBanner:
+      "El acceso premium expiró. Todavía puede actualizar la configuración normal, pero los cambios de contenido premium están deshabilitados.",
+    premiumAccessExpiredError: "El acceso premium expiró para este cambio.",
+    premiumAccessRequiredError: "Esta configuración no está disponible con tu plan actual.",
   },
   fa: {
     saveButton: "ذخیره",
@@ -111,12 +126,12 @@ export const editConversationTranslations: Record<
     updateSuccess: "گفتگو با موفقیت به‌روزرسانی شد",
     updateError: "به‌روزرسانی گفتگو ناموفق بود",
     notFoundError: "گفتگو یافت نشد",
-    notAuthorError: "شما نویسنده این گفتگو نیستید",
+    notAuthorError: "شما تسهیل‌گر این گفتگو نیستید",
     conversationLockedError: "این گفتگو قفل شده و قابل ویرایش نیست",
     notFoundErrorTitle: "گفتگو یافت نشد",
     notFoundErrorMessage: "بارگذاری گفتگو ناموفق بود",
-    notAuthorErrorTitle: "شما نویسنده این گفتگو نیستید",
-    notAuthorErrorMessage: "فقط نویسنده اصلی می‌تواند این گفتگو را ویرایش کند",
+    notAuthorErrorTitle: "شما تسهیل‌گر این گفتگو نیستید",
+    notAuthorErrorMessage: "فقط تسهیل‌گر می‌تواند این گفتگو را ویرایش کند",
     conversationLockedErrorTitle: "این گفتگو قفل شده و قابل ویرایش نیست",
     conversationLockedErrorMessage:
       "در صورت نیاز به باز کردن قفل این گفتگو، لطفاً با مدیر محتوا تماس بگیرید",
@@ -126,6 +141,10 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "هنگام بارگذاری گفتگو خطایی رخ داد",
     createSurveyButton: "ایجاد نظرسنجی",
     editSurveyButton: "ویرایش نظرسنجی",
+    premiumEditRestrictedBanner:
+      "دسترسی ویژه منقضی شده است. هنوز می‌توانید تنظیمات عادی را تغییر دهید، اما تغییرات محتوای ویژه غیرفعال است.",
+    premiumAccessExpiredError: "دسترسی ویژه برای این تغییر منقضی شده است.",
+    premiumAccessRequiredError: "این تنظیم در طرح فعلی شما در دسترس نیست.",
   },
   he: {
     saveButton: "שמור",
@@ -134,12 +153,12 @@ export const editConversationTranslations: Record<
     updateSuccess: "השיחה עודכנה בהצלחה",
     updateError: "עדכון השיחה נכשל",
     notFoundError: "השיחה לא נמצאה",
-    notAuthorError: "אינך המחבר/ת של שיחה זו",
+    notAuthorError: "אינך המנחה של שיחה זו",
     conversationLockedError: "שיחה זו נעולה ולא ניתן לערוך אותה",
     notFoundErrorTitle: "השיחה לא נמצאה",
     notFoundErrorMessage: "טעינת השיחה נכשלה",
-    notAuthorErrorTitle: "אינך המחבר/ת של שיחה זו",
-    notAuthorErrorMessage: "רק המחבר/ת המקורי/ת יכול/ה לערוך שיחה זו",
+    notAuthorErrorTitle: "אינך המנחה של שיחה זו",
+    notAuthorErrorMessage: "רק המנחה יכול/ה לערוך שיחה זו",
     conversationLockedErrorTitle: "שיחה זו נעולה ולא ניתן לערוך אותה",
     conversationLockedErrorMessage:
       "אנא פנו למנהל/ת התוכן אם יש צורך לפתוח את נעילת שיחה זו",
@@ -149,6 +168,10 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "אירעה שגיאה בעת טעינת השיחה",
     createSurveyButton: "יצירת סקר",
     editSurveyButton: "עריכת סקר",
+    premiumEditRestrictedBanner:
+      "גישת הפרימיום פגה. עדיין ניתן לעדכן הגדרות רגילות, אך שינויי תוכן פרימיום מושבתים.",
+    premiumAccessExpiredError: "גישת הפרימיום פגה עבור שינוי זה.",
+    premiumAccessRequiredError: "הגדרה זו אינה זמינה בתוכנית הנוכחית שלך.",
   },
   "zh-Hans": {
     saveButton: "保存",
@@ -157,12 +180,12 @@ export const editConversationTranslations: Record<
     updateSuccess: "对话更新成功",
     updateError: "更新对话失败",
     notFoundError: "未找到对话",
-    notAuthorError: "你不是此对话的作者",
+    notAuthorError: "你不是此对话的主持人",
     conversationLockedError: "此对话已锁定，无法编辑",
     notFoundErrorTitle: "未找到对话",
     notFoundErrorMessage: "加载对话失败",
-    notAuthorErrorTitle: "你不是此对话的作者",
-    notAuthorErrorMessage: "只有原作者可以编辑此对话",
+    notAuthorErrorTitle: "你不是此对话的主持人",
+    notAuthorErrorMessage: "只有主持人可以编辑此对话",
     conversationLockedErrorTitle: "此对话已锁定，无法编辑",
     conversationLockedErrorMessage: "如需解锁此对话，请联系管理员",
     invalidAccessSettingsError: "访问设置无效。私人对话不能要求登录。",
@@ -170,6 +193,10 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "加载对话时发生错误",
     createSurveyButton: "创建问卷",
     editSurveyButton: "编辑问卷",
+    premiumEditRestrictedBanner:
+      "高级访问权限已到期。您仍可更新常规设置，但高级内容更改已禁用。",
+    premiumAccessExpiredError: "此更改的高级访问权限已到期。",
+    premiumAccessRequiredError: "此设置不适用于您当前的计划。",
   },
   "zh-Hant": {
     saveButton: "儲存",
@@ -178,12 +205,12 @@ export const editConversationTranslations: Record<
     updateSuccess: "對話更新成功",
     updateError: "更新對話失敗",
     notFoundError: "未找到對話",
-    notAuthorError: "你不是此對話的作者",
+    notAuthorError: "你不是此對話的主持人",
     conversationLockedError: "此對話已鎖定，無法編輯",
     notFoundErrorTitle: "未找到對話",
     notFoundErrorMessage: "載入對話失敗",
-    notAuthorErrorTitle: "你不是此對話的作者",
-    notAuthorErrorMessage: "只有原作者可以編輯此對話",
+    notAuthorErrorTitle: "你不是此對話的主持人",
+    notAuthorErrorMessage: "只有主持人可以編輯此對話",
     conversationLockedErrorTitle: "此對話已鎖定，無法編輯",
     conversationLockedErrorMessage: "如需解鎖此對話，請聯絡管理員",
     invalidAccessSettingsError: "存取設定無效。私人對話不能要求登入。",
@@ -191,6 +218,10 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "載入對話時發生錯誤",
     createSurveyButton: "建立問卷",
     editSurveyButton: "編輯問卷",
+    premiumEditRestrictedBanner:
+      "進階存取權已到期。你仍可更新一般設定，但進階內容變更已停用。",
+    premiumAccessExpiredError: "此變更的進階存取權已到期。",
+    premiumAccessRequiredError: "此設定不適用於你目前的方案。",
   },
   ja: {
     saveButton: "保存",
@@ -199,12 +230,12 @@ export const editConversationTranslations: Record<
     updateSuccess: "会話が正常に更新されました",
     updateError: "会話の更新に失敗しました",
     notFoundError: "会話が見つかりません",
-    notAuthorError: "あなたはこの会話の作成者ではありません",
+    notAuthorError: "あなたはこの会話のファシリテーターではありません",
     conversationLockedError: "この会話はロックされており、編集できません",
     notFoundErrorTitle: "会話が見つかりません",
     notFoundErrorMessage: "会話の読み込みに失敗しました",
-    notAuthorErrorTitle: "あなたはこの会話の作成者ではありません",
-    notAuthorErrorMessage: "元の作成者のみがこの会話を編集できます",
+    notAuthorErrorTitle: "あなたはこの会話のファシリテーターではありません",
+    notAuthorErrorMessage: "ファシリテーターのみがこの会話を編集できます",
     conversationLockedErrorTitle: "この会話はロックされており、編集できません",
     conversationLockedErrorMessage:
       "この会話のロックを解除する必要がある場合は、モデレーターにお問い合わせください",
@@ -214,6 +245,11 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "会話の読み込み中にエラーが発生しました",
     createSurveyButton: "アンケートを作成",
     editSurveyButton: "アンケートを編集",
+    premiumEditRestrictedBanner:
+      "プレミアムアクセスの期限が切れました。通常設定は引き続き更新できますが、プレミアムコンテンツの変更は無効です。",
+    premiumAccessExpiredError:
+      "この変更のプレミアムアクセスの期限が切れました。",
+    premiumAccessRequiredError: "この設定は現在のプランでは利用できません。",
   },
   ar: {
     saveButton: "حفظ",
@@ -222,12 +258,12 @@ export const editConversationTranslations: Record<
     updateSuccess: "تم تحديث المحادثة بنجاح",
     updateError: "فشل تحديث المحادثة",
     notFoundError: "لم يتم العثور على المحادثة",
-    notAuthorError: "أنت لست مؤلف هذه المحادثة",
+    notAuthorError: "أنت لست ميسر هذه المحادثة",
     conversationLockedError: "هذه المحادثة مقفلة ولا يمكن تعديلها",
     notFoundErrorTitle: "لم يتم العثور على المحادثة",
     notFoundErrorMessage: "فشل تحميل المحادثة",
-    notAuthorErrorTitle: "أنت لست مؤلف هذه المحادثة",
-    notAuthorErrorMessage: "يمكن للمؤلف الأصلي فقط تعديل هذه المحادثة",
+    notAuthorErrorTitle: "أنت لست ميسر هذه المحادثة",
+    notAuthorErrorMessage: "يمكن للميسر فقط تعديل هذه المحادثة",
     conversationLockedErrorTitle: "هذه المحادثة مقفلة ولا يمكن تعديلها",
     conversationLockedErrorMessage:
       "يرجى الاتصال بمشرف إذا كنت بحاجة إلى إلغاء قفل هذه المحادثة",
@@ -237,6 +273,10 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "حدث خطأ أثناء تحميل المحادثة",
     createSurveyButton: "إنشاء استبيان",
     editSurveyButton: "تعديل الاستبيان",
+    premiumEditRestrictedBanner:
+      "انتهت صلاحية الوصول المميز. لا يزال بإمكانك تحديث الإعدادات العادية، لكن تغييرات المحتوى المميز معطلة.",
+    premiumAccessExpiredError: "انتهت صلاحية الوصول المميز لهذا التغيير.",
+    premiumAccessRequiredError: "هذا الإعداد غير متاح في خطتك الحالية.",
   },
   ky: {
     saveButton: "Сактоо",
@@ -245,12 +285,12 @@ export const editConversationTranslations: Record<
     updateSuccess: "Талкуу ийгиликтүү жаңыланды",
     updateError: "Талкууну жаңылоо ишке ашкан жок",
     notFoundError: "Талкуу табылган жок",
-    notAuthorError: "Сиз бул талкуунун автору эмессиз",
+    notAuthorError: "Сиз бул талкуунун фасилитатору эмессиз",
     conversationLockedError: "Бул талкуу кулпуланган жана түзөтүлбөйт",
     notFoundErrorTitle: "Талкуу табылган жок",
     notFoundErrorMessage: "Талкууну жүктөө ишке ашкан жок",
-    notAuthorErrorTitle: "Сиз бул талкуунун автору эмессиз",
-    notAuthorErrorMessage: "Бул талкууну баштапкы автору гана түзөтө алат",
+    notAuthorErrorTitle: "Сиз бул талкуунун фасилитатору эмессиз",
+    notAuthorErrorMessage: "Бул талкууну фасилитатор гана түзөтө алат",
     conversationLockedErrorTitle: "Бул талкуу кулпуланган жана түзөтүлбөйт",
     conversationLockedErrorMessage:
       "Бул талкуунун кулпусун ачуу керек болсо, модераторго кайрылыңыз",
@@ -260,6 +300,10 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "Талкууну жүктөөдө ката кетти",
     createSurveyButton: "Сурамжылоо түзүү",
     editSurveyButton: "Сурамжылоону түзөтүү",
+    premiumEditRestrictedBanner:
+      "Premium access has expired. You can still update normal settings, but premium content changes are disabled.",
+    premiumAccessExpiredError: "Premium access has expired for this change.",
+    premiumAccessRequiredError: "This setting is not available with your current plan.",
   },
   ru: {
     saveButton: "Сохранить",
@@ -268,14 +312,14 @@ export const editConversationTranslations: Record<
     updateSuccess: "Обсуждение успешно обновлено",
     updateError: "Не удалось обновить обсуждение",
     notFoundError: "Обсуждение не найдено",
-    notAuthorError: "Вы не являетесь автором этого обсуждения",
+    notAuthorError: "Вы не являетесь фасилитатором этого обсуждения",
     conversationLockedError:
       "Это обсуждение заблокировано и не может быть отредактировано",
     notFoundErrorTitle: "Обсуждение не найдено",
     notFoundErrorMessage: "Не удалось загрузить обсуждение",
-    notAuthorErrorTitle: "Вы не являетесь автором этого обсуждения",
+    notAuthorErrorTitle: "Вы не являетесь фасилитатором этого обсуждения",
     notAuthorErrorMessage:
-      "Только автор может редактировать это обсуждение",
+      "Только фасилитатор может редактировать это обсуждение",
     conversationLockedErrorTitle:
       "Это обсуждение заблокировано и не может быть отредактировано",
     conversationLockedErrorMessage:
@@ -286,5 +330,9 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "Произошла ошибка при загрузке обсуждения",
     createSurveyButton: "Создать опрос",
     editSurveyButton: "Редактировать опрос",
+    premiumEditRestrictedBanner:
+      "Премиум-доступ истёк. Вы всё ещё можете менять обычные настройки, но изменения премиум-контента отключены.",
+    premiumAccessExpiredError: "Премиум-доступ для этого изменения истёк.",
+    premiumAccessRequiredError: "Эта настройка недоступна на вашем текущем плане.",
   },
 };

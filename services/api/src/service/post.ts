@@ -17,6 +17,7 @@ import type {
     ExtendedConversation,
     ExternalSourceConfig,
     ParticipationMode,
+    PreferredOpinionGroupCount,
     SurveyConfig,
 } from "@/shared/types/zod.js";
 import type {
@@ -28,7 +29,6 @@ import { postNewOpinion } from "./comment.js";
 import { createMaxdiffItem } from "./maxdiffItem.js";
 import type { ConversationIds } from "@/utils/dataStructure.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
-import type { VoteBuffer } from "./voteBuffer.js";
 import { deleteAllConversationExports } from "@/service/conversationExport/index.js";
 import * as authUtilService from "@/service/authUtil.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
@@ -37,25 +37,28 @@ import {
     setSurveyConfigForConversation,
     warmSurveyTranslationsForConversation,
 } from "@/service/survey.js";
+import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
 import { isConversationOwner } from "@/service/conversationAccess.js";
+import { createConversationViewSnapshotsFromCurrentState } from "@/service/conversationViewSnapshot.js";
+import { queueConversationSettingsUpdatedEvent } from "@/service/realtimeEventOutbox.js";
 
 const MAX_CONVERSATION_SEED_ITEMS = 50;
 
 interface CreateNewPostProps {
     db: PostgresDatabase;
-    voteBuffer: VoteBuffer;
     conversationTitle: string;
     conversationBody: string | null;
     authorId: string;
     didWrite: string;
     postAsOrganization?: string;
-    indexConversationAt?: string;
     isIndexed: boolean;
     participationMode: ParticipationMode;
     conversationType: ConversationType;
     isImporting: boolean;
     seedOpinionList: string[];
     requiresEventTicket?: EventSlug;
+    aiLabelingEnabled: boolean;
+    preferredOpinionGroupCount: PreferredOpinionGroupCount;
     externalSourceConfig?: ExternalSourceConfig | null;
     surveyConfig?: SurveyConfig | null;
     googleCloudCredentials?: GoogleCloudCredentials;
@@ -69,19 +72,19 @@ interface CreateNewPostProps {
 
 export async function createNewPost({
     db,
-    voteBuffer,
     conversationTitle,
     conversationBody,
     authorId,
     didWrite,
     postAsOrganization,
-    indexConversationAt,
     participationMode,
     conversationType,
     isIndexed,
     isImporting,
     seedOpinionList,
     requiresEventTicket,
+    aiLabelingEnabled,
+    preferredOpinionGroupCount,
     externalSourceConfig,
     surveyConfig,
     googleCloudCredentials,
@@ -144,13 +147,9 @@ export async function createNewPost({
                     conversationType: conversationType,
                     isImporting: isImporting,
                     requiresEventTicket: requiresEventTicket,
-                    indexConversationAt:
-                        indexConversationAt !== undefined
-                            ? new Date(indexConversationAt)
-                            : undefined,
-                    opinionCount: 0,
+                    aiLabelingEnabled,
+                    preferredOpinionGroupCount,
                     currentContentId: null,
-                    currentPolisContentId: null, // will be subsequently updated upon external polis system fetch
                     createdAt: now,
                     updatedAt: now,
                     lastReactedAt: now,
@@ -160,8 +159,7 @@ export async function createNewPost({
                     importCreatedAt,
                     importAuthor,
                     importMethod,
-                    externalSourceConfig:
-                        externalSourceConfig ?? undefined,
+                    externalSourceConfig: externalSourceConfig ?? undefined,
                 })
                 .returning({ conversationId: conversationTable.id });
 
@@ -204,18 +202,30 @@ export async function createNewPost({
                             db,
                             tx,
                             conversationId: insertedConversationId,
-                            conversationContentId: insertedConversationContentId,
+                            conversationContentId:
+                                insertedConversationContentId,
                             authorId,
                             title: seedTitle,
                             isSeed: true,
                         });
                     }
                 } else {
+                    const authorRows = await tx
+                        .select({ username: userTable.username })
+                        .from(userTable)
+                        .where(eq(userTable.id, authorId))
+                        .limit(1);
+                    const author = authorRows.at(0);
+                    if (author === undefined) {
+                        throw httpErrors.internalServerError(
+                            "Failed to locate seed opinion author",
+                        );
+                    }
+
                     for (const seedOpinionText of seedOpinionList) {
                         await postNewOpinion({
                             db,
                             tx,
-                            voteBuffer,
                             commentBody: seedOpinionText,
                             conversationSlugId,
                             didWrite,
@@ -224,12 +234,16 @@ export async function createNewPost({
                             isSeed: true,
                             conversationMetadata: {
                                 conversationId: insertedConversationId,
-                                conversationContentId: insertedConversationContentId,
+                                conversationContentId:
+                                    insertedConversationContentId,
                                 conversationAuthorId: authorId,
+                                conversationAuthorUsername: author.username,
                                 conversationIsIndexed: isIndexed,
-                                conversationParticipationMode: participationMode,
+                                conversationParticipationMode:
+                                    participationMode,
                                 conversationIsClosed: false,
-                                requiresEventTicket: requiresEventTicket ?? null,
+                                requiresEventTicket:
+                                    requiresEventTicket ?? null,
                             },
                         });
                     }
@@ -244,6 +258,14 @@ export async function createNewPost({
                     now,
                 });
             }
+
+            // Create the initial coherent display state even before analysis exists.
+            // There is no dedicated "created" enum yet, so reuse the content-update reason.
+            await createConversationViewSnapshotsFromCurrentState({
+                db: tx,
+                conversationId: insertedConversationId,
+                viewReason: "conversation_content_updated",
+            });
 
             return {
                 conversationId: insertedConversationId,
@@ -375,7 +397,9 @@ export async function deletePostBySlugId({
             organizationId: conversation.organizationId,
         });
         if (!isOwner) {
-            throw httpErrors.forbidden("Only conversation owners can delete it");
+            throw httpErrors.forbidden(
+                "Only conversation owners can delete it",
+            );
         }
         if (conversation.currentContentId === null) {
             throw httpErrors.notFound("Conversation not found");
@@ -402,7 +426,9 @@ export async function deletePostBySlugId({
             .set({
                 currentContentId: null,
             })
-            .where(eq(opinionTable.conversationId, conversation.conversationId));
+            .where(
+                eq(opinionTable.conversationId, conversation.conversationId),
+            );
 
         return conversation.conversationId;
     });
@@ -445,6 +471,12 @@ export async function closeConversation({
             conversationId: conversationTable.id,
             authorId: conversationTable.authorId,
             isClosed: conversationTable.isClosed,
+            isIndexed: conversationTable.isIndexed,
+            participationMode: conversationTable.participationMode,
+            requiresEventTicket: conversationTable.requiresEventTicket,
+            aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+            preferredOpinionGroupCount:
+                conversationTable.preferredOpinionGroupCount,
             organizationId: conversationTable.organizationId,
         })
         .from(conversationTable)
@@ -471,11 +503,40 @@ export async function closeConversation({
         return { success: false, reason: "already_closed" };
     }
 
-    // Update to closed
-    await db
-        .update(conversationTable)
-        .set({ isClosed: true })
-        .where(eq(conversationTable.id, conversation[0].conversationId));
+    await db.transaction(async (tx) => {
+        await tx
+            .update(conversationTable)
+            .set({ isClosed: true })
+            .where(eq(conversationTable.id, conversation[0].conversationId));
+
+        await createConversationViewSnapshotsFromCurrentState({
+            db: tx,
+            conversationId: conversation[0].conversationId,
+            viewReason: "conversation_lifecycle_updated",
+            lifecycleCheckpointReason: "conversation_closed",
+            emitRealtimeEvent: true,
+        });
+
+        await scheduleConversationAnalysisRefresh({
+            db: tx,
+            conversationId: conversation[0].conversationId,
+            log,
+        });
+
+        await queueConversationSettingsUpdatedEvent({
+            db: tx,
+            conversationSlugId,
+            settings: {
+                isIndexed: conversation[0].isIndexed,
+                participationMode: conversation[0].participationMode,
+                requiresEventTicket: conversation[0].requiresEventTicket,
+                aiLabelingEnabled: conversation[0].aiLabelingEnabled,
+                preferredOpinionGroupCount:
+                    conversation[0].preferredOpinionGroupCount,
+                isClosed: true,
+            },
+        });
+    });
 
     return { success: true };
 }
@@ -497,6 +558,12 @@ export async function openConversation({
             conversationId: conversationTable.id,
             authorId: conversationTable.authorId,
             isClosed: conversationTable.isClosed,
+            isIndexed: conversationTable.isIndexed,
+            participationMode: conversationTable.participationMode,
+            requiresEventTicket: conversationTable.requiresEventTicket,
+            aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+            preferredOpinionGroupCount:
+                conversationTable.preferredOpinionGroupCount,
             organizationId: conversationTable.organizationId,
         })
         .from(conversationTable)
@@ -523,11 +590,32 @@ export async function openConversation({
         return { success: false, reason: "already_open" };
     }
 
-    // Update to open
-    await db
-        .update(conversationTable)
-        .set({ isClosed: false })
-        .where(eq(conversationTable.id, conversation[0].conversationId));
+    await db.transaction(async (tx) => {
+        await tx
+            .update(conversationTable)
+            .set({ isClosed: false })
+            .where(eq(conversationTable.id, conversation[0].conversationId));
+
+        await scheduleConversationAnalysisRefresh({
+            db: tx,
+            conversationId: conversation[0].conversationId,
+            log,
+        });
+
+        await queueConversationSettingsUpdatedEvent({
+            db: tx,
+            conversationSlugId,
+            settings: {
+                isIndexed: conversation[0].isIndexed,
+                participationMode: conversation[0].participationMode,
+                requiresEventTicket: conversation[0].requiresEventTicket,
+                aiLabelingEnabled: conversation[0].aiLabelingEnabled,
+                preferredOpinionGroupCount:
+                    conversation[0].preferredOpinionGroupCount,
+                isClosed: false,
+            },
+        });
+    });
 
     return { success: true };
 }
@@ -551,36 +639,6 @@ export async function openConversation({
 //     console.log(polisParticipationInit.pca["votes-base"]["0"].A.length);
 // }
 //
-
-export async function updateParticipantCount({
-    db,
-    conversationId,
-    participantCount,
-    voteCount,
-    opinionCount,
-}: {
-    db: PostgresDatabase;
-    conversationId: number;
-    participantCount: number;
-    voteCount?: number;
-    opinionCount?: number;
-}): Promise<void> {
-    const updateValues: {
-        participantCount: number;
-        voteCount?: number;
-        opinionCount?: number;
-    } = { participantCount: participantCount };
-    if (voteCount !== undefined) {
-        updateValues.voteCount = voteCount;
-    }
-    if (opinionCount !== undefined) {
-        updateValues.opinionCount = opinionCount;
-    }
-    await db
-        .update(conversationTable)
-        .set(updateValues)
-        .where(eq(conversationTable.id, conversationId));
-}
 
 export async function getConversationContent({
     db,

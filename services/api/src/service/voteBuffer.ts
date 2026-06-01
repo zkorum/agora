@@ -69,15 +69,12 @@
  */
 
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { eq, and, sql, isNotNull, inArray, type SQL } from "drizzle-orm";
+import { eq, and, sql, inArray, type SQL } from "drizzle-orm";
 import {
     voteTable,
     voteContentTable,
     opinionTable,
     conversationTable,
-    conversationUpdateQueueTable,
-    opinionModerationTable,
-    userTable,
 } from "@/shared-backend/schema.js";
 import { zodVotingAction, type VotingOption } from "@/shared/types/zod.js";
 import { z } from "zod";
@@ -85,6 +82,11 @@ import { log } from "@/app.js";
 import { nowZeroMs } from "@/shared/util.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
+import {
+    enqueueConversationForMathWork,
+    scheduleAnalysisUpdate,
+    type AnalysisSchedule,
+} from "@/shared-backend/analysisScheduler.js";
 import { Script } from "@valkey/valkey-glide";
 import type { ValkeyRef } from "./valkeyRef.js";
 import type { RealtimeSSEManager } from "./realtimeSSE.js";
@@ -92,6 +94,7 @@ import {
     createVoteNotifications,
     getNotificationRecipients,
 } from "./notification.js";
+import { createConversationViewSnapshotsFromCurrentState } from "./conversationViewSnapshot.js";
 
 // ============================================================================
 // Lua Scripts (inline for bundling - no separate files needed)
@@ -390,7 +393,9 @@ export function createVoteBuffer({
                         }
 
                         try {
-                            const parsed: unknown = JSON.parse(String(voteJson));
+                            const parsed: unknown = JSON.parse(
+                                String(voteJson),
+                            );
                             const result = zodBufferedVote.safeParse(parsed);
 
                             if (result.success) {
@@ -461,6 +466,7 @@ export function createVoteBuffer({
             number,
             { voterIds: Set<string>; conversationId: number }
         >();
+        const analysisSchedules: AnalysisSchedule[] = [];
 
         try {
             for (const [batchIndex, voteBatch] of batches.entries()) {
@@ -519,169 +525,6 @@ export function createVoteBuffer({
                         log.info(
                             `[VoteBuffer] Bulk check: ${String(existingVotesMap.size)} existing votes found out of ${String(voteBatch.length)} in batch`,
                         );
-                    }
-
-                    // STEP 0: Detect potential new participants BEFORE inserting votes
-                    // This must happen before vote INSERTs to correctly identify first-time voters
-                    const participantCountDeltas = new Map<
-                        number,
-                        Set<string>
-                    >();
-
-                    for (const vote of voteBatch) {
-                        const key = getVoteKey(vote.userId, vote.opinionId);
-                        const existingVoteData = existingVotesMap.get(key);
-
-                        // Check if this is a new participant (first active vote in conversation)
-                        if (!existingVoteData && vote.vote !== "cancel") {
-                            // New vote that's not a cancel - potentially a new participant
-                            if (
-                                !participantCountDeltas.has(vote.conversationId)
-                            ) {
-                                participantCountDeltas.set(
-                                    vote.conversationId,
-                                    new Set(),
-                                );
-                            }
-                            const participantSet = participantCountDeltas.get(
-                                vote.conversationId,
-                            );
-                            if (participantSet) {
-                                participantSet.add(vote.userId);
-                            }
-                        } else if (
-                            existingVoteData?.existingVote === null &&
-                            vote.vote !== "cancel"
-                        ) {
-                            // Restoring a previously canceled vote - potentially a returning participant
-                            if (
-                                !participantCountDeltas.has(vote.conversationId)
-                            ) {
-                                participantCountDeltas.set(
-                                    vote.conversationId,
-                                    new Set(),
-                                );
-                            }
-                            const participantSet = participantCountDeltas.get(
-                                vote.conversationId,
-                            );
-                            if (participantSet) {
-                                participantSet.add(vote.userId);
-                            }
-                        }
-                    }
-
-                    log.info(
-                        `[VoteBuffer] Detected ${String(participantCountDeltas.size)} conversation(s) with potential new participants`,
-                    );
-
-                    // Query existing participants BEFORE inserting new votes
-                    // Uses GROUP BY + bool_or to determine both unmoderated and total participant status in one query
-                    const participantDeltasToApply = new Map<number, number>();
-                    const totalParticipantDeltasToApply = new Map<
-                        number,
-                        number
-                    >();
-
-                    if (participantCountDeltas.size > 0) {
-                        for (const [
-                            conversationId,
-                            potentialNewUsers,
-                        ] of participantCountDeltas.entries()) {
-                            // Single query returns both unmoderated and total participant info
-                            const existingParticipants = await tx
-                                .select({
-                                    authorId: voteTable.authorId,
-                                    hasUnmoderatedVote:
-                                        sql<boolean>`bool_or(${opinionModerationTable.id} IS NULL)`.as(
-                                            "has_unmoderated_vote",
-                                        ),
-                                })
-                                .from(voteTable)
-                                .innerJoin(
-                                    opinionTable,
-                                    eq(voteTable.opinionId, opinionTable.id),
-                                )
-                                .innerJoin(
-                                    userTable,
-                                    eq(voteTable.authorId, userTable.id),
-                                )
-                                .leftJoin(
-                                    opinionModerationTable,
-                                    eq(
-                                        opinionModerationTable.opinionId,
-                                        opinionTable.id,
-                                    ),
-                                )
-                                .where(
-                                    and(
-                                        eq(
-                                            opinionTable.conversationId,
-                                            conversationId,
-                                        ),
-                                        sql`${voteTable.authorId} IN (${sql.join(
-                                            Array.from(potentialNewUsers).map(
-                                                (userId) => sql`${userId}`,
-                                            ),
-                                            sql`, `,
-                                        )})`,
-                                        isNotNull(
-                                            opinionTable.currentContentId,
-                                        ),
-                                        isNotNull(voteTable.currentContentId),
-                                        eq(userTable.isDeleted, false),
-                                    ),
-                                )
-                                .groupBy(voteTable.authorId);
-
-                            // Existing unmoderated participants: have at least one vote on an unmoderated opinion
-                            const existingUnmodParticipantIds = new Set(
-                                existingParticipants
-                                    .filter(
-                                        (row) => row.hasUnmoderatedVote,
-                                    )
-                                    .map((row) => row.authorId),
-                            );
-                            // Existing total participants: have any active vote
-                            const existingTotalParticipantIds = new Set(
-                                existingParticipants.map(
-                                    (row) => row.authorId,
-                                ),
-                            );
-
-                            // Count truly new participants for each counter
-                            let newUnmodParticipantCount = 0;
-                            let newTotalParticipantCount = 0;
-                            for (const userId of potentialNewUsers) {
-                                if (
-                                    !existingUnmodParticipantIds.has(userId)
-                                ) {
-                                    newUnmodParticipantCount++;
-                                }
-                                if (
-                                    !existingTotalParticipantIds.has(userId)
-                                ) {
-                                    newTotalParticipantCount++;
-                                }
-                            }
-
-                            if (newUnmodParticipantCount > 0) {
-                                participantDeltasToApply.set(
-                                    conversationId,
-                                    newUnmodParticipantCount,
-                                );
-                            }
-                            if (newTotalParticipantCount > 0) {
-                                totalParticipantDeltasToApply.set(
-                                    conversationId,
-                                    newTotalParticipantCount,
-                                );
-                            }
-
-                            log.info(
-                                `[VoteBuffer] Conversation ${String(conversationId)}: ${String(newUnmodParticipantCount)} new unmod participant(s), ${String(newTotalParticipantCount)} new total participant(s) (${String(potentialNewUsers.size)} user(s) checked)`,
-                            );
-                        }
                     }
 
                     // Step 1: Separate new votes from existing votes
@@ -914,167 +757,47 @@ export function createVoteBuffer({
                         `[VoteBuffer] Updated opinion counters for ${String(opinionsUpdated)} opinion(s) out of ${String(counterDeltas.size)} with changes`,
                     );
 
-                    // Step 8: Update conversation voteCount (delta-based, batched)
-                    // Track voteCount changes per conversation
-                    const voteCountDeltas = new Map<number, number>();
-
-                    for (const vote of voteBatch) {
-                        const key = getVoteKey(vote.userId, vote.opinionId);
-                        const existingVoteData = existingVotesMap.get(key);
-
-                        let delta = 0;
-                        if (!existingVoteData) {
-                            // New vote: +1
-                            delta = vote.vote === "cancel" ? 0 : 1;
-                        } else {
-                            // Existing vote
-                            if (
-                                vote.vote === "cancel" &&
-                                existingVoteData.existingVote !== null
-                            ) {
-                                // Canceling an active vote: -1
-                                delta = -1;
-                            } else if (
-                                vote.vote !== "cancel" &&
-                                existingVoteData.existingVote === null
-                            ) {
-                                // Restoring a canceled vote: +1
-                                delta = 1;
-                            }
-                            // else: vote change (agree→disagree): delta = 0
-                        }
-
-                        if (delta !== 0) {
-                            const currentDelta =
-                                voteCountDeltas.get(vote.conversationId) ?? 0;
-                            voteCountDeltas.set(
-                                vote.conversationId,
-                                currentDelta + delta,
-                            );
-                        }
-                    }
-
-                    // Apply voteCount deltas in single batched UPDATE
-                    if (voteCountDeltas.size > 0) {
-                        const caseClauses: SQL[] = [];
-                        const conversationIdsToUpdate: number[] = [];
-
-                        for (const [
-                            conversationId,
-                            delta,
-                        ] of voteCountDeltas.entries()) {
-                            conversationIdsToUpdate.push(conversationId);
-                            caseClauses.push(
-                                sql`WHEN ${conversationTable.id} = ${conversationId} THEN ${delta}`,
-                            );
-                        }
-
-                        const inClause = sql.join(
-                            conversationIdsToUpdate.map((id) => sql`${id}`),
-                            sql`, `,
-                        );
-
-                        const caseExpression = sql`(CASE ${sql.join(caseClauses, sql` `)} ELSE 0 END)`;
-
+                    if (conversationIds.size > 0) {
                         await tx
                             .update(conversationTable)
-                            .set({
-                                voteCount: sql`${conversationTable.voteCount} + ${caseExpression}`,
-                                totalVoteCount: sql`${conversationTable.totalVoteCount} + ${caseExpression}`,
-                                lastReactedAt: nowZeroMs(),
-                            })
+                            .set({ lastReactedAt: nowZeroMs() })
                             .where(
-                                sql`${conversationTable.id} IN (${inClause})`,
-                            );
-
-                        const voteCountChanges = Array.from(
-                            voteCountDeltas.entries(),
-                        ).map(([id, delta]) => ({
-                            conversationId: id,
-                            delta,
-                        }));
-                        log.info(
-                            `[VoteBuffer] Updated voteCount + totalVoteCount for ${String(voteCountDeltas.size)} conversation(s): ${JSON.stringify(voteCountChanges)}`,
-                        );
-                    } else {
-                        log.info("[VoteBuffer] No voteCount changes to apply");
-                    }
-
-                    // Step 9: Apply participantCount + totalParticipantCount deltas (calculated earlier in STEP 0)
-                    // ParticipantCount detection and querying happened BEFORE vote INSERTs
-                    // to correctly identify first-time voters
-                    {
-                        // Merge conversation IDs from both unmoderated and total deltas
-                        const allConversationIds = new Set([
-                            ...participantDeltasToApply.keys(),
-                            ...totalParticipantDeltasToApply.keys(),
-                        ]);
-
-                        if (allConversationIds.size > 0) {
-                            const unmodCaseClauses: SQL[] = [];
-                            const totalCaseClauses: SQL[] = [];
-                            const conversationIdsToUpdateParticipant: number[] =
-                                [];
-
-                            for (const conversationId of allConversationIds) {
-                                conversationIdsToUpdateParticipant.push(
-                                    conversationId,
-                                );
-                                const unmodDelta =
-                                    participantDeltasToApply.get(
-                                        conversationId,
-                                    ) ?? 0;
-                                const totalDelta =
-                                    totalParticipantDeltasToApply.get(
-                                        conversationId,
-                                    ) ?? 0;
-                                unmodCaseClauses.push(
-                                    sql`WHEN ${conversationTable.id} = ${conversationId} THEN ${unmodDelta}`,
-                                );
-                                totalCaseClauses.push(
-                                    sql`WHEN ${conversationTable.id} = ${conversationId} THEN ${totalDelta}`,
-                                );
-                            }
-
-                            const participantInClause = sql.join(
-                                conversationIdsToUpdateParticipant.map(
-                                    (id) => sql`${id}`,
+                                inArray(
+                                    conversationTable.id,
+                                    Array.from(conversationIds),
                                 ),
-                                sql`, `,
                             );
 
-                            await tx
-                                .update(conversationTable)
-                                .set({
-                                    participantCount: sql`${conversationTable.participantCount} + (CASE ${sql.join(unmodCaseClauses, sql` `)} ELSE 0 END)`,
-                                    totalParticipantCount: sql`${conversationTable.totalParticipantCount} + (CASE ${sql.join(totalCaseClauses, sql` `)} ELSE 0 END)`,
-                                })
-                                .where(
-                                    sql`${conversationTable.id} IN (${participantInClause})`,
-                                );
+                        log.info(
+                            `[VoteBuffer] Updated lastReactedAt for ${String(conversationIds.size)} conversation(s)`,
+                        );
 
-                            log.info(
-                                `[VoteBuffer] Updated participantCount + totalParticipantCount for ${String(allConversationIds.size)} conversation(s)`,
+                        for (const conversationId of conversationIds) {
+                            await createConversationViewSnapshotsFromCurrentState(
+                                {
+                                    db: tx,
+                                    conversationId,
+                                    viewReason: "conversation_content_updated",
+                                    emitCommentStatsRealtimeEvent: true,
+                                },
                             );
                         }
                     }
 
-                    // UPDATE conversation queue (one UPSERT per conversation)
+                    // Schedule opinion-group analysis once per affected conversation.
+                    log.info(
+                        `[VoteBuffer] Scheduling analysis for ${String(conversationIds.size)} affected conversation(s)`,
+                    );
                     for (const conversationId of conversationIds) {
-                        await tx
-                            .insert(conversationUpdateQueueTable)
-                            .values({
-                                conversationId: conversationId,
-                                requestedAt: nowZeroMs(),
-                                processedAt: null,
-                            })
-                            .onConflictDoUpdate({
-                                target: conversationUpdateQueueTable.conversationId,
-                                set: {
-                                    requestedAt: nowZeroMs(),
-                                    processedAt: null,
-                                },
-                            });
+                        const analysisSchedule = await scheduleAnalysisUpdate({
+                            db: tx,
+                            conversationId,
+                            log,
+                        });
+                        log.info(
+                            `[VoteBuffer] Scheduled analysis for conversationId=${String(conversationId)} conversationSlugId=${analysisSchedule.conversationSlugId} dataGeneration=${String(analysisSchedule.dataGeneration)} specs=${String(analysisSchedule.scheduledSpecCount)}`,
+                        );
+                        analysisSchedules.push(analysisSchedule);
                     }
 
                     // Track genuinely new voters for notification purposes.
@@ -1108,6 +831,18 @@ export function createVoteBuffer({
             log.info(
                 `[VoteBuffer] Successfully flushed ${String(batch.length)} votes across ${String(batches.length)} transaction(s)`,
             );
+
+            for (const schedule of analysisSchedules) {
+                const valkey = getValkey();
+                log.info(
+                    `[VoteBuffer] Queueing scheduled math work conversationId=${String(schedule.conversationId)} conversationSlugId=${schedule.conversationSlugId} valkey=${valkey === undefined ? "missing" : "connected"}`,
+                );
+                enqueueConversationForMathWork({
+                    valkey,
+                    schedule,
+                    log,
+                });
+            }
 
             // Create vote notifications AFTER all transactions committed
             // Wrapped in try/catch to never fail the flush

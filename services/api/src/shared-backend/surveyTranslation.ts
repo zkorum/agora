@@ -41,7 +41,10 @@ export async function getSurveyQuestionContentTranslations({
         );
 
     return new Map(
-        rows.map((row) => [row.surveyQuestionContentId, row.translatedQuestionText]),
+        rows.map((row) => [
+            row.surveyQuestionContentId,
+            row.translatedQuestionText,
+        ]),
     );
 }
 
@@ -80,6 +83,9 @@ export async function getSurveyQuestionOptionContentTranslations({
         );
 
     return new Map(
-        rows.map((row) => [row.surveyQuestionOptionContentId, row.translatedOptionText]),
+        rows.map((row) => [
+            row.surveyQuestionOptionContentId,
+            row.translatedOptionText,
+        ]),
     );
 }

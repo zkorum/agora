@@ -1,12 +1,10 @@
 import { storeToRefs } from "pinia";
+import type { OpinionItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
-import {
-  useConversationQuery,
-  useInvalidateConversationQuery,
-} from "src/utils/api/post/useConversationQuery";
+import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { useInvalidateVoteQueries } from "src/utils/api/vote/useVoteQueries";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
@@ -35,8 +33,22 @@ export interface ConversationParentConfig {
 
 export interface SubmittedCommentData {
   opinionSlugId: string;
+  opinionItem: OpinionItem;
   authStateChanged: boolean;
   needsCacheRefresh: boolean;
+}
+
+export type ChildRefreshHandler = () => Promise<void>;
+export type RegisterChildRefreshHandler = (
+  handler: ChildRefreshHandler
+) => () => void;
+
+export interface ConversationScrollContext {
+  actionBarElement: HTMLElement | null;
+  scrollContainerElement: HTMLElement | null;
+  getScrollPosition: () => number;
+  getElementScrollPosition: (params: { element: HTMLElement }) => number;
+  scrollToPosition: (params: { top: number; behavior: ScrollBehavior }) => void;
 }
 
 export function useConversationParentState({
@@ -90,18 +102,21 @@ export function useConversationParentState({
 
   const { invalidateUserVotes } = useInvalidateVoteQueries();
   const {
-    invalidateAnalysis: invalidateAnalysisQuery,
     invalidateComments,
-    forceRefreshAnalysis,
+    markAnalysisAsStale,
   } = useInvalidateCommentQueries();
-  const { invalidateConversation } = useInvalidateConversationQuery();
 
   // Child tab refresh: the active child route registers its own refresh handler
-  const childRefreshHandler = ref<(() => Promise<void>) | undefined>();
-  provide(
+  const childRefreshHandler = ref<ChildRefreshHandler | undefined>();
+  provide<RegisterChildRefreshHandler>(
     "registerChildRefreshHandler",
-    (handler: () => Promise<void>) => {
+    (handler) => {
       childRefreshHandler.value = handler;
+      return () => {
+        if (childRefreshHandler.value === handler) {
+          childRefreshHandler.value = undefined;
+        }
+      };
     }
   );
 
@@ -115,15 +130,46 @@ export function useConversationParentState({
     }
   );
 
-  // Shared state for children
-  const opinionCountOffset = ref(0);
-  const participantCountOffset = ref(0);
   const currentTab = ref<"comment" | "analysis">("comment");
   const isCurrentTabLoading = ref(false);
   const moderationHistoryTrigger = ref(0);
 
   // Ref for scroll targeting — bound to a wrapper div around PostActionBar in parent pages
   const actionBarElement = ref<HTMLElement | null>(null);
+  const scrollContainerRef = scrollContainer ?? ref<HTMLElement | null>(null);
+
+  function getCurrentScrollPosition(): number {
+    return getScrollTop({ scrollContainer: scrollContainerRef.value });
+  }
+
+  function getElementScrollPosition({
+    element,
+  }: {
+    element: HTMLElement;
+  }): number {
+    return getElementScrollTop({
+      element,
+      scrollContainer: scrollContainerRef.value,
+    });
+  }
+
+  function scrollToPosition({
+    top,
+    behavior,
+  }: {
+    top: number;
+    behavior: ScrollBehavior;
+  }): void {
+    scrollTo({ top, behavior, scrollContainer: scrollContainerRef.value });
+  }
+
+  const conversationScrollContext = computed<ConversationScrollContext>(() => ({
+    actionBarElement: actionBarElement.value,
+    scrollContainerElement: scrollContainerRef.value,
+    getScrollPosition: getCurrentScrollPosition,
+    getElementScrollPosition,
+    scrollToPosition,
+  }));
 
   // When true, the tab scroll restoration watcher should skip
   // restoring the saved position and let scrollToActionBar handle it instead.
@@ -140,33 +186,25 @@ export function useConversationParentState({
   // Filter state: owned here, displayed in PostActionBar slot, synced with child route via props
   const commentFilter = ref<CommentFilterOptions>("discover");
 
-  // Computed: base participant count + offset
-  const participantCountLocal = computed(
-    () =>
-      (conversationData.value?.metadata.participantCount ?? 0) +
-      participantCountOffset.value
-  );
-
   // Provide state and functions to child routes
   provide("refreshConversation", async () => {
     await conversationQuery.refetch();
   });
-  provide("opinionCountOffset", opinionCountOffset);
-  provide("participantCountOffset", participantCountOffset);
   provide("setCurrentTabLoading", (loading: boolean) => {
     isCurrentTabLoading.value = loading;
   });
-  provide("decrementOpinionCount", () => {
-    opinionCountOffset.value -= 1;
-  });
   provide("scrollToActionBar", scrollToActionBar);
   provide("getScrollPosition", () =>
-    getScrollTop({ scrollContainer: scrollContainer?.value }),
+    getCurrentScrollPosition(),
   );
   provide(
     "scrollToPosition",
     ({ top, behavior }: { top: number; behavior?: ScrollBehavior }) =>
-      scrollTo({ top, behavior, scrollContainer: scrollContainer?.value }),
+      scrollTo({
+        top,
+        behavior,
+        scrollContainer: scrollContainerRef.value,
+      }),
   );
 
   // Navigation functions for banner actions (parameterized by route prefix)
@@ -221,14 +259,6 @@ export function useConversationParentState({
     (newRouteName) => {
       if (newRouteName === analysisRouteName) {
         currentTab.value = "analysis";
-        // Refresh both conversation metadata and analysis data together.
-        // Stale participantCount causes >100% group percentages when clusters
-        // have more users than the cached count.
-        const slugId = conversationData.value?.metadata.conversationSlugId;
-        if (slugId) {
-          invalidateConversation(slugId);
-          invalidateAnalysisQuery(slugId);
-        }
       } else if (commentRouteNames.some((name) => name === newRouteName)) {
         currentTab.value = "comment";
       }
@@ -271,9 +301,8 @@ export function useConversationParentState({
       return;
     }
 
-    opinionCountOffset.value += 1;
     invalidateComments(slugId);
-    forceRefreshAnalysis(slugId);
+    markAnalysisAsStale(slugId);
 
     if (data.needsCacheRefresh) {
       await loadAuthenticatedModules();
@@ -317,13 +346,10 @@ export function useConversationParentState({
     conversationData,
     hasConversationData,
     loadedConversationData,
-    opinionCountOffset,
-    participantCountOffset,
     currentTab,
     isCurrentTabLoading,
     moderationHistoryTrigger,
     commentFilter,
-    participantCountLocal,
     actionBarElement,
     onViewAnalysis,
     navigateToDiscoverTab,
@@ -333,6 +359,7 @@ export function useConversationParentState({
     handleRefresh,
     invalidateUserVotes,
     scrollToActionBar,
+    conversationScrollContext,
     pendingScrollOverride,
     scrollContainer,
   };

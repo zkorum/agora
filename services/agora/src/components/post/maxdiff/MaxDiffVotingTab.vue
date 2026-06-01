@@ -238,6 +238,7 @@ import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
+import type { RegisterChildRefreshHandler } from "src/composables/conversation/useConversationParentState";
 import { useParticipationGate } from "src/composables/conversation/useParticipationGate";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
@@ -259,7 +260,7 @@ import {
 } from "src/utils/maxdiff";
 import { useNotify } from "src/utils/ui/notify";
 import type { ComponentPublicInstance } from "vue";
-import { computed, inject, nextTick, onActivated, onBeforeUnmount, ref, triggerRef, watch } from "vue";
+import { computed, inject, nextTick, onActivated, onBeforeUnmount, onDeactivated, ref, triggerRef, watch } from "vue";
 
 import MaxDiffStatementDialog from "./MaxDiffStatementDialog.vue";
 import {
@@ -293,14 +294,16 @@ const {
 });
 
 // Inject parent refresh handler (same pattern as ConversationCommentTab)
-const registerChildRefreshHandler = inject<
-  (handler: () => Promise<void>) => void
->(
+const registerChildRefreshHandler = inject<RegisterChildRefreshHandler>(
   "registerChildRefreshHandler",
   () => {
     /* noop */
+    return () => {
+      /* noop */
+    };
   },
 );
+let unregisterChildRefreshHandler: (() => void) | undefined;
 
 const needsLogin = computed(() => {
   return isAuthBlocked.value;
@@ -348,12 +351,23 @@ async function handleChildRefresh(): Promise<void> {
   await Promise.all([itemsQuery.refetch(), loadQuery.refetch()]);
 }
 
+function registerRefreshHandler(): void {
+  unregisterChildRefreshHandler?.();
+  unregisterChildRefreshHandler = registerChildRefreshHandler(handleChildRefresh);
+}
+
+function unregisterRefreshHandler(): void {
+  unregisterChildRefreshHandler?.();
+  unregisterChildRefreshHandler = undefined;
+}
+
 // Register on initial setup and re-register on KeepAlive reactivation
 // (whichever tab activates last must own the handler)
-registerChildRefreshHandler(handleChildRefresh);
+registerRefreshHandler();
 onActivated(() => {
-  registerChildRefreshHandler(handleChildRefresh);
+  registerRefreshHandler();
 });
+onDeactivated(unregisterRefreshHandler);
 
 interface MaxDiffItemDisplay {
   slugId: string;
@@ -451,6 +465,7 @@ function cancelTransition(): void {
 }
 
 onBeforeUnmount(() => {
+  unregisterRefreshHandler();
   cancelTransition();
 });
 

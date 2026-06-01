@@ -25,13 +25,25 @@ import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogCon
 import ZKDialogOptionsList from "src/components/ui-library/ZKDialogOptionsList.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { EventSlug } from "src/shared/types/zod";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 import {
   type EventTicketRequirementDialogTranslations,
   eventTicketRequirementDialogTranslations,
 } from "./EventTicketRequirementDialog.i18n";
 import EventTicketSelectionDialog from "./EventTicketSelectionDialog.vue";
+
+interface Props {
+  canAddEventTicket?: boolean;
+  canChangeEventTicket?: boolean;
+  canRemoveEventTicket?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  canAddEventTicket: true,
+  canChangeEventTicket: true,
+  canRemoveEventTicket: true,
+});
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
 const requiresEventTicket = defineModel<EventSlug | undefined>(
@@ -45,18 +57,24 @@ const { t } = useComponentI18n<EventTicketRequirementDialogTranslations>(
 
 const showEventSelectionDialog = ref(false);
 
-const eventTicketRequirementOptions = [
+const eventTicketRequirementOptions = computed(() => [
   {
     title: t("noVerificationTitle"),
     description: t("noVerificationDescription"),
     value: "noVerification",
+    disabled:
+      requiresEventTicket.value !== undefined && !props.canRemoveEventTicket,
   },
   {
     title: t("requiresEventTicketTitle"),
     description: t("requiresEventTicketDescription"),
     value: "requiresEventTicket",
+    disabled:
+      requiresEventTicket.value === undefined
+        ? !props.canAddEventTicket
+        : !props.canChangeEventTicket,
   },
-];
+]);
 
 function handleOptionSelected(option: {
   title: string;

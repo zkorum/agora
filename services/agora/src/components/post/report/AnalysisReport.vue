@@ -71,6 +71,9 @@
         <ReportRepresentativeOpinions
           :clusters="clusters"
           :total-participant-count="participantCount"
+          :conversation-slug-id="conversationSlugId"
+          :conversation-author-username="authorUsername"
+          :conversation-organization-name="conversationOrganizationName"
           :single-cluster-key="key"
         >
           <template #after-subtitle>
@@ -111,6 +114,9 @@
         :items="[]"
         :clusters="clusters"
         :total-participants="participantCount"
+        :conversation-slug-id="conversationSlugId"
+        :conversation-author-username="authorUsername"
+        :conversation-organization-name="conversationOrganizationName"
         :empty-message="t('noAgreementsMessage')"
       />
       <ReportFooter
@@ -154,6 +160,9 @@
         :items="chunk"
         :clusters="clusters"
         :total-participants="participantCount"
+        :conversation-slug-id="conversationSlugId"
+        :conversation-author-username="authorUsername"
+        :conversation-organization-name="conversationOrganizationName"
         :start-rank="chunkIdx * effectiveItemsPerPage"
         :hide-title="chunkIdx > 0"
       >
@@ -193,6 +202,9 @@
         :items="[]"
         :clusters="clusters"
         :total-participants="participantCount"
+        :conversation-slug-id="conversationSlugId"
+        :conversation-author-username="authorUsername"
+        :conversation-organization-name="conversationOrganizationName"
         :empty-message="t('noDisagreementsMessage')"
       />
       <ReportFooter
@@ -236,6 +248,9 @@
         :items="chunk"
         :clusters="clusters"
         :total-participants="participantCount"
+        :conversation-slug-id="conversationSlugId"
+        :conversation-author-username="authorUsername"
+        :conversation-organization-name="conversationOrganizationName"
         :start-rank="chunkIdx * effectiveItemsPerPage"
         :hide-title="chunkIdx > 0"
       >
@@ -275,6 +290,9 @@
         :items="[]"
         :clusters="clusters"
         :total-participants="participantCount"
+        :conversation-slug-id="conversationSlugId"
+        :conversation-author-username="authorUsername"
+        :conversation-organization-name="conversationOrganizationName"
         :empty-message="t('noDivisiveMessage')"
       />
       <ReportFooter
@@ -318,6 +336,9 @@
         :items="chunk"
         :clusters="clusters"
         :total-participants="participantCount"
+        :conversation-slug-id="conversationSlugId"
+        :conversation-author-username="authorUsername"
+        :conversation-organization-name="conversationOrganizationName"
         :start-rank="chunkIdx * effectiveItemsPerPage"
         :hide-title="chunkIdx > 0"
       >
@@ -526,6 +547,9 @@
         :items="[]"
         :clusters="clusters"
         :total-participants="participantCount"
+        :conversation-slug-id="conversationSlugId"
+        :conversation-author-username="authorUsername"
+        :conversation-organization-name="conversationOrganizationName"
         :hide-title="true"
         :empty-message="t('noAllStatementsMessage')"
       />
@@ -574,6 +598,9 @@
         :items="chunk"
         :clusters="clusters"
         :total-participants="participantCount"
+        :conversation-slug-id="conversationSlugId"
+        :conversation-author-username="authorUsername"
+        :conversation-organization-name="conversationOrganizationName"
         :start-rank="chunkIdx * effectiveItemsPerPage"
         :hide-title="true"
       >
@@ -644,6 +671,7 @@ const props = defineProps<{
   conversationSlugId: string;
   conversationTitle: string;
   authorUsername: string;
+  conversationOrganizationName: string;
   createdAt: string | Date;
   participantCount: number;
   opinionCount: number;

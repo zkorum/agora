@@ -2,7 +2,10 @@
   <button
     type="button"
     class="survey-selectable-option"
-    :class="{ 'survey-selectable-option--selected': selected }"
+    :class="{
+      'survey-selectable-option--selected': selected,
+      'survey-selectable-option--compact': props.density === 'compact',
+    }"
     :role="indicatorType === 'radio' ? 'radio' : 'checkbox'"
     :aria-checked="selected"
     @click="emit('select')"
@@ -18,14 +21,16 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(
+const props = withDefaults(
   defineProps<{
     label: string;
     selected: boolean;
     indicatorType?: "radio" | "checkbox";
+    density?: "comfortable" | "compact";
   }>(),
   {
     indicatorType: "radio",
+    density: "comfortable",
   }
 );
 
@@ -46,6 +51,10 @@ const emit = defineEmits<{
   text-align: start;
   color: $color-text-strong;
   cursor: pointer;
+}
+
+.survey-selectable-option--compact {
+  padding: 0.5rem 0;
 }
 
 .survey-selectable-option__indicator {

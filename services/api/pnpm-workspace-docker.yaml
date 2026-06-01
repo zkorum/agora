@@ -1,11 +1,16 @@
 packages:
-  - '.'
+    - "."
+
+minimumReleaseAge: 7200
+minimumReleaseAgeExclude:
+    - launder@1.7.1
+    - sanitize-html@2.17.4
 
 ignoredBuiltDependencies:
-  - protobufjs
+    - protobufjs
 
 onlyBuiltDependencies:
-  - esbuild
+    - esbuild
 
 patchedDependencies:
-  '@zk-kit/eddsa-poseidon@1.1.0': patches/@zk-kit__eddsa-poseidon@1.1.0.patch
+    "@zk-kit/eddsa-poseidon@1.1.0": patches/@zk-kit__eddsa-poseidon@1.1.0.patch

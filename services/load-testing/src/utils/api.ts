@@ -5,7 +5,10 @@
  */
 
 import http from "k6/http";
-import { buildUcan, buildAuthorizationHeader } from "../crypto/ucan/operation.js";
+import {
+    buildUcan,
+    buildAuthorizationHeader,
+} from "../crypto/ucan/operation.js";
 
 // API base URL from environment or default to local dev server
 const API_BASE_URL = __ENV.API_BASE_URL || "http://127.0.0.1:8084";
@@ -94,6 +97,254 @@ export interface FetchMainPageResponse {
     error?: string;
 }
 
+interface SurveyGateSummary {
+    hasSurvey: boolean;
+    isOptional: boolean;
+    canParticipate: boolean;
+    status:
+        | "no_survey"
+        | "not_started"
+        | "in_progress"
+        | "needs_update"
+        | "complete_valid";
+}
+
+interface SurveyQuestionOption {
+    optionSlugId?: string;
+    displayOrder: number;
+}
+
+interface SurveyChoiceQuestionFormItem {
+    questionType: "choice";
+    questionSlugId?: string;
+    displayOrder: number;
+    constraints: {
+        type: "choice";
+        minSelections: number;
+        maxSelections?: number;
+    };
+    options: SurveyQuestionOption[];
+}
+
+interface SurveyFreeTextQuestionFormItem {
+    questionType: "free_text";
+    questionSlugId?: string;
+    displayOrder: number;
+    constraints:
+        | {
+              type: "free_text";
+              inputMode?: "rich_text";
+              minPlainTextLength?: number;
+              maxPlainTextLength: number;
+              maxHtmlLength: number;
+          }
+        | {
+              type: "free_text";
+              inputMode: "integer";
+              minValue: number;
+              maxValue?: number;
+          };
+}
+
+export type SurveyQuestionFormItem =
+    | SurveyChoiceQuestionFormItem
+    | SurveyFreeTextQuestionFormItem;
+
+export type SurveyAnswerSubmission =
+    | {
+          questionType: "choice";
+          optionSlugIds: string[];
+      }
+    | {
+          questionType: "free_text";
+          textValueHtml: string;
+      };
+
+export interface FetchSurveyFormParams {
+    conversationSlugId: string;
+    did: string;
+    prefixedKey: string;
+    backendDid: string;
+}
+
+export interface FetchSurveyFormResponse {
+    success: boolean;
+    responseTime: number;
+    surveyGate?: SurveyGateSummary;
+    questions: SurveyQuestionFormItem[];
+    error?: string;
+}
+
+export interface SaveSurveyAnswerParams {
+    conversationSlugId: string;
+    questionSlugId: string;
+    answer: SurveyAnswerSubmission | null;
+    did: string;
+    prefixedKey: string;
+    backendDid: string;
+}
+
+export interface SaveSurveyAnswerResponse {
+    success: boolean;
+    responseTime: number;
+    surveyGate?: SurveyGateSummary;
+    justCompleted?: boolean;
+    error?: string;
+}
+
+export async function fetchSurveyForm(
+    params: FetchSurveyFormParams,
+): Promise<FetchSurveyFormResponse> {
+    const { conversationSlugId, did, prefixedKey, backendDid } = params;
+    const url = `${API_BASE_URL}/api/v1/survey/form/fetch`;
+    const pathname = "/api/v1/survey/form/fetch";
+    const requestBody = { conversationSlugId };
+
+    try {
+        const encodedUcan = await buildUcan({
+            did,
+            prefixedKey,
+            pathname,
+            method: "POST",
+            backendDid,
+        });
+        const startTime = Date.now();
+        const response = http.post(url, JSON.stringify(requestBody), {
+            headers: {
+                "Content-Type": "application/json",
+                ...buildAuthorizationHeader(encodedUcan),
+            },
+            timeout: "30s",
+        });
+        const responseTime = Date.now() - startTime;
+
+        const responseBody =
+            typeof response.body === "string" ? response.body : "Unknown body";
+
+        if (
+            response.status === 404 &&
+            responseBody.includes("Survey not found")
+        ) {
+            return {
+                success: true,
+                responseTime,
+                surveyGate: {
+                    hasSurvey: false,
+                    isOptional: false,
+                    canParticipate: true,
+                    status: "no_survey",
+                },
+                questions: [],
+            };
+        }
+
+        if (response.status !== 200) {
+            return {
+                success: false,
+                responseTime,
+                questions: [],
+                error: `HTTP ${String(response.status)}: ${responseBody}`,
+            };
+        }
+
+        const responseData = JSON.parse(responseBody) as {
+            surveyGate: SurveyGateSummary;
+            questions: SurveyQuestionFormItem[];
+        };
+        return {
+            success: true,
+            responseTime,
+            surveyGate: responseData.surveyGate,
+            questions: responseData.questions,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            responseTime: 0,
+            questions: [],
+            error: String(error),
+        };
+    }
+}
+
+export async function saveSurveyAnswer(
+    params: SaveSurveyAnswerParams,
+): Promise<SaveSurveyAnswerResponse> {
+    const {
+        conversationSlugId,
+        questionSlugId,
+        answer,
+        did,
+        prefixedKey,
+        backendDid,
+    } = params;
+    const url = `${API_BASE_URL}/api/v1/survey/answer/save`;
+    const pathname = "/api/v1/survey/answer/save";
+    const requestBody = { conversationSlugId, questionSlugId, answer };
+
+    try {
+        const encodedUcan = await buildUcan({
+            did,
+            prefixedKey,
+            pathname,
+            method: "POST",
+            backendDid,
+        });
+        const startTime = Date.now();
+        const response = http.post(url, JSON.stringify(requestBody), {
+            headers: {
+                "Content-Type": "application/json",
+                ...buildAuthorizationHeader(encodedUcan),
+            },
+            timeout: "30s",
+        });
+        const responseTime = Date.now() - startTime;
+
+        if (response.status !== 200) {
+            return {
+                success: false,
+                responseTime,
+                error: `HTTP ${String(response.status)}: ${
+                    typeof response.body === "string"
+                        ? response.body
+                        : "Unknown body"
+                }`,
+            };
+        }
+
+        const responseData = JSON.parse(response.body as string) as
+            | {
+                  success: true;
+                  surveyGate: SurveyGateSummary;
+                  justCompleted: boolean;
+              }
+            | {
+                  success: false;
+                  reason: string;
+              };
+        if (!responseData.success) {
+            return {
+                success: false,
+                responseTime,
+                error: responseData.reason,
+            };
+        }
+
+        return {
+            success: true,
+            responseTime,
+            surveyGate: responseData.surveyGate,
+            justCompleted: responseData.justCompleted,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            responseTime: 0,
+            error: String(error),
+        };
+    }
+}
+
 /**
  * Fetch all opinions in a conversation (public/unauthenticated endpoint)
  * Uses the fetch-by-conversation endpoint with "new" filter to get all opinions
@@ -164,7 +415,8 @@ export function fetchOpinions(
 export async function createOpinion(
     params: CreateOpinionParams,
 ): Promise<CreateOpinionResponse> {
-    const { conversationSlugId, opinionText, did, prefixedKey, backendDid } = params;
+    const { conversationSlugId, opinionText, did, prefixedKey, backendDid } =
+        params;
 
     const url = `${API_BASE_URL}/api/v1/opinion/create`;
     const pathname = "/api/v1/opinion/create";
@@ -241,7 +493,8 @@ export async function createOpinion(
  * Uses the generated OpenAPI endpoint following the agora pattern
  */
 export async function castVote(params: VoteParams): Promise<VoteResponse> {
-    const { commentSlugId, votingAction, did, prefixedKey, backendDid } = params;
+    const { commentSlugId, votingAction, did, prefixedKey, backendDid } =
+        params;
 
     const url = `${API_BASE_URL}/api/v1/vote/cast`;
     const pathname = "/api/v1/vote/cast";
@@ -278,9 +531,7 @@ export async function castVote(params: VoteParams): Promise<VoteResponse> {
             success: response.status === 200 || response.status === 201,
             responseTime,
             error:
-                response.status >= 400
-                    ? (response.body as string)
-                    : undefined,
+                response.status >= 400 ? (response.body as string) : undefined,
         };
     } catch (error) {
         return {
@@ -334,9 +585,7 @@ export async function deleteOpinion(
             success: response.status === 200 || response.status === 204,
             responseTime,
             error:
-                response.status >= 400
-                    ? (response.body as string)
-                    : undefined,
+                response.status >= 400 ? (response.body as string) : undefined,
         };
     } catch (error) {
         return {
@@ -386,9 +635,7 @@ export async function deleteUser(
             success: response.status === 200 || response.status === 204,
             responseTime,
             error:
-                response.status >= 400
-                    ? (response.body as string)
-                    : undefined,
+                response.status >= 400 ? (response.body as string) : undefined,
         };
     } catch (error) {
         return {
@@ -428,7 +675,7 @@ export function fetchConversationPage(
             success: response.status === 200,
             responseTime,
             error:
-                response.status >= 400
+                response.status !== 200
                     ? `HTTP ${String(response.status)}`
                     : undefined,
         };
@@ -465,7 +712,7 @@ export function fetchMainPage(): FetchMainPageResponse {
             success: response.status === 200,
             responseTime,
             error:
-                response.status >= 400
+                response.status !== 200
                     ? `HTTP ${String(response.status)}`
                     : undefined,
         };

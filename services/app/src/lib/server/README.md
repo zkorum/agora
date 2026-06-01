@@ -5,10 +5,8 @@ Server-only code. SvelteKit enforces this cannot be imported from client.
 ## Structure
 
 ```
-server/{app}/
+server/
   landing/      # Resources and marketing data
-  facilitator/  # Facilitator data fetching
-  participant/  # Participant data fetching
 ```
 
 ## Rules
@@ -19,4 +17,4 @@ server/{app}/
 
 ## Sharing
 
-**Per-app by default** - each app has distinct data needs. No `shared/` folder; create one only if genuinely needed.
+**Feature-specific by default** - keep server code close to the feature that needs it. Create `shared/` only if genuinely needed.

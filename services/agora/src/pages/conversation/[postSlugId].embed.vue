@@ -18,20 +18,19 @@
         <PostActionBar
           v-model="currentTab"
           :compact-mode="false"
-          :opinion-count="
-            loadedConversationData.metadata.opinionCount + opinionCountOffset
-          "
-          :participant-count="participantCountLocal"
-          :vote-count="loadedConversationData.metadata.voteCount"
-          :total-participant-count="loadedConversationData.metadata.totalParticipantCount"
-          :total-vote-count="loadedConversationData.metadata.totalVoteCount"
-          :is-loading="isCurrentTabLoading"
+          :opinion-count="displayedActionBarStats.opinionCount"
+          :participant-count="displayedActionBarStats.participantCount"
+          :vote-count="displayedActionBarStats.voteCount"
+          :total-participant-count="displayedActionBarStats.totalParticipantCount"
+          :total-vote-count="displayedActionBarStats.totalVoteCount"
+          :is-loading="isActionBarLoading"
           :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
           :conversation-title="loadedConversationData.payload.title"
           :author-username="loadedConversationData.metadata.authorUsername"
-          :on-same-tab-click="() => scrollToActionBar({ behavior: 'smooth' })"
+          :on-same-tab-click="() => handleSameTabActionBarClick()"
           :conversation-type="loadedConversationData.metadata.conversationType"
           :has-survey="loadedConversationData.interaction.surveyGate?.hasSurvey === true"
+          :enable-route-navigation="true"
         />
         </div>
 
@@ -48,6 +47,7 @@
                 :comment-filter="commentFilter"
                 :on-view-analysis="onViewAnalysis"
                 :navigate-to-discover-tab="navigateToDiscoverTab"
+                :conversation-scroll-context="conversationScrollContext"
                 @update:comment-filter="
                   (filter: CommentFilterOptions) => { commentFilter = filter }
                 "
@@ -78,6 +78,10 @@ import FloatingBottomContainer from "src/components/navigation/FloatingBottomCon
 import CommentComposer from "src/components/post/comments/CommentComposer.vue";
 import PostContent from "src/components/post/display/PostContent.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
+import {
+  type ConversationActionBarStats,
+  useConversationActionBarStats,
+} from "src/composables/conversation/useConversationActionBarStats";
 import { useConversationParentState } from "src/composables/conversation/useConversationParentState";
 import { useTabScrollRestoration } from "src/composables/conversation/useTabScrollRestoration";
 import { useStickyObserver } from "src/composables/ui/useStickyObserver";
@@ -92,14 +96,13 @@ const { sentinelElement, headerHeight } = useStickyObserver();
 
 const {
   route,
+  conversationData,
   hasConversationData,
   loadedConversationData,
-  opinionCountOffset,
   currentTab,
   isCurrentTabLoading,
   moderationHistoryTrigger,
   commentFilter,
-  participantCountLocal,
   actionBarElement,
   onViewAnalysis,
   navigateToDiscoverTab,
@@ -107,6 +110,7 @@ const {
   handleTicketVerified,
   handleSubmittedComment,
   scrollToActionBar,
+  conversationScrollContext,
   pendingScrollOverride,
 } = useConversationParentState({
   analysisRouteName: "/conversation/[postSlugId].embed/analysis",
@@ -117,6 +121,51 @@ const {
   routePrefix: "/conversation/{id}/embed",
   scrollContainer,
 });
+
+const {
+  actionBarStats,
+  isLoadingCheckpointStats,
+  isLoadingCommentStats,
+  refetchCommentStats,
+} = useConversationActionBarStats({
+  conversationData,
+  currentTab,
+  routeQuery: computed(() => route.query),
+});
+
+const displayedActionBarStats = computed<ConversationActionBarStats>(() => {
+  const stats = actionBarStats.value;
+  if (stats !== undefined) {
+    return stats;
+  }
+
+  return getActionBarStatsFromMetadata();
+});
+
+const isActionBarLoading = computed(
+  () =>
+    isCurrentTabLoading.value ||
+    isLoadingCheckpointStats.value ||
+    isLoadingCommentStats.value
+);
+
+function getActionBarStatsFromMetadata(): ConversationActionBarStats {
+  const metadata = loadedConversationData.value.metadata;
+  return {
+    opinionCount: metadata.opinionCount,
+    participantCount: metadata.participantCount,
+    voteCount: metadata.voteCount,
+    totalParticipantCount: metadata.totalParticipantCount,
+    totalVoteCount: metadata.totalVoteCount,
+  };
+}
+
+function handleSameTabActionBarClick(): void {
+  scrollToActionBar({ behavior: "smooth" });
+  if (currentTab.value === "comment") {
+    void refetchCommentStats();
+  }
+}
 
 const isVotingDisabled = computed(() => {
   const data = loadedConversationData.value;

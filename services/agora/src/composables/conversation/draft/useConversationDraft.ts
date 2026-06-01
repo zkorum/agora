@@ -17,6 +17,7 @@ import type {
   EventSlug,
   ExternalSourceConfig,
   ParticipationMode,
+  PreferredOpinionGroupCount,
   SurveyConfig,
 } from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
@@ -31,7 +32,6 @@ import type {
   ConversationImportSettings,
   MutationResult,
   PostAsSettings,
-  PrivateConversationSettings,
   UseConversationDraftConfig,
   ValidationResult,
   ValidationState,
@@ -52,7 +52,8 @@ export interface UseConversationDraftReturn {
   isPrivate: Ref<boolean>;
   participationMode: Ref<ParticipationMode>;
   requiresEventTicket: Ref<EventSlug | undefined>;
-  privateConversationSettings: Ref<PrivateConversationSettings>;
+  aiLabelingEnabled: Ref<boolean>;
+  preferredOpinionGroupCount: Ref<PreferredOpinionGroupCount>;
   postAs: Ref<PostAsSettings>;
   externalSourceConfig: Ref<ExternalSourceConfig | null>;
   surveyConfig: Ref<SurveyConfig | null>;
@@ -125,9 +126,10 @@ export function useConversationDraft(
   const requiresEventTicket = ref<EventSlug | undefined>(
     initialDraft.requiresEventTicket
   );
-  const privateConversationSettings = ref<PrivateConversationSettings>({
-    ...initialDraft.privateConversationSettings,
-  });
+  const aiLabelingEnabled = ref(initialDraft.aiLabelingEnabled);
+  const preferredOpinionGroupCount = ref<PreferredOpinionGroupCount>(
+    initialDraft.preferredOpinionGroupCount
+  );
   const postAs = ref<PostAsSettings>({ ...initialDraft.postAs });
   const externalSourceConfig = ref<ExternalSourceConfig | null>(
     initialDraft.externalSourceConfig,
@@ -157,7 +159,8 @@ export function useConversationDraft(
       isPrivate: isPrivate.value,
       participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
-      privateConversationSettings: { ...privateConversationSettings.value },
+      aiLabelingEnabled: aiLabelingEnabled.value,
+      preferredOpinionGroupCount: preferredOpinionGroupCount.value,
       postAs: { ...postAs.value },
       externalSourceConfig: externalSourceConfig.value,
       surveyConfig: surveyConfig.value,
@@ -176,8 +179,10 @@ export function useConversationDraft(
         store.conversationDraft.participationMode = newSnapshot.participationMode;
         store.conversationDraft.requiresEventTicket =
           newSnapshot.requiresEventTicket;
-        store.conversationDraft.privateConversationSettings =
-          newSnapshot.privateConversationSettings;
+        store.conversationDraft.aiLabelingEnabled =
+          newSnapshot.aiLabelingEnabled;
+        store.conversationDraft.preferredOpinionGroupCount =
+          newSnapshot.preferredOpinionGroupCount;
         store.conversationDraft.postAs = newSnapshot.postAs;
         store.conversationDraft.externalSourceConfig =
           newSnapshot.externalSourceConfig;
@@ -419,10 +424,11 @@ export function useConversationDraft(
       isPrivate.value !== emptyDraft.isPrivate ||
       participationMode.value !== emptyDraft.participationMode;
 
-    // Check private conversation settings changes
-    const hasPrivateSettingsChanges =
-      privateConversationSettings.value.hasScheduledConversion !==
-      emptyDraft.privateConversationSettings.hasScheduledConversion;
+    const hasAiLabelingChanges =
+      aiLabelingEnabled.value !== emptyDraft.aiLabelingEnabled;
+
+    const hasPreferredOpinionGroupCountChanges =
+      preferredOpinionGroupCount.value !== emptyDraft.preferredOpinionGroupCount;
 
     // Check creation settings changes
     const hasCreationSettingsChanges =
@@ -444,7 +450,8 @@ export function useConversationDraft(
       hasConversationTypeChanges ||
       hasPostAsChanges ||
       hasPrivacyChanges ||
-      hasPrivateSettingsChanges ||
+      hasAiLabelingChanges ||
+      hasPreferredOpinionGroupCountChanges ||
       hasCreationSettingsChanges ||
       hasSurveyConfigChanges
     );
@@ -471,9 +478,8 @@ export function useConversationDraft(
     isPrivate.value = emptyDraft.isPrivate;
     participationMode.value = emptyDraft.participationMode;
     requiresEventTicket.value = emptyDraft.requiresEventTicket;
-    privateConversationSettings.value = {
-      ...emptyDraft.privateConversationSettings,
-    };
+    aiLabelingEnabled.value = emptyDraft.aiLabelingEnabled;
+    preferredOpinionGroupCount.value = emptyDraft.preferredOpinionGroupCount;
     postAs.value = { ...emptyDraft.postAs };
     externalSourceConfig.value = null;
     surveyConfig.value = emptyDraft.surveyConfig;
@@ -495,9 +501,8 @@ export function useConversationDraft(
     isPrivate.value = data.isPrivate;
     participationMode.value = data.participationMode;
     requiresEventTicket.value = data.requiresEventTicket;
-    privateConversationSettings.value = {
-      ...data.privateConversationSettings,
-    };
+    aiLabelingEnabled.value = data.aiLabelingEnabled;
+    preferredOpinionGroupCount.value = data.preferredOpinionGroupCount;
 
     clearAllValidationErrors();
   }
@@ -512,9 +517,8 @@ export function useConversationDraft(
       isPrivate: isPrivate.value,
       participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
-      privateConversationSettings: {
-        ...privateConversationSettings.value,
-      },
+      aiLabelingEnabled: aiLabelingEnabled.value,
+      preferredOpinionGroupCount: preferredOpinionGroupCount.value,
       surveyConfig: surveyConfig.value,
     };
   }
@@ -547,7 +551,8 @@ export function useConversationDraft(
     isPrivate,
     participationMode,
     requiresEventTicket,
-    privateConversationSettings,
+    aiLabelingEnabled,
+    preferredOpinionGroupCount,
     postAs,
     externalSourceConfig,
     surveyConfig,

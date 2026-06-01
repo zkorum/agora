@@ -12,6 +12,8 @@ export interface ActionsTranslations {
   embedLink: string;
   exportConversation: string;
   syncGitHub: string;
+  openConversation: string;
+  closeConversation: string;
   cancel: string;
   confirm: string;
   confirmDeletePost: string;
@@ -36,6 +38,8 @@ export const actionsTranslations: Record<
     embedLink: "Copy Embed Link",
     exportConversation: "Export Conversation",
     syncGitHub: "Sync from GitHub",
+    openConversation: "Open Conversation",
+    closeConversation: "Close Conversation",
     cancel: "Cancel",
     confirm: "Confirm",
     confirmDeletePost: "Are you sure you want to delete this conversation?",
@@ -56,6 +60,8 @@ export const actionsTranslations: Record<
     embedLink: "نسخ رابط التضمين",
     exportConversation: "تصدير المحادثة",
     syncGitHub: "مزامنة من GitHub",
+    openConversation: "فتح المحادثة",
+    closeConversation: "إغلاق المحادثة",
     cancel: "إلغاء",
     confirm: "تأكيد",
     confirmDeletePost: "هل أنت متأكد أنك تريد حذف هذه المحادثة؟",
@@ -76,6 +82,8 @@ export const actionsTranslations: Record<
     embedLink: "Copiar Enlace de Inserción",
     exportConversation: "Exportar Conversación",
     syncGitHub: "Sincronizar desde GitHub",
+    openConversation: "Abrir conversación",
+    closeConversation: "Cerrar conversación",
     cancel: "Cancelar",
     confirm: "Confirmar",
     confirmDeletePost: "¿Está seguro de que desea eliminar esta conversación?",
@@ -96,6 +104,8 @@ export const actionsTranslations: Record<
     embedLink: "کپی لینک جاسازی",
     exportConversation: "خروجی گفتگو",
     syncGitHub: "همگام‌سازی از GitHub",
+    openConversation: "باز کردن گفتگو",
+    closeConversation: "بستن گفتگو",
     cancel: "لغو",
     confirm: "تأیید",
     confirmDeletePost: "آیا مطمئن هستید که می‌خواهید این گفتگو را حذف کنید؟",
@@ -116,6 +126,8 @@ export const actionsTranslations: Record<
     embedLink: "העתקת קישור הטמעה",
     exportConversation: "ייצוא שיחה",
     syncGitHub: "סנכרון מ-GitHub",
+    openConversation: "פתיחת שיחה",
+    closeConversation: "סגירת שיחה",
     cancel: "ביטול",
     confirm: "אישור",
     confirmDeletePost: "האם ברצונכם למחוק שיחה זו?",
@@ -136,6 +148,8 @@ export const actionsTranslations: Record<
     embedLink: "Copier le Lien d'Intégration",
     exportConversation: "Exporter la Conversation",
     syncGitHub: "Synchroniser depuis GitHub",
+    openConversation: "Ouvrir la Conversation",
+    closeConversation: "Fermer la Conversation",
     cancel: "Annuler",
     confirm: "Confirmer",
     confirmDeletePost:
@@ -157,6 +171,8 @@ export const actionsTranslations: Record<
     embedLink: "复制嵌入链接",
     exportConversation: "导出对话",
     syncGitHub: "从 GitHub 同步",
+    openConversation: "打开对话",
+    closeConversation: "关闭对话",
     cancel: "取消",
     confirm: "确认",
     confirmDeletePost: "您确定要删除此对话吗？",
@@ -176,6 +192,8 @@ export const actionsTranslations: Record<
     embedLink: "複製嵌入連結",
     exportConversation: "匯出對話",
     syncGitHub: "從 GitHub 同步",
+    openConversation: "打開對話",
+    closeConversation: "關閉對話",
     cancel: "取消",
     confirm: "確認",
     confirmDeletePost: "您確定要刪除此對話嗎？",
@@ -195,6 +213,8 @@ export const actionsTranslations: Record<
     embedLink: "埋め込みリンクをコピー",
     exportConversation: "会話をエクスポート",
     syncGitHub: "GitHub から同期",
+    openConversation: "会話を開く",
+    closeConversation: "会話を閉じる",
     cancel: "キャンセル",
     confirm: "確認",
     confirmDeletePost: "この会話を削除してもよろしいですか？",
@@ -215,6 +235,8 @@ export const actionsTranslations: Record<
     embedLink: "Кыстаруу шилтемесин көчүрүү",
     exportConversation: "Талкууну экспорттоо",
     syncGitHub: "GitHub'тен синхрондоо",
+    openConversation: "Талкууну ачуу",
+    closeConversation: "Талкууну жабуу",
     cancel: "Жокко чыгаруу",
     confirm: "Ырастоо",
     confirmDeletePost: "Бул талкууну жок кылганыңызга ишенесизби?",
@@ -235,6 +257,8 @@ export const actionsTranslations: Record<
     embedLink: "Копировать ссылку для встраивания",
     exportConversation: "Экспорт обсуждения",
     syncGitHub: "Синхронизировать с GitHub",
+    openConversation: "Открыть обсуждение",
+    closeConversation: "Закрыть обсуждение",
     cancel: "Отмена",
     confirm: "Подтвердить",
     confirmDeletePost: "Вы уверены, что хотите удалить это обсуждение?",

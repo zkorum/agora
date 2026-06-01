@@ -188,6 +188,12 @@ export function useUpdateConversationMutation() {
           metadata: {
             ...oldData.metadata,
             isIndexed: variables.isIndexed,
+            aiLabelingEnabled:
+              variables.aiLabelingEnabled ?? oldData.metadata.aiLabelingEnabled,
+            preferredOpinionGroupCount:
+              variables.preferredOpinionGroupCount === undefined
+                ? oldData.metadata.preferredOpinionGroupCount
+                : variables.preferredOpinionGroupCount,
             participationMode: variables.participationMode,
             requiresEventTicket: variables.requiresEventTicket,
           },
@@ -207,6 +213,15 @@ export function useUpdateConversationMutation() {
         void queryClient.invalidateQueries({
           queryKey: ["feed"],
           refetchType: "none",
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["analysis", variables.conversationSlugId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["analysisMetadata", variables.conversationSlugId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["analysisContent", variables.conversationSlugId],
         });
       } else {
         void queryClient.invalidateQueries({

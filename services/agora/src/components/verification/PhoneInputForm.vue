@@ -85,7 +85,7 @@ const phoneData = reactive({
   countryCode: null as CountryCode | null,
   isValid: false,
   hasError: false,
-  errorMessage: "" as string,
+  errorMessage: "",
   hasAttemptedSubmission: false,
 });
 

@@ -14,6 +14,9 @@ import type {
   ParamValueZeroOrMore,
   ParamValueZeroOrOne,
 } from 'vue-router'
+import type {
+  _ExtractParamParserType,
+} from 'vue-router/experimental'
 
 declare module 'vue-router' {
   interface TypesConfig {
@@ -307,6 +310,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dev/test-components/CheckpointTimelineTest': RouteRecordInfo<
+      '/dev/test-components/CheckpointTimelineTest',
+      '/dev/test-components/CheckpointTimelineTest',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/dev/test-components/EmbeddedBrowserWarningTest': RouteRecordInfo<
       '/dev/test-components/EmbeddedBrowserWarningTest',
       '/dev/test-components/EmbeddedBrowserWarningTest',
@@ -450,6 +460,13 @@ declare module 'vue-router/auto-routes' {
     '/settings/account/administrator/organization/': RouteRecordInfo<
       '/settings/account/administrator/organization/',
       '/settings/account/administrator/organization',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/settings/account/administrator/premium-entitlements/': RouteRecordInfo<
+      '/settings/account/administrator/premium-entitlements/',
+      '/settings/account/administrator/premium-entitlements',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -848,6 +865,12 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/dev/test-components/CheckpointTimelineTest.vue': {
+      routes:
+        | '/dev/test-components/CheckpointTimelineTest'
+      views:
+        | never
+    }
     'src/pages/dev/test-components/EmbeddedBrowserWarningTest.vue': {
       routes:
         | '/dev/test-components/EmbeddedBrowserWarningTest'
@@ -971,6 +994,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/settings/account/administrator/organization/index.vue': {
       routes:
         | '/settings/account/administrator/organization/'
+      views:
+        | never
+    }
+    'src/pages/settings/account/administrator/premium-entitlements/index.vue': {
+      routes:
+        | '/settings/account/administrator/premium-entitlements/'
       views:
         | never
     }

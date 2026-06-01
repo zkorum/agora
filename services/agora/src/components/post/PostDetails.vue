@@ -16,19 +16,22 @@
         <PostActionBar
           v-model="currentTab"
           :compact-mode="compactMode"
-          :opinion-count="
-            conversationData.metadata.opinionCount + opinionCountOffset
+          :opinion-count="displayedActionBarStats.opinionCount"
+          :participant-count="displayedActionBarStats.participantCount"
+          :vote-count="displayedActionBarStats.voteCount"
+          :total-participant-count="
+            displayedActionBarStats.totalParticipantCount
           "
-          :participant-count="participantCountLocal"
-          :vote-count="props.conversationData.metadata.voteCount"
-          :total-participant-count="props.conversationData.metadata.totalParticipantCount"
-          :total-vote-count="props.conversationData.metadata.totalVoteCount"
-          :is-loading="isCurrentTabLoading"
+          :total-vote-count="displayedActionBarStats.totalVoteCount"
+          :is-loading="isActionBarLoading"
           :conversation-slug-id="conversationData.metadata.conversationSlugId"
           :conversation-title="conversationData.payload.title"
           :author-username="conversationData.metadata.authorUsername"
           :conversation-type="conversationData.metadata.conversationType"
-          :has-survey="conversationData.interaction.surveyGate?.hasSurvey === true"
+          :has-survey="
+            conversationData.interaction.surveyGate?.hasSurvey === true
+          "
+          :enable-route-navigation="true"
         />
 
         <AnalysisPage
@@ -37,28 +40,41 @@
           :conversation-slug-id="
             props.conversationData.metadata.conversationSlugId
           "
-          :participant-count="
-            props.conversationData.metadata.participantCount
+          :conversation-author-username="
+            conversationData.metadata.authorUsername
+          "
+          :conversation-organization-name="
+            conversationData.metadata.organization?.name ?? ''
           "
           :analysis-query="analysisQuery"
+          :analysis-checkpoints-query="analysisCheckpointsQuery"
+          :live-conversation-view-snapshot-id="
+            conversationData.metadata.conversationViewSnapshotId
+          "
           :survey-query="surveyResultsQuery"
           :has-survey="hasSurvey"
           :survey-gate="conversationData.interaction.surveyGate"
+          :ai-labeling-enabled="conversationData.metadata.aiLabelingEnabled"
+          :show-report-button="true"
+          :is-live-analysis-paused="isLiveAnalysisPaused"
+          :is-conversation-closed="conversationData.metadata.isClosed"
           :navigate-to-discover-tab="navigateToDiscoverTab"
+          :conversation-scroll-context="conversationScrollContext"
+          @update:live-analysis-paused="setLiveAnalysisPaused"
         />
 
         <CommentSection
           v-if="!compactMode && currentTab === 'comment'"
           ref="opinionSectionRef"
           :post-slug-id="conversationData.metadata.conversationSlugId"
-          :conversation-author-username="conversationData.metadata.authorUsername"
-          :conversation-organization-name="conversationData.metadata.organization?.name ?? ''"
-          :participation-mode="
-            conversationData.metadata.participationMode
+          :conversation-author-username="
+            conversationData.metadata.authorUsername
           "
-          :requires-event-ticket="
-            conversationData.metadata.requiresEventTicket
+          :conversation-organization-name="
+            conversationData.metadata.organization?.name ?? ''
           "
+          :participation-mode="conversationData.metadata.participationMode"
+          :requires-event-ticket="conversationData.metadata.requiresEventTicket"
           :survey-gate="conversationData.interaction.surveyGate"
           :on-view-analysis="viewAnalysisTab"
           :is-voting-disabled="isVotingDisabled"
@@ -69,10 +85,6 @@
             hiddenCommentsQuery,
             commentsMyVotesQuery,
           }"
-          @deleted="decrementOpinionCount()"
-          @participant-count-delta="
-            (delta: number) => (participantCountLocal += delta)
-          "
         />
       </div>
     </ZKHoverEffect>
@@ -80,9 +92,7 @@
     <FloatingBottomContainer v-if="!compactMode">
       <CommentComposer
         :post-slug-id="conversationData.metadata.conversationSlugId"
-        :participation-mode="
-          conversationData.metadata.participationMode
-        "
+        :participation-mode="conversationData.metadata.participationMode"
         :requires-event-ticket="conversationData.metadata.requiresEventTicket"
         :survey-gate="conversationData.interaction.surveyGate"
         :is-composer-disabled="isVotingDisabled"
@@ -94,17 +104,29 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import type { ExtendedConversation } from "src/shared/types/zod";
+import {
+  type ConversationActionBarStats,
+  useConversationActionBarStats,
+} from "src/composables/conversation/useConversationActionBarStats";
+import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
+import type { ExtendedConversation, OpinionItem } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import {
+  useAnalysisCheckpointsQuery,
   useAnalysisQuery,
   useCommentsQuery,
   useHiddenCommentsQuery,
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
 import { useSurveyResultsAggregatedQuery } from "src/utils/api/survey/useSurveyQueries";
+import {
+  getElementScrollTop,
+  getScrollTop,
+  scrollTo,
+} from "src/utils/html/scroll";
 import { computed, onMounted, ref, watch } from "vue";
+import { useRoute } from "vue-router";
 
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
@@ -126,26 +148,45 @@ const emit = defineEmits<{
 }>();
 
 const currentTab = ref<"comment" | "analysis">("comment");
+const route = useRoute();
 
 const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
 const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
+const isLiveAnalysisPaused = ref(false);
 
-const opinionCountOffset = ref(0);
+const conversationScrollContext = computed<ConversationScrollContext>(() => ({
+  actionBarElement: null,
+  scrollContainerElement: null,
+  getScrollPosition: () => getScrollTop({ scrollContainer: null }),
+  getElementScrollPosition: ({ element }: { element: HTMLElement }) =>
+    getElementScrollTop({ element, scrollContainer: null }),
+  scrollToPosition: ({
+    top,
+    behavior,
+  }: {
+    top: number;
+    behavior: ScrollBehavior;
+  }) => {
+    scrollTo({ top, behavior, scrollContainer: null });
+  },
+}));
 
 const {
   invalidateAnalysis,
-  forceRefreshAnalysis,
+  markAnalysisAsStale,
+  markCommentsAsStale,
   invalidateComments,
   invalidateHiddenComments,
 } = useInvalidateCommentQueries();
 const { loadAuthenticatedModules } = useBackendAuthApi();
 const userStore = useUserStore();
 
-const participantCountLocal = ref(
-  props.conversationData.metadata.participantCount
-);
 const hasSurvey = computed(
   () => props.conversationData.interaction.surveyGate?.hasSurvey === true
+);
+
+const aiLabelingEnabled = computed(
+  () => props.conversationData.metadata.aiLabelingEnabled
 );
 
 const { profileData } = storeToRefs(userStore);
@@ -155,6 +196,10 @@ const isAnalysisEnabled = computed(
   () => !props.compactMode && currentTab.value === "analysis"
 );
 
+const isAnalysisQueryEnabled = computed(
+  () => isAnalysisEnabled.value && !isLiveAnalysisPaused.value
+);
+
 // Create a computed property to ensure reactivity for the query's enabled parameter
 const isSiteModerator = computed(() => profileData.value.isSiteModerator);
 
@@ -162,7 +207,13 @@ const isSiteModerator = computed(() => profileData.value.isSiteModerator);
 const analysisQuery = useAnalysisQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   voteCount: props.conversationData.metadata.voteCount,
-  enabled: isAnalysisEnabled,
+  aiLabelingEnabled,
+  enabled: isAnalysisQueryEnabled,
+});
+
+const analysisCheckpointsQuery = useAnalysisCheckpointsQuery({
+  conversationSlugId: props.conversationData.metadata.conversationSlugId,
+  enabled: isAnalysisQueryEnabled,
 });
 
 const surveyResultsQuery = useSurveyResultsAggregatedQuery({
@@ -221,6 +272,10 @@ function navigateToDiscoverTab(): void {
   currentTab.value = "comment";
 }
 
+function setLiveAnalysisPaused(paused: boolean): void {
+  isLiveAnalysisPaused.value = paused;
+}
+
 // Track loading states from child components
 const isCurrentTabLoading = computed((): boolean => {
   if (props.compactMode) {
@@ -231,15 +286,54 @@ const isCurrentTabLoading = computed((): boolean => {
     return opinionSectionRef.value?.isLoading ?? false;
   } else if (currentTab.value === "analysis") {
     return (
-      analysisQuery.isPending.value ||
-      analysisQuery.isRefetching.value ||
-      surveyResultsQuery.isPending.value ||
-      surveyResultsQuery.isRefetching.value
+      ((analysisQuery.isPending.value || analysisQuery.isRefetching.value) &&
+        analysisQuery.data.value === undefined) ||
+      ((analysisCheckpointsQuery.isPending.value ||
+        analysisCheckpointsQuery.isRefetching.value) &&
+        analysisCheckpointsQuery.data.value === undefined) ||
+      ((surveyResultsQuery.isPending.value ||
+        surveyResultsQuery.isRefetching.value) &&
+        surveyResultsQuery.data.value === undefined)
     );
   }
 
   return false;
 });
+
+const { actionBarStats, isLoadingCheckpointStats, isLoadingCommentStats } =
+  useConversationActionBarStats({
+    conversationData: computed(() => props.conversationData),
+    currentTab,
+    routeQuery: computed(() => route.query),
+    enableCommentStats: computed(() => !props.compactMode),
+  });
+
+const displayedActionBarStats = computed<ConversationActionBarStats>(() => {
+  const stats = actionBarStats.value;
+  if (stats !== undefined) {
+    return stats;
+  }
+
+  return getActionBarStatsFromMetadata();
+});
+
+const isActionBarLoading = computed(
+  () =>
+    isCurrentTabLoading.value ||
+    isLoadingCheckpointStats.value ||
+    isLoadingCommentStats.value
+);
+
+function getActionBarStatsFromMetadata(): ConversationActionBarStats {
+  const metadata = props.conversationData.metadata;
+  return {
+    opinionCount: metadata.opinionCount,
+    participantCount: metadata.participantCount,
+    voteCount: metadata.voteCount,
+    totalParticipantCount: metadata.totalParticipantCount,
+    totalVoteCount: metadata.totalVoteCount,
+  };
+}
 
 function openModerationHistory(): void {
   if (opinionSectionRef.value) {
@@ -249,45 +343,28 @@ function openModerationHistory(): void {
   }
 }
 
-function decrementOpinionCount(): void {
-  opinionCountOffset.value -= 1;
-}
-
 async function submittedComment(data: {
   opinionSlugId: string;
+  opinionItem: OpinionItem;
   authStateChanged: boolean;
   needsCacheRefresh: boolean;
 }): Promise<void> {
-  opinionCountOffset.value += 1;
-
-  // The 1.3s wait for vote buffer flush happens in CommentComposer
-  // before this function is called, so the vote is already in the database
-
   if (opinionSectionRef.value) {
-    await opinionSectionRef.value.refreshAndHighlightOpinion(
-      data.opinionSlugId
-    );
+    opinionSectionRef.value.highlightOpinion(data.opinionItem);
   }
 
-  // Force refresh analysis data since new opinion affects analysis results
-  // Always use forceRefreshAnalysis to ensure cache expires completely
-  forceRefreshAnalysis(props.conversationData.metadata.conversationSlugId);
+  await markCommentsAsStale(props.conversationData.metadata.conversationSlugId);
+  markAnalysisAsStale(props.conversationData.metadata.conversationSlugId);
 
   // Handle deferred cache refresh if auth state changed (new guest user)
   if (data.needsCacheRefresh) {
-    console.log(
-      "[PostDetails] New guest user detected - performing deferred cache refresh"
-    );
-
     // Load authenticated modules (including user profile with username)
     await loadAuthenticatedModules();
 
     // Fetch the opinion again to get updated author info with username
     // Using refreshAndHighlightOpinion instead of refreshData to force immediate refetch
     if (opinionSectionRef.value) {
-      await opinionSectionRef.value.refreshAndHighlightOpinion(
-        data.opinionSlugId
-      );
+      opinionSectionRef.value.highlightOpinion(data.opinionItem);
 
       // Update user store with username from the fetched opinion
       // This is necessary because loadUserProfile() may hit a read replica that doesn't yet
@@ -303,10 +380,6 @@ async function submittedComment(data: {
 }
 
 onMounted(async () => {
-  // Reset local state
-  participantCountLocal.value =
-    props.conversationData.metadata.participantCount;
-
   await refreshAllData();
 });
 
@@ -330,7 +403,9 @@ watch(currentTab, async (newTab) => {
       const staleOrUnfetchedQueries = commentQueries.filter(
         (query) => query.isStale.value || !query.data.value
       );
-      await Promise.all(staleOrUnfetchedQueries.map((query) => query.refetch()));
+      await Promise.all(
+        staleOrUnfetchedQueries.map((query) => query.refetch())
+      );
     } else if (newTab === "analysis") {
       // Check and refetch analysis query if it is stale
       if (analysisQuery.isStale.value) {
@@ -345,11 +420,6 @@ watch(currentTab, async (newTab) => {
 });
 
 async function refreshAllData(): Promise<void> {
-  // Reset local state
-  opinionCountOffset.value = 0;
-  participantCountLocal.value =
-    props.conversationData.metadata.participantCount;
-
   const slugId = props.conversationData.metadata.conversationSlugId;
 
   // Invalidate all queries to force fresh data
@@ -370,19 +440,12 @@ async function handleTicketVerified(payload: {
   userIdChanged: boolean;
   needsCacheRefresh: boolean;
 }): Promise<void> {
-  console.log(
-    "[PostDetails] Ticket verified event received - emitting to parent",
-    payload
-  );
   // This is called directly by PostContent when EventTicketRequirementBanner emits verified
   // Emit to parent (conversation page) so it can refresh conversation data AND all tab data
   emit("ticketVerified", payload);
 
   // Handle deferred cache refresh if a new guest was created via Zupass
   if (payload.needsCacheRefresh) {
-    console.log(
-      "[PostDetails] New guest via Zupass - performing deferred cache refresh"
-    );
     // Load authenticated modules (including user profile) after ticket verification
     // The underlying problem is read replica lag: when a new guest user is created via Zupass,
     // the username is written to the primary database but may not yet be replicated to read replicas.

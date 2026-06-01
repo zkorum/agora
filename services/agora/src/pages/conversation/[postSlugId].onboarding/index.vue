@@ -52,9 +52,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
-import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import { getSingleRouteParam } from "src/utils/router/params";
-import { getConversationPath } from "src/utils/survey/navigation";
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -68,7 +66,6 @@ const route = useRoute();
 const conversationOnboardingStore = useConversationOnboardingStore();
 const { credentialUpgradeTarget } = storeToRefs(onboardingFlowStore());
 const { exitToConversation } = useConversationOnboardingExit();
-const { safeNavigateBack } = useGoBackButtonHandler();
 const { t } = useComponentI18n<ConversationSurveyOnboardingTranslations>(
   conversationSurveyOnboardingTranslations
 );
@@ -131,13 +128,7 @@ async function handleBackToConversation(): Promise<void> {
 }
 
 async function handleBackToPrevious(): Promise<void> {
-  credentialUpgradeTarget.value = null;
-  conversationOnboardingStore.clearForConversation({
-    conversationSlugId: conversationSlugId.value,
-  });
-  await safeNavigateBack({
-    path: getConversationPath({ conversationSlugId: conversationSlugId.value }),
-  });
+  await handleBackToConversation();
 }
 
 async function handlePrimaryAction(): Promise<void> {

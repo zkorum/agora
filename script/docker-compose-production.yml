@@ -3,19 +3,6 @@ x-logging-options: &aws-logging-options
   awslogs-group: agora-prod-docker
 
 services:
-  polis-server:
-    container_name: polis-server
-    image: quay.io/zkorum/agora-python-bridge:2.0.2
-    environment:
-      TOTAL_VCPUS: "2" # t3.medium = 2 vCPUs (adjust for your instance type)
-    expose:
-      - 8004
-    restart: unless-stopped
-    logging:
-      driver: awslogs
-      options:
-        <<: *aws-logging-options
-        awslogs-stream: polis-server
   api:
     container_name: agora_api
     image: quay.io/zkorum/agora-api:4.0.2
@@ -25,19 +12,13 @@ services:
       PEPPERS: "fmgXvsChQsx9fAlq0DPiVg=="
       NODE_ENV: "production"
       VERIFICATOR_SVC_BASE_URL: "http://verificator-svc:8000"
-      POLIS_BASE_URL: "http://polis-server:8004"
       REACHER_BASE_URL: "http://reacher:8080"
       TWILIO_ACCOUNT_SID: "CHANGEME"
       TWILIO_AUTH_TOKEN: "CHANGEME"
       TWILIO_SERVICE_SID: "CHANGEME"
       SERVER_DID_PROD: "did:web:agoracitizen.app"
       GOOGLE_APPLICATION_CREDENTIALS: "/secrets/service-account.json"
-      # MaxDiff
-      MAXDIFF_ENABLED: "true"
-      IS_MAXDIFF_ORG_ONLY: "true"
-      MAXDIFF_ALLOWED_ORGS: "Agora"
       # MaxDiff GitHub integration
-      MAXDIFF_GITHUB_ENABLED: "true"
       IS_MAXDIFF_GITHUB_ORG_ONLY: "true"
       MAXDIFF_GITHUB_ALLOWED_ORGS: "Agora"
       GITHUB_WEBHOOK_SECRET: "CHANGEME"
@@ -57,28 +38,81 @@ services:
       SCORING_WORKER_POLL_INTERVAL_SECONDS: "2"
       SCORING_WORKER_BATCH_SIZE: "50"
       SCORING_WORKER_RECONCILE_INTERVAL_SECONDS: "300"
+    stop_grace_period: 10m
     restart: unless-stopped
     logging:
       driver: awslogs
       options:
         <<: *aws-logging-options
         awslogs-stream: scoring-worker
-  math-updater:
-    container_name: agora_math_updater
-    image: quay.io/zkorum/agora-math-updater:2.0.3
+  import-worker:
+    container_name: agora_import_worker
+    image: quay.io/zkorum/agora-import-worker:latest
     environment:
-      CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
-      NODE_ENV: "production"
-      POLIS_BASE_URL: "http://polis-server:8004"
-      TOTAL_VCPUS: "2" # t3.medium = 2 vCPUs (adjust for your instance type)
-      GOOGLE_APPLICATION_CREDENTIALS: "/secrets/service-account.json"
-    volumes:
-      - ./<name of service account>.json:/secrets/service-account.json:ro
+      IMPORT_WORKER_CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
+      IMPORT_WORKER_CONNECTION_STRING_READ: "postgres://postgres:CHANGEME@postgres-replica:5432/agora"
+      IMPORT_WORKER_VALKEY_URL: "valkey://valkey:6379"
+    stop_grace_period: 10m
     restart: unless-stopped
     logging:
       driver: awslogs
       options:
         <<: *aws-logging-options
+        awslogs-stream: import-worker
+  math-updater:
+    container_name: agora_math_updater
+    image: quay.io/zkorum/agora-math-updater:2.0.3
+    environment:
+      MATH_UPDATER_CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
+      MATH_UPDATER_CONNECTION_STRING_READ: "postgres://postgres:CHANGEME@postgres-replica:5432/agora"
+      MATH_UPDATER_VALKEY_URL: "valkey://valkey:6379"
+      # The main worker owns red-dwarf analysis and immediate AI-description first pass.
+      # Retry workers below only process retry/backlog queues.
+      MATH_UPDATER_AWS_AI_LABEL_SUMMARY_ENABLE: "true"
+      MATH_UPDATER_AWS_DESCRIPTION_TRANSLATION_ENABLE: "true"
+      MATH_UPDATER_GOOGLE_APPLICATION_CREDENTIALS: "/secrets/service-account.json"
+    volumes:
+      - ./<name of service account>.json:/secrets/service-account.json:ro
+    stop_grace_period: 10m
+    restart: unless-stopped
+    logging:
+      driver: awslogs
+      options:
+        <<: *aws-logging-options
+        awslogs-stream: math-updater
+  ai-description-retry-worker:
+    container_name: agora_ai_description_retry_worker
+    image: quay.io/zkorum/agora-ai-description-retry-worker:1.0.0
+    environment:
+      AI_DESCRIPTION_RETRY_WORKER_CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
+      AI_DESCRIPTION_RETRY_WORKER_CONNECTION_STRING_READ: "postgres://postgres:CHANGEME@postgres-replica:5432/agora"
+      AI_DESCRIPTION_RETRY_WORKER_VALKEY_URL: "valkey://valkey:6379"
+      AI_DESCRIPTION_RETRY_WORKER_AWS_AI_LABEL_SUMMARY_ENABLE: "true"
+    stop_grace_period: 10m
+    restart: unless-stopped
+    logging:
+      driver: awslogs
+      options:
+        <<: *aws-logging-options
+        awslogs-stream: ai-description-retry-worker
+  description-translation-retry-worker:
+    container_name: agora_description_translation_retry_worker
+    image: quay.io/zkorum/agora-description-translation-retry-worker:1.0.0
+    environment:
+      DESCRIPTION_TRANSLATION_RETRY_WORKER_CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
+      DESCRIPTION_TRANSLATION_RETRY_WORKER_CONNECTION_STRING_READ: "postgres://postgres:CHANGEME@postgres-replica:5432/agora"
+      DESCRIPTION_TRANSLATION_RETRY_WORKER_VALKEY_URL: "valkey://valkey:6379"
+      DESCRIPTION_TRANSLATION_RETRY_WORKER_AWS_DESCRIPTION_TRANSLATION_ENABLE: "true"
+      DESCRIPTION_TRANSLATION_RETRY_WORKER_GOOGLE_APPLICATION_CREDENTIALS: "/secrets/service-account.json"
+    volumes:
+      - ./<name of service account>.json:/secrets/service-account.json:ro
+    stop_grace_period: 10m
+    restart: unless-stopped
+    logging:
+      driver: awslogs
+      options:
+        <<: *aws-logging-options
+        awslogs-stream: description-translation-retry-worker
   reacher:
     container_name: reacher
     image: reacherhq/backend:latest

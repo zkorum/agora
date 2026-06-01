@@ -1,9 +1,12 @@
-import { conversationTable } from "@/shared-backend/schema.js";
+import {
+    conversationTable,
+    conversationViewSnapshotTable,
+} from "@/shared-backend/schema.js";
 import type {
     ExtendedConversationPerSlugId,
     FeedSortAlgorithm,
 } from "@/shared/types/zod.js";
-import { and, eq, SQL } from "drizzle-orm";
+import { and, desc, eq, isNotNull, SQL } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { getConversationEngagementScore } from "./recommendationSystem.js";
@@ -96,22 +99,46 @@ interface GetTopEngagementSlugIdsProps {
 export async function getTopEngagementSlugIds({
     db,
 }: GetTopEngagementSlugIdsProps): Promise<string[]> {
-    const conversations = await db
+    const conversationRows = await db
         .select({
             slugId: conversationTable.slugId,
             createdAt: conversationTable.createdAt,
             lastReactedAt: conversationTable.lastReactedAt,
-            opinionCount: conversationTable.opinionCount,
-            voteCount: conversationTable.voteCount,
-            participantCount: conversationTable.participantCount,
+            opinionCount: conversationViewSnapshotTable.opinionCount,
+            voteCount: conversationViewSnapshotTable.voteCount,
+            participantCount: conversationViewSnapshotTable.participantCount,
         })
         .from(conversationTable)
+        .innerJoin(
+            conversationViewSnapshotTable,
+            eq(
+                conversationViewSnapshotTable.conversationId,
+                conversationTable.id,
+            ),
+        )
         .where(
             and(
                 eq(conversationTable.isIndexed, true),
                 eq(conversationTable.isImporting, false),
+                isNotNull(conversationViewSnapshotTable.activatedAt),
             ),
+        )
+        .orderBy(
+            conversationTable.id,
+            desc(conversationViewSnapshotTable.createdAt),
+            desc(conversationViewSnapshotTable.id),
         );
+
+    const conversationsBySlugId = new Map<
+        string,
+        (typeof conversationRows)[number]
+    >();
+    for (const row of conversationRows) {
+        if (!conversationsBySlugId.has(row.slugId)) {
+            conversationsBySlugId.set(row.slugId, row);
+        }
+    }
+    const conversations = Array.from(conversationsBySlugId.values());
 
     conversations.sort((a, b) => {
         const scoreA = getConversationEngagementScore(a);

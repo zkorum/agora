@@ -42,26 +42,11 @@ export const envSchema = z.object({
   // must use !== "false" checks to treat undefined as enabled by default.
   VITE_EXPORT_CONVOS_ENABLED: z.enum(["true", "false"]).optional(), // Enable/disable conversation export feature (must match backend)
   VITE_FEATURED_CONVERSATION_SLUG: z.string().optional(), // Slug of a conversation to feature in a banner on the home page (empty or unset = no banner)
-  // Note: We use z.enum instead of transform because process.env contains raw strings at runtime.
-  // The processEnv object reads build-time process.env values, so transforms don't run at runtime.
-  // Compare with string "true"/"false" when using this value.
-  // DO NOT use .default() here - it only applies during Zod parsing, but processEnv is a
-  // direct read from process.env without runtime parsing. Code using this variable
-  // must use === "true" checks to treat undefined as disabled by default.
-  VITE_MAXDIFF_ENABLED: z.enum(["true", "false"]).optional(), // Enable/disable MaxDiff conversation type (must match backend)
-  VITE_IS_MAXDIFF_ORG_ONLY: z.enum(["true", "false"]).optional(), // If "true", personal users cannot create MaxDiff conversations (must match backend)
-  VITE_MAXDIFF_ALLOWED_ORGS: z.string().optional(), // Comma-separated org names allowed to create MaxDiff conversations when posting as org (empty = all orgs allowed)
-  VITE_MAXDIFF_ALLOWED_USERS: z.string().optional(), // Comma-separated user IDs allowed to create MaxDiff conversations when posting as user (empty = all users allowed)
-  VITE_MAXDIFF_GITHUB_ENABLED: z.enum(["true", "false"]).optional(), // Enable/disable GitHub connector for MaxDiff (must match backend)
   VITE_IS_MAXDIFF_GITHUB_ORG_ONLY: z.enum(["true", "false"]).optional(), // If "true", personal users cannot use the GitHub connector (must match backend)
   VITE_MAXDIFF_GITHUB_ALLOWED_ORGS: z.string().optional(), // Comma-separated org names allowed to use GitHub connector when posting as org
   VITE_MAXDIFF_GITHUB_ALLOWED_USERS: z.string().optional(), // Comma-separated user IDs allowed to use GitHub connector when posting as user
   VITE_IMPORT_ALLOWED_ORGS: z.string().optional(), // Comma-separated org names allowed to import conversations when posting as org (empty = all orgs allowed)
   VITE_IMPORT_ALLOWED_USERS: z.string().optional(), // Comma-separated user IDs allowed to import conversations when posting as user (empty = all users allowed)
-  VITE_SURVEY_ENABLED: z.enum(["true", "false"]).optional(), // Enable/disable survey configuration feature (must match backend)
-  VITE_IS_SURVEY_ORG_ONLY: z.enum(["true", "false"]).optional(), // If "true", personal users cannot configure surveys (must match backend)
-  VITE_SURVEY_ALLOWED_ORGS: z.string().optional(), // Comma-separated org names allowed to configure surveys when posting as org (empty = all orgs allowed)
-  VITE_SURVEY_ALLOWED_USERS: z.string().optional(), // Comma-separated user IDs allowed to configure surveys when posting as user (empty = all users allowed)
 });
 
 export type ProcessEnv = z.infer<typeof envSchema>;
@@ -155,11 +140,6 @@ export const processEnv = {
   VITE_DISCORD_LINK: process.env.VITE_DISCORD_LINK,
   VITE_EXPORT_CONVOS_ENABLED: process.env.VITE_EXPORT_CONVOS_ENABLED,
   VITE_FEATURED_CONVERSATION_SLUG: process.env.VITE_FEATURED_CONVERSATION_SLUG,
-  VITE_MAXDIFF_ENABLED: process.env.VITE_MAXDIFF_ENABLED,
-  VITE_IS_MAXDIFF_ORG_ONLY: process.env.VITE_IS_MAXDIFF_ORG_ONLY,
-  VITE_MAXDIFF_ALLOWED_ORGS: process.env.VITE_MAXDIFF_ALLOWED_ORGS,
-  VITE_MAXDIFF_ALLOWED_USERS: process.env.VITE_MAXDIFF_ALLOWED_USERS,
-  VITE_MAXDIFF_GITHUB_ENABLED: process.env.VITE_MAXDIFF_GITHUB_ENABLED,
   VITE_IS_MAXDIFF_GITHUB_ORG_ONLY:
     process.env.VITE_IS_MAXDIFF_GITHUB_ORG_ONLY,
   VITE_MAXDIFF_GITHUB_ALLOWED_ORGS:
@@ -168,8 +148,4 @@ export const processEnv = {
     process.env.VITE_MAXDIFF_GITHUB_ALLOWED_USERS,
   VITE_IMPORT_ALLOWED_ORGS: process.env.VITE_IMPORT_ALLOWED_ORGS,
   VITE_IMPORT_ALLOWED_USERS: process.env.VITE_IMPORT_ALLOWED_USERS,
-  VITE_SURVEY_ENABLED: process.env.VITE_SURVEY_ENABLED,
-  VITE_IS_SURVEY_ORG_ONLY: process.env.VITE_IS_SURVEY_ORG_ONLY,
-  VITE_SURVEY_ALLOWED_ORGS: process.env.VITE_SURVEY_ALLOWED_ORGS,
-  VITE_SURVEY_ALLOWED_USERS: process.env.VITE_SURVEY_ALLOWED_USERS,
 } satisfies ProcessEnv;

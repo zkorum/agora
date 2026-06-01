@@ -6,21 +6,20 @@ This directory contains all Agora services and shared code packages.
 
 - **agora/** - Frontend Vue.js application
 - **api/** - Main Fastify backend API
-- **math-updater/** - Background worker for Polis math calculations
-- **export-worker/** - Background worker for S3 data exports *(planned)*
-- **python-bridge/** - Python service for Polis math
+- **import-worker/** - Python worker for conversation imports
+- **math-updater/** - Python worker for opinion-group analysis
+- **scoring-worker/** - Python worker for MaxDiff rankings
 - **llm/** - LLM service for AI-generated summaries
-- **nlp/** - NLP utilities
 - **images/** - Image processing service
 
 ## Shared Code Packages
 
 ### services/shared (Universal)
-Shared across **ALL** services (frontend + backend)
+Shared across TypeScript services.
 
 **Contents:** Common types, Zod schemas, DTOs, utilities
 
-**Syncs to:** agora, api, math-updater, export-worker
+**Syncs to:** agora, api, load-testing
 
 **Usage:** `make sync` or `make dev-sync`
 
@@ -34,13 +33,13 @@ Shared between **frontend and API** only
 **Usage:** `make sync-app-api` or `make dev-sync-app-api`
 
 ### services/shared-backend
-Shared between **backend services** only
+Shared directly between TypeScript backend services. Python workers consume generated artifacts instead of synced TypeScript source.
 
-**Contents:** Database schema, Polis service logic, DB utilities, server-side config
+**Contents:** Database schema, DB utilities, server-side config
 
-**Syncs to:** api, math-updater, export-worker
+**Syncs to:** api
 
-**Usage:** `make sync-backend` or `make dev-sync-backend`
+**Usage:** `make sync-ts-backend` or `make dev-sync-ts-backend`
 
 ## Development Workflow
 
@@ -48,14 +47,14 @@ Shared between **backend services** only
 
 1. **After modifying `services/shared/src/`:** Run `make sync`
 2. **After modifying `services/shared-app-api/src/`:** Run `make sync-app-api`
-3. **After modifying `services/shared-backend/src/`:** Run `make sync-backend`
+3. **After modifying `services/shared-backend/src/`:** Run `make sync-ts-backend` and `make sync-python-artifacts` if Python generated models or constants are affected
 
 ### Watch Mode
 
 For automatic syncing during development:
 - `make dev-sync` - Watch universal shared
 - `make dev-sync-app-api` - Watch app-api shared
-- `make dev-sync-backend` - Watch backend shared
+- `make dev-sync-ts-backend` - Watch TypeScript backend shared
 
 ### Important Notes
 
@@ -69,15 +68,17 @@ For automatic syncing during development:
 services/shared (Universal Types)
     ├──> services/agora/src/shared/
     ├──> services/api/src/shared/
-    ├──> services/math-updater/src/shared/
-    └──> services/export-worker/src/shared/
+    └──> services/load-testing/src/shared/
 
 services/shared-app-api (Frontend + API)
     ├──> services/agora/src/shared-app-api/
     └──> services/api/src/shared-app-api/
 
 services/shared-backend (Backend Services)
-    ├──> services/api/src/shared-backend/
-    ├──> services/math-updater/src/shared-backend/
-    └──> services/export-worker/src/shared-backend/
+    └──> services/api/src/shared-backend/
+
+services/shared-backend + services/shared generated artifacts
+    ├──> services/import-worker/src/import_worker/generated_*.py
+    ├──> services/python-worker-shared/src/agora_worker_shared/generated_*.py
+    └──> services/scoring-worker/src/scoring_worker/generated_models.py
 ```

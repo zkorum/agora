@@ -74,6 +74,9 @@ const getActionVariantClass = (action: ContentAction): string => {
   if (action.variant === "warning") {
     return "action-warning";
   }
+  if (action.variant === "positive") {
+    return "action-positive";
+  }
   return "";
 };
 
@@ -217,6 +220,26 @@ watch(showDialog, (newValue) => {
 
   .action-label {
     color: $negative;
+  }
+}
+
+.action-warning {
+  .action-icon {
+    color: #b7791f;
+  }
+
+  .action-label {
+    color: #8a5a14;
+  }
+}
+
+.action-positive {
+  .action-icon {
+    color: $positive;
+  }
+
+  .action-label {
+    color: $positive;
   }
 }
 </style>

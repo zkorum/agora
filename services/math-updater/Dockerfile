@@ -1,30 +1,43 @@
-# ---- Dependencies (production only) ----
-FROM node:24.14.1-alpine AS deps
+# ---- Builder ----
+FROM python:3.13-slim-bookworm AS builder
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@10 --activate
-COPY package.json pnpm-lock.yaml ./
-COPY pnpm-workspace-docker.yaml ./pnpm-workspace.yaml
-RUN pnpm install --frozen-lockfile --prod
 
-# ---- Build ----
-FROM node:24.14.1-alpine AS build
-WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@10 --activate
-COPY package.json pnpm-lock.yaml ./
-COPY pnpm-workspace-docker.yaml ./pnpm-workspace.yaml
-RUN pnpm install --frozen-lockfile
-COPY tsconfig.json ./
-COPY src ./src
-RUN pnpm build
+ARG PIP_INSTALL_TARGET=.
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git build-essential python3-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN python -m pip install --no-cache-dir --upgrade "pip>=26.1.1" "setuptools>=78.1.1" "wheel>=0.46.2"
+
+COPY services/python-worker-shared/ services/python-worker-shared/
+RUN pip install --no-cache-dir services/python-worker-shared
+
+COPY services/math-updater/pyproject.toml services/math-updater/uv.lock ./
+COPY services/math-updater/src/ src/
+RUN pip install --no-cache-dir --no-deps "$PIP_INSTALL_TARGET"
 
 # ---- Production ----
-FROM node:24.14.1-alpine
-RUN apk add --no-cache tini
+FROM python:3.13-slim-bookworm
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends tini libgomp1 && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN python -m pip install --no-cache-dir --upgrade "pip>=26.1.1" "setuptools>=78.1.1" "wheel>=0.46.2"
+
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
-COPY package.json ./
-RUN chown -R node:node /app
-USER node
+
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+RUN groupadd --system --gid 1000 appuser && \
+    useradd --system --uid 1000 --gid appuser appuser && \
+    chown -R appuser:appuser /app
+USER appuser
+
+STOPSIGNAL SIGTERM
 ENTRYPOINT ["tini", "--"]
-CMD ["node", "--loader", "esm-module-alias/loader", "--no-warnings", "dist/index.js"]
+CMD ["python", "-m", "math_updater.worker"]

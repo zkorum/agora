@@ -428,6 +428,62 @@
       "when": 1777396555114,
       "tag": "0060_puzzling_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1779714793808,
+      "tag": "0061_shiny_sally_floyd",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1779716084166,
+      "tag": "0062_bumpy_virginia_dare",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1780072764669,
+      "tag": "0063_volatile_captain_britain",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1780089591538,
+      "tag": "0064_fancy_sally_floyd",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1780089749255,
+      "tag": "0065_rainy_galactus",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1780141429246,
+      "tag": "0066_narrow_scream",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1780149010817,
+      "tag": "0067_flimsy_stark_industries",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1780275338435,
+      "tag": "0068_lonely_speed",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,7 @@ import {
     parseEnums,
     mapSqlType,
     toPascalCase,
+    toPythonEnumMember,
     generateSqlAlchemyModels,
 } from "./sync-schema-lib.js";
 
@@ -16,9 +17,7 @@ describe("parseServiceAnnotations", () => {
         const input = `/** @service scoring-worker, api */
 export const fooTable = pgTable("foo", {`;
         const result = parseServiceAnnotations(input);
-        expect(result.get("foo")).toEqual(
-            new Set(["scoring-worker", "api"]),
-        );
+        expect(result.get("foo")).toEqual(new Set(["scoring-worker", "api"]));
     });
 
     it("handles comments between annotation and pgTable", () => {
@@ -27,6 +26,16 @@ export const fooTable = pgTable("foo", {`;
 export const barTable = pgTable("bar", {`;
         const result = parseServiceAnnotations(input);
         expect(result.get("bar")).toEqual(new Set(["worker"]));
+    });
+
+    it("merges adjacent service annotations for one table", () => {
+        const input = `/** @service math-updater */
+/** @service import-worker */
+export const opinionModerationTable = pgTable("opinion_moderation", {`;
+        const result = parseServiceAnnotations(input);
+        expect(result.get("opinion_moderation")).toEqual(
+            new Set(["math-updater", "import-worker"]),
+        );
     });
 
     it("returns empty map when no annotations", () => {
@@ -204,7 +213,7 @@ describe("mapSqlType", () => {
     it("maps jsonb to JSON/Any", () => {
         expect(mapSqlType("jsonb", noEnums)).toEqual({
             pyType: "Any",
-            saType: "JSON",
+            saType: "JSON(none_as_null=True)",
         });
     });
 
@@ -240,7 +249,7 @@ describe("mapSqlType", () => {
         const enums = new Map([["my_status", ["a", "b"]]]);
         expect(mapSqlType('"my_status"', enums)).toEqual({
             pyType: "MyStatus",
-            saType: "SaEnum(MyStatus, native_enum=False)",
+            saType: "SaEnum(MyStatus, values_callable=_enum_values, native_enum=False)",
         });
     });
 
@@ -265,6 +274,13 @@ describe("mapSqlType", () => {
         });
     });
 
+    it("maps bytea to LargeBinary", () => {
+        expect(mapSqlType("bytea", noEnums)).toEqual({
+            pyType: "bytes",
+            saType: "LargeBinary",
+        });
+    });
+
     it("falls back to JSON for unknown types", () => {
         expect(mapSqlType("geometry", noEnums)).toEqual({
             pyType: "Any",
@@ -277,13 +293,21 @@ describe("mapSqlType", () => {
 
 describe("toPascalCase", () => {
     it("converts snake_case", () => {
-        expect(toPascalCase("ranking_score_entity")).toBe(
-            "RankingScoreEntity",
-        );
+        expect(toPascalCase("ranking_score_entity")).toBe("RankingScoreEntity");
     });
 
     it("handles single word", () => {
         expect(toPascalCase("conversation")).toBe("Conversation");
+    });
+});
+
+describe("toPythonEnumMember", () => {
+    it("replaces hyphens with underscores", () => {
+        expect(toPythonEnumMember("devconnect-2025")).toBe("devconnect_2025");
+    });
+
+    it("suffixes Python keywords", () => {
+        expect(toPythonEnumMember("pass")).toBe("pass_");
     });
 });
 
@@ -336,9 +360,7 @@ describe("generateSqlAlchemyModels", () => {
         expect(output).toContain(
             "name: Mapped[str] = mapped_column(String(100))",
         );
-        expect(output).toContain(
-            "score: Mapped[float] = mapped_column(Float)",
-        );
+        expect(output).toContain("score: Mapped[float] = mapped_column(Float)");
     });
 
     it("includes enum class and SaEnum column", () => {
@@ -367,12 +389,20 @@ describe("generateSqlAlchemyModels", () => {
         expect(output).toContain("class MyStatus(StrEnum):");
         expect(output).toContain('    active = "active"');
         expect(output).toContain('    done = "done"');
-        expect(output).toContain("SaEnum(MyStatus, native_enum=False)");
+        expect(output).toContain(
+            "SaEnum(MyStatus, values_callable=_enum_values, native_enum=False)",
+        );
+        expect(output).toContain(
+            "def _enum_values(enum_cls: type[StrEnum]) -> list[str]:",
+        );
     });
 
     it("breaks long lines", () => {
         const enums = new Map([
-            ["very_long_enum_name", ["value_one", "value_two"]],
+            [
+                "conversation_view_snapshot_checkpoint_reason",
+                ["value_one", "value_two"],
+            ],
         ]);
         const tables = new Map([
             [
@@ -380,7 +410,8 @@ describe("generateSqlAlchemyModels", () => {
                 [
                     {
                         name: "very_long_column_name",
-                        sqlType: '"very_long_enum_name"',
+                        sqlType:
+                            '"conversation_view_snapshot_checkpoint_reason"',
                         nullable: true,
                         hasDefault: false,
                         defaultValue: null,
@@ -494,5 +525,34 @@ describe("generateSqlAlchemyModels", () => {
         });
         expect(output).toContain("# WARNING: GENERATED");
         expect(output).toContain("# Service: my-svc");
+    });
+});
+
+describe("JSON null codegen", () => {
+    it("generates JSON columns that persist None as SQL NULL", () => {
+        const output = generateSqlAlchemyModels({
+            tables: new Map([
+                [
+                    "analysis_result",
+                    [
+                        {
+                            name: "raw_output",
+                            sqlType: "jsonb",
+                            nullable: true,
+                            hasDefault: false,
+                            defaultValue: null,
+                            isPrimaryKey: false,
+                        },
+                    ],
+                ],
+            ]),
+            enums: new Map(),
+            service: "math-updater",
+        });
+
+        expect(output).toContain("from sqlalchemy import JSON");
+        expect(output).toContain(
+            "raw_output: Mapped[Any | None] = mapped_column(JSON(none_as_null=True), nullable=True)",
+        );
     });
 });

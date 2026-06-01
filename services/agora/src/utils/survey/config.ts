@@ -1,6 +1,7 @@
 import {
   MAX_LENGTH_SURVEY_OPTION,
   MAX_LENGTH_SURVEY_QUESTION,
+  PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
 } from "src/shared/shared";
 import type {
   SurveyChoiceDisplay,
@@ -14,6 +15,7 @@ import { zodSurveyConfig } from "src/shared/types/zod";
 
 export const SURVEY_CHOICE_DROPDOWN_OPTION_THRESHOLD = 8;
 export const SURVEY_LARGE_OPTION_WARNING_THRESHOLD = 7;
+export { PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD };
 
 export function shouldUseSurveyChoiceDropdown({
   choiceDisplay,
@@ -154,6 +156,7 @@ export function createEmptySurveyQuestion({
   return {
     questionType: "choice",
     choiceDisplay: "auto",
+    isPublicAggregateSuppressionEnabled: false,
     questionText: "",
     isRequired: true,
     displayOrder,
@@ -230,10 +233,12 @@ export function normalizeSurveyConfig({
               }),
             ];
 
-      const choiceQuestion = {
+        const choiceQuestion = {
         ...questionBase,
         questionType: "choice",
         choiceDisplay: question.choiceDisplay,
+        isPublicAggregateSuppressionEnabled:
+          question.isPublicAggregateSuppressionEnabled,
         constraints: normalizeChoiceSurveyQuestionConstraints({
           minSelections: question.constraints.minSelections,
           maxSelections: question.constraints.maxSelections,
@@ -388,6 +393,23 @@ function areSurveyQuestionChoiceDisplaysEqual({
   return left.choiceDisplay === right.choiceDisplay;
 }
 
+function areSurveyQuestionPublicAggregateSuppressionSettingsEqual({
+  left,
+  right,
+}: {
+  left: SurveyQuestionConfig;
+  right: SurveyQuestionConfig;
+}): boolean {
+  if (left.questionType === "free_text" || right.questionType === "free_text") {
+    return true;
+  }
+
+  return (
+    left.isPublicAggregateSuppressionEnabled ===
+    right.isPublicAggregateSuppressionEnabled
+  );
+}
+
 function areSurveyQuestionConstraintsEqual({
   left,
   right,
@@ -444,6 +466,10 @@ function areSurveyQuestionsEqual({
       question.displayOrder === otherQuestion.displayOrder &&
       question.textChangeIsSemantic === otherQuestion.textChangeIsSemantic &&
       areSurveyQuestionChoiceDisplaysEqual({
+        left: question,
+        right: otherQuestion,
+      }) &&
+      areSurveyQuestionPublicAggregateSuppressionSettingsEqual({
         left: question,
         right: otherQuestion,
       }) &&
@@ -554,6 +580,10 @@ export function summarizeSurveyConfigChanges({
       }) ||
       previousQuestion.questionText !== nextQuestion.questionText ||
       previousQuestion.isRequired !== nextQuestion.isRequired ||
+      !areSurveyQuestionPublicAggregateSuppressionSettingsEqual({
+        left: previousQuestion,
+        right: nextQuestion,
+      }) ||
       !areSurveyQuestionConstraintsEqual({
         left: previousQuestion.constraints,
         right: nextQuestion.constraints,

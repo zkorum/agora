@@ -152,6 +152,9 @@ export function useContentActions() {
       exportConversationCallback: () => void | Promise<void>;
       shareCallback: () => void | Promise<void>;
       syncGitHubCallback: (() => void | Promise<void>) | null;
+      openConversationCallback: () => void | Promise<void>;
+      closeConversationCallback: () => void | Promise<void>;
+      isConversationClosed: boolean;
       conversationDeletedCallback: () => void | Promise<void>;
     }
   ): void => {
@@ -197,6 +200,8 @@ export function useContentActions() {
       userReports: t("userReports"),
       exportConversation: t("exportConversation"),
       syncGitHub: t("syncGitHub"),
+      openConversation: t("openConversation"),
+      closeConversation: t("closeConversation"),
     };
 
     const availableActions = getAvailablePostActions({
@@ -212,6 +217,9 @@ export function useContentActions() {
       exportConversationCallback: callbacks.exportConversationCallback,
       shareCallback: callbacks.shareCallback,
       syncGitHubCallback: callbacks.syncGitHubCallback,
+      openConversationCallback: callbacks.openConversationCallback,
+      closeConversationCallback: callbacks.closeConversationCallback,
+      isConversationClosed: callbacks.isConversationClosed,
       translations: postTranslations,
     });
 

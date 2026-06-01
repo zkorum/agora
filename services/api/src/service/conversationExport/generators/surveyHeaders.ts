@@ -5,6 +5,7 @@ export const surveyQuestionHeaders = [
     "question-type",
     "question-text",
     "is-required",
+    "is-public-aggregate-suppression-enabled",
     "question-semantic-version",
 ] as const;
 

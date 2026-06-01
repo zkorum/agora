@@ -5,11 +5,9 @@ Pure TypeScript functions with colocated tests.
 ## Structure
 
 ```
-logic/{app}/
+logic/
   shared/       # Shared pure functions
   landing/      # Landing-specific logic (if needed)
-  facilitator/  # Facilitator-specific logic (if needed)
-  participant/  # Participant-specific logic (if needed)
 ```
 
 ## Rules

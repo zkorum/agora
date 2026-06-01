@@ -15,6 +15,7 @@ export interface UseTargetOpinionReturn {
   targetOpinion: Ref<OpinionItem | null>;
   setupHighlightFromRoute: () => Promise<void>;
   fetchTargetOpinion: (opinionSlugId: string) => Promise<void>;
+  highlightOpinion: (opinion: OpinionItem) => void;
   refreshAndHighlightOpinion: (opinionSlugId: string) => Promise<void>;
   clearRouteQueryParameters: () => Promise<void>;
 }
@@ -92,6 +93,11 @@ export function useTargetOpinion({
     }
   }
 
+  function highlightOpinion(opinion: OpinionItem): void {
+    targetOpinion.value = opinion;
+    scrollToOpinion(opinion.opinionSlugId);
+  }
+
   async function refreshAndHighlightOpinion(
     opinionSlugId: string
   ): Promise<void> {
@@ -108,6 +114,7 @@ export function useTargetOpinion({
     targetOpinion,
     setupHighlightFromRoute,
     fetchTargetOpinion,
+    highlightOpinion,
     refreshAndHighlightOpinion,
     clearRouteQueryParameters,
   };

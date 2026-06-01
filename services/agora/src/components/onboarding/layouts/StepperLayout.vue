@@ -1,7 +1,14 @@
 <template>
   <div>
-    <div class="container">
-      <OnboardStepper v-if="showStepper" :current-step="currentStep" :total-steps="totalSteps" />
+    <div
+      class="container"
+      :class="{ 'container--compact': props.density === 'compact' }"
+    >
+      <OnboardStepper
+        v-if="showStepper"
+        :current-step="currentStep"
+        :total-steps="totalSteps"
+      />
 
       <slot name="header"></slot>
 
@@ -28,7 +35,7 @@
 import OnboardStepper from "src/components/onboarding/layouts/OnboardStepper.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     submitCallBack: () => void;
     currentStep: number;
@@ -37,9 +44,11 @@ withDefaults(
     showNextButton: boolean;
     showLoadingButton: boolean;
     showStepper?: boolean;
+    density?: "comfortable" | "compact";
   }>(),
   {
     showStepper: true,
+    density: "comfortable",
   }
 );
 </script>
@@ -53,6 +62,11 @@ withDefaults(
   gap: 2rem;
   padding: 1rem;
   padding-bottom: 5rem;
+}
+
+.container--compact {
+  gap: 0.875rem;
+  padding-bottom: 3rem;
 }
 
 .bodyContent {

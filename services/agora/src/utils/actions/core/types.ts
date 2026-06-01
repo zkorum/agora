@@ -9,7 +9,7 @@ export interface BaseContentAction {
   label: string;
   description?: string;
   icon: string;
-  variant?: "default" | "destructive" | "warning";
+  variant?: "default" | "destructive" | "warning" | "positive";
 }
 
 // Context for determining available content actions

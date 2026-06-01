@@ -1,7 +1,6 @@
 import type {
   ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner,
   ApiV1ConversationImportPost200Response,
-  ApiV1ConversationImportPostRequest,
 } from "src/api";
 import {
   type ApiV1ConversationFetchRecentPostRequest,
@@ -25,6 +24,7 @@ import type {
   ExternalSourceConfig,
   FeedSortAlgorithm,
   ParticipationMode,
+  PreferredOpinionGroupCount,
   SurveyConfig,
 } from "src/shared/types/zod";
 import { zodExtendedConversationData } from "src/shared/types/zod";
@@ -179,12 +179,13 @@ export function useBackendPostApi() {
     postTitle: string;
     postBody: string | undefined;
     postAsOrganizationName: string;
-    targetIsoConvertDateString: string | undefined;
     isIndexed: boolean;
     participationMode: ParticipationMode;
     conversationType: ConversationType;
     seedOpinionList: string[];
     requiresEventTicket?: EventSlug;
+    aiLabelingEnabled: boolean;
+    preferredOpinionGroupCount: PreferredOpinionGroupCount;
     externalSourceConfig?: ExternalSourceConfig | null;
     surveyConfig?: SurveyConfig | null;
   }
@@ -198,10 +199,11 @@ export function useBackendPostApi() {
   interface ImportConversationProps {
     polisUrl: string;
     postAsOrganizationName: string;
-    targetIsoConvertDateString: string | undefined;
     isIndexed: boolean;
     participationMode: ParticipationMode;
     requiresEventTicket?: EventSlug;
+    aiLabelingEnabled: boolean;
+    preferredOpinionGroupCount: PreferredOpinionGroupCount;
   }
 
   type ImportConversationSuccessResponse =
@@ -215,10 +217,11 @@ export function useBackendPostApi() {
     commentsFile: File;
     votesFile: File;
     postAsOrganizationName: string;
-    targetIsoConvertDateString: string | undefined;
     isIndexed: boolean;
     participationMode: ParticipationMode;
     requiresEventTicket?: EventSlug;
+    aiLabelingEnabled: boolean;
+    preferredOpinionGroupCount: PreferredOpinionGroupCount;
   }
 
   async function importConversationFromCsv(
@@ -233,13 +236,16 @@ export function useBackendPostApi() {
 
     // Add metadata
     formData.append("postAsOrganization", params.postAsOrganizationName);
-    formData.append(
-      "indexConversationAt",
-      params.targetIsoConvertDateString || ""
-    );
     formData.append("isIndexed", String(params.isIndexed));
     formData.append("participationMode", params.participationMode);
     formData.append("requiresEventTicket", params.requiresEventTicket || "");
+    formData.append("aiLabelingEnabled", String(params.aiLabelingEnabled));
+    formData.append(
+      "preferredOpinionGroupCount",
+      params.preferredOpinionGroupCount === null
+        ? ""
+        : String(params.preferredOpinionGroupCount)
+    );
 
     // Get URL from OpenAPI spec
     const { url, options } =
@@ -271,29 +277,28 @@ export function useBackendPostApi() {
   async function importConversation({
     polisUrl,
     postAsOrganizationName,
-    targetIsoConvertDateString,
     isIndexed,
     participationMode,
     requiresEventTicket,
+    aiLabelingEnabled,
+    preferredOpinionGroupCount,
   }: ImportConversationProps): Promise<ImportConversationResponse> {
     try {
-      const params: ApiV1ConversationImportPostRequest = {
+      const params = Dto.importConversationRequest.parse({
         polisUrl,
         postAsOrganization: postAsOrganizationName,
-        indexConversationAt: targetIsoConvertDateString,
         isIndexed,
         participationMode,
         requiresEventTicket,
-      };
+        aiLabelingEnabled,
+        preferredOpinionGroupCount,
+      });
 
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1ConversationImportPost(params);
+      const url = "/api/v1/conversation/import";
+      const options = { method: "POST" };
       const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1ConversationImportPost(
+      const response = await api.post(
+        url,
         params,
         createRawAxiosRequestConfig({
           encodedUcan: encodedUcan,
@@ -314,12 +319,13 @@ export function useBackendPostApi() {
     postTitle,
     postBody,
     postAsOrganizationName,
-    targetIsoConvertDateString,
     isIndexed,
     participationMode,
     conversationType,
     seedOpinionList,
     requiresEventTicket,
+    aiLabelingEnabled,
+    preferredOpinionGroupCount,
     externalSourceConfig,
     surveyConfig,
   }: CreateNewPostProps): Promise<CreateNewPostResponse> {
@@ -331,9 +337,10 @@ export function useBackendPostApi() {
         participationMode: participationMode,
         conversationType: conversationType,
         postAsOrganization: postAsOrganizationName,
-        indexConversationAt: targetIsoConvertDateString,
         seedOpinionList: seedOpinionList,
         requiresEventTicket,
+        aiLabelingEnabled,
+        preferredOpinionGroupCount,
         externalSourceConfig: externalSourceConfig ?? undefined,
         surveyConfig: surveyConfig ?? undefined,
       });

@@ -12,6 +12,10 @@ All URIs are relative to *http://localhost*
 |[**apiV1AdministratorOrganizationGetAllOrganizationsPost**](#apiv1administratororganizationgetallorganizationspost) | **POST** /api/v1/administrator/organization/get-all-organizations | |
 |[**apiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost**](#apiv1administratororganizationgetorganizationnamesbyusernamepost) | **POST** /api/v1/administrator/organization/get-organization-names-by-username | |
 |[**apiV1AdministratorOrganizationRemoveUserOrganizationMappingPost**](#apiv1administratororganizationremoveuserorganizationmappingpost) | **POST** /api/v1/administrator/organization/remove-user-organization-mapping | |
+|[**apiV1AdministratorPremiumEntitlementCreatePost**](#apiv1administratorpremiumentitlementcreatepost) | **POST** /api/v1/administrator/premium-entitlement/create | |
+|[**apiV1AdministratorPremiumEntitlementListPost**](#apiv1administratorpremiumentitlementlistpost) | **POST** /api/v1/administrator/premium-entitlement/list | |
+|[**apiV1AdministratorPremiumEntitlementRevokePost**](#apiv1administratorpremiumentitlementrevokepost) | **POST** /api/v1/administrator/premium-entitlement/revoke | |
+|[**apiV1AdministratorPremiumEntitlementUpdatePost**](#apiv1administratorpremiumentitlementupdatepost) | **POST** /api/v1/administrator/premium-entitlement/update | |
 |[**apiV1AuthAuthenticatePost**](#apiv1authauthenticatepost) | **POST** /api/v1/auth/authenticate | |
 |[**apiV1AuthCheckLoginStatusPost**](#apiv1authcheckloginstatuspost) | **POST** /api/v1/auth/check-login-status | |
 |[**apiV1AuthEmailAuthenticatePost**](#apiv1authemailauthenticatepost) | **POST** /api/v1/auth/email/authenticate | |
@@ -58,10 +62,16 @@ All URIs are relative to *http://localhost*
 |[**apiV1NotificationMarkAllReadPost**](#apiv1notificationmarkallreadpost) | **POST** /api/v1/notification/mark-all-read | |
 |[**apiV1OpinionCreatePost**](#apiv1opinioncreatepost) | **POST** /api/v1/opinion/create | |
 |[**apiV1OpinionDeletePost**](#apiv1opiniondeletepost) | **POST** /api/v1/opinion/delete | |
-|[**apiV1OpinionFetchAnalysisByConversationPost**](#apiv1opinionfetchanalysisbyconversationpost) | **POST** /api/v1/opinion/fetch-analysis-by-conversation | |
+|[**apiV1OpinionFetchAnalysisCheckpointsByConversationPost**](#apiv1opinionfetchanalysischeckpointsbyconversationpost) | **POST** /api/v1/opinion/fetch-analysis-checkpoints-by-conversation | |
+|[**apiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost**](#apiv1opinionfetchanalysisframegrouplabelsbyframepost) | **POST** /api/v1/opinion/fetch-analysis-frame-group-labels-by-frame | |
+|[**apiV1OpinionFetchAnalysisFrameGroupsByFramePost**](#apiv1opinionfetchanalysisframegroupsbyframepost) | **POST** /api/v1/opinion/fetch-analysis-frame-groups-by-frame | |
+|[**apiV1OpinionFetchAnalysisFrameManifestByConversationPost**](#apiv1opinionfetchanalysisframemanifestbyconversationpost) | **POST** /api/v1/opinion/fetch-analysis-frame-manifest-by-conversation | |
+|[**apiV1OpinionFetchAnalysisFrameOpinionListByFramePost**](#apiv1opinionfetchanalysisframeopinionlistbyframepost) | **POST** /api/v1/opinion/fetch-analysis-frame-opinion-list-by-frame | |
 |[**apiV1OpinionFetchByConversationPost**](#apiv1opinionfetchbyconversationpost) | **POST** /api/v1/opinion/fetch-by-conversation | |
 |[**apiV1OpinionFetchBySlugIdListPost**](#apiv1opinionfetchbyslugidlistpost) | **POST** /api/v1/opinion/fetch-by-slug-id-list | |
+|[**apiV1OpinionFetchCommentStatsByConversationPost**](#apiv1opinionfetchcommentstatsbyconversationpost) | **POST** /api/v1/opinion/fetch-comment-stats-by-conversation | |
 |[**apiV1OpinionFetchHiddenByConversationPost**](#apiv1opinionfetchhiddenbyconversationpost) | **POST** /api/v1/opinion/fetch-hidden-by-conversation | |
+|[**apiV1PremiumFeatureAccessCheckPost**](#apiv1premiumfeatureaccesscheckpost) | **POST** /api/v1/premium-feature/access/check | |
 |[**apiV1RealtimeStreamGet**](#apiv1realtimestreamget) | **GET** /api/v1/realtime/stream | |
 |[**apiV1ReportConversationCreatePost**](#apiv1reportconversationcreatepost) | **POST** /api/v1/report/conversation/create | |
 |[**apiV1ReportConversationFetchPost**](#apiv1reportconversationfetchpost) | **POST** /api/v1/report/conversation/fetch | |
@@ -459,6 +469,209 @@ const { status, data } = await apiInstance.apiV1AdministratorOrganizationRemoveU
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
 | **apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest** | **ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest**|  | |
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1AdministratorPremiumEntitlementCreatePost**
+> apiV1AdministratorPremiumEntitlementCreatePost(apiV1AdministratorPremiumEntitlementCreatePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1AdministratorPremiumEntitlementCreatePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1AdministratorPremiumEntitlementCreatePostRequest: ApiV1AdministratorPremiumEntitlementCreatePostRequest; //
+
+const { status, data } = await apiInstance.apiV1AdministratorPremiumEntitlementCreatePost(
+    apiV1AdministratorPremiumEntitlementCreatePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1AdministratorPremiumEntitlementCreatePostRequest** | **ApiV1AdministratorPremiumEntitlementCreatePostRequest**|  | |
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1AdministratorPremiumEntitlementListPost**
+> ApiV1AdministratorPremiumEntitlementListPost200Response apiV1AdministratorPremiumEntitlementListPost(body)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let body: object; //
+
+const { status, data } = await apiInstance.apiV1AdministratorPremiumEntitlementListPost(
+    body
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **body** | **object**|  | |
+
+
+### Return type
+
+**ApiV1AdministratorPremiumEntitlementListPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1AdministratorPremiumEntitlementRevokePost**
+> apiV1AdministratorPremiumEntitlementRevokePost(apiV1AdministratorPremiumEntitlementRevokePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1AdministratorPremiumEntitlementRevokePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1AdministratorPremiumEntitlementRevokePostRequest: ApiV1AdministratorPremiumEntitlementRevokePostRequest; //
+
+const { status, data } = await apiInstance.apiV1AdministratorPremiumEntitlementRevokePost(
+    apiV1AdministratorPremiumEntitlementRevokePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1AdministratorPremiumEntitlementRevokePostRequest** | **ApiV1AdministratorPremiumEntitlementRevokePostRequest**|  | |
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1AdministratorPremiumEntitlementUpdatePost**
+> apiV1AdministratorPremiumEntitlementUpdatePost(apiV1AdministratorPremiumEntitlementUpdatePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1AdministratorPremiumEntitlementUpdatePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1AdministratorPremiumEntitlementUpdatePostRequest: ApiV1AdministratorPremiumEntitlementUpdatePostRequest; //
+
+const { status, data } = await apiInstance.apiV1AdministratorPremiumEntitlementUpdatePost(
+    apiV1AdministratorPremiumEntitlementUpdatePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1AdministratorPremiumEntitlementUpdatePostRequest** | **ApiV1AdministratorPremiumEntitlementUpdatePostRequest**|  | |
 
 
 ### Return type
@@ -2764,8 +2977,8 @@ void (empty response body)
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **apiV1OpinionFetchAnalysisByConversationPost**
-> ApiV1OpinionFetchAnalysisByConversationPost200Response apiV1OpinionFetchAnalysisByConversationPost(apiV1ModerationConversationWithdrawPostRequest)
+# **apiV1OpinionFetchAnalysisCheckpointsByConversationPost**
+> Array<ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInner> apiV1OpinionFetchAnalysisCheckpointsByConversationPost(apiV1ModerationConversationWithdrawPostRequest)
 
 
 ### Example
@@ -2782,7 +2995,7 @@ const apiInstance = new DefaultApi(configuration);
 
 let apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest; //
 
-const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisByConversationPost(
+const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisCheckpointsByConversationPost(
     apiV1ModerationConversationWithdrawPostRequest
 );
 ```
@@ -2796,7 +3009,211 @@ const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisByConversati
 
 ### Return type
 
-**ApiV1OpinionFetchAnalysisByConversationPost200Response**
+**Array<ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInner>**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost**
+> ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200Response apiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost(apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest: ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest; //
+
+const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost(
+    apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest** | **ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest**|  | |
+
+
+### Return type
+
+**ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1OpinionFetchAnalysisFrameGroupsByFramePost**
+> ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200Response apiV1OpinionFetchAnalysisFrameGroupsByFramePost(apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest: ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest; //
+
+const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisFrameGroupsByFramePost(
+    apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest** | **ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest**|  | |
+
+
+### Return type
+
+**ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1OpinionFetchAnalysisFrameManifestByConversationPost**
+> ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200Response apiV1OpinionFetchAnalysisFrameManifestByConversationPost(apiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest: ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest; //
+
+const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisFrameManifestByConversationPost(
+    apiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest** | **ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1OpinionFetchAnalysisFrameOpinionListByFramePost**
+> ApiV1OpinionFetchAnalysisFrameOpinionListByFramePost200Response apiV1OpinionFetchAnalysisFrameOpinionListByFramePost(apiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest: ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest; //
+
+const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisFrameOpinionListByFramePost(
+    apiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest** | **ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest**|  | |
+
+
+### Return type
+
+**ApiV1OpinionFetchAnalysisFrameOpinionListByFramePost200Response**
 
 ### Authorization
 
@@ -2917,6 +3334,57 @@ const { status, data } = await apiInstance.apiV1OpinionFetchBySlugIdListPost(
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **apiV1OpinionFetchCommentStatsByConversationPost**
+> ApiV1OpinionFetchCommentStatsByConversationPost200Response apiV1OpinionFetchCommentStatsByConversationPost(apiV1ModerationConversationWithdrawPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ModerationConversationWithdrawPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest; //
+
+const { status, data } = await apiInstance.apiV1OpinionFetchCommentStatsByConversationPost(
+    apiV1ModerationConversationWithdrawPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ModerationConversationWithdrawPostRequest** | **ApiV1ModerationConversationWithdrawPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1OpinionFetchCommentStatsByConversationPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **apiV1OpinionFetchHiddenByConversationPost**
 > Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem> apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest)
 
@@ -2950,6 +3418,57 @@ const { status, data } = await apiInstance.apiV1OpinionFetchHiddenByConversation
 ### Return type
 
 **Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1PremiumFeatureAccessCheckPost**
+> ApiV1PremiumFeatureAccessCheckPost200Response apiV1PremiumFeatureAccessCheckPost(apiV1PremiumFeatureAccessCheckPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1PremiumFeatureAccessCheckPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1PremiumFeatureAccessCheckPostRequest: ApiV1PremiumFeatureAccessCheckPostRequest; //
+
+const { status, data } = await apiInstance.apiV1PremiumFeatureAccessCheckPost(
+    apiV1PremiumFeatureAccessCheckPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1PremiumFeatureAccessCheckPostRequest** | **ApiV1PremiumFeatureAccessCheckPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1PremiumFeatureAccessCheckPost200Response**
 
 ### Authorization
 
@@ -3522,7 +4041,7 @@ const { status, data } = await apiInstance.apiV1SurveyResponseWithdrawPost(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1SurveyResultsAggregatedPost**
-> ApiV1SurveyResultsAggregatedPost200Response apiV1SurveyResultsAggregatedPost(apiV1ModerationConversationWithdrawPostRequest)
+> ApiV1SurveyResultsAggregatedPost200Response apiV1SurveyResultsAggregatedPost(apiV1SurveyResultsAggregatedPostRequest)
 
 
 ### Example
@@ -3531,16 +4050,16 @@ const { status, data } = await apiInstance.apiV1SurveyResponseWithdrawPost(
 import {
     DefaultApi,
     Configuration,
-    ApiV1ModerationConversationWithdrawPostRequest
+    ApiV1SurveyResultsAggregatedPostRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-let apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest; //
+let apiV1SurveyResultsAggregatedPostRequest: ApiV1SurveyResultsAggregatedPostRequest; //
 
 const { status, data } = await apiInstance.apiV1SurveyResultsAggregatedPost(
-    apiV1ModerationConversationWithdrawPostRequest
+    apiV1SurveyResultsAggregatedPostRequest
 );
 ```
 
@@ -3548,7 +4067,7 @@ const { status, data } = await apiInstance.apiV1SurveyResultsAggregatedPost(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **apiV1ModerationConversationWithdrawPostRequest** | **ApiV1ModerationConversationWithdrawPostRequest**|  | |
+| **apiV1SurveyResultsAggregatedPostRequest** | **ApiV1SurveyResultsAggregatedPostRequest**|  | |
 
 
 ### Return type

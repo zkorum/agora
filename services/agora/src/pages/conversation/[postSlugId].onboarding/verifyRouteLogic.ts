@@ -22,9 +22,30 @@ export interface VerifyRouteRequirementState {
 }
 
 export interface VerifyRouteDecision {
-  redirectPath: string | null;
+  navigation:
+    | { kind: "none" }
+    | { kind: "redirect"; path: string }
+    | { kind: "exitToConversation" };
   credentialUpgradeTarget: "hard" | "email" | "strong" | null;
   onboardingMode: "LOGIN" | null;
+}
+
+interface CreateDecisionParams {
+  navigation: VerifyRouteDecision["navigation"];
+  credentialUpgradeTarget?: "hard" | "email" | "strong" | null;
+  onboardingMode?: "LOGIN" | null;
+}
+
+function createDecision({
+  navigation,
+  credentialUpgradeTarget = null,
+  onboardingMode = null,
+}: CreateDecisionParams): VerifyRouteDecision {
+  return {
+    navigation,
+    credentialUpgradeTarget,
+    onboardingMode,
+  };
 }
 
 export function resolveVerifyRouteDecision({
@@ -49,44 +70,37 @@ export function resolveVerifyRouteDecision({
   requirementState: VerifyRouteRequirementState;
 }): VerifyRouteDecision {
   if (!exactVerifyRoute || isInitialLoading) {
-    return {
-      redirectPath: null,
-      credentialUpgradeTarget: null,
-      onboardingMode: null,
-    };
+    return createDecision({ navigation: { kind: "none" } });
   }
 
   if (justCompletedSurvey) {
-    return {
-      redirectPath: getConversationSurveyCompletePath({ conversationSlugId }),
-      credentialUpgradeTarget: null,
-      onboardingMode: null,
-    };
+    return createDecision({
+      navigation: {
+        kind: "redirect",
+        path: getConversationSurveyCompletePath({ conversationSlugId }),
+      },
+    });
   }
 
   if (hasLoadError) {
-    return {
-      redirectPath: getConversationSurveyOnboardingPath({ conversationSlugId }),
-      credentialUpgradeTarget: null,
-      onboardingMode: null,
-    };
+    return createDecision({
+      navigation: {
+        kind: "redirect",
+        path: getConversationSurveyOnboardingPath({ conversationSlugId }),
+      },
+    });
   }
 
   if (conversation === undefined || surveyStatus === undefined) {
-    return {
-      redirectPath: null,
-      credentialUpgradeTarget: null,
-      onboardingMode: null,
-    };
+    return createDecision({ navigation: { kind: "none" } });
   }
 
   if (requirementState.needsAuth) {
     if (conversation.participationMode === "guest") {
-      return {
-        redirectPath: null,
-        credentialUpgradeTarget: null,
+      return createDecision({
+        navigation: { kind: "none" },
         onboardingMode: "LOGIN",
-      };
+      });
     }
 
     const destination = getCredentialUpgradeDestination({
@@ -104,44 +118,44 @@ export function resolveVerifyRouteDecision({
       }
     })();
 
-    return {
-      redirectPath,
+    return createDecision({
+      navigation: { kind: "redirect", path: redirectPath },
       credentialUpgradeTarget: destination.target,
       onboardingMode: "LOGIN",
-    };
+    });
   }
 
   if (requirementState.needsTicket) {
-    return {
-      redirectPath: getConversationSurveyVerifyTicketPath({ conversationSlugId }),
-      credentialUpgradeTarget: null,
-      onboardingMode: null,
-    };
+    return createDecision({
+      navigation: {
+        kind: "redirect",
+        path: getConversationSurveyVerifyTicketPath({ conversationSlugId }),
+      },
+    });
   }
 
   if (!surveyStatus.surveyGate.hasSurvey) {
-    return {
-      redirectPath: getConversationPath({ conversationSlugId }),
-      credentialUpgradeTarget: null,
-      onboardingMode: null,
-    };
+    return createDecision({ navigation: { kind: "exitToConversation" } });
   }
 
   if (surveyForm === undefined) {
-    return {
-      redirectPath: null,
-      credentialUpgradeTarget: null,
-      onboardingMode: null,
-    };
+    return createDecision({ navigation: { kind: "none" } });
   }
 
-  return {
-    redirectPath: getConversationSurveyContinuePath({
-      conversationSlugId,
-      routeResolution: surveyStatus.routeResolution,
-      firstQuestionSlugId: surveyForm.questions[0]?.questionSlugId,
-    }),
-    credentialUpgradeTarget: null,
-    onboardingMode: null,
-  };
+  const continuePath = getConversationSurveyContinuePath({
+    conversationSlugId,
+    routeResolution: surveyStatus.routeResolution,
+    firstQuestionSlugId: surveyForm.questions[0]?.questionSlugId,
+  });
+
+  if (continuePath === getConversationPath({ conversationSlugId })) {
+    return createDecision({ navigation: { kind: "exitToConversation" } });
+  }
+
+  return createDecision({
+    navigation: {
+      kind: "redirect",
+      path: continuePath,
+    },
+  });
 }

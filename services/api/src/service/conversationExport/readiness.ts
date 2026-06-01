@@ -51,7 +51,10 @@ export async function getExportReadinessForConversation({
         .from(conversationExportRequestTable)
         .where(
             and(
-                eq(conversationExportRequestTable.conversationId, conversationId),
+                eq(
+                    conversationExportRequestTable.conversationId,
+                    conversationId,
+                ),
                 eq(conversationExportRequestTable.userId, userId),
                 eq(conversationExportRequestTable.status, "processing"),
                 isNull(conversationExportRequestTable.deletedAt),
@@ -80,7 +83,10 @@ export async function getExportReadinessForConversation({
         .from(conversationExportRequestTable)
         .where(
             and(
-                eq(conversationExportRequestTable.conversationId, conversationId),
+                eq(
+                    conversationExportRequestTable.conversationId,
+                    conversationId,
+                ),
                 eq(conversationExportRequestTable.userId, userId),
                 eq(conversationExportRequestTable.status, "completed"),
                 isNull(conversationExportRequestTable.deletedAt),

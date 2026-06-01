@@ -1,7 +1,9 @@
+.env
+.venv/
+.ruff_cache/
+__pycache__/
+.pytest_cache/
 node_modules/
 dist/
 *.log
 .DS_Store
-.env
-.env.local
-.env.*.local

@@ -51,12 +51,14 @@ def zpopmin_batch(vk: Valkey, *, count: int) -> list[DirtyConversation]:
         parts = str(member_str).split(":", 1)
         conv_id = int(parts[0])
         slug_id = parts[1] if len(parts) > 1 else "unknown"
-        batch.append(DirtyConversation(
-            conversation_id=conv_id,
-            slug_id=slug_id,
-            weight=int(score),
-            member=str(member_str),
-        ))
+        batch.append(
+            DirtyConversation(
+                conversation_id=conv_id,
+                slug_id=slug_id,
+                weight=int(score),
+                member=str(member_str),
+            )
+        )
     return batch
 
 

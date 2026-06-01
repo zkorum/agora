@@ -10,9 +10,6 @@ import type { ConversationDraft } from "./conversationDraft.types";
  * Used by both the composable and the Pinia store
  */
 export function createEmptyDraft(): ConversationDraft {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
   return {
     // Basic Content
     title: "",
@@ -31,13 +28,15 @@ export function createEmptyDraft(): ConversationDraft {
     // Privacy and Advanced Settings
     isPrivate: false,
     participationMode: "account_required",
-    privateConversationSettings: {
-      hasScheduledConversion: false,
-      conversionDate: tomorrow,
-    },
 
     // Event Ticket Verification
     requiresEventTicket: undefined,
+
+    // AI labeling
+    aiLabelingEnabled: true,
+
+    // Facilitator analysis preference
+    preferredOpinionGroupCount: null,
 
     // External Source (GitHub integration for MaxDiff)
     externalSourceConfig: null,

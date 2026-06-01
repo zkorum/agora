@@ -9,8 +9,7 @@ import {
     importStatusEnum,
     importFailureReasonEnum,
 } from "@/shared-backend/schema.js";
-import { eq, and, lt } from "drizzle-orm";
-import { log } from "@/app.js";
+import { eq, and } from "drizzle-orm";
 import { generateRandomSlugId } from "@/crypto.js";
 
 interface CreateImportRecordParams {
@@ -140,41 +139,6 @@ export async function getImportStatus(
     return result[0];
 }
 
-interface CleanupStaleImportsParams {
-    db: PostgresDatabase;
-    staleThresholdMs: number; // e.g., 3600000 for 1 hour
-}
-
-/**
- * Mark stale imports as failed
- * An import is considered stale if it's been in "processing" state
- * for longer than the threshold
- */
-export async function cleanupStaleImports(
-    params: CleanupStaleImportsParams,
-): Promise<number> {
-    const { db, staleThresholdMs } = params;
-
-    const staleTimestamp = new Date(Date.now() - staleThresholdMs);
-
-    const result = await db
-        .update(conversationImportTable)
-        .set({
-            status: "failed",
-            failureReason: "timeout",
-            updatedAt: new Date(),
-        })
-        .where(
-            and(
-                eq(conversationImportTable.status, "processing"),
-                lt(conversationImportTable.updatedAt, staleTimestamp),
-            ),
-        )
-        .returning({ slugId: conversationImportTable.slugId });
-
-    return result.length;
-}
-
 interface GetActiveImportForUserParams {
     db: PostgresDatabase;
     userId: string;
@@ -215,66 +179,4 @@ export async function getActiveImportForUser(
     }
 
     return result[0];
-}
-
-interface StuckImportRecord {
-    id: number;
-    slugId: string;
-    userId: string;
-}
-
-interface CleanupStuckImportsOnStartupParams {
-    db: PostgresDatabase;
-}
-
-interface CleanupStuckImportsResult {
-    cleanedCount: number;
-    stuckImports: StuckImportRecord[];
-}
-
-/**
- * Cleanup stuck imports on server startup.
- * Returns the list of stuck imports so notifications can be sent.
- * This is separate from the periodic cleanup because:
- * 1. It runs immediately without threshold check (server restarted)
- * 2. It returns import details for notification sending
- */
-export async function cleanupStuckImportsOnStartup({
-    db,
-}: CleanupStuckImportsOnStartupParams): Promise<CleanupStuckImportsResult> {
-    // First, get all stuck imports (to return for notification sending)
-    const stuckImports = await db
-        .select({
-            id: conversationImportTable.id,
-            slugId: conversationImportTable.slugId,
-            userId: conversationImportTable.userId,
-        })
-        .from(conversationImportTable)
-        .where(eq(conversationImportTable.status, "processing"));
-
-    if (stuckImports.length === 0) {
-        return {
-            cleanedCount: 0,
-            stuckImports: [],
-        };
-    }
-
-    // Mark all stuck imports as failed
-    await db
-        .update(conversationImportTable)
-        .set({
-            status: "failed",
-            failureReason: "server_restart",
-            updatedAt: new Date(),
-        })
-        .where(eq(conversationImportTable.status, "processing"));
-
-    log.info(
-        `[ImportStartup] Marked ${String(stuckImports.length)} stuck imports as failed`,
-    );
-
-    return {
-        cleanedCount: stuckImports.length,
-        stuckImports: stuckImports,
-    };
 }

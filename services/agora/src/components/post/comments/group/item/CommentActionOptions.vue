@@ -176,11 +176,18 @@ async function moderateCommentCallback() {
 }
 
 function deleteCommentCallback() {
-  deleteCommentMutation.mutate(props.commentItem.opinionSlugId, {
-    onSuccess: () => {
-      emit("deleted");
+  deleteCommentMutation.mutate(
+    {
+      commentSlugId: props.commentItem.opinionSlugId,
+      conversationSlugId: props.postSlugId,
+      moderation: props.commentItem.moderation,
     },
-  });
+    {
+      onSuccess: () => {
+        emit("deleted");
+      },
+    }
+  );
 }
 
 function optionButtonClicked() {

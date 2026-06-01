@@ -135,7 +135,6 @@ interface SaveMaxdiffResultProps {
     ranking: string[] | null;
     comparisons: MaxDiffComparison[];
     isComplete: boolean;
-    isMaxdiffOrgOnly: boolean;
     valkey?: Valkey;
 }
 
@@ -146,7 +145,6 @@ export async function saveMaxdiffResult({
     ranking,
     comparisons,
     isComplete,
-    isMaxdiffOrgOnly,
     valkey,
 }: SaveMaxdiffResultProps): Promise<{ conversationId: number }> {
     const { id: conversationId } =
@@ -159,7 +157,6 @@ export async function saveMaxdiffResult({
     const conversationTypeResult = await db
         .select({
             conversationType: conversationTable.conversationType,
-            organizationId: conversationTable.organizationId,
         })
         .from(conversationTable)
         .where(eq(conversationTable.id, conversationId));
@@ -167,12 +164,6 @@ export async function saveMaxdiffResult({
     if (conversationTypeResult[0]?.conversationType !== "maxdiff") {
         throw httpErrors.badRequest(
             "This conversation is not a MaxDiff conversation",
-        );
-    }
-
-    if (isMaxdiffOrgOnly && conversationTypeResult[0].organizationId === null) {
-        throw httpErrors.forbidden(
-            "MaxDiff feature is restricted to organization conversations",
         );
     }
 
@@ -423,7 +414,7 @@ export async function getMaxdiffResults({
     }
 
     // For active/all: read pre-computed Solidago scores from ranking_score table.
-    // If no cache, call python-bridge synchronously.
+    // If no cache exists, requeue work for the scoring worker and return empty results.
     const cachedScoreRow = await db
         .select({
             currentRankingScoreId: conversationTable.currentRankingScoreId,

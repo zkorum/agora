@@ -114,9 +114,7 @@ class ComparisonMatrix:
         self._n = len(items)
         self._index: dict[str, int] = {item: i for i, item in enumerate(items)}
         # None = unknown, 0 = same, -1 = i<j (i before j), +1 = i>j
-        self._matrix: list[list[int | None]] = [
-            [None] * self._n for _ in range(self._n)
-        ]
+        self._matrix: list[list[int | None]] = [[None] * self._n for _ in range(self._n)]
         for i in range(self._n):
             self._matrix[i][i] = 0
 
@@ -139,17 +137,13 @@ class ComparisonMatrix:
     def _items_before(self, item: str) -> list[str]:
         """Items known to come before (be better than) the given item."""
         return [
-            other
-            for other in self._items
-            if (c := self._get(other, item)) is not None and c < 0
+            other for other in self._items if (c := self._get(other, item)) is not None and c < 0
         ]
 
     def _items_after(self, item: str) -> list[str]:
         """Items known to come after (be worse than) the given item."""
         return [
-            other
-            for other in self._items
-            if (c := self._get(other, item)) is not None and c > 0
+            other for other in self._items if (c := self._get(other, item)) is not None and c > 0
         ]
 
     def _order(self, item_before: str, item_after: str) -> None:
@@ -255,10 +249,12 @@ def bws_to_pairwise(
             matrix.apply_comparison(comp)
 
         for winner, loser in matrix.get_ordered_pairs():
-            result.append(PairwiseWin(
-                user_id=user_id,
-                winner=winner,
-                loser=loser,
-            ))
+            result.append(
+                PairwiseWin(
+                    user_id=user_id,
+                    winner=winner,
+                    loser=loser,
+                )
+            )
 
     return result

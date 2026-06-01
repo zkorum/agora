@@ -15,7 +15,6 @@ export type {
   FieldValidationState,
   MutationResult,
   PostAsSettings,
-  PrivateConversationSettings,
   UseConversationDraftConfig,
   ValidationErrorField,
   ValidationResult,
@@ -39,6 +38,5 @@ export {
   zodPolisUrlValidation,
   zodPostAsSettings,
   zodSerializableConversationDraft,
-  zodSerializablePrivateConversationSettings,
   zodTitleValidation,
 } from "./conversationDraft.schema";

@@ -3,22 +3,57 @@
     <AnalysisPage
       ref="analysisPageRef"
       :conversation-slug-id="conversationData.metadata.conversationSlugId"
-      :participant-count="conversationData.metadata.participantCount"
+      :conversation-author-username="conversationData.metadata.authorUsername"
+      :conversation-organization-name="
+        conversationData.metadata.organization?.name ?? ''
+      "
       :analysis-query="analysisQuery"
+      :analysis-checkpoints-query="analysisCheckpointsQuery"
+      :live-conversation-view-snapshot-id="
+        conversationData.metadata.conversationViewSnapshotId
+      "
       :survey-query="surveyResultsQuery"
       :has-survey="hasSurvey"
       :survey-gate="conversationData.interaction.surveyGate"
+      :ai-labeling-enabled="conversationData.metadata.aiLabelingEnabled"
       :show-report-button="showReportButton"
+      :is-live-analysis-paused="isLiveAnalysisPaused"
+      :is-conversation-closed="conversationData.metadata.isClosed"
       :navigate-to-discover-tab="props.navigateToDiscoverTab"
+      :conversation-scroll-context="props.conversationScrollContext"
+      @update:live-analysis-paused="setLiveAnalysisPaused"
+      @live-pause-stats="emit('analysisLivePauseStats', $event)"
     />
   </div>
 </template>
 
 <script setup lang="ts">
+import type { ConversationActionBarStats } from "src/composables/conversation/useConversationActionBarStats";
+import type {
+  ConversationScrollContext,
+  RegisterChildRefreshHandler,
+} from "src/composables/conversation/useConversationParentState";
 import type { ExtendedConversation } from "src/shared/types/zod";
-import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
+import {
+  parseAnalysisViewQuery,
+  parseCheckpointQuery,
+} from "src/utils/analysis/analysisRoute";
+import {
+  useAnalysisCheckpointsQuery,
+  useAnalysisQuery,
+} from "src/utils/api/comment/useCommentQueries";
 import { useSurveyResultsAggregatedQuery } from "src/utils/api/survey/useSurveyQueries";
-import { computed, inject, onActivated, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  inject,
+  onActivated,
+  onDeactivated,
+  onMounted,
+  onUnmounted,
+  ref,
+  watch,
+} from "vue";
+import { useRoute } from "vue-router";
 
 import AnalysisPage from "./analysis/AnalysisPage.vue";
 
@@ -28,11 +63,16 @@ const props = withDefaults(
     hasConversationData: boolean;
     showReportButton?: boolean;
     navigateToDiscoverTab: () => void;
+    conversationScrollContext: ConversationScrollContext;
   }>(),
   {
     showReportButton: true,
   }
 );
+
+const emit = defineEmits<{
+  analysisLivePauseStats: [stats: ConversationActionBarStats | undefined];
+}>();
 
 // Inject parent function to report loading state
 const setCurrentTabLoading = inject<(loading: boolean) => void>(
@@ -41,70 +81,138 @@ const setCurrentTabLoading = inject<(loading: boolean) => void>(
     /* noop */
   }
 );
-const registerChildRefreshHandler = inject<
-  (handler: () => Promise<void>) => void
->(
+const registerChildRefreshHandler = inject<RegisterChildRefreshHandler>(
   "registerChildRefreshHandler",
   () => {
     /* noop */
+    return () => {
+      /* noop */
+    };
   }
 );
 
 const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
+const isTabActive = ref(true);
+const isLiveAnalysisPaused = ref(false);
+const route = useRoute();
+let unregisterChildRefreshHandler: (() => void) | undefined;
 
 // Create computed properties to ensure reactivity
 const conversationSlugId = computed(
   () => props.conversationData.metadata.conversationSlugId
 );
 const voteCount = computed(() => props.conversationData.metadata.voteCount);
-const hasSurvey = computed(() => props.conversationData.interaction.surveyGate?.hasSurvey === true);
+const aiLabelingEnabled = computed(
+  () => props.conversationData.metadata.aiLabelingEnabled
+);
+const hasSurvey = computed(
+  () => props.conversationData.interaction.surveyGate?.hasSurvey === true
+);
+const analysisView = computed(() =>
+  parseAnalysisViewQuery({ query: route.query })
+);
+const checkpointViewSnapshotId = computed(() =>
+  parseCheckpointQuery({ query: route.query })
+);
 
 // Load analysis data
 const analysisQuery = useAnalysisQuery({
   conversationSlugId,
+  analysisView,
+  checkpointViewSnapshotId,
   voteCount,
-  enabled: () => props.hasConversationData,
+  aiLabelingEnabled,
+  enabled: computed(
+    () =>
+      props.hasConversationData &&
+      isTabActive.value &&
+      !isLiveAnalysisPaused.value
+  ),
+});
+
+const analysisCheckpointsQuery = useAnalysisCheckpointsQuery({
+  conversationSlugId,
+  enabled: computed(
+    () =>
+      props.hasConversationData &&
+      isTabActive.value &&
+      !isLiveAnalysisPaused.value
+  ),
 });
 
 const surveyResultsQuery = useSurveyResultsAggregatedQuery({
   conversationSlugId,
-  enabled: hasSurvey,
+  analysisView,
+  checkpointViewSnapshotId,
+  enabled: computed(() => hasSurvey.value && !isLiveAnalysisPaused.value),
 });
 
 const isSurveyResultsLoading = computed(
   () =>
     hasSurvey.value &&
-    (surveyResultsQuery.isPending.value || surveyResultsQuery.isRefetching.value)
+    (surveyResultsQuery.isPending.value ||
+      surveyResultsQuery.isRefetching.value) &&
+    surveyResultsQuery.data.value === undefined
 );
 
 // Report loading state to parent (for spinner in PostActionBar)
 const isLoading = computed(
   () =>
-    analysisQuery.isPending.value ||
-    analysisQuery.isRefetching.value ||
-    isSurveyResultsLoading.value
+    isTabActive.value &&
+    (analysisQuery.isPending.value ||
+      analysisQuery.isRefetching.value ||
+      analysisCheckpointsQuery.isPending.value ||
+      analysisCheckpointsQuery.isRefetching.value ||
+      isSurveyResultsLoading.value)
 );
+
+function setLiveAnalysisPaused(paused: boolean): void {
+  isLiveAnalysisPaused.value = paused;
+}
 
 watch(isLoading, (loading) => {
   setCurrentTabLoading(loading);
 });
 
 async function handleChildRefresh(): Promise<void> {
+  const analysisRefresh =
+    analysisPageRef.value?.refreshLatestAnalysis() ??
+    Promise.all([analysisQuery.refetch(), analysisCheckpointsQuery.refetch()]);
+
   if (hasSurvey.value) {
-    await Promise.all([analysisQuery.refetch(), surveyResultsQuery.refetch()]);
+    await Promise.all([analysisRefresh, surveyResultsQuery.refetch()]);
     return;
   }
 
-  await analysisQuery.refetch();
+  await analysisRefresh;
 }
 
-registerChildRefreshHandler(handleChildRefresh);
+function registerRefreshHandler(): void {
+  unregisterChildRefreshHandler?.();
+  unregisterChildRefreshHandler = registerChildRefreshHandler(handleChildRefresh);
+}
+
+function unregisterRefreshHandler(): void {
+  unregisterChildRefreshHandler?.();
+  unregisterChildRefreshHandler = undefined;
+}
+
+registerRefreshHandler();
 
 onActivated(() => {
-  registerChildRefreshHandler(handleChildRefresh);
+  isTabActive.value = true;
+  registerRefreshHandler();
 });
 
+onDeactivated(() => {
+  isTabActive.value = false;
+  unregisterRefreshHandler();
+});
+
+onUnmounted(unregisterRefreshHandler);
+
 onMounted(() => {
+  isTabActive.value = true;
   // Report initial loading state to parent
   setCurrentTabLoading(isLoading.value);
 });

@@ -120,7 +120,7 @@ export function useOpinionFiltering({
   // No isFetching guard: TanStack Query deduplicates concurrent fetches internally,
   // and the guard can fail during transient QueryObserver initialization states.
   watch(activeQuery, (query) => {
-    if (!query.data.value) {
+    if (!query.data.value || query.isStale.value) {
       void query.refetch();
     }
   }, { immediate: true });
@@ -132,7 +132,11 @@ export function useOpinionFiltering({
     // Always refetch "My Votes" to show latest voting state (e.g., after cancelling votes).
     // For other lazy queries, refetch if no data loaded yet to ensure switching tabs
     // always loads data (guards against watch race conditions with TanStack Query).
-    if (filterValue === "my_votes" || !targetQuery.data.value) {
+    if (
+      filterValue === "my_votes" ||
+      !targetQuery.data.value ||
+      targetQuery.isStale.value
+    ) {
       void targetQuery.refetch();
     }
   }

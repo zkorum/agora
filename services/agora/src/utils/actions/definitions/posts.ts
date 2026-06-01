@@ -22,6 +22,8 @@ interface PostActionTranslations {
   userReports: string;
   exportConversation: string;
   syncGitHub: string;
+  openConversation: string;
+  closeConversation: string;
 }
 
 /**
@@ -39,6 +41,9 @@ export function getPostActions({
   exportConversationCallback,
   shareCallback,
   syncGitHubCallback,
+  openConversationCallback,
+  closeConversationCallback,
+  isConversationClosed,
   translations,
 }: {
   reportPostCallback: () => void;
@@ -52,6 +57,9 @@ export function getPostActions({
   exportConversationCallback: () => void | Promise<void>;
   shareCallback: () => void | Promise<void>;
   syncGitHubCallback: (() => void | Promise<void>) | null;
+  openConversationCallback: () => void | Promise<void>;
+  closeConversationCallback: () => void | Promise<void>;
+  isConversationClosed: boolean;
   translations: PostActionTranslations;
 }): ContentAction[] {
   const actions: ContentAction[] = [
@@ -64,6 +72,17 @@ export function getPostActions({
         (context.isOwner || context.isOrgMember) && !context.isEmbeddedMode,
     },
   ];
+
+  if (isConversationClosed) {
+    actions.push({
+      id: "openConversation",
+      label: translations.openConversation,
+      icon: "mdi-play-circle",
+      handler: openConversationCallback,
+      isVisible: (context: ContentActionContext) =>
+        (context.isOwner || context.isOrgMember) && !context.isEmbeddedMode,
+    });
+  }
 
   if (syncGitHubCallback !== null) {
     actions.push({
@@ -114,7 +133,6 @@ export function getPostActions({
       id: "moderate",
       label: translations.moderate,
       icon: "mdi-sword",
-      variant: "warning",
       handler: moderatePostCallback,
       isVisible: (context: ContentActionContext) =>
         context.isSiteModerator && !context.isEmbeddedMode,
@@ -131,7 +149,6 @@ export function getPostActions({
       id: "report",
       label: translations.report,
       icon: "mdi-flag",
-      variant: "warning",
       handler: reportPostCallback,
       isVisible: () => true,
     },
@@ -143,6 +160,16 @@ export function getPostActions({
       handler: muteUserCallback,
       isVisible: (context: ContentActionContext) =>
         !context.isOwner && context.isLoggedIn && !context.isEmbeddedMode,
+    },
+    {
+      id: "closeConversation",
+      label: translations.closeConversation,
+      icon: "mdi-stop-circle",
+      handler: closeConversationCallback,
+      isVisible: (context: ContentActionContext) =>
+        !isConversationClosed &&
+        (context.isOwner || context.isOrgMember) &&
+        !context.isEmbeddedMode,
     },
     {
       id: "delete",
@@ -174,6 +201,9 @@ export function getAvailablePostActions({
   exportConversationCallback,
   shareCallback,
   syncGitHubCallback,
+  openConversationCallback,
+  closeConversationCallback,
+  isConversationClosed,
   translations,
 }: {
   context: ContentActionContext;
@@ -188,6 +218,9 @@ export function getAvailablePostActions({
   exportConversationCallback: () => void | Promise<void>;
   shareCallback: () => void | Promise<void>;
   syncGitHubCallback: (() => void | Promise<void>) | null;
+  openConversationCallback: () => void | Promise<void>;
+  closeConversationCallback: () => void | Promise<void>;
+  isConversationClosed: boolean;
   translations: PostActionTranslations;
 }): ContentAction[] {
   const allActions = getPostActions({
@@ -202,6 +235,9 @@ export function getAvailablePostActions({
     exportConversationCallback,
     shareCallback,
     syncGitHubCallback,
+    openConversationCallback,
+    closeConversationCallback,
+    isConversationClosed,
     translations,
   });
 

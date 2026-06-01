@@ -1,13 +1,20 @@
 import { expect, test } from "@playwright/test";
 
-test("landing page renders greeting", async ({ page }) => {
+test("landing page renders hero", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator("h1")).toHaveText("Agora");
-  await expect(page.locator("p")).toHaveText("Hello, world!");
+  await expect(
+    page.getByText(
+      "Agora helps people overcome disagreement and find consensus",
+    ),
+  ).toBeVisible();
 });
 
-test("button click updates greeting", async ({ page }) => {
+test("hero calls to action link to landing sections", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Click me" }).click();
-  await expect(page.locator("p")).toHaveText("Hello! You've clicked 1 time.");
+  await expect(
+    page.getByRole("link", { name: "Create a conversation" }).first(),
+  ).toHaveAttribute("href", "#facilitators");
+  await expect(
+    page.getByRole("link", { name: "Explore conversations" }).first(),
+  ).toHaveAttribute("href", "#citizens");
 });

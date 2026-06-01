@@ -27,7 +27,7 @@ export const commentActionBarTranslations: Record<
     agree: "Agree",
     voteFailed: "Failed to submit vote. Please try again.",
     conversationClosed:
-      "Cannot vote because the conversation was closed by the author.",
+      "Cannot vote because the conversation was closed by the facilitator.",
     closedConversationTooltip:
       "Voting is disabled - conversation has been closed or locked",
     disagreeAriaLabel: "Disagree with statement. Current disagrees:",
@@ -43,7 +43,7 @@ export const commentActionBarTranslations: Record<
     pass: "غير متأكد",
     agree: "أوافق",
     voteFailed: "فشل في إرسال التصويت. يرجى المحاولة مرة أخرى.",
-    conversationClosed: "لا يمكن التصويت لأن المحادثة تم إغلاقها من قبل المؤلف.",
+    conversationClosed: "لا يمكن التصويت لأن المحادثة تم إغلاقها من قبل الميسر.",
     closedConversationTooltip:
       "التصويت معطل - تم إغلاق المحادثة أو قفلها",
     disagreeAriaLabel: "أرفض المقترح. عدد الرفض الحالي:",
@@ -60,7 +60,7 @@ export const commentActionBarTranslations: Record<
     agree: "De acuerdo",
     voteFailed: "Error al enviar el voto. Por favor, inténtelo de nuevo.",
     conversationClosed:
-      "No se puede votar porque la conversación fue cerrada por el autor.",
+      "No se puede votar porque la conversación fue cerrada por el facilitador.",
     closedConversationTooltip:
       "La votación está deshabilitada - la conversación ha sido cerrada o bloqueada",
     disagreeAriaLabel: "En desacuerdo con la proposición. Desacuerdos actuales:",
@@ -76,7 +76,7 @@ export const commentActionBarTranslations: Record<
     pass: "مطمئن نیستم",
     agree: "موافقم",
     voteFailed: "ارسال رأی ناموفق بود. لطفاً دوباره تلاش کنید.",
-    conversationClosed: "امکان رأی‌گیری وجود ندارد زیرا گفتگو توسط نویسنده بسته شده است.",
+    conversationClosed: "امکان رأی‌گیری وجود ندارد زیرا گفتگو توسط تسهیل‌گر بسته شده است.",
     closedConversationTooltip: "رأی‌گیری غیرفعال است — گفتگو بسته یا قفل شده است",
     disagreeAriaLabel: "مخالفت با گزاره. تعداد فعلی مخالفت‌ها:",
     passAriaLabel: "مطمئن نیستم درباره این گزاره. تعداد فعلی:",
@@ -92,7 +92,7 @@ export const commentActionBarTranslations: Record<
     agree: "D'accord",
     voteFailed: "Échec de l'envoi du vote. Veuillez réessayer.",
     conversationClosed:
-      "Impossible de voter car la conversation a été fermée par l'auteur.",
+      "Impossible de voter car la conversation a été fermée par le facilitateur.",
     closedConversationTooltip:
       "Le vote est désactivé - la conversation a été fermée ou verrouillée",
     disagreeAriaLabel: "Pas d'accord avec la proposition. Désaccords actuels:",
@@ -108,7 +108,7 @@ export const commentActionBarTranslations: Record<
     pass: "不确定",
     agree: "同意",
     voteFailed: "投票提交失败。请重试。",
-    conversationClosed: "无法投票，因为对话已被作者关闭。",
+    conversationClosed: "无法投票，因为对话已被主持人关闭。",
     closedConversationTooltip: "投票已禁用 - 对话已被关闭或锁定",
     disagreeAriaLabel: "不同意此意见。当前不同意数：",
     passAriaLabel: "对该意见不确定。当前不确定数：",
@@ -123,7 +123,7 @@ export const commentActionBarTranslations: Record<
     pass: "不確定",
     agree: "同意",
     voteFailed: "投票提交失敗。請重試。",
-    conversationClosed: "無法投票，因為對話已被作者關閉。",
+    conversationClosed: "無法投票，因為對話已被主持人關閉。",
     closedConversationTooltip: "投票已禁用 - 對話已被關閉或鎖定",
     disagreeAriaLabel: "不同意此意見。當前不同意數：",
     passAriaLabel: "對該意見不確定。當前不確定數：",
@@ -138,7 +138,7 @@ export const commentActionBarTranslations: Record<
     pass: "לא בטוח/ה",
     agree: "מסכים/ה",
     voteFailed: "שליחת ההצבעה נכשלה. אנא נסו שוב.",
-    conversationClosed: "לא ניתן להצביע כי השיחה נסגרה על ידי המחבר.",
+    conversationClosed: "לא ניתן להצביע כי השיחה נסגרה על ידי המנחה.",
     closedConversationTooltip: "ההצבעה מושבתת — השיחה נסגרה או ננעלה",
     disagreeAriaLabel: "לא מסכים/ה עם ההצהרה. מספר חוסר הסכמות נוכחי:",
     passAriaLabel: "לא בטוח/ה לגבי הצהרה זו. ספירה נוכחית:",
@@ -153,7 +153,7 @@ export const commentActionBarTranslations: Record<
     pass: "わからない",
     agree: "同意",
     voteFailed: "投票の送信に失敗しました。もう一度お試しください。",
-    conversationClosed: "会話が作成者によって閉じられたため、投票できません。",
+    conversationClosed: "会話がファシリテーターによって閉じられたため、投票できません。",
     closedConversationTooltip:
       "投票は無効です - 会話は閉じられたかロックされています",
     disagreeAriaLabel: "意見に同意しない。現在の反対票数：",
@@ -169,7 +169,7 @@ export const commentActionBarTranslations: Record<
     pass: "Белгисиз",
     agree: "Макулмун",
     voteFailed: "Добуш берүү ишке ашкан жок. Кайра аракет кылыңыз.",
-    conversationClosed: "Автор талкууну жапкандыктан добуш берүү мүмкүн эмес.",
+    conversationClosed: "Фасилитатор талкууну жапкандыктан добуш берүү мүмкүн эмес.",
     closedConversationTooltip:
       "Добуш берүү өчүрүлгөн — талкуу жабылган же кулпуланган",
     disagreeAriaLabel: "Пикирге макул эмес. Учурдагы макул эмес саны:",
@@ -185,7 +185,7 @@ export const commentActionBarTranslations: Record<
     pass: "Не уверен",
     agree: "Согласен",
     voteFailed: "Не удалось отправить голос. Пожалуйста, попробуйте снова.",
-    conversationClosed: "Невозможно голосовать, так как обсуждение закрыто автором.",
+    conversationClosed: "Невозможно голосовать, так как обсуждение закрыто фасилитатором.",
     closedConversationTooltip:
       "Голосование отключено — обсуждение закрыто или заблокировано",
     disagreeAriaLabel: "Не согласен с высказыванием. Текущее количество несогласных:",

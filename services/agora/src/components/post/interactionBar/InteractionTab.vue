@@ -6,12 +6,16 @@
          router.push(). See SpaLink.vue for the two-mode explanation. -->
     <div class="container">
       <ZKTab
-        :icon-code="props.conversationType === 'maxdiff' ? 'mdi:sort-numeric-ascending' : 'meteor-icons:comment'"
-        :text="formatAmount(opinionCount)"
+        :icon-code="
+          props.conversationType === 'maxdiff'
+            ? 'mdi:sort-numeric-ascending'
+            : 'meteor-icons:comment'
+        "
+        :amount="opinionCount"
         :is-highlighted="model === 'comment' && !compactMode"
         :should-underline-on-highlight="true"
         :is-loading="isLoading && model === 'comment'"
-        :to="compactMode ? undefined : { name: commentRouteName, params: { postSlugId: conversationSlugId } }"
+        :to="commentRoute"
         :deferred="true"
         @click="handleCommentClick"
       />
@@ -22,7 +26,7 @@
         :is-highlighted="model === 'analysis'"
         :should-underline-on-highlight="true"
         :is-loading="isLoading && model === 'analysis'"
-        :to="{ name: analysisRouteName, params: { postSlugId: conversationSlugId } }"
+        :to="analysisRoute"
         :deferred="true"
         @click="handleAnalysisClick"
       />
@@ -34,26 +38,29 @@
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ConversationType } from "src/shared/types/zod";
-import { formatAmount } from "src/utils/common";
 import { computed, ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { type RouteLocationRaw, useRoute, useRouter } from "vue-router";
 
 import {
   type InteractionTabTranslations,
   interactionTabTranslations,
 } from "./InteractionTab.i18n";
 
-const props = withDefaults(defineProps<{
-  opinionCount: number;
-  compactMode: boolean;
-  isLoading?: boolean;
-  conversationSlugId: string;
-  onSameTabClick?: () => void;
-  conversationType?: ConversationType;
-}>(), {
-  onSameTabClick: undefined,
-  conversationType: "polis",
-});
+const props = withDefaults(
+  defineProps<{
+    opinionCount: number;
+    compactMode: boolean;
+    isLoading?: boolean;
+    conversationSlugId: string;
+    onSameTabClick?: () => void;
+    conversationType?: ConversationType;
+    enableRouteNavigation: boolean;
+  }>(),
+  {
+    onSameTabClick: undefined,
+    conversationType: "polis",
+  }
+);
 
 const model = defineModel<"comment" | "analysis">({ required: true });
 const { t } = useComponentI18n<InteractionTabTranslations>(
@@ -80,9 +87,33 @@ const analysisRouteName = computed(() =>
     : "/conversation/[postSlugId]/analysis"
 );
 
+const commentRoute = computed<RouteLocationRaw | undefined>(() => {
+  if (props.compactMode || !props.enableRouteNavigation) {
+    return undefined;
+  }
+
+  return {
+    name: commentRouteName.value,
+    params: { postSlugId: props.conversationSlugId },
+  };
+});
+
+const analysisRoute = computed<RouteLocationRaw | undefined>(() => {
+  if (!props.enableRouteNavigation) {
+    return undefined;
+  }
+
+  return {
+    name: analysisRouteName.value,
+    params: { postSlugId: props.conversationSlugId },
+  };
+});
+
 function handleCommentClick(): void {
   if (model.value === "comment") {
     props.onSameTabClick?.();
+  } else if (!props.enableRouteNavigation) {
+    model.value = "comment";
   } else {
     // Going from analysis back to comment — pop the analysis history entry
     if (canGoBackToComment.value) {
@@ -101,6 +132,8 @@ function handleCommentClick(): void {
 function handleAnalysisClick(): void {
   if (model.value === "analysis") {
     props.onSameTabClick?.();
+  } else if (!props.enableRouteNavigation) {
+    model.value = "analysis";
   } else {
     canGoBackToComment.value = true;
     void router.push({

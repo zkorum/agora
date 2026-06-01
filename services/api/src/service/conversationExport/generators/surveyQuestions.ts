@@ -5,7 +5,10 @@ import type {
     GeneratorParams,
 } from "./base.js";
 import { surveyQuestionHeaders } from "./surveyHeaders.js";
-import { buildSurveyQuestionRows, loadSurveyExportContext } from "./surveyShared.js";
+import {
+    buildSurveyQuestionRows,
+    loadSurveyExportContext,
+} from "./surveyShared.js";
 
 export const surveyQuestionsGenerator: CsvGenerator = {
     fileType: "survey_questions",

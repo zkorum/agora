@@ -1,15 +1,11 @@
 /**
- * Conversation Counter Management
+ * Conversation count calculation and analysis scheduling
  *
- * Provides modular functions for updating and reconciling conversation counters:
+ * Provides a calculation helper for conversation_view_snapshot counts:
  * - voteCount / totalVoteCount: Active votes (unmoderated / all)
  * - opinionCount / totalOpinionCount: Active opinions (unmoderated / all)
  * - participantCount / totalParticipantCount: Unique voters (unmoderated / all)
  * - moderatedOpinionCount / hiddenOpinionCount: Opinions by moderation action
- *
- * Each counter has:
- * - reconcile function: Recalculates accurate count from database
- * - update function: Applies delta changes (+1/-1)
  *
  * Uses PostgreSQL FILTER clauses to compute unmoderated and total counts
  * in the same query (3 queries total, same as before).
@@ -23,8 +19,9 @@ import {
     voteTable,
     userTable,
     opinionModerationTable,
-    conversationUpdateQueueTable,
 } from "./schema.js";
+import { scheduleAnalysisUpdate } from "./analysisScheduler.js";
+import type { BaseLogger } from "pino";
 import { getEligibleParticipantIdsForAnalysis } from "./surveyAnalysis.js";
 import { nowZeroMs } from "./util.js";
 
@@ -39,11 +36,13 @@ interface AllConversationCounters {
     totalParticipantCount: number;
 }
 
+type AnalysisQueueStrategy = "caller_will_enqueue" | "db_reconciliation_only";
+
 /**
  * Reconcile all conversation counters from actual database records (internal helper).
  * Returns both unmoderated and total counts using FILTER clauses — 3 queries total.
  */
-async function calculateConversationCounters({
+export async function calculateConversationCounters({
     db,
     conversationId,
 }: {
@@ -103,7 +102,7 @@ async function calculateConversationCounters({
     const voteCount =
         shouldFilterAnalysisVotes && analysisEligibleParticipantIds.length === 0
             ? 0
-            : (
+            : ((
                   await db
                       .select({ voteCount: count() })
                       .from(voteTable)
@@ -111,7 +110,10 @@ async function calculateConversationCounters({
                           opinionTable,
                           eq(voteTable.opinionId, opinionTable.id),
                       )
-                      .innerJoin(userTable, eq(voteTable.authorId, userTable.id))
+                      .innerJoin(
+                          userTable,
+                          eq(voteTable.authorId, userTable.id),
+                      )
                       .leftJoin(
                           opinionModerationTable,
                           eq(opinionModerationTable.opinionId, opinionTable.id),
@@ -131,7 +133,7 @@ async function calculateConversationCounters({
                                   : sql`true`,
                           ),
                       )
-              )[0]?.voteCount ?? 0;
+              )[0]?.voteCount ?? 0);
 
     // Opinion counts: unmoderated + total + moderated + hidden in one query
     const opinionCountResult = await db
@@ -189,7 +191,10 @@ async function calculateConversationCounters({
                 shouldFilterAnalysisVotes
                     ? analysisEligibleParticipantIds.length === 0
                         ? sql`false`
-                        : inArray(voteTable.authorId, analysisEligibleParticipantIds)
+                        : inArray(
+                              voteTable.authorId,
+                              analysisEligibleParticipantIds,
+                          )
                     : sql`true`,
             ),
         )
@@ -218,128 +223,23 @@ async function calculateConversationCounters({
 }
 
 /**
- * Update voteCount with a delta (+1 or -1)
+ * Schedule analysis after a mutation that changes counts.
  *
- * Automatically enqueues math update since clustering depends on vote data
- * Use this for real-time updates when votes are added/removed
+ * conversation_view_snapshot is the canonical count store; math-updater writes
+ * updated snapshot counts after processing the scheduled work.
  */
-export async function updateVoteCount({
+export async function scheduleConversationAnalysisRefresh({
     db,
     conversationId,
-    delta,
+    log,
     doUpdateLastReactedAt = false,
+    queueStrategy = "db_reconciliation_only",
 }: {
     db: PostgresJsDatabase;
     conversationId: number;
-    delta: number;
+    log: Pick<BaseLogger, "info" | "error">;
     doUpdateLastReactedAt?: boolean;
-}): Promise<void> {
-    if (doUpdateLastReactedAt) {
-        await db
-            .update(conversationTable)
-            .set({
-                voteCount: sql`${conversationTable.voteCount} + ${delta}`,
-                lastReactedAt: nowZeroMs(),
-            })
-            .where(eq(conversationTable.id, conversationId));
-    } else {
-        await db
-            .update(conversationTable)
-            .set({
-                voteCount: sql`${conversationTable.voteCount} + ${delta}`,
-            })
-            .where(eq(conversationTable.id, conversationId));
-    }
-
-    // Enqueue math update (voteCount changes affect clustering)
-    await enqueueMathUpdate({ db, conversationId });
-}
-
-/**
- * Update opinionCount and totalOpinionCount with a delta (+1 or -1)
- *
- * Both counters receive the same delta because new/deleted opinions are always
- * unmoderated. Moderation actions use reconcileConversationCounters instead.
- */
-export async function updateOpinionCount({
-    db,
-    conversationId,
-    delta,
-    doUpdateLastReactedAt = false,
-}: {
-    db: PostgresJsDatabase;
-    conversationId: number;
-    delta: number;
-    doUpdateLastReactedAt?: boolean;
-}): Promise<void> {
-    if (doUpdateLastReactedAt) {
-        await db
-            .update(conversationTable)
-            .set({
-                opinionCount: sql`${conversationTable.opinionCount} + ${delta}`,
-                totalOpinionCount: sql`${conversationTable.totalOpinionCount} + ${delta}`,
-                lastReactedAt: nowZeroMs(),
-            })
-            .where(eq(conversationTable.id, conversationId));
-    } else {
-        await db
-            .update(conversationTable)
-            .set({
-                opinionCount: sql`${conversationTable.opinionCount} + ${delta}`,
-                totalOpinionCount: sql`${conversationTable.totalOpinionCount} + ${delta}`,
-            })
-            .where(eq(conversationTable.id, conversationId));
-    }
-}
-
-/**
- * Enqueue conversation for math update (clustering recalculation) (internal helper)
- *
- * Should be called whenever voteCount changes, as math calculations depend on votes
- */
-async function enqueueMathUpdate({
-    db,
-    conversationId,
-}: {
-    db: PostgresJsDatabase;
-    conversationId: number;
-}): Promise<void> {
-    const now = nowZeroMs();
-
-    await db
-        .insert(conversationUpdateQueueTable)
-        .values({
-            conversationId: conversationId,
-            requestedAt: now,
-            processedAt: null,
-        })
-        .onConflictDoUpdate({
-            target: conversationUpdateQueueTable.conversationId,
-            set: {
-                requestedAt: now,
-                processedAt: null,
-            },
-        });
-}
-
-/**
- * Reconcile all conversation counters by recalculating from database
- *
- * Sets both unmoderated and total counts in a single UPDATE.
- * Automatically enqueues math update since voteCount changes affect clustering,
- * unless the caller is already running a math update for the same conversation.
- * Use this when actions affect multiple counters (e.g., moderation).
- */
-export async function reconcileConversationCounters({
-    db,
-    conversationId,
-    doUpdateLastReactedAt = false,
-    enqueueMathUpdateAfterReconcile = true,
-}: {
-    db: PostgresJsDatabase;
-    conversationId: number;
-    doUpdateLastReactedAt?: boolean;
-    enqueueMathUpdateAfterReconcile?: boolean;
+    queueStrategy?: AnalysisQueueStrategy;
 }): Promise<void> {
     // MaxDiff counters are owned by the scoring worker (Python).
     // Skip here -- the worker updates counters alongside scoring.
@@ -352,39 +252,15 @@ export async function reconcileConversationCounters({
         return;
     }
 
-    const counters = await calculateConversationCounters({
-        db,
-        conversationId,
-    });
-
-    const counterColumns = {
-        opinionCount: counters.opinionCount,
-        voteCount: counters.voteCount,
-        participantCount: counters.participantCount,
-        totalOpinionCount: counters.totalOpinionCount,
-        totalVoteCount: counters.totalVoteCount,
-        totalParticipantCount: counters.totalParticipantCount,
-        moderatedOpinionCount: counters.moderatedOpinionCount,
-        hiddenOpinionCount: counters.hiddenOpinionCount,
-    };
-
     if (doUpdateLastReactedAt) {
         await db
             .update(conversationTable)
-            .set({
-                ...counterColumns,
-                lastReactedAt: nowZeroMs(),
-            })
-            .where(eq(conversationTable.id, conversationId));
-    } else {
-        await db
-            .update(conversationTable)
-            .set(counterColumns)
+            .set({ lastReactedAt: nowZeroMs() })
             .where(eq(conversationTable.id, conversationId));
     }
 
-    if (enqueueMathUpdateAfterReconcile) {
-        // Enqueue math update (voteCount changes affect clustering)
-        await enqueueMathUpdate({ db, conversationId });
-    }
+    const schedule = await scheduleAnalysisUpdate({ db, conversationId, log });
+    log.info(
+        `[ConversationCounters] Scheduled math work conversationId=${String(conversationId)} conversationSlugId=${schedule.conversationSlugId} generation=${String(schedule.dataGeneration)} specs=${String(schedule.scheduledSpecCount)} queueStrategy=${queueStrategy}`,
+    );
 }

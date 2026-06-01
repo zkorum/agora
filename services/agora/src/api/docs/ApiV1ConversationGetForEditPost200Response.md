@@ -12,12 +12,14 @@ Name | Type | Description | Notes
 **isIndexed** | **boolean** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
+**aiLabelingEnabled** | **boolean** |  | [default to undefined]
+**preferredOpinionGroupCount** | **number** |  | [default to undefined]
 **postAsOrganizationName** | **string** |  | [optional] [default to undefined]
 **surveyConfig** | [**ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfig**](ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfig.md) |  | [optional] [default to undefined]
-**indexConversationAt** | **string** |  | [optional] [default to undefined]
 **createdAt** | **string** |  | [default to undefined]
 **updatedAt** | **string** |  | [default to undefined]
 **isLocked** | **boolean** |  | [default to undefined]
+**editPermissions** | [**ApiV1ConversationGetForEditPost200ResponseOneOfEditPermissions**](ApiV1ConversationGetForEditPost200ResponseOneOfEditPermissions.md) |  | [default to undefined]
 **reason** | **string** |  | [default to undefined]
 
 ## Example
@@ -33,12 +35,14 @@ const instance: ApiV1ConversationGetForEditPost200Response = {
     isIndexed,
     participationMode,
     requiresEventTicket,
+    aiLabelingEnabled,
+    preferredOpinionGroupCount,
     postAsOrganizationName,
     surveyConfig,
-    indexConversationAt,
     createdAt,
     updatedAt,
     isLocked,
+    editPermissions,
     reason,
 };
 ```

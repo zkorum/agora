@@ -33,7 +33,11 @@
               </div>
               <div
                 class="topLayer"
-                :class="{ 'topLayer--overBody': bodyBehindFooter }"
+                :class="{
+                  'topLayer--overBody': bodyBehindFooter,
+                  'topLayer--pinned': pinFooterToBottom,
+                  'topLayer--fills-remaining': !pinFooterToBottom && !bodyBehindFooter,
+                }"
               >
                 <div class="widthLimiter">
                   <slot name="footer" />
@@ -57,6 +61,7 @@ const props = withDefaults(
     showCloseButton?: boolean;
     closeCallback?: () => void;
     bodyBehindFooter?: boolean;
+    pinFooterToBottom?: boolean;
   }>(),
   {
     showBackButton: true,
@@ -64,6 +69,7 @@ const props = withDefaults(
     showCloseButton: false,
     closeCallback: undefined,
     bodyBehindFooter: false,
+    pinFooterToBottom: true,
   }
 );
 
@@ -164,7 +170,15 @@ function handleClose() {
   justify-content: center;
   background-color: white;
   border-top: 1px solid $secondary;
+}
+
+.topLayer--pinned {
   margin-top: auto;
+}
+
+.topLayer--fills-remaining {
+  align-items: flex-start;
+  flex: 1 0 auto;
 }
 
 .topLayer--overBody {

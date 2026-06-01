@@ -8,7 +8,6 @@ Ported from:
 Tests are written FIRST (before implementation) per TDD methodology.
 """
 
-
 from scoring_worker.bws_conversion import (
     BWSComparison,
     PairwiseWin,
@@ -20,6 +19,7 @@ from scoring_worker.bws_conversion import (
 # ---------------------------------------------------------------------------
 # Helper: create a BWSComparison concisely
 # ---------------------------------------------------------------------------
+
 
 def bws(
     *,
@@ -100,9 +100,14 @@ class TestBuildComparisonMatrix:
 
     def test_two_items_after_comparison(self) -> None:
         matrix = build_comparison_matrix(items=["a", "b"])
-        matrix.apply_comparison(BWSComparison(
-            user_id=0, best="b", worst="a", candidate_set=["a", "b"],
-        ))
+        matrix.apply_comparison(
+            BWSComparison(
+                user_id=0,
+                best="b",
+                worst="a",
+                candidate_set=["a", "b"],
+            )
+        )
         assert matrix.get_unordered_pairs() == []
         ordered = matrix.get_ordered_pairs()
         assert len(ordered) == 1
@@ -112,13 +117,23 @@ class TestBuildComparisonMatrix:
         """If A>B and B>C, then A>C is inferred."""
         matrix = build_comparison_matrix(items=["a", "b", "c"])
         # a beats b
-        matrix.apply_comparison(BWSComparison(
-            user_id=0, best="a", worst="b", candidate_set=["a", "b"],
-        ))
+        matrix.apply_comparison(
+            BWSComparison(
+                user_id=0,
+                best="a",
+                worst="b",
+                candidate_set=["a", "b"],
+            )
+        )
         # b beats c
-        matrix.apply_comparison(BWSComparison(
-            user_id=0, best="b", worst="c", candidate_set=["b", "c"],
-        ))
+        matrix.apply_comparison(
+            BWSComparison(
+                user_id=0,
+                best="b",
+                worst="c",
+                candidate_set=["b", "c"],
+            )
+        )
         # Transitive: a>c should be inferred
         assert matrix.get_unordered_pairs() == []
         ordered = matrix.get_ordered_pairs()
@@ -130,9 +145,14 @@ class TestBuildComparisonMatrix:
     def test_bws_decomposition_four_items(self) -> None:
         """BWS {best:A, worst:D, set:[A,B,C,D]} produces multiple pairwise orderings."""
         matrix = build_comparison_matrix(items=["A", "B", "C", "D"])
-        matrix.apply_comparison(BWSComparison(
-            user_id=0, best="A", worst="D", candidate_set=["A", "B", "C", "D"],
-        ))
+        matrix.apply_comparison(
+            BWSComparison(
+                user_id=0,
+                best="A",
+                worst="D",
+                candidate_set=["A", "B", "C", "D"],
+            )
+        )
         ordered = matrix.get_ordered_pairs()
         pair_tuples = {(winner, loser) for winner, loser in ordered}
         # A beats everyone
@@ -149,9 +169,14 @@ class TestBuildComparisonMatrix:
     def test_ignores_unknown_items(self) -> None:
         """Comparisons referencing items not in the item list are ignored."""
         matrix = build_comparison_matrix(items=["a", "b"])
-        matrix.apply_comparison(BWSComparison(
-            user_id=0, best="x", worst="y", candidate_set=["x", "y"],
-        ))
+        matrix.apply_comparison(
+            BWSComparison(
+                user_id=0,
+                best="x",
+                worst="y",
+                candidate_set=["x", "y"],
+            )
+        )
         assert len(matrix.get_ordered_pairs()) == 0
         assert len(matrix.get_unordered_pairs()) == 1
 
@@ -186,9 +211,14 @@ class TestBwsToPairwise:
     def test_bws_four_items_produces_five_pairs(self) -> None:
         """BWS {best:A, worst:D, set:[A,B,C,D]} → 5 pairwise wins via transitive closure."""
         result = bws_to_pairwise(
-            bws_comparisons=[bws(
-                user_id=0, best="A", worst="D", candidate_set=["A", "B", "C", "D"],
-            )],
+            bws_comparisons=[
+                bws(
+                    user_id=0,
+                    best="A",
+                    worst="D",
+                    candidate_set=["A", "B", "C", "D"],
+                )
+            ],
             entity_ids=["A", "B", "C", "D"],
         )
         pairs = pair_set(result)
@@ -247,20 +277,28 @@ class TestBwsToPairwise:
         Comparisons where best+worst are active but set has removed items work."""
         # Case 1: worst is removed → entire comparison skipped
         result1 = bws_to_pairwise(
-            bws_comparisons=[bws(
-                user_id=0, best="A", worst="D",
-                candidate_set=["A", "B", "C", "D"],
-            )],
+            bws_comparisons=[
+                bws(
+                    user_id=0,
+                    best="A",
+                    worst="D",
+                    candidate_set=["A", "B", "C", "D"],
+                )
+            ],
             entity_ids=["A", "B"],  # C and D are removed
         )
         assert result1 == []  # D not active, comparison skipped
 
         # Case 2: best+worst active, some set members removed → works with filtered set
         result2 = bws_to_pairwise(
-            bws_comparisons=[bws(
-                user_id=0, best="A", worst="B",
-                candidate_set=["A", "B", "C", "D"],
-            )],
+            bws_comparisons=[
+                bws(
+                    user_id=0,
+                    best="A",
+                    worst="B",
+                    candidate_set=["A", "B", "C", "D"],
+                )
+            ],
             entity_ids=["A", "B"],  # C and D removed but best/worst are active
         )
         pairs = pair_set(result2)
@@ -275,12 +313,24 @@ class TestBwsToPairwise:
         """
         items = ["y4c2yrE", "bdw35_M", "INN4aJg", "5rLND68", "_COndGA", "mH8LTrc"]
         comparisons = [
-            bws(user_id=0, best="INN4aJg", worst="5rLND68",
-                candidate_set=["5rLND68", "bdw35_M", "y4c2yrE", "INN4aJg"]),
-            bws(user_id=0, best="y4c2yrE", worst="bdw35_M",
-                candidate_set=["bdw35_M", "_COndGA", "mH8LTrc", "y4c2yrE"]),
-            bws(user_id=0, best="_COndGA", worst="mH8LTrc",
-                candidate_set=["INN4aJg", "5rLND68", "mH8LTrc", "_COndGA"]),
+            bws(
+                user_id=0,
+                best="INN4aJg",
+                worst="5rLND68",
+                candidate_set=["5rLND68", "bdw35_M", "y4c2yrE", "INN4aJg"],
+            ),
+            bws(
+                user_id=0,
+                best="y4c2yrE",
+                worst="bdw35_M",
+                candidate_set=["bdw35_M", "_COndGA", "mH8LTrc", "y4c2yrE"],
+            ),
+            bws(
+                user_id=0,
+                best="_COndGA",
+                worst="mH8LTrc",
+                candidate_set=["INN4aJg", "5rLND68", "mH8LTrc", "_COndGA"],
+            ),
         ]
         result = bws_to_pairwise(bws_comparisons=comparisons, entity_ids=items)
         pairs = pair_set(result)
@@ -326,12 +376,14 @@ class TestBwsToPairwise:
         comparisons: list[BWSComparison] = []
         for cset in candidate_sets:
             sorted_set = sorted(cset, key=lambda x: rank_map[x])
-            comparisons.append(bws(
-                user_id=0,
-                best=sorted_set[0],
-                worst=sorted_set[-1],
-                candidate_set=cset,
-            ))
+            comparisons.append(
+                bws(
+                    user_id=0,
+                    best=sorted_set[0],
+                    worst=sorted_set[-1],
+                    candidate_set=cset,
+                )
+            )
 
         result = bws_to_pairwise(bws_comparisons=comparisons, entity_ids=items)
         pairs = pair_set(result)
@@ -343,8 +395,7 @@ class TestBwsToPairwise:
         # All generated pairs must respect true ordering
         for _, winner, loser in pairs:
             assert rank_map[winner] < rank_map[loser], (
-                f"{winner} (rank {rank_map[winner]}) should beat "
-                f"{loser} (rank {rank_map[loser]})"
+                f"{winner} (rank {rank_map[winner]}) should beat {loser} (rank {rank_map[loser]})"
             )
 
     def test_multiple_users_same_entities(self) -> None:
@@ -391,9 +442,14 @@ class TestBwsToPairwise:
     def test_three_item_candidate_set(self) -> None:
         """BWS with 3-item set (not just 4)."""
         result = bws_to_pairwise(
-            bws_comparisons=[bws(
-                user_id=0, best="A", worst="C", candidate_set=["A", "B", "C"],
-            )],
+            bws_comparisons=[
+                bws(
+                    user_id=0,
+                    best="A",
+                    worst="C",
+                    candidate_set=["A", "B", "C"],
+                )
+            ],
             entity_ids=["A", "B", "C"],
         )
         pairs = pair_set(result)
@@ -406,9 +462,14 @@ class TestBwsToPairwise:
     def test_candidate_set_subset_of_entities(self) -> None:
         """Candidate set only covers some entities -- others remain unaffected."""
         result = bws_to_pairwise(
-            bws_comparisons=[bws(
-                user_id=0, best="A", worst="B", candidate_set=["A", "B"],
-            )],
+            bws_comparisons=[
+                bws(
+                    user_id=0,
+                    best="A",
+                    worst="B",
+                    candidate_set=["A", "B"],
+                )
+            ],
             entity_ids=["A", "B", "C", "D"],
         )
         pairs = pair_set(result)
@@ -418,9 +479,14 @@ class TestBwsToPairwise:
     def test_malformed_best_equals_worst(self) -> None:
         """best == worst should produce no useful orderings (degenerate input)."""
         result = bws_to_pairwise(
-            bws_comparisons=[bws(
-                user_id=0, best="A", worst="A", candidate_set=["A", "B", "C"],
-            )],
+            bws_comparisons=[
+                bws(
+                    user_id=0,
+                    best="A",
+                    worst="A",
+                    candidate_set=["A", "B", "C"],
+                )
+            ],
             entity_ids=["A", "B", "C"],
         )
         pairs = pair_set(result)

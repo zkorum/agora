@@ -13,6 +13,7 @@
         <div>
           {{ t("description3", { minVotes: String(MIN_VOTES_FOR_CLUSTER) }) }}
         </div>
+
       </ZKBottomDialogContainer>
     </q-dialog>
   </div>
@@ -28,9 +29,10 @@ import {
   clusterInformationDialogTranslations,
 } from "./ClusterInformationDialog.i18n";
 
+const showDialog = defineModel<boolean>({ required: true });
+
 const { t } = useComponentI18n<ClusterInformationDialogTranslations>(
   clusterInformationDialogTranslations
 );
 
-const showDialog = defineModel<boolean>({ required: true });
 </script>

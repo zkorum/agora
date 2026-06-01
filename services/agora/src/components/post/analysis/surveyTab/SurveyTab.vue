@@ -66,77 +66,82 @@
               @select-all="selectedClusterKey = undefined"
             />
 
-            <OpinionGroupSelector
-              :cluster-metadata-list="props.clusters"
+            <AnalysisClusterSelectorBar
+              :clusters="props.clusters"
               :selected-cluster-key="selectedClusterKey"
-              :show-all-tab="true"
-              :all-label="t('allGroups')"
-              :allow-clear-to-all="true"
-              @changed-cluster-key="selectedClusterKey = $event"
-              @select-all="selectedClusterKey = undefined"
+              :all-option="surveyAllOption"
+              :accessibility-label="t('allGroups')"
+              :conversation-scroll-context="props.conversationScrollContext"
+              :content-floor-element="surveyResultsFloorElement"
+              :secondary-content-merge-target="null"
+              @update:selected-cluster-key="selectedClusterKey = $event"
             />
           </template>
 
-          <EmptyStateMessage
-            v-if="displayedQuestions.length === 0"
-            :message="emptyMessage"
-          />
+          <div ref="surveyResultsFloorElement">
+            <EmptyStateMessage
+              v-if="displayedQuestions.length === 0"
+              :message="emptyMessage"
+            />
 
-          <CompactFadeContainer
-            v-else
-            :show-fade="compactMode && hasMoreQuestions"
-            :max-height="compactMode ? compactSummaryMaxHeight : undefined"
-          >
-            <div class="question-list">
-              <ZKCard
-                v-for="question in displayedQuestions"
-                :key="question.id"
-                padding="1rem"
-                class="question-card"
-              >
-                <div class="question-text">{{ question.question }}</div>
+            <CompactFadeContainer
+              v-else
+              :show-fade="compactMode && hasMoreQuestions"
+              :max-height="compactMode ? compactSummaryMaxHeight : undefined"
+            >
+              <div class="question-list">
+                <ZKCard
+                  v-for="question in displayedQuestions"
+                  :key="question.id"
+                  padding="1rem"
+                  class="question-card"
+                >
+                  <div class="question-text">{{ question.question }}</div>
 
-                <SurveySuppressedQuestionNotice
-                  v-if="question.isSuppressed"
-                  :suppression-reason="question.suppressionReason"
-                  class="question-card__suppressed"
-                />
+                  <SurveySuppressedQuestionNotice
+                    v-if="question.isSuppressed"
+                    :suppression-reason="question.suppressionReason"
+                    class="question-card__suppressed"
+                  />
 
-                <div v-else class="option-list">
-                  <div
-                    v-for="option in question.options"
-                    :key="option.id"
-                    class="option-row"
-                  >
-                    <div class="option-row__header">
-                      <span class="option-row__label">{{ option.label }}</span>
-                      <span class="option-row__value">
-                        <template v-if="option.isSuppressed">
-                          {{ t("suppressed") }}
-                        </template>
-                        <template v-else>
-                          {{ formatAmount(option.count ?? 0) }} /
-                          {{ formatPercentage(option.percentage ?? 0) }}
-                        </template>
-                      </span>
-                    </div>
+                  <div v-else class="option-list">
+                    <div
+                      v-for="option in question.options"
+                      :key="option.id"
+                      class="option-row"
+                    >
+                      <div class="option-row__header">
+                        <span class="option-row__label">{{
+                          option.label
+                        }}</span>
+                        <span class="option-row__value">
+                          <template v-if="option.isSuppressed">
+                            {{ t("suppressed") }}
+                          </template>
+                          <template v-else>
+                            {{ formatAmount(option.count ?? 0) }} /
+                            {{ formatPercentage(option.percentage ?? 0) }}
+                          </template>
+                        </span>
+                      </div>
 
-                    <div class="option-row__bar">
-                      <div
-                        class="option-row__fill"
-                        :class="{
-                          'option-row__fill--suppressed': option.isSuppressed,
-                        }"
-                        :style="{
-                          width: `${option.isSuppressed ? 0 : (option.percentage ?? 0)}%`,
-                        }"
-                      />
+                      <div class="option-row__bar">
+                        <div
+                          class="option-row__fill"
+                          :class="{
+                            'option-row__fill--suppressed': option.isSuppressed,
+                          }"
+                          :style="{
+                            width: `${option.isSuppressed ? 0 : (option.percentage ?? 0)}%`,
+                          }"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </ZKCard>
-            </div>
-          </CompactFadeContainer>
+                </ZKCard>
+              </div>
+            </CompactFadeContainer>
+          </div>
         </AsyncStateHandler>
       </template>
     </AnalysisSectionWrapper>
@@ -151,6 +156,7 @@ import SurveySuppressedQuestionNotice from "src/components/survey/SurveySuppress
 import SurveyVisibilityToggle from "src/components/survey/SurveyVisibilityToggle.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
+import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
 import { useSurveyNavigation } from "src/composables/conversation/useSurveyNavigation";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { SurveyResultsAggregatedResponse } from "src/shared/types/dto";
@@ -173,13 +179,13 @@ import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
+import AnalysisClusterSelectorBar from "../common/AnalysisClusterSelectorBar.vue";
 import AnalysisInlineActionBanner from "../common/AnalysisInlineActionBanner.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import CompactFadeContainer from "../common/CompactFadeContainer.vue";
 import EmptyStateMessage from "../common/EmptyStateMessage.vue";
 import ClusterVisualization from "../opinionGroupTab/ClusterVisualization.vue";
-import OpinionGroupSelector from "../opinionGroupTab/OpinionGroupSelector.vue";
 import SurveyInformationDialog from "./SurveyInformationDialog.vue";
 import {
   type SurveyTabTranslations,
@@ -191,13 +197,16 @@ const props = withDefaults(
     conversationSlugId: string;
     surveyGate?: SurveyGateSummary;
     surveyQuery: UseQueryReturnType<SurveyResultsAggregatedResponse, Error>;
+    surveyResultsOverride?: SurveyResultsAggregatedResponse;
     clusters: Partial<PolisClusters>;
     totalParticipantCount: number;
     compactMode?: boolean;
+    conversationScrollContext: ConversationScrollContext;
   }>(),
   {
     compactMode: false,
     surveyGate: undefined,
+    surveyResultsOverride: undefined,
   }
 );
 
@@ -206,6 +215,7 @@ const currentTab = defineModel<ShortcutItem>({ required: true });
 const { t } = useComponentI18n<SurveyTabTranslations>(surveyTabTranslations);
 
 const selectedClusterKey = ref<PolisKey>();
+const surveyResultsFloorElement = ref<HTMLElement | null>(null);
 const showSurveyInfo = ref(false);
 const displayMode = ref<SurveyResultsDisplayMode>("suppressed");
 const isOpeningSurveyResponses = ref(false);
@@ -265,13 +275,17 @@ const answerCalloutActionLabel = computed(() => {
   return t(surveyAnswerCalloutCopy.value.actionLabelKey);
 });
 
+const activeSurveyResults = computed(
+  () => props.surveyResultsOverride ?? props.surveyQuery.data.value
+);
+
 const canViewFullResults = computed(() =>
-  canViewFullSurveyResults({ surveyResults: props.surveyQuery.data.value })
+  canViewFullSurveyResults({ surveyResults: activeSurveyResults.value })
 );
 
 const surveyRows = computed(() =>
   getDisplayedSurveyRows({
-    surveyResults: props.surveyQuery.data.value,
+    surveyResults: activeSurveyResults.value,
     displayMode: displayMode.value,
   })
 );
@@ -286,6 +300,8 @@ const showGroupComponents = computed(
     hasClusterRows.value &&
     Object.keys(props.clusters).length > 1
 );
+
+const surveyAllOption = computed(() => ({ label: t("allGroups") }));
 
 const selectedRows = computed(() => {
   if (

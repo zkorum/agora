@@ -27,13 +27,13 @@ import {
     zodUserMuteItem,
     zodNotificationItem,
     zodPolisKey,
+    zodAnalysisView,
     zodOrganization,
     zodTopicObject,
     zodFeedSortAlgorithm,
     zodLinkType,
     zodPolisUrl,
     zodLanguagePreferences,
-    zodPolisClusters,
     zodEventSlug,
     zodExportStatus,
     zodExportFileInfo,
@@ -45,6 +45,7 @@ import {
     zodParticipationBlockedReason,
     zodMaxdiffComparison,
     zodConversationType,
+    zodConversationViewSnapshotCheckpointReason,
     zodMaxdiffLifecycleStatus,
     zodExternalSourceConfig,
     zodSurveyConfig,
@@ -55,12 +56,83 @@ import {
     zodSurveyResultsAccessLevel,
     zodSurveyRouteResolution,
     zodSurveyAnswerSubmission,
+    zodGrantablePremiumFeature,
+    zodPremiumFeature,
+    zodUserId,
+    zodPreferredOpinionGroupCount,
 } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
     ZodSupportedSpokenLanguageCodes,
     ZodSupportedDisplayLanguageCodes,
 } from "../languages.js";
+
+const zodConversationEditPermissions = z
+    .object({
+        canEditNormalSettings: z.boolean(),
+        canEditConversationContent: z.boolean(),
+        canEditSurvey: z.boolean(),
+        canDeleteSurvey: z.boolean(),
+        canAddEventTicket: z.boolean(),
+        canChangeEventTicket: z.boolean(),
+        canRemoveEventTicket: z.boolean(),
+        canUseAnalysisVariantsPreference: z.boolean(),
+        restrictedPremiumFeatures: z.array(zodPremiumFeature),
+        premiumEditAccessEndsAt: zodDateTimeFlexible.optional(),
+    })
+    .strict();
+
+const zodAnalysisViewOptionBase = z
+    .object({
+        view: zodAnalysisView,
+        resolvesToView: zodAnalysisView.optional(),
+    })
+    .strict();
+const zodAnalysisViewOptionCandidate = z
+    .object({
+        candidateId: z.number().int().positive(),
+        groupCount: z.number().int().min(2).max(6),
+        assessment: z
+            .object({
+                selectionScore: z.number(),
+                silhouetteScore: z.number().nullable(),
+                balanceScore: z.number().nullable(),
+            })
+            .strict(),
+    })
+    .strict();
+const zodRecommendedAnalysisViewOption = zodAnalysisViewOptionBase.extend({
+    status: z.literal("recommended"),
+    candidate: zodAnalysisViewOptionCandidate,
+});
+const zodAvailableAnalysisViewOption = zodAnalysisViewOptionBase.extend({
+    status: z.literal("available"),
+    candidate: zodAnalysisViewOptionCandidate,
+});
+const zodDiscouragedAnalysisViewOption = zodAnalysisViewOptionBase.extend({
+    status: z.literal("discouraged"),
+    candidate: zodAnalysisViewOptionCandidate,
+});
+const zodLockedAnalysisViewOption = zodAnalysisViewOptionBase.extend({
+    status: z.literal("locked"),
+    reason: z.literal("analysis_variants_not_available"),
+});
+const zodFixedGroupCountUnavailableAnalysisViewOption =
+    zodAnalysisViewOptionBase.extend({
+        status: z.literal("unavailable"),
+        reason: z.literal("fixed_group_count_unavailable"),
+        groupCount: z.number().int().min(2).max(6),
+    });
+const zodRecommendedDefaultUnavailableAnalysisViewOption =
+    zodAnalysisViewOptionBase.extend({
+        status: z.literal("unavailable"),
+        reason: z.literal("recommended_default_unavailable"),
+    });
+const zodAnalysisFrameOpinionListKind = z.enum([
+    "agreements",
+    "disagreements",
+    "divisive",
+]);
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Dto {
@@ -92,21 +164,205 @@ export class Dto {
         })
         .strict();
     static fetchOpinionsResponse = z.array(zodOpinionItem);
-    static fetchAnalysisRequest = z
+    static fetchCommentStatsRequest = z
         .object({
-            conversationSlugId: zodSlugId, // z.object() does not exist :(
+            conversationSlugId: zodSlugId,
         })
         .strict();
-    static fetchAnalysisResponse = z
+    static fetchCommentStatsResponse = z
         .object({
-            polisContentId: z.number().int().nonnegative().optional(), // for logging/debugging purpose, undefined if no polis calculated
-            consensusAgree: z.array(zodAnalysisOpinionItem),
-            consensusDisagree: z.array(zodAnalysisOpinionItem),
-            controversial: z.array(zodAnalysisOpinionItem),
-            clusters: zodPolisClusters,
+            conversationViewSnapshotId: z.number().int().positive(),
+            opinionCount: z.number().int().nonnegative(),
+            voteCount: z.number().int().nonnegative(),
+            participantCount: z.number().int().nonnegative(),
+            totalOpinionCount: z.number().int().nonnegative(),
+            totalVoteCount: z.number().int().nonnegative(),
+            totalParticipantCount: z.number().int().nonnegative(),
+            moderatedOpinionCount: z.number().int().nonnegative(),
+            hiddenOpinionCount: z.number().int().nonnegative(),
+            isClosed: z.boolean(),
+        })
+        .strict();
+    static analysisFreshnessRequest = z
+        .object({
+            enablePrimaryFallback: z.boolean(),
+            minimumConversationViewSnapshotId: z
+                .number()
+                .int()
+                .positive()
+                .nullable(),
+            expectedDescriptionLocales: z.array(ZodSupportedDisplayLanguageCodes),
+        })
+        .strict();
+    static analysisFrameKey = z
+        .object({
+            conversationViewSnapshotId: z.number().int().positive(),
+            analysisSnapshotId: z.number().int().positive(),
+            candidateId: z.number().int().positive(),
+        })
+        .strict();
+    static analysisFrameCounters = z
+        .object({
+            opinionCount: z.number().int().nonnegative(),
+            voteCount: z.number().int().nonnegative(),
+            participantCount: z.number().int().nonnegative(),
+            totalOpinionCount: z.number().int().nonnegative(),
+            totalVoteCount: z.number().int().nonnegative(),
+            totalParticipantCount: z.number().int().nonnegative(),
+            moderatedOpinionCount: z.number().int().nonnegative(),
+            hiddenOpinionCount: z.number().int().nonnegative(),
+            isClosed: z.boolean(),
+        })
+        .strict();
+    static groupDescriptionDisplay = z
+        .object({
+            displayedLocale: ZodSupportedDisplayLanguageCodes.nullable(),
+        })
+        .strict();
+    static fetchAnalysisFrameManifestRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+            analysisView: zodAnalysisView.optional(),
+            checkpointViewSnapshotId: z.number().int().positive().optional(),
+            freshness: Dto.analysisFreshnessRequest.nullable().default(null),
+        })
+        .strict();
+    static fetchAnalysisFrameSectionRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+            frameKey: Dto.analysisFrameKey,
+            freshness: Dto.analysisFreshnessRequest.nullable().default(null),
+        })
+        .strict();
+    static fetchAnalysisFrameOpinionListRequest =
+        Dto.fetchAnalysisFrameSectionRequest.extend({
+            kind: zodAnalysisFrameOpinionListKind,
+        }).strict();
+    static analysisViewOption = z.union([
+        zodRecommendedAnalysisViewOption,
+        zodAvailableAnalysisViewOption,
+        zodDiscouragedAnalysisViewOption,
+        zodLockedAnalysisViewOption,
+        zodFixedGroupCountUnavailableAnalysisViewOption,
+        zodRecommendedDefaultUnavailableAnalysisViewOption,
+    ]);
+    static analysisViewState = z
+        .object({
+            requestedView: zodAnalysisView,
+            canonicalView: zodAnalysisView,
+            resolvedGroupCount: z.number().int().min(2).max(6).nullable(),
+            resolvedCandidateId: z.number().int().positive().nullable(),
+            resolvedBy: z.enum([
+                "auto",
+                "facilitator_preference",
+                "facilitator_fallback",
+                "fixed_count",
+                "locked_fallback",
+                "unavailable_fixed_count",
+                "no_analysis",
+            ]),
+            variantsEnabled: z.boolean(),
+            options: z.array(Dto.analysisViewOption),
+        })
+        .strict();
+    static analysisViewResolution = Dto.analysisViewState;
+    static analysisConversationViewSnapshot = z
+        .object({
+            conversationViewSnapshotId: z.number().int().positive(),
+            analysisSnapshotId: z.number().int().positive(),
+            opinionCount: z.number().int().nonnegative(),
+            voteCount: z.number().int().nonnegative(),
+            participantCount: z.number().int().nonnegative(),
+            totalOpinionCount: z.number().int().nonnegative(),
+            totalVoteCount: z.number().int().nonnegative(),
+            totalParticipantCount: z.number().int().nonnegative(),
+            moderatedOpinionCount: z.number().int().nonnegative(),
+            hiddenOpinionCount: z.number().int().nonnegative(),
+            isClosed: z.boolean(),
+        })
+        .strict();
+    static analysisFrameManifest = z
+        .object({
+            frameKey: Dto.analysisFrameKey.optional(),
+            conversationViewSnapshot:
+                Dto.analysisConversationViewSnapshot.optional(),
+            counters: Dto.analysisFrameCounters.optional(),
+            emptyReason: z.string().optional(),
+            analysisViewResolution: Dto.analysisViewResolution,
+            aiLabelsExpected: z.boolean(),
             hasVotedOnAllAvailableOpinions: z.boolean().optional(),
         })
         .strict();
+    static analysisFrameGroup = z
+        .object({
+            key: zodPolisKey,
+            numUsers: z.number().int().nonnegative(),
+            isUserInCluster: z.boolean(),
+            representative: z.array(zodAnalysisOpinionItem),
+        })
+        .strict();
+    static analysisFrameGroups = z
+        .object({
+            frameKey: Dto.analysisFrameKey,
+            clusters: z.partialRecord(zodPolisKey, Dto.analysisFrameGroup),
+        })
+        .strict();
+    static analysisFrameGroupLabel = z
+        .object({
+            key: zodPolisKey,
+            aiLabel: z.string(),
+            aiSummary: z.string(),
+        })
+        .strict();
+    static analysisFrameGroupLabels = z
+        .object({
+            frameKey: Dto.analysisFrameKey,
+            groupDescriptionDisplay: Dto.groupDescriptionDisplay,
+            labels: z.partialRecord(zodPolisKey, Dto.analysisFrameGroupLabel),
+        })
+        .strict();
+    static analysisFrameOpinionListKind = zodAnalysisFrameOpinionListKind;
+    static analysisFrameOpinionList = z
+        .object({
+            frameKey: Dto.analysisFrameKey,
+            kind: Dto.analysisFrameOpinionListKind,
+            items: z.array(zodAnalysisOpinionItem),
+        })
+        .strict();
+    static fetchAnalysisCheckpointsRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static analysisCheckpointReason = z
+        .object({
+            reason: zodConversationViewSnapshotCheckpointReason,
+            groupCount: z.number().int().min(2).max(6).nullable(),
+            previousGroupCount: z.number().int().min(2).max(6).nullable(),
+            participantCount: z.number().int().nonnegative().nullable(),
+            participantMilestone: z.number().int().positive().nullable(),
+            voteCount: z.number().int().nonnegative().nullable(),
+            voteMilestone: z.number().int().positive().nullable(),
+        })
+        .strict();
+    static analysisCheckpoint = z
+        .object({
+            conversationViewSnapshotId: z.number().int().positive(),
+            createdAt: zodDateTimeFlexible,
+            activatedAt: zodDateTimeFlexible,
+            opinionCount: z.number().int().nonnegative(),
+            voteCount: z.number().int().nonnegative(),
+            participantCount: z.number().int().nonnegative(),
+            totalOpinionCount: z.number().int().nonnegative(),
+            totalVoteCount: z.number().int().nonnegative(),
+            totalParticipantCount: z.number().int().nonnegative(),
+            moderatedOpinionCount: z.number().int().nonnegative(),
+            hiddenOpinionCount: z.number().int().nonnegative(),
+            isClosed: z.boolean(),
+            reasons: z.array(Dto.analysisCheckpointReason),
+        })
+        .strict();
+    static fetchAnalysisCheckpointsResponse = z.array(Dto.analysisCheckpoint);
     static fetchHiddenOpinionsRequest = z
         .object({
             conversationSlugId: zodSlugId, // z.object() does not exist :(
@@ -119,12 +375,14 @@ export class Dto {
             conversationTitle: zodConversationTitle,
             conversationBody: zodConversationBodyInput,
             postAsOrganization: z.string().optional(),
-            indexConversationAt: z.iso.datetime().optional(),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
             conversationType: zodConversationType,
             seedOpinionList: z.array(zodOpinionContentInput).max(50),
             requiresEventTicket: zodEventSlug.optional(),
+            aiLabelingEnabled: z.boolean().default(true),
+            preferredOpinionGroupCount:
+                zodPreferredOpinionGroupCount.default(null),
             externalSourceConfig: zodExternalSourceConfig.nullable().optional(),
             surveyConfig: zodSurveyConfig.nullable().optional(),
         })
@@ -136,10 +394,12 @@ export class Dto {
         .object({
             polisUrl: zodPolisUrl,
             postAsOrganization: z.string().optional(),
-            indexConversationAt: z.iso.datetime().optional(),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
             requiresEventTicket: zodEventSlug.optional(),
+            aiLabelingEnabled: z.boolean().default(true),
+            preferredOpinionGroupCount:
+                zodPreferredOpinionGroupCount.default(null),
         })
         .strict();
     static importConversationResponse = z
@@ -150,7 +410,6 @@ export class Dto {
     static importCsvConversationRequest = z
         .object({
             postAsOrganization: z.string().optional(),
-            indexConversationAt: z.iso.datetime().optional(),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
         })
@@ -160,10 +419,6 @@ export class Dto {
             postAsOrganization: z.preprocess(
                 (val) => (val === "" || val === undefined ? undefined : val),
                 z.string().optional(),
-            ),
-            indexConversationAt: z.preprocess(
-                (val) => (val === "" || val === undefined ? undefined : val),
-                z.iso.datetime().optional(),
             ),
             isIndexed: z.preprocess(
                 (val) => val === "true" || val === true,
@@ -180,6 +435,19 @@ export class Dto {
                 (val) => (val === "" || val === undefined ? undefined : val),
                 zodEventSlug.optional(),
             ),
+            aiLabelingEnabled: z.preprocess(
+                (val) => val === "true" || val === true,
+                z.boolean().default(true),
+            ),
+            preferredOpinionGroupCount: z.preprocess((val) => {
+                if (val === "" || val === undefined || val === null) {
+                    return null;
+                }
+                if (typeof val === "string") {
+                    return Number(val);
+                }
+                return val;
+            }, zodPreferredOpinionGroupCount.default(null)),
         })
         .strict();
     static importCsvConversationResponse = z
@@ -312,12 +580,14 @@ export class Dto {
                 isIndexed: z.boolean(),
                 participationMode: zodParticipationMode,
                 requiresEventTicket: zodEventSlug.optional(),
+                aiLabelingEnabled: z.boolean(),
+                preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
                 postAsOrganizationName: z.string().optional(),
                 surveyConfig: zodSurveyConfig.nullable().optional(),
-                indexConversationAt: zodDateTimeFlexible.optional(),
                 createdAt: zodDateTimeFlexible,
                 updatedAt: zodDateTimeFlexible,
                 isLocked: z.boolean(),
+                editPermissions: zodConversationEditPermissions,
             })
             .strict(),
         z
@@ -335,8 +605,10 @@ export class Dto {
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
             requiresEventTicket: zodEventSlug.optional(),
+            aiLabelingEnabled: z.boolean().optional(),
+            preferredOpinionGroupCount:
+                zodPreferredOpinionGroupCount.optional(),
             surveyConfig: zodSurveyConfig.nullable().optional(),
-            indexConversationAt: z.iso.datetime().optional(),
         })
         .strict();
     static updateConversationResponse = z.discriminatedUnion("success", [
@@ -353,10 +625,24 @@ export class Dto {
                     "not_author",
                     "conversation_locked",
                     "invalid_access_settings",
+                    "premium_access_expired",
+                    "premium_access_required",
                 ]),
             })
             .strict(),
     ]);
+
+    static checkPremiumFeatureAccessRequest = z
+        .object({
+            postAsOrganization: z.string().optional(),
+            feature: zodGrantablePremiumFeature,
+        })
+        .strict();
+    static checkPremiumFeatureAccessResponse = z
+        .object({
+            hasAccess: z.boolean(),
+        })
+        .strict();
     static surveyFormFetchRequest = z
         .object({
             conversationSlugId: zodSlugId,
@@ -424,6 +710,8 @@ export class Dto {
     static surveyResultsAggregatedRequest = z
         .object({
             conversationSlugId: zodSlugId,
+            analysisView: zodAnalysisView.optional(),
+            checkpointViewSnapshotId: z.number().int().positive().optional(),
         })
         .strict();
     static surveyResultsAggregatedResponse = z
@@ -479,6 +767,7 @@ export class Dto {
             .object({
                 success: z.literal(true),
                 opinionSlugId: z.string(),
+                opinionItem: zodOpinionItem,
             })
             .strict(),
         z
@@ -752,6 +1041,66 @@ export class Dto {
         .object({
             username: zodUsername,
             organizationName: z.string(),
+        })
+        .strict();
+    static premiumFeatureEntitlementSubjectRequest = z
+        .object({
+            username: zodUsername.optional(),
+            organizationName: z.string().optional(),
+        })
+        .strict()
+        .refine(
+            ({ username, organizationName }) =>
+                (username !== undefined && organizationName === undefined) ||
+                (username === undefined && organizationName !== undefined),
+            {
+                message:
+                    "Exactly one of username or organizationName is required",
+            },
+        );
+    static premiumFeatureEntitlementItem = z
+        .object({
+            id: z.number().int().positive(),
+            userId: zodUserId.optional(),
+            username: zodUsername.optional(),
+            organizationId: z.number().int().positive().optional(),
+            organizationName: z.string().optional(),
+            feature: zodPremiumFeature,
+            startsAt: zodDateTimeFlexible,
+            expiresAt: zodDateTimeFlexible.optional(),
+            revokedAt: zodDateTimeFlexible.optional(),
+            adminNote: z.string().optional(),
+            createdAt: zodDateTimeFlexible,
+            updatedAt: zodDateTimeFlexible,
+        })
+        .strict();
+    static listPremiumFeatureEntitlementsRequest = z.object({}).strict();
+    static listPremiumFeatureEntitlementsResponse = z
+        .object({
+            entitlements: z.array(Dto.premiumFeatureEntitlementItem),
+        })
+        .strict();
+    static createPremiumFeatureEntitlementRequest = z
+        .object({
+            subject: Dto.premiumFeatureEntitlementSubjectRequest,
+            features: z.array(zodGrantablePremiumFeature).min(1),
+            startsAt: z.iso.datetime(),
+            expiresAt: z.iso.datetime().optional(),
+            adminNote: z.string().max(1000).optional(),
+        })
+        .strict();
+    static updatePremiumFeatureEntitlementRequest = z
+        .object({
+            entitlementId: z.number().int().positive(),
+            startsAt: z.iso.datetime(),
+            expiresAt: z.iso.datetime().optional(),
+            revokedAt: z.iso.datetime().nullable().optional(),
+            adminNote: z.string().max(1000).optional(),
+        })
+        .strict();
+    static revokePremiumFeatureEntitlementRequest = z
+        .object({
+            entitlementId: z.number().int().positive(),
         })
         .strict();
     static getAllTopicsResponse = z
@@ -1162,12 +1511,21 @@ export type UpdateConversationRequest = z.infer<
 export type UpdateConversationResponse = z.infer<
     typeof Dto.updateConversationResponse
 >;
+export type CheckPremiumFeatureAccessRequest = z.infer<
+    typeof Dto.checkPremiumFeatureAccessRequest
+>;
+export type CheckPremiumFeatureAccessResponse = z.infer<
+    typeof Dto.checkPremiumFeatureAccessResponse
+>;
 export type CreateCommentResponse = z.infer<typeof Dto.createOpinionResponse>;
 export type FetchUserVotesForPostSlugIdsResponse = z.infer<
     typeof Dto.getUserVotesByConversationsResponse
 >;
 export type FetchCommentFeedResponse = z.infer<
     typeof Dto.fetchOpinionsResponse
+>;
+export type FetchCommentStatsResponse = z.infer<
+    typeof Dto.fetchCommentStatsResponse
 >;
 export type FetchFeedResponse = z.infer<typeof Dto.fetchFeedResponse>;
 export type GetUserProfileResponse = z.infer<typeof Dto.getUserProfileResponse>;
@@ -1207,6 +1565,21 @@ export type GetOrganizationsByUsernameResponse = z.infer<
 export type GetAllOrganizationsResponse = z.infer<
     typeof Dto.getAllOrganizationsResponse
 >;
+export type PremiumFeatureEntitlementItem = z.infer<
+    typeof Dto.premiumFeatureEntitlementItem
+>;
+export type ListPremiumFeatureEntitlementsResponse = z.infer<
+    typeof Dto.listPremiumFeatureEntitlementsResponse
+>;
+export type CreatePremiumFeatureEntitlementRequest = z.infer<
+    typeof Dto.createPremiumFeatureEntitlementRequest
+>;
+export type UpdatePremiumFeatureEntitlementRequest = z.infer<
+    typeof Dto.updatePremiumFeatureEntitlementRequest
+>;
+export type RevokePremiumFeatureEntitlementRequest = z.infer<
+    typeof Dto.revokePremiumFeatureEntitlementRequest
+>;
 export type GetAllTopicsResponse = z.infer<typeof Dto.getAllTopicsResponse>;
 export type GetUserFollowedTopicCodesResponse = z.infer<
     typeof Dto.getUserFollowedTopicCodesResponse
@@ -1227,7 +1600,39 @@ export type GetLanguagePreferencesResponse = z.infer<
 export type UpdateLanguagePreferencesRequest = z.infer<
     typeof Dto.updateLanguagePreferencesRequest
 >;
-export type ConversationAnalysis = z.infer<typeof Dto.fetchAnalysisResponse>;
+export type AnalysisFrameKey = z.infer<typeof Dto.analysisFrameKey>;
+export type AnalysisFrameManifest = z.infer<typeof Dto.analysisFrameManifest>;
+export type AnalysisFrameGroups = z.infer<typeof Dto.analysisFrameGroups>;
+export type AnalysisFrameGroupLabels = z.infer<
+    typeof Dto.analysisFrameGroupLabels
+>;
+export type AnalysisFrameOpinionListKind = z.infer<
+    typeof Dto.analysisFrameOpinionListKind
+>;
+export type AnalysisFrameOpinionList = z.infer<
+    typeof Dto.analysisFrameOpinionList
+>;
+export type GroupDescriptionDisplay = z.infer<
+    typeof Dto.groupDescriptionDisplay
+>;
+export type AnalysisViewOptionCandidate = z.infer<
+    typeof zodAnalysisViewOptionCandidate
+>;
+export type AnalysisViewOption = z.infer<typeof Dto.analysisViewOption>;
+export type AnalysisViewState = z.infer<typeof Dto.analysisViewState>;
+export type AnalysisViewResolution = z.infer<
+    typeof Dto.analysisViewResolution
+>;
+export type AnalysisConversationViewSnapshot = z.infer<
+    typeof Dto.analysisConversationViewSnapshot
+>;
+export type AnalysisFreshnessRequest = z.infer<
+    typeof Dto.analysisFreshnessRequest
+>;
+export type AnalysisCheckpoint = z.infer<typeof Dto.analysisCheckpoint>;
+export type FetchAnalysisCheckpointsResponse = z.infer<
+    typeof Dto.fetchAnalysisCheckpointsResponse
+>;
 export type CastVoteResponse = z.infer<typeof Dto.castVoteResponse>;
 export type CloseConversationResponse = z.infer<
     typeof Dto.closeConversationResponse

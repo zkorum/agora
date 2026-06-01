@@ -1,4 +1,3 @@
-import { getClusterIdByUserAndConv } from "@/service/polis.js";
 import {
     conversationTable,
     opinionTable,
@@ -21,6 +20,7 @@ import { httpErrors } from "@fastify/sensible";
 import { and, eq, inArray, sql, SQL } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonComment, useCommonPost } from "./common.js";
+import { isUserInSelectedOpinionGroup } from "./opinionGroupAnalysis.js";
 import { checkConversationParticipation } from "./participationGate.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 
@@ -186,40 +186,37 @@ export async function getUserVotesForPostSlugIds({
     postSlugIdList,
     userId,
 }: GetUserVotesForPostSlugIdsProps): Promise<FetchUserVotesForPostSlugIdsResponse> {
-    const userVoteList: FetchUserVotesForPostSlugIdsResponse = [];
-
-    for (const postSlugId of postSlugIdList) {
-        const userResponses = await db
-            .select({
-                optionChosen: voteContentTable.vote,
-                opinionSlugId: opinionTable.slugId,
-            })
-            .from(voteTable)
-            .innerJoin(
-                voteContentTable,
-                eq(voteContentTable.id, voteTable.currentContentId),
-            )
-            .innerJoin(opinionTable, eq(opinionTable.id, voteTable.opinionId))
-            .innerJoin(
-                conversationTable,
-                eq(opinionTable.conversationId, conversationTable.id),
-            )
-            .where(
-                and(
-                    eq(conversationTable.slugId, postSlugId),
-                    eq(voteTable.authorId, userId),
-                ),
-            );
-
-        userResponses.forEach((response) => {
-            userVoteList.push({
-                opinionSlugId: response.opinionSlugId,
-                votingAction: response.optionChosen,
-            });
-        });
+    const uniquePostSlugIds = Array.from(new Set(postSlugIdList));
+    if (uniquePostSlugIds.length === 0) {
+        return [];
     }
 
-    return userVoteList;
+    const userResponses = await db
+        .select({
+            optionChosen: voteContentTable.vote,
+            opinionSlugId: opinionTable.slugId,
+        })
+        .from(voteTable)
+        .innerJoin(
+            voteContentTable,
+            eq(voteContentTable.id, voteTable.currentContentId),
+        )
+        .innerJoin(opinionTable, eq(opinionTable.id, voteTable.opinionId))
+        .innerJoin(
+            conversationTable,
+            eq(opinionTable.conversationId, conversationTable.id),
+        )
+        .where(
+            and(
+                inArray(conversationTable.slugId, uniquePostSlugIds),
+                eq(voteTable.authorId, userId),
+            ),
+        );
+
+    return userResponses.map((response) => ({
+        opinionSlugId: response.opinionSlugId,
+        votingAction: response.optionChosen,
+    }));
 }
 
 // TODO: remove when this is merged: https://github.com/drizzle-team/drizzle-orm/pull/3816
@@ -444,43 +441,16 @@ interface CheckUserIsClusteredProps {
     conversationId: number;
 }
 
-/**
- * Check if user has been assigned to a cluster for this conversation.
- *
- * Uses two-step indexed lookup approach for optimal performance:
- * 1. Get polisContentId from conversation (PK lookup)
- * 2. Check cluster membership (unique index on polis_content_id, user_id)
- *
- * This is 5-50x faster than joining tables, as it uses existing indexes optimally.
- */
 async function checkUserIsClustered({
     db,
     userId,
     conversationId,
 }: CheckUserIsClusteredProps): Promise<boolean> {
-    // Step 1: Get polisContentId from conversation (fast PK lookup)
-    const conversation = await db
-        .select({ currentPolisContentId: conversationTable.currentPolisContentId })
-        .from(conversationTable)
-        .where(eq(conversationTable.id, conversationId))
-        .limit(1);
-
-    if (conversation.length === 0 || conversation[0].currentPolisContentId === null) {
-        // No clustering exists yet for this conversation
-        return false;
-    }
-
-    const polisContentId = conversation[0].currentPolisContentId;
-
-    // Step 2: Check if user is in a cluster (fast unique index lookup)
-    // Reuses optimized function from polis.ts that uses the unique constraint index
-    const clusterId = await getClusterIdByUserAndConv({
+    return await isUserInSelectedOpinionGroup({
         db,
         userId,
-        polisContentId,
+        conversationId,
     });
-
-    return clusterId !== undefined;
 }
 
 /**

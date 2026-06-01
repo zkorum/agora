@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import type { SurveyStatusCheckResponse } from "src/shared/types/dto";
 import {
+  type AnalysisView,
   type SurveyAnswerSubmission,
   type SurveyConfig,
   type SurveyGateSummary,
@@ -145,18 +146,29 @@ export function useSurveyFormQuery({
 
 export function useSurveyResultsAggregatedQuery({
   conversationSlugId,
+  analysisView,
+  checkpointViewSnapshotId,
   enabled = true,
 }: {
   conversationSlugId: MaybeRefOrGetter<string>;
+  analysisView?: MaybeRefOrGetter<AnalysisView | undefined>;
+  checkpointViewSnapshotId?: MaybeRefOrGetter<number | undefined>;
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { fetchSurveyResultsAggregated } = useBackendSurveyApi();
 
   return useQuery({
-    queryKey: ["survey-results-aggregated", computed(() => toValue(conversationSlugId))],
+    queryKey: [
+      "survey-results-aggregated",
+      computed(() => toValue(conversationSlugId)),
+      computed(() => toValue(analysisView)),
+      computed(() => toValue(checkpointViewSnapshotId)),
+    ],
     queryFn: async () => {
       const response = await fetchSurveyResultsAggregated({
         conversationSlugId: toValue(conversationSlugId),
+        analysisView: toValue(analysisView),
+        checkpointViewSnapshotId: toValue(checkpointViewSnapshotId),
       });
       if (response.status !== "success") {
         throw new Error("Failed to load survey results");

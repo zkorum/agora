@@ -1,16 +1,23 @@
 <template>
   <div class="dialogContainer">
     <div v-if="title" class="dialog-header">
-      <div class="dialog-title">{{ title }}</div>
-      <q-btn
-        v-close-popup
-        flat
-        round
-        dense
-        icon="mdi-close"
-        size="sm"
-        class="close-btn"
-      />
+      <div class="dialog-title-row">
+        <slot name="leadingAction" />
+        <div class="dialog-title">{{ title }}</div>
+        <q-btn
+          v-close-popup
+          flat
+          round
+          dense
+          icon="mdi-close"
+          size="sm"
+          class="close-btn"
+        />
+      </div>
+      <div v-if="subtitle || $slots.subtitleAction" class="dialog-subtitle-row">
+        <div v-if="subtitle" class="dialog-subtitle">{{ subtitle }}</div>
+        <slot name="subtitleAction" />
+      </div>
     </div>
     <slot />
   </div>
@@ -21,8 +28,10 @@ import { ClosePopup } from "quasar";
 
 withDefaults(defineProps<{
   title?: string;
+  subtitle?: string;
 }>(), {
   title: undefined,
+  subtitle: undefined,
 });
 
 const vClosePopup = ClosePopup;
@@ -50,15 +59,38 @@ const vClosePopup = ClosePopup;
 
 .dialog-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.85rem;
   flex-shrink: 0;
 }
 
+.dialog-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
 .dialog-title {
+  flex: 1;
+  min-width: 0;
   font-size: 1.1rem;
   font-weight: var(--font-weight-semibold);
   color: $color-text-strong;
+}
+
+.dialog-subtitle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dialog-subtitle {
+  color: $color-text-weak;
+  font-size: 0.85rem;
+  line-height: 1.3;
+  min-width: 0;
 }
 
 .close-btn {

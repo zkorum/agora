@@ -2,8 +2,7 @@
 
 Solidago expects integer entity IDs for DataFrame indices and internal
 coordinate mapping. This module provides a bidirectional mapper that
-converts at the python-bridge boundary, keeping the int-mapping concern
-contained in one place.
+keeps the int-mapping concern contained in the scoring worker boundary.
 """
 
 from dataclasses import dataclass

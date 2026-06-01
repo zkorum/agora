@@ -211,7 +211,7 @@ const errorMessage = computed((): string | null => {
     error !== null &&
     typeof error === "object" &&
     "message" in error &&
-    typeof (error as { message: unknown }).message === "string"
+    typeof (error).message === "string"
   ) {
     return (error as { message: string }).message;
   }

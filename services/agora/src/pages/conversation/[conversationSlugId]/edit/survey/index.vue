@@ -26,6 +26,7 @@
         :display-language="locale"
         :original-survey-config="originalSurveyConfig"
         :show-validation-errors="surveyValidationErrorMessage !== null"
+        :read-only="!canEditSurvey"
         @clear-validation-error="clearSurveyValidationError"
       >
         <template #between-intro-and-editor>
@@ -58,6 +59,7 @@
             color="negative"
             :label="t('deleteButton')"
             :loading="isDeleting"
+            :disable="!canDeleteSurvey"
             @click="requestDeleteSurvey"
           />
         </template>
@@ -76,7 +78,6 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import Button from "primevue/button";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
@@ -87,20 +88,15 @@ import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { GetConversationForEditResponse } from "src/shared/types/dto";
 import type { SurveyConfig } from "src/shared/types/zod";
-import {
-  checkFeatureManagementAccess,
-  DEFAULT_FEATURE_ALLOWED_ORGS,
-  DEFAULT_FEATURE_ALLOWED_USERS,
-} from "src/shared-app-api/featureAccess";
-import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
 import {
   useSurveyCompletionCountsQuery,
   useSurveyConfigDeleteMutation,
   useSurveyConfigUpdateMutation,
 } from "src/utils/api/survey/useSurveyQueries";
-import { processEnv } from "src/utils/processEnv";
+import { getConversationEditReturnPath } from "src/utils/router/conversationEditReturn";
 import { getSingleRouteParam } from "src/utils/router/params";
 import {
   areSurveyConfigsEqual,
@@ -124,7 +120,6 @@ const { t, locale } = useComponentI18n<EditSurveyTranslations>(editSurveyTransla
 const { showNotifyMessage } = useNotify();
 const route = useRoute();
 const router = useRouter();
-const { userId } = storeToRefs(useAuthenticationStore());
 const { getConversationForEdit } = useBackendPostEditApi();
 
 const conversationSlugId = getSingleRouteParam(route.params.conversationSlugId);
@@ -135,6 +130,17 @@ const showDeleteDialog = ref(false);
 const surveyConfig = ref<SurveyConfig | null>(null);
 const originalSurveyConfig = ref<SurveyConfig | null>(null);
 const surveyValidationErrorMessage = ref<string | null>(null);
+type EditPermissions = Extract<
+  GetConversationForEditResponse,
+  { success: true }
+>["editPermissions"];
+const editPermissions = ref<EditPermissions | null>(null);
+const canEditSurvey = computed(() => {
+  return editPermissions.value?.canEditSurvey ?? true;
+});
+const canDeleteSurvey = computed(() => {
+  return editPermissions.value?.canDeleteSurvey ?? true;
+});
 
 const completionCountsQuery = useSurveyCompletionCountsQuery({
   conversationSlugId: computed(() => conversationSlugId),
@@ -157,6 +163,7 @@ const isSaveDisabled = computed(() => {
     isLoading.value ||
     isSaving.value ||
     isDeleting.value ||
+    !canEditSurvey.value ||
     !hasUnsavedChanges.value
   );
 });
@@ -228,26 +235,20 @@ onMounted(async () => {
     await router.replace({
       name: "/conversation/[conversationSlugId]/edit/",
       params: { conversationSlugId },
+      query: route.query,
     });
     return;
   }
 
-  const surveyAccess = checkFeatureManagementAccess({
-    hasExistingFeature: response.surveyConfig !== null,
-    featureEnabled: processEnv.VITE_SURVEY_ENABLED === "true",
-    isOrgOnly: processEnv.VITE_IS_SURVEY_ORG_ONLY === "true",
-    allowedOrgs:
-      processEnv.VITE_SURVEY_ALLOWED_ORGS ?? DEFAULT_FEATURE_ALLOWED_ORGS,
-    allowedUsers:
-      processEnv.VITE_SURVEY_ALLOWED_USERS ?? DEFAULT_FEATURE_ALLOWED_USERS,
-    postAsOrganization: response.postAsOrganizationName !== undefined,
-    organizationName: response.postAsOrganizationName ?? "",
-    userId: userId.value ?? "",
-  });
-  if (!surveyAccess.allowed) {
+  editPermissions.value = response.editPermissions;
+  if (
+    !response.editPermissions.canEditSurvey &&
+    (response.surveyConfig == null || !response.editPermissions.canDeleteSurvey)
+  ) {
     await router.replace({
       name: "/conversation/[conversationSlugId]/edit/",
       params: { conversationSlugId },
+      query: route.query,
     });
     return;
   }
@@ -270,17 +271,27 @@ function showSurveyValidationError(): void {
 }
 
 async function redirectToConversation(): Promise<void> {
-  await router.replace({
-    name: "/conversation/[postSlugId]/",
-    params: { postSlugId: conversationSlugId },
+  const returnPath = getConversationEditReturnPath({
+    conversationSlugId,
+    returnTo: route.query.returnTo,
   });
+  await router.replace(returnPath);
 }
 
 function requestDeleteSurvey(): void {
+  if (!canDeleteSurvey.value) {
+    return;
+  }
+
   showDeleteDialog.value = true;
 }
 
 async function saveSurvey(): Promise<void> {
+  if (!canEditSurvey.value) {
+    showNotifyMessage(t("saveError"));
+    return;
+  }
+
   const normalizedSurveyConfigResult = buildSurveyConfigForSave({
     surveyConfig: surveyConfig.value,
   });

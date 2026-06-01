@@ -1,35 +1,46 @@
+import { isAxiosError } from "axios";
 import { storeToRefs } from "pinia";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import type { DeviceLoginStatus } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
-import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useNotificationStore } from "src/stores/notification";
 import { useTopicStore } from "src/stores/topic";
 import { useUserStore } from "src/stores/user";
 import { useRoute, useRouter } from "vue-router";
 
-import { resetZupassModuleState } from "../../composables/zupass/useZupassVerification";
-import { useNewPostDraftsStore } from "../../stores/newConversationDrafts";
-import { buildAuthorizationHeader, deleteDid } from "../crypto/ucan/operation";
+import { resetLocalAuthState } from "../auth/localAuthState";
+import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { queryClient } from "../query/client";
 import { useRouterGuard } from "../router/guard";
 import { api } from "./client";
 import { useCommonApi } from "./common";
+
+export interface AuthStateUpdateResult {
+  authStateChanged: boolean;
+  needsCacheRefresh: boolean;
+}
+
+const unknownDeviceLoginStatus = {
+  isKnown: false,
+  isLoggedIn: false,
+  isRegistered: false,
+  credentials: { email: null, phone: null, rarimo: null },
+} satisfies DeviceLoginStatus;
+
+function isUnauthorizedResponse(error: unknown): boolean {
+  return isAxiosError(error) && error.response?.status === 401;
+}
 
 export function useBackendAuthApi() {
   const { buildEncodedUcan } = useCommonApi();
   const authStore = useAuthenticationStore();
   const { isAuthInitialized } = storeToRefs(authStore);
 
-  const { loadUserProfile, clearProfileData } = useUserStore();
-  const { loadTopicsData, clearTopicsData } = useTopicStore();
+  const { loadUserProfile } = useUserStore();
+  const { loadTopicsData } = useTopicStore();
   const { loadNotificationData } = useNotificationStore();
-  const { resetDraft } = useNewPostDraftsStore();
-  const { clearOpinionDrafts } = useNewOpinionDraftsStore();
-  const { clearNotificationData } = useNotificationStore();
-  const { clearLanguagePreferences, loadLanguagePreferencesFromBackend } =
-    useLanguageStore();
+  const { loadLanguagePreferencesFromBackend } = useLanguageStore();
 
   const route = useRoute();
   const router = useRouter();
@@ -88,7 +99,7 @@ export function useBackendAuthApi() {
     partialLoginStatus: Partial<DeviceLoginStatus>;
     forceRefresh?: boolean;
     deferCacheOperations?: boolean;
-  }): Promise<{ authStateChanged: boolean; needsCacheRefresh: boolean }> {
+  }): Promise<AuthStateUpdateResult> {
     try {
       const {
         oldLoginStatus,
@@ -178,13 +189,28 @@ export function useBackendAuthApi() {
     }
   }
 
-  async function initializeAuthState() {
+  async function refreshAuthState(): Promise<AuthStateUpdateResult> {
     try {
       const deviceLoginStatus = await getDeviceLoginStatus();
-      await updateAuthState({
+      return await updateAuthState({
         partialLoginStatus: deviceLoginStatus,
         forceRefresh: true,
       });
+    } catch (error) {
+      if (isUnauthorizedResponse(error)) {
+        return await updateAuthState({
+          partialLoginStatus: unknownDeviceLoginStatus,
+          forceRefresh: true,
+        });
+      }
+
+      throw error;
+    }
+  }
+
+  async function initializeAuthState() {
+    try {
+      await refreshAuthState();
     } finally {
       isAuthInitialized.value = true;
     }
@@ -195,32 +221,14 @@ export function useBackendAuthApi() {
   }: {
     shouldClearLanguagePreferences: boolean;
   }) {
-    // Clear all TanStack Query cache data
-    queryClient.clear();
-
-    await deleteDid();
-    resetDraft();
-    clearOpinionDrafts();
-
-    authStore.setLoginStatus({ isKnown: false });
-
-    clearProfileData();
-
-    clearNotificationData();
-
-    clearTopicsData();
-
-    resetZupassModuleState();
-
-    if (shouldClearLanguagePreferences) {
-      await clearLanguagePreferences();
-    }
+    await resetLocalAuthState({ shouldClearLanguagePreferences });
   }
 
   return {
     logoutFromServer,
     getDeviceLoginStatus,
     updateAuthState,
+    refreshAuthState,
     initializeAuthState,
     loadAuthenticatedModules,
   };

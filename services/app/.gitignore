@@ -5,6 +5,8 @@ node_modules
 .vercel
 .netlify
 .wrangler
+test-results
+playwright-report
 /.svelte-kit
 /build
 

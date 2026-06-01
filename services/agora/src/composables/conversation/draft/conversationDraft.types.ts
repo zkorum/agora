@@ -12,6 +12,7 @@ import type {
   EventSlug,
   ExternalSourceConfig,
   ParticipationMode,
+  PreferredOpinionGroupCount,
   SurveyConfig,
 } from "src/shared/types/zod";
 
@@ -27,17 +28,6 @@ export interface PostAsSettings {
   postAsOrganization: boolean;
   /** The name of the organization (only relevant if postAsOrganization is true) */
   organizationName: string;
-}
-
-/**
- * Advanced settings for private conversations
- * Only relevant when the conversation is private
- */
-export interface PrivateConversationSettings {
-  /** Whether to automatically convert this conversation on a specific date */
-  hasScheduledConversion: boolean;
-  /** The target date for automatic conversion */
-  conversionDate: Date;
 }
 
 /**
@@ -80,12 +70,16 @@ export interface ConversationDraft {
   isPrivate: boolean;
   /** Controls the participation mode for this conversation (applies to both public and private conversations) */
   participationMode: ParticipationMode;
-  /** Advanced settings for private conversations (only relevant when isPrivate is true) */
-  privateConversationSettings: PrivateConversationSettings;
 
   // Event Ticket Verification
   /** If set, requires users to verify ownership of the specified event ticket. If undefined, no verification required. */
   requiresEventTicket?: EventSlug;
+
+  // AI labeling
+  aiLabelingEnabled: boolean;
+
+  // Facilitator analysis preference
+  preferredOpinionGroupCount: PreferredOpinionGroupCount;
 
   // External Source (GitHub integration for MaxDiff)
   externalSourceConfig: ExternalSourceConfig | null;
@@ -178,9 +172,8 @@ export interface ConversationFormState {
   isPrivate: boolean;
   participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
-
-  // Private conversation settings
-  privateConversationSettings: PrivateConversationSettings;
+  aiLabelingEnabled: boolean;
+  preferredOpinionGroupCount: PreferredOpinionGroupCount;
 
   // Survey configuration
   surveyConfig: SurveyConfig | null;

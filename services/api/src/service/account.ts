@@ -15,7 +15,7 @@ import { nowZeroMs } from "@/shared/util.js";
 import { logoutAllDevicesForUser } from "./auth.js";
 import { httpErrors } from "@fastify/sensible";
 import { MAX_LENGTH_USERNAME } from "@/shared/shared.js";
-import { reconcileConversationCounters } from "@/shared-backend/conversationCounters.js";
+import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
 
 interface CheckUserNameExistProps {
     db: PostgresJsDatabase;
@@ -699,7 +699,9 @@ export async function deleteUserAccount({ db, userId }: DeleteAccountProps) {
             .select()
             .from(conversationTable)
             .where(eq(conversationTable.authorId, userId));
-        log.info(`[Account] Found ${String(userConversations.length)} conversations`);
+        log.info(
+            `[Account] Found ${String(userConversations.length)} conversations`,
+        );
         userConversations.forEach((conversation) =>
             conversationIdsSet.add(conversation.id),
         );
@@ -714,7 +716,11 @@ export async function deleteUserAccount({ db, userId }: DeleteAccountProps) {
             log.info(
                 `[Account] Reconciling counters for conversation: ${String(conversationId)}`,
             );
-            await reconcileConversationCounters({ db: tx, conversationId });
+            await scheduleConversationAnalysisRefresh({
+                db: tx,
+                conversationId,
+                log,
+            });
         }
 
         log.info(

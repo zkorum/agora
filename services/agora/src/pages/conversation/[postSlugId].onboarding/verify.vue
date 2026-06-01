@@ -4,6 +4,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
@@ -19,6 +20,7 @@ const { onboardingMode, credentialUpgradeTarget } = storeToRefs(
   onboardingFlowStore()
 );
 const conversationOnboardingStore = useConversationOnboardingStore();
+const { exitToConversation } = useConversationOnboardingExit();
 
 const routeConversationSlugId = computed(() => {
   return getSingleRouteParam(route.params.postSlugId);
@@ -86,11 +88,19 @@ watch(
 
     credentialUpgradeTarget.value = decision.credentialUpgradeTarget;
 
-    if (decision.redirectPath === null) {
+    if (decision.navigation.kind === "none") {
       return;
     }
+
+    if (decision.navigation.kind === "exitToConversation") {
+      void exitToConversation({
+        conversationSlugId: conversationSlugId.value,
+      });
+      return;
+    }
+
     void router.replace({
-      path: decision.redirectPath,
+      path: decision.navigation.path,
     });
   },
   { immediate: true }

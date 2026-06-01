@@ -10,8 +10,11 @@ Name | Type | Description | Notes
 **isRequired** | **boolean** |  | [default to undefined]
 **displayOrder** | **number** |  | [default to undefined]
 **textChangeIsSemantic** | **boolean** |  | [optional] [default to undefined]
+**choiceDisplay** | **string** |  | [default to undefined]
+**isPublicAggregateSuppressionEnabled** | **boolean** |  | [default to false]
+**_options** | [**Array&lt;ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner&gt;**](ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner.md) |  | [default to undefined]
 **questionType** | **string** |  | [default to undefined]
-**constraints** | [**ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraints**](ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraints.md) |  | [default to undefined]
+**constraints** | [**ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraints**](ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraints.md) |  | [default to undefined]
 
 ## Example
 
@@ -24,6 +27,9 @@ const instance: ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuest
     isRequired,
     displayOrder,
     textChangeIsSemantic,
+    choiceDisplay,
+    isPublicAggregateSuppressionEnabled,
+    _options,
     questionType,
     constraints,
 };

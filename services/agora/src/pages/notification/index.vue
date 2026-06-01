@@ -8,7 +8,7 @@
       </HomeMenuBar>
     </Teleport>
 
-    <q-pull-to-refresh @refresh="pullDownTriggered">
+    <PullToRefresh @refresh="pullDownTriggered">
       <PageLoadingSpinner v-if="isLoading" />
 
       <ErrorRetryBlock
@@ -90,7 +90,7 @@
           {{ t("noNotifications") }}
         </div>
       </q-infinite-scroll>
-    </q-pull-to-refresh>
+    </PullToRefresh>
   </div>
 </template>
 
@@ -100,6 +100,7 @@ import UserAvatar from "src/components/account/UserAvatar.vue";
 import { HomeMenuBar } from "src/components/navigation/header/variants";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
+import PullToRefresh from "src/components/ui/PullToRefresh.vue";
 import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
@@ -107,7 +108,10 @@ import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { isNetworkOffline } from "src/composables/useNetworkStatus";
-import type { NotificationType, RouteTarget } from "src/shared/types/zod";
+import type {
+  NotificationType,
+  RouteTarget,
+} from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotificationStore } from "src/stores/notification";
 import { useNotificationApi } from "src/utils/api/notification/notification";

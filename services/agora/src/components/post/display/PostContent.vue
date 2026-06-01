@@ -11,7 +11,6 @@
       :organization-name="extendedPostData.metadata.organization?.name || ''"
       :participation-mode="extendedPostData.metadata.participationMode"
       :is-closed="extendedPostData.metadata.isClosed"
-      :compact-mode="compactMode"
       :conversation-title="extendedPostData.payload.title"
       :conversation-type="extendedPostData.metadata.conversationType"
       :external-source-config="extendedPostData.metadata.externalSourceConfig ?? null"

@@ -12,6 +12,7 @@ import {
   zodEventSlug,
   zodExternalSourceConfig,
   zodParticipationMode,
+  zodPreferredOpinionGroupCount,
   zodSurveyConfig,
 } from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
@@ -52,36 +53,6 @@ export const zodPostAsSettings = z.object({
 });
 
 /**
- * Zod schema for private conversation settings (serializable version with ISO string)
- *
- * Backward compatibility: old localStorage drafts stored `requiresLogin: boolean`
- * inside privateConversationSettings. New format uses `participationMode: ParticipationMode`.
- * The preprocess step converts old format to new format before validation.
- */
-export const zodSerializablePrivateConversationSettings = z.preprocess(
-  (val) => {
-    if (
-      val != null &&
-      typeof val === "object" &&
-      "requiresLogin" in val &&
-      !("participationMode" in val)
-    ) {
-      const { requiresLogin, ...rest } = val as Record<string, unknown>;
-      return {
-        ...rest,
-        participationMode: requiresLogin ? "strong_verification" : "guest",
-      };
-    }
-    return val;
-  },
-  z.object({
-    participationMode: zodParticipationMode,
-    hasScheduledConversion: z.boolean(),
-    conversionDate: z.iso.datetime(), // Validates ISO 8601 datetime format
-  })
-);
-
-/**
  * Zod schema for CSV file metadata
  */
 export const zodCsvFileMetadata = z
@@ -120,34 +91,66 @@ export const zodConversationImportSettings = z.object({
  * Zod schema for serializable conversation draft
  * This is the main schema used for localStorage validation
  */
-export const zodSerializableConversationDraft = z.object({
-  // Basic content
-  title: z.string().max(MAX_LENGTH_TITLE),
-  content: z.string(), // Body length validation happens in validateHtmlStringCharacterCount
-  seedOpinions: z.array(z.string()),
+export const zodSerializableConversationDraft = z.preprocess(
+  (val) => {
+    if (val === null || typeof val !== "object" || Array.isArray(val)) {
+      return val;
+    }
+    if ("participationMode" in val || !("privateConversationSettings" in val)) {
+      return val;
+    }
 
-  // Conversation type
-  conversationType: zodConversationType.default("polis"),
+    const legacyPrivateSettings = z
+      .object({ participationMode: zodParticipationMode.optional() })
+      .passthrough()
+      .safeParse(val.privateConversationSettings);
+    if (
+      !legacyPrivateSettings.success ||
+      legacyPrivateSettings.data.participationMode === undefined
+    ) {
+      return val;
+    }
 
-  // Publishing options
-  postAs: zodPostAsSettings,
+    return {
+      ...val,
+      participationMode: legacyPrivateSettings.data.participationMode,
+    };
+  },
+  z.object({
+    // Basic content
+    title: z.string().max(MAX_LENGTH_TITLE),
+    content: z.string(), // Body length validation happens in validateHtmlStringCharacterCount
+    seedOpinions: z.array(z.string()),
 
-  // Privacy settings
-  isPrivate: z.boolean(),
-  privateConversationSettings: zodSerializablePrivateConversationSettings,
+    // Conversation type
+    conversationType: zodConversationType.default("polis"),
 
-  // Event ticket verification
-  requiresEventTicket: zodEventSlug.optional(),
+    // Publishing options
+    postAs: zodPostAsSettings,
 
-  // External source (GitHub integration for MaxDiff)
-  externalSourceConfig: zodExternalSourceConfig.nullable().default(null),
+    // Privacy settings
+    isPrivate: z.boolean(),
+    participationMode: zodParticipationMode.default("account_required"),
 
-  // Survey configuration
-  surveyConfig: zodSurveyConfig.nullable().default(null),
+    // Event ticket verification
+    requiresEventTicket: zodEventSlug.optional(),
 
-  // Import settings
-  importSettings: zodConversationImportSettings,
-});
+    // AI labeling
+    aiLabelingEnabled: z.boolean().default(true),
+
+    // Facilitator analysis preference
+    preferredOpinionGroupCount: zodPreferredOpinionGroupCount.default(null),
+
+    // External source (GitHub integration for MaxDiff)
+    externalSourceConfig: zodExternalSourceConfig.nullable().default(null),
+
+    // Survey configuration
+    surveyConfig: zodSurveyConfig.nullable().default(null),
+
+    // Import settings
+    importSettings: zodConversationImportSettings,
+  })
+);
 
 // ============================================================================
 // Type Exports

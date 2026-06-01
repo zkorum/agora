@@ -50,19 +50,28 @@
     v-model:is-private="isPrivate"
   />
 
+  <AiLabelingOptionsDialog
+    v-model:show-dialog="showAiLabelingDialog"
+    v-model:ai-labeling-enabled="aiLabelingEnabled"
+  />
+
+  <AnalysisPreferenceDialog
+    v-model:show-dialog="showAnalysisPreferenceDialog"
+    v-model:preferred-opinion-group-count="preferredOpinionGroupCount"
+    :can-use-analysis-variants-preference="canUseAnalysisVariantsPreference"
+  />
+
   <LoginRequirementDialog
     v-model:show-dialog="showLoginRequirementDialog"
     v-model:participation-mode="participationMode"
   />
 
-  <MakePublicTimerDialog
-    v-model:show-dialog="showMakePublicDialog"
-    v-model:private-conversation-settings="privateConversationSettings"
-  />
-
   <EventTicketRequirementDialog
     v-model:show-dialog="showEventTicketRequirementDialog"
     v-model:requires-event-ticket="requiresEventTicket"
+    :can-add-event-ticket="canAddEventTicket"
+    :can-change-event-ticket="canChangeEventTicket"
+    :can-remove-event-ticket="canRemoveEventTicket"
   />
 </template>
 
@@ -70,9 +79,10 @@
 import { storeToRefs } from "pinia";
 import DynamicProfileImage from "src/components/account/DynamicProfileImage.vue";
 import ConversationControlButton from "src/components/newConversation/ConversationControlButton.vue";
+import AiLabelingOptionsDialog from "src/components/newConversation/dialog/AiLabelingOptionsDialog.vue";
+import AnalysisPreferenceDialog from "src/components/newConversation/dialog/AnalysisPreferenceDialog.vue";
 import EventTicketRequirementDialog from "src/components/newConversation/dialog/EventTicketRequirementDialog.vue";
 import LoginRequirementDialog from "src/components/newConversation/dialog/LoginRequirementDialog.vue";
-import MakePublicTimerDialog from "src/components/newConversation/dialog/MakePublicTimerDialog.vue";
 import ModeChangeConfirmationDialog from "src/components/newConversation/dialog/ModeChangeConfirmationDialog.vue";
 import PostAsAccountDialog from "src/components/newConversation/dialog/PostAsAccountDialog.vue";
 import VisibilityOptionsDialog from "src/components/newConversation/dialog/VisibilityOptionsDialog.vue";
@@ -80,31 +90,29 @@ import {
   type ConversationImportSettings,
   hasContentThatWouldBeCleared,
   type PostAsSettings,
-  type PrivateConversationSettings,
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  localizedDateTimeFormatOptions,
-  useLocalizedDateTimeFormatter,
-} from "src/composables/ui/useLocalizedDateTime";
-import type { ConversationType, EventSlug, ExternalSourceConfig, ParticipationMode } from "src/shared/types/zod";
+import type {
+  ConversationType,
+  EventSlug,
+  ExternalSourceConfig,
+  ParticipationMode,
+  PreferredOpinionGroupCount,
+} from "src/shared/types/zod";
 import {
   checkFeatureAccess,
   DEFAULT_FEATURE_ALLOWED_ORGS,
   DEFAULT_FEATURE_ALLOWED_USERS,
 } from "src/shared-app-api/featureAccess";
 import {
-  checkMaxDiffAllowed,
-  checkMaxDiffGitHubAllowed,
-  DEFAULT_MAXDIFF_ALLOWED_ORGS,
-  DEFAULT_MAXDIFF_ALLOWED_USERS,
   DEFAULT_MAXDIFF_GITHUB_ALLOWED_ORGS,
   DEFAULT_MAXDIFF_GITHUB_ALLOWED_USERS,
 } from "src/shared-app-api/maxdiffLogic";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
+import { usePremiumFeatureApi } from "src/utils/api/premiumFeature";
 import { processEnv } from "src/utils/processEnv";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 
 import MaxDiffSourceDialog from "./dialog/MaxDiffSourceDialog.vue";
 import PostTypeDialog from "./dialog/PostTypeDialog.vue";
@@ -124,9 +132,18 @@ interface ControlButton {
 
 interface Props {
   isEditMode?: boolean;
+  canAddEventTicket?: boolean;
+  canChangeEventTicket?: boolean;
+  canRemoveEventTicket?: boolean;
+  canUseAnalysisVariantsPreference?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  canAddEventTicket: true,
+  canChangeEventTicket: true,
+  canRemoveEventTicket: true,
+  canUseAnalysisVariantsPreference: false,
+});
 
 const { t } = useComponentI18n<NewConversationControlBarTranslations>(
   newConversationControlBarTranslations
@@ -144,12 +161,6 @@ const requiresEventTicket = defineModel<EventSlug | undefined>(
   "requiresEventTicket",
   { required: true }
 );
-const privateConversationSettings = defineModel<PrivateConversationSettings>(
-  "privateConversationSettings",
-  {
-    required: true,
-  }
-);
 const postAs = defineModel<PostAsSettings>("postAs", { required: true });
 const conversationType = defineModel<ConversationType>("conversationType", {
   required: true,
@@ -161,6 +172,13 @@ const importSettings = defineModel<ConversationImportSettings>(
 const externalSourceConfig = defineModel<ExternalSourceConfig | null>(
   "externalSourceConfig",
   { required: true },
+);
+const aiLabelingEnabled = defineModel<boolean>("aiLabelingEnabled", {
+  required: true,
+});
+const preferredOpinionGroupCount = defineModel<PreferredOpinionGroupCount>(
+  "preferredOpinionGroupCount",
+  { required: true }
 );
 
 // For checking if there's content that would be cleared (parent needs to provide these)
@@ -188,7 +206,8 @@ const selectedOrganizationImageUrl = computed(() => {
 const showPostAsDialogVisible = ref(false);
 const showPostTypeDialog = ref(false);
 const showVisibilityDialog = ref(false);
-const showMakePublicDialog = ref(false);
+const showAiLabelingDialog = ref(false);
+const showAnalysisPreferenceDialog = ref(false);
 const showLoginRequirementDialog = ref(false);
 const showEventTicketRequirementDialog = ref(false);
 
@@ -289,32 +308,27 @@ const toggleVisibility = (): void => {
   showVisibilityDialog.value = true;
 };
 
+const toggleAiLabeling = (): void => {
+  showAiLabelingDialog.value = true;
+};
+
+const toggleAnalysisPreference = (): void => {
+  showAnalysisPreferenceDialog.value = true;
+};
+
 const toggleLoginRequirement = (): void => {
   showLoginRequirementDialog.value = true;
 };
 
-const toggleMakePublicTimer = (): void => {
-  showMakePublicDialog.value = true;
-};
-
 const toggleEventTicketRequirement = (): void => {
+  if (!canOpenEventTicketRequirementDialog.value) {
+    return;
+  }
+
   showEventTicketRequirementDialog.value = true;
 };
 
-const isMaxDiffAllowed = computed(() => {
-  const result = checkMaxDiffAllowed({
-    maxdiffEnabled: processEnv.VITE_MAXDIFF_ENABLED === "true",
-    isMaxdiffOrgOnly: processEnv.VITE_IS_MAXDIFF_ORG_ONLY === "true",
-    maxdiffAllowedOrgs:
-      processEnv.VITE_MAXDIFF_ALLOWED_ORGS ?? DEFAULT_MAXDIFF_ALLOWED_ORGS,
-    maxdiffAllowedUsers:
-      processEnv.VITE_MAXDIFF_ALLOWED_USERS ?? DEFAULT_MAXDIFF_ALLOWED_USERS,
-    postAsOrganization: postAs.value.postAsOrganization,
-    organizationName: postAs.value.organizationName,
-    userId: userId.value ?? "",
-  });
-  return result.allowed;
-});
+const isMaxDiffAllowed = computed(() => true);
 
 const isImportAllowed = computed(() => {
   const result = checkFeatureAccess({
@@ -332,21 +346,13 @@ const isImportAllowed = computed(() => {
 });
 
 const isMaxDiffGitHubAllowed = computed(() => {
-  const result = checkMaxDiffGitHubAllowed({
-    maxdiffEnabled: processEnv.VITE_MAXDIFF_ENABLED === "true",
-    isMaxdiffOrgOnly: processEnv.VITE_IS_MAXDIFF_ORG_ONLY === "true",
-    maxdiffAllowedOrgs:
-      processEnv.VITE_MAXDIFF_ALLOWED_ORGS ?? DEFAULT_MAXDIFF_ALLOWED_ORGS,
-    maxdiffAllowedUsers:
-      processEnv.VITE_MAXDIFF_ALLOWED_USERS ?? DEFAULT_MAXDIFF_ALLOWED_USERS,
-    maxdiffGitHubEnabled:
-      processEnv.VITE_MAXDIFF_GITHUB_ENABLED === "true",
-    isMaxdiffGitHubOrgOnly:
-      processEnv.VITE_IS_MAXDIFF_GITHUB_ORG_ONLY === "true",
-    maxdiffGitHubAllowedOrgs:
+  const result = checkFeatureAccess({
+    featureEnabled: true,
+    isOrgOnly: processEnv.VITE_IS_MAXDIFF_GITHUB_ORG_ONLY === "true",
+    allowedOrgs:
       processEnv.VITE_MAXDIFF_GITHUB_ALLOWED_ORGS ??
       DEFAULT_MAXDIFF_GITHUB_ALLOWED_ORGS,
-    maxdiffGitHubAllowedUsers:
+    allowedUsers:
       processEnv.VITE_MAXDIFF_GITHUB_ALLOWED_USERS ??
       DEFAULT_MAXDIFF_GITHUB_ALLOWED_USERS,
     postAsOrganization: postAs.value.postAsOrganization,
@@ -356,25 +362,121 @@ const isMaxDiffGitHubAllowed = computed(() => {
   return result.allowed;
 });
 
-const showMaxDiffSourceDialog = ref(false);
+const { checkPremiumFeatureAccess } = usePremiumFeatureApi();
+const createModeCanUseAnalysisVariantsPreference = ref(false);
+const createModeCanAddEventTicket = ref<boolean | null>(null);
+let createModePremiumAccessRequestId = 0;
 
-const formatMakePublicDate = useLocalizedDateTimeFormatter({
-  options: localizedDateTimeFormatOptions.dateTime,
+const canUseAnalysisVariantsPreference = computed(() => {
+  return props.isEditMode
+    ? props.canUseAnalysisVariantsPreference
+    : createModeCanUseAnalysisVariantsPreference.value;
 });
+
+const canAddEventTicket = computed(() => {
+  return props.isEditMode
+    ? props.canAddEventTicket
+    : createModeCanAddEventTicket.value === true;
+});
+
+const canChangeEventTicket = computed(() => {
+  return props.isEditMode
+    ? props.canChangeEventTicket
+    : canAddEventTicket.value;
+});
+
+const canRemoveEventTicket = computed(() => {
+  return props.isEditMode ? props.canRemoveEventTicket : true;
+});
+
+watch(
+  () => ({
+    isEditMode: props.isEditMode,
+    isLoggedIn: isLoggedIn.value,
+    postAsOrganization: postAs.value.postAsOrganization,
+    organizationName: postAs.value.organizationName,
+    userId: userId.value,
+  }),
+  async () => {
+    const requestId = ++createModePremiumAccessRequestId;
+
+    if (props.isEditMode) {
+      return;
+    }
+
+    if (!isLoggedIn.value) {
+      createModeCanAddEventTicket.value = false;
+      createModeCanUseAnalysisVariantsPreference.value = false;
+      return;
+    }
+
+    createModeCanAddEventTicket.value = null;
+
+    try {
+      const postAsOrganization = postAs.value.postAsOrganization
+        ? postAs.value.organizationName
+        : undefined;
+      const [eventTicketAccess, analysisVariantsAccess] = await Promise.all([
+        checkPremiumFeatureAccess({
+          feature: "event_ticket",
+          postAsOrganization,
+        }),
+        checkPremiumFeatureAccess({
+          feature: "analysis_variants",
+          postAsOrganization,
+        }),
+      ]);
+
+      if (requestId !== createModePremiumAccessRequestId) {
+        return;
+      }
+
+      createModeCanAddEventTicket.value = eventTicketAccess.hasAccess;
+      createModeCanUseAnalysisVariantsPreference.value =
+        analysisVariantsAccess.hasAccess;
+    } catch {
+      if (requestId !== createModePremiumAccessRequestId) {
+        return;
+      }
+
+      createModeCanAddEventTicket.value = false;
+      createModeCanUseAnalysisVariantsPreference.value = false;
+    }
+  },
+  { immediate: true }
+);
+
+watch(
+  () => ({
+    isEditMode: props.isEditMode,
+    canAddEventTicket: createModeCanAddEventTicket.value,
+  }),
+  ({ isEditMode, canAddEventTicket }) => {
+    if (!isEditMode && canAddEventTicket === false) {
+      requiresEventTicket.value = undefined;
+    }
+  }
+);
+
+watch(canUseAnalysisVariantsPreference, (canUsePreference) => {
+  if (!canUsePreference) {
+    preferredOpinionGroupCount.value = null;
+  }
+});
+
+const canOpenEventTicketRequirementDialog = computed(() => {
+  if (requiresEventTicket.value === undefined) {
+    return canAddEventTicket.value;
+  }
+
+  return canChangeEventTicket.value || canRemoveEventTicket.value;
+});
+
+const showMaxDiffSourceDialog = ref(false);
 
 function handleSourceSelected(config: ExternalSourceConfig | null): void {
   externalSourceConfig.value = config;
 }
-
-const getMakePublicLabel = (): string => {
-  if (!privateConversationSettings.value.hasScheduledConversion) {
-    return t("makePublicNever");
-  }
-
-  const targetDate = privateConversationSettings.value.conversionDate;
-
-  return t("makePublic").replace("{date}", formatMakePublicDate(targetDate));
-};
 
 const getEventTicketLabel = (): string => {
   const eventSlug = requiresEventTicket.value;
@@ -388,6 +490,12 @@ const getEventTicketLabel = (): string => {
       return t("devconnect2025");
   }
 };
+
+const analysisPreferenceLabel = computed(() => {
+  return preferredOpinionGroupCount.value === null
+    ? t("recommendedDefault")
+    : t("groupsLabel", { count: String(preferredOpinionGroupCount.value) });
+});
 
 const controlButtons = computed((): ControlButton[] => [
   {
@@ -426,6 +534,26 @@ const controlButtons = computed((): ControlButton[] => [
     clickable: true,
   },
   {
+    id: "ai-labeling",
+    label: aiLabelingEnabled.value ? t("aiOn") : t("aiOff"),
+    icon: showAiLabelingDialog.value
+      ? "pi pi-chevron-up"
+      : "pi pi-chevron-down",
+    isVisible: true,
+    clickHandler: toggleAiLabeling,
+    clickable: true,
+  },
+  {
+    id: "analysis-preference",
+    label: analysisPreferenceLabel.value,
+    icon: showAnalysisPreferenceDialog.value
+      ? "pi pi-chevron-up"
+      : "pi pi-chevron-down",
+    isVisible: conversationType.value === "polis",
+    clickHandler: toggleAnalysisPreference,
+    clickable: true,
+  },
+  {
     id: "login-requirement",
     label:
       participationMode.value === "account_required"
@@ -443,24 +571,16 @@ const controlButtons = computed((): ControlButton[] => [
     clickable: true,
   },
   {
-    id: "make-public-timer",
-    label: getMakePublicLabel(),
-    icon: showMakePublicDialog.value
-      ? "pi pi-chevron-up"
-      : "pi pi-chevron-down",
-    isVisible: isPrivate.value,
-    clickHandler: toggleMakePublicTimer,
-    clickable: true,
-  },
-  {
     id: "event-ticket-requirement",
     label: getEventTicketLabel(),
     icon: showEventTicketRequirementDialog.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
-    isVisible: true,
+    isVisible: props.isEditMode
+      ? requiresEventTicket.value !== undefined
+      : canAddEventTicket.value,
     clickHandler: toggleEventTicketRequirement,
-    clickable: true,
+    clickable: canOpenEventTicketRequirementDialog.value,
   },
 ]);
 

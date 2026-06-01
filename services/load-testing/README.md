@@ -7,7 +7,6 @@ k6 load testing infrastructure for stress testing guest voting scenarios with re
 This repository provides **two monitoring configurations**:
 
 1. **Local Docker Setup** (this guide) - For local development and testing
-
     - Uses docker-compose with Grafana, Prometheus, and postgres-exporter
     - Monitors local PostgreSQL container
 
@@ -59,31 +58,27 @@ Password: see ../api/docker-compose.yml
 
 ### 4. Run Load Tests (Local)
 
-#### Scenario 1: Single Conversation
+#### Scenario 1: Conversation Voting
 
 ```bash
 cd services/load-testing
 pnpm install
-./scripts/run-scenario1-with-monitoring.sh <CONVERSATION_SLUG_ID>
+./scripts/run-scenario1-with-monitoring.sh <CONVERSATION_SLUG_IDS>
 ```
 
 Example:
 
 ```bash
-./scripts/run-scenario1-with-monitoring.sh abc123xyz
+./scripts/run-scenario1-with-monitoring.sh abc123xyz,def456uvw
 ```
 
-#### Scenario 2: Multiple Conversations
+The script wraps k6 with the root dev log runner. Outputs are written to:
 
-```bash
-./scripts/run-scenario2-with-monitoring.sh <CONVERSATION_SLUG_IDS>
-```
+- `.local/logs/latest/load-testing.log` for the full k6 console output.
+- `.local/logs/latest/load-testing.events.jsonl` for semantic events such as user setup, opinion creation, votes, page fetches, and teardown failures.
+- `.local/logs/latest/load-testing.summary.json` for the k6 summary export.
 
-Example:
-
-```bash
-./scripts/run-scenario2-with-monitoring.sh abc123,def456,ghi789
-```
+Search semantic events directly with `rg`, for example `rg '"outcome":"failure"' .local/logs/latest/load-testing.events.jsonl`.
 
 ### 5. Monitor Real-Time (Local)
 
@@ -146,36 +141,23 @@ This section will include:
 
 ## Test Scenarios
 
-### Scenario 1: Single Conversation Heavy Load
+### Scenario 1: Conversation Voting Load
 
-Tests database contention on a single conversation:
+Tests voting load on one or more conversations:
 
-- 50-200 concurrent guest users
-- Each user creates 5-10 opinions
-- Each user votes 5-15 times
-- Actions interleaved (realistic user behavior)
-- 20-minute test duration
+- Configurable opinion creators and additional voters
+- Initial opinions distributed across all configured conversations
+- Each user votes on 50-100% of fetched opinions
+- Users occasionally create new opinions while voting
+- Page fetches are mixed in to simulate realistic browsing behavior
 
 **What it tests:**
 
-- Row-level locking on single conversation
+- Row-level locking on hot conversations
 - Opinion table insert performance
 - Vote table insert performance
+- Multiple-conversation voting throughput
 - Transaction throughput limits
-
-### Scenario 2: Multiple Conversations Heavy Load
-
-Tests distributed load across multiple conversations:
-
-- 50-200 concurrent guest users
-- Load distributed across multiple conversations
-- Same opinion/vote creation as Scenario 1
-
-**What it tests:**
-
-- Cross-conversation scalability
-- Database contention with distributed load
-- Overall transaction throughput
 
 ## Configuration
 
@@ -183,10 +165,10 @@ Tests distributed load across multiple conversations:
 
 Edit scenario files to adjust:
 
-- `MIN_OPINIONS_PER_USER` / `MAX_OPINIONS_PER_USER` (default: 5-10)
-- `MIN_VOTES_PER_USER` / `MAX_VOTES_PER_USER` (default: 5-15)
-- `MIN_SLEEP_BETWEEN_ACTIONS` / `MAX_SLEEP_BETWEEN_ACTIONS` (default: 0.5-2.0s)
-- Load stages in `options.stages`
+- `OPINION_CREATOR_COUNT` / `ADDITIONAL_VOTERS` (default: 50/50)
+- `INTERMITTENT_OPINION_CREATION_PROBABILITY` (default: 0.1)
+- `MAIN_PAGE_FETCH_PROBABILITY` / `CONVERSATION_PAGE_FETCH_PROBABILITY`
+- `SLEEP_BETWEEN_ACTIONS` and retry constants in the scenario file
 
 ### Monitoring Configuration (Local Only)
 
@@ -200,7 +182,6 @@ Edit `services/api/postgresql-monitoring.conf` to adjust:
 ### Grafana shows no data
 
 1. Check Prometheus is scraping metrics:
-
     - Open <http://localhost:9090>
     - Go to Status → Targets
     - Verify `postgresql` target is UP
@@ -215,7 +196,6 @@ Edit `services/api/postgresql-monitoring.conf` to adjust:
 ### k6 metrics not appearing in Grafana
 
 1. Verify k6 is sending to Prometheus:
-
     - Check k6 output shows "experimental-prometheus-rw" output
     - Verify `K6_PROMETHEUS_RW_SERVER_URL` is set correctly
 

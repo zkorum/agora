@@ -45,7 +45,7 @@ For detailed information about each service, licenses, and documentation, see [C
 
 **[Math Updater](./services/math-updater)** - Background worker service that periodically updates Polis clustering mathematics and generates AI-powered cluster insights using LLM models.
 
-**[Python Bridge](./services/python-bridge)** - A Flask application enabling the Node.js backend to communicate with Python data science libraries, particularly [reddwarf](https://github.com/polis-community/red-dwarf) for clustering algorithms.
+**[Import Worker](./services/import-worker)** - Python worker that consumes conversation import jobs and imports Polis URLs or CSV archives.
 
 **[Scoring Worker](./services/scoring-worker)** - Python worker that runs [Solidago](https://solidago.tournesol.app/) algorithm to produce community rankings from MaxDiff (Best-Worst Scaling) comparisons. Uses Valkey for job queuing and supports parallel scoring.
 
@@ -55,20 +55,19 @@ For detailed information about each service, licenses, and documentation, see [C
 
 **[Shared App-API](./services/shared-app-api)** - TypeScript code shared specifically between the frontend (agora) and API service.
 
-**[Shared Backend](./services/shared-backend)** - Backend-specific code shared between API and worker services (like math-updater). Synced via rsync to maintain consistency.
+**[Shared Backend](./services/shared-backend)** - Backend-specific TypeScript code for the API and source schema for generated Python worker artifacts.
 
 ### Development Tools
 
 **[LLM](./services/llm)** - LLM prompts and Python scripts for AI-related development.
-
-**[NLP](./services/nlp)** - Natural language processing utilities and tools.
 
 ### OpenAPI
 
 We generate an `openapi-zkorum.json` file from the backend, and then use [openapi-generator-cli](https://openapi-generator.tech/) to generate the corresponding frontend client.
 
 ### Getting started
-Please read READMEs in `/services/agora`, `/services/api`, `/services/math-updater`, `/services/python-bridge`, and `/services/scoring-worker`
+
+Please read READMEs in `/services/agora`, `/services/api`, `/services/import-worker`, `/services/math-updater`, and `/services/scoring-worker`.
 
 ### Run in dev mode
 
@@ -84,11 +83,33 @@ Backend API:
 make dev-api
 ```
 
-Python Bridge:
+Import Worker:
 
 ```
-make dev-polis
+make dev-import-worker
 ```
+
+### Development logs
+
+Root `make dev-*` targets write durable logs under `.local/logs` while still streaming output to the terminal or kitty tab.
+
+```bash
+make logs
+make logs-tail service=api
+make logs-clean
+```
+
+Log layout:
+
+- `.local/logs/runs/<run-id>/<service>.log` stores each captured service run.
+- `.local/logs/latest/<service>.log` points to the latest run for quick inspection.
+- `.local/logs/latest/<service>.events.jsonl` stores semantic load-test events emitted with `AGORA_LOAD_EVENT`.
+- `.local/logs/latest/<service>-browser.jsonl` stores dev-browser events emitted by the Quasar frontend.
+- `.local/logs/latest/<service>.summary.json` stores k6 summaries when available.
+
+Use `rg` directly for searches, for example `rg "error|failed" .local/logs/latest/api.log`. Logs rotate at 25 MB per file, keep 5 files per service, prune runs older than 7 days, and cap total run storage at 750 MB by default. Override with `AGORA_LOG_DIR`, `AGORA_LOG_RUN_ID`, `AGORA_LOG_MAX_BYTES`, `AGORA_LOG_MAX_FILES`, `AGORA_LOG_RETENTION_DAYS`, or `AGORA_LOG_MAX_TOTAL_BYTES`.
+
+`run_all_in_kitty_tabs.sh` exports one shared `AGORA_LOG_RUN_ID`, so all tabs from the same launch land in the same run directory.
 
 ### Shared
 
@@ -100,7 +121,7 @@ Use these commands to automatically rsync shared files to back and front:
 make dev-sync
 ```
 
-### OpenAPI  
+### OpenAPI
 
 Automatically generate frontend stub from backends and subsequent openapi changes:
 
@@ -108,9 +129,7 @@ Automatically generate frontend stub from backends and subsequent openapi change
 make dev-generate
 ```
 
-
 ... and start coding!
-
 
 ## Embedding Agora on your website
 

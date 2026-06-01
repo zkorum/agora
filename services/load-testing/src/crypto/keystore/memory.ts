@@ -3,16 +3,56 @@
  * Replaces IndexedDB-based keystore with a simple in-memory Map
  */
 
+import type { ExportedKeypairs } from "../ucan/implementation.js";
+
+interface InMemoryKeyStore {
+    init: () => Promise<InMemoryKeyStore>;
+    clear: () => Promise<void>;
+    keypairExists: (name: string) => Promise<boolean>;
+    getKey: (name: string) => Promise<CryptoKeyPair | null>;
+    writeKey: (name: string) => Promise<CryptoKeyPair>;
+    exchangeKey: (name: string) => Promise<CryptoKeyPair>;
+    createIfDoesNotExist: (
+        writeName: string,
+        exchangeName: string,
+    ) => Promise<InMemoryKeyStore>;
+    createOverwriteIfAlreadyExists: (
+        writeName: string,
+        exchangeName: string,
+    ) => Promise<InMemoryKeyStore>;
+    copyKeypair: (fromName: string, toName: string) => Promise<void>;
+    deleteKey: (name: string) => Promise<void>;
+    exportKeys: (
+        writeName: string,
+        exchangeName: string,
+    ) => Promise<ExportedKeypairs>;
+    importKeys: (
+        writeName: string,
+        exchangeName: string,
+        exportedKeys: ExportedKeypairs,
+    ) => Promise<InMemoryKeyStore>;
+    exportSymmKey: (name: string) => Promise<Uint8Array>;
+    importSymmKey: (key: Uint8Array, name: string) => Promise<void>;
+    symmKeyExists: (name: string) => Promise<boolean>;
+    cfg: {
+        charSize: number;
+        hashAlg: string;
+        storeName: string;
+    };
+}
+
 // Simple in-memory storage for RSA keypairs
 const keypairStore = new Map<string, CryptoKeyPair>();
+const symmKeyStore = new Map<string, CryptoKey>();
 
-export const MemoryKeyStore = {
+export const MemoryKeyStore: InMemoryKeyStore = {
     async init() {
         return this;
     },
 
     async clear(): Promise<void> {
         keypairStore.clear();
+        symmKeyStore.clear();
     },
 
     async keypairExists(name: string): Promise<boolean> {
@@ -39,7 +79,10 @@ export const MemoryKeyStore = {
         return keypair;
     },
 
-    async createIfDoesNotExist(writeName: string, exchangeName: string): Promise<typeof MemoryKeyStore> {
+    async createIfDoesNotExist(
+        writeName: string,
+        exchangeName: string,
+    ): Promise<InMemoryKeyStore> {
         if (!keypairStore.has(writeName)) {
             const writeKeypair = await crypto.subtle.generateKey(
                 {
@@ -49,7 +92,7 @@ export const MemoryKeyStore = {
                     hash: { name: "SHA-256" },
                 },
                 true,
-                ["sign", "verify"]
+                ["sign", "verify"],
             );
             keypairStore.set(writeName, writeKeypair);
         }
@@ -63,7 +106,7 @@ export const MemoryKeyStore = {
                     hash: { name: "SHA-256" },
                 },
                 true,
-                ["encrypt", "decrypt"]
+                ["encrypt", "decrypt"],
             );
             keypairStore.set(exchangeName, exchangeKeypair);
         }
@@ -71,10 +114,32 @@ export const MemoryKeyStore = {
         return this;
     },
 
-    async exportKeys(writeName: string, exchangeName: string): Promise<{
-        write: { privateKey: JsonWebKey; publicKey: JsonWebKey };
-        exchange: { privateKey: JsonWebKey; publicKey: JsonWebKey };
-    }> {
+    async createOverwriteIfAlreadyExists(
+        writeName: string,
+        exchangeName: string,
+    ): Promise<InMemoryKeyStore> {
+        keypairStore.delete(writeName);
+        keypairStore.delete(exchangeName);
+        return await this.createIfDoesNotExist(writeName, exchangeName);
+    },
+
+    async copyKeypair(fromName: string, toName: string): Promise<void> {
+        const keypair = keypairStore.get(fromName);
+        if (!keypair) {
+            throw new Error(`Keypair not found: ${fromName}`);
+        }
+        keypairStore.set(toName, keypair);
+    },
+
+    async deleteKey(name: string): Promise<void> {
+        keypairStore.delete(name);
+        symmKeyStore.delete(name);
+    },
+
+    async exportKeys(
+        writeName: string,
+        exchangeName: string,
+    ): Promise<ExportedKeypairs> {
         const writeKeypair = keypairStore.get(writeName);
         const exchangeKeypair = keypairStore.get(exchangeName);
 
@@ -82,7 +147,12 @@ export const MemoryKeyStore = {
             throw new Error(`Keys not found: ${writeName} or ${exchangeName}`);
         }
 
-        const [writePrivateJwk, writePublicJwk, exchangePrivateJwk, exchangePublicJwk] = await Promise.all([
+        const [
+            writePrivateJwk,
+            writePublicJwk,
+            exchangePrivateJwk,
+            exchangePublicJwk,
+        ] = await Promise.all([
             crypto.subtle.exportKey("jwk", writeKeypair.privateKey),
             crypto.subtle.exportKey("jwk", writeKeypair.publicKey),
             crypto.subtle.exportKey("jwk", exchangeKeypair.privateKey),
@@ -104,41 +174,39 @@ export const MemoryKeyStore = {
     async importKeys(
         writeName: string,
         exchangeName: string,
-        exportedKeys: {
-            write: { privateKey: JsonWebKey; publicKey: JsonWebKey };
-            exchange: { privateKey: JsonWebKey; publicKey: JsonWebKey };
-        }
-    ): Promise<typeof MemoryKeyStore> {
-        const [writePrivate, writePublic, exchangePrivate, exchangePublic] = await Promise.all([
-            crypto.subtle.importKey(
-                "jwk",
-                exportedKeys.write.privateKey,
-                { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-                true,
-                ["sign"]
-            ),
-            crypto.subtle.importKey(
-                "jwk",
-                exportedKeys.write.publicKey,
-                { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-                true,
-                ["verify"]
-            ),
-            crypto.subtle.importKey(
-                "jwk",
-                exportedKeys.exchange.privateKey,
-                { name: "RSA-OAEP", hash: "SHA-256" },
-                true,
-                ["decrypt"]
-            ),
-            crypto.subtle.importKey(
-                "jwk",
-                exportedKeys.exchange.publicKey,
-                { name: "RSA-OAEP", hash: "SHA-256" },
-                true,
-                ["encrypt"]
-            ),
-        ]);
+        exportedKeys: ExportedKeypairs,
+    ): Promise<InMemoryKeyStore> {
+        const [writePrivate, writePublic, exchangePrivate, exchangePublic] =
+            await Promise.all([
+                crypto.subtle.importKey(
+                    "jwk",
+                    exportedKeys.write.privateKey,
+                    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+                    true,
+                    ["sign"],
+                ),
+                crypto.subtle.importKey(
+                    "jwk",
+                    exportedKeys.write.publicKey,
+                    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+                    true,
+                    ["verify"],
+                ),
+                crypto.subtle.importKey(
+                    "jwk",
+                    exportedKeys.exchange.privateKey,
+                    { name: "RSA-OAEP", hash: "SHA-256" },
+                    true,
+                    ["decrypt"],
+                ),
+                crypto.subtle.importKey(
+                    "jwk",
+                    exportedKeys.exchange.publicKey,
+                    { name: "RSA-OAEP", hash: "SHA-256" },
+                    true,
+                    ["encrypt"],
+                ),
+            ]);
 
         keypairStore.set(writeName, {
             privateKey: writePrivate,
@@ -151,6 +219,30 @@ export const MemoryKeyStore = {
         });
 
         return this;
+    },
+
+    async exportSymmKey(name: string): Promise<Uint8Array> {
+        const key = symmKeyStore.get(name);
+        if (!key) {
+            throw new Error(`Symmetric key not found: ${name}`);
+        }
+        const raw = await crypto.subtle.exportKey("raw", key);
+        return new Uint8Array(raw);
+    },
+
+    async importSymmKey(key: Uint8Array, name: string): Promise<void> {
+        const importedKey = await crypto.subtle.importKey(
+            "raw",
+            new Uint8Array(key),
+            { name: "AES-GCM", length: 256 },
+            true,
+            ["encrypt", "decrypt"],
+        );
+        symmKeyStore.set(name, importedKey);
+    },
+
+    async symmKeyExists(name: string): Promise<boolean> {
+        return symmKeyStore.has(name);
     },
 
     // Configuration object to match RSAKeyStore interface

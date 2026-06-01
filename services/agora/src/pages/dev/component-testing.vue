@@ -3,8 +3,9 @@
     <StandardMenuBar :title="t('componentTesting')" :center-content="true" />
   </Teleport>
 
-  <div class="container">
-      <PreferencesDialogTest />
+      <div class="container">
+       <CheckpointTimelineTest />
+       <PreferencesDialogTest />
       <OpinionGroupVisualizationTest />
       <AnalysisReportTest />
       <AsyncStateHandlerTest />
@@ -23,6 +24,7 @@ import {
 } from "./component-testing.i18n";
 import AnalysisReportTest from "./test-components/AnalysisReportTest.vue";
 import AsyncStateHandlerTest from "./test-components/AsyncStateHandlerTest.vue";
+import CheckpointTimelineTest from "./test-components/CheckpointTimelineTest.vue";
 import EmbeddedBrowserWarningTest from "./test-components/EmbeddedBrowserWarningTest.vue";
 import OpinionGroupVisualizationTest from "./test-components/OpinionGroupVisualizationTest.vue";
 import PreferencesDialogTest from "./test-components/PreferencesDialogTest.vue";

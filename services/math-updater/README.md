@@ -1,267 +1,134 @@
-# Math Updater Service
+# Math Updater
 
-Background worker service for automatically updating Polis math calculations and AI-generated cluster insights for conversations in the Agora Citizen Network.
+Python worker that computes opinion-group analysis for Agora conversations.
 
 ## Overview
 
-The math-updater service is a background worker that periodically scans active conversations and triggers recalculation of Polis clustering mathematics. It processes voting data, computes opinion statistics, cluster assignments, and generates AI-powered cluster labels and summaries using LLM.
+The math-updater consumes queued conversation IDs from Valkey, claims work in PostgreSQL, builds immutable input snapshots, runs `red-dwarf` locally, and persists opinion-group analysis results. It also optionally generates and translates opinion-group labels and summaries.
 
-## Features
+## Responsibilities
 
-- **Automated Math Updates**: Periodically scans conversations and triggers Polis math recalculation
-- **Job Queue Management**: Uses [pg-boss](https://github.com/timgit/pg-boss) for reliable job queue management
-- **Cluster Analysis**: Processes Polis math results to generate cluster statistics and assignments
-- **AI-Powered Insights**: Generates neutral, concise cluster labels and summaries using AWS Bedrock LLMs
-- **Configurable Intervals**: Customizable scan intervals and update frequency
-- **Graceful Shutdown**: Handles SIGTERM/SIGINT for clean service termination
-
-## Architecture
-
-The service consists of two main job types:
-
-### 1. Scan Conversations Job
-
-- Runs on a self-scheduling loop (default: every 2 seconds)
-- Scans `conversation_update_queue` table for pending math updates
-- Queues `update-conversation-math` jobs for eligible conversations
-- **Rate limiting**: Respects 2-second minimum between updates per conversation
-- **Singleton protection**: Uses pg-boss singleton keys to prevent duplicate jobs per conversation (2s-28s windows based on conversation size)
-- Uses self-scheduling pattern: each job schedules the next run after completion
-- Error-resilient: continues scheduling even if scan encounters errors
-
-### 2. Update Conversation Math Job
-
-- **Counter reconciliation**: Recalculates accurate counters from actual database records (self-healing)
-- Fetches voting data for a specific conversation
-- Calls external Polis service to compute clustering mathematics
-- **Batch processing**: Handles large conversations (19K+ opinions) via batching to avoid stack overflow
-- Processes and stores math results (priorities, consensus, clusters, etc.)
-- Optionally generates AI labels and summaries for clusters
-- Updates conversation table counters and marks queue entry as processed
-- **Race-condition safe**: Only marks processed if no newer update arrived during processing
+- Consume queued conversation IDs from the `analysis:dirty` Valkey sorted set.
+- Claim and lease analysis work in PostgreSQL.
+- Build input snapshots from conversation opinions and votes.
+- Run `red-dwarf` locally for Polis-style opinion-group analysis.
+- Persist analysis results, candidates, group membership, representative opinions, and opinion metrics.
+- Retry retryable failures and mark non-retryable work states.
+- Recover expired running work leases.
+- Optionally generate AWS Bedrock labels/summaries and Google Cloud translations.
 
 ## Configuration
 
-Configuration is managed via environment variables. See `env.example` for required variables.
+Environment variables use the `MATH_UPDATER_` prefix.
 
-### Database
+| Variable                                         | Default                   | Description                          |
+| ------------------------------------------------ | ------------------------- | ------------------------------------ |
+| `MATH_UPDATER_CONNECTION_STRING`                 | Required                  | PostgreSQL primary DSN               |
+| `MATH_UPDATER_CONNECTION_STRING_READ`            | Same as primary           | PostgreSQL read replica DSN          |
+| `MATH_UPDATER_VALKEY_URL`                        | `valkey://localhost:6379` | Valkey connection URL                |
+| `MATH_UPDATER_DB_CLAIM_BATCH_SIZE`               | `8`                       | Max conversations popped and claimed per cycle |
+| `MATH_UPDATER_DB_WRITE_BATCH_SIZE`               | `10`                      | Max results persisted per DB batch   |
+| `MATH_UPDATER_MAX_COMPUTE_CONCURRENCY`           | `4`                       | Max concurrent analysis computations |
+| `MATH_UPDATER_LEASE_TTL_SECONDS`                 | `45`                      | DB work lease TTL                    |
+| `MATH_UPDATER_HEARTBEAT_INTERVAL_SECONDS`        | `15`                      | Lease heartbeat cadence              |
+| `MATH_UPDATER_WORKER_POLL_IDLE_SLEEP_SECONDS`    | `0.5`                     | Idle sleep between poll cycles       |
+| `MATH_UPDATER_DEFAULT_DEBOUNCE_SECONDS`          | `5`                       | Default dirty-work debounce          |
+| `MATH_UPDATER_RECONCILIATION_INTERVAL_SECONDS`   | `60`                      | DB-to-Valkey reconciliation cadence  |
+| `MATH_UPDATER_RUNNING_RECOVERY_INTERVAL_SECONDS` | `10`                      | Expired lease recovery cadence       |
 
-**Primary Database (Required):**
-- `CONNECTION_STRING`: PostgreSQL connection string for primary database
-  - Used by pg-boss for job queue management (writes)
-  - Used for all database writes (opinion updates, counter updates, math results)
+AI label and summary generation is disabled by default and configured with `MATH_UPDATER_AWS_AI_LABEL_SUMMARY_*` variables. Translation is configured with `MATH_UPDATER_AWS_DESCRIPTION_TRANSLATION_*`, `MATH_UPDATER_GOOGLE_*`, and optional AWS Secrets Manager credential variables. Translation requires AI label/summary generation to be enabled.
 
-**Alternative: AWS Production Mode**
-- `DB_HOST`: Primary database host (e.g., `primary.region.rds.amazonaws.com`)
-- `DB_PORT`: Database port (default: 5432)
-- `DB_NAME`: Database name
-- `AWS_SECRET_ID`: AWS Secrets Manager secret ID containing database credentials
-- `AWS_SECRET_REGION`: AWS region for Secrets Manager
+### Dev-only AI simulation
 
-**Read Replica (Optional):**
-- `CONNECTION_STRING_READ`: PostgreSQL connection string for read replica
-  - Used for SELECT queries (fetching votes, reading conversation data)
-  - Falls back to primary if not configured
-- `DB_HOST_READ`: Read replica host (e.g., `replica.region.rds.amazonaws.com`)
-- `DB_PORT_READ`: Read replica port (default: 5432)
-- `AWS_SECRET_ID_READ`: AWS Secrets Manager secret ID for read replica credentials
-- `AWS_SECRET_REGION_READ`: AWS region for read replica secrets
+The worker can simulate AI description and translation providers for load-testing retry, fallback, and first-pass behavior without calling Bedrock or Google. This is dev-only. Config validation refuses to start the process unless `AGORA_DEV_MODE=true` is present.
 
-**Important Notes:**
-- **pg-boss always uses the primary database** (via `CONNECTION_STRING` or `DB_HOST`)
-  - pg-boss manages its own connection pool independently
-  - The `pgboss` schema must exist on the primary database
-- **Business logic queries (via `db` object) use read replica for SELECTs when configured**
-  - `getPolisVotes()` reads from replica (acceptable ~1s staleness)
-  - All writes (updates, inserts) automatically route to primary via `withReplicas()`
-- **Replication lag**: Typically <1 second, acceptable for math updates (2s minimum rate limit)
+The repository dev Make targets set `AGORA_DEV_MODE=true` automatically. Plain `uv run ...` does not imply dev mode.
 
-### Polis Service
+Example:
 
-- `POLIS_BASE_URL`: Base URL for the Polis math computation service
+```bash
+AGORA_DEV_MODE=true
+MATH_UPDATER_AWS_AI_LABEL_SUMMARY_ENABLE=false
+MATH_UPDATER_AWS_DESCRIPTION_TRANSLATION_ENABLE=false
+MATH_UPDATER_SIMULATION_PROVIDERS_ENABLE=true
+MATH_UPDATER_AI_DESCRIPTION_SIMULATION_MODE=retryable_error_then_success
+MATH_UPDATER_DESCRIPTION_TRANSLATION_SIMULATION_MODE=success
+MATH_UPDATER_SIMULATION_RETRYABLE_FAILURE_ATTEMPTS=1
+```
 
-### Math Updater Settings
+Simulation modes are `off`, `success`, `retryable_error`, `retryable_error_then_success`, and `non_retryable_error`.
 
-- `MATH_UPDATER_SCAN_INTERVAL_MS`: How often to scan for conversations needing updates (default: 2000ms = 2 seconds, min: 2000ms)
-- `MATH_UPDATER_BATCH_SIZE`: Number of jobs to fetch per batch from the queue. Also determines database connection pool size (batch size + 5) (default: auto-calculated as 2x concurrency)
-- `MATH_UPDATER_JOB_CONCURRENCY`: Number of jobs that execute concurrently within each batch. Limits concurrent heavy database operations to protect the database server (default: auto-calculated from TOTAL_VCPUS)
-- `MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS`: Minimum time between updates for a single conversation (default: 2000ms = 2 seconds, min: 2000ms)
-- `TOTAL_VCPUS`: Total vCPUs available (used to auto-calculate concurrency settings) (default: 2)
+Logs use the `[SimulationProvider]` prefix and also emit `AGORA_LOAD_EVENT` JSON markers. When services are launched through the root Make targets, marker payloads are written to files such as `.local/logs/latest/math-updater.events.jsonl`, `.local/logs/latest/ai-description-retry-worker.events.jsonl`, and `.local/logs/latest/description-translation-retry-worker.events.jsonl`.
 
-### AWS Configuration (for AI labels/summaries)
+Useful checks:
 
-- `AWS_SECRET_ID`: AWS Secrets Manager secret ID (optional, for production)
-- `AWS_SECRET_REGION`: AWS region for Secrets Manager (optional)
-- `AWS_AI_LABEL_SUMMARY_ENABLE`: Enable/disable AI label and summary generation (default: true)
-- `AWS_AI_LABEL_SUMMARY_REGION`: AWS region for Bedrock (default: "eu-west-1")
-- `AWS_AI_LABEL_SUMMARY_MODEL_ID`: Bedrock model ID (default: "mistral.mistral-large-2402-v1:0")
-- `AWS_AI_LABEL_SUMMARY_TEMPERATURE`: LLM temperature (default: "0.4")
-- `AWS_AI_LABEL_SUMMARY_TOP_P`: LLM top_p parameter (default: "0.8")
-- `AWS_AI_LABEL_SUMMARY_MAX_TOKENS`: Maximum tokens for LLM response (default: "8192")
-- `AWS_AI_LABEL_SUMMARY_PROMPT`: Custom prompt for AI label/summary generation (see config.ts for default)
+```bash
+rg "SimulationProvider|first_pass|retry" .local/logs/latest/math-updater.log
+rg '"action":"ai-generate"|"action":"translation"|"action":"retry-scheduled"' .local/logs/latest/*.events.jsonl
+```
 
-## AI Label & Summary Generation
+See `env.example` for a local template.
 
-When enabled, the service uses AWS Bedrock to generate:
+## Generated Artifacts
 
-1. **Cluster Labels**: Short (1-2 words), neutral, agentive nouns describing each cluster's ideological position
-   - Examples: "Skeptics", "Technologists", "Redistributionists", "Pragmatists"
-   - Avoids policy-specific terms, geographic references, and abstract concepts
-   - Professional/academic tone that reflects generality and positionality
+Shared worker code uses generated Python artifacts:
 
-2. **Cluster Summaries**: Concise (≤300 chars), neutral summaries of each cluster's perspective
-   - Grounded in cluster's agreement/disagreement patterns
-   - Reflects cluster's stance relative to conversation context
-   - Covers all representative opinions without repetition
+- `services/python-worker-shared/src/agora_worker_shared/generated_models.py` from `services/shared-backend/src/schema.ts`.
+- `services/python-worker-shared/src/agora_worker_shared/generated_shared_types.py` from `services/shared/src` constants.
 
-The AI prompt is carefully designed to:
+Regenerate from the repository root:
 
-- Detect sarcasm and irony
-- Analyze each cluster independently
-- Consider whether opinions are supported or rejected by the cluster
-- Generate abstract, context-independent labels
-- Produce neutral, professional summaries
+```bash
+make sync-python-artifacts
+```
 
 ## Development
 
-### Prerequisites
-
-- Node.js 16+
-- PostgreSQL database
-- Access to Polis service
-- AWS credentials (if using AI features)
-
-### Installation
-
 ```bash
-pnpm install
+uv sync --extra dev
+uv run python -m math_updater.worker
 ```
 
-### Running Locally
+Prefer the repository-root target when you want durable logs:
 
 ```bash
-# Development mode with auto-reload
-pnpm start:dev
-
-# Production build
-pnpm build
-pnpm start
+make dev-math-updater
 ```
 
-### Linting & Formatting
+The root target runs the worker with unbuffered Python output and writes `.local/logs/latest/math-updater.log`.
+
+## Shutdown
+
+The container runs under `tini` and handles `SIGTERM` by finishing the in-flight batch before exiting. During that drain period, active analysis leases keep heartbeating; successful completion clears the lease normally. Docker deployments should provide a stop grace period long enough for the current batch to finish. The production Compose template sets `stop_grace_period: 10m` for the worker containers.
+
+The dedicated [`ai-description-retry-worker`](../ai-description-retry-worker) and [`description-translation-retry-worker`](../description-translation-retry-worker) services process retry/backlog queues. This service owns red-dwarf analysis and immediate first-pass AI description/translation work.
+
+Useful checks:
 
 ```bash
-pnpm lint
-pnpm format:check
-pnpm format:write
+uv run --extra dev ruff check
+uv run --extra dev basedpyright
 ```
 
-## How It Works
+## Docker
 
-1. **Initialization**: Service connects to database and initializes pg-boss job queue with **singleton policy**
-   - Queue policy ensures only 1 job per conversation (created OR active) to prevent duplicate processing
+```bash
+make image-buildx TAG=2.0.4
+make image-push TAG=2.0.4
+```
 
-2. **Loop Kickoff**: Sends initial `scan-conversations` job with singleton key to start the self-scheduling loop
-
-3. **Conversation Scanning**: Scan job queries `conversation_update_queue` table for pending updates
-   - Reads conversations where `processed_at IS NULL`
-   - Respects rate limiting via `last_math_update_at` (2s minimum between updates)
-   - Orders by `last_math_update_at ASC NULLS FIRST` (prioritizes never-updated and oldest)
-
-4. **Job Queueing**: Eligible conversations are queued as `update-conversation-math` jobs
-   - Each job includes captured `requestedAt` timestamp for race-condition detection
-   - Uses `singletonKey: update-math-${conversationId}` per conversation
-   - Dynamic `singletonSeconds` based on conversation size (2s-28s)
-
-5. **Self-Scheduling**: After each scan, the job schedules itself to run again after `MATH_UPDATER_SCAN_INTERVAL_MS`
-   - Uses `singletonKey` to prevent duplicate loops
-   - Always reschedules, even if the scan encounters errors
-   - Creates a continuous, reliable scanning loop
-
-6. **Counter Reconciliation** (services/math-updater/src/conversationCounters.ts):
-   - Recalculates `opinion_count`, `vote_count`, `participant_count` from actual DB records
-   - Self-healing: fixes drift from soft deletes, moderation, user deletion
-   - Updates `lastReactedAt` for activity tracking
-   - Logs any discrepancies found
-
-7. **Math Processing**: Worker jobs fetch votes, call Polis service, process results
-   - Batches large conversations (1000 opinions per batch) to avoid stack overflow
-   - Handles conversations with 100K+ votes and 19K+ opinions
-
-8. **Database Updates**: Math results are stored in database, updating:
-   - Conversation counters (opinion_count, vote_count, participant_count, lastReactedAt)
-   - Opinion priorities, consensus levels, divisiveness scores
-   - Cluster assignments for participants
-   - Cluster statistics (agreement/disagreement counts per opinion)
-   - Representative opinions for each cluster
-
-9. **AI Enhancement**: If enabled, generates AI-powered cluster labels and summaries
-
-10. **Queue Completion** (race-condition safe):
-    - Marks queue entry as `processedAt = NOW()` only if `requestedAt` unchanged
-    - If `requestedAt` changed during processing → new update arrived → this is now stale
-    - Always updates `last_math_update_at` for rate limiting
-    - Newer updates automatically picked up by next scan
-
-## Database Schema
-
-The service interacts with several database tables:
-
-### Queue Management
-- `conversation_update_queue`: Tracks pending math updates with rate limiting
-  - `conversation_id` (PRIMARY KEY): Deduplicates queue entries
-  - `requested_at`: When update was requested (used for race-condition detection)
-  - `processed_at`: NULL = pending, NOT NULL = processed
-  - `last_math_update_at`: Tracks actual processing time (enables 2s rate limiting)
-
-### Core Data
-- `conversation`: Stores conversation metadata, counters, and current math content reference
-  - Counters: `opinion_count`, `vote_count`, `participant_count`, `lastReactedAt`
-  - Updated by math-updater via counter reconciliation
-- `opinion`: Stores opinions with math-computed statistics (priority, consensus, divisiveness)
-- `vote`: Stores user votes on opinions
-- `polis_content`: Stores raw Polis math results
-- `polis_cluster`: Stores cluster metadata
-- `polis_cluster_user`: Maps users to clusters
-- `polis_cluster_opinion`: Stores representative opinions for each cluster
-
-## Error Handling
-
-- Database connection errors are logged and cause service shutdown
-- Math computation errors are logged but don't crash the service
-- AI generation errors are caught and logged, allowing math updates to complete
-- Job failures are handled by pg-boss retry mechanism
-
-## Monitoring
-
-The service logs important events:
-
-- Service startup and shutdown
-- Job registrations and scheduling
-- Conversation scans with slugIds: `[Scan] Found 3 conversation(s) needing math updates: [SIP3Kg, sfoFIQ, 15I-Jw]`
-- Enqueued vs skipped conversations: `[Scan] Successfully enqueued 2 conversation(s): [sfoFIQ, 15I-Jw]`
-- Counter reconciliation discrepancies: `[Counter] Fixing counters for R3NBkA: diff { opinions: -2, votes: -3 }`
-- Math processing times for large conversations (113K votes: 50-85 seconds)
-- AI label/summary generation
-- Errors and warnings
-
-**Key Metrics to Watch**:
-- Counter drift frequency (should be occasional, not every update)
-- Large conversations processing time (>30s indicates heavy load)
-- Singleton job rejections (normal behavior, prevents duplicate work)
-- Queue depth (pending updates in `conversation_update_queue`)
-
-Use structured logging output to monitor service health and performance.
-
-## License
-
-This service is licensed under the AGPL v3 license. See [COPYING](./COPYING) for details.
+Retry workers are built and deployed as separate services/images.
 
 ## Related Services
 
-- [`api`](../api): Main API service that triggers manual math updates
-- [`python-bridge`](../python-bridge): Python bridge for Polis math computation
-- [`shared-backend`](../shared-backend): Shared database schema and utilities
+- [`api`](../api): creates dirty analysis work and serves analysis results.
+- [`import-worker`](../import-worker): imports conversations and queues math work by adding to `analysis:dirty`.
+- [`scoring-worker`](../scoring-worker): computes MaxDiff community rankings.
+- [`shared-backend`](../shared-backend): source schema for generated SQLAlchemy models.
+
+## License
+
+AGPL-3.0. See [COPYING](./COPYING).
 
 ## Contributing
 

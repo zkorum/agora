@@ -9,10 +9,6 @@ export default defineConfig({
                     __dirname,
                     "src/scenario1-single-conversation.ts",
                 ),
-                "scenario2-multiple-conversations": resolve(
-                    __dirname,
-                    "src/scenario2-multiple-conversations.ts",
-                ),
             },
             formats: ["cjs"],
             fileName: (format, entryName) => `${entryName}.cjs`,
@@ -20,7 +16,7 @@ export default defineConfig({
         outDir: "dist",
         rollupOptions: {
             external: [
-                /^k6(\/.*)?$/,  // All k6 modules including k6/experimental/webcrypto
+                /^k6(\/.*)?$/, // All k6 modules including k6/experimental/webcrypto
             ],
             output: {
                 format: "cjs",

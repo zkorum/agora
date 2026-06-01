@@ -6,13 +6,13 @@ dev:
 	uv run python -m scoring_worker.worker
 
 test:
-	uv run pytest -v
+	uv run --extra dev pytest -v
 
 lint:
-	uv run ruff check
+	uv run --extra dev ruff check
 
 typecheck:
-	uv run basedpyright
+	uv run --extra dev basedpyright
 
 image-buildx:
 	docker buildx build --platform linux/amd64 --build-arg PIP_INSTALL_TARGET=. -t $(IMAGE):latest .

@@ -8,7 +8,7 @@ export function parseLlmOutputJson(rawLlmOutput: string): JSONObject {
         return parsedJSON;
     }
     log.warn(
-        `[LLM]: Unable to parse model reponse to JSON--attempting to extract first JSON:\n${rawLlmOutput}`,
+        `[LLM]: Unable to parse model response to JSON--attempting to extract first JSON:\n${rawLlmOutput}`,
     );
     const extractedJSON = extractJSONObject(rawLlmOutput);
     if (extractedJSON === undefined) {

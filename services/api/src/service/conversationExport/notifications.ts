@@ -5,9 +5,15 @@ import {
 } from "@/shared-backend/schema.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
-import type { ExportFailureReason, NotificationType } from "@/shared/types/zod.js";
+import type { ExportFailureReason } from "@/shared/types/zod.js";
 import type { RealtimeSSEManager } from "../realtimeSSE.js";
 import { broadcastExportNotification } from "../notification.js";
+
+type ExportNotificationType =
+    | "export_started"
+    | "export_completed"
+    | "export_failed"
+    | "export_cancelled";
 
 type ExportCancellationReason = NonNullable<
     (typeof notificationExportTable.$inferSelect)["cancellationReason"]
@@ -19,7 +25,7 @@ interface CreateExportNotificationParams {
     exportRequestId: number;
     exportSlugId: string;
     conversationId: number;
-    type: NotificationType;
+    type: ExportNotificationType;
     failureReason?: ExportFailureReason;
     cancellationReason?: ExportCancellationReason;
     realtimeSSEManager?: RealtimeSSEManager;

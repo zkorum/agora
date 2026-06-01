@@ -11,8 +11,9 @@ Name | Type | Description | Notes
 **isIndexed** | **boolean** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
+**aiLabelingEnabled** | **boolean** |  | [optional] [default to undefined]
+**preferredOpinionGroupCount** | **number** |  | [optional] [default to undefined]
 **surveyConfig** | [**ApiV1ConversationCreatePostRequestSurveyConfig**](ApiV1ConversationCreatePostRequestSurveyConfig.md) |  | [optional] [default to undefined]
-**indexConversationAt** | **string** |  | [optional] [default to undefined]
 
 ## Example
 
@@ -26,8 +27,9 @@ const instance: ApiV1ConversationUpdatePostRequest = {
     isIndexed,
     participationMode,
     requiresEventTicket,
+    aiLabelingEnabled,
+    preferredOpinionGroupCount,
     surveyConfig,
-    indexConversationAt,
 };
 ```
 

@@ -33,6 +33,7 @@ import { useZupassVerification } from "./composables/zupass/useZupassVerificatio
 import PersistentLayout from "./layouts/PersistentLayout.vue";
 import { useBackendAuthApi } from "./utils/api/auth";
 import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
+import { getSingleRouteParam } from "./utils/router/params";
 import { useNotify } from "./utils/ui/notify";
 
 const { t } = useComponentI18n<AppTranslations>(appTranslations);
@@ -46,13 +47,25 @@ useHtmlNodeCssPatch();
 // Initialize global Zupass iframe container
 const { zupassIframeContainer } = useZupassVerification();
 
-// Initialize SSE for real-time events (notifications + feed updates).
-// Always connected: authenticated users get personal notifications + global
-// events; anonymous users get only global events (e.g. new_conversation).
-useRealtimeSSE();
-
 // Determine layout mode from route name
 const route = useRoute();
+const realtimeConversationSlugId = computed(() => {
+  const routeName = String(route.name ?? "");
+  if (!routeName.startsWith("/conversation/[postSlugId]")) {
+    return undefined;
+  }
+
+  if (!("postSlugId" in route.params)) {
+    return undefined;
+  }
+
+  return getSingleRouteParam(route.params.postSlugId) || undefined;
+});
+
+// Initialize SSE for real-time events after auth initialization.
+// Authenticated users get personal notifications + global events; anonymous
+// users get the public stream and conversation subscriptions when applicable.
+useRealtimeSSE({ subscribedConversationSlugId: realtimeConversationSlugId });
 const nonDrawerRoutePatterns = [
   "/onboarding/",
   "/verify/",

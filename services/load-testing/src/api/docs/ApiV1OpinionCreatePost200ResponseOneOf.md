@@ -7,6 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **boolean** |  | [default to undefined]
 **opinionSlugId** | **string** |  | [default to undefined]
+**opinionItem** | [**ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem**](ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem.md) |  | [default to undefined]
 
 ## Example
 
@@ -16,6 +17,7 @@ import { ApiV1OpinionCreatePost200ResponseOneOf } from './api';
 const instance: ApiV1OpinionCreatePost200ResponseOneOf = {
     success,
     opinionSlugId,
+    opinionItem,
 };
 ```
 

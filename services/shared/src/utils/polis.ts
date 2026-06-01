@@ -21,8 +21,9 @@ function hasHostnameSuffix({
         hostnameLabels.length >= suffix.length &&
         suffix.every(
             (label, index) =>
-                hostnameLabels[hostnameLabels.length - suffix.length + index] ===
-                label,
+                hostnameLabels[
+                    hostnameLabels.length - suffix.length + index
+                ] === label,
         )
     );
 }

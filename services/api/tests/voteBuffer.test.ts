@@ -24,14 +24,7 @@
  * is required because Ryuk (cleanup container) has issues with Podman's socket mounting.
  */
 
-import {
-    describe,
-    it,
-    expect,
-    beforeAll,
-    afterAll,
-    beforeEach,
-} from "vitest";
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { GenericContainer, type StartedTestContainer } from "testcontainers";
 import { GlideClient, Script, Decoder } from "@valkey/valkey-glide";
 import {
@@ -655,7 +648,11 @@ describe("Vote Buffer Lua Scripts", () => {
             for (let i = 0; i < members.length; i++) {
                 await client.invokeScript(addVoteScript, {
                     keys: [INDEX_KEY, DATA_KEY],
-                    args: [members[i], String(initialScores[i]), `data_v1_${String(i)}`],
+                    args: [
+                        members[i],
+                        String(initialScores[i]),
+                        `data_v1_${String(i)}`,
+                    ],
                 });
             }
 
@@ -688,7 +685,9 @@ describe("Vote Buffer Lua Scripts", () => {
 
             // Verify user2's new vote is preserved
             expect(await client.zscore(INDEX_KEY, "user2:2")).toBe(5000);
-            expect(await client.hget(DATA_KEY, "user2:2")).toBe("data_v2_user2");
+            expect(await client.hget(DATA_KEY, "user2:2")).toBe(
+                "data_v2_user2",
+            );
 
             // Verify others are deleted
             expect(await client.zscore(INDEX_KEY, "user1:1")).toBeNull();
@@ -730,7 +729,11 @@ describe("Vote Buffer Lua Scripts", () => {
             for (let i = 0; i < 10; i++) {
                 await client.invokeScript(addVoteScript, {
                     keys: [INDEX_KEY, DATA_KEY],
-                    args: [`user${String(i)}:${String(i)}`, String(1000 + i), `data${String(i)}`],
+                    args: [
+                        `user${String(i)}:${String(i)}`,
+                        String(1000 + i),
+                        `data${String(i)}`,
+                    ],
                 });
             }
 

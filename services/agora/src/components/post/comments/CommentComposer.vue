@@ -75,6 +75,7 @@
 </template>
 
 <script setup lang="ts">
+import { useQueryClient } from "@tanstack/vue-query";
 import { onClickOutside, useWindowScroll } from "@vueuse/core";
 import Button from "primevue/button";
 import PreParticipationIntentionDialog from "src/components/authentication/intention/PreParticipationIntentionDialog.vue";
@@ -90,6 +91,7 @@ import {
 } from "src/shared/shared";
 import type {
   EventSlug,
+  OpinionItem,
   ParticipationMode,
   SurveyGateSummary,
 } from "src/shared/types/zod";
@@ -139,6 +141,7 @@ const emit = defineEmits<{
   submittedComment: [
     data: {
       opinionSlugId: string;
+      opinionItem: OpinionItem;
       authStateChanged: boolean;
       needsCacheRefresh: boolean;
     },
@@ -223,19 +226,37 @@ const { createNewOpinionIntention, clearNewOpinionIntention } =
   useLoginIntentionStore();
 
 const { createNewComment } = useBackendCommentApi();
+const queryClient = useQueryClient();
 
 const { showNotifyMessage } = useNotify();
-const {
-  needsAuth: isAuthBlocked,
-  shouldOpenParticipationModal,
-} = useParticipationGate({
-  conversationSlugId: computed(() => props.postSlugId),
-  participationMode: computed(() => props.participationMode),
-  requiresEventTicket: computed(() => props.requiresEventTicket),
-  surveyGate: computed(() => props.surveyGate),
-});
+const { needsAuth: isAuthBlocked, shouldOpenParticipationModal } =
+  useParticipationGate({
+    conversationSlugId: computed(() => props.postSlugId),
+    participationMode: computed(() => props.participationMode),
+    requiresEventTicket: computed(() => props.requiresEventTicket),
+    surveyGate: computed(() => props.surveyGate),
+  });
 
 const { invalidateConversation } = useInvalidateConversationQuery();
+
+type UserVoteCacheItem = {
+  opinionSlugId: string;
+  votingAction: string;
+};
+
+function addCreatedOpinionVoteToCache({
+  opinionSlugId,
+}: {
+  opinionSlugId: string;
+}): void {
+  const userVotesKey = ["userVotes", props.postSlugId];
+
+  queryClient.setQueryData<UserVoteCacheItem[]>(userVotesKey, (oldData) => {
+    const filteredVotes =
+      oldData?.filter((vote) => vote.opinionSlugId !== opinionSlugId) ?? [];
+    return [...filteredVotes, { opinionSlugId, votingAction: "agree" }];
+  });
+}
 
 // Check if user needs login/verification based on participation mode
 const needsLogin = computed(() => {
@@ -412,7 +433,10 @@ function isSameConversationTabRoute(to: RouteGuardDestination): boolean {
   }
 
   if (
-    !routeNameMatches({ routeName: to.name, routes: sameConversationTabRouteNames })
+    !routeNameMatches({
+      routeName: to.name,
+      routes: sameConversationTabRouteNames,
+    })
   ) {
     return false;
   }
@@ -508,16 +532,15 @@ async function submitPostClicked() {
       props.postSlugId
     );
 
-    if (response.success && response.opinionSlugId) {
-      // Successfully created comment
-      // Note: The backend automatically votes "agree" when creating an opinion
-      // Wait 1.3 seconds for the vote buffer to flush (buffer flushes every 1 second)
-      // This ensures the backend has processed the auto-agree vote before we refresh
-      await new Promise((resolve) => setTimeout(resolve, 1300));
+    if (response.success) {
+      addCreatedOpinionVoteToCache({
+        opinionSlugId: response.opinionSlugId,
+      });
 
       // Emit to parent to refresh and highlight the opinion
       emit("submittedComment", {
         opinionSlugId: response.opinionSlugId,
+        opinionItem: response.opinionItem,
         authStateChanged: response.authStateChanged ?? false,
         needsCacheRefresh: response.needsCacheRefresh ?? false,
       });

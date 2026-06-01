@@ -6,6 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **conversationSlugId** | **string** |  | [default to undefined]
+**conversationViewSnapshotId** | **number** |  | [optional] [default to undefined]
 **createdAt** | **string** |  | [default to undefined]
 **updatedAt** | **string** |  | [optional] [default to undefined]
 **lastReactedAt** | **string** |  | [default to undefined]
@@ -21,6 +22,8 @@ Name | Type | Description | Notes
 **participationMode** | **string** |  | [default to undefined]
 **conversationType** | **string** |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
+**aiLabelingEnabled** | **boolean** |  | [default to undefined]
+**preferredOpinionGroupCount** | **number** |  | [default to undefined]
 **isClosed** | **boolean** |  | [default to undefined]
 **isEdited** | **boolean** |  | [default to undefined]
 **organization** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization.md) |  | [optional] [default to undefined]
@@ -36,6 +39,7 @@ import { ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMet
 
 const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata = {
     conversationSlugId,
+    conversationViewSnapshotId,
     createdAt,
     updatedAt,
     lastReactedAt,
@@ -51,6 +55,8 @@ const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListI
     participationMode,
     conversationType,
     isIndexed,
+    aiLabelingEnabled,
+    preferredOpinionGroupCount,
     isClosed,
     isEdited,
     organization,

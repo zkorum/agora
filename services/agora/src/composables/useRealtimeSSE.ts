@@ -1,23 +1,53 @@
-import type {
-  SSEConnectedData,
-  SSEHeartbeatData,
-  SSENotificationData,
-  SSEPopularConversationData,
+import { useQueryClient } from "@tanstack/vue-query";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  type AnySSEEvent,
+  type FetchCommentStatsResponse,
+  type SSEConversationAnalysisUpdatedData,
+  type SSEConversationCommentStatsUpdatedData,
+  type SSEConversationSettingsUpdatedData,
+  zodSSEEventDataByType,
 } from "src/shared/types/dto";
-import { zodNotificationItem } from "src/shared/types/zod";
+import type {
+  ExtendedConversation,
+  ParticipationMode,
+} from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
+import { useLanguageStore } from "src/stores/language";
 import { useNotificationStore } from "src/stores/notification";
+import { useOpinionUpdatesStore } from "src/stores/opinionUpdates";
+import { useBackendAuthApi } from "src/utils/api/auth";
+import { useBackendCommentApi } from "src/utils/api/comment/comment";
+import { fetchAnalysisDataWithCache } from "src/utils/api/comment/useCommentQueries";
 import { useCommonApi } from "src/utils/api/common";
+import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { processEnv } from "src/utils/processEnv";
-import { onUnmounted, ref, watch } from "vue";
+import {
+  type ParsedSSEFrame,
+  parseRawSSEFrame,
+  splitCompleteSSEFrames,
+} from "src/utils/sse/frameParser";
+import { useNotify } from "src/utils/ui/notify";
+import { type MaybeRefOrGetter, onUnmounted, ref, toValue, watch } from "vue";
 
+import {
+  createLiveAnalysisCatchUpController,
+  isAnalysisQueryKeyForConversation,
+  isLiveAnalysisQueryKey,
+} from "./useLiveAnalysisCatchUp";
 import { setNetworkOffline } from "./useNetworkStatus";
+import {
+  type RealtimeSSETranslations,
+  realtimeSSETranslations,
+} from "./useRealtimeSSE.i18n";
 
 const SSE_CONNECTION_TIMEOUT_MS = 15_000;
-const SSE_RETRY_DELAY_MS = 1_000;
-// Server sends heartbeats every 30s (see services/api/src/service/realtimeSSE.ts).
+const SSE_DEFAULT_RETRY_DELAY_MS = 1_000;
+const SSE_MAX_BUFFER_LENGTH = 1_000_000;
+const SSE_PROCESSED_ID_CACHE_SIZE = 1_000;
+// @fastify/sse sends comment heartbeats every 30s by default.
 // When the API stops ungracefully, reader.read() can hang indefinitely on a dead
 // TCP connection. This watchdog aborts the connection after 45s of silence (1.5x
 // the server interval), triggering the normal reconnect + offline detection flow.
@@ -27,32 +57,257 @@ const SSE_RETRY_DELAY_MS = 1_000;
 // - RabbitMQ heartbeat: https://www.rabbitmq.com/docs/heartbeats
 // - Python websockets keepalive: https://websockets.readthedocs.io/en/stable/topics/keepalive.html
 const SSE_HEARTBEAT_TIMEOUT_MS = 45_000;
+const realtimeSSEHotDisposeHandlers = new Set<() => void>();
+
+interface ParsedRealtimeSSEEvent {
+  event: AnySSEEvent;
+  id: string | null;
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    for (const dispose of realtimeSSEHotDisposeHandlers) {
+      dispose();
+    }
+    realtimeSSEHotDisposeHandlers.clear();
+  });
+}
+
+function isFacilitatorPreferenceLiveAnalysisQueryKey({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return (
+    isLiveAnalysisQueryKey({ queryKey, conversationSlugId }) &&
+    (queryKey[2] === undefined || queryKey[2] === "facilitator_preference")
+  );
+}
+
+function shouldRefetchLiveAnalysisForSettingsUpdate({
+  queryKey,
+  conversationSlugId,
+  preferredOpinionGroupCountChanged,
+  aiLabelingEnabledChanged,
+  aiLabelingEnabled,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+  preferredOpinionGroupCountChanged: boolean;
+  aiLabelingEnabledChanged: boolean;
+  aiLabelingEnabled: boolean;
+}): boolean {
+  if (!isLiveAnalysisQueryKey({ queryKey, conversationSlugId })) {
+    return false;
+  }
+
+  if (preferredOpinionGroupCountChanged) {
+    return isFacilitatorPreferenceLiveAnalysisQueryKey({
+      queryKey,
+      conversationSlugId,
+    });
+  }
+
+  return aiLabelingEnabledChanged && aiLabelingEnabled;
+}
+
+function isCheckpointAnalysisQueryKey({
+  queryKey,
+  conversationSlugId,
+  checkpointViewSnapshotId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+  checkpointViewSnapshotId: number;
+}): boolean {
+  return (
+    isAnalysisQueryKeyForConversation({ queryKey, conversationSlugId }) &&
+    queryKey[3] === checkpointViewSnapshotId
+  );
+}
+
+function isAnalysisCheckpointsQueryKey({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return (
+    queryKey[0] === "analysisCheckpoints" && queryKey[1] === conversationSlugId
+  );
+}
+
+function isAnalysisFrameManifestQueryKey({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return (
+    queryKey[0] === "analysisFrameManifest" &&
+    queryKey[1] === conversationSlugId
+  );
+}
+
+function isAnalysisFrameSectionQueryKey({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return (
+    (queryKey[0] === "analysisFrameGroups" ||
+      queryKey[0] === "analysisFrameGroupLabels" ||
+      queryKey[0] === "analysisFrameOpinionList") &&
+    queryKey[1] === conversationSlugId
+  );
+}
+
+function isAnalysisFrameGroupLabelsQueryKey({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return (
+    queryKey[0] === "analysisFrameGroupLabels" &&
+    queryKey[1] === conversationSlugId
+  );
+}
+
+function isConversationCommentsQueryKey({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return (
+    (queryKey[0] === "comments" || queryKey[0] === "hiddenComments") &&
+    queryKey[1] === conversationSlugId
+  );
+}
+
+function isCommentStatsQueryKey({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return queryKey[0] === "commentStats" && queryKey[1] === conversationSlugId;
+}
 
 /**
  * Single composable for ALL real-time server events.
- * Always maintains an SSE connection regardless of auth state:
+ * Maintains an SSE connection after auth initialization when:
  * - Authenticated (guest/logged-in): connects with UCAN headers → receives
  *   personal notifications + global events (new_conversation)
- * - Anonymous: connects without auth → receives only global events
+ * - Anonymous: connects without auth → receives public global events and
+ *   subscribed conversation events when applicable
  * On auth state change: disconnects from old mode → reconnects with new headers.
  */
-export function useRealtimeSSE() {
+export function useRealtimeSSE({
+  subscribedConversationSlugId,
+}: {
+  subscribedConversationSlugId?: MaybeRefOrGetter<string | undefined>;
+} = {}) {
   const { buildEncodedUcan } = useCommonApi();
   const notificationStore = useNotificationStore();
   const homeFeedStore = useHomeFeedStore();
+  const opinionUpdatesStore = useOpinionUpdatesStore();
   const authStore = useAuthenticationStore();
+  const languageStore = useLanguageStore();
+  const queryClient = useQueryClient();
+  const {
+    fetchAnalysisFrameManifest,
+    fetchAnalysisFrameGroups,
+    fetchAnalysisFrameGroupLabels,
+    fetchAnalysisFrameOpinionList,
+  } = useBackendCommentApi();
+  const liveAnalysisCatchUpController = createLiveAnalysisCatchUpController({
+    queryClient,
+    fetchLiveAnalysis: (params) =>
+      fetchAnalysisDataWithCache({
+        queryClient,
+        fetchAnalysisFrameManifest,
+        fetchAnalysisFrameGroups,
+        fetchAnalysisFrameGroupLabels,
+        fetchAnalysisFrameOpinionList,
+        conversationSlugId: params.conversationSlugId,
+        analysisView: params.analysisView,
+        checkpointViewSnapshotId: params.checkpointViewSnapshotId,
+        aiLabelingEnabled: params.aiLabelingEnabled,
+        displayLanguage: params.displayLanguage,
+        voteCount: undefined,
+        freshness: params.freshness,
+        analysisQueryKey: undefined,
+      }),
+  });
+  const { refreshAuthState } = useBackendAuthApi();
+  const { showNotifyMessage } = useNotify();
+  const { t } = useComponentI18n<RealtimeSSETranslations>(
+    realtimeSSETranslations
+  );
 
   const isConnected = ref(false);
   const isConnecting = ref(false);
-  const lastHeartbeat = ref<number | null>(null);
   let abortController: AbortController | null = null;
   let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   let shouldReconnect = true;
   let connectionId = 0;
+  let lastEventId: string | null = null;
+  let reconnectDelayMs = SSE_DEFAULT_RETRY_DELAY_MS;
   let offlineTimer: ReturnType<typeof setTimeout> | null = null;
   let heartbeatWatchdog: ReturnType<typeof setTimeout> | null = null;
+  const processedSSEEventIds = new Set<string>();
+  const processedSSEEventIdOrder: string[] = [];
+  const latestAnalysisEventTimestampByConversationSlugId = new Map<
+    string,
+    number
+  >();
+  const latestSettingsEventTimestampByConversationSlugId = new Map<
+    string,
+    number
+  >();
+  let didCleanup = false;
+
+  function getSubscribedConversationSlugId(): string | undefined {
+    return toValue(subscribedConversationSlugId);
+  }
+
+  function shouldMaintainConnection(): boolean {
+    return !didCleanup && !document.hidden && authStore.isAuthInitialized;
+  }
+
+  function disconnectAndAllowLaterReconnect(): void {
+    disconnect();
+    shouldReconnect = true;
+  }
+
+  function buildRealtimeStreamUrl(): string {
+    const baseUrl = processEnv.VITE_API_BASE_URL || "";
+    const path = "/api/v1/realtime/stream";
+    const conversationSlugId = getSubscribedConversationSlugId();
+    if (conversationSlugId === undefined) {
+      return `${baseUrl}${path}`;
+    }
+
+    const params = new URLSearchParams({ conversationSlugId });
+    return `${baseUrl}${path}?${params.toString()}`;
+  }
 
   async function connect() {
+    if (!shouldMaintainConnection()) {
+      return;
+    }
+
     if (isConnecting.value || isConnected.value) {
       return;
     }
@@ -75,19 +330,20 @@ export function useRealtimeSSE() {
         abortController?.abort();
       }, SSE_CONNECTION_TIMEOUT_MS);
 
-      const baseUrl = processEnv.VITE_API_BASE_URL || "";
-      const url = `${baseUrl}/api/v1/realtime/stream`;
+      const url = buildRealtimeStreamUrl();
       const headers: Record<string, string> = {
         Accept: "text/event-stream",
       };
+      if (lastEventId !== null) {
+        headers["Last-Event-ID"] = lastEventId;
+      }
 
       // Add auth headers when authenticated
       // Future: replace buildEncodedUcan with Bearer token when migrating to JWT
       if (authStore.isGuestOrLoggedIn) {
-        const encodedUcan = await buildEncodedUcan(
-          "/api/v1/realtime/stream",
-          { method: "GET" },
-        );
+        const encodedUcan = await buildEncodedUcan("/api/v1/realtime/stream", {
+          method: "GET",
+        });
         const authHeader = buildAuthorizationHeader(encodedUcan);
         Object.assign(headers, authHeader);
       }
@@ -102,6 +358,23 @@ export function useRealtimeSSE() {
       connectionTimeout = null;
 
       if (!response.ok) {
+        if (response.status === 401) {
+          const didRefreshAuthState =
+            await refreshAuthStateAfterSSEUnauthorized();
+          if (didRefreshAuthState) {
+            isConnecting.value = false;
+            isConnected.value = false;
+            setNetworkOffline(false);
+            if (
+              thisConnectionId === connectionId &&
+              shouldReconnect &&
+              shouldMaintainConnection()
+            ) {
+              scheduleReconnect();
+            }
+            return;
+          }
+        }
         throw new Error(`SSE connection failed: ${String(response.status)}`);
       }
 
@@ -120,6 +393,9 @@ export function useRealtimeSSE() {
       }
 
       setNetworkOffline(false);
+      refreshActiveConversationQueriesAfterReconnect({
+        conversationSlugId: getSubscribedConversationSlugId(),
+      });
 
       // Read and parse SSE stream
       const reader = response.body.getReader();
@@ -132,15 +408,19 @@ export function useRealtimeSSE() {
         resetHeartbeatWatchdog();
 
         buffer += decoder.decode(value, { stream: true });
+        if (buffer.length > SSE_MAX_BUFFER_LENGTH) {
+          throw new Error("SSE event buffer exceeded maximum size");
+        }
 
-        // SSE events are separated by double newlines
-        const parts = buffer.split("\n\n");
-        buffer = parts.pop() ?? "";
+        const { frames, remainingBuffer } = splitCompleteSSEFrames(buffer);
+        buffer = remainingBuffer;
 
-        for (const part of parts) {
+        for (const part of frames) {
           if (!part.trim()) continue;
           const parsed = parseSSEEvent(part);
-          handleSSEEvent(parsed.event, parsed.data);
+          if (parsed !== undefined) {
+            handleParsedSSEEvent(parsed);
+          }
         }
       }
 
@@ -150,7 +430,7 @@ export function useRealtimeSSE() {
 
       isConnected.value = false;
       scheduleOfflineTimer();
-      if (shouldReconnect) {
+      if (shouldReconnect && shouldMaintainConnection()) {
         scheduleReconnect();
       }
     } catch {
@@ -167,58 +447,555 @@ export function useRealtimeSSE() {
       isConnecting.value = false;
       scheduleOfflineTimer();
 
-      if (shouldReconnect) {
+      if (shouldReconnect && shouldMaintainConnection()) {
         scheduleReconnect();
       }
     }
   }
 
-  function parseSSEEvent(raw: string): { event: string; data: string } {
-    let event = "";
-    let data = "";
-    for (const line of raw.split("\n")) {
-      if (line.startsWith("event: ")) {
-        event = line.slice(7);
-      } else if (line.startsWith("data: ")) {
-        data = line.slice(6);
-      }
+  function updateLastEventId(id: string): void {
+    if (id === "") {
+      lastEventId = null;
+      return;
     }
-    return { event, data };
+
+    const numericId = Number(id);
+    if (Number.isSafeInteger(numericId) && numericId > 0) {
+      const numericLastEventId =
+        lastEventId === null ? null : Number(lastEventId);
+      if (
+        numericLastEventId === null ||
+        !Number.isSafeInteger(numericLastEventId) ||
+        numericId > numericLastEventId
+      ) {
+        lastEventId = id;
+      }
+      return;
+    }
+
+    lastEventId = id;
   }
 
-  function handleSSEEvent(event: string, rawData: string): void {
+  function rememberProcessedSSEEventId(id: string): void {
+    if (processedSSEEventIds.has(id)) {
+      return;
+    }
+
+    processedSSEEventIds.add(id);
+    processedSSEEventIdOrder.push(id);
+    while (processedSSEEventIdOrder.length > SSE_PROCESSED_ID_CACHE_SIZE) {
+      const expiredId = processedSSEEventIdOrder.shift();
+      if (expiredId !== undefined) {
+        processedSSEEventIds.delete(expiredId);
+      }
+    }
+  }
+
+  function handleParsedSSEEvent(parsed: ParsedRealtimeSSEEvent): void {
+    if (parsed.id !== null && parsed.id !== "") {
+      if (processedSSEEventIds.has(parsed.id)) {
+        return;
+      }
+      rememberProcessedSSEEventId(parsed.id);
+    }
+
+    handleSSEEvent(parsed.event);
+  }
+
+  function parseSSEEvent(raw: string): ParsedRealtimeSSEEvent | undefined {
+    const frame = parseRawSSEFrame(raw);
+    if (frame.kind === "comment") {
+      return undefined;
+    }
+
+    if (frame.id !== null) {
+      updateLastEventId(frame.id);
+    }
+    if (frame.retry !== null) {
+      reconnectDelayMs = frame.retry;
+    }
+
+    const data = frame.data.trim();
+    if (data === "") {
+      return undefined;
+    }
+
+    let rawData: unknown;
+
     try {
-      switch (event) {
+      rawData = JSON.parse(data);
+    } catch (error) {
+      logSSEJSONParseError({ raw, frame, data, error });
+      return undefined;
+    }
+
+    switch (frame.event) {
+      case "connected": {
+        const result = zodSSEEventDataByType.connected.safeParse(rawData);
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
+      }
+      case "notification": {
+        const result = zodSSEEventDataByType.notification.safeParse(rawData);
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
+      }
+      case "new_conversation": {
+        const result =
+          zodSSEEventDataByType.new_conversation.safeParse(rawData);
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
+      }
+      case "new_opinion": {
+        const result = zodSSEEventDataByType.new_opinion.safeParse(rawData);
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
+      }
+      case "popular_conversation": {
+        const result =
+          zodSSEEventDataByType.popular_conversation.safeParse(rawData);
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
+      }
+      case "conversation_analysis_updated": {
+        const result =
+          zodSSEEventDataByType.conversation_analysis_updated.safeParse(
+            rawData
+          );
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
+      }
+      case "conversation_comment_stats_updated": {
+        const result =
+          zodSSEEventDataByType.conversation_comment_stats_updated.safeParse(
+            rawData
+          );
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
+      }
+      case "conversation_settings_updated": {
+        const result =
+          zodSSEEventDataByType.conversation_settings_updated.safeParse(
+            rawData
+          );
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
+      }
+      case "shutdown": {
+        const result = zodSSEEventDataByType.shutdown.safeParse(rawData);
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
+      }
+      default:
+        console.error(`Unknown SSE event: ${frame.event}`);
+        return undefined;
+    }
+  }
+
+  function logSSEJSONParseError({
+    raw,
+    frame,
+    data,
+    error,
+  }: {
+    raw: string;
+    frame: Extract<ParsedSSEFrame, { kind: "event" }>;
+    data: string;
+    error: unknown;
+  }): void {
+    if (import.meta.env.DEV) {
+      void logDevSSEJSONParseError({ raw, frame, data, error });
+    }
+
+    console.error("Failed to parse SSE event JSON", error);
+  }
+
+  async function logDevSSEJSONParseError({
+    raw,
+    frame,
+    data,
+    error,
+  }: {
+    raw: string;
+    frame: Extract<ParsedSSEFrame, { kind: "event" }>;
+    data: string;
+    error: unknown;
+  }): Promise<void> {
+    const { logBrowserEvent } = await import("src/utils/devLogger");
+    logBrowserEvent({
+      level: "error",
+      category: "sse_parse_error",
+      message: "failed_to_parse_sse_event_json",
+      stack: error instanceof Error ? error.stack : undefined,
+      metadata: {
+        event: frame.event === "" ? null : frame.event,
+        dataLength: data.length,
+        frameLength: raw.length,
+        dataPreview: data,
+        framePreview: raw,
+      },
+    });
+  }
+
+  function logInvalidSSEPayload({
+    event,
+    error,
+  }: {
+    event: string;
+    error: unknown;
+  }): void {
+    console.error(`Invalid SSE payload for event ${event}`, error);
+  }
+
+  async function refreshAuthStateAfterSSEUnauthorized(): Promise<boolean> {
+    try {
+      const result = await refreshAuthState();
+      return result.authStateChanged || result.needsCacheRefresh;
+    } catch (error) {
+      console.error("Failed to refresh auth state after SSE 401", error);
+      return false;
+    }
+  }
+
+  function getParticipationModeMessage(
+    participationMode: ParticipationMode
+  ): string {
+    switch (participationMode) {
+      case "guest": {
+        return t("participationGuestAllowed");
+      }
+      case "account_required": {
+        return t("participationAccountRequired");
+      }
+      case "email_verification": {
+        return t("participationEmailVerificationRequired");
+      }
+      case "strong_verification": {
+        return t("participationStrongVerificationRequired");
+      }
+    }
+  }
+
+  function notifyConversationSettingsUpdated({
+    previousMetadata,
+    data,
+  }: {
+    previousMetadata: ExtendedConversation["metadata"] | undefined;
+    data: SSEConversationSettingsUpdatedData;
+  }): void {
+    if (previousMetadata === undefined) {
+      return;
+    }
+
+    const messages: string[] = [];
+    const isClosedChanged =
+      previousMetadata.isClosed !== data.settings.isClosed;
+
+    if (isClosedChanged) {
+      messages.push(
+        data.settings.isClosed
+          ? t("conversationClosed")
+          : t("conversationOpened")
+      );
+    }
+
+    if (previousMetadata.isIndexed !== data.settings.isIndexed) {
+      messages.push(
+        data.settings.isIndexed
+          ? t("conversationPublic")
+          : t("conversationPrivate")
+      );
+    }
+
+    if (
+      previousMetadata.participationMode !== data.settings.participationMode
+    ) {
+      messages.push(
+        getParticipationModeMessage(data.settings.participationMode)
+      );
+    }
+
+    if (
+      (previousMetadata.requiresEventTicket ?? null) !==
+      data.settings.requiresEventTicket
+    ) {
+      messages.push(
+        data.settings.requiresEventTicket === null
+          ? t("eventTicketNotRequired")
+          : t("eventTicketRequired")
+      );
+    }
+
+    if (
+      previousMetadata.aiLabelingEnabled !== data.settings.aiLabelingEnabled
+    ) {
+      messages.push(
+        data.settings.aiLabelingEnabled
+          ? t("llmTurnedOnByFacilitator")
+          : t("llmTurnedOffByFacilitator")
+      );
+    }
+
+    if (
+      previousMetadata.preferredOpinionGroupCount !==
+      data.settings.preferredOpinionGroupCount
+    ) {
+      messages.push(t("facilitatorGroupCountPreferenceChanged"));
+    }
+
+    if (messages.length === 0) {
+      return;
+    }
+
+    const isOnlyClosedChange = messages.length === 1 && isClosedChanged;
+    showNotifyMessage({
+      message:
+        messages.length === 1 ? messages[0] : t("conversationSettingsUpdated"),
+      caption: messages.length > 1 ? messages.join(" · ") : undefined,
+      icon: isOnlyClosedChange
+        ? data.settings.isClosed
+          ? "mdi-lock-outline"
+          : "mdi-lock-open-outline"
+        : "mdi-cog-outline",
+      group: `conversation-settings-${data.conversationSlugId}`,
+    });
+  }
+
+  function shouldHandleAnalysisUpdatedEventForDisplayLanguage(
+    data: SSEConversationAnalysisUpdatedData
+  ): boolean {
+    if (data.changeKind !== "descriptions") {
+      return true;
+    }
+
+    const locales = data.locales;
+    if (locales.includes("en")) {
+      return true;
+    }
+
+    return locales.includes(languageStore.displayLanguage);
+  }
+
+  function handleSSEEvent(sseEvent: AnySSEEvent): void {
+    try {
+      switch (sseEvent.event) {
         case "connected": {
-          const data: SSEConnectedData = JSON.parse(rawData);
-          lastHeartbeat.value = data.timestamp;
           break;
         }
         case "notification": {
-          const data: SSENotificationData = JSON.parse(rawData);
-          const parsedNotification = zodNotificationItem.safeParse({
-            ...data.notification,
-            createdAt: new Date(data.notification.createdAt),
-          });
-          if (parsedNotification.success) {
-            notificationStore.addNewNotification(parsedNotification.data);
-          }
+          const data = sseEvent.data;
+          notificationStore.addNewNotification(data.notification);
           break;
         }
         case "new_conversation": {
           void homeFeedStore.hasNewPostCheck("new");
           break;
         }
+        case "new_opinion": {
+          const data = sseEvent.data;
+          opinionUpdatesStore.markNewOpinion(data.conversationSlugId);
+          void queryClient.invalidateQueries({
+            queryKey: ["comments", data.conversationSlugId],
+            refetchType: "none",
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ["commentStats", data.conversationSlugId],
+            refetchType: "active",
+          });
+          break;
+        }
+        case "conversation_comment_stats_updated": {
+          updateCommentStatsFromEvent(sseEvent.data);
+          break;
+        }
         case "popular_conversation": {
-          const data: SSEPopularConversationData = JSON.parse(rawData);
+          const data = sseEvent.data;
           homeFeedStore.onPopularConversationUpdate(
             data.topConversationSlugIdList
           );
           break;
         }
-        case "heartbeat": {
-          const data: SSEHeartbeatData = JSON.parse(rawData);
-          lastHeartbeat.value = data.timestamp;
+        case "conversation_analysis_updated": {
+          const data = sseEvent.data;
+          if (!shouldHandleAnalysisUpdatedEventForDisplayLanguage(data)) {
+            break;
+          }
+
+          const checkpointChanged = data.checkpointChanged === true;
+          updateConversationCountsFromAnalysisEvent(data);
+          void queryClient.invalidateQueries({
+            queryKey: ["conversation", data.conversationSlugId],
+            refetchType: "none",
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ["survey-results-aggregated", data.conversationSlugId],
+            refetchType: "active",
+          });
+          void queryClient.invalidateQueries({
+            predicate: (query) =>
+              isLiveAnalysisQueryKey({
+                queryKey: query.queryKey,
+                conversationSlugId: data.conversationSlugId,
+              }),
+            refetchType: "none",
+          });
+          if (data.changeKind !== "descriptions") {
+            void queryClient.invalidateQueries({
+              predicate: (query) =>
+                isAnalysisFrameManifestQueryKey({
+                  queryKey: query.queryKey,
+                  conversationSlugId: data.conversationSlugId,
+                }),
+              refetchType: "none",
+            });
+          }
+          void queryClient.invalidateQueries({
+            predicate: (query) =>
+              data.changeKind === "descriptions"
+                ? isAnalysisFrameGroupLabelsQueryKey({
+                    queryKey: query.queryKey,
+                    conversationSlugId: data.conversationSlugId,
+                  })
+                : isAnalysisFrameSectionQueryKey({
+                    queryKey: query.queryKey,
+                    conversationSlugId: data.conversationSlugId,
+                  }),
+            refetchType: "none",
+          });
+          if (data.changeKind === "descriptions") {
+            void queryClient.refetchQueries({
+              predicate: (query) =>
+                query.isActive() &&
+                isAnalysisFrameGroupLabelsQueryKey({
+                  queryKey: query.queryKey,
+                  conversationSlugId: data.conversationSlugId,
+                }),
+            });
+          }
+          if (checkpointChanged || data.changeKind === "descriptions") {
+            void queryClient.invalidateQueries({
+              predicate: (query) =>
+                isCheckpointAnalysisQueryKey({
+                  queryKey: query.queryKey,
+                  conversationSlugId: data.conversationSlugId,
+                  checkpointViewSnapshotId: data.conversationViewSnapshotId,
+                }),
+              refetchType: "active",
+            });
+          }
+          if (checkpointChanged) {
+            void queryClient.invalidateQueries({
+              queryKey: ["analysisCheckpoints", data.conversationSlugId],
+            });
+          }
+          liveAnalysisCatchUpController.requestCatchUp(data);
+          break;
+        }
+        case "conversation_settings_updated": {
+          const data = sseEvent.data;
+          const previousTimestamp =
+            latestSettingsEventTimestampByConversationSlugId.get(
+              data.conversationSlugId
+            );
+          if (
+            previousTimestamp !== undefined &&
+            previousTimestamp > data.timestamp
+          ) {
+            break;
+          }
+
+          latestSettingsEventTimestampByConversationSlugId.set(
+            data.conversationSlugId,
+            data.timestamp
+          );
+
+          const previousConversation =
+            queryClient.getQueryData<ExtendedConversation>([
+              "conversation",
+              data.conversationSlugId,
+            ]);
+          const previousMetadata = previousConversation?.metadata;
+          const preferredOpinionGroupCountChanged =
+            previousMetadata === undefined ||
+            previousMetadata.preferredOpinionGroupCount !==
+              data.settings.preferredOpinionGroupCount;
+          const aiLabelingEnabledChanged =
+            previousMetadata === undefined ||
+            previousMetadata.aiLabelingEnabled !==
+              data.settings.aiLabelingEnabled;
+
+          updateConversationQueryCache({
+            queryClient,
+            conversationSlugId: data.conversationSlugId,
+            updateConversation: (conversation) => ({
+              ...conversation,
+              metadata: {
+                ...conversation.metadata,
+                isIndexed: data.settings.isIndexed,
+                participationMode: data.settings.participationMode,
+                requiresEventTicket:
+                  data.settings.requiresEventTicket ?? undefined,
+                aiLabelingEnabled: data.settings.aiLabelingEnabled,
+                preferredOpinionGroupCount:
+                  data.settings.preferredOpinionGroupCount,
+                isClosed: data.settings.isClosed,
+              },
+            }),
+          });
+
+          notifyConversationSettingsUpdated({ previousMetadata, data });
+
+          if (preferredOpinionGroupCountChanged || aiLabelingEnabledChanged) {
+            void queryClient.invalidateQueries({
+              queryKey: ["analysisFrameManifest", data.conversationSlugId],
+              refetchType: "none",
+            });
+          }
+
+          if (aiLabelingEnabledChanged) {
+            void queryClient.invalidateQueries({
+              queryKey: ["analysisFrameGroupLabels", data.conversationSlugId],
+              refetchType: "none",
+            });
+          }
+
+          void queryClient.invalidateQueries({
+            predicate: (query) =>
+              shouldRefetchLiveAnalysisForSettingsUpdate({
+                queryKey: query.queryKey,
+                conversationSlugId: data.conversationSlugId,
+                preferredOpinionGroupCountChanged,
+                aiLabelingEnabledChanged,
+                aiLabelingEnabled: data.settings.aiLabelingEnabled,
+              }),
+          });
           break;
         }
         case "shutdown": {
@@ -228,6 +1005,111 @@ export function useRealtimeSSE() {
     } catch {
       return;
     }
+  }
+
+  function updateConversationCountsFromAnalysisEvent(
+    data: SSEConversationAnalysisUpdatedData
+  ): void {
+    const previousTimestamp =
+      latestAnalysisEventTimestampByConversationSlugId.get(
+        data.conversationSlugId
+      );
+    if (previousTimestamp !== undefined && previousTimestamp > data.timestamp) {
+      return;
+    }
+
+    latestAnalysisEventTimestampByConversationSlugId.set(
+      data.conversationSlugId,
+      data.timestamp
+    );
+
+    updateConversationQueryCache({
+      queryClient,
+      conversationSlugId: data.conversationSlugId,
+      updateConversation: (conversation) => {
+        const previousSnapshotId =
+          conversation.metadata.conversationViewSnapshotId;
+        if (
+          previousSnapshotId !== undefined &&
+          data.conversationViewSnapshotId < previousSnapshotId
+        ) {
+          return conversation;
+        }
+
+        return {
+          ...conversation,
+          metadata: {
+            ...conversation.metadata,
+            conversationViewSnapshotId: data.conversationViewSnapshotId,
+            opinionCount:
+              data.opinionCount ?? conversation.metadata.opinionCount,
+            voteCount: data.voteCount ?? conversation.metadata.voteCount,
+            participantCount:
+              data.participantCount ?? conversation.metadata.participantCount,
+            totalOpinionCount:
+              data.totalOpinionCount ?? conversation.metadata.totalOpinionCount,
+            totalVoteCount:
+              data.totalVoteCount ?? conversation.metadata.totalVoteCount,
+            totalParticipantCount:
+              data.totalParticipantCount ??
+              conversation.metadata.totalParticipantCount,
+            moderatedOpinionCount:
+              data.moderatedOpinionCount ??
+              conversation.metadata.moderatedOpinionCount,
+            hiddenOpinionCount:
+              data.hiddenOpinionCount ??
+              conversation.metadata.hiddenOpinionCount,
+            isClosed: data.isClosed ?? conversation.metadata.isClosed,
+          },
+        };
+      },
+    });
+  }
+
+  function updateCommentStatsFromEvent(
+    data: SSEConversationCommentStatsUpdatedData
+  ): void {
+    const stats: FetchCommentStatsResponse = {
+      conversationViewSnapshotId: data.conversationViewSnapshotId,
+      opinionCount: data.opinionCount,
+      voteCount: data.voteCount,
+      participantCount: data.participantCount,
+      totalOpinionCount: data.totalOpinionCount,
+      totalVoteCount: data.totalVoteCount,
+      totalParticipantCount: data.totalParticipantCount,
+      moderatedOpinionCount: data.moderatedOpinionCount,
+      hiddenOpinionCount: data.hiddenOpinionCount,
+      isClosed: data.isClosed,
+    };
+
+    queryClient.setQueryData(["commentStats", data.conversationSlugId], stats);
+  }
+
+  function refreshActiveConversationQueriesAfterReconnect({
+    conversationSlugId,
+  }: {
+    conversationSlugId: string | undefined;
+  }): void {
+    if (conversationSlugId === undefined) {
+      return;
+    }
+
+    void queryClient.refetchQueries({
+      predicate: (query) =>
+        query.isActive() &&
+        (isAnalysisCheckpointsQueryKey({
+          queryKey: query.queryKey,
+          conversationSlugId,
+        }) ||
+          isCommentStatsQueryKey({
+            queryKey: query.queryKey,
+            conversationSlugId,
+          }) ||
+          isConversationCommentsQueryKey({
+            queryKey: query.queryKey,
+            conversationSlugId,
+          })),
+    });
   }
 
   function resetHeartbeatWatchdog() {
@@ -248,16 +1130,20 @@ export function useRealtimeSSE() {
   }
 
   function scheduleReconnect() {
+    if (!shouldMaintainConnection()) {
+      return;
+    }
+
     if (reconnectTimeout) {
       clearTimeout(reconnectTimeout);
     }
 
     // Fixed 1s retry with small jitter (0-250ms) to avoid thundering herd
     const jitter = Math.random() * 250;
-    const delay = SSE_RETRY_DELAY_MS + jitter;
+    const delay = reconnectDelayMs + jitter;
 
     reconnectTimeout = setTimeout(() => {
-      if (shouldReconnect) {
+      if (shouldReconnect && shouldMaintainConnection()) {
         void connect();
       }
     }, delay);
@@ -275,18 +1161,11 @@ export function useRealtimeSSE() {
   }
 
   function forceReconnect() {
-    clearHeartbeatWatchdog();
-    if (reconnectTimeout) {
-      clearTimeout(reconnectTimeout);
-      reconnectTimeout = null;
+    disconnectAndAllowLaterReconnect();
+
+    if (shouldMaintainConnection()) {
+      void connect();
     }
-    if (abortController) {
-      abortController.abort();
-      abortController = null;
-    }
-    isConnected.value = false;
-    isConnecting.value = false;
-    void connect();
   }
 
   function disconnect() {
@@ -323,35 +1202,86 @@ export function useRealtimeSSE() {
   // stale — it can never schedule an offline timer or touch shared state.
   function onVisibilityChange() {
     if (document.hidden) {
-      disconnect();
-      shouldReconnect = true;
+      disconnectAndAllowLaterReconnect();
     } else {
-      void connect();
+      if (shouldMaintainConnection()) {
+        void connect();
+      }
     }
   }
 
   document.addEventListener("visibilitychange", onVisibilityChange);
 
-  // Watch for authentication state changes — reconnect to switch auth mode.
-  // Always connected: authenticated users get personal notifications + global
-  // events; anonymous users get only global events.
+  function cleanupRealtimeSSE(): void {
+    if (didCleanup) {
+      return;
+    }
+    didCleanup = true;
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+    liveAnalysisCatchUpController.clearAll();
+    disconnect();
+    realtimeSSEHotDisposeHandlers.delete(cleanupRealtimeSSE);
+  }
+
+  if (import.meta.env.DEV) {
+    realtimeSSEHotDisposeHandlers.add(cleanupRealtimeSSE);
+  }
+
   watch(
-    () => authStore.isGuestOrLoggedIn,
-    async (isAuthenticated, wasAuthenticated) => {
-      if (isAuthenticated !== wasAuthenticated) {
-        // Auth state changed — disconnect and reconnect with appropriate headers
-        disconnect();
-        shouldReconnect = true;
-        await connect();
+    () => getSubscribedConversationSlugId(),
+    (conversationSlugId, previousConversationSlugId) => {
+      if (previousConversationSlugId !== undefined) {
+        liveAnalysisCatchUpController.clearConversation({
+          conversationSlugId: previousConversationSlugId,
+        });
+      }
+
+      if (conversationSlugId === previousConversationSlugId) {
+        return;
+      }
+
+      if (document.hidden) {
+        disconnectAndAllowLaterReconnect();
+        return;
+      }
+
+      if (shouldMaintainConnection()) {
+        forceReconnect();
+      } else {
+        disconnectAndAllowLaterReconnect();
+      }
+    }
+  );
+
+  // Watch for authentication state changes — reconnect to switch auth mode.
+  // Wait for auth initialization first so check-login-status is never queued
+  // behind long-lived SSE connections.
+  watch(
+    () => [authStore.isAuthInitialized, authStore.isGuestOrLoggedIn] as const,
+    async ([isAuthInitialized, isAuthenticated], previousState) => {
+      const wasAuthInitialized = previousState?.[0];
+      const wasAuthenticated = previousState?.[1];
+      if (!isAuthInitialized) {
+        disconnectAndAllowLaterReconnect();
+        return;
+      }
+
+      if (
+        isAuthInitialized !== wasAuthInitialized ||
+        isAuthenticated !== wasAuthenticated
+      ) {
+        disconnectAndAllowLaterReconnect();
+        if (shouldMaintainConnection()) {
+          await connect();
+        }
       }
     },
-    { immediate: true } // Connect on mount regardless of auth state
+    { immediate: true }
   );
 
   // Cleanup on unmount
   onUnmounted(() => {
-    document.removeEventListener("visibilitychange", onVisibilityChange);
-    disconnect();
+    cleanupRealtimeSSE();
   });
 
   return {
@@ -360,6 +1290,5 @@ export function useRealtimeSSE() {
     forceReconnect,
     isConnected,
     isConnecting,
-    lastHeartbeat,
   };
 }

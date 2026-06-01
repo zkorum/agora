@@ -222,6 +222,12 @@ const moderatorSettings: SettingsInterface[] = [
     to: "/settings/account/administrator/organization/",
     style: "none",
   },
+  {
+    type: "navigation",
+    label: t("moderatorPremiumEntitlements"),
+    to: "/settings/account/administrator/premium-entitlements/",
+    style: "none",
+  },
 ];
 
 const developmentSettings: SettingsInterface[] = [

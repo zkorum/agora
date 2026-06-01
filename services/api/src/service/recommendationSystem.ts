@@ -30,12 +30,20 @@ export function getConversationEngagementScore({
     // createdAt: penalizes old conversations (even if they get new comments)
     const scoreCreatedAt = Math.exp(-weightCreatedAt * createdAtAgeInDays);
     // lastReactedAt: rewards recent activity
-    const scoreLastReactedAt = Math.exp(-weightLastReactedAt * lastReactedAtAgeInDays);
+    const scoreLastReactedAt = Math.exp(
+        -weightLastReactedAt * lastReactedAtAgeInDays,
+    );
     const scoreOpinionCount = Math.exp(weightOpinionCount * opinionCount);
     const scoreVoteCount = Math.exp(weightVoteCount * voteCount);
     const scoreParticipantCount = Math.exp(
         weightParticipantCount * participantCount,
     );
 
-    return scoreCreatedAt + scoreLastReactedAt + scoreOpinionCount + scoreVoteCount + scoreParticipantCount;
+    return (
+        scoreCreatedAt +
+        scoreLastReactedAt +
+        scoreOpinionCount +
+        scoreVoteCount +
+        scoreParticipantCount
+    );
 }
