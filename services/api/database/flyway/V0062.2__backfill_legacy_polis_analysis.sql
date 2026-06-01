@@ -22,7 +22,7 @@ DECLARE
     lineage_scope_id integer;
     candidate_id integer;
     view_snapshot_id integer;
-    survey_aggregate_snapshot_id integer;
+    new_survey_aggregate_snapshot_id integer;
     active_survey_config_id integer;
     active_survey_current_revision integer;
     active_survey_is_optional boolean;
@@ -196,7 +196,7 @@ BEGIN
         TRUNCATE tmp_survey_overall_option_count;
         TRUNCATE tmp_survey_group_option_count;
 
-        survey_aggregate_snapshot_id := NULL;
+        new_survey_aggregate_snapshot_id := NULL;
         active_survey_config_id := NULL;
         active_survey_current_revision := NULL;
         active_survey_is_optional := NULL;
@@ -755,7 +755,7 @@ BEGIN
                 5,
                 backfill_conversation.polis_content_updated_at
             )
-            RETURNING id INTO survey_aggregate_snapshot_id;
+            RETURNING id INTO new_survey_aggregate_snapshot_id;
 
             INSERT INTO survey_aggregate_question (
                 survey_aggregate_snapshot_id,
@@ -769,7 +769,7 @@ BEGIN
                 created_at
             )
             SELECT
-                survey_aggregate_snapshot_id,
+                new_survey_aggregate_snapshot_id,
                 question_id,
                 question_slug_id,
                 question_order,
@@ -799,7 +799,7 @@ BEGIN
             JOIN tmp_survey_question_meta question_meta
                 ON question_meta.question_id = option_meta.question_id
             JOIN survey_aggregate_question aggregate_question
-                ON aggregate_question.survey_aggregate_snapshot_id = survey_aggregate_snapshot_id
+                ON aggregate_question.survey_aggregate_snapshot_id = new_survey_aggregate_snapshot_id
                AND aggregate_question.question_slug_id = question_meta.question_slug_id;
 
             WITH eligible_responses AS (
@@ -1055,7 +1055,7 @@ BEGIN
                 created_at
             )
             SELECT
-                survey_aggregate_snapshot_id,
+                new_survey_aggregate_snapshot_id,
                 NULL,
                 NULL,
                 'overall',
@@ -1083,7 +1083,7 @@ BEGIN
                 backfill_conversation.polis_content_updated_at
             FROM tmp_survey_overall_option_count overall_count
             JOIN survey_aggregate_question aggregate_question
-                ON aggregate_question.survey_aggregate_snapshot_id = survey_aggregate_snapshot_id
+                ON aggregate_question.survey_aggregate_snapshot_id = new_survey_aggregate_snapshot_id
                AND aggregate_question.survey_question_id = overall_count.question_id
             JOIN survey_aggregate_option aggregate_option
                 ON aggregate_option.survey_aggregate_question_id = aggregate_question.id
@@ -1103,7 +1103,7 @@ BEGIN
                 created_at
             )
             SELECT
-                survey_aggregate_snapshot_id,
+                new_survey_aggregate_snapshot_id,
                 candidate_id,
                 group_count.group_id,
                 'opinion_group',
@@ -1131,7 +1131,7 @@ BEGIN
                 backfill_conversation.polis_content_updated_at
             FROM tmp_survey_group_option_count group_count
             JOIN survey_aggregate_question aggregate_question
-                ON aggregate_question.survey_aggregate_snapshot_id = survey_aggregate_snapshot_id
+                ON aggregate_question.survey_aggregate_snapshot_id = new_survey_aggregate_snapshot_id
                AND aggregate_question.survey_question_id = group_count.question_id
             JOIN survey_aggregate_option aggregate_option
                 ON aggregate_option.survey_aggregate_question_id = aggregate_question.id
@@ -1228,7 +1228,7 @@ BEGIN
             )
             VALUES (
                 backfill_conversation.conversation_id,
-                survey_aggregate_snapshot_id,
+                new_survey_aggregate_snapshot_id,
                 active_survey_config_id,
                 active_survey_current_revision,
                 owner_current_rows,
@@ -1267,7 +1267,7 @@ BEGIN
             backfill_conversation.conversation_id,
             default_opinion_group_spec_id,
             analysis_snapshot_id,
-            survey_aggregate_snapshot_id,
+            new_survey_aggregate_snapshot_id,
             backfill_conversation.conversation_content_id,
             'analysis_completed',
             backfill_conversation.is_closed,

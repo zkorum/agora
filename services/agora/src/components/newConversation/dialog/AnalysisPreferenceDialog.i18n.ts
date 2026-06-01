@@ -25,7 +25,7 @@ export const analysisPreferenceDialogTranslations: Record<
   fr: {
     recommendedDefaultTitle: "Auto",
     recommendedDefaultDescription:
-      "Agora choisit le nombre de groupes le mieux noté pour chaque instantané d'analyse.",
+      "Agora choisit le nombre de groupes le mieux noté pour chaque jalon d'analyse.",
     groupsTitle: "{count} groupes",
     groupsDescription:
       "Utiliser {count} groupes par défaut dans la vue de préférence du facilitateur.",

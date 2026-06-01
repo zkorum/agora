@@ -32,7 +32,7 @@ export const surveyInformationDialogTranslations: Record<
   fr: {
     title: "Questionnaire",
     description:
-      "Cet onglet montre comment les participants comptabilisés dans l'analyse sélectionnée ont répondu à chaque question du questionnaire. Les résultats globaux regroupent ces participants, et lorsqu'il existe des groupes d'opinion vous pouvez comparer les réponses par groupe.\n\nSi le masquage de confidentialité est activé pour une question, les résultats publics masquent les très petits groupes dans tous les instantanés. Les propriétaires peuvent basculer entre la vue publique masquée et la vue agrégée complète.\n\nUne fois le masquage de confidentialité activé pour une question, il ne peut plus être désactivé, afin que les participants puissent compter sur cette garantie publique de confidentialité.",
+      "Cet onglet montre comment les participants comptabilisés dans l'analyse sélectionnée ont répondu à chaque question du questionnaire. Les résultats globaux regroupent ces participants, et lorsqu'il existe des groupes d'opinion vous pouvez comparer les réponses par groupe.\n\nSi le masquage de confidentialité est activé pour une question, les résultats publics masquent les très petits groupes dans tous les jalons. Les propriétaires peuvent basculer entre la vue publique masquée et la vue agrégée complète.\n\nUne fois le masquage de confidentialité activé pour une question, il ne peut plus être désactivé, afin que les participants puissent compter sur cette garantie publique de confidentialité.",
   },
   he: {
     title: "סקר",
