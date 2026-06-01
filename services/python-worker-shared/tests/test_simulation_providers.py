@@ -31,7 +31,11 @@ VALID_DSN = "postgresql://user:password@localhost:5432/agora"
 
 
 def test_normal_mode_does_not_create_fake_providers() -> None:
-    settings = Settings(connection_string=VALID_DSN)
+    settings = Settings(
+        connection_string=VALID_DSN,
+        aws_ai_label_summary_enable=False,
+        aws_description_translation_enable=False,
+    )
 
     assert build_description_generator(settings) is None
     assert build_description_translator(settings) is None
@@ -146,5 +150,5 @@ def test_emit_load_event_logs_json_marker(caplog: pytest.LogCaptureFixture) -> N
     )
 
     assert "AGORA_LOAD_EVENT" in caplog.text
-    assert '"scenario":"python-worker-simulation"' in caplog.text
+    assert '"scenario":"python-worker"' in caplog.text
     assert '"action":"simulation-provider"' in caplog.text
