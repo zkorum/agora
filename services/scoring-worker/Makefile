@@ -15,7 +15,7 @@ typecheck:
 	uv run --extra dev basedpyright
 
 image-buildx:
-	docker buildx build --platform linux/amd64 --build-arg PIP_INSTALL_TARGET=. -t $(IMAGE):latest .
+	docker buildx build --pull --platform linux/amd64 --build-arg PIP_INSTALL_TARGET=. -t $(IMAGE):latest .
 
 image-buildx-gpu:
-	docker buildx build --platform linux/amd64 --build-arg "PIP_INSTALL_TARGET=.[gpu]" -t $(IMAGE):gpu .
+	docker buildx build --pull --platform linux/amd64 --build-arg "PIP_INSTALL_TARGET=.[gpu]" -t $(IMAGE):gpu .

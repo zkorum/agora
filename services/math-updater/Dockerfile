@@ -5,6 +5,7 @@ WORKDIR /app
 ARG PIP_INSTALL_TARGET=.
 
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends git build-essential python3-dev && \
     rm -rf /var/lib/apt/lists/*
 
@@ -23,6 +24,7 @@ RUN pip install --no-cache-dir --no-deps "$PIP_INSTALL_TARGET"
 FROM python:3.13-slim-bookworm
 
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends tini libgomp1 && \
     rm -rf /var/lib/apt/lists/*
 

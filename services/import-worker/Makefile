@@ -15,4 +15,4 @@ typecheck:
 	uv run --extra dev basedpyright
 
 image-buildx:
-	docker buildx build --platform linux/amd64 -t $(IMAGE):latest .
+	docker buildx build --pull --platform linux/amd64 -t $(IMAGE):latest .
