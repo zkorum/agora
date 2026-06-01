@@ -36,7 +36,7 @@ Environment variables use the `MATH_UPDATER_` prefix.
 | `MATH_UPDATER_RECONCILIATION_INTERVAL_SECONDS`   | `60`                      | DB-to-Valkey reconciliation cadence  |
 | `MATH_UPDATER_RUNNING_RECOVERY_INTERVAL_SECONDS` | `10`                      | Expired lease recovery cadence       |
 
-AI label and summary generation is disabled by default and configured with `MATH_UPDATER_AWS_AI_LABEL_SUMMARY_*` variables. Translation is configured with `MATH_UPDATER_AWS_DESCRIPTION_TRANSLATION_*`, `MATH_UPDATER_GOOGLE_*`, and optional AWS Secrets Manager credential variables. Translation requires AI label/summary generation to be enabled.
+AI label/summary generation and Bedrock translation are enabled by default through `MATH_UPDATER_AWS_AI_LABEL_SUMMARY_ENABLE=true` and `MATH_UPDATER_AWS_DESCRIPTION_TRANSLATION_ENABLE=true`. Bedrock uses normal AWS credentials plus the `MATH_UPDATER_AWS_*_REGION` and model settings; there is no explicit Bedrock URL. The required runtime infrastructure is PostgreSQL and Valkey. Google translation fallback/direct translation is configured with `MATH_UPDATER_GOOGLE_*` and optional AWS Secrets Manager credential variables.
 
 ### Dev-only AI simulation
 

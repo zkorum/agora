@@ -56,7 +56,7 @@ def build_description_generator(settings: Settings) -> DescriptionGenerator | No
     if settings.ai_description_simulation_enabled:
         return generate_simulated_label_summaries
 
-    if not settings.aws_ai_label_summary_enable:
+    if not settings.bedrock_label_summary_configured:
         return None
 
     config = BedrockLabelSummaryConfig(
@@ -103,7 +103,7 @@ def build_description_translator(settings: Settings) -> DescriptionTranslatorBun
             connect_timeout_seconds=settings.aws_client_connect_timeout_seconds,
             read_timeout_seconds=settings.aws_description_translation_read_timeout_seconds,
         )
-        if settings.aws_description_translation_enable
+        if settings.bedrock_description_translation_configured
         else None
     )
     google_service = _build_google_translation_service(settings)
