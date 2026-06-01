@@ -394,8 +394,8 @@ export const analysisPageTranslations: Record<
     recommendedDefault: "Auto",
     groupsLabel: "{count} groupes",
     systemDefaultCaption:
-      "Choisit la variante la mieux notée pour chaque nouvel instantané.",
-    analysisVariantsNotAvailable: "Cet instantané n'inclut pas de variantes.",
+      "Choisit la variante la mieux notée pour chaque nouveau jalon.",
+    analysisVariantsNotAvailable: "Ce jalon n'inclut pas de variantes.",
     fixedGroupCountUnavailable:
       "Agora n’a pas pu former {count} groupes pertinents pour ce jalon.",
     recommendedDefaultUnavailable:
