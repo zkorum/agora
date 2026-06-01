@@ -51,9 +51,9 @@
   },
   "dependencies": {
     "@fontsource-variable/albert-sans": "^5.2.8",
-    "@inlang/paraglide-js": "^2.16.1",
+    "@inlang/paraglide-js": "^2.18.1",
     "@justinribeiro/lite-youtube": "^1.9.0",
-    "@sentry/sveltekit": "^10.50.0",
+    "@sentry/sveltekit": "^10.55.0",
     "bits-ui": "^2.18.0",
     "gray-matter": "^4.0.3",
     "rehype-raw": "^7.0.0",
