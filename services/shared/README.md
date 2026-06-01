@@ -20,14 +20,15 @@ After modifying code in `services/shared/src/`, run:
 make sync
 ```
 
-This will copy the shared code to TypeScript services.
+This will copy the shared code to TypeScript services. If shared constants or schemas are used by Python workers, also run `make sync-python-artifacts` from the repository root.
 
 ## What's Shared
 
-- **Types**: Zod schemas, DTOs, Polis types
-- **Utils**: Polis utilities, common utilities
+- **Types**: Zod schemas, DTOs, conversation-analysis types
+- **Utils**: conversation utilities, common utilities
 
 ## Other Shared Packages
 
 - `services/shared-app-api`: Shared between frontend + API only (UCAN, DID, etc.)
 - `services/shared-backend`: Shared directly with TypeScript backend services and used to generate Python worker artifacts
+- `services/python-worker-shared`: Shared Python package used by Python background workers; receives generated artifacts from `services/shared` and `services/shared-backend`
