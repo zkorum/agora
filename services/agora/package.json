@@ -27,9 +27,9 @@
     "image:build:production": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker build -f Dockerfile.production -t agora-app-production:$tag .' --",
     "image:buildx:production": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker buildx build -f Dockerfile.production --platform linux/amd64 -t agora-app-production:$tag --load .' --",
     "image:tag:staging": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker tag agora-app-staging:$tag quay.io/zkorum/agora-app-staging:$tag' --",
-    "image:push:staging": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; pnpm run image:tag:staging -- \"$tag\" && docker image push quay.io/zkorum/agora-app-staging:$tag' --",
+    "image:push:staging": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; TAG=\"$tag\" pnpm run image:tag:staging && docker image push quay.io/zkorum/agora-app-staging:$tag' --",
     "image:tag:production": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker tag agora-app-production:$tag quay.io/zkorum/agora-app-production:$tag' --",
-    "image:push:production": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; pnpm run image:tag:production -- \"$tag\" && docker image push quay.io/zkorum/agora-app-production:$tag' --"
+    "image:push:production": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; TAG=\"$tag\" pnpm run image:tag:production && docker image push quay.io/zkorum/agora-app-production:$tag' --"
   },
   "dependencies": {
     "@dicebear/collection": "^9.4.2",
