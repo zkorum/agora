@@ -49,8 +49,15 @@ class FakeRedDwarfCandidateSuccess:
 
 
 @dataclass(frozen=True)
+class FakeRedDwarfCandidateInsufficientData:
+    group_count: int
+    reason: str
+    outcome: str = AnalysisResultOutcomeEnum.insufficient_data.value
+
+
+@dataclass(frozen=True)
 class FakeRedDwarfCandidatesResult:
-    candidates: list[FakeRedDwarfCandidateSuccess]
+    candidates: list[FakeRedDwarfCandidateSuccess | FakeRedDwarfCandidateInsufficientData]
 
 
 def _config() -> OpinionGroupConfigRecord:
@@ -265,7 +272,7 @@ def test_compute_analysis_bundle_is_testable_with_injected_runner() -> None:
     assert representative_opinion.agreement_type == "agree"
 
 
-def test_duplicate_representative_sets_raise_even_when_order_differs() -> None:
+def test_duplicate_representative_sets_hide_only_the_affected_candidate() -> None:
     snapshot = prepare_input_snapshot(
         conversation_id=10,
         data_generation=3,
@@ -281,36 +288,65 @@ def test_duplicate_representative_sets_raise_even_when_order_differs() -> None:
         candidate_group_counts: list[int] | None = None,
     ) -> FakeRedDwarfSuccess:
         return FakeRedDwarfSuccess(
-            _fake_result_with_repness(
-                {
-                    0: [
-                        {"tid": 0, "repful-for": "agree", "p-success": 0.75, "n-success": 2},
-                        {
-                            "tid": 1,
-                            "repful-for": "disagree",
-                            "p-success": 0.75,
-                            "n-success": 2,
-                        },
-                    ],
-                    1: [
-                        {
-                            "tid": 1,
-                            "repful-for": "disagree",
-                            "p-success": 0.75,
-                            "n-success": 2,
-                        },
-                        {"tid": 0, "repful-for": "agree", "p-success": 0.75, "n-success": 2},
-                    ],
-                }
+            FakeRedDwarfCandidatesResult(
+                candidates=[
+                    FakeRedDwarfCandidateSuccess(
+                        group_count=2,
+                        result=_fake_result_with_repness(
+                            {
+                                0: [
+                                    {
+                                        "tid": 0,
+                                        "repful-for": "agree",
+                                        "p-success": 0.75,
+                                        "n-success": 2,
+                                    },
+                                    {
+                                        "tid": 1,
+                                        "repful-for": "disagree",
+                                        "p-success": 0.75,
+                                        "n-success": 2,
+                                    },
+                                ],
+                                1: [
+                                    {
+                                        "tid": 1,
+                                        "repful-for": "disagree",
+                                        "p-success": 0.75,
+                                        "n-success": 2,
+                                    },
+                                    {
+                                        "tid": 0,
+                                        "repful-for": "agree",
+                                        "p-success": 0.75,
+                                        "n-success": 2,
+                                    },
+                                ],
+                            }
+                        ),
+                    ),
+                    FakeRedDwarfCandidateSuccess(
+                        group_count=3,
+                        result=_fake_result(3),
+                    ),
+                ]
             )
         )
 
-    with pytest.raises(RedDwarfContractError, match="duplicate representative-opinion set"):
-        compute_analysis_bundle(
-            snapshot=snapshot,
-            config=_single_variant_config(),
-            run_red_dwarf_pipeline=fake_runner,
-        )
+    bundle = compute_analysis_bundle(
+        snapshot=snapshot,
+        config=_config(),
+        run_red_dwarf_pipeline=fake_runner,
+    )
+
+    assert bundle.outcome == AnalysisResultOutcomeEnum.success
+    assert bundle.candidates[0].assessment is not None
+    assert bundle.candidates[0].assessment.selection_score is None
+    assert bundle.candidates[0].assessment.hidden_reason == (
+        OpinionGroupCandidateHiddenReasonEnum.duplicate_representative_opinions
+    )
+    assert bundle.candidates[1].assessment is not None
+    assert bundle.candidates[1].assessment.hidden_reason is None
 
 
 def test_same_representative_statement_with_different_stance_is_allowed() -> None:
@@ -558,7 +594,7 @@ def test_imbalanced_candidate_records_cv_without_hiding() -> None:
     assert assessment.selection_score is not None
 
 
-def test_missing_group_representative_opinions_is_contract_error() -> None:
+def test_missing_group_representative_opinions_hides_candidate() -> None:
     snapshot = prepare_input_snapshot(
         conversation_id=10,
         data_generation=3,
@@ -584,7 +620,7 @@ def test_missing_group_representative_opinions_is_contract_error() -> None:
             )
         )
 
-    with pytest.raises(RedDwarfContractError, match="missing repness"):
+    with pytest.raises(RedDwarfContractError, match="no displayable candidates"):
         compute_analysis_bundle(
             snapshot=snapshot,
             config=OpinionGroupConfigRecord(
@@ -598,6 +634,48 @@ def test_missing_group_representative_opinions_is_contract_error() -> None:
             ),
             run_red_dwarf_pipeline=fake_runner,
         )
+
+
+def test_unknown_insufficient_data_reason_is_stored_as_other() -> None:
+    snapshot = prepare_input_snapshot(
+        conversation_id=10,
+        data_generation=3,
+        rows=_snapshot_rows(),
+    )
+
+    def fake_runner(
+        *,
+        votes: list[dict[str, int]],
+        min_user_vote_threshold: int,
+        max_group_count: int,
+        force_group_count: int | None = None,
+        candidate_group_counts: list[int] | None = None,
+    ) -> FakeRedDwarfSuccess:
+        return FakeRedDwarfSuccess(
+            FakeRedDwarfCandidatesResult(
+                candidates=[
+                    FakeRedDwarfCandidateInsufficientData(
+                        group_count=2,
+                        reason="new_red_dwarf_reason",
+                    ),
+                    FakeRedDwarfCandidateSuccess(
+                        group_count=3,
+                        result=_fake_result(3),
+                    ),
+                ]
+            )
+        )
+
+    bundle = compute_analysis_bundle(
+        snapshot=snapshot,
+        config=_config(),
+        run_red_dwarf_pipeline=fake_runner,
+    )
+
+    assert bundle.outcome == AnalysisResultOutcomeEnum.success
+    assert bundle.candidates[0].outcome_reason == AnalysisInsufficientDataReasonEnum.other
+    assert isinstance(bundle.candidates[0].raw_output, dict)
+    assert bundle.candidates[0].raw_output["raw_reason"] == "new_red_dwarf_reason"
 
 
 def test_group_comment_stats_ns_is_total_votes_not_passes() -> None:

@@ -46,6 +46,7 @@ class AnalysisInsufficientDataReasonEnum(StrEnum):
     not_enough_clusterable_participants = "not_enough_clusterable_participants"
     not_enough_unique_points = "not_enough_unique_points"
     not_enough_samples_for_group_count = "not_enough_samples_for_group_count"
+    other = "other"
 
 
 class AnalysisFamilyEnum(StrEnum):
@@ -107,6 +108,9 @@ class MaxdiffLifecycleStatus(StrEnum):
 
 class OpinionGroupCandidateHiddenReasonEnum(StrEnum):
     singleton_group = "singleton_group"
+    duplicate_representative_opinions = "duplicate_representative_opinions"
+    missing_representative_opinions = "missing_representative_opinions"
+    invalid_candidate_output = "invalid_candidate_output"
 
 
 class VoteEnumSimple(StrEnum):

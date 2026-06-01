@@ -727,6 +727,7 @@ export const analysisInsufficientDataReasonEnum = pgEnum(
         "not_enough_clusterable_participants",
         "not_enough_unique_points",
         "not_enough_samples_for_group_count",
+        "other",
     ],
 );
 
@@ -746,7 +747,12 @@ export const opinionGroupSelectionPolicyEnum = pgEnum(
 
 export const opinionGroupCandidateHiddenReasonEnum = pgEnum(
     "opinion_group_candidate_hidden_reason_enum",
-    ["singleton_group"],
+    [
+        "singleton_group",
+        "duplicate_representative_opinions",
+        "missing_representative_opinions",
+        "invalid_candidate_output",
+    ],
 );
 
 export const surveyAggregateScopeEnum = pgEnum("survey_aggregate_scope_enum", [

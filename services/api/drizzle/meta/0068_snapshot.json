@@ -1,5 +1,5 @@
 {
-  "id": "6b343831-0f0e-4cbc-b492-8a630d3df0c1",
+  "id": "0ad00cbb-77f5-434e-9cca-389e5d0084d2",
   "prevId": "6b6d58a8-3179-4c3e-b91b-c299bb5c8fe5",
   "version": "7",
   "dialect": "postgresql",
@@ -11241,7 +11241,8 @@
         "empty_vote_matrix",
         "not_enough_clusterable_participants",
         "not_enough_unique_points",
-        "not_enough_samples_for_group_count"
+        "not_enough_samples_for_group_count",
+        "other"
       ]
     },
     "public.analysis_result_outcome_enum": {
@@ -11489,7 +11490,10 @@
       "name": "opinion_group_candidate_hidden_reason_enum",
       "schema": "public",
       "values": [
-        "singleton_group"
+        "singleton_group",
+        "duplicate_representative_opinions",
+        "missing_representative_opinions",
+        "invalid_candidate_output"
       ]
     },
     "public.opinion_group_clusterer_enum": {

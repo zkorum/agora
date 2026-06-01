@@ -114,6 +114,27 @@ class RedDwarfContractError(RuntimeError):
     pass
 
 
+class _HiddenCandidateOutputError(RuntimeError):
+    def __init__(
+        self,
+        *,
+        hidden_reason: OpinionGroupCandidateHiddenReasonEnum,
+        detail_code: str,
+        detail: JsonObject,
+    ) -> None:
+        super().__init__(detail_code)
+        self.hidden_reason = hidden_reason
+        self.detail_code = detail_code
+        self.detail = detail
+
+
+_CONTRACT_HIDDEN_REASONS = {
+    OpinionGroupCandidateHiddenReasonEnum.duplicate_representative_opinions,
+    OpinionGroupCandidateHiddenReasonEnum.missing_representative_opinions,
+    OpinionGroupCandidateHiddenReasonEnum.invalid_candidate_output,
+}
+
+
 class RedDwarfRunner(Protocol):
     def __call__(
         self,
@@ -144,25 +165,26 @@ def compute_analysis_bundle(
         run_red_dwarf_pipeline=red_dwarf_runner,
     )
     candidates_with_assessments = [
-        replace(
-            candidate,
-            assessment=_assess_candidate(candidate),
-        )
-        if candidate.outcome == AnalysisResultOutcomeEnum.success
-        else candidate
-        for candidate in candidates
+        _candidate_with_assessment(candidate) for candidate in candidates
     ]
+    visible_successful_candidates = [
+        candidate
+        for candidate in candidates_with_assessments
+        if _is_visible_success_candidate(candidate)
+    ]
+    if not visible_successful_candidates and _has_contract_hidden_candidates(
+        candidates_with_assessments
+    ):
+        msg = _all_candidates_hidden_contract_error_message(candidates_with_assessments)
+        raise RedDwarfContractError(msg)
+
     successful_candidates = [
         candidate
         for candidate in candidates_with_assessments
         if candidate.outcome == AnalysisResultOutcomeEnum.success
     ]
-    routing_priority_candidate = _routing_priority_candidate(successful_candidates) or next(
-        (
-            candidate
-            for candidate in successful_candidates
-            if candidate.assessment is not None and candidate.assessment.hidden_reason is None
-        ),
+    routing_priority_candidate = _routing_priority_candidate(visible_successful_candidates) or next(
+        iter(visible_successful_candidates),
         None,
     )
 
@@ -260,9 +282,13 @@ def _computed_candidates_from_red_dwarf_result(
 ) -> dict[int, ComputedOpinionGroupCandidate]:
     outcome = _get_red_dwarf_outcome(red_dwarf_result)
     if outcome == AnalysisResultOutcomeEnum.insufficient_data.value:
-        reason = _get_red_dwarf_insufficient_reason(red_dwarf_result)
+        reason, raw_reason = _get_red_dwarf_insufficient_reason(red_dwarf_result)
         return {
-            variant.id: _insufficient_candidate(variant=variant, reason=reason)
+            variant.id: _insufficient_candidate(
+                variant=variant,
+                reason=reason,
+                raw_reason=raw_reason,
+            )
             for variant in variants
         }
     if outcome != AnalysisResultOutcomeEnum.success.value:
@@ -272,7 +298,7 @@ def _computed_candidates_from_red_dwarf_result(
     result = _get_attr(red_dwarf_result, "result")
     if len({variant.group_count for variant in variants}) == 1:
         return {
-            variant.id: _success_candidate_from_red_dwarf_result(
+            variant.id: _success_or_hidden_candidate_from_red_dwarf_result(
                 variant=variant,
                 result=result,
             )
@@ -285,19 +311,38 @@ def _computed_candidates_from_red_dwarf_result(
         raise RedDwarfContractError(msg)
 
     result_by_group_count: dict[int, object] = {}
+    duplicate_group_counts: set[int] = set()
     for candidate_result in candidate_results:
-        group_count = _optional_int(_get_attr(candidate_result, "group_count"))
+        try:
+            group_count = _optional_int(_get_attr(candidate_result, "group_count"))
+        except RedDwarfContractError:
+            continue
         if group_count is None:
-            msg = "red-dwarf candidate missing integer group_count"
-            raise RedDwarfContractError(msg)
+            continue
+        if group_count in result_by_group_count:
+            duplicate_group_counts.add(group_count)
+            continue
         result_by_group_count[group_count] = candidate_result
 
     computed: dict[int, ComputedOpinionGroupCandidate] = {}
     for variant in variants:
+        if variant.group_count in duplicate_group_counts:
+            computed[variant.id] = _hidden_success_candidate(
+                variant=variant,
+                hidden_reason=OpinionGroupCandidateHiddenReasonEnum.invalid_candidate_output,
+                detail_code="duplicate_candidate_group_count",
+                detail={"group_count": variant.group_count},
+            )
+            continue
         candidate_result = result_by_group_count.get(variant.group_count)
         if candidate_result is None:
-            msg = f"red-dwarf candidates missing group_count {variant.group_count}"
-            raise RedDwarfContractError(msg)
+            computed[variant.id] = _hidden_success_candidate(
+                variant=variant,
+                hidden_reason=OpinionGroupCandidateHiddenReasonEnum.invalid_candidate_output,
+                detail_code="candidate_not_returned",
+                detail={"group_count": variant.group_count},
+            )
+            continue
         computed[variant.id] = _candidate_from_red_dwarf_candidate_result(
             variant=variant,
             candidate_result=candidate_result,
@@ -310,19 +355,67 @@ def _candidate_from_red_dwarf_candidate_result(
     variant: OpinionGroupVariantRecord,
     candidate_result: object,
 ) -> ComputedOpinionGroupCandidate:
-    outcome = _get_red_dwarf_outcome(candidate_result)
+    try:
+        outcome = _get_red_dwarf_outcome(candidate_result)
+    except RedDwarfContractError as error:
+        return _hidden_success_candidate(
+            variant=variant,
+            hidden_reason=OpinionGroupCandidateHiddenReasonEnum.invalid_candidate_output,
+            detail_code="missing_candidate_outcome",
+            detail={"message": str(error), "group_count": variant.group_count},
+        )
     if outcome == AnalysisResultOutcomeEnum.insufficient_data.value:
+        try:
+            reason, raw_reason = _get_red_dwarf_insufficient_reason(candidate_result)
+        except RedDwarfContractError as error:
+            return _hidden_success_candidate(
+                variant=variant,
+                hidden_reason=OpinionGroupCandidateHiddenReasonEnum.invalid_candidate_output,
+                detail_code="invalid_insufficient_data_reason",
+                detail={"message": str(error), "group_count": variant.group_count},
+            )
         return _insufficient_candidate(
             variant=variant,
-            reason=_get_red_dwarf_insufficient_reason(candidate_result),
+            reason=reason,
+            raw_reason=raw_reason,
         )
     if outcome != AnalysisResultOutcomeEnum.success.value:
-        msg = f"unknown red-dwarf candidate outcome {outcome}"
-        raise RedDwarfContractError(msg)
-    return _success_candidate_from_red_dwarf_result(
+        return _hidden_success_candidate(
+            variant=variant,
+            hidden_reason=OpinionGroupCandidateHiddenReasonEnum.invalid_candidate_output,
+            detail_code="unknown_candidate_outcome",
+            detail={"outcome": outcome, "group_count": variant.group_count},
+        )
+    return _success_or_hidden_candidate_from_red_dwarf_result(
         variant=variant,
         result=_get_attr(candidate_result, "result"),
     )
+
+
+def _success_or_hidden_candidate_from_red_dwarf_result(
+    *,
+    variant: OpinionGroupVariantRecord,
+    result: object,
+) -> ComputedOpinionGroupCandidate:
+    try:
+        return _success_candidate_from_red_dwarf_result(
+            variant=variant,
+            result=result,
+        )
+    except _HiddenCandidateOutputError as error:
+        return _hidden_success_candidate(
+            variant=variant,
+            hidden_reason=error.hidden_reason,
+            detail_code=error.detail_code,
+            detail=error.detail,
+        )
+    except RedDwarfContractError as error:
+        return _hidden_success_candidate(
+            variant=variant,
+            hidden_reason=OpinionGroupCandidateHiddenReasonEnum.invalid_candidate_output,
+            detail_code="invalid_success_payload",
+            detail={"message": str(error), "group_count": variant.group_count},
+        )
 
 
 def _success_candidate_from_red_dwarf_result(
@@ -342,23 +435,41 @@ def _success_candidate_from_red_dwarf_result(
         repness=repness,
     )
     silhouette = _calculate_silhouette_score(participants_df)
+    duplicate_representative_opinion_detail = _duplicate_representative_opinion_detail(groups)
+    coefficient_of_variation = _calculate_coefficient_of_variation(groups)
+    balance_score = _calculate_balance_score(coefficient_of_variation)
+    raw_output: JsonObject = {
+        "schema_version": 1,
+        "group_count": variant.group_count,
+        "silhouette_score": silhouette,
+        "participants_df": _dataframe_records(participants_df),
+        "statements_df": _dataframe_records(statements_df),
+        "group_comment_stats": _dataframe_records(group_comment_stats),
+        "repness": _to_json_value(repness),
+        "consensus": _to_json_value(consensus),
+    }
+    if duplicate_representative_opinion_detail is not None:
+        raw_output["hidden_reason"] = (
+            OpinionGroupCandidateHiddenReasonEnum.duplicate_representative_opinions.value
+        )
+        raw_output["detail_code"] = "duplicate_representative_opinions"
+        raw_output["detail"] = duplicate_representative_opinion_detail
     return ComputedOpinionGroupCandidate(
         opinion_group_variant_id=variant.id,
         group_count=variant.group_count,
         outcome=AnalysisResultOutcomeEnum.success,
         outcome_reason=None,
-        raw_output={
-            "schema_version": 1,
-            "group_count": variant.group_count,
-            "silhouette_score": silhouette,
-            "participants_df": _dataframe_records(participants_df),
-            "statements_df": _dataframe_records(statements_df),
-            "group_comment_stats": _dataframe_records(group_comment_stats),
-            "repness": _to_json_value(repness),
-            "consensus": _to_json_value(consensus),
-        },
+        raw_output=raw_output,
         groups=groups,
-        assessment=None,
+        assessment=None
+        if duplicate_representative_opinion_detail is None
+        else CandidateAssessment(
+            silhouette_score=silhouette,
+            coefficient_of_variation=coefficient_of_variation,
+            balance_score=balance_score,
+            selection_score=None,
+            hidden_reason=OpinionGroupCandidateHiddenReasonEnum.duplicate_representative_opinions,
+        ),
         opinion_metrics=_candidate_opinion_metrics(
             statements_df=statements_df,
             consensus=consensus,
@@ -370,15 +481,50 @@ def _insufficient_candidate(
     *,
     variant: OpinionGroupVariantRecord,
     reason: AnalysisInsufficientDataReasonEnum,
+    raw_reason: str | None = None,
 ) -> ComputedOpinionGroupCandidate:
+    raw_output: JsonObject = {"reason": reason.value, "group_count": variant.group_count}
+    if raw_reason is not None and raw_reason != reason.value:
+        raw_output["raw_reason"] = raw_reason
     return ComputedOpinionGroupCandidate(
         opinion_group_variant_id=variant.id,
         group_count=variant.group_count,
         outcome=AnalysisResultOutcomeEnum.insufficient_data,
         outcome_reason=reason,
-        raw_output={"reason": reason.value, "group_count": variant.group_count},
+        raw_output=raw_output,
         groups=[],
         assessment=None,
+        opinion_metrics=[],
+    )
+
+
+def _hidden_success_candidate(
+    *,
+    variant: OpinionGroupVariantRecord,
+    hidden_reason: OpinionGroupCandidateHiddenReasonEnum,
+    detail_code: str,
+    detail: JsonObject,
+) -> ComputedOpinionGroupCandidate:
+    return ComputedOpinionGroupCandidate(
+        opinion_group_variant_id=variant.id,
+        group_count=variant.group_count,
+        outcome=AnalysisResultOutcomeEnum.success,
+        outcome_reason=None,
+        raw_output={
+            "schema_version": 1,
+            "group_count": variant.group_count,
+            "hidden_reason": hidden_reason.value,
+            "detail_code": detail_code,
+            "detail": detail,
+        },
+        groups=[],
+        assessment=CandidateAssessment(
+            silhouette_score=None,
+            coefficient_of_variation=None,
+            balance_score=None,
+            selection_score=None,
+            hidden_reason=hidden_reason,
+        ),
         opinion_metrics=[],
     )
 
@@ -412,17 +558,18 @@ def _get_red_dwarf_outcome(value: object) -> str:
     raise RedDwarfContractError(msg)
 
 
-def _get_red_dwarf_insufficient_reason(value: object) -> AnalysisInsufficientDataReasonEnum:
+def _get_red_dwarf_insufficient_reason(
+    value: object,
+) -> tuple[AnalysisInsufficientDataReasonEnum, str | None]:
     reason = _get_attr(value, "reason")
     reason_value = reason if isinstance(reason, str) else _get_attr(reason, "value")
     if not isinstance(reason_value, str):
         msg = "red-dwarf insufficient-data reason is not a string"
         raise RedDwarfContractError(msg)
     try:
-        return AnalysisInsufficientDataReasonEnum(reason_value)
-    except ValueError as error:
-        msg = f"unknown red-dwarf insufficient-data reason {reason_value}"
-        raise RedDwarfContractError(msg) from error
+        return AnalysisInsufficientDataReasonEnum(reason_value), reason_value
+    except ValueError:
+        return AnalysisInsufficientDataReasonEnum.other, reason_value
 
 
 def _to_red_dwarf_votes(votes: list[SnapshotVote]) -> list[dict[str, int]]:
@@ -561,24 +708,16 @@ def _build_groups(
         participants_by_external_id.setdefault(cluster_id, []).append(participant_id)
 
     groups: list[ComputedOpinionGroup] = []
-    external_id_by_representative_key: dict[_RepresentativeOpinionMatchKey, int] = {}
     for key_index, external_id in enumerate(sorted(participants_by_external_id)):
         representative_opinions = _representative_opinions_for_group(
             repness.get(external_id, []),
         )
         if not representative_opinions:
-            msg = f"red-dwarf success result missing repness for group {external_id}"
-            raise RedDwarfContractError(msg)
-        representative_key = _representative_opinion_match_key(representative_opinions)
-        previous_external_id = external_id_by_representative_key.get(representative_key)
-        if previous_external_id is not None:
-            msg = (
-                "red-dwarf success result has duplicate representative-opinion set "
-                f"for groups {previous_external_id} and {external_id}: "
-                f"{_format_representative_opinion_match_key(representative_key)}"
+            raise _HiddenCandidateOutputError(
+                hidden_reason=OpinionGroupCandidateHiddenReasonEnum.missing_representative_opinions,
+                detail_code="missing_representative_opinions",
+                detail={"external_group_id": external_id},
             )
-            raise RedDwarfContractError(msg)
-        external_id_by_representative_key[representative_key] = external_id
         groups.append(
             ComputedOpinionGroup(
                 key=str(key_index),
@@ -613,6 +752,25 @@ def _format_representative_opinion_match_key(
     )
 
 
+def _duplicate_representative_opinion_detail(
+    groups: list[ComputedOpinionGroup],
+) -> JsonObject | None:
+    group_key_by_representative_key: dict[_RepresentativeOpinionMatchKey, str] = {}
+    for group in groups:
+        representative_key = _representative_opinion_match_key(group.representative_opinions)
+        previous_group_key = group_key_by_representative_key.get(representative_key)
+        if previous_group_key is not None:
+            return {
+                "first_group_key": previous_group_key,
+                "second_group_key": group.key,
+                "representative_opinions": _format_representative_opinion_match_key(
+                    representative_key
+                ),
+            }
+        group_key_by_representative_key[representative_key] = group.key
+    return None
+
+
 def _group_opinion_stats(
     *,
     group_comment_stats: pd.DataFrame,
@@ -635,11 +793,17 @@ def _group_opinion_stats(
         total_votes = _optional_int(record.get("ns")) or 0
         num_passes = total_votes - num_agrees - num_disagrees
         if num_passes < 0:
-            msg = (
-                "red-dwarf group_comment_stats has ns smaller than "
-                f"na + nd for group {external_group_id} statement {local_opinion_index}"
+            raise _HiddenCandidateOutputError(
+                hidden_reason=OpinionGroupCandidateHiddenReasonEnum.invalid_candidate_output,
+                detail_code="invalid_group_stats",
+                detail={
+                    "external_group_id": external_group_id,
+                    "local_opinion_index": local_opinion_index,
+                    "num_agrees": num_agrees,
+                    "num_disagrees": num_disagrees,
+                    "total_votes": total_votes,
+                },
             )
-            raise RedDwarfContractError(msg)
 
         stats.append(
             ComputedGroupOpinionStats(
@@ -804,6 +968,47 @@ def _routing_priority_candidate(
             else -math.inf,
             candidate.group_count,
         ),
+    )
+
+
+def _candidate_with_assessment(
+    candidate: ComputedOpinionGroupCandidate,
+) -> ComputedOpinionGroupCandidate:
+    if candidate.outcome != AnalysisResultOutcomeEnum.success or candidate.assessment is not None:
+        return candidate
+    return replace(candidate, assessment=_assess_candidate(candidate))
+
+
+def _is_visible_success_candidate(candidate: ComputedOpinionGroupCandidate) -> bool:
+    if candidate.outcome != AnalysisResultOutcomeEnum.success:
+        return False
+    return candidate.assessment is None or candidate.assessment.hidden_reason is None
+
+
+def _has_contract_hidden_candidates(candidates: list[ComputedOpinionGroupCandidate]) -> bool:
+    return any(
+        candidate.assessment is not None
+        and candidate.assessment.hidden_reason in _CONTRACT_HIDDEN_REASONS
+        for candidate in candidates
+    )
+
+
+def _all_candidates_hidden_contract_error_message(
+    candidates: list[ComputedOpinionGroupCandidate],
+) -> str:
+    reason_counts: dict[str, int] = {}
+    for candidate in candidates:
+        hidden_reason = None if candidate.assessment is None else candidate.assessment.hidden_reason
+        if hidden_reason is None or hidden_reason not in _CONTRACT_HIDDEN_REASONS:
+            continue
+        reason_counts[hidden_reason.value] = reason_counts.get(hidden_reason.value, 0) + 1
+
+    formatted_counts = ",".join(
+        f"{reason}={count}" for reason, count in sorted(reason_counts.items())
+    )
+    return (
+        "red-dwarf produced no displayable candidates; "
+        f"hidden_contract_reasons={formatted_counts}"
     )
 
 

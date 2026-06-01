@@ -6,6 +6,10 @@ import {
 } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  type SupportedDisplayLanguageCodes,
+  ZodSupportedDisplayLanguageCodes,
+} from "src/shared/languages";
 import type {
   AnalysisFrameGroupLabels,
   AnalysisFrameGroups,
@@ -15,10 +19,6 @@ import type {
   AnalysisFreshnessRequest,
   FetchCommentStatsResponse,
 } from "src/shared/types/dto";
-import {
-  type SupportedDisplayLanguageCodes,
-  ZodSupportedDisplayLanguageCodes,
-} from "src/shared/languages";
 import type { AnalysisView, OpinionItem, PolisKey } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
 import { useUserStore } from "src/stores/user";
@@ -176,6 +176,7 @@ type BackendCommentApi = ReturnType<typeof useBackendCommentApi>;
 type AnalysisQueryKey = readonly unknown[];
 
 const LABEL_CATCH_UP_MAX_ATTEMPTS = 5;
+const TRANSLATED_LABEL_FALLBACK_GRACE_MS = 750;
 const labelCatchUpStateByKey = new Map<
   string,
   { attemptCount: number; timeout: ReturnType<typeof setTimeout> | undefined }
@@ -247,6 +248,49 @@ function expectedLabelLocales(
   displayLanguage: SupportedDisplayLanguageCodes
 ): SupportedDisplayLanguageCodes[] {
   return displayLanguage === "en" ? ["en"] : ["en", displayLanguage];
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function shouldWaitForTranslatedLabels({
+  groupLabels,
+  displayLanguage,
+}: {
+  groupLabels: AnalysisFrameGroupLabels;
+  displayLanguage: string;
+}): boolean {
+  const parsedDisplayLanguage =
+    ZodSupportedDisplayLanguageCodes.safeParse(displayLanguage);
+  if (!parsedDisplayLanguage.success || parsedDisplayLanguage.data === "en") {
+    return false;
+  }
+
+  return groupLabels.groupDescriptionDisplay.displayedLocale === "en";
+}
+
+function getTranslatedLabelGraceFreshness({
+  freshness,
+  displayLanguage,
+}: {
+  freshness: AnalysisFreshnessRequest | null;
+  displayLanguage: string;
+}): AnalysisFreshnessRequest | null {
+  const parsedDisplayLanguage =
+    ZodSupportedDisplayLanguageCodes.safeParse(displayLanguage);
+  if (!parsedDisplayLanguage.success || parsedDisplayLanguage.data === "en") {
+    return freshness;
+  }
+
+  return {
+    enablePrimaryFallback: true,
+    minimumConversationViewSnapshotId:
+      freshness?.minimumConversationViewSnapshotId ?? null,
+    expectedDescriptionLocales: expectedLabelLocales(parsedDisplayLanguage.data),
+  };
 }
 
 function labelCatchUpKey({
@@ -335,6 +379,75 @@ interface FrameLabelCatchUpAttemptParams extends FrameLabelCatchUpParams {
   supportedDisplayLanguage: SupportedDisplayLanguageCodes;
 }
 
+interface FetchFrameGroupLabelsParams {
+  queryClient: QueryClient;
+  fetchAnalysisFrameGroupLabels: BackendCommentApi["fetchAnalysisFrameGroupLabels"];
+  conversationSlugId: string;
+  frameKey: AnalysisFrameKey;
+  aiLabelingEnabled: boolean | undefined;
+  displayLanguage: string;
+  freshness: AnalysisFreshnessRequest | null;
+  labelStaleTime: number;
+}
+
+async function fetchFrameGroupLabelsWithTranslationGrace({
+  queryClient,
+  fetchAnalysisFrameGroupLabels,
+  conversationSlugId,
+  frameKey,
+  aiLabelingEnabled,
+  displayLanguage,
+  freshness,
+  labelStaleTime,
+}: FetchFrameGroupLabelsParams): Promise<AnalysisFrameGroupLabels> {
+  const frameKeyPart = frameKeyQueryPart(frameKey);
+  const labelQueryKey = [
+    "analysisFrameGroupLabels",
+    conversationSlugId,
+    frameKeyPart,
+    aiLabelingEnabled,
+    displayLanguage,
+  ];
+  const groupLabels = await queryClient.fetchQuery({
+    queryKey: labelQueryKey,
+    queryFn: () =>
+      fetchAnalysisFrameGroupLabels({
+        conversationSlugId,
+        frameKey,
+        freshness,
+      }),
+    staleTime: labelStaleTime,
+  });
+
+  if (!shouldWaitForTranslatedLabels({ groupLabels, displayLanguage })) {
+    return groupLabels;
+  }
+
+  await wait(TRANSLATED_LABEL_FALLBACK_GRACE_MS);
+  await queryClient.invalidateQueries({
+    queryKey: labelQueryKey,
+    exact: true,
+    refetchType: "none",
+  });
+  try {
+    return await queryClient.fetchQuery({
+      queryKey: labelQueryKey,
+      queryFn: () =>
+        fetchAnalysisFrameGroupLabels({
+          conversationSlugId,
+          frameKey,
+          freshness: getTranslatedLabelGraceFreshness({
+            freshness,
+            displayLanguage,
+          }),
+        }),
+      staleTime: 0,
+    });
+  } catch {
+    return groupLabels;
+  }
+}
+
 async function runFrameLabelCatchUpAttempt({
   queryClient,
   fetchAnalysisFrameGroupLabels,
@@ -342,7 +455,6 @@ async function runFrameLabelCatchUpAttempt({
   frameKey,
   aiLabelingEnabled,
   displayLanguage,
-  groupLabels,
   analysisQueryKey,
   catchUpKey,
   supportedDisplayLanguage,
@@ -550,21 +662,15 @@ export async function fetchAnalysisDataWithCache({
           }),
         staleTime: frameSectionStaleTime,
       }),
-      queryClient.fetchQuery({
-        queryKey: [
-          "analysisFrameGroupLabels",
-          conversationSlugId,
-          frameKeyPart,
-          aiLabelingEnabled,
-          displayLanguage,
-        ],
-        queryFn: () =>
-          fetchAnalysisFrameGroupLabels({
-            conversationSlugId,
-            frameKey,
-            freshness,
-          }),
-        staleTime: labelStaleTime,
+      fetchFrameGroupLabelsWithTranslationGrace({
+        queryClient,
+        fetchAnalysisFrameGroupLabels,
+        conversationSlugId,
+        frameKey,
+        aiLabelingEnabled,
+        displayLanguage,
+        freshness,
+        labelStaleTime,
       }),
       queryClient.fetchQuery({
         queryKey: [

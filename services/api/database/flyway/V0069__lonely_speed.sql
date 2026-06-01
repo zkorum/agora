@@ -1,3 +1,7 @@
+ALTER TYPE "public"."analysis_insufficient_data_reason_enum" ADD VALUE 'other';--> statement-breakpoint
+ALTER TYPE "public"."opinion_group_candidate_hidden_reason_enum" ADD VALUE 'duplicate_representative_opinions';--> statement-breakpoint
+ALTER TYPE "public"."opinion_group_candidate_hidden_reason_enum" ADD VALUE 'missing_representative_opinions';--> statement-breakpoint
+ALTER TYPE "public"."opinion_group_candidate_hidden_reason_enum" ADD VALUE 'invalid_candidate_output';--> statement-breakpoint
 CREATE TABLE "opinion_group_candidate_description_locale_request" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "opinion_group_candidate_description_locale_request_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"candidate_id" integer NOT NULL,
