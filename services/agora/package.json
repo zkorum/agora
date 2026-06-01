@@ -26,6 +26,8 @@
     "image:buildx:staging": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker buildx build -f Dockerfile.staging --platform linux/amd64 -t agora-app-staging:$tag --load .' --",
     "image:build:production": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker build -f Dockerfile.production -t agora-app-production:$tag .' --",
     "image:buildx:production": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker buildx build -f Dockerfile.production --platform linux/amd64 -t agora-app-production:$tag --load .' --",
+    "image:tag:staging": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker tag agora-app-staging:$tag quay.io/zkorum/agora-app-staging:$tag' --",
+    "image:push:staging": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker tag agora-app-staging:$tag quay.io/zkorum/agora-app-staging:$tag && docker image push quay.io/zkorum/agora-app-staging:$tag' --",
     "image:tag": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker tag agora-app-production:$tag quay.io/zkorum/agora-app-production:$tag' --",
     "image:push": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker tag agora-app-production:$tag quay.io/zkorum/agora-app-production:$tag && docker image push quay.io/zkorum/agora-app-production:$tag' --"
   },
