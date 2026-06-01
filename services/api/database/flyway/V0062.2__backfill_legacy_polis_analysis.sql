@@ -30,7 +30,7 @@ DECLARE
     legacy_cluster record;
     description_id integer;
     lineage_id integer;
-    group_id integer;
+    new_opinion_group_id integer;
 BEGIN
     SELECT id
     INTO default_opinion_group_spec_id
@@ -479,10 +479,10 @@ BEGIN
                 legacy_cluster.num_users,
                 legacy_cluster.created_at
             )
-            RETURNING id INTO group_id;
+            RETURNING id INTO new_opinion_group_id;
 
             INSERT INTO tmp_group_map (legacy_cluster_id, group_id)
-            VALUES (legacy_cluster.legacy_cluster_id, group_id);
+            VALUES (legacy_cluster.legacy_cluster_id, new_opinion_group_id);
         END LOOP;
 
         INSERT INTO opinion_group_user (
