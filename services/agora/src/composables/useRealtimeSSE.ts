@@ -791,11 +791,11 @@ export function useRealtimeSSE({
   function shouldHandleAnalysisUpdatedEventForDisplayLanguage(
     data: SSEConversationAnalysisUpdatedData
   ): boolean {
-    const locales = data.locales;
-    if (locales === undefined || locales.length === 0) {
+    if (data.changeKind !== "descriptions") {
       return true;
     }
 
+    const locales = data.locales;
     if (locales.includes("en")) {
       return true;
     }

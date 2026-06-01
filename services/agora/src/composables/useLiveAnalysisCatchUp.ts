@@ -16,6 +16,8 @@ import type { AnalysisData } from "src/utils/api/comment/comment";
 
 type QueryKey = readonly unknown[];
 
+const DESCRIPTION_CATCH_UP_BUSY_RETRY_MS = 100;
+
 interface LiveAnalysisQueryParams {
   conversationSlugId: string;
   analysisView: AnalysisView | undefined;
@@ -136,6 +138,34 @@ function mergeLocales({
   return Array.from(new Set([...current, ...incoming]));
 }
 
+function isQueryRelevantToAnalysisEvent({
+  query,
+  data,
+}: {
+  query: LiveAnalysisQueryInfo;
+  data: SSEConversationAnalysisUpdatedData;
+}): boolean {
+  if (data.changeKind !== "descriptions") {
+    return query.checkpointViewSnapshotId === undefined;
+  }
+
+  const frameKey = query.analysis?.frameKey;
+  if (frameKey === undefined) {
+    return false;
+  }
+
+  if (
+    frameKey.conversationViewSnapshotId !== data.conversationViewSnapshotId ||
+    frameKey.analysisSnapshotId !== data.analysisSnapshotId
+  ) {
+    return false;
+  }
+
+  return (
+    data.candidateIds.includes(frameKey.candidateId)
+  );
+}
+
 export function createLiveAnalysisCatchUpController({
   queryClient,
   fetchLiveAnalysis,
@@ -211,9 +241,11 @@ export function createLiveAnalysisCatchUpController({
   function scheduleQueryCheck({
     queryHash,
     delayMs,
+    force = false,
   }: {
     queryHash: string;
     delayMs: number;
+    force?: boolean;
   }): void {
     const state = catchUpStateByQueryHash.get(queryHash);
     if (state === undefined) {
@@ -229,7 +261,7 @@ export function createLiveAnalysisCatchUpController({
       if (latestState !== undefined) {
         latestState.timeout = undefined;
       }
-      void catchUpQuery({ queryHash });
+      void catchUpQuery({ queryHash, force });
     }, delayMs);
   }
 
@@ -257,8 +289,14 @@ export function createLiveAnalysisCatchUpController({
     query: LiveAnalysisQueryInfo;
     expectedSnapshotId: number | null;
     expectedDescriptionLocales: SupportedDisplayLanguageCodes[];
-  }): void {
+  }): boolean {
     const existingState = catchUpStateByQueryHash.get(query.queryHash);
+    const existingLocales = new Set(
+      existingState?.expectedDescriptionLocales ?? []
+    );
+    const didAddDescriptionLocale = expectedDescriptionLocales.some(
+      (locale) => !existingLocales.has(locale)
+    );
     const nextExpectedSnapshotId = Math.max(
       existingState?.expectedSnapshotId ?? 0,
       expectedSnapshotId ?? 0
@@ -276,12 +314,15 @@ export function createLiveAnalysisCatchUpController({
       inFlight: existingState?.inFlight ?? false,
       timeout: existingState?.timeout,
     });
+    return didAddDescriptionLocale;
   }
 
   function scheduleOrRunQueryCatchUp({
     query,
+    force = false,
   }: {
     query: LiveAnalysisQueryInfo;
+    force?: boolean;
   }): void {
     const state = catchUpStateByQueryHash.get(query.queryHash);
     if (state === undefined) {
@@ -296,26 +337,33 @@ export function createLiveAnalysisCatchUpController({
     if (query.isFetching || state.inFlight) {
       scheduleQueryCheck({
         queryHash: query.queryHash,
-        delayMs: LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS,
+        delayMs: force
+          ? DESCRIPTION_CATCH_UP_BUSY_RETRY_MS
+          : LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS,
+        force,
       });
       return;
     }
 
-    const nextAllowedAt =
-      state.lastStartedAt + LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS;
-    const delayMs = Math.max(0, nextAllowedAt - Date.now());
-    if (delayMs > 0) {
-      scheduleQueryCheck({ queryHash: query.queryHash, delayMs });
-      return;
+    if (!force) {
+      const nextAllowedAt =
+        state.lastStartedAt + LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS;
+      const delayMs = Math.max(0, nextAllowedAt - Date.now());
+      if (delayMs > 0) {
+        scheduleQueryCheck({ queryHash: query.queryHash, delayMs });
+        return;
+      }
     }
 
-    void catchUpQuery({ queryHash: query.queryHash });
+    void catchUpQuery({ queryHash: query.queryHash, force });
   }
 
   async function catchUpQuery({
     queryHash,
+    force = false,
   }: {
     queryHash: string;
+    force?: boolean;
   }): Promise<void> {
     const state = catchUpStateByQueryHash.get(queryHash);
     if (state === undefined) {
@@ -339,17 +387,22 @@ export function createLiveAnalysisCatchUpController({
     if (query.isFetching || state.inFlight) {
       scheduleQueryCheck({
         queryHash,
-        delayMs: LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS,
+        delayMs: force
+          ? DESCRIPTION_CATCH_UP_BUSY_RETRY_MS
+          : LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS,
+        force,
       });
       return;
     }
 
-    const nextAllowedAt =
-      state.lastStartedAt + LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS;
-    const delayMs = Math.max(0, nextAllowedAt - Date.now());
-    if (delayMs > 0) {
-      scheduleQueryCheck({ queryHash, delayMs });
-      return;
+    if (!force) {
+      const nextAllowedAt =
+        state.lastStartedAt + LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS;
+      const delayMs = Math.max(0, nextAllowedAt - Date.now());
+      if (delayMs > 0) {
+        scheduleQueryCheck({ queryHash, delayMs });
+        return;
+      }
     }
 
     state.inFlight = true;
@@ -407,7 +460,7 @@ export function createLiveAnalysisCatchUpController({
     const activeQueries = getActiveLiveAnalysisQueries({
       conversationSlugId: data.conversationSlugId,
       includeCheckpoints: data.changeKind === "descriptions",
-    });
+    }).filter((query) => isQueryRelevantToAnalysisEvent({ query, data }));
     const activeQueryHashes = new Set(
       activeQueries.map((query) => query.queryHash)
     );
@@ -428,7 +481,7 @@ export function createLiveAnalysisCatchUpController({
           displayLanguage: query.displayLanguage,
         }
       );
-      upsertQueryState({
+      const didAddDescriptionLocale = upsertQueryState({
         conversationSlugId: data.conversationSlugId,
         query,
         expectedSnapshotId:
@@ -437,7 +490,10 @@ export function createLiveAnalysisCatchUpController({
             : data.conversationViewSnapshotId,
         expectedDescriptionLocales,
       });
-      scheduleOrRunQueryCatchUp({ query });
+      scheduleOrRunQueryCatchUp({
+        query,
+        force: data.changeKind === "descriptions" && didAddDescriptionLocale,
+      });
     }
   }
 

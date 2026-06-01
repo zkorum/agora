@@ -191,6 +191,7 @@ def _enqueue_conversations_for_math_work(
             enqueued_count,
         )
 
+
 def _format_ids(conversation_ids: Sequence[int]) -> str:
     limit = 20
     head = list(conversation_ids[:limit])
@@ -252,6 +253,45 @@ def _format_claim(claim: ClaimedWorkItem) -> str:
 
 def _format_claims(claims: list[ClaimedWorkItem]) -> str:
     return ", ".join(_format_claim(claim) for claim in claims)
+
+
+def _release_unpersisted_claims_after_db_error(
+    *,
+    primary_engine: Engine,
+    vk: valkey_lib.Valkey,
+    claims: list[ClaimedWorkItem],
+    error_code: str,
+    error_message: str,
+    failure_message: str,
+    enqueue_released: bool = True,
+) -> list[int]:
+    if not claims:
+        return []
+
+    try:
+        retry_conversation_ids = release_retryable_work_items_batch(
+            primary_engine,
+            claims=claims,
+            error_code=error_code,
+            error_message=error_message,
+        )
+        if enqueue_released:
+            _enqueue_conversations_for_math_work(
+                vk,
+                conversation_ids=retry_conversation_ids,
+            )
+        return retry_conversation_ids
+    except SQLAlchemyError as release_error:
+        log_database_error(
+            logger=log,
+            message=(
+                f"{failure_message}; failed to release analysis work, "
+                "lease recovery will retry"
+            ),
+            error=release_error,
+            context={"claims": _format_claims(claims)},
+        )
+        return []
 
 
 def _ai_description_claim_kind(claim: ClaimedAiDescriptionLocaleWorkItem) -> str:
@@ -1241,10 +1281,24 @@ def _run_worker_once() -> None:
         batch_started_at = time.perf_counter()
         processable_queue_items = queued_items
 
-        completed_non_processable_ids = complete_non_processable_work_items_batch(
-            primary_engine,
-            conversation_ids=[item.conversation_id for item in processable_queue_items],
-        )
+        try:
+            completed_non_processable_ids = complete_non_processable_work_items_batch(
+                primary_engine,
+                conversation_ids=[item.conversation_id for item in processable_queue_items],
+            )
+        except SQLAlchemyError as error:
+            log_database_error(
+                logger=log,
+                message="[MathUpdater] Failed to complete non-processable analysis work",
+                error=error,
+                context={
+                    "conversation_ids": _format_ids(
+                        [item.conversation_id for item in processable_queue_items]
+                    ),
+                },
+            )
+            requeue_conversations(vk, conversations=processable_queue_items)
+            continue
         if completed_non_processable_ids:
             log.info(
                 "[MathUpdater] Completed %d non-processable conversation(s) ids=%s",
@@ -1309,7 +1363,8 @@ def _run_worker_once() -> None:
                 log.exception("[MathUpdater] Failed primary claimable diagnostic after zero claim")
             log.info(
                 "[MathUpdater] No math work processable for queued conversation(s) "
-                "ids=%s primaryClaimableCount=%d primaryClaimableIds=%s",
+                "ids=%s primaryClaimableCount=%d primaryClaimableIds=%s "
+                "reason_hint=queued_ids_likely_still_leased_or_already_completed",
                 _format_ids([item.conversation_id for item in processable_items]),
                 len(primary_claimable_ids),
                 _format_ids(primary_claimable_ids),
@@ -1432,10 +1487,31 @@ def _run_worker_once() -> None:
             },
             rows_by_conversation_id=rows_by_conversation_id,
         )
-        stored_snapshots = upsert_input_snapshots_batch(
-            primary_engine,
-            snapshots=list(snapshots_by_conversation_id.values()),
-        )
+        try:
+            stored_snapshots = upsert_input_snapshots_batch(
+                primary_engine,
+                snapshots=list(snapshots_by_conversation_id.values()),
+            )
+        except SQLAlchemyError as error:
+            log_database_error(
+                logger=log,
+                message="[MathUpdater] Failed to persist analysis input snapshots",
+                error=error,
+                context={"claims": _format_claims(active_analysis_claims)},
+            )
+            set_active_analysis_claims([])
+            _release_unpersisted_claims_after_db_error(
+                primary_engine=primary_engine,
+                vk=vk,
+                claims=active_analysis_claims,
+                error_code="analysis_input_snapshot_persist_failed",
+                error_message="analysis input snapshot persistence failed; see worker logs",
+                failure_message=(
+                    "[MathUpdater] Failed to release analysis work after input "
+                    "snapshot persist failure"
+                ),
+            )
+            continue
         log.info(
             "[MathUpdater] Prepared %d input snapshot(s) input_prep_ms=%.1f: %s",
             len(stored_snapshots),
@@ -1488,11 +1564,17 @@ def _run_worker_once() -> None:
                         isolated_empty_failed_claims.append(claim)
                 if isolated_empty_failed_claims:
                     empty_newer_generation_ids.extend(
-                        release_retryable_work_items_batch(
-                            primary_engine,
+                        _release_unpersisted_claims_after_db_error(
+                            primary_engine=primary_engine,
+                            vk=vk,
                             claims=isolated_empty_failed_claims,
                             error_code="analysis_persist_failed",
                             error_message="analysis persistence failed; see worker logs",
+                            failure_message=(
+                                "[MathUpdater] Failed to release empty-matrix analysis work "
+                                "after persist failure"
+                            ),
+                            enqueue_released=False,
                         )
                     )
             _enqueue_conversations_for_math_work(
@@ -1524,10 +1606,33 @@ def _run_worker_once() -> None:
             if len(snapshots_by_conversation_id[claim.conversation_id].votes) > 0
         ]
         if non_empty_claims:
-            config_by_spec_id = fetch_opinion_group_configs(
-                primary_engine,
-                opinion_group_spec_ids=[claim.opinion_group_spec_id for claim in non_empty_claims],
-            )
+            try:
+                config_by_spec_id = fetch_opinion_group_configs(
+                    primary_engine,
+                    opinion_group_spec_ids=[
+                        claim.opinion_group_spec_id for claim in non_empty_claims
+                    ],
+                )
+            except SQLAlchemyError as error:
+                log_database_error(
+                    logger=log,
+                    message="[MathUpdater] Failed to fetch opinion-group config",
+                    error=error,
+                    context={"claims": _format_claims(non_empty_claims)},
+                )
+                set_active_analysis_claims([])
+                _release_unpersisted_claims_after_db_error(
+                    primary_engine=primary_engine,
+                    vk=vk,
+                    claims=non_empty_claims,
+                    error_code="analysis_config_fetch_failed",
+                    error_message="analysis config fetch failed; see worker logs",
+                    failure_message=(
+                        "[MathUpdater] Failed to release analysis work after config "
+                        "fetch failure"
+                    ),
+                )
+                continue
 
             bundles_by_conversation_id: dict[int, ComputedAnalysisBundle] = {}
             failed_claims: list[ClaimedWorkItem] = []
@@ -1811,15 +1916,29 @@ def _run_worker_once() -> None:
                                 isolated_failed_claims.append(claim)
 
                         if lineage_invariant_failed_claims:
-                            lineage_newer_generation_ids = mark_non_retryable_work_items_batch(
-                                primary_engine,
-                                claims=lineage_invariant_failed_claims,
-                                analysis_engine_epoch=settings.analysis_engine_epoch,
-                                error_code="lineage_assignment_invariant_error",
-                                error_message=(
-                                    "lineage assignment invariant failed; see worker logs"
-                                ),
-                            )
+                            try:
+                                lineage_newer_generation_ids = mark_non_retryable_work_items_batch(
+                                    primary_engine,
+                                    claims=lineage_invariant_failed_claims,
+                                    analysis_engine_epoch=settings.analysis_engine_epoch,
+                                    error_code="lineage_assignment_invariant_error",
+                                    error_message=(
+                                        "lineage assignment invariant failed; see worker logs"
+                                    ),
+                                )
+                            except SQLAlchemyError as mark_error:
+                                log_database_error(
+                                    logger=log,
+                                    message=(
+                                        "[MathUpdater] Failed to mark lineage-invariant "
+                                        "analysis work non-retryable; lease recovery will retry"
+                                    ),
+                                    error=mark_error,
+                                    context={
+                                        "claims": _format_claims(lineage_invariant_failed_claims)
+                                    },
+                                )
+                                lineage_newer_generation_ids = []
                             _enqueue_conversations_for_math_work(
                                 vk,
                                 conversation_ids=lineage_newer_generation_ids,
@@ -1836,11 +1955,19 @@ def _run_worker_once() -> None:
                             )
 
                         if isolated_failed_claims:
-                            persist_retry_conversation_ids = release_retryable_work_items_batch(
-                                primary_engine,
-                                claims=isolated_failed_claims,
-                                error_code="analysis_persist_failed",
-                                error_message="analysis persistence failed; see worker logs",
+                            persist_retry_conversation_ids = (
+                                _release_unpersisted_claims_after_db_error(
+                                    primary_engine=primary_engine,
+                                    vk=vk,
+                                    claims=isolated_failed_claims,
+                                    error_code="analysis_persist_failed",
+                                    error_message="analysis persistence failed; see worker logs",
+                                    failure_message=(
+                                        "[MathUpdater] Failed to release analysis work after "
+                                        "retryable math persistence failure"
+                                    ),
+                                    enqueue_released=False,
+                                )
                             )
                             _enqueue_conversations_for_math_work(
                                 vk,
@@ -1857,11 +1984,17 @@ def _run_worker_once() -> None:
                             )
 
             if failed_claims:
-                compute_retry_conversation_ids = release_retryable_work_items_batch(
-                    primary_engine,
+                compute_retry_conversation_ids = _release_unpersisted_claims_after_db_error(
+                    primary_engine=primary_engine,
+                    vk=vk,
                     claims=failed_claims,
                     error_code="red_dwarf_compute_failed",
                     error_message="red-dwarf compute failed; see worker logs",
+                    failure_message=(
+                        "[MathUpdater] Failed to release analysis work after retryable "
+                        "math failure"
+                    ),
+                    enqueue_released=False,
                 )
                 _enqueue_conversations_for_math_work(
                     vk,
@@ -1878,13 +2011,25 @@ def _run_worker_once() -> None:
                 )
 
             if non_retryable_failed_claims:
-                contract_newer_generation_ids = mark_non_retryable_work_items_batch(
-                    primary_engine,
-                    claims=non_retryable_failed_claims,
-                    analysis_engine_epoch=settings.analysis_engine_epoch,
-                    error_code="red_dwarf_contract_error",
-                    error_message="red-dwarf success payload violated math-updater contract",
-                )
+                try:
+                    contract_newer_generation_ids = mark_non_retryable_work_items_batch(
+                        primary_engine,
+                        claims=non_retryable_failed_claims,
+                        analysis_engine_epoch=settings.analysis_engine_epoch,
+                        error_code="red_dwarf_contract_error",
+                        error_message="red-dwarf success payload violated math-updater contract",
+                    )
+                except SQLAlchemyError as mark_error:
+                    log_database_error(
+                        logger=log,
+                        message=(
+                            "[MathUpdater] Failed to mark contract-failed analysis work "
+                            "non-retryable; lease recovery will retry"
+                        ),
+                        error=mark_error,
+                        context={"claims": _format_claims(non_retryable_failed_claims)},
+                    )
+                    contract_newer_generation_ids = []
                 _enqueue_conversations_for_math_work(
                     vk,
                     conversation_ids=contract_newer_generation_ids,

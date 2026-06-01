@@ -176,7 +176,7 @@ type BackendCommentApi = ReturnType<typeof useBackendCommentApi>;
 type AnalysisQueryKey = readonly unknown[];
 
 const LABEL_CATCH_UP_MAX_ATTEMPTS = 5;
-const TRANSLATED_LABEL_FALLBACK_GRACE_MS = 750;
+const TRANSLATED_LABEL_FALLBACK_GRACE_MS = 1000;
 const labelCatchUpStateByKey = new Map<
   string,
   { attemptCount: number; timeout: ReturnType<typeof setTimeout> | undefined }
@@ -190,6 +190,7 @@ type CompleteAnalysisData = AnalysisData & {
     >;
   };
   groups: AnalysisFrameGroups;
+  groupLabels: AnalysisFrameGroupLabels;
   agreements: AnalysisFrameOpinionList;
   disagreements: AnalysisFrameOpinionList;
   divisive: AnalysisFrameOpinionList;
@@ -224,6 +225,7 @@ function hasCompleteAnalysisFrame(
     analysis?.manifest?.frameKey !== undefined &&
     analysis.manifest.conversationViewSnapshot !== undefined &&
     analysis.groups !== undefined &&
+    analysis.groupLabels !== undefined &&
     analysis.agreements !== undefined &&
     analysis.disagreements !== undefined &&
     analysis.divisive !== undefined
@@ -440,7 +442,7 @@ async function fetchFrameGroupLabelsWithTranslationGrace({
             freshness,
             displayLanguage,
           }),
-        }),
+      }),
       staleTime: 0,
     });
   } catch {
@@ -515,16 +517,14 @@ async function runFrameLabelCatchUpAttempt({
     return;
   }
 
-  scheduleFrameLabelCatchUp({
-    queryClient,
-    fetchAnalysisFrameGroupLabels,
-    conversationSlugId,
-    frameKey,
-    aiLabelingEnabled,
-    displayLanguage,
-    groupLabels: refreshedGroupLabels,
-    analysisQueryKey,
+  // A frame-section request cannot discover that live analysis moved to a
+  // newer frame. Refresh the active analysis query before retrying this frame.
+  await queryClient.invalidateQueries({
+    queryKey: analysisQueryKey,
+    exact: true,
+    refetchType: "active",
   });
+  labelCatchUpStateByKey.delete(catchUpKey);
 }
 
 function scheduleFrameLabelCatchUp(params: FrameLabelCatchUpParams): void {
@@ -580,6 +580,33 @@ function scheduleFrameLabelCatchUp(params: FrameLabelCatchUpParams): void {
     currentState.timeout = undefined;
     currentState.attemptCount += 1;
     labelCatchUpStateByKey.set(catchUpKey, currentState);
+
+    const query = params.queryClient.getQueryCache().find({
+      queryKey: params.analysisQueryKey,
+    });
+    if (query === undefined || !query.isActive()) {
+      labelCatchUpStateByKey.delete(catchUpKey);
+      return;
+    }
+
+    const currentAnalysis = params.queryClient.getQueryData<AnalysisData>(
+      params.analysisQueryKey
+    );
+    if (
+      hasCompleteAnalysisFrame(currentAnalysis) &&
+      !isSameFrameKey({
+        left: currentAnalysis.manifest.frameKey,
+        right: params.frameKey,
+      })
+    ) {
+      labelCatchUpStateByKey.delete(catchUpKey);
+      scheduleFrameLabelCatchUp({
+        ...params,
+        frameKey: currentAnalysis.manifest.frameKey,
+        groupLabels: currentAnalysis.groupLabels,
+      });
+      return;
+    }
 
     void runFrameLabelCatchUpAttempt({
       ...params,

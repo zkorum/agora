@@ -1161,6 +1161,7 @@ def _queue_conversation_analysis_updated_events_for_view_snapshots(
     *,
     conversation_view_snapshot_ids: list[int],
     locales_by_view_snapshot_id: Mapping[int, set[str]] | None = None,
+    candidate_ids_by_view_snapshot_id: Mapping[int, set[int]] | None = None,
 ) -> None:
     if not conversation_view_snapshot_ids:
         return
@@ -1216,6 +1217,11 @@ def _queue_conversation_analysis_updated_events_for_view_snapshots(
             if locales_by_view_snapshot_id is not None
             else []
         )
+        candidate_ids = (
+            sorted(candidate_ids_by_view_snapshot_id.get(row.id, set()))
+            if candidate_ids_by_view_snapshot_id is not None
+            else []
+        )
         values.append(
             {
                 "event_type": "conversation_analysis_updated",
@@ -1239,7 +1245,14 @@ def _queue_conversation_analysis_updated_events_for_view_snapshots(
                     "moderatedOpinionCount": row.moderated_opinion_count,
                     "hiddenOpinionCount": row.hidden_opinion_count,
                     "isClosed": row.is_closed,
-                    **({"locales": locales} if locales else {}),
+                    **(
+                        {
+                            "locales": locales,
+                            "candidateIds": candidate_ids,
+                        }
+                        if locales
+                        else {}
+                    ),
                     "timestamp": timestamp,
                 },
             }
@@ -1344,12 +1357,14 @@ def _add_lineage_description_content_update_view_snapshot_locales(
     conversation_ids: list[int],
     lineage_ids: list[int],
     view_snapshot_locales: dict[int, set[str]],
+    view_snapshot_candidate_ids: dict[int, set[int]],
 ) -> None:
     if not conversation_ids or not lineage_ids:
         return
 
     rows = session.execute(
         select(ConversationViewSnapshot.id)
+        .add_columns(OpinionGroupCandidate.id.label("candidate_id"))
         .join(
             AnalysisSnapshotResult,
             and_(
@@ -1389,6 +1404,7 @@ def _add_lineage_description_content_update_view_snapshot_locales(
     ).all()
     for row in rows:
         view_snapshot_locales.setdefault(row.id, set()).add("en")
+        view_snapshot_candidate_ids.setdefault(row.id, set()).add(row.candidate_id)
 
 
 def _add_translation_content_update_view_snapshot_locales(
@@ -1398,12 +1414,14 @@ def _add_translation_content_update_view_snapshot_locales(
     description_ids: list[int],
     locale: str,
     view_snapshot_locales: dict[int, set[str]],
+    view_snapshot_candidate_ids: dict[int, set[int]],
 ) -> None:
     if not conversation_ids or not description_ids:
         return
 
     rows = session.execute(
         select(ConversationViewSnapshot.id)
+        .add_columns(OpinionGroupCandidate.id.label("candidate_id"))
         .join(
             AnalysisSnapshotResult,
             and_(
@@ -1452,6 +1470,7 @@ def _add_translation_content_update_view_snapshot_locales(
     ).all()
     for row in rows:
         view_snapshot_locales.setdefault(row.id, set()).add(locale)
+        view_snapshot_candidate_ids.setdefault(row.id, set()).add(row.candidate_id)
 
 
 def queue_ai_description_content_updated_events(
@@ -1468,12 +1487,14 @@ def queue_ai_description_content_updated_events(
 
     with Session(engine) as session:
         view_snapshot_locales: dict[int, set[str]] = {}
+        view_snapshot_candidate_ids: dict[int, set[int]] = {}
         for conversation_id, lineage_ids in lineage_ids_by_conversation_id.items():
             _add_lineage_description_content_update_view_snapshot_locales(
                 session,
                 conversation_ids=[conversation_id],
                 lineage_ids=sorted(set(lineage_ids)),
                 view_snapshot_locales=view_snapshot_locales,
+                view_snapshot_candidate_ids=view_snapshot_candidate_ids,
             )
         for (
             conversation_id,
@@ -1485,12 +1506,14 @@ def queue_ai_description_content_updated_events(
                 description_ids=sorted(set(description_ids)),
                 locale=locale,
                 view_snapshot_locales=view_snapshot_locales,
+                view_snapshot_candidate_ids=view_snapshot_candidate_ids,
             )
 
         _queue_conversation_analysis_updated_events_for_view_snapshots(
             session,
             conversation_view_snapshot_ids=sorted(view_snapshot_locales),
             locales_by_view_snapshot_id=view_snapshot_locales,
+            candidate_ids_by_view_snapshot_id=view_snapshot_candidate_ids,
         )
         session.commit()
 
@@ -1872,7 +1895,6 @@ def _materialize_lineage_description_work_for_candidate_locale_requests(
         session,
         conversation_ids=conversation_ids,
         conversation_view_snapshot_ids=conversation_view_snapshot_ids,
-        limit=limit,
         require_activated_view_snapshot=require_activated_view_snapshot,
         require_processable_conversation=require_processable_conversation,
         include_checkpoints=include_checkpoints,
@@ -1888,6 +1910,8 @@ def _materialize_lineage_description_work_for_candidate_locale_requests(
         requests=requests,
         lineage_rows_by_request_id=lineage_rows_by_request_id,
     )
+    if limit is not None:
+        demands = demands[:limit]
     _insert_or_reactivate_lineage_description_work(session, demands=demands)
     return sorted({demand.conversation_id for demand in demands})
 
@@ -2130,7 +2154,6 @@ def _materialize_translation_work_for_candidate_locale_requests(
         conversation_ids=conversation_ids,
         conversation_view_snapshot_ids=conversation_view_snapshot_ids,
         non_english_only=True,
-        limit=limit,
         require_activated_view_snapshot=require_activated_view_snapshot,
         require_processable_conversation=require_processable_conversation,
         include_checkpoints=include_checkpoints,
@@ -2163,6 +2186,8 @@ def _materialize_translation_work_for_candidate_locale_requests(
         description_ids_by_request_id=description_ids_by_request_id,
         translated_description_ids_by_request_id=translated_description_ids_by_request_id,
     )
+    if limit is not None:
+        demands = demands[:limit]
     _insert_or_reactivate_translation_work(session, demands=demands)
     return sorted({demand.conversation_id for demand in demands})
 

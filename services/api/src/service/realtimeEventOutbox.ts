@@ -25,8 +25,8 @@ import {
     opinionGroupVariantTable,
     realtimeEventOutboxTable,
 } from "@/shared-backend/schema.js";
-import { ZodSupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import type { SSEEventDataByType } from "@/shared/types/dto.js";
+import { zodSSEConversationAnalysisUpdatedData } from "@/shared/types/sse.js";
 import {
     zodEventSlug,
     zodParticipationMode,
@@ -37,27 +37,6 @@ import type { RealtimeSSEManager } from "./realtimeSSE.js";
 const REALTIME_EVENT_OUTBOX_CHANNEL = "realtime_event_outbox";
 const RECENT_EVENT_CATCHUP_MS = 5 * 60 * 1000;
 const RECENT_EVENT_CATCHUP_INTERVAL_MS = 30 * 1000;
-const zodConversationAnalysisUpdatedData = z.object({
-    conversationSlugId: z.string().min(1),
-    conversationViewSnapshotId: z.number().int().positive(),
-    analysisSnapshotId: z.number().int().positive(),
-    changeKind: z
-        .enum(["snapshot", "descriptions", "latest_state"])
-        .default("snapshot"),
-    checkpointChanged: z.boolean().default(false),
-    displayableGroupCounts: z.array(z.number().int().min(2).max(6)),
-    opinionCount: z.number().int().nonnegative().optional(),
-    voteCount: z.number().int().nonnegative().optional(),
-    participantCount: z.number().int().nonnegative().optional(),
-    totalOpinionCount: z.number().int().nonnegative().optional(),
-    totalVoteCount: z.number().int().nonnegative().optional(),
-    totalParticipantCount: z.number().int().nonnegative().optional(),
-    moderatedOpinionCount: z.number().int().nonnegative().optional(),
-    hiddenOpinionCount: z.number().int().nonnegative().optional(),
-    isClosed: z.boolean().optional(),
-    locales: z.array(ZodSupportedDisplayLanguageCodes).optional(),
-    timestamp: z.number().int().nonnegative(),
-});
 
 const zodConversationCommentStatsUpdatedData = z.object({
     conversationSlugId: z.string().min(1),
@@ -643,16 +622,15 @@ function parseRealtimeEventOutboxRow({
 }): ConversationReplayEvent | undefined {
     switch (eventType) {
         case "conversation_analysis_updated": {
-            const result =
-                zodConversationAnalysisUpdatedData.safeParse(payload);
-            if (!result.success) {
+            try {
+                return {
+                    id,
+                    event: eventType,
+                    data: zodSSEConversationAnalysisUpdatedData.parse(payload),
+                };
+            } catch {
                 return undefined;
             }
-            return {
-                id,
-                event: eventType,
-                data: result.data,
-            };
         }
         case "conversation_comment_stats_updated": {
             const result =

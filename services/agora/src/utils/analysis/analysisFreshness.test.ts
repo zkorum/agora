@@ -132,6 +132,7 @@ describe("analysis freshness", () => {
           checkpointChanged: false,
           displayableGroupCounts: [2],
           locales: ["en", "fr", "es"],
+          candidateIds: [1],
           timestamp: 1,
         },
       })

@@ -18,7 +18,11 @@ from agora_worker_shared.config import (
 )
 from agora_worker_shared.description_retry_processor import process_ai_description_conversation_ids
 from agora_worker_shared.description_services import build_description_translator
-from agora_worker_shared.logging_utils import LOG_FORMAT, configure_worker_logging
+from agora_worker_shared.logging_utils import (
+    LOG_FORMAT,
+    configure_worker_logging,
+    log_database_error,
+)
 from agora_worker_shared.postgres_engine import create_ready_postgres_engine
 from agora_worker_shared.schema_readiness import (
     StartupSchemaRetryState,
@@ -29,6 +33,7 @@ from agora_worker_shared.simulation_providers import (
     build_simulation_runtime,
     log_simulation_startup,
 )
+from sqlalchemy.exc import SQLAlchemyError
 
 if TYPE_CHECKING:
     from agora_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
@@ -170,6 +175,7 @@ def main() -> None:
                 primary_engine,
                 limit=settings.db_claim_batch_size,
                 require_activated_view_snapshot=True,
+                include_checkpoints=True,
             )
             if materialized_ids:
                 log.info(
@@ -230,22 +236,35 @@ def main() -> None:
         )
 
         batch_started_at = time.perf_counter()
-        processed_count = process_ai_description_conversation_ids(
-            primary_engine=primary_engine,
-            worker_id=worker_id,
-            conversation_ids=claimable_ids,
-            lease_ttl_seconds=settings.lease_ttl_seconds,
-            heartbeat_interval_seconds=settings.heartbeat_interval_seconds,
-            claim_limit=settings.db_claim_batch_size,
-            max_workers=settings.max_ai_description_concurrency,
-            ai_description_epoch=settings.ai_description_epoch,
-            description_generator=_unused_description_generator,
-            description_translator=translator_bundle.translate,
-            claim_lineage_descriptions=False,
-            claim_translations=True,
-            simulation_runtime=simulation_runtime,
-            log_prefix=LOG_PREFIX,
-        )
+        try:
+            processed_count = process_ai_description_conversation_ids(
+                primary_engine=primary_engine,
+                worker_id=worker_id,
+                conversation_ids=claimable_ids,
+                lease_ttl_seconds=settings.lease_ttl_seconds,
+                heartbeat_interval_seconds=settings.heartbeat_interval_seconds,
+                claim_limit=settings.db_claim_batch_size,
+                max_workers=settings.max_ai_description_concurrency,
+                ai_description_epoch=settings.ai_description_epoch,
+                description_generator=_unused_description_generator,
+                description_translator=translator_bundle.translate,
+                claim_lineage_descriptions=False,
+                claim_translations=True,
+                simulation_runtime=simulation_runtime,
+                log_prefix=LOG_PREFIX,
+            )
+        except SQLAlchemyError as error:
+            log_database_error(
+                logger=log,
+                message=f"{LOG_PREFIX} Translation processing failed; retrying later",
+                error=error,
+                context={
+                    "conversation_count": len(claimable_ids),
+                    "ids": ",".join(str(conversation_id) for conversation_id in claimable_ids),
+                },
+            )
+            _sleep_before_retry(settings.worker_poll_idle_sleep_seconds)
+            continue
         if processed_count:
             log.info(
                 "%s Processed %d translation work item(s) batch_ms=%.1f",

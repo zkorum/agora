@@ -74,12 +74,11 @@ export type SSEPopularConversationData = z.infer<
 /**
  * Data sent when a conversation has a newer analysis snapshot available.
  */
-export const zodSSEConversationAnalysisUpdatedData = z
+const zodSSEConversationAnalysisUpdatedBaseData = z
     .object({
         conversationSlugId: zodSlugId,
         conversationViewSnapshotId: z.number().int().positive(),
         analysisSnapshotId: z.number().int().positive(),
-        changeKind: z.enum(["snapshot", "descriptions", "latest_state"]),
         checkpointChanged: z.boolean(),
         displayableGroupCounts: z.array(z.number().int().min(2).max(6)),
         opinionCount: z.number().int().nonnegative().optional(),
@@ -91,10 +90,26 @@ export const zodSSEConversationAnalysisUpdatedData = z
         moderatedOpinionCount: z.number().int().nonnegative().optional(),
         hiddenOpinionCount: z.number().int().nonnegative().optional(),
         isClosed: z.boolean().optional(),
-        locales: z.array(ZodSupportedDisplayLanguageCodes).optional(),
         timestamp: z.number(),
     })
     .strict();
+
+export const zodSSEConversationAnalysisUpdatedData = z.discriminatedUnion(
+    "changeKind",
+    [
+        zodSSEConversationAnalysisUpdatedBaseData.extend({
+            changeKind: z.literal("snapshot"),
+        }),
+        zodSSEConversationAnalysisUpdatedBaseData.extend({
+            changeKind: z.literal("latest_state"),
+        }),
+        zodSSEConversationAnalysisUpdatedBaseData.extend({
+            changeKind: z.literal("descriptions"),
+            locales: z.array(ZodSupportedDisplayLanguageCodes).min(1),
+            candidateIds: z.array(z.number().int().positive()).min(1),
+        }),
+    ],
+);
 export type SSEConversationAnalysisUpdatedData = z.infer<
     typeof zodSSEConversationAnalysisUpdatedData
 >;

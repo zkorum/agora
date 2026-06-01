@@ -26,6 +26,7 @@ from agora_worker_shared.ai_description_work import (
     finalize_first_pass_ai_description_work_batch,
     lineage_description_work_demands_for_candidate_requests,
     materialize_requested_description_translation_work,
+    materialize_requested_lineage_description_work,
     process_ai_description_locale_work_item,
     process_description_translation_work_items_batch,
     queue_ai_description_content_updated_events,
@@ -633,6 +634,7 @@ def test_content_update_events_coalesce_locales_per_snapshot() -> None:
     assert len(events) == 1
     assert events[0].payload["conversationViewSnapshotId"] == 20
     assert events[0].payload["locales"] == ["es", "fr"]
+    assert events[0].payload["candidateIds"] == [401]
 
 
 def test_process_translation_work_items_batch_rejects_output_mismatch() -> None:
@@ -1329,6 +1331,159 @@ def test_materialize_requested_translation_work_creates_missing_translation_work
     assert translation_work.lease_token is None
 
 
+def test_materialize_requested_translation_work_includes_checkpoints_when_enabled() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
+        view_snapshot.activated_at = NOW
+        request = session.execute(
+            select(OpinionGroupCandidateDescriptionLocaleRequest)
+        ).scalar_one()
+        request.updated_at = NOW
+        session.add(
+            OpinionGroupDescriptionTranslation(
+                id=601,
+                description_id=501,
+                locale="fr",
+                label="Groupe",
+                summary="Résumé",
+                created_at=NOW,
+            )
+        )
+        session.add(
+            OpinionGroupCandidateDescriptionLocaleRequest(
+                id=102,
+                candidate_id=401,
+                locale="es",
+                created_at=NOW + timedelta(seconds=1),
+                updated_at=NOW + timedelta(seconds=1),
+            )
+        )
+        session.add(
+            ConversationViewSnapshotCheckpointReason(
+                conversation_view_snapshot_id=20,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                reason=ConversationViewSnapshotCheckpointReasonEnum.first_displayable_analysis,
+                group_count=None,
+                participant_milestone=None,
+                vote_milestone=None,
+                created_at=NOW,
+            )
+        )
+        session.add(
+            ConversationViewSnapshot(
+                id=21,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                analysis_snapshot_id=31,
+                survey_aggregate_snapshot_id=None,
+                conversation_content_id=40,
+                view_reason=ConversationViewSnapshotReasonEnum.analysis_completed,
+                is_closed=False,
+                opinion_count=2,
+                vote_count=2,
+                participant_count=2,
+                total_opinion_count=2,
+                total_vote_count=2,
+                total_participant_count=2,
+                moderated_opinion_count=0,
+                hidden_opinion_count=0,
+                activated_at=NOW + timedelta(seconds=1),
+                created_at=NOW + timedelta(seconds=1),
+            )
+        )
+        session.commit()
+
+    default_materialized_ids = materialize_requested_description_translation_work(
+        engine,
+        limit=1,
+        require_activated_view_snapshot=True,
+    )
+    checkpoint_materialized_ids = materialize_requested_description_translation_work(
+        engine,
+        limit=1,
+        require_activated_view_snapshot=True,
+        include_checkpoints=True,
+    )
+
+    assert default_materialized_ids == []
+    assert checkpoint_materialized_ids == [10]
+    with Session(engine) as session:
+        translation_work = session.execute(
+            select(OpinionGroupDescriptionTranslationWork).where(
+                OpinionGroupDescriptionTranslationWork.locale == "es"
+            )
+        ).scalar_one()
+
+    assert translation_work.description_id == 501
+
+
+def test_materialize_requested_lineage_work_includes_checkpoints_when_enabled() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
+        view_snapshot.activated_at = NOW
+        lineage = session.execute(select(OpinionGroupLineage)).scalar_one()
+        lineage.system_description_id = None
+        session.add(
+            ConversationViewSnapshotCheckpointReason(
+                conversation_view_snapshot_id=20,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                reason=ConversationViewSnapshotCheckpointReasonEnum.first_displayable_analysis,
+                group_count=None,
+                participant_milestone=None,
+                vote_milestone=None,
+                created_at=NOW,
+            )
+        )
+        session.add(
+            ConversationViewSnapshot(
+                id=21,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                analysis_snapshot_id=31,
+                survey_aggregate_snapshot_id=None,
+                conversation_content_id=40,
+                view_reason=ConversationViewSnapshotReasonEnum.analysis_completed,
+                is_closed=False,
+                opinion_count=2,
+                vote_count=2,
+                participant_count=2,
+                total_opinion_count=2,
+                total_vote_count=2,
+                total_participant_count=2,
+                moderated_opinion_count=0,
+                hidden_opinion_count=0,
+                activated_at=NOW + timedelta(seconds=1),
+                created_at=NOW + timedelta(seconds=1),
+            )
+        )
+        session.commit()
+
+    default_materialized_ids = materialize_requested_lineage_description_work(
+        engine,
+        limit=10,
+        require_activated_view_snapshot=True,
+    )
+    checkpoint_materialized_ids = materialize_requested_lineage_description_work(
+        engine,
+        limit=10,
+        require_activated_view_snapshot=True,
+        include_checkpoints=True,
+    )
+
+    assert default_materialized_ids == []
+    assert checkpoint_materialized_ids == [10]
+
+
 def test_materialize_requested_translation_work_skips_ready_translation() -> None:
     engine = _create_engine()
     with Session(engine) as session:
@@ -1772,6 +1927,95 @@ def test_expired_unpersisted_analysis_work_is_claimable_immediately() -> None:
     assert claims[0].data_generation == 1
     assert claims[0].attempt_count == 2
     assert claimable_after_claim_ids == []
+
+
+def test_expired_first_pass_analysis_work_claimable_after_snapshot_checkpoint() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
+        view_snapshot.activated_at = NOW
+        session.add(
+            ConversationViewSnapshotCheckpointReason(
+                conversation_view_snapshot_id=20,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                reason=ConversationViewSnapshotCheckpointReasonEnum.first_displayable_analysis,
+                group_count=None,
+                participant_milestone=None,
+                vote_milestone=None,
+                created_at=NOW,
+            )
+        )
+        session.add(
+            ConversationViewSnapshot(
+                id=21,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                analysis_snapshot_id=31,
+                survey_aggregate_snapshot_id=None,
+                conversation_content_id=40,
+                view_reason=ConversationViewSnapshotReasonEnum.analysis_completed,
+                is_closed=False,
+                opinion_count=2,
+                vote_count=2,
+                participant_count=2,
+                total_opinion_count=2,
+                total_vote_count=2,
+                total_participant_count=2,
+                moderated_opinion_count=0,
+                hidden_opinion_count=0,
+                activated_at=NOW + timedelta(seconds=1),
+                created_at=NOW + timedelta(seconds=1),
+            )
+        )
+        session.add(
+            AnalysisWorkState(
+                id=901,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                last_completed_data_generation=0,
+                running_data_generation=1,
+                persisted_analysis_snapshot_id=None,
+                dirty_since=None,
+                attempt_generation=1,
+                attempt_count=1,
+                non_retryable_generation=None,
+                non_retryable_analysis_engine_epoch=None,
+                lease_owner="math-updater",
+                lease_token="analysis-token",
+                lease_expires_at=datetime.now(UTC) - timedelta(seconds=1),
+                last_error_kind=None,
+                last_error_code=None,
+                last_error_message=None,
+                last_error_stack_hash=None,
+                created_at=NOW,
+                updated_at=NOW,
+            )
+        )
+        session.commit()
+
+    claimable_ids = fetch_claimable_work_conversation_ids(
+        engine,
+        limit=10,
+        analysis_engine_epoch=1,
+    )
+    claims = claim_work_items_batch(
+        engine,
+        worker_id="math-updater-2",
+        conversation_ids=[10],
+        lease_ttl_seconds=60,
+        limit=10,
+        analysis_engine_epoch=1,
+    )
+
+    assert claimable_ids == [10]
+    assert len(claims) == 1
+    assert claims[0].conversation_id == 10
+    assert claims[0].data_generation == 1
+    assert claims[0].attempt_count == 2
 
 
 def test_active_analysis_lease_blocks_duplicate_claim() -> None:
