@@ -35,6 +35,7 @@ export {
   buildAnalysisDataFromFrame,
   buildEmptyAnalysisDataFromManifest,
   hasManifestFrame,
+  mergeLiveAnalysisSnapshotMetadata,
 } from "./analysisData";
 
 export type CommentTabFilters =

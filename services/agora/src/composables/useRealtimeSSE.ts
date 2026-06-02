@@ -1059,7 +1059,6 @@ export function useRealtimeSSE({
             hiddenOpinionCount:
               data.hiddenOpinionCount ??
               conversation.metadata.hiddenOpinionCount,
-            isClosed: data.isClosed ?? conversation.metadata.isClosed,
           },
         };
       },

@@ -54,7 +54,7 @@
           "
         >
           <TransitionGroup
-            name="analysis-statement"
+            :name="statementTransitionName"
             tag="div"
             class="analysis-statement-list"
           >
@@ -81,7 +81,7 @@
           </div>
 
           <TransitionGroup
-            name="analysis-statement"
+            :name="statementTransitionName"
             tag="div"
             class="analysis-statement-list"
           >
@@ -145,7 +145,7 @@ import type {
 } from "src/shared/types/zod";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import { useAnalysisDisplayList } from "src/utils/component/analysis/statisticalRelevance";
-import { computed, ref, toRef } from "vue";
+import { computed, nextTick, onActivated, onDeactivated, ref, toRef } from "vue";
 
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
@@ -197,6 +197,10 @@ const isSmallScreen = useMediaQuery("(max-width: 599px)");
 const keyword = computed(() => t("divisiveKeyword"));
 const titleParts = computed(() => t("divisiveLongTitle").split("{keyword}"));
 const showDivisiveInfo = ref(false);
+const suppressStatementTransitions = ref(false);
+const statementTransitionName = computed(() =>
+  suppressStatementTransitions.value ? undefined : "analysis-statement"
+);
 const warningDescriptionParts = computed(() =>
   tWarning("description").split("{emphasis}")
 );
@@ -228,6 +232,15 @@ const {
 function switchTab() {
   currentTab.value = "Divisive";
 }
+
+onDeactivated(() => {
+  suppressStatementTransitions.value = true;
+});
+
+onActivated(async () => {
+  await nextTick();
+  suppressStatementTransitions.value = false;
+});
 </script>
 
 <style lang="scss" scoped>

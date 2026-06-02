@@ -59,7 +59,7 @@
           "
         >
           <TransitionGroup
-            name="analysis-statement"
+            :name="statementTransitionName"
             tag="div"
             class="analysis-statement-list"
           >
@@ -86,7 +86,7 @@
           </div>
 
           <TransitionGroup
-            name="analysis-statement"
+            :name="statementTransitionName"
             tag="div"
             class="analysis-statement-list"
           >
@@ -153,7 +153,7 @@ import type {
 } from "src/shared/types/zod";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import { useAnalysisDisplayList } from "src/utils/component/analysis/statisticalRelevance";
-import { computed, ref, toRef } from "vue";
+import { computed, nextTick, onActivated, onDeactivated, ref, toRef } from "vue";
 
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
@@ -207,6 +207,10 @@ const keywordColor = computed(() =>
   props.direction === "agree" ? "#6b4eff" : "#a05e03"
 );
 const showInfoDialog = ref(false);
+const suppressStatementTransitions = ref(false);
+const statementTransitionName = computed(() =>
+  suppressStatementTransitions.value ? undefined : "analysis-statement"
+);
 
 const shortTitle = computed(() =>
   props.direction === "agree" ? t("agreementsTitle") : t("disagreementsTitle")
@@ -257,6 +261,15 @@ function switchTab() {
   currentTab.value =
     props.direction === "agree" ? "Agreements" : "Disagreements";
 }
+
+onDeactivated(() => {
+  suppressStatementTransitions.value = true;
+});
+
+onActivated(async () => {
+  await nextTick();
+  suppressStatementTransitions.value = false;
+});
 </script>
 
 <style lang="scss" scoped>

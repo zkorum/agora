@@ -8,6 +8,7 @@ import type {
 } from "src/shared/types/dto";
 import type {
   AnalysisOpinionItem,
+  ConversationMetadata,
   PolisClusters,
   PolisKey,
 } from "src/shared/types/zod";
@@ -29,6 +30,10 @@ interface CompleteAnalysisFrameSections {
   divisive: AnalysisFrameOpinionList;
 }
 
+type ConversationViewSnapshot = NonNullable<
+  AnalysisFrameManifest["conversationViewSnapshot"]
+>;
+
 export interface AnalysisData {
   consensusAgree: AnalysisOpinionItem[];
   consensusDisagree: AnalysisOpinionItem[];
@@ -49,6 +54,35 @@ export interface AnalysisData {
   analysisViewState?: AnalysisFrameManifest["analysisViewResolution"];
   displayableGroupCounts?: number[];
   hasVotedOnAllAvailableOpinions?: boolean;
+}
+
+export function mergeLiveAnalysisSnapshotMetadata({
+  metadata,
+  snapshot,
+}: {
+  metadata: ConversationMetadata;
+  snapshot: ConversationViewSnapshot;
+}): ConversationMetadata {
+  const previousSnapshotId = metadata.conversationViewSnapshotId;
+  if (
+    previousSnapshotId !== undefined &&
+    snapshot.conversationViewSnapshotId < previousSnapshotId
+  ) {
+    return metadata;
+  }
+
+  return {
+    ...metadata,
+    conversationViewSnapshotId: snapshot.conversationViewSnapshotId,
+    opinionCount: snapshot.opinionCount,
+    voteCount: snapshot.voteCount,
+    participantCount: snapshot.participantCount,
+    totalOpinionCount: snapshot.totalOpinionCount,
+    totalVoteCount: snapshot.totalVoteCount,
+    totalParticipantCount: snapshot.totalParticipantCount,
+    moderatedOpinionCount: snapshot.moderatedOpinionCount,
+    hiddenOpinionCount: snapshot.hiddenOpinionCount,
+  };
 }
 
 function isAnalysisFrameKeyEqual({

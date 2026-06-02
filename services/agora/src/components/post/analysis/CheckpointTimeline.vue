@@ -23,6 +23,7 @@
         }"
         :aria-label="props.title"
         @wheel="handleTimelineWheel"
+        @scroll="saveTimelineScrollPosition"
         @pointerdown="handleTimelinePointerDown"
         @click.capture="handleTimelineClickCapture"
       >
@@ -94,11 +95,11 @@
                 })
             "
             type="button"
-            class="checkpoint-timeline__marker checkpoint-timeline__marker--live"
+            class="checkpoint-timeline__marker"
             :class="{
+              'checkpoint-timeline__marker--live': !props.isLiveClosed,
               'checkpoint-timeline__marker--selected': isLiveTimelineSelected,
               'checkpoint-timeline__marker--live-active': isLivePulseActive,
-              'checkpoint-timeline__marker--live-closed': props.isLiveClosed,
             }"
             @click="emit('selectLive')"
           >
@@ -134,6 +135,8 @@ import {
   type ComponentPublicInstance,
   computed,
   nextTick,
+  onActivated,
+  onDeactivated,
   onMounted,
   ref,
   watch,
@@ -176,6 +179,7 @@ const emit = defineEmits<{
 
 const $q = useQuasar();
 const timelineRef = ref<HTMLElement | null>(null);
+const savedTimelineScrollLeft = ref<number | undefined>();
 const markerElements = new Map<CheckpointMarkerKey, HTMLElement>();
 
 const {
@@ -459,6 +463,28 @@ function scrollSelectedCheckpointIntoView(): void {
   scrollTimelineMarkerIntoView({ timeline, marker: selectedMarker });
 }
 
+function saveTimelineScrollPosition(): void {
+  const timeline = timelineRef.value;
+  if (timeline === null) {
+    return;
+  }
+
+  savedTimelineScrollLeft.value = timeline.scrollLeft;
+}
+
+function restoreTimelineScrollPosition(): void {
+  const timeline = timelineRef.value;
+  const savedScrollLeft = savedTimelineScrollLeft.value;
+  if (timeline === null || savedScrollLeft === undefined) {
+    return;
+  }
+
+  timeline.scrollTo({
+    left: Math.min(savedScrollLeft, getTimelineMaxScrollLeft(timeline)),
+    behavior: "auto",
+  });
+}
+
 function getTimelineMaxScrollLeft(timeline: HTMLElement): number {
   return getHorizontalScrollMax({
     scrollWidth: timeline.scrollWidth,
@@ -546,6 +572,13 @@ onMounted(async () => {
   await nextTick();
   scrollSelectedCheckpointIntoView();
 });
+
+onActivated(async () => {
+  await nextTick();
+  restoreTimelineScrollPosition();
+});
+
+onDeactivated(saveTimelineScrollPosition);
 </script>
 
 <style lang="scss" scoped>
@@ -629,7 +662,7 @@ onMounted(async () => {
 }
 
 .checkpoint-timeline__scroller--with-detail {
-  padding-bottom: 3.2rem;
+  padding-bottom: 1.6rem;
 }
 
 .checkpoint-timeline__track {
@@ -706,12 +739,12 @@ onMounted(async () => {
 
 .checkpoint-timeline__marker-detail {
   position: absolute;
-  top: 1.95rem;
+  top: 1.65rem;
   inset-inline-start: 50%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.12rem;
+  gap: 0.08rem;
   width: 9rem;
   transform: translateX(-50%);
   pointer-events: none;
@@ -719,7 +752,7 @@ onMounted(async () => {
 
 .checkpoint-timeline__marker-time {
   color: #6b4eff;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
   line-height: 1.05;
   text-align: center;
@@ -728,7 +761,7 @@ onMounted(async () => {
 
 .checkpoint-timeline__marker-reasons {
   color: #6b4eff;
-  font-size: 0.64rem;
+  font-size: 0.6rem;
   font-weight: 600;
   line-height: 1.15;
   max-width: 9rem;
@@ -760,24 +793,6 @@ onMounted(async () => {
       border-color: #24966d;
       background: #24966d;
       box-shadow: 0 0 0 4px rgb(36 150 109 / 14%);
-    }
-  }
-}
-
-.checkpoint-timeline__marker--live-closed {
-  color: $red-base;
-
-  .checkpoint-timeline__dot {
-    border-color: $red-base;
-  }
-
-  &.checkpoint-timeline__marker--selected {
-    color: $red-base;
-
-    .checkpoint-timeline__dot {
-      border-color: $red-base;
-      background: $red-base;
-      box-shadow: 0 0 0 4px rgba($red-base, 0.14);
     }
   }
 }

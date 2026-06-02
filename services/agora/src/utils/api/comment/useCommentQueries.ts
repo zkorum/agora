@@ -37,6 +37,7 @@ import {
   buildAnalysisDataFromFrame,
   buildEmptyAnalysisDataFromManifest,
   hasManifestFrame,
+  mergeLiveAnalysisSnapshotMetadata,
   useBackendCommentApi,
 } from "./comment";
 import {
@@ -176,7 +177,7 @@ type BackendCommentApi = ReturnType<typeof useBackendCommentApi>;
 type AnalysisQueryKey = readonly unknown[];
 
 const LABEL_CATCH_UP_MAX_ATTEMPTS = 5;
-const TRANSLATED_LABEL_FALLBACK_GRACE_MS = 1000;
+const TRANSLATED_LABEL_FALLBACK_GRACE_MS = 2_000;
 const labelCatchUpStateByKey = new Map<
   string,
   { attemptCount: number; timeout: ReturnType<typeof setTimeout> | undefined }
@@ -856,30 +857,17 @@ export function useAnalysisQuery({
           queryClient,
           conversationSlugId: resolvedConversationSlugId,
           updateConversation: (conversation) => {
-            const previousSnapshotId =
-              conversation.metadata.conversationViewSnapshotId;
-            if (
-              previousSnapshotId !== undefined &&
-              snapshot.conversationViewSnapshotId < previousSnapshotId
-            ) {
+            const metadata = mergeLiveAnalysisSnapshotMetadata({
+              metadata: conversation.metadata,
+              snapshot,
+            });
+            if (metadata === conversation.metadata) {
               return conversation;
             }
 
             return {
               ...conversation,
-              metadata: {
-                ...conversation.metadata,
-                conversationViewSnapshotId: snapshot.conversationViewSnapshotId,
-                opinionCount: snapshot.opinionCount,
-                voteCount: snapshot.voteCount,
-                participantCount: snapshot.participantCount,
-                totalOpinionCount: snapshot.totalOpinionCount,
-                totalVoteCount: snapshot.totalVoteCount,
-                totalParticipantCount: snapshot.totalParticipantCount,
-                moderatedOpinionCount: snapshot.moderatedOpinionCount,
-                hiddenOpinionCount: snapshot.hiddenOpinionCount,
-                isClosed: snapshot.isClosed,
-              },
+              metadata,
             };
           },
         });

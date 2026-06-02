@@ -38,8 +38,13 @@
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ConversationType } from "src/shared/types/zod";
-import { computed, ref } from "vue";
-import { type RouteLocationRaw, useRoute, useRouter } from "vue-router";
+import { computed, ref, watch } from "vue";
+import {
+  type LocationQueryRaw,
+  type RouteLocationRaw,
+  useRoute,
+  useRouter,
+} from "vue-router";
 
 import {
   type InteractionTabTranslations,
@@ -72,6 +77,7 @@ const router = useRouter();
 
 // Track whether we can use router.back() to return to comment tab
 const canGoBackToComment = ref(false);
+const lastAnalysisQuery = ref<LocationQueryRaw>({});
 
 const isEmbed = computed(() => route.path.includes("/embed"));
 
@@ -106,8 +112,21 @@ const analysisRoute = computed<RouteLocationRaw | undefined>(() => {
   return {
     name: analysisRouteName.value,
     params: { postSlugId: props.conversationSlugId },
+    query: lastAnalysisQuery.value,
   };
 });
+
+watch(
+  () => ({ name: route.name, query: route.query }),
+  ({ name, query }) => {
+    if (name !== analysisRouteName.value) {
+      return;
+    }
+
+    lastAnalysisQuery.value = { ...query };
+  },
+  { immediate: true }
+);
 
 function handleCommentClick(): void {
   if (model.value === "comment") {
@@ -139,6 +158,7 @@ function handleAnalysisClick(): void {
     void router.push({
       name: analysisRouteName.value,
       params: { postSlugId: props.conversationSlugId },
+      query: lastAnalysisQuery.value,
     });
   }
 }
