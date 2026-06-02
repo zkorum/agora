@@ -73,16 +73,25 @@ export function getPostActions({
     },
   ];
 
-  if (isConversationClosed) {
-    actions.push({
-      id: "openConversation",
-      label: translations.openConversation,
-      icon: "mdi-play-circle",
-      handler: openConversationCallback,
-      isVisible: (context: ContentActionContext) =>
-        (context.isOwner || context.isOrgMember) && !context.isEmbeddedMode,
-    });
-  }
+  actions.push(
+    isConversationClosed
+      ? {
+          id: "openConversation",
+          label: translations.openConversation,
+          icon: "mdi-play-circle",
+          handler: openConversationCallback,
+          isVisible: (context: ContentActionContext) =>
+            (context.isOwner || context.isOrgMember) && !context.isEmbeddedMode,
+        }
+      : {
+          id: "closeConversation",
+          label: translations.closeConversation,
+          icon: "mdi-stop-circle",
+          handler: closeConversationCallback,
+          isVisible: (context: ContentActionContext) =>
+            (context.isOwner || context.isOrgMember) && !context.isEmbeddedMode,
+        }
+  );
 
   if (syncGitHubCallback !== null) {
     actions.push({
@@ -160,16 +169,6 @@ export function getPostActions({
       handler: muteUserCallback,
       isVisible: (context: ContentActionContext) =>
         !context.isOwner && context.isLoggedIn && !context.isEmbeddedMode,
-    },
-    {
-      id: "closeConversation",
-      label: translations.closeConversation,
-      icon: "mdi-stop-circle",
-      handler: closeConversationCallback,
-      isVisible: (context: ContentActionContext) =>
-        !isConversationClosed &&
-        (context.isOwner || context.isOrgMember) &&
-        !context.isEmbeddedMode,
     },
     {
       id: "delete",
