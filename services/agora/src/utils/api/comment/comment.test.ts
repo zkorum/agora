@@ -5,12 +5,16 @@ import type {
   AnalysisFrameManifest,
   AnalysisFrameOpinionList,
 } from "src/shared/types/dto";
-import type { AnalysisOpinionItem } from "src/shared/types/zod";
+import type {
+  AnalysisOpinionItem,
+  ConversationMetadata,
+} from "src/shared/types/zod";
 import { describe, expect, it } from "vitest";
 
 import {
   buildAnalysisDataFromFrame,
   buildEmptyAnalysisDataFromManifest,
+  mergeLiveAnalysisSnapshotMetadata,
 } from "./analysisData";
 
 const frameKey: AnalysisFrameKey = {
@@ -33,6 +37,10 @@ type AnalysisFrameManifestWithFrame = AnalysisFrameManifest & {
   frameKey: AnalysisFrameKey;
   conversationViewSnapshot: NonNullable<AnalysisFrameManifest["conversationViewSnapshot"]>;
 };
+
+type ConversationViewSnapshot = NonNullable<
+  AnalysisFrameManifest["conversationViewSnapshot"]
+>;
 
 const manifest: AnalysisFrameManifestWithFrame = {
   frameKey,
@@ -63,6 +71,55 @@ const manifest: AnalysisFrameManifestWithFrame = {
   analysisViewResolution,
   aiLabelsExpected: true,
 };
+
+function conversationMetadata(
+  overrides: Partial<ConversationMetadata> = {}
+): ConversationMetadata {
+  return {
+    conversationSlugId: "conversation-1",
+    conversationViewSnapshotId: 12,
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    lastReactedAt: new Date("2026-01-01T00:00:00.000Z"),
+    opinionCount: 5,
+    voteCount: 42,
+    participantCount: 7,
+    totalOpinionCount: 6,
+    totalVoteCount: 45,
+    totalParticipantCount: 8,
+    moderatedOpinionCount: 1,
+    hiddenOpinionCount: 0,
+    authorUsername: "alice",
+    participationMode: "guest",
+    conversationType: "polis",
+    isIndexed: true,
+    aiLabelingEnabled: false,
+    preferredOpinionGroupCount: null,
+    isClosed: false,
+    isEdited: false,
+    moderation: { status: "unmoderated" },
+    externalSourceConfig: null,
+    ...overrides,
+  };
+}
+
+function conversationViewSnapshot(
+  overrides: Partial<ConversationViewSnapshot> = {}
+): ConversationViewSnapshot {
+  return {
+    conversationViewSnapshotId: 13,
+    analysisSnapshotId: 35,
+    opinionCount: 8,
+    voteCount: 99,
+    participantCount: 14,
+    totalOpinionCount: 9,
+    totalVoteCount: 101,
+    totalParticipantCount: 15,
+    moderatedOpinionCount: 2,
+    hiddenOpinionCount: 1,
+    isClosed: true,
+    ...overrides,
+  };
+}
 
 function opinion(overrides: Partial<AnalysisOpinionItem> = {}): AnalysisOpinionItem {
   return {
@@ -184,5 +241,37 @@ describe("analysis frame data", () => {
         divisive: opinionList("divisive"),
       })
     ).toThrow("Mismatched analysis frame section: groups");
+  });
+
+  it("keeps current closed state when merging live analysis snapshot counts", () => {
+    const metadata = conversationMetadata({ isClosed: false });
+
+    const merged = mergeLiveAnalysisSnapshotMetadata({
+      metadata,
+      snapshot: conversationViewSnapshot({ isClosed: true }),
+    });
+
+    expect(merged.conversationViewSnapshotId).toBe(13);
+    expect(merged.voteCount).toBe(99);
+    expect(merged.isClosed).toBe(false);
+  });
+
+  it("ignores analysis snapshot metadata older than the current conversation snapshot", () => {
+    const metadata = conversationMetadata({
+      conversationViewSnapshotId: 20,
+      voteCount: 42,
+      isClosed: false,
+    });
+
+    const merged = mergeLiveAnalysisSnapshotMetadata({
+      metadata,
+      snapshot: conversationViewSnapshot({
+        conversationViewSnapshotId: 19,
+        voteCount: 99,
+        isClosed: true,
+      }),
+    });
+
+    expect(merged).toBe(metadata);
   });
 });

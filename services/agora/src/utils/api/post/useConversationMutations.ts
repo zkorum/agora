@@ -52,6 +52,8 @@ export function useCloseConversationMutation() {
 
     onSuccess: (data, { conversationSlugId }) => {
       if (data.success) {
+        showNotifyMessage(t("closeSuccess"));
+
         // Optimistic update was correct, mark feed as stale for next visit
         void queryClient.invalidateQueries({
           queryKey: ["feed"],
@@ -129,6 +131,8 @@ export function useOpenConversationMutation() {
 
     onSuccess: (data, { conversationSlugId }) => {
       if (data.success) {
+        showNotifyMessage(t("openSuccess"));
+
         // Optimistic update was correct, mark feed as stale for next visit
         void queryClient.invalidateQueries({
           queryKey: ["feed"],
