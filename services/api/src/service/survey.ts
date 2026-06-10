@@ -10,7 +10,6 @@ import {
     opinionGroupLineageTable,
     opinionGroupTable,
     opinionTable,
-    organizationTable,
     surveyAggregateOptionTable,
     surveyAggregateQuestionTable,
     surveyAggregateResultTable,
@@ -84,8 +83,8 @@ import {
 import { log } from "@/app.js";
 import {
     getConversationViewAccessLevelForConversation,
-    isConversationOwner,
 } from "@/service/conversationAccess.js";
+import { requireProjectCapability } from "@/service/projectAccess.js";
 import {
     buildSurveyCompletionCounts,
     loadSurveyExportContext,
@@ -103,9 +102,7 @@ import {
 interface ConversationAccessContext {
     conversationId: number;
     slugId: string;
-    authorId: string;
-    organizationId: number | null;
-    organizationName: string | null;
+    projectId: number;
     participationMode: (typeof conversationTable.$inferSelect)["participationMode"];
     conversationType: (typeof conversationTable.$inferSelect)["conversationType"];
     currentContentId: number | null;
@@ -957,9 +954,7 @@ async function getConversationAccessContextBySlugId({
         .select({
             conversationId: conversationTable.id,
             slugId: conversationTable.slugId,
-            authorId: conversationTable.authorId,
-            organizationId: conversationTable.organizationId,
-            organizationName: organizationTable.name,
+            projectId: conversationTable.projectId,
             participationMode: conversationTable.participationMode,
             conversationType: conversationTable.conversationType,
             currentContentId: conversationTable.currentContentId,
@@ -967,10 +962,6 @@ async function getConversationAccessContextBySlugId({
             requiresEventTicket: conversationTable.requiresEventTicket,
         })
         .from(conversationTable)
-        .leftJoin(
-            organizationTable,
-            eq(conversationTable.organizationId, organizationTable.id),
-        )
         .where(eq(conversationTable.slugId, conversationSlugId))
         .limit(1);
 
@@ -2700,8 +2691,7 @@ export async function fetchSurveyAggregatedResults({
     const accessLevel = await getConversationViewAccessLevelForConversation({
         db,
         userId,
-        authorId: conversation.authorId,
-        organizationId: conversation.organizationId,
+        projectId: conversation.projectId,
     });
     const activeSurveyConfig = await getActiveSurveyConfigRecord({
         db,
@@ -2803,12 +2793,11 @@ export async function fetchSurveyCompletionCounts({
     const accessLevel = await getConversationViewAccessLevelForConversation({
         db,
         userId,
-        authorId: conversation.authorId,
-        organizationId: conversation.organizationId,
+        projectId: conversation.projectId,
     });
     if (accessLevel !== "owner") {
         throw httpErrors.forbidden(
-            "Only conversation owners can view survey completion counts",
+            "Missing conversation_update capability",
         );
     }
 
@@ -3291,24 +3280,22 @@ export async function updateSurveyConfigByAuthor({
         db,
         conversationSlugId,
     });
-    const isOwner = await isConversationOwner({
+    await requireProjectCapability({
         db,
         userId,
-        authorId: conversation.authorId,
-        organizationId: conversation.organizationId,
+        projectId: conversation.projectId,
+        capability: "conversation_update",
+        message: "Missing conversation_update capability",
     });
-    if (!isOwner) {
-        throw httpErrors.forbidden(
-            "Only conversation owners can edit the survey",
-        );
-    }
     const existingSurveyConfig = await getActiveSurveyConfigRecord({
         db,
         conversationId: conversation.conversationId,
     });
     await requirePremiumAccess({
         db,
-        subject: getPremiumEntitlementSubjectForConversation({ conversation }),
+        subject: getPremiumEntitlementSubjectForConversation({
+            conversation: { projectId: conversation.projectId, userId },
+        }),
         features: ["survey"],
         mode: existingSurveyConfig === undefined ? "creation" : "edit",
         now,
@@ -3379,17 +3366,13 @@ export async function deleteSurveyConfigByAuthor({
         db,
         conversationSlugId,
     });
-    const isOwner = await isConversationOwner({
+    await requireProjectCapability({
         db,
         userId,
-        authorId: conversation.authorId,
-        organizationId: conversation.organizationId,
+        projectId: conversation.projectId,
+        capability: "conversation_update",
+        message: "Missing conversation_update capability",
     });
-    if (!isOwner) {
-        throw httpErrors.forbidden(
-            "Only conversation owners can delete the survey",
-        );
-    }
     const surveyConfigUpdateEffect = await db.transaction(async (tx) => {
         return await setSurveyConfigForConversation({
             db: tx,

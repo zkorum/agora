@@ -228,6 +228,7 @@ describe("Admission guards", () => {
             requestUrlImport({
                 db,
                 userId,
+                projectId: 1,
                 polisUrl: "https://pol.is/123",
                 formData: {
                     participationMode: "guest",

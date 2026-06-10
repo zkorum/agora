@@ -6,7 +6,7 @@ import {
     conversationTable,
     userTable,
 } from "@/shared-backend/schema.js";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
 import { useCommonPost } from "./common.js";
@@ -30,7 +30,6 @@ import { postNewOpinion } from "./comment.js";
 import { createMaxdiffItem } from "./maxdiffItem.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import { deleteAllConversationExports } from "@/service/conversationExport/index.js";
-import * as authUtilService from "@/service/authUtil.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import {
     getSurveyGateSummary,
@@ -38,9 +37,13 @@ import {
     warmSurveyTranslationsForConversation,
 } from "@/service/survey.js";
 import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
-import { isConversationOwner } from "@/service/conversationAccess.js";
 import { createConversationViewSnapshotsFromCurrentState } from "@/service/conversationViewSnapshot.js";
 import { queueConversationSettingsUpdatedEvent } from "@/service/realtimeEventOutbox.js";
+import {
+    hasProjectCapability,
+    requireProjectCapability,
+    resolveConversationCreateTarget,
+} from "@/service/projectAccess.js";
 
 const MAX_CONVERSATION_SEED_ITEMS = 50;
 
@@ -100,19 +103,11 @@ export async function createNewPost({
             `A conversation can have at most ${String(MAX_CONVERSATION_SEED_ITEMS)} seed items`,
         );
     }
-    let organizationId: number | undefined = undefined;
-    if (postAsOrganization !== undefined && postAsOrganization !== "") {
-        organizationId = await authUtilService.isUserPartOfOrganization({
-            db,
-            organizationName: postAsOrganization,
-            userId: authorId,
-        });
-        if (organizationId === undefined) {
-            throw httpErrors.forbidden(
-                `User '${authorId}' is not part of the organization: '${postAsOrganization}'`,
-            );
-        }
-    }
+    const target = await resolveConversationCreateTarget({
+        db,
+        userId: authorId,
+        postAsOrganizationSlug: postAsOrganization,
+    });
     const conversationSlugId = generateRandomSlugId();
 
     if (conversationBody != null) {
@@ -168,9 +163,8 @@ export async function createNewPost({
             const insertPostResponse = await tx
                 .insert(conversationTable)
                 .values({
-                    authorId: authorId,
                     slugId: conversationSlugId,
-                    organizationId: organizationId,
+                    projectId: target.projectId,
                     isIndexed: isIndexed,
                     participationMode: participationMode,
                     conversationType: conversationType,
@@ -214,15 +208,6 @@ export async function createNewPost({
                     currentContentId: insertedConversationContentId,
                 })
                 .where(eq(conversationTable.id, insertedConversationId));
-
-            // Update the user profile's conversation count
-            await tx
-                .update(userTable)
-                .set({
-                    activeConversationCount: sql`${userTable.activeConversationCount} + 1`,
-                    totalConversationCount: sql`${userTable.totalConversationCount} + 1`,
-                })
-                .where(eq(userTable.id, authorId));
 
             if (seedOpinionList.length > 0) {
                 if (conversationType === "maxdiff") {
@@ -409,8 +394,7 @@ export async function deletePostBySlugId({
         const conversationRows = await tx
             .select({
                 conversationId: conversationTable.id,
-                authorId: conversationTable.authorId,
-                organizationId: conversationTable.organizationId,
+                projectId: conversationTable.projectId,
                 currentContentId: conversationTable.currentContentId,
             })
             .from(conversationTable)
@@ -422,17 +406,13 @@ export async function deletePostBySlugId({
         }
 
         const conversation = conversationRows[0];
-        const isOwner = await isConversationOwner({
+        await requireProjectCapability({
             db: tx,
             userId,
-            authorId: conversation.authorId,
-            organizationId: conversation.organizationId,
+            projectId: conversation.projectId,
+            capability: "conversation_delete",
+            message: "Missing conversation_delete capability",
         });
-        if (!isOwner) {
-            throw httpErrors.forbidden(
-                "Only conversation owners can delete it",
-            );
-        }
         if (conversation.currentContentId === null) {
             throw httpErrors.notFound("Conversation not found");
         }
@@ -443,14 +423,6 @@ export async function deletePostBySlugId({
                 currentContentId: null,
             })
             .where(eq(conversationTable.id, conversation.conversationId));
-
-        // Update the original author's active conversation count
-        await tx
-            .update(userTable)
-            .set({
-                activeConversationCount: sql`${userTable.activeConversationCount} - 1`,
-            })
-            .where(eq(userTable.id, conversation.authorId));
 
         // Mark all of the opinions as deleted
         await tx
@@ -497,11 +469,11 @@ export async function closeConversation({
     conversationSlugId,
     userId,
 }: CloseConversationProps): Promise<CloseConversationResponse> {
-    // First, get the conversation to check ownership and current state
+    // First, get the conversation to check permissions and current state
     const conversation = await db
         .select({
             conversationId: conversationTable.id,
-            authorId: conversationTable.authorId,
+            projectId: conversationTable.projectId,
             isClosed: conversationTable.isClosed,
             isIndexed: conversationTable.isIndexed,
             participationMode: conversationTable.participationMode,
@@ -509,7 +481,6 @@ export async function closeConversation({
             aiLabelingEnabled: conversationTable.aiLabelingEnabled,
             preferredOpinionGroupCount:
                 conversationTable.preferredOpinionGroupCount,
-            organizationId: conversationTable.organizationId,
         })
         .from(conversationTable)
         .where(eq(conversationTable.slugId, conversationSlugId))
@@ -520,13 +491,13 @@ export async function closeConversation({
         throw httpErrors.notFound("Conversation not found");
     }
 
-    const isAuthorized = await isConversationOwner({
+    const canUpdateConversation = await hasProjectCapability({
         db,
         userId,
-        authorId: conversation[0].authorId,
-        organizationId: conversation[0].organizationId,
+        projectId: conversation[0].projectId,
+        capability: "conversation_update",
     });
-    if (!isAuthorized) {
+    if (!canUpdateConversation) {
         return { success: false, reason: "not_allowed" };
     }
 
@@ -584,11 +555,11 @@ export async function openConversation({
     conversationSlugId,
     userId,
 }: OpenConversationProps): Promise<OpenConversationResponse> {
-    // First, get the conversation to check ownership and current state
+    // First, get the conversation to check permissions and current state
     const conversation = await db
         .select({
             conversationId: conversationTable.id,
-            authorId: conversationTable.authorId,
+            projectId: conversationTable.projectId,
             isClosed: conversationTable.isClosed,
             isIndexed: conversationTable.isIndexed,
             participationMode: conversationTable.participationMode,
@@ -596,7 +567,6 @@ export async function openConversation({
             aiLabelingEnabled: conversationTable.aiLabelingEnabled,
             preferredOpinionGroupCount:
                 conversationTable.preferredOpinionGroupCount,
-            organizationId: conversationTable.organizationId,
         })
         .from(conversationTable)
         .where(eq(conversationTable.slugId, conversationSlugId))
@@ -607,13 +577,13 @@ export async function openConversation({
         throw httpErrors.notFound("Conversation not found");
     }
 
-    const isAuthorized = await isConversationOwner({
+    const canUpdateConversation = await hasProjectCapability({
         db,
         userId,
-        authorId: conversation[0].authorId,
-        organizationId: conversation[0].organizationId,
+        projectId: conversation[0].projectId,
+        capability: "conversation_update",
     });
-    if (!isAuthorized) {
+    if (!canUpdateConversation) {
         return { success: false, reason: "not_allowed" };
     }
 

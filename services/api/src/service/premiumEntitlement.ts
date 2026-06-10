@@ -8,8 +8,10 @@ import {
 } from "@/shared-backend/analysisScheduler.js";
 import {
     conversationTable,
+    organizationMembershipTable,
     organizationTable,
     premiumFeatureEntitlementTable,
+    projectOrganizationOwnershipTable,
     surveyConfigTable,
     userTable,
 } from "@/shared-backend/schema.js";
@@ -26,7 +28,10 @@ import {
     type PremiumFeature,
 } from "@/shared/types/zod.js";
 import { log } from "@/app.js";
-import * as authUtilService from "./authUtil.js";
+import {
+    getOrCreatePersonalOrganization,
+    resolveConversationCreateTarget,
+} from "./projectAccess.js";
 
 type PremiumFeatureEntitlementUpdateValues = Partial<
     typeof premiumFeatureEntitlementTable.$inferInsert
@@ -41,8 +46,8 @@ const premiumFeatureSortValues = {
 } satisfies Record<PremiumFeature, number>;
 
 export type PremiumEntitlementSubject =
-    | { userId: string; organizationId?: never }
-    | { organizationId: number; userId?: never };
+    | { organizationId: number; projectId?: never; userId?: never }
+    | { projectId: number; userId: string; organizationId?: never };
 
 type PremiumAccessMode = "creation" | "edit";
 
@@ -52,8 +57,8 @@ interface ConversationPremiumFeatureContext {
 }
 
 interface ConversationEntitlementContext {
-    authorId: string;
-    organizationId: number | null;
+    projectId: number;
+    userId: string;
 }
 
 export interface ConversationEditPermissions {
@@ -122,52 +127,12 @@ function getEditAccessEnd(entitlement: EntitlementRow): Date | undefined {
     return addDays(entitlement.expiresAt, PREMIUM_EDIT_GRACE_DAYS);
 }
 
-function getEntitlementSubjectFilter({
-    subject,
-}: {
-    subject: PremiumEntitlementSubject;
-}) {
-    if (subject.userId !== undefined) {
-        return and(
-            eq(premiumFeatureEntitlementTable.userId, subject.userId),
-            isNull(premiumFeatureEntitlementTable.organizationId),
-        );
-    }
-
-    return and(
-        eq(
-            premiumFeatureEntitlementTable.organizationId,
-            subject.organizationId,
-        ),
-        isNull(premiumFeatureEntitlementTable.userId),
-    );
-}
-
-function getConversationSubjectFilter({
-    subject,
-}: {
-    subject: PremiumEntitlementSubject;
-}) {
-    if (subject.userId !== undefined) {
-        return and(
-            eq(conversationTable.authorId, subject.userId),
-            isNull(conversationTable.organizationId),
-        );
-    }
-
-    return eq(conversationTable.organizationId, subject.organizationId);
-}
-
 export function getPremiumEntitlementSubjectForConversation({
     conversation,
 }: {
     conversation: ConversationEntitlementContext;
 }): PremiumEntitlementSubject {
-    if (conversation.organizationId !== null) {
-        return { organizationId: conversation.organizationId };
-    }
-
-    return { userId: conversation.authorId };
+    return { projectId: conversation.projectId, userId: conversation.userId };
 }
 
 export async function getPremiumEntitlementSubjectForCreate({
@@ -179,23 +144,12 @@ export async function getPremiumEntitlementSubjectForCreate({
     userId: string;
     postAsOrganization?: string;
 }): Promise<PremiumEntitlementSubject> {
-    if (postAsOrganization === undefined || postAsOrganization === "") {
-        return { userId };
-    }
-
-    const organizationId = await authUtilService.isUserPartOfOrganization({
+    const target = await resolveConversationCreateTarget({
         db,
         userId,
-        organizationName: postAsOrganization,
+        postAsOrganizationSlug: postAsOrganization,
     });
-
-    if (organizationId === undefined) {
-        throw httpErrors.forbidden(
-            `User '${userId}' is not part of the organization: '${postAsOrganization}'`,
-        );
-    }
-
-    return { organizationId };
+    return { projectId: target.projectId, userId };
 }
 
 async function getCandidateEntitlements({
@@ -213,17 +167,51 @@ async function getCandidateEntitlements({
         return [];
     }
 
-    const subjectFilter = getEntitlementSubjectFilter({ subject });
+    if (subject.organizationId !== undefined) {
+        return await db
+            .select({
+                feature: premiumFeatureEntitlementTable.feature,
+                expiresAt: premiumFeatureEntitlementTable.expiresAt,
+            })
+            .from(premiumFeatureEntitlementTable)
+            .where(
+                and(
+                    eq(
+                        premiumFeatureEntitlementTable.organizationId,
+                        subject.organizationId,
+                    ),
+                    inArray(premiumFeatureEntitlementTable.feature, features),
+                    lte(premiumFeatureEntitlementTable.startsAt, now),
+                    isNull(premiumFeatureEntitlementTable.revokedAt),
+                ),
+            )
+            .orderBy(desc(premiumFeatureEntitlementTable.expiresAt));
+    }
 
     return await db
         .select({
             feature: premiumFeatureEntitlementTable.feature,
             expiresAt: premiumFeatureEntitlementTable.expiresAt,
         })
-        .from(premiumFeatureEntitlementTable)
+        .from(organizationMembershipTable)
+        .innerJoin(
+            projectOrganizationOwnershipTable,
+            eq(
+                projectOrganizationOwnershipTable.organizationId,
+                organizationMembershipTable.organizationId,
+            ),
+        )
+        .innerJoin(
+            premiumFeatureEntitlementTable,
+            eq(
+                premiumFeatureEntitlementTable.organizationId,
+                organizationMembershipTable.organizationId,
+            ),
+        )
         .where(
             and(
-                subjectFilter,
+                eq(organizationMembershipTable.userId, subject.userId),
+                eq(projectOrganizationOwnershipTable.projectId, subject.projectId),
                 inArray(premiumFeatureEntitlementTable.feature, features),
                 lte(premiumFeatureEntitlementTable.startsAt, now),
                 isNull(premiumFeatureEntitlementTable.revokedAt),
@@ -280,18 +268,53 @@ async function refreshPremiumAnalysisForSubject({
     subject: PremiumEntitlementSubject;
     valkey: Valkey | undefined;
 }): Promise<void> {
-    const conversationRows = await db
+    const baseQuery = db
         .select({ conversationId: conversationTable.id })
         .from(conversationTable)
-        .where(
-            and(
-                getConversationSubjectFilter({ subject }),
-                eq(conversationTable.conversationType, "polis"),
-                eq(conversationTable.isImporting, false),
-                isNotNull(conversationTable.currentContentId),
+        .innerJoin(
+            projectOrganizationOwnershipTable,
+            eq(
+                projectOrganizationOwnershipTable.projectId,
+                conversationTable.projectId,
             ),
-        )
-        .orderBy(desc(conversationTable.createdAt));
+        );
+
+    const conversationRows =
+        subject.organizationId !== undefined
+            ? await baseQuery
+                  .where(
+                      and(
+                          eq(
+                              projectOrganizationOwnershipTable.organizationId,
+                              subject.organizationId,
+                          ),
+                          eq(conversationTable.conversationType, "polis"),
+                          eq(conversationTable.isImporting, false),
+                          isNotNull(conversationTable.currentContentId),
+                      ),
+                  )
+                  .orderBy(desc(conversationTable.createdAt))
+            : await baseQuery
+                  .innerJoin(
+                      organizationMembershipTable,
+                      eq(
+                          organizationMembershipTable.organizationId,
+                          projectOrganizationOwnershipTable.organizationId,
+                      ),
+                  )
+                  .where(
+                      and(
+                          eq(organizationMembershipTable.userId, subject.userId),
+                          eq(
+                              projectOrganizationOwnershipTable.projectId,
+                              subject.projectId,
+                          ),
+                          eq(conversationTable.conversationType, "polis"),
+                          eq(conversationTable.isImporting, false),
+                          isNotNull(conversationTable.currentContentId),
+                      ),
+                  )
+                  .orderBy(desc(conversationTable.createdAt));
 
     for (const row of conversationRows) {
         const hasActiveVotes = await hasActiveVotesForMathWork({
@@ -487,15 +510,46 @@ async function clearPreferredOpinionGroupCountForSubject({
     db: PostgresJsDatabase;
     subject: PremiumEntitlementSubject;
 }): Promise<void> {
+    const conversationRows =
+        subject.organizationId !== undefined
+            ? await db
+                  .select({ conversationId: conversationTable.id })
+                  .from(conversationTable)
+                  .innerJoin(
+                      projectOrganizationOwnershipTable,
+                      eq(
+                          projectOrganizationOwnershipTable.projectId,
+                          conversationTable.projectId,
+                      ),
+                  )
+                  .where(
+                      and(
+                          eq(
+                              projectOrganizationOwnershipTable.organizationId,
+                              subject.organizationId,
+                          ),
+                          isNotNull(conversationTable.preferredOpinionGroupCount),
+                      ),
+                  )
+            : await db
+                  .select({ conversationId: conversationTable.id })
+                  .from(conversationTable)
+                  .where(
+                      and(
+                          eq(conversationTable.projectId, subject.projectId),
+                          isNotNull(conversationTable.preferredOpinionGroupCount),
+                      ),
+                  );
+
+    const conversationIds = conversationRows.map((row) => row.conversationId);
+    if (conversationIds.length === 0) {
+        return;
+    }
+
     await db
         .update(conversationTable)
         .set({ preferredOpinionGroupCount: null })
-        .where(
-            and(
-                getConversationSubjectFilter({ subject }),
-                isNotNull(conversationTable.preferredOpinionGroupCount),
-            ),
-        );
+        .where(inArray(conversationTable.id, conversationIds));
 }
 
 export async function buildConversationEditPermissions({
@@ -568,7 +622,7 @@ async function resolveEntitlementSubject({
 }: {
     db: PostgresJsDatabase;
     subject: CreatePremiumFeatureEntitlementRequest["subject"];
-}): Promise<PremiumEntitlementSubject> {
+}): Promise<{ organizationId: number }> {
     if (subject.username !== undefined) {
         const users = await db
             .select({ userId: userTable.id })
@@ -581,14 +635,18 @@ async function resolveEntitlementSubject({
             throw httpErrors.notFound("User not found");
         }
 
-        return { userId: user.userId };
+        const organization = await getOrCreatePersonalOrganization({
+            db,
+            userId: user.userId,
+        });
+        return { organizationId: organization.organizationId };
     }
 
     if (subject.organizationName !== undefined) {
         const organizations = await db
             .select({ organizationId: organizationTable.id })
             .from(organizationTable)
-            .where(eq(organizationTable.name, subject.organizationName))
+            .where(eq(organizationTable.slug, subject.organizationName))
             .limit(1);
 
         const organization = organizations.at(0);
@@ -606,7 +664,7 @@ function toEntitlementItem(row: {
     id: number;
     userId: string | null;
     username: string | null;
-    organizationId: number | null;
+    organizationId: number;
     organizationName: string | null;
     feature: PremiumFeature;
     startsAt: Date;
@@ -640,10 +698,10 @@ export async function listPremiumFeatureEntitlements({
     const rows = await db
         .select({
             id: premiumFeatureEntitlementTable.id,
-            userId: premiumFeatureEntitlementTable.userId,
+            userId: organizationTable.autoProvisionedForUserId,
             username: userTable.username,
             organizationId: premiumFeatureEntitlementTable.organizationId,
-            organizationName: organizationTable.name,
+            organizationName: organizationTable.displayName,
             feature: premiumFeatureEntitlementTable.feature,
             startsAt: premiumFeatureEntitlementTable.startsAt,
             expiresAt: premiumFeatureEntitlementTable.expiresAt,
@@ -653,16 +711,16 @@ export async function listPremiumFeatureEntitlements({
             updatedAt: premiumFeatureEntitlementTable.updatedAt,
         })
         .from(premiumFeatureEntitlementTable)
-        .leftJoin(
-            userTable,
-            eq(userTable.id, premiumFeatureEntitlementTable.userId),
-        )
-        .leftJoin(
+        .innerJoin(
             organizationTable,
             eq(
                 organizationTable.id,
                 premiumFeatureEntitlementTable.organizationId,
             ),
+        )
+        .leftJoin(
+            userTable,
+            eq(userTable.id, organizationTable.autoProvisionedForUserId),
         )
         .orderBy(desc(premiumFeatureEntitlementTable.updatedAt));
 
@@ -707,8 +765,7 @@ export async function createPremiumFeatureEntitlement({
     await db.transaction(async (tx) => {
         for (const feature of features) {
             await tx.insert(premiumFeatureEntitlementTable).values({
-                userId: subject.userId ?? null,
-                organizationId: subject.organizationId ?? null,
+                organizationId: subject.organizationId,
                 feature,
                 startsAt,
                 expiresAt,
@@ -765,7 +822,6 @@ export async function updatePremiumFeatureEntitlement({
 }): Promise<void> {
     const existingRows = await db
         .select({
-            userId: premiumFeatureEntitlementTable.userId,
             organizationId: premiumFeatureEntitlementTable.organizationId,
             feature: premiumFeatureEntitlementTable.feature,
         })
@@ -774,13 +830,9 @@ export async function updatePremiumFeatureEntitlement({
         .limit(1);
     const existingEntitlement = existingRows.at(0);
     const subject =
-        existingEntitlement?.userId !== null &&
-        existingEntitlement?.userId !== undefined
-            ? { userId: existingEntitlement.userId }
-            : existingEntitlement?.organizationId !== null &&
-                existingEntitlement?.organizationId !== undefined
-              ? { organizationId: existingEntitlement.organizationId }
-              : undefined;
+        existingEntitlement === undefined
+            ? undefined
+            : { organizationId: existingEntitlement.organizationId };
     const hadPremiumAnalysisAccess =
         existingEntitlement?.feature === PREMIUM_ANALYSIS_FEATURE &&
         subject !== undefined

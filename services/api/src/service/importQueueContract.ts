@@ -19,7 +19,6 @@ const zodImportFormData = withJsonSchemaId(
     "ImportFormData",
     z
         .object({
-            postAsOrganization: z.string().optional(),
             participationMode: zodParticipationMode,
             isIndexed: z.boolean(),
             requiresEventTicket: zodEventSlug.optional(),
@@ -41,9 +40,10 @@ const zodImportRequestBase = withJsonSchemaId(
         .object({
             importSlugId: z.string(),
             userId: z.string(),
+            actorUserId: z.string(),
+            projectId: z.number().int().positive(),
             formData: zodImportFormData,
             didWrite: z.string(),
-            authorId: z.string(),
         })
         .strict(),
 );
@@ -111,8 +111,9 @@ export const zodImportWorkerContracts = withJsonSchemaId(
 interface ImportRequestBase {
     importSlugId: string;
     userId: string;
+    actorUserId: string;
+    projectId: number;
     formData: {
-        postAsOrganization?: string;
         participationMode: ParticipationMode;
         isIndexed: boolean;
         requiresEventTicket?: EventSlug;
@@ -120,7 +121,6 @@ interface ImportRequestBase {
         preferredOpinionGroupCount?: PreferredOpinionGroupCount;
     };
     didWrite: string;
-    authorId: string;
 }
 
 export interface CsvImportRequest extends ImportRequestBase {

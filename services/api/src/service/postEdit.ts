@@ -5,6 +5,7 @@ import {
     conversationTable,
     conversationModerationTable,
     organizationTable,
+    projectOrganizationOwnershipTable,
 } from "@/shared-backend/schema.js";
 import { eq } from "drizzle-orm";
 import { log } from "@/app.js";
@@ -23,7 +24,7 @@ import type {
     UpdateConversationRequest,
     UpdateConversationResponse,
 } from "@/shared/types/dto.js";
-import { isConversationOwner } from "@/service/conversationAccess.js";
+import { hasProjectCapability } from "@/service/projectAccess.js";
 import {
     buildConversationEditPermissions,
     getPremiumEntitlementSubjectForConversation,
@@ -50,8 +51,7 @@ export async function getConversationForEdit({
         .select({
             conversationId: conversationTable.id,
             conversationSlugId: conversationTable.slugId,
-            authorId: conversationTable.authorId,
-            organizationId: conversationTable.organizationId,
+            projectId: conversationTable.projectId,
             conversationTitle: conversationContentTable.title,
             conversationBody: conversationContentTable.body,
             isIndexed: conversationTable.isIndexed,
@@ -61,7 +61,8 @@ export async function getConversationForEdit({
             aiLabelingEnabled: conversationTable.aiLabelingEnabled,
             preferredOpinionGroupCount:
                 conversationTable.preferredOpinionGroupCount,
-            postAsOrganizationName: organizationTable.name,
+            postAsOrganizationName: organizationTable.displayName,
+            autoProvisionedForUserId: organizationTable.autoProvisionedForUserId,
             createdAt: conversationTable.createdAt,
             updatedAt: conversationTable.updatedAt,
             moderationAction: conversationModerationTable.moderationAction,
@@ -71,9 +72,19 @@ export async function getConversationForEdit({
             conversationContentTable,
             eq(conversationContentTable.id, conversationTable.currentContentId),
         )
-        .leftJoin(
+        .innerJoin(
+            projectOrganizationOwnershipTable,
+            eq(
+                projectOrganizationOwnershipTable.projectId,
+                conversationTable.projectId,
+            ),
+        )
+        .innerJoin(
             organizationTable,
-            eq(conversationTable.organizationId, organizationTable.id),
+            eq(
+                projectOrganizationOwnershipTable.organizationId,
+                organizationTable.id,
+            ),
         )
         .leftJoin(
             conversationModerationTable,
@@ -90,13 +101,13 @@ export async function getConversationForEdit({
 
     const conversation = results[0];
 
-    const isOwner = await isConversationOwner({
+    const canUpdateConversation = await hasProjectCapability({
         db,
         userId,
-        authorId: conversation.authorId,
-        organizationId: conversation.organizationId,
+        projectId: conversation.projectId,
+        capability: "conversation_update",
     });
-    if (!isOwner) {
+    if (!canUpdateConversation) {
         return { success: false, reason: "not_author" };
     }
 
@@ -110,12 +121,12 @@ export async function getConversationForEdit({
 
     const editPermissions = await buildConversationEditPermissions({
         db,
-        conversation: {
-            conversationId: conversation.conversationId,
-            requiresEventTicket: conversation.requiresEventTicket,
-            authorId: conversation.authorId,
-            organizationId: conversation.organizationId,
-        },
+            conversation: {
+                conversationId: conversation.conversationId,
+                projectId: conversation.projectId,
+                userId,
+                requiresEventTicket: conversation.requiresEventTicket,
+            },
         hasSurvey: surveyConfig !== undefined,
         now: new Date(),
     });
@@ -134,7 +145,9 @@ export async function getConversationForEdit({
                 ? conversation.preferredOpinionGroupCount
                 : null,
         postAsOrganizationName: toUnionUndefined(
-            conversation.postAsOrganizationName,
+            conversation.autoProvisionedForUserId === null
+                ? conversation.postAsOrganizationName
+                : null,
         ),
         surveyConfig,
         createdAt: conversation.createdAt,
@@ -211,9 +224,8 @@ export async function updateConversation({
         const conversationResults = await tx
             .select({
                 conversationId: conversationTable.id,
-                authorId: conversationTable.authorId,
-                organizationId: conversationTable.organizationId,
-                organizationName: organizationTable.name,
+                projectId: conversationTable.projectId,
+                organizationName: organizationTable.displayName,
                 currentContentId: conversationTable.currentContentId,
                 conversationType: conversationTable.conversationType,
                 isIndexed: conversationTable.isIndexed,
@@ -235,9 +247,19 @@ export async function updateConversation({
                     conversationTable.currentContentId,
                 ),
             )
-            .leftJoin(
+            .innerJoin(
+                projectOrganizationOwnershipTable,
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    conversationTable.projectId,
+                ),
+            )
+            .innerJoin(
                 organizationTable,
-                eq(conversationTable.organizationId, organizationTable.id),
+                eq(
+                    projectOrganizationOwnershipTable.organizationId,
+                    organizationTable.id,
+                ),
             )
             .leftJoin(
                 conversationModerationTable,
@@ -254,13 +276,13 @@ export async function updateConversation({
 
         const conversation = conversationResults[0];
 
-        const isOwner = await isConversationOwner({
+        const canUpdateConversation = await hasProjectCapability({
             db: tx,
             userId,
-            authorId: conversation.authorId,
-            organizationId: conversation.organizationId,
+            projectId: conversation.projectId,
+            capability: "conversation_update",
         });
-        if (!isOwner) {
+        if (!canUpdateConversation) {
             return { success: false, reason: "not_author" } as const;
         }
 
@@ -279,7 +301,7 @@ export async function updateConversation({
 
         const conversationId = conversation.conversationId;
         const subject = getPremiumEntitlementSubjectForConversation({
-            conversation,
+            conversation: { projectId: conversation.projectId, userId },
         });
         const currentBody = toUnionUndefined(conversation.currentBody);
         const contentChanged =

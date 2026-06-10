@@ -29,7 +29,6 @@ class ImportFormData(BaseModel):
         extra="forbid",
         validate_by_name=True,
     )
-    post_as_organization: str | None = Field(None, alias="postAsOrganization")
     participation_mode: ParticipationMode = Field(..., alias="participationMode")
     is_indexed: bool = Field(..., alias="isIndexed")
     requires_event_ticket: RequiresEventTicket | None = Field(None, alias="requiresEventTicket")
@@ -56,9 +55,10 @@ class UrlImportRequest(BaseModel):
     )
     import_slug_id: str = Field(..., alias="importSlugId")
     user_id: str = Field(..., alias="userId")
+    actor_user_id: str = Field(..., alias="actorUserId")
+    project_id: int = Field(..., alias="projectId", gt=0)
     form_data: ImportFormData = Field(..., alias="formData")
     did_write: str = Field(..., alias="didWrite")
-    author_id: str = Field(..., alias="authorId")
     type: Literal["url"]
     polis_url: str = Field(..., alias="polisUrl")
 
@@ -91,9 +91,10 @@ class CsvImportRequest(BaseModel):
     )
     import_slug_id: str = Field(..., alias="importSlugId")
     user_id: str = Field(..., alias="userId")
+    actor_user_id: str = Field(..., alias="actorUserId")
+    project_id: int = Field(..., alias="projectId", gt=0)
     form_data: ImportFormData = Field(..., alias="formData")
     did_write: str = Field(..., alias="didWrite")
-    author_id: str = Field(..., alias="authorId")
     type: Literal["csv"]
     files: CsvFiles
 

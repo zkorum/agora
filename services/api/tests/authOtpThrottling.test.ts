@@ -212,9 +212,11 @@ describe("OTP destination throttling", () => {
 
     async function createGuestDevice(didWrite: string) {
         const userId = crypto.randomUUID();
+        const username = didWrite.replace(/[^a-z0-9]/gi, "").slice(-20);
         await db.insert(userTable).values({
             id: userId,
-            username: didWrite.replace(/[^a-z0-9]/gi, "").slice(-20),
+            username,
+            firstName: username,
         });
         await db.insert(deviceTable).values({
             didWrite,
@@ -297,6 +299,7 @@ describe("OTP destination throttling", () => {
         await db.insert(userTable).values({
             id: conflictingUserId,
             username: "conflictemailuser",
+            firstName: "conflictemailuser",
         });
         await db.insert(emailTable).values({
             email: normalizeEmail(email),
@@ -364,6 +367,7 @@ describe("OTP destination throttling", () => {
         await db.insert(userTable).values({
             id: conflictingUserId,
             username: "conflictphoneuser",
+            firstName: "conflictphoneuser",
         });
         await db.insert(phoneTable).values({
             userId: conflictingUserId,

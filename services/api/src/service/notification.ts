@@ -9,8 +9,9 @@ import {
     opinionContentTable,
     opinionTable,
     notificationTable,
+    organizationMembershipTable,
+    projectOrganizationOwnershipTable,
     userTable,
-    userOrganizationMappingTable,
 } from "@/shared-backend/schema.js";
 import type { FetchNotificationsResponse } from "@/shared/types/dto.js";
 import type {
@@ -846,8 +847,7 @@ export async function getNotificationRecipients({
 }: GetNotificationRecipientsProps): Promise<NotificationRecipients> {
     const conversationResult = await db
         .select({
-            authorId: conversationTable.authorId,
-            organizationId: conversationTable.organizationId,
+            projectId: conversationTable.projectId,
         })
         .from(conversationTable)
         .where(eq(conversationTable.id, conversationId))
@@ -861,20 +861,29 @@ export async function getNotificationRecipients({
         };
     }
 
-    const { authorId, organizationId } = conversationResult[0];
-    const recipientSet = new Set<string>([authorId]);
+    const { projectId } = conversationResult[0];
+    const recipientSet = new Set<string>();
+    const orgMembers = await db
+        .select({
+            userId: organizationMembershipTable.userId,
+            organizationId: organizationMembershipTable.organizationId,
+        })
+        .from(projectOrganizationOwnershipTable)
+        .innerJoin(
+            organizationMembershipTable,
+            eq(
+                organizationMembershipTable.organizationId,
+                projectOrganizationOwnershipTable.organizationId,
+            ),
+        )
+        .where(eq(projectOrganizationOwnershipTable.projectId, projectId));
 
-    if (organizationId !== null) {
-        const orgMembers = await db
-            .select({ userId: userOrganizationMappingTable.userId })
-            .from(userOrganizationMappingTable)
-            .where(
-                eq(userOrganizationMappingTable.organizationId, organizationId),
-            );
-        for (const member of orgMembers) {
-            recipientSet.add(member.userId);
-        }
+    for (const member of orgMembers) {
+        recipientSet.add(member.userId);
     }
+
+    const firstOrganizationId = orgMembers.at(0)?.organizationId ?? null;
+    const firstRecipientId = orgMembers.at(0)?.userId ?? "";
 
     if (excludeUserIds) {
         for (const id of excludeUserIds) {
@@ -884,8 +893,8 @@ export async function getNotificationRecipients({
 
     return {
         recipientUserIds: Array.from(recipientSet),
-        conversationAuthorId: authorId,
-        organizationId,
+        conversationAuthorId: firstRecipientId,
+        organizationId: firstOrganizationId,
     };
 }
 

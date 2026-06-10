@@ -7,6 +7,7 @@ import {
     conversationModerationTable,
     organizationTable,
     maxdiffItemTable,
+    projectOrganizationOwnershipTable,
 } from "@/shared-backend/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type {
@@ -21,7 +22,17 @@ import type {
 } from "@/shared/types/zod.js";
 import { zodExternalSourceConfig } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
-import { eq, desc, SQL, and, sql, isNotNull, inArray } from "drizzle-orm";
+import {
+    eq,
+    desc,
+    SQL,
+    and,
+    sql,
+    isNotNull,
+    inArray,
+    isNull,
+    or,
+} from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import sanitizeHtml from "sanitize-html";
 import { createPostModerationPropertyObject } from "./moderation.js";
@@ -29,6 +40,7 @@ import { getUserMutePreferences } from "./muteUser.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
 import { getConversationEngagementScore } from "./recommendationSystem.js";
 import { log } from "@/app.js";
+import { alias } from "drizzle-orm/pg-core";
 
 export function useCommonUser() {
     interface GetUserIdFromUsernameProps {
@@ -218,6 +230,11 @@ export function useCommonPost() {
     }: FetchPostItemsProps): Promise<ExtendedConversationPerSlugId> {
         let postItems;
 
+        const personalOrganizationUserTable = alias(
+            userTable,
+            "personalOrganizationUser",
+        );
+
         const postItemsQuery = db
             .select({
                 title: conversationContentTable.title,
@@ -228,8 +245,8 @@ export function useCommonPost() {
                 createdAt: conversationTable.createdAt,
                 updatedAt: conversationTable.updatedAt,
                 lastReactedAt: conversationTable.lastReactedAt,
-                authorName: userTable.username,
-                organizationName: organizationTable.name,
+                authorName: personalOrganizationUserTable.username,
+                organizationName: organizationTable.displayName,
                 organizationImagePath: organizationTable.imagePath,
                 organizationWebsiteUrl: organizationTable.websiteUrl,
                 organizationIsFullImagePath: organizationTable.isFullImagePath,
@@ -267,7 +284,27 @@ export function useCommonPost() {
                     conversationTable.currentContentId,
                 ),
             )
-            .innerJoin(userTable, eq(userTable.id, conversationTable.authorId))
+            .innerJoin(
+                projectOrganizationOwnershipTable,
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    conversationTable.projectId,
+                ),
+            )
+            .innerJoin(
+                organizationTable,
+                eq(
+                    organizationTable.id,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+            )
+            .leftJoin(
+                personalOrganizationUserTable,
+                eq(
+                    personalOrganizationUserTable.id,
+                    organizationTable.autoProvisionedForUserId,
+                ),
+            )
             .leftJoin(
                 conversationModerationTable,
                 eq(
@@ -275,12 +312,16 @@ export function useCommonPost() {
                     conversationTable.id,
                 ),
             )
-            .leftJoin(
-                organizationTable,
-                eq(organizationTable.id, conversationTable.organizationId),
-            )
             // whereClause = and(whereClause, lt(postTable.createdAt, lastCreatedAt));
-            .where(and(where, eq(userTable.isDeleted, false)))
+            .where(
+                and(
+                    where,
+                    or(
+                        isNull(organizationTable.autoProvisionedForUserId),
+                        eq(personalOrganizationUserTable.isDeleted, false),
+                    ),
+                ),
+            )
             .orderBy(
                 desc(conversationTable.createdAt),
                 desc(conversationTable.id),
@@ -370,7 +411,7 @@ export function useCommonPost() {
                 totalParticipantCount: displayCounts.totalParticipantCount,
                 moderatedOpinionCount: displayCounts.moderatedOpinionCount,
                 hiddenOpinionCount: displayCounts.hiddenOpinionCount,
-                authorUsername: postItem.authorName,
+                authorUsername: postItem.authorName ?? postItem.organizationName,
                 isIndexed: postItem.isIndexed,
                 aiLabelingEnabled: postItem.aiLabelingEnabled,
                 preferredOpinionGroupCount: postItem.preferredOpinionGroupCount,
@@ -380,10 +421,8 @@ export function useCommonPost() {
                 isEdited: postItem.isEdited,
                 requiresEventTicket: postItem.requiresEventTicket ?? undefined,
                 organization:
-                    postItem.organizationName !== null &&
+                    postItem.authorName === null &&
                     postItem.organizationDescription !== null &&
-                    postItem.organizationImagePath !== null &&
-                    postItem.organizationIsFullImagePath !== null &&
                     postItem.organizationWebsiteUrl !== null
                         ? {
                               name: postItem.organizationName,
@@ -508,7 +547,6 @@ export function useCommonPost() {
     interface PostMetadata {
         id: number;
         contentId: number | null;
-        authorId: string;
         conversationType: ConversationType;
         participantCount: number;
         opinionCount: number;
@@ -538,7 +576,6 @@ export function useCommonPost() {
             .select({
                 id: conversationTable.id,
                 currentContentId: conversationTable.currentContentId,
-                authorId: conversationTable.authorId,
                 isIndexed: conversationTable.isIndexed,
                 participationMode: conversationTable.participationMode,
                 conversationType: conversationTable.conversationType,
@@ -564,7 +601,6 @@ export function useCommonPost() {
         return {
             contentId: postTableResponse[0].currentContentId,
             id: postTableResponse[0].id,
-            authorId: postTableResponse[0].authorId,
             participantCount: displayCounts.participantCount,
             voteCount: displayCounts.voteCount,
             opinionCount: displayCounts.opinionCount,

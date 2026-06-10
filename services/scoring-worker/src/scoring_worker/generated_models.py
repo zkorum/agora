@@ -50,6 +50,11 @@ class MaxdiffLifecycleStatus(StrEnum):
     canceled = "canceled"
 
 
+class DirectoryVisibility(StrEnum):
+    listed = "listed"
+    unlisted = "unlisted"
+
+
 class SurveyQuestionType(StrEnum):
     choice = "choice"
     free_text = "free_text"
@@ -66,8 +71,7 @@ class Conversation(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     slug_id: Mapped[str] = mapped_column(String(8))
-    author_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
-    organization_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    project_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     current_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_indexed: Mapped[bool] = mapped_column(Boolean, server_default="true")
@@ -158,6 +162,29 @@ class MaxdiffUserEntityScore(Base):
     score: Mapped[float] = mapped_column(Float)
     uncertainty_left: Mapped[float] = mapped_column(Float)
     uncertainty_right: Mapped[float] = mapped_column(Float)
+
+
+class ProjectOrganizationOwnership(Base):
+    __tablename__ = "project_organization_ownership"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    project_id: Mapped[int] = mapped_column(Integer)
+    organization_id: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class Project(Base):
+    __tablename__ = "project"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug: Mapped[str] = mapped_column(String(65))
+    display_name: Mapped[str] = mapped_column(String(65))
+    directory_visibility: Mapped[DirectoryVisibility] = mapped_column(
+        SaEnum(DirectoryVisibility, values_callable=_enum_values, native_enum=False),
+    )
+    auto_provisioned_for_organization_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
 
 
 class RankingScoreEntity(Base):
@@ -309,6 +336,7 @@ class User(Base):
     id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True)
     polis_participant_id: Mapped[int] = mapped_column(Integer)
     username: Mapped[str] = mapped_column(String(20))
+    first_name: Mapped[str] = mapped_column(String(65))
     is_site_moderator: Mapped[bool] = mapped_column(Boolean, server_default="false")
     is_site_org_admin: Mapped[bool] = mapped_column(Boolean, server_default="false")
     is_imported: Mapped[bool] = mapped_column(Boolean, server_default="false")

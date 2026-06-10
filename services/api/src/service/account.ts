@@ -8,6 +8,8 @@ import {
     voteTable,
     opinionTable,
     conversationTable,
+    organizationMembershipTable,
+    projectOrganizationOwnershipTable,
 } from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
@@ -693,17 +695,31 @@ export async function deleteUserAccount({ db, userId }: DeleteAccountProps) {
             conversationIdsSet.add(opinion.conversationId),
         );
 
-        // From conversations (as author)
+        // From conversations owned through organization/project membership
         log.info(`[Account] Querying conversations for user: ${userId}`);
         const userConversations = await tx
-            .select()
+            .select({ conversationId: conversationTable.id })
             .from(conversationTable)
-            .where(eq(conversationTable.authorId, userId));
+            .innerJoin(
+                projectOrganizationOwnershipTable,
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    conversationTable.projectId,
+                ),
+            )
+            .innerJoin(
+                organizationMembershipTable,
+                eq(
+                    organizationMembershipTable.organizationId,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+            )
+            .where(eq(organizationMembershipTable.userId, userId));
         log.info(
             `[Account] Found ${String(userConversations.length)} conversations`,
         );
         userConversations.forEach((conversation) =>
-            conversationIdsSet.add(conversation.id),
+            conversationIdsSet.add(conversation.conversationId),
         );
 
         log.info(

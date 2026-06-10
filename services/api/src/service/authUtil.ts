@@ -4,9 +4,9 @@ import {
     deviceTable,
     emailTable,
     opinionTable,
+    organizationMembershipTable,
     organizationTable,
     phoneTable,
-    userOrganizationMappingTable,
     userTable,
     zkPassportTable,
 } from "@/shared-backend/schema.js";
@@ -34,6 +34,7 @@ export type DeviceLoginStatusInternal =
     | Extract<DeviceLoginStatusExtended, { isKnown: false }>;
 import * as authService from "@/service/auth.js";
 import { log } from "@/app.js";
+import { hasConversationCapability } from "@/service/projectAccess.js";
 
 interface InfoDevice {
     userAgent: string;
@@ -177,20 +178,20 @@ export async function isUserPartOfOrganization({
         .select({ organizationId: organizationTable.id })
         .from(userTable)
         .innerJoin(
-            userOrganizationMappingTable,
-            eq(userTable.id, userOrganizationMappingTable.userId),
+            organizationMembershipTable,
+            eq(userTable.id, organizationMembershipTable.userId),
         )
         .innerJoin(
             organizationTable,
             eq(
                 organizationTable.id,
-                userOrganizationMappingTable.organizationId,
+                organizationMembershipTable.organizationId,
             ),
         )
         .where(
             and(
                 eq(userTable.id, userId),
-                eq(organizationTable.name, organizationName),
+                eq(organizationTable.slug, organizationName),
             ),
         );
     if (result.length === 0) {
@@ -211,12 +212,12 @@ export async function isUserPartOfOrganizationById({
     organizationId,
 }: IsUserPartOfOrganizationByIdProps): Promise<boolean> {
     const result = await db
-        .select({ id: userOrganizationMappingTable.id })
-        .from(userOrganizationMappingTable)
+        .select({ id: organizationMembershipTable.id })
+        .from(organizationMembershipTable)
         .where(
             and(
-                eq(userOrganizationMappingTable.userId, userId),
-                eq(userOrganizationMappingTable.organizationId, organizationId),
+                eq(organizationMembershipTable.userId, userId),
+                eq(organizationMembershipTable.organizationId, organizationId),
             ),
         )
         .limit(1);
@@ -546,9 +547,7 @@ interface CanModerateConversationParams {
 }
 
 /**
- * Checks if a user can moderate content in a conversation.
- * Returns authorized if user is a site moderator, the conversation author,
- * or a member of the organization that owns the conversation.
+ * Checks move-style moderation rights. Hide moderation remains site-moderator-only.
  */
 export async function canModerateConversation({
     db,
@@ -562,8 +561,7 @@ export async function canModerateConversation({
 
     const conversation = await db
         .select({
-            authorId: conversationTable.authorId,
-            organizationId: conversationTable.organizationId,
+            conversationId: conversationTable.id,
         })
         .from(conversationTable)
         .where(eq(conversationTable.slugId, conversationSlugId))
@@ -573,23 +571,14 @@ export async function canModerateConversation({
         throw httpErrors.notFound("Conversation not found");
     }
 
-    const isAuthor = conversation[0].authorId === userId;
-    if (isAuthor) {
-        return { isAuthorized: true, isSiteModerator: false };
-    }
+    const canModerate = await hasConversationCapability({
+        db,
+        userId,
+        conversationId: conversation[0].conversationId,
+        capability: "conversation_moderate",
+    });
 
-    if (conversation[0].organizationId !== null) {
-        const isOrgMember = await isUserPartOfOrganizationById({
-            db,
-            userId,
-            organizationId: conversation[0].organizationId,
-        });
-        if (isOrgMember) {
-            return { isAuthorized: true, isSiteModerator: false };
-        }
-    }
-
-    return { isAuthorized: false, isSiteModerator: false };
+    return { isAuthorized: canModerate, isSiteModerator: false };
 }
 
 interface CanModerateConversationByOpinionSlugIdParams {
