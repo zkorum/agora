@@ -289,6 +289,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dev/long-rich-text-disclosure': RouteRecordInfo<
+      '/dev/long-rich-text-disclosure',
+      '/dev/long-rich-text-disclosure',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/dev/opinion-group-visualization': RouteRecordInfo<
       '/dev/opinion-group-visualization',
       '/dev/opinion-group-visualization',
@@ -844,6 +851,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dev/component-testing.vue': {
       routes:
         | '/dev/component-testing'
+      views:
+        | never
+    }
+    'src/pages/dev/long-rich-text-disclosure.vue': {
+      routes:
+        | '/dev/long-rich-text-disclosure'
       views:
         | never
     }

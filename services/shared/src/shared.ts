@@ -4,6 +4,8 @@ export const MAX_LENGTH_OPTION = 30;
 export const MAX_LENGTH_TITLE = 140; // 140 is LinkedIn question limit
 export const MAX_LENGTH_BODY = 1000;
 export const MAX_LENGTH_BODY_HTML = 3000; // Reserve extra space for HTML tags
+export const MAX_LENGTH_CONVERSATION_BODY = 10000;
+export const MAX_LENGTH_CONVERSATION_BODY_HTML = 60000;
 export const MAX_LENGTH_OPINION = 280;
 export const MAX_LENGTH_OPINION_HTML = 840; // Reserve extra space for HTML tags
 export const MAX_LENGTH_OPINION_HTML_OUTPUT = 3000; // Old value for database retro-compatibility of existing data
@@ -78,7 +80,9 @@ export function validateHtmlStringCharacterCount(
     mode: "conversation" | "opinion",
 ): ValidateHtmlStringCharacterCountReturn {
     const characterLimit =
-        mode == "conversation" ? MAX_LENGTH_BODY : MAX_LENGTH_OPINION;
+        mode == "conversation"
+            ? MAX_LENGTH_CONVERSATION_BODY
+            : MAX_LENGTH_OPINION;
     return validateHtmlStringCharacterCountWithLimit({
         htmlString,
         maxCharacterCount: characterLimit,

@@ -44,6 +44,7 @@
                   :html-body="item.title"
                   :compact-mode="true"
                   :enable-links="false"
+                  content-role="title"
                 />
                 <div v-if="item.score !== null" class="item-meta">
                   <div class="score-bar-container">

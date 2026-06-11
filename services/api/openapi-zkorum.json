@@ -1328,7 +1328,7 @@
                                                             },
                                                             "body": {
                                                                 "type": "string",
-                                                                "maxLength": 3000
+                                                                "maxLength": 60000
                                                             }
                                                         },
                                                         "required": [
@@ -2325,7 +2325,7 @@
                                                     },
                                                     "body": {
                                                         "type": "string",
-                                                        "maxLength": 3000
+                                                        "maxLength": 60000
                                                     }
                                                 },
                                                 "required": [
@@ -2725,7 +2725,7 @@
                                                             },
                                                             "body": {
                                                                 "type": "string",
-                                                                "maxLength": 3000
+                                                                "maxLength": 60000
                                                             }
                                                         },
                                                         "required": [
@@ -6658,8 +6658,7 @@
                                         "maxLength": 140
                                     },
                                     "conversationBody": {
-                                        "type": "string",
-                                        "maxLength": 3000
+                                        "type": "string"
                                     },
                                     "postAsOrganization": {
                                         "type": "string"
@@ -7713,7 +7712,7 @@
                                                         },
                                                         "body": {
                                                             "type": "string",
-                                                            "maxLength": 3000
+                                                            "maxLength": 60000
                                                         }
                                                     },
                                                     "required": [
@@ -7839,7 +7838,7 @@
                                                 },
                                                 "conversationBody": {
                                                     "type": "string",
-                                                    "maxLength": 3000
+                                                    "maxLength": 60000
                                                 },
                                                 "isIndexed": {
                                                     "type": "boolean"
@@ -8253,8 +8252,7 @@
                                         "maxLength": 140
                                     },
                                     "conversationBody": {
-                                        "type": "string",
-                                        "maxLength": 3000
+                                        "type": "string"
                                     },
                                     "isIndexed": {
                                         "type": "boolean"

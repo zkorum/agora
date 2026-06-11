@@ -283,7 +283,7 @@ class ConversationContent(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     conversation_id: Mapped[int] = mapped_column(Integer)
     title: Mapped[str] = mapped_column(String(140))
-    body: Mapped[str | None] = mapped_column(String(3000), nullable=True)
+    body: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 

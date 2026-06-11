@@ -106,6 +106,7 @@ function generateLengthConstantsSection({
     const constants = [
         "MAX_LENGTH_TITLE",
         "MAX_LENGTH_BODY_HTML",
+        "MAX_LENGTH_CONVERSATION_BODY_HTML",
         "MAX_LENGTH_OPINION_HTML_OUTPUT",
     ];
     return {

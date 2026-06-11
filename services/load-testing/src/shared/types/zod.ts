@@ -9,11 +9,14 @@ import {
     MAX_LENGTH_USERNAME,
     MAX_LENGTH_BODY,
     MAX_LENGTH_BODY_HTML,
+    MAX_LENGTH_CONVERSATION_BODY,
+    MAX_LENGTH_CONVERSATION_BODY_HTML,
     MAX_LENGTH_OPINION,
     MAX_LENGTH_OPINION_HTML,
     MAX_LENGTH_USER_REPORT_EXPLANATION,
     validateHtmlStringCharacterCount,
     MAX_LENGTH_OPINION_HTML_OUTPUT,
+    countHtmlPlainTextCharacters,
 } from "../shared.js";
 import { isValidPolisUrl } from "../utils/polis.js";
 import {
@@ -180,25 +183,30 @@ export const zodConversationTitle = z.string().max(MAX_LENGTH_TITLE).min(1);
 // For API input validation - validates both HTML string length AND plain text character count
 export const zodConversationBodyInput = z
     .string()
-    .max(MAX_LENGTH_BODY_HTML, {
-        message: `Raw HTML content exceeds maximum length of ${String(MAX_LENGTH_BODY_HTML)} characters`,
+    .superRefine((val, ctx) => {
+        const { characterCount } = countHtmlPlainTextCharacters(val);
+        if (characterCount > MAX_LENGTH_CONVERSATION_BODY) {
+            ctx.addIssue({
+                code: "custom",
+                message: `Plain text content exceeds maximum length of ${String(MAX_LENGTH_CONVERSATION_BODY)} characters`,
+            });
+            return;
+        }
+
+        if (val.length > MAX_LENGTH_CONVERSATION_BODY_HTML) {
+            ctx.addIssue({
+                code: "custom",
+                message: `This content contains too much formatting. Remove some formatting or paste as plain text.`,
+            });
+        }
     })
-    .refine(
-        (val: string) => {
-            return validateHtmlStringCharacterCount(val, "conversation")
-                .isValid;
-        },
-        {
-            message: `Plain text content exceeds maximum length of ${String(MAX_LENGTH_BODY)} characters`,
-        },
-    )
     .optional();
 
 // For database/API output - validates HTML string length only (after linkification may add extra chars)
 export const zodConversationBodyOutput = z
     .string()
-    .max(MAX_LENGTH_BODY_HTML, {
-        message: `Raw HTML content exceeds maximum length of ${String(MAX_LENGTH_BODY_HTML)} characters`,
+    .max(MAX_LENGTH_CONVERSATION_BODY_HTML, {
+        message: `Raw HTML content exceeds maximum length of ${String(MAX_LENGTH_CONVERSATION_BODY_HTML)} characters`,
     })
     .optional();
 export const zodConversationDataWithResult = z

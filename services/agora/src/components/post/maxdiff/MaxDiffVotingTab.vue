@@ -134,6 +134,7 @@
                 :html-body="itemContentMap.get(slugId) ?? slugId"
                 :compact-mode="false"
                 :enable-links="false"
+                content-role="title"
               />
               <span v-if="itemBySlugId.get(slugId)?.body" class="candidate-body-inline">
                 — {{ stripHtml(itemBySlugId.get(slugId)?.body ?? "") }}

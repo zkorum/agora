@@ -20,6 +20,23 @@ INPUT_ALLOWED_TAGS = {
 }
 OUTPUT_ALLOWED_TAGS = INPUT_ALLOWED_TAGS | {"div"}
 URL_PATTERN = re.compile(r"(?<![\"'=])(https?://[^\s<]+)")
+EMPTY_PARAGRAPH_PATTERN = r"<p>(?:[\s\u00a0]|&nbsp;|<br\s*/?>)*</p>"
+PARAGRAPH_CONTENT_PATTERN = re.compile(r"<p>(.*?)</p>", flags=re.IGNORECASE | re.DOTALL)
+LEADING_EMPTY_PARAGRAPHS_PATTERN = re.compile(
+    rf"^(?:\s*{EMPTY_PARAGRAPH_PATTERN})+\s*",
+    flags=re.IGNORECASE,
+)
+TRAILING_EMPTY_PARAGRAPHS_PATTERN = re.compile(
+    rf"\s*(?:{EMPTY_PARAGRAPH_PATTERN}\s*)+$",
+    flags=re.IGNORECASE,
+)
+REPEATED_EMPTY_PARAGRAPHS_PATTERN = re.compile(
+    rf"{EMPTY_PARAGRAPH_PATTERN}(?:\s*{EMPTY_PARAGRAPH_PATTERN})+",
+    flags=re.IGNORECASE,
+)
+EMPTY_PARAGRAPH_REGEX = re.compile(EMPTY_PARAGRAPH_PATTERN, flags=re.IGNORECASE)
+LEADING_BREAKS_PATTERN = re.compile(r"^(\s*<br\s*/?>)+\s*", flags=re.IGNORECASE)
+TRAILING_BREAKS_PATTERN = re.compile(r"\s*(<br\s*/?>)+\s*$", flags=re.IGNORECASE)
 
 
 class _SanitizingParser(HTMLParser):
@@ -67,10 +84,17 @@ def _sanitize_rich_text_content(value: str, *, mode: str) -> str:
 def _normalize_empty_lines(value: str) -> str:
     if not value.strip():
         return value
-    value = re.sub(r"^(\s*<p>\s*</p>)+\s*", "", value, flags=re.IGNORECASE)
-    value = re.sub(r"\s*(<p>\s*</p>)+\s*$", "", value, flags=re.IGNORECASE)
-    value = re.sub(r"^(\s*<br\s*/?>)+\s*", "", value, flags=re.IGNORECASE)
-    return re.sub(r"\s*(<br\s*/?>)+\s*$", "", value, flags=re.IGNORECASE)
+
+    value = PARAGRAPH_CONTENT_PATTERN.sub(
+        lambda match: f"<p>{match.group(1).strip()}</p>",
+        value,
+    )
+    value = LEADING_EMPTY_PARAGRAPHS_PATTERN.sub("", value)
+    value = TRAILING_EMPTY_PARAGRAPHS_PATTERN.sub("", value)
+    value = REPEATED_EMPTY_PARAGRAPHS_PATTERN.sub("<p></p>", value)
+    value = EMPTY_PARAGRAPH_REGEX.sub("<p></p>", value)
+    value = LEADING_BREAKS_PATTERN.sub("", value)
+    return TRAILING_BREAKS_PATTERN.sub("", value)
 
 
 def _linkify_html_content(value: str) -> str:

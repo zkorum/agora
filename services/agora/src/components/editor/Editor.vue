@@ -118,8 +118,8 @@ import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { BubbleMenu } from "@tiptap/vue-3/menus";
 import Divider from "primevue/divider";
 import { useQuasar } from "quasar";
-import sanitizeHtml from "sanitize-html";
 import { htmlToCountedText } from "src/shared/shared";
+import { processUserGeneratedHtml } from "src/shared-app-api/html";
 import { computed, onUnmounted, ref, watch } from "vue";
 
 import EditorToolbarButton from "./EditorToolbarButton.vue";
@@ -267,25 +267,7 @@ const editor = useEditor({
     },
     // Handle paste to preserve only TipTap-enabled formatting
     transformPastedHTML(html) {
-      // Only allow tags that TipTap supports: b, strong, i, em, strike, s, u, p, br, ul, ol, li
-      const options: sanitizeHtml.IOptions = {
-        allowedTags: [
-          "b",
-          "strong",
-          "i",
-          "em",
-          "strike",
-          "s",
-          "u",
-          "p",
-          "br",
-          "ul",
-          "ol",
-          "li",
-        ],
-        allowedAttributes: {},
-      };
-      return sanitizeHtml(html, options);
+      return processUserGeneratedHtml(html, false, "input");
     },
     handleKeyDown(_view, event) {
       if (props.submitOnEnter && event.key === "Enter" && !event.shiftKey) {

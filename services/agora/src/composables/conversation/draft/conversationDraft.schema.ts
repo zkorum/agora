@@ -6,7 +6,7 @@
  * - newConversationDrafts store (persistence validation)
  */
 
-import { MAX_LENGTH_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
+import { MAX_LENGTH_CONVERSATION_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
 import {
   zodConversationType,
   zodEventSlug,
@@ -174,5 +174,5 @@ export type ConversationImportType = z.infer<typeof zodConversationImportType>;
 
 export const VALIDATION_CONSTANTS = {
   MAX_LENGTH_TITLE,
-  MAX_LENGTH_BODY,
+  MAX_LENGTH_BODY: MAX_LENGTH_CONVERSATION_BODY,
 } as const;

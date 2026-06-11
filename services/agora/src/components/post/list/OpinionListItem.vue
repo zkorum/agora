@@ -46,6 +46,7 @@
             :html-body="opinionItem.opinion"
             :compact-mode="false"
             :enable-links="false"
+            :collapsible="false"
           />
         </div>
 
