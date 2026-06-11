@@ -100,7 +100,7 @@
               :show-toolbar="true"
               :single-line="false"
               :disabled="!canEditConversationContent"
-              :max-length="MAX_LENGTH_BODY"
+              :max-length="MAX_LENGTH_CONVERSATION_BODY"
               :show-character-count="true"
               @update:model-value="updateContent"
               @update:is-over-limit="(v: boolean) => (isBodyOverLimit = v)"
@@ -127,7 +127,7 @@ import {
   type ValidationErrorField,
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { MAX_LENGTH_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
+import { MAX_LENGTH_CONVERSATION_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
 import type { GetConversationForEditResponse } from "src/shared/types/dto";
 import type {
   ParticipationMode,

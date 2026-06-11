@@ -9,7 +9,7 @@
 
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
-  MAX_LENGTH_BODY,
+  MAX_LENGTH_CONVERSATION_BODY,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
 import type {
@@ -228,7 +228,7 @@ export function useConversationDraft(
     if (!bodyValidation.isValid) {
       const error = t("bodyExceedsLimit", {
         count: bodyValidation.characterCount.toString(),
-        max: MAX_LENGTH_BODY.toString(),
+        max: MAX_LENGTH_CONVERSATION_BODY.toString(),
       });
       validationState.value.body = {
         isValid: false,
@@ -323,7 +323,7 @@ export function useConversationDraft(
         result.isValid = false;
         result.errors.body = t("bodyExceedsLimit", {
           count: bodyValidation.characterCount.toString(),
-          max: MAX_LENGTH_BODY.toString(),
+          max: MAX_LENGTH_CONVERSATION_BODY.toString(),
         });
         if (!result.firstErrorField) result.firstErrorField = "body";
       }

@@ -15,6 +15,7 @@
           :html-body="title"
           :compact-mode="false"
           :enable-links="false"
+          content-role="title"
         />
         <ZKHtmlContent
           v-if="htmlBody"

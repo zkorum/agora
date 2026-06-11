@@ -33,7 +33,7 @@ from import_worker.generated_models import (
     VoteContent,
 )
 from import_worker.generated_shared_types import (
-    MAX_LENGTH_BODY_HTML,
+    MAX_LENGTH_CONVERSATION_BODY_HTML,
     MAX_LENGTH_OPINION_HTML_OUTPUT,
     MAX_LENGTH_TITLE,
 )
@@ -297,7 +297,7 @@ def _create_conversation(
     title = _truncate_with_ellipsis(title, max_length=MAX_LENGTH_TITLE, ellipsis=" [...]")
     body = _truncate_with_ellipsis(
         imported.conversation_data.description,
-        max_length=MAX_LENGTH_BODY_HTML,
+        max_length=MAX_LENGTH_CONVERSATION_BODY_HTML,
         ellipsis=" [...].",
     )
     body = process_user_generated_html(body, enable_links=True, mode="input")

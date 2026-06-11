@@ -26,7 +26,6 @@ import { sql } from "drizzle-orm/sql";
 // WARNING: when you modify these limits, change this in shared.ts as well
 const MAX_LENGTH_TITLE = 140;
 const MAX_LENGTH_BODY = 1000;
-const MAX_LENGTH_BODY_HTML = 3000; // Reserve extra space for HTML tags
 // const MAX_LENGTH_OPINION = 280;
 const MAX_LENGTH_OPINION_HTML = 3000; // is lower now, kept this value For retro-compatibility
 const MAX_LENGTH_SURVEY_QUESTION = 500;
@@ -1430,7 +1429,7 @@ export const conversationContentTable = pgTable("conversation_content", {
         .references(() => conversationTable.id)
         .notNull(),
     title: varchar("title", { length: MAX_LENGTH_TITLE }).notNull(),
-    body: varchar("body", { length: MAX_LENGTH_BODY_HTML }),
+    body: text("body"),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,

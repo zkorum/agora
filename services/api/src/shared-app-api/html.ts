@@ -7,6 +7,24 @@ import type { Opts } from "linkifyjs";
 import localforage from "localforage";
 import sanitizeHtml from "sanitize-html";
 
+const EMPTY_PARAGRAPH_PATTERN = String.raw`<p>(?:[\s\u00a0]|&nbsp;|<br\s*\/?>)*<\/p>`;
+const PARAGRAPH_CONTENT_REGEX = /<p>([\s\S]*?)<\/p>/gi;
+const EMPTY_PARAGRAPH_REGEX = new RegExp(EMPTY_PARAGRAPH_PATTERN, "gi");
+const LEADING_EMPTY_PARAGRAPHS_REGEX = new RegExp(
+    String.raw`^(?:\s*${EMPTY_PARAGRAPH_PATTERN})+\s*`,
+    "i",
+);
+const TRAILING_EMPTY_PARAGRAPHS_REGEX = new RegExp(
+    String.raw`\s*(?:${EMPTY_PARAGRAPH_PATTERN}\s*)+$`,
+    "i",
+);
+const REPEATED_EMPTY_PARAGRAPHS_REGEX = new RegExp(
+    String.raw`${EMPTY_PARAGRAPH_PATTERN}(?:\s*${EMPTY_PARAGRAPH_PATTERN})+`,
+    "gi",
+);
+const LEADING_BREAKS_REGEX = /^(\s*<br\s*\/?>)+\s*/i;
+const TRAILING_BREAKS_REGEX = /\s*(<br\s*\/?>)+\s*$/i;
+
 /**
  * Converts HTML content to plain text with newlines preserved
  * This is used for character counting across the application
@@ -30,8 +48,8 @@ export function htmlToCountedText(htmlString: string): string {
 }
 
 /**
- * Normalizes HTML content by trimming leading and trailing empty lines
- * Only removes unnecessary whitespace at the beginning and end of content
+ * Normalizes TipTap-style empty lines while preserving one intentional blank
+ * paragraph between content blocks.
  *
  * @param htmlString - The HTML string to normalize
  * @returns Normalized HTML string with leading/trailing empty elements removed
@@ -41,18 +59,16 @@ export function normalizeEmptyLines(htmlString: string): string {
         return htmlString;
     }
 
-    // Step 1: Trim leading empty paragraphs
-    // Use non-ambiguous quantifiers to avoid ReDoS (no nested \s* inside repeating group)
-    htmlString = htmlString.replace(/^(\s*<p>\s*<\/p>)+\s*/i, "");
-
-    // Step 2: Trim trailing empty paragraphs
-    htmlString = htmlString.replace(/\s*(<p>\s*<\/p>)+\s*$/i, "");
-
-    // Step 3: Trim leading <br> tags
-    htmlString = htmlString.replace(/^(\s*<br\s*\/?>)+\s*/i, "");
-
-    // Step 4: Trim trailing <br> tags
-    htmlString = htmlString.replace(/\s*(<br\s*\/?>)+\s*$/i, "");
+    htmlString = htmlString
+        .replace(PARAGRAPH_CONTENT_REGEX, (_match, content: string) => {
+            return `<p>${content.trim()}</p>`;
+        })
+        .replace(LEADING_EMPTY_PARAGRAPHS_REGEX, "")
+        .replace(TRAILING_EMPTY_PARAGRAPHS_REGEX, "")
+        .replace(REPEATED_EMPTY_PARAGRAPHS_REGEX, "<p></p>")
+        .replace(EMPTY_PARAGRAPH_REGEX, "<p></p>")
+        .replace(LEADING_BREAKS_REGEX, "")
+        .replace(TRAILING_BREAKS_REGEX, "");
 
     return htmlString;
 }
@@ -181,7 +197,7 @@ export function processUserGeneratedHtml(
     // Step 1: Sanitize to remove disallowed tags
     htmlString = sanitizeRichTextContent(htmlString, mode);
 
-    // Step 2: Normalize excessive empty lines (limit to max 2 consecutive)
+    // Step 2: Normalize excessive empty lines (limit to one empty paragraph)
     htmlString = normalizeEmptyLines(htmlString);
 
     // Step 3: Convert URLs to clickable links if enabled

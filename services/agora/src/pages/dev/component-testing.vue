@@ -3,18 +3,29 @@
     <StandardMenuBar :title="t('componentTesting')" :center-content="true" />
   </Teleport>
 
-      <div class="container">
-       <CheckpointTimelineTest />
-       <PreferencesDialogTest />
-      <OpinionGroupVisualizationTest />
-      <AnalysisReportTest />
-      <AsyncStateHandlerTest />
-      <EmbeddedBrowserWarningTest />
-    </div>
+  <div class="container">
+    <SpaLink to="/dev/long-rich-text-disclosure" class="route-card">
+      <div class="route-card-header">
+        <i class="pi pi-align-left section-icon"></i>
+        <span>Long rich text disclosure</span>
+      </div>
+      <p class="route-card-description">
+        Open a conversation-page preview with controls for long descriptions,
+        compact mode, and statements.
+      </p>
+    </SpaLink>
+
+    <PreferencesDialogTest />
+    <OpinionGroupVisualizationTest />
+    <AnalysisReportTest />
+    <AsyncStateHandlerTest />
+    <EmbeddedBrowserWarningTest />
+  </div>
 </template>
 
 <script setup lang="ts">
 import { StandardMenuBar } from "src/components/navigation/header/variants";
+import SpaLink from "src/components/ui-library/SpaLink.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 
@@ -24,12 +35,15 @@ import {
 } from "./component-testing.i18n";
 import AnalysisReportTest from "./test-components/AnalysisReportTest.vue";
 import AsyncStateHandlerTest from "./test-components/AsyncStateHandlerTest.vue";
-import CheckpointTimelineTest from "./test-components/CheckpointTimelineTest.vue";
 import EmbeddedBrowserWarningTest from "./test-components/EmbeddedBrowserWarningTest.vue";
 import OpinionGroupVisualizationTest from "./test-components/OpinionGroupVisualizationTest.vue";
 import PreferencesDialogTest from "./test-components/PreferencesDialogTest.vue";
 
-const { isActive } = usePageLayout({ enableFooter: false, reducedWidth: true, addBottomPadding: true });
+const { isActive } = usePageLayout({
+  enableFooter: false,
+  reducedWidth: true,
+  addBottomPadding: true,
+});
 
 const { t } = useComponentI18n<ComponentTestingTranslations>(
   componentTestingTranslations
@@ -43,11 +57,24 @@ const { t } = useComponentI18n<ComponentTestingTranslations>(
   margin: 0 auto;
 }
 
-.test-section-card {
+.route-card {
+  display: block;
+  padding: 1.5rem;
   margin-bottom: 2rem;
+  border: 1px solid $grey-4;
+  border-radius: 0.75rem;
+  background: white;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.section-header {
+.route-card:hover {
+  border-color: $primary;
+  box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 8%);
+}
+
+.route-card-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -59,15 +86,9 @@ const { t } = useComponentI18n<ComponentTestingTranslations>(
   }
 }
 
-.section-description {
-  margin: 0 0 2rem 0;
+.route-card-description {
+  margin: 0.75rem 0 0;
   color: $grey-8;
-  font-size: 1rem;
   line-height: 1.5;
-}
-
-.button-container {
-  display: flex;
-  justify-content: center;
 }
 </style>

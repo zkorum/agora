@@ -130,7 +130,7 @@
               :show-toolbar="true"
               :single-line="false"
               :disabled="false"
-              :max-length="MAX_LENGTH_BODY"
+              :max-length="MAX_LENGTH_CONVERSATION_BODY"
               :show-character-count="true"
               @update:model-value="updateContent"
               @update:is-over-limit="(v: boolean) => (isBodyOverLimit = v)"
@@ -172,7 +172,7 @@ import {
   type ValidationErrorField,
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { MAX_LENGTH_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
+import { MAX_LENGTH_CONVERSATION_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";

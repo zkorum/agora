@@ -73,6 +73,7 @@
                         :html-body="notificationItem.displayMessage"
                         :compact-mode="false"
                         :enable-links="false"
+                        :collapsible="false"
                       />
                     </div>
                   </div>
