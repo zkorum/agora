@@ -1,6 +1,6 @@
 # WARNING: GENERATED FROM shared-backend/src/schema.ts
 # DO NOT MODIFY -- Re-generate with: make sync
-# Service: math-updater
+# Service: shared-analysis-worker
 
 from __future__ import annotations
 

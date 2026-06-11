@@ -10,7 +10,7 @@ This directory contains all Agora services and shared code packages.
 - **math-updater/** - Python worker for opinion-group analysis
 - **ai-description-retry-worker/** - Python worker for AI label/summary retry and backlog work
 - **description-translation-retry-worker/** - Python worker for label/summary translation retry and backlog work
-- **analysis-worker-shared/** - Shared Python package for analysis and description worker code and generated artifacts
+- **shared-analysis-worker/** - Shared Python package for analysis and description worker code and generated artifacts
 - **scoring-worker/** - Python worker for MaxDiff rankings
 - **llm/** - LLM service for AI-generated summaries
 - **images/** - Image processing service
@@ -44,14 +44,14 @@ Shared directly between TypeScript backend services. Python workers consume gene
 
 **Usage:** `make sync-ts-backend` or `make dev-sync-ts-backend`
 
-### services/analysis-worker-shared
+### services/shared-analysis-worker
 Shared Python package consumed by analysis and description Python workers.
 
 **Contents:** Generated SQLAlchemy models for analysis workers, generated shared constants/types, Valkey queue helpers, retry-state helpers, AI provider helpers, and red-dwarf analysis glue
 
 **Used by:** math-updater, ai-description-retry-worker, description-translation-retry-worker
 
-**Usage:** edit source Python code directly in `services/analysis-worker-shared/src/`; regenerate `generated_*.py` with `make sync-python-artifacts` after relevant `services/shared` or `services/shared-backend` changes
+**Usage:** edit source Python code directly in `services/shared-analysis-worker/src/`; regenerate `generated_*.py` with `make sync-python-artifacts` after relevant `services/shared` or `services/shared-backend` changes
 
 ## Development Workflow
 
@@ -60,7 +60,7 @@ Shared Python package consumed by analysis and description Python workers.
 1. **After modifying `services/shared/src/`:** Run `make sync`
 2. **After modifying `services/shared-app-api/src/`:** Run `make sync-app-api`
 3. **After modifying `services/shared-backend/src/`:** Run `make sync-ts-backend` and `make sync-python-artifacts` if Python generated models are affected
-4. **After modifying analysis-worker-shared Python logic:** Edit `services/analysis-worker-shared/src/` directly, then run the affected worker checks
+4. **After modifying shared-analysis-worker Python logic:** Edit `services/shared-analysis-worker/src/` directly, then run the affected worker checks
 
 ### Watch Mode
 
@@ -92,10 +92,10 @@ services/shared-backend (Backend Services)
 
 services/shared-backend + services/shared generated artifacts
     ├──> services/import-worker/src/import_worker/generated_*.py
-    ├──> services/analysis-worker-shared/src/agora_analysis_worker_shared/generated_*.py
+    ├──> services/shared-analysis-worker/src/agora_analysis_worker_shared/generated_*.py
     └──> services/scoring-worker/src/scoring_worker/generated_models.py
 
-services/analysis-worker-shared (analysis Python worker library)
+services/shared-analysis-worker (analysis Python worker library)
     ├──> services/math-updater
     ├──> services/ai-description-retry-worker
     └──> services/description-translation-retry-worker

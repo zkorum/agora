@@ -11,7 +11,7 @@ exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for 
 exclude-newer-span = "P5D"
 
 [[package]]
-name = "agora-analysis-worker-shared"
+name = "agora-shared-analysis-worker"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

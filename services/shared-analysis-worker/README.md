@@ -6,7 +6,7 @@ This package contains DB models, generated shared constants, Valkey queue helper
 
 Python workers share code in two ways:
 
-- Reusable Python implementation lives here under `src/agora_analysis_worker_shared/` and is imported as the editable `agora-analysis-worker-shared` package by worker services.
+- Reusable Python implementation lives here under `src/agora_analysis_worker_shared/` and is imported as the editable `agora-shared-analysis-worker` package by worker services.
 - Generated files under `src/agora_analysis_worker_shared/generated_*.py` are produced from TypeScript sources in `services/shared` and `services/shared-backend`.
 
 Do not hand-edit generated files. Edit the TypeScript source schema/types or the reusable Python implementation, depending on what needs to change.

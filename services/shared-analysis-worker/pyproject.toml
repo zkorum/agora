@@ -1,5 +1,5 @@
 [project]
-name = "agora-analysis-worker-shared"
+name = "agora-shared-analysis-worker"
 version = "0.1.0"
 description = "Shared Python code for Agora workers"
 requires-python = ">=3.13"

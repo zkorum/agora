@@ -793,7 +793,7 @@ export const conversationViewSnapshotReasonEnum = pgEnum(
 // The association between users and devices/emails can change over time.
 // A user must have at least 1 validated primary email and 1 device associated with it.
 // The "at least one" conditon is not enforced directly in the SQL model yet. It is done in the application code.
-/** @service scoring-worker, math-updater, import-worker */
+/** @service scoring-worker, shared-analysis-worker, import-worker */
 export const userTable = pgTable(
     "user",
     {
@@ -1009,7 +1009,7 @@ export const organizationTable = pgTable("organization", {
         .notNull(),
 });
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const premiumFeatureEntitlementTable = pgTable(
     "premium_feature_entitlement",
     {
@@ -1422,7 +1422,7 @@ export const otpEmailDestinationStateTable = pgTable(
     ],
 );
 
-/** @service math-updater, import-worker */
+/** @service shared-analysis-worker, import-worker */
 export const conversationContentTable = pgTable("conversation_content", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     conversationId: integer("conversation_id")
@@ -1438,7 +1438,7 @@ export const conversationContentTable = pgTable("conversation_content", {
         .notNull(),
 });
 
-/** @service scoring-worker, api, math-updater, import-worker */
+/** @service scoring-worker, api, shared-analysis-worker, import-worker */
 export const conversationTable = pgTable(
     "conversation",
     {
@@ -1544,7 +1544,7 @@ export const conversationTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, math-updater */
+/** @service scoring-worker, api, shared-analysis-worker */
 export const surveyConfigTable = pgTable(
     "survey_config",
     {
@@ -1582,7 +1582,7 @@ export const surveyConfigTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, math-updater */
+/** @service scoring-worker, api, shared-analysis-worker */
 export const surveyQuestionTable = pgTable(
     "survey_question",
     {
@@ -1644,7 +1644,7 @@ export const surveyQuestionTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, math-updater */
+/** @service scoring-worker, api, shared-analysis-worker */
 export const surveyQuestionContentTable = pgTable("survey_question_content", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     surveyQuestionId: integer("survey_question_id")
@@ -1699,7 +1699,7 @@ export const surveyQuestionContentTranslationTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, math-updater */
+/** @service scoring-worker, api, shared-analysis-worker */
 export const surveyQuestionOptionTable = pgTable(
     "survey_question_option",
     {
@@ -1736,7 +1736,7 @@ export const surveyQuestionOptionTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, math-updater */
+/** @service scoring-worker, api, shared-analysis-worker */
 export const surveyQuestionOptionContentTable = pgTable(
     "survey_question_option_content",
     {
@@ -1795,7 +1795,7 @@ export const surveyQuestionOptionContentTranslationTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, math-updater */
+/** @service scoring-worker, api, shared-analysis-worker */
 export const surveyResponseTable = pgTable(
     "survey_response",
     {
@@ -1843,7 +1843,7 @@ export const surveyResponseTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, math-updater */
+/** @service scoring-worker, api, shared-analysis-worker */
 export const surveyAnswerTable = pgTable(
     "survey_answer",
     {
@@ -1903,7 +1903,7 @@ export const surveyAnswerTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, math-updater */
+/** @service scoring-worker, api, shared-analysis-worker */
 export const surveyAnswerOptionTable = pgTable(
     "survey_answer_option",
     {
@@ -1943,7 +1943,7 @@ export const surveyAnswerOptionTable = pgTable(
     ],
 );
 
-/** @service math-updater, import-worker */
+/** @service shared-analysis-worker, import-worker */
 export const opinionTable = pgTable(
     "opinion",
     {
@@ -2008,7 +2008,7 @@ export const opinionTable = pgTable(
     ],
 );
 
-/** @service math-updater, import-worker */
+/** @service shared-analysis-worker, import-worker */
 export const opinionContentTable = pgTable("opinion_content", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     opinionId: integer("opinion_id")
@@ -2027,7 +2027,7 @@ export const opinionContentTable = pgTable("opinion_content", {
 });
 
 // like or dislike on opinions for each user
-/** @service math-updater, import-worker */
+/** @service shared-analysis-worker, import-worker */
 export const voteTable = pgTable(
     "vote",
     {
@@ -2071,7 +2071,7 @@ export const voteTable = pgTable(
     ],
 );
 
-/** @service math-updater, import-worker */
+/** @service shared-analysis-worker, import-worker */
 export const voteContentTable = pgTable("vote_content", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     voteId: integer("vote_id") //
@@ -2198,7 +2198,7 @@ export const conversationModerationTable = pgTable(
     },
 );
 
-/** @service math-updater */
+/** @service shared-analysis-worker */
 /** @service import-worker */
 export const opinionModerationTable = pgTable("opinion_moderation", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -2375,7 +2375,7 @@ export const notificationTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const analysisSpecTable = pgTable("analysis_spec", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     analysisFamily: analysisFamilyEnum("analysis_family").notNull(),
@@ -2387,7 +2387,7 @@ export const analysisSpecTable = pgTable("analysis_spec", {
         .notNull(),
 });
 
-/** @service api, math-updater, import-worker */
+/** @service api, shared-analysis-worker, import-worker */
 export const opinionGroupSpecTable = pgTable(
     "opinion_group_spec",
     {
@@ -2418,7 +2418,7 @@ export const opinionGroupSpecTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const opinionGroupVariantTable = pgTable(
     "opinion_group_variant",
     {
@@ -2446,7 +2446,7 @@ export const opinionGroupVariantTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const analysisInputSnapshotTable = pgTable(
     "analysis_input_snapshot",
     {
@@ -2485,7 +2485,7 @@ export const analysisInputSnapshotTable = pgTable(
     ],
 );
 
-/** @service api, math-updater, import-worker */
+/** @service api, shared-analysis-worker, import-worker */
 export const analysisWorkStateTable = pgTable(
     "analysis_work_state",
     {
@@ -2567,7 +2567,7 @@ export const analysisWorkStateTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const analysisSnapshotTable = pgTable(
     "analysis_snapshot",
     {
@@ -2603,7 +2603,7 @@ export const analysisSnapshotTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const analysisSnapshotResultTable = pgTable(
     "analysis_snapshot_result",
     {
@@ -2639,7 +2639,7 @@ export const analysisSnapshotResultTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const analysisSnapshotOpinionTable = pgTable(
     "analysis_snapshot_opinion",
     {
@@ -2678,7 +2678,7 @@ export const analysisSnapshotOpinionTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const surveyAggregateSnapshotTable = pgTable(
     "survey_aggregate_snapshot",
     {
@@ -2711,7 +2711,7 @@ export const surveyAggregateSnapshotTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const surveyAggregateQuestionTable = pgTable(
     "survey_aggregate_question",
     {
@@ -2751,7 +2751,7 @@ export const surveyAggregateQuestionTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const surveyAggregateOptionTable = pgTable(
     "survey_aggregate_option",
     {
@@ -2781,7 +2781,7 @@ export const surveyAggregateOptionTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const surveyAggregateResultTable = pgTable(
     "survey_aggregate_result",
     {
@@ -2853,7 +2853,7 @@ export const surveyAggregateResultTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const opinionGroupLineageScopeTable = pgTable(
     "opinion_group_lineage_scope",
     {
@@ -2879,7 +2879,7 @@ export const opinionGroupLineageScopeTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const opinionGroupDescriptionTable = pgTable(
     "opinion_group_description",
     {
@@ -2896,7 +2896,7 @@ export const opinionGroupDescriptionTable = pgTable(
     },
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const opinionGroupDescriptionTranslationTable = pgTable(
     "opinion_group_description_translation",
     {
@@ -2922,7 +2922,7 @@ export const opinionGroupDescriptionTranslationTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const opinionGroupDescriptionTranslationWorkTable = pgTable(
     "opinion_group_description_translation_work",
     {
@@ -2988,7 +2988,7 @@ export const opinionGroupDescriptionTranslationWorkTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const opinionGroupLineageTable = pgTable("opinion_group_lineage", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     scopeId: integer("scope_id")
@@ -3008,7 +3008,7 @@ export const opinionGroupLineageTable = pgTable("opinion_group_lineage", {
         .notNull(),
 });
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const opinionGroupCandidateTable = pgTable(
     "opinion_group_candidate",
     {
@@ -3044,7 +3044,7 @@ export const opinionGroupCandidateTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const opinionGroupCandidateDescriptionLocaleRequestTable = pgTable(
     "opinion_group_candidate_description_locale_request",
     {
@@ -3081,7 +3081,7 @@ export const opinionGroupCandidateDescriptionLocaleRequestTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const opinionGroupLineageDescriptionWorkTable = pgTable(
     "opinion_group_lineage_description_work",
     {
@@ -3149,7 +3149,7 @@ export const opinionGroupLineageDescriptionWorkTable = pgTable(
 // One row per (candidate, snapshot opinion). This is where candidate-specific
 // opinion metrics live; the snapshot-opinion FK pins the exact frozen opinion
 // row for this analysis snapshot rather than relying on live opinion state.
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const opinionGroupCandidateOpinionMetricsTable = pgTable(
     "opinion_group_candidate_opinion_metrics",
     {
@@ -3191,7 +3191,7 @@ export const opinionGroupCandidateOpinionMetricsTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const opinionGroupCandidateAssessmentTable = pgTable(
     "opinion_group_candidate_assessment",
     {
@@ -3214,7 +3214,7 @@ export const opinionGroupCandidateAssessmentTable = pgTable(
     },
 );
 
-/** @service api, math-updater, import-worker */
+/** @service api, shared-analysis-worker, import-worker */
 export const conversationViewSnapshotTable = pgTable(
     "conversation_view_snapshot",
     {
@@ -3295,7 +3295,7 @@ export const conversationViewSnapshotTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const realtimeEventOutboxTable = pgTable(
     "realtime_event_outbox",
     {
@@ -3319,7 +3319,7 @@ export const realtimeEventOutboxTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const conversationViewSnapshotCheckpointReasonTable = pgTable(
     "conversation_view_snapshot_checkpoint_reason",
     {
@@ -3390,7 +3390,7 @@ export const conversationViewSnapshotCheckpointReasonTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const opinionGroupTable = pgTable(
     "opinion_group",
     {
@@ -3423,7 +3423,7 @@ export const opinionGroupTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const opinionGroupUserTable = pgTable(
     "opinion_group_user",
     {
@@ -3456,7 +3456,7 @@ export const opinionGroupUserTable = pgTable(
 // One row per (group, snapshot opinion). This stores group-local tallies for
 // every opinion in the snapshot. The representative* columns are only populated
 // when that opinion is a representative opinion for the group.
-/** @service api, math-updater */
+/** @service api, shared-analysis-worker */
 export const opinionGroupOpinionStatsTable = pgTable(
     "opinion_group_opinion_stats",
     {
@@ -3748,7 +3748,7 @@ export const conversationImportTable = pgTable(
 // MaxDiff (Best-Worst Scaling) results per user per conversation.
 // Stores both the final ranking and the individual comparisons made,
 // so the adaptive MaxDiff session can be resumed from saved state.
-/** @service scoring-worker, api, math-updater */
+/** @service scoring-worker, api, shared-analysis-worker */
 export const maxdiffResultTable = pgTable(
     "maxdiff_result",
     {
@@ -3790,7 +3790,7 @@ export const maxdiffResultTable = pgTable(
 
 // MaxDiff item: a statement/proposition in a MaxDiff conversation.
 // Separate from opinionTable to allow independent evolution of MaxDiff format.
-/** @service scoring-worker, api, math-updater */
+/** @service scoring-worker, api, shared-analysis-worker */
 export const maxdiffItemTable = pgTable(
     "maxdiff_item",
     {

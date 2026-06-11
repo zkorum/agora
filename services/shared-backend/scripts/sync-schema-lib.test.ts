@@ -29,12 +29,12 @@ export const barTable = pgTable("bar", {`;
     });
 
     it("merges adjacent service annotations for one table", () => {
-        const input = `/** @service math-updater */
+        const input = `/** @service shared-analysis-worker */
 /** @service import-worker */
 export const opinionModerationTable = pgTable("opinion_moderation", {`;
         const result = parseServiceAnnotations(input);
         expect(result.get("opinion_moderation")).toEqual(
-            new Set(["math-updater", "import-worker"]),
+            new Set(["shared-analysis-worker", "import-worker"]),
         );
     });
 
@@ -547,7 +547,7 @@ describe("JSON null codegen", () => {
                 ],
             ]),
             enums: new Map(),
-            service: "math-updater",
+            service: "shared-analysis-worker",
         });
 
         expect(output).toContain("from sqlalchemy import JSON");

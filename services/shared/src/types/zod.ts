@@ -8,14 +8,10 @@ import {
     MAX_LENGTH_USERNAME,
     MAX_LENGTH_BODY,
     MAX_LENGTH_BODY_HTML,
-    MAX_LENGTH_CONVERSATION_BODY,
     MAX_LENGTH_CONVERSATION_BODY_HTML,
-    MAX_LENGTH_OPINION,
-    MAX_LENGTH_OPINION_HTML,
     MAX_LENGTH_USER_REPORT_EXPLANATION,
     MAX_LENGTH_OPINION_HTML_OUTPUT,
     normalizeRichTextEmptyLines,
-    validateRichTextInput,
 } from "../shared.js";
 import { isValidPolisUrl } from "../utils/polis.js";
 import {
@@ -187,31 +183,8 @@ function normalizeRichTextInput(val: unknown): unknown {
     return typeof val === "string" ? normalizeRichTextEmptyLines(val) : val;
 }
 
-// For API input validation - validates both HTML string length AND plain text character count
 export const zodConversationBodyInput = z
     .preprocess(normalizeRichTextInput, z.string())
-    .optional();
-
-export const zodValidatedConversationBodyInput = z
-    .preprocess(
-        normalizeRichTextInput,
-        z.string().superRefine((val, ctx) => {
-            const validationResult = validateRichTextInput({
-                htmlString: val,
-                mode: "conversation",
-            });
-
-            if (!validationResult.success) {
-                ctx.addIssue({
-                    code: "custom",
-                    message:
-                        validationResult.reason === "plain_text_too_long"
-                            ? `Plain text content exceeds maximum length of ${String(MAX_LENGTH_CONVERSATION_BODY)} characters`
-                            : `This content contains too much formatting. Remove some formatting or paste as plain text.`,
-                });
-            }
-        }),
-    )
     .optional();
 
 // For database/API output - validates HTML string length only (after linkification may add extra chars)
@@ -930,33 +903,8 @@ export const zodAnalysisViewOptionReason = z.enum([
     "recommended_default_unavailable",
 ]);
 
-// For API input validation - validates both HTML string length AND plain text character count
 export const zodOpinionContentInput = z
     .preprocess(normalizeRichTextInput, z.string().min(1));
-
-export const zodValidatedOpinionContentInput = z
-    .preprocess(
-        normalizeRichTextInput,
-        z
-            .string()
-            .min(1)
-            .superRefine((val, ctx) => {
-                const validationResult = validateRichTextInput({
-                    htmlString: val,
-                    mode: "opinion",
-                });
-
-                if (!validationResult.success) {
-                    ctx.addIssue({
-                        code: "custom",
-                        message:
-                            validationResult.reason === "plain_text_too_long"
-                                ? `Plain text content exceeds maximum length of ${String(MAX_LENGTH_OPINION)} characters`
-                                : `Raw HTML content exceeds maximum length of ${String(MAX_LENGTH_OPINION_HTML)} characters`,
-                    });
-                }
-            }),
-    );
 
 // For database/API output - validates HTML string length only (after linkification may add extra chars)
 export const zodOpinionContentOutput = z

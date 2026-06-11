@@ -11,9 +11,9 @@ exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for 
 exclude-newer-span = "P5D"
 
 [[package]]
-name = "agora-analysis-worker-shared"
+name = "agora-shared-analysis-worker"
 version = "0.1.0"
-source = { editable = "../analysis-worker-shared" }
+source = { editable = "../shared-analysis-worker" }
 dependencies = [
     { name = "botocore" },
     { name = "google-cloud-translate" },
@@ -54,7 +54,7 @@ name = "agora-math-updater"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "agora-analysis-worker-shared" },
+    { name = "agora-shared-analysis-worker" },
 ]
 
 [package.optional-dependencies]
@@ -67,7 +67,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "agora-analysis-worker-shared", editable = "../analysis-worker-shared" },
+    { name = "agora-shared-analysis-worker", editable = "../shared-analysis-worker" },
     { name = "basedpyright", marker = "extra == 'dev'", specifier = ">=1.29" },
     { name = "botocore-stubs", marker = "extra == 'dev'", specifier = ">=1.42" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },

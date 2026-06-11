@@ -4,8 +4,8 @@ LOG_RUNNER := node scripts/dev-log-runner.mjs
 LOAD_TEST_CONVERSATIONS := $(or $(CONVERSATION_SLUG_IDS),$(conversations))
 
 PYTHON_TYPECHECK_PATTERNS := \
-	services/analysis-worker-shared/src/**/*.py \
-	services/analysis-worker-shared/tests/**/*.py \
+	services/shared-analysis-worker/src/**/*.py \
+	services/shared-analysis-worker/tests/**/*.py \
 	services/math-updater/src/**/*.py \
 	services/ai-description-retry-worker/src/**/*.py \
 	services/description-translation-retry-worker/src/**/*.py \
@@ -75,10 +75,10 @@ sync-python-models: sync-ts-backend
 		--sql /tmp/agora-schema.sql \
 		--output ../scoring-worker/src/scoring_worker/generated_models.py
 	cd services/shared-backend && npx tsx scripts/sync-schema-cli.ts \
-		--service math-updater \
+		--service shared-analysis-worker \
 		--schema-ts src/schema.ts \
 		--sql /tmp/agora-schema.sql \
-		--output ../analysis-worker-shared/src/agora_analysis_worker_shared/generated_models.py
+		--output ../shared-analysis-worker/src/agora_analysis_worker_shared/generated_models.py
 	cd services/shared-backend && npx tsx scripts/sync-schema-cli.ts \
 		--service import-worker \
 		--schema-ts src/schema.ts \
@@ -88,7 +88,7 @@ sync-python-models: sync-ts-backend
 sync-python-shared-types:
 	cd services/shared-backend && npx tsx scripts/sync-python-shared-cli.ts \
 		--shared-src ../shared/src \
-		--output ../analysis-worker-shared/src/agora_analysis_worker_shared/generated_shared_types.py
+		--output ../shared-analysis-worker/src/agora_analysis_worker_shared/generated_shared_types.py
 	cd services/shared-backend && npx tsx scripts/sync-python-shared-cli.ts \
 		--shared-src ../shared/src \
 		--output ../import-worker/src/import_worker/generated_shared_types.py
@@ -118,7 +118,7 @@ sync-import-worker-contracts:
 sync-python-shared: sync-python-shared-types sync-import-worker-contracts
 
 typecheck-python:
-	cd services/analysis-worker-shared && uv run --extra dev basedpyright
+	cd services/shared-analysis-worker && uv run --extra dev basedpyright
 	cd services/math-updater && uv run --extra dev basedpyright
 	cd services/ai-description-retry-worker && uv run --extra dev basedpyright
 	cd services/description-translation-retry-worker && uv run --extra dev basedpyright

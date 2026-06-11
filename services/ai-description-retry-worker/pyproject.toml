@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "AI-description retry/backlog worker"
 requires-python = ">=3.13"
 dependencies = [
-    "agora-analysis-worker-shared",
+    "agora-shared-analysis-worker",
 ]
 
 [tool.uv]
@@ -12,7 +12,7 @@ required-version = ">=0.11.6"
 exclude-newer = "5 days"
 
 [tool.uv.sources]
-agora-analysis-worker-shared = { path = "../analysis-worker-shared", editable = true }
+agora-shared-analysis-worker = { path = "../shared-analysis-worker", editable = true }
 
 [project.optional-dependencies]
 dev = [

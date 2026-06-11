@@ -11,7 +11,7 @@ This package contains TypeScript code synced directly to:
 It is also the source for generated SQLAlchemy models used by Python workers:
 
 - `services/import-worker`
-- `services/analysis-worker-shared` for `math-updater`, `ai-description-retry-worker`, and `description-translation-retry-worker`
+- `services/shared-analysis-worker` for `math-updater`, `ai-description-retry-worker`, and `description-translation-retry-worker`
 - `services/scoring-worker`
 
 ## Usage

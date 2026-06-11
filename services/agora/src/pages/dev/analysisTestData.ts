@@ -57,7 +57,7 @@ export const mockStatements = [
 
 export const polisKeys: PolisKey[] = ["0", "1", "2", "3", "4", "5"];
 
-export const fixedAnalysisViews = [
+const fixedAnalysisViews = [
   "2",
   "3",
   "4",
@@ -73,7 +73,7 @@ function getStatement({ index }: { index: number }): string {
   );
 }
 
-export function buildMockClusterStats({
+function buildMockClusterStats({
   clusterCount,
 }: {
   clusterCount: number;
@@ -91,7 +91,7 @@ export function buildMockClusterStats({
   });
 }
 
-export function buildMockAnalysisOpinion({
+function buildMockAnalysisOpinion({
   index,
   clusterCount,
   suffix = "",
@@ -121,7 +121,7 @@ export function buildMockAnalysisOpinion({
   };
 }
 
-export function buildMockPolisClusters({
+function buildMockPolisClusters({
   clusterCount,
   aiLabelMode,
   scaleMultiplier = 1,
@@ -168,7 +168,7 @@ export function buildMockPolisClusters({
   return clusters;
 }
 
-export function getMockAnalysisResolvedGroupCount(view: AnalysisView): number {
+function getMockAnalysisResolvedGroupCount(view: AnalysisView): number {
   switch (view) {
     case "2":
       return 2;

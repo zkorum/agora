@@ -13,8 +13,8 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN python -m pip install --no-cache-dir --upgrade "pip>=26.1.1" "setuptools>=78.1.1" "wheel>=0.46.2"
 
-COPY services/analysis-worker-shared/ services/analysis-worker-shared/
-RUN pip install --no-cache-dir services/analysis-worker-shared
+COPY services/shared-analysis-worker/ services/shared-analysis-worker/
+RUN pip install --no-cache-dir services/shared-analysis-worker
 
 COPY services/math-updater/pyproject.toml services/math-updater/uv.lock ./
 COPY services/math-updater/src/ src/

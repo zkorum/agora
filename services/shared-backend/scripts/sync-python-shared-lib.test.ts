@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -6,6 +9,8 @@ import {
     parseNumericExport,
     parseStringLiteralZodEnum,
 } from "./sync-python-shared-lib.js";
+
+const testDir = dirname(fileURLToPath(import.meta.url));
 
 describe("parseStringLiteralZodEnum", () => {
     it("parses a TypeScript zod string enum", () => {
@@ -48,19 +53,18 @@ export const ZodSupportedDisplayLanguageCodes = z.enum([
 });
 
 describe("generatePythonSharedTypes", () => {
-    it("generates current shared Python values from registered sections", () => {
+    it("generates Python values from the real shared sources", () => {
+        const sharedSrcDir = resolve(testDir, "../../shared/src");
         const output = generatePythonSharedTypes({
             sources: {
-                languagesTs: `
-export const ZodSupportedDisplayLanguageCodes = z.enum([
-    "en",
-    "es",
-    "zh-Hant",
-]);`,
-                sharedTs: `
-export const MAX_LENGTH_TITLE = 140;
-export const MAX_LENGTH_BODY_HTML = 3000;
-export const MAX_LENGTH_OPINION_HTML_OUTPUT = 3000;`,
+                languagesTs: readFileSync(
+                    resolve(sharedSrcDir, "languages.ts"),
+                    "utf-8",
+                ),
+                sharedTs: readFileSync(
+                    resolve(sharedSrcDir, "shared.ts"),
+                    "utf-8",
+                ),
             },
             sourcePaths: [
                 "services/shared/src/languages.ts",
@@ -71,6 +75,9 @@ export const MAX_LENGTH_OPINION_HTML_OUTPUT = 3000;`,
         expect(output).toContain("SUPPORTED_DISPLAY_LANGUAGE_CODES");
         expect(output).toContain("SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES");
         expect(output).toContain("MAX_LENGTH_TITLE: int = 140");
+        expect(output).toContain(
+            "MAX_LENGTH_CONVERSATION_BODY_HTML: int = 60000",
+        );
         expect(output).toContain('    "zh-Hant",');
         expect(output).not.toContain(
             'SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES: tuple[str, ...] = (\n    "en",',

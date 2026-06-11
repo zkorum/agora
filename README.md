@@ -61,7 +61,7 @@ For detailed information about each service, licenses, and documentation, see [C
 
 **[Shared Backend](./services/shared-backend)** - Backend-specific TypeScript code for the API and source schema for generated Python worker artifacts.
 
-**[Analysis Worker Shared](./services/analysis-worker-shared)** - Shared Python package used by analysis and description workers for generated models/types, queue helpers, retry logic, AI providers, and red-dwarf integration.
+**[Shared Analysis Worker](./services/shared-analysis-worker)** - Shared Python package used by analysis and description workers for generated models/types, queue helpers, retry logic, AI providers, and red-dwarf integration.
 
 ### Development Tools
 
