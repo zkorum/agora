@@ -9,10 +9,10 @@ from threading import Event, Lock, Thread
 from typing import TYPE_CHECKING, cast
 
 import valkey as valkey_lib
-from agora_worker_shared.ai_description_lease_heartbeat import (
+from agora_analysis_worker_shared.ai_description_lease_heartbeat import (
     start_ai_description_lease_heartbeat,
 )
-from agora_worker_shared.ai_description_work import (
+from agora_analysis_worker_shared.ai_description_work import (
     DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE,
     AiDescriptionWorkResult,
     ClaimedAiDescriptionLocaleWorkItem,
@@ -31,13 +31,16 @@ from agora_worker_shared.ai_description_work import (
     recover_expired_ai_description_work,
     retry_ai_description_locale_work_item,
 )
-from agora_worker_shared.analysis_compute import RedDwarfContractError, compute_analysis_bundle
-from agora_worker_shared.config import (
+from agora_analysis_worker_shared.analysis_compute import (
+    RedDwarfContractError,
+    compute_analysis_bundle,
+)
+from agora_analysis_worker_shared.config import (
     MathUpdaterConfigError,
     Settings,
     validate_ai_description_config,
 )
-from agora_worker_shared.db import (
+from agora_analysis_worker_shared.db import (
     AnalysisWorkStatePersistenceError,
     CheckpointActivationContext,
     LineageAssignmentInvariantError,
@@ -54,31 +57,37 @@ from agora_worker_shared.db import (
     release_retryable_work_items_batch,
     upsert_input_snapshots_batch,
 )
-from agora_worker_shared.description_input import DescriptionInputError, DescriptionOutputError
-from agora_worker_shared.description_services import (
+from agora_analysis_worker_shared.description_input import (
+    DescriptionInputError,
+    DescriptionOutputError,
+)
+from agora_analysis_worker_shared.description_services import (
     build_description_generator,
     build_description_translator,
 )
-from agora_worker_shared.input_snapshot import PreparedInputSnapshot, prepare_input_snapshots_batch
-from agora_worker_shared.logging_utils import (
+from agora_analysis_worker_shared.input_snapshot import (
+    PreparedInputSnapshot,
+    prepare_input_snapshots_batch,
+)
+from agora_analysis_worker_shared.logging_utils import (
     LOG_FORMAT,
     configure_worker_logging,
     log_database_error,
 )
-from agora_worker_shared.postgres_engine import create_ready_postgres_engine
-from agora_worker_shared.schema_readiness import (
+from agora_analysis_worker_shared.postgres_engine import create_ready_postgres_engine
+from agora_analysis_worker_shared.schema_readiness import (
     StartupSchemaRetryState,
     handle_startup_schema_retry,
     mark_startup_schema_ready,
 )
-from agora_worker_shared.simulation_providers import (
+from agora_analysis_worker_shared.simulation_providers import (
     SimulatedRetryableError,
     build_simulation_runtime,
     emit_load_event,
     log_simulation_startup,
     maybe_raise_simulated_claim_error,
 )
-from agora_worker_shared.valkey_client import (
+from agora_analysis_worker_shared.valkey_client import (
     enqueue_conversation,
     format_queue_lag_ms,
     now_ms,
@@ -94,20 +103,20 @@ from sqlalchemy.exc import SQLAlchemyError
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from agora_worker_shared.ai_description_work import ClaimedAiDescriptionLocaleWorkItem
-    from agora_worker_shared.analysis_compute import ComputedAnalysisBundle
-    from agora_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
-    from agora_worker_shared.db import (
+    from agora_analysis_worker_shared.ai_description_work import ClaimedAiDescriptionLocaleWorkItem
+    from agora_analysis_worker_shared.analysis_compute import ComputedAnalysisBundle
+    from agora_analysis_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
+    from agora_analysis_worker_shared.db import (
         ClaimedWorkItem,
         OpinionGroupConfigRecord,
         PersistComputedAnalysisResult,
     )
-    from agora_worker_shared.description_input import ConversationDescriptionInput
-    from agora_worker_shared.description_translation import (
+    from agora_analysis_worker_shared.description_input import ConversationDescriptionInput
+    from agora_analysis_worker_shared.description_translation import (
         DescriptionForTranslation,
         DescriptionTranslation,
     )
-    from agora_worker_shared.simulation_providers import SimulationRuntime
+    from agora_analysis_worker_shared.simulation_providers import SimulationRuntime
     from sqlalchemy import Engine
 
     DescriptionGenerator = Callable[[ConversationDescriptionInput], ParsedLabelSummaryOutput]

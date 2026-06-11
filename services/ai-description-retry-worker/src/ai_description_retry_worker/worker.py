@@ -5,30 +5,32 @@ import signal
 import time
 import uuid
 
-from agora_worker_shared.ai_description_work import (
+from agora_analysis_worker_shared.ai_description_work import (
     fetch_claimable_ai_description_work_conversation_ids,
     materialize_requested_lineage_description_work,
     recover_expired_ai_description_work,
 )
-from agora_worker_shared.config import (
+from agora_analysis_worker_shared.config import (
     AiDescriptionWorkerSettings,
     MathUpdaterConfigError,
     validate_ai_description_config,
 )
-from agora_worker_shared.description_retry_processor import process_ai_description_conversation_ids
-from agora_worker_shared.description_services import build_description_generator
-from agora_worker_shared.logging_utils import (
+from agora_analysis_worker_shared.description_retry_processor import (
+    process_ai_description_conversation_ids,
+)
+from agora_analysis_worker_shared.description_services import build_description_generator
+from agora_analysis_worker_shared.logging_utils import (
     LOG_FORMAT,
     configure_worker_logging,
     log_database_error,
 )
-from agora_worker_shared.postgres_engine import create_ready_postgres_engine
-from agora_worker_shared.schema_readiness import (
+from agora_analysis_worker_shared.postgres_engine import create_ready_postgres_engine
+from agora_analysis_worker_shared.schema_readiness import (
     StartupSchemaRetryState,
     handle_startup_schema_retry,
     mark_startup_schema_ready,
 )
-from agora_worker_shared.simulation_providers import (
+from agora_analysis_worker_shared.simulation_providers import (
     build_simulation_runtime,
     log_simulation_startup,
 )

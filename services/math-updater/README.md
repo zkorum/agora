@@ -73,8 +73,8 @@ See `env.example` for a local template.
 
 Shared worker code uses generated Python artifacts:
 
-- `services/python-worker-shared/src/agora_worker_shared/generated_models.py` from `services/shared-backend/src/schema.ts`.
-- `services/python-worker-shared/src/agora_worker_shared/generated_shared_types.py` from `services/shared/src` constants.
+- `services/analysis-worker-shared/src/agora_analysis_worker_shared/generated_models.py` from `services/shared-backend/src/schema.ts`.
+- `services/analysis-worker-shared/src/agora_analysis_worker_shared/generated_shared_types.py` from `services/shared/src` constants.
 
 Regenerate from the repository root:
 

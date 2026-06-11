@@ -15,7 +15,7 @@ name = "agora-ai-description-retry-worker"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "agora-worker-shared" },
+    { name = "agora-analysis-worker-shared" },
 ]
 
 [package.optional-dependencies]
@@ -26,16 +26,16 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "agora-worker-shared", editable = "../python-worker-shared" },
+    { name = "agora-analysis-worker-shared", editable = "../analysis-worker-shared" },
     { name = "basedpyright", marker = "extra == 'dev'", specifier = ">=1.29" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9" },
 ]
 provides-extras = ["dev"]
 
 [[package]]
-name = "agora-worker-shared"
+name = "agora-analysis-worker-shared"
 version = "0.1.0"
-source = { editable = "../python-worker-shared" }
+source = { editable = "../analysis-worker-shared" }
 dependencies = [
     { name = "botocore" },
     { name = "google-cloud-translate" },

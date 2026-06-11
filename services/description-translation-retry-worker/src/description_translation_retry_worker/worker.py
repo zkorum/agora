@@ -6,38 +6,40 @@ import time
 import uuid
 from typing import TYPE_CHECKING
 
-from agora_worker_shared.ai_description_work import (
+from agora_analysis_worker_shared.ai_description_work import (
     fetch_claimable_ai_description_work_conversation_ids,
     materialize_requested_description_translation_work,
     recover_expired_ai_description_work,
 )
-from agora_worker_shared.config import (
+from agora_analysis_worker_shared.config import (
     DescriptionTranslationWorkerSettings,
     MathUpdaterConfigError,
     validate_ai_description_config,
 )
-from agora_worker_shared.description_retry_processor import process_ai_description_conversation_ids
-from agora_worker_shared.description_services import build_description_translator
-from agora_worker_shared.logging_utils import (
+from agora_analysis_worker_shared.description_retry_processor import (
+    process_ai_description_conversation_ids,
+)
+from agora_analysis_worker_shared.description_services import build_description_translator
+from agora_analysis_worker_shared.logging_utils import (
     LOG_FORMAT,
     configure_worker_logging,
     log_database_error,
 )
-from agora_worker_shared.postgres_engine import create_ready_postgres_engine
-from agora_worker_shared.schema_readiness import (
+from agora_analysis_worker_shared.postgres_engine import create_ready_postgres_engine
+from agora_analysis_worker_shared.schema_readiness import (
     StartupSchemaRetryState,
     handle_startup_schema_retry,
     mark_startup_schema_ready,
 )
-from agora_worker_shared.simulation_providers import (
+from agora_analysis_worker_shared.simulation_providers import (
     build_simulation_runtime,
     log_simulation_startup,
 )
 from sqlalchemy.exc import SQLAlchemyError
 
 if TYPE_CHECKING:
-    from agora_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
-    from agora_worker_shared.description_input import ConversationDescriptionInput
+    from agora_analysis_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
+    from agora_analysis_worker_shared.description_input import ConversationDescriptionInput
 
 logging.basicConfig(
     level=logging.INFO,
