@@ -662,7 +662,7 @@ onDeactivated(saveTimelineScrollPosition);
 }
 
 .checkpoint-timeline__scroller--with-detail {
-  padding-bottom: 1.6rem;
+  padding-bottom: 2.8rem;
 }
 
 .checkpoint-timeline__track {
@@ -745,7 +745,7 @@ onDeactivated(saveTimelineScrollPosition);
   flex-direction: column;
   align-items: center;
   gap: 0.08rem;
-  width: 9rem;
+  width: 10rem;
   transform: translateX(-50%);
   pointer-events: none;
 }
@@ -764,7 +764,7 @@ onDeactivated(saveTimelineScrollPosition);
   font-size: 0.6rem;
   font-weight: 600;
   line-height: 1.15;
-  max-width: 9rem;
+  max-width: 10rem;
   text-align: center;
 }
 

@@ -11,8 +11,8 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN python -m pip install --no-cache-dir --upgrade "pip>=26.1.1" "setuptools>=78.1.1" "wheel>=0.46.2"
 
-COPY services/python-worker-shared/ services/python-worker-shared/
-RUN pip install --no-cache-dir services/python-worker-shared
+COPY services/shared-analysis-worker/ services/shared-analysis-worker/
+RUN pip install --no-cache-dir services/shared-analysis-worker
 
 COPY services/ai-description-retry-worker/ services/ai-description-retry-worker/
 RUN pip install --no-cache-dir --no-deps services/ai-description-retry-worker

@@ -83,6 +83,7 @@ import type {
 } from "@/utils/dataStructure.js";
 import { nowZeroMs } from "@/shared/util.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
+import { validateRichTextInput } from "@/shared/shared.js";
 import {
     getOpinionGroupAnalysisSelection,
     getSelectedOpinionGroupCandidate,
@@ -2298,7 +2299,7 @@ export async function postNewOpinion({
     }
 
     try {
-        commentBody = processUserGeneratedHtml(commentBody, true, "input");
+        commentBody = processUserGeneratedHtml(commentBody, false, "input");
     } catch (error) {
         if (error instanceof Error) {
             throw httpErrors.badRequest(error.message);
@@ -2306,6 +2307,16 @@ export async function postNewOpinion({
             throw httpErrors.badRequest("Error while sanitizing request body");
         }
     }
+
+    const validationResult = validateRichTextInput({
+        htmlString: commentBody,
+        mode: "opinion",
+    });
+    if (!validationResult.success) {
+        return validationResult;
+    }
+
+    commentBody = processUserGeneratedHtml(commentBody, true, "input");
 
     const participationContext:
         | ParticipationContext

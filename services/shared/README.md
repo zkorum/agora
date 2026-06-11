@@ -31,4 +31,4 @@ This will copy the shared code to TypeScript services. If shared constants or sc
 
 - `services/shared-app-api`: Shared between frontend + API only (UCAN, DID, etc.)
 - `services/shared-backend`: Shared directly with TypeScript backend services and used to generate Python worker artifacts
-- `services/python-worker-shared`: Shared Python package used by Python background workers; receives generated artifacts from `services/shared` and `services/shared-backend`
+- `services/shared-analysis-worker`: Shared Python package used by analysis and description workers; receives generated artifacts from `services/shared` and `services/shared-backend`

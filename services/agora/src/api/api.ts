@@ -727,6 +727,27 @@ export const ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum = {
 
 export type ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum];
 
+/**
+ * @type ApiV1ConversationCreatePost200Response
+ */
+export type ApiV1ConversationCreatePost200Response = ApiV1ConversationCreatePost200ResponseOneOf | ApiV1ConversationCreatePost200ResponseOneOf1;
+
+export interface ApiV1ConversationCreatePost200ResponseOneOf {
+    'success': boolean;
+    'conversationSlugId': string;
+}
+export interface ApiV1ConversationCreatePost200ResponseOneOf1 {
+    'success': boolean;
+    'reason': ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum;
+}
+
+export const ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum = {
+    PlainTextTooLong: 'plain_text_too_long',
+    HtmlTooLong: 'html_too_long',
+} as const;
+
+export type ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum];
+
 export interface ApiV1ConversationCreatePostRequest {
     'conversationTitle': string;
     'conversationBody'?: string;
@@ -1613,6 +1634,8 @@ export const ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum = {
     InvalidAccessSettings: 'invalid_access_settings',
     PremiumAccessExpired: 'premium_access_expired',
     PremiumAccessRequired: 'premium_access_required',
+    PlainTextTooLong: 'plain_text_too_long',
+    HtmlTooLong: 'html_too_long',
 } as const;
 
 export type ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum = typeof ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum[keyof typeof ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum];
@@ -2107,13 +2130,33 @@ export interface ApiV1NotificationFetchPostRequest {
 /**
  * @type ApiV1OpinionCreatePost200Response
  */
-export type ApiV1OpinionCreatePost200Response = ApiV1OpinionCreatePost200ResponseOneOf | ApiV1VoteCastPost200ResponseOneOf1;
+export type ApiV1OpinionCreatePost200Response = ApiV1OpinionCreatePost200ResponseOneOf | ApiV1OpinionCreatePost200ResponseOneOf1;
 
 export interface ApiV1OpinionCreatePost200ResponseOneOf {
     'success': boolean;
     'opinionSlugId': string;
     'opinionItem': ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem;
 }
+export interface ApiV1OpinionCreatePost200ResponseOneOf1 {
+    'success': boolean;
+    'reason': ApiV1OpinionCreatePost200ResponseOneOf1ReasonEnum;
+}
+
+export const ApiV1OpinionCreatePost200ResponseOneOf1ReasonEnum = {
+    ConversationLocked: 'conversation_locked',
+    ConversationClosed: 'conversation_closed',
+    EventTicketRequired: 'event_ticket_required',
+    AccountRequired: 'account_required',
+    StrongVerificationRequired: 'strong_verification_required',
+    EmailVerificationRequired: 'email_verification_required',
+    SurveyRequired: 'survey_required',
+    SurveyOutdated: 'survey_outdated',
+    PlainTextTooLong: 'plain_text_too_long',
+    HtmlTooLong: 'html_too_long',
+} as const;
+
+export type ApiV1OpinionCreatePost200ResponseOneOf1ReasonEnum = typeof ApiV1OpinionCreatePost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1OpinionCreatePost200ResponseOneOf1ReasonEnum];
+
 export interface ApiV1OpinionCreatePostRequest {
     'conversationSlugId': string;
     'opinionBody': string;
@@ -7119,7 +7162,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest: ApiV1ConversationCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffLoadPostRequest>> {
+        async apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest: ApiV1ConversationCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationCreatePost200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationCreatePost']?.[localVarOperationServerIndex]?.url;
@@ -8186,7 +8229,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest: ApiV1ConversationCreatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffLoadPostRequest> {
+        apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest: ApiV1ConversationCreatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationCreatePost200Response> {
             return localVarFp.apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest, options).then((request) => request(axios, basePath));
         },
         /**

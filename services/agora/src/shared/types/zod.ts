@@ -9,14 +9,10 @@ import {
     MAX_LENGTH_USERNAME,
     MAX_LENGTH_BODY,
     MAX_LENGTH_BODY_HTML,
-    MAX_LENGTH_CONVERSATION_BODY,
     MAX_LENGTH_CONVERSATION_BODY_HTML,
-    MAX_LENGTH_OPINION,
-    MAX_LENGTH_OPINION_HTML,
     MAX_LENGTH_USER_REPORT_EXPLANATION,
-    validateHtmlStringCharacterCount,
     MAX_LENGTH_OPINION_HTML_OUTPUT,
-    countHtmlPlainTextCharacters,
+    normalizeRichTextEmptyLines,
 } from "../shared.js";
 import { isValidPolisUrl } from "../utils/polis.js";
 import {
@@ -179,27 +175,17 @@ export const zodDevice = z
     .strict();
 export const zodDevices = z.array(zodDevice); // list of didWrite of all the devices belonging to a user
 export const zodConversationTitle = z.string().max(MAX_LENGTH_TITLE).min(1);
+export const zodRichTextValidationFailureReason = z.enum([
+    "plain_text_too_long",
+    "html_too_long",
+]);
 
-// For API input validation - validates both HTML string length AND plain text character count
+function normalizeRichTextInput(val: unknown): unknown {
+    return typeof val === "string" ? normalizeRichTextEmptyLines(val) : val;
+}
+
 export const zodConversationBodyInput = z
-    .string()
-    .superRefine((val, ctx) => {
-        const { characterCount } = countHtmlPlainTextCharacters(val);
-        if (characterCount > MAX_LENGTH_CONVERSATION_BODY) {
-            ctx.addIssue({
-                code: "custom",
-                message: `Plain text content exceeds maximum length of ${String(MAX_LENGTH_CONVERSATION_BODY)} characters`,
-            });
-            return;
-        }
-
-        if (val.length > MAX_LENGTH_CONVERSATION_BODY_HTML) {
-            ctx.addIssue({
-                code: "custom",
-                message: `This content contains too much formatting. Remove some formatting or paste as plain text.`,
-            });
-        }
-    })
+    .preprocess(normalizeRichTextInput, z.string())
     .optional();
 
 // For database/API output - validates HTML string length only (after linkification may add extra chars)
@@ -918,21 +904,8 @@ export const zodAnalysisViewOptionReason = z.enum([
     "recommended_default_unavailable",
 ]);
 
-// For API input validation - validates both HTML string length AND plain text character count
 export const zodOpinionContentInput = z
-    .string()
-    .min(1)
-    .max(MAX_LENGTH_OPINION_HTML, {
-        message: `Raw HTML content exceeds maximum length of ${String(MAX_LENGTH_OPINION_HTML)} characters`,
-    })
-    .refine(
-        (val: string) => {
-            return validateHtmlStringCharacterCount(val, "opinion").isValid;
-        },
-        {
-            message: `Plain text content exceeds maximum length of ${String(MAX_LENGTH_OPINION)} characters`,
-        },
-    );
+    .preprocess(normalizeRichTextInput, z.string().min(1));
 
 // For database/API output - validates HTML string length only (after linkification may add extra chars)
 export const zodOpinionContentOutput = z

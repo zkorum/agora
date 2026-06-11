@@ -58,7 +58,7 @@ export function normalizeEmptyLines(htmlString: string): string {
         return htmlString;
     }
 
-    htmlString = htmlString
+    return htmlString
         .replace(PARAGRAPH_CONTENT_REGEX, (_match, content: string) => {
             return `<p>${content.trim()}</p>`;
         })
@@ -68,8 +68,6 @@ export function normalizeEmptyLines(htmlString: string): string {
         .replace(EMPTY_PARAGRAPH_REGEX, "<p></p>")
         .replace(LEADING_BREAKS_REGEX, "")
         .replace(TRAILING_BREAKS_REGEX, "");
-
-    return htmlString;
 }
 
 /**

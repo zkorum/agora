@@ -36,6 +36,55 @@ interface CountHtmlPlainTextCharactersReturn {
     characterCount: number;
 }
 
+export type RichTextValidationMode = "conversation" | "opinion";
+export type RichTextValidationFailureReason =
+    | "plain_text_too_long"
+    | "html_too_long";
+
+interface ValidateRichTextInputReturn {
+    success: true;
+}
+
+interface ValidateRichTextInputFailureReturn {
+    success: false;
+    reason: RichTextValidationFailureReason;
+}
+
+const EMPTY_PARAGRAPH_PATTERN = String.raw`<p>(?:[\s\u00a0]|&nbsp;|<br\s*\/?>)*<\/p>`;
+const PARAGRAPH_CONTENT_REGEX = /<p>([\s\S]*?)<\/p>/gi;
+const EMPTY_PARAGRAPH_REGEX = new RegExp(EMPTY_PARAGRAPH_PATTERN, "gi");
+const LEADING_EMPTY_PARAGRAPHS_REGEX = new RegExp(
+    String.raw`^(?:\s*${EMPTY_PARAGRAPH_PATTERN})+\s*`,
+    "i",
+);
+const TRAILING_EMPTY_PARAGRAPHS_REGEX = new RegExp(
+    String.raw`\s*(?:${EMPTY_PARAGRAPH_PATTERN}\s*)+$`,
+    "i",
+);
+const REPEATED_EMPTY_PARAGRAPHS_REGEX = new RegExp(
+    String.raw`${EMPTY_PARAGRAPH_PATTERN}(?:\s*${EMPTY_PARAGRAPH_PATTERN})+`,
+    "gi",
+);
+const LEADING_BREAKS_REGEX = /^(\s*<br\s*\/?>)+\s*/i;
+const TRAILING_BREAKS_REGEX = /\s*(<br\s*\/?>)+\s*$/i;
+
+export function normalizeRichTextEmptyLines(htmlString: string): string {
+    if (!htmlString || htmlString.trim() === "") {
+        return htmlString;
+    }
+
+    return htmlString
+        .replace(PARAGRAPH_CONTENT_REGEX, (_match, content: string) => {
+            return `<p>${content.trim()}</p>`;
+        })
+        .replace(LEADING_EMPTY_PARAGRAPHS_REGEX, "")
+        .replace(TRAILING_EMPTY_PARAGRAPHS_REGEX, "")
+        .replace(REPEATED_EMPTY_PARAGRAPHS_REGEX, "<p></p>")
+        .replace(EMPTY_PARAGRAPH_REGEX, "<p></p>")
+        .replace(LEADING_BREAKS_REGEX, "")
+        .replace(TRAILING_BREAKS_REGEX, "");
+}
+
 export function htmlToCountedText(htmlString: string): string {
     const textWithNewlines = htmlString
         .replace(/<\/p>/gi, "\n")
@@ -78,7 +127,7 @@ export function validateHtmlStringCharacterCountWithLimit({
 
 export function validateHtmlStringCharacterCount(
     htmlString: string,
-    mode: "conversation" | "opinion",
+    mode: RichTextValidationMode,
 ): ValidateHtmlStringCharacterCountReturn {
     const characterLimit =
         mode == "conversation"
@@ -88,4 +137,32 @@ export function validateHtmlStringCharacterCount(
         htmlString,
         maxCharacterCount: characterLimit,
     });
+}
+
+export function validateRichTextInput({
+    htmlString,
+    mode,
+}: {
+    htmlString: string;
+    mode: RichTextValidationMode;
+}): ValidateRichTextInputReturn | ValidateRichTextInputFailureReturn {
+    const characterLimit =
+        mode === "conversation"
+            ? MAX_LENGTH_CONVERSATION_BODY
+            : MAX_LENGTH_OPINION;
+    const htmlLimit =
+        mode === "conversation"
+            ? MAX_LENGTH_CONVERSATION_BODY_HTML
+            : MAX_LENGTH_OPINION_HTML;
+    const { characterCount } = countHtmlPlainTextCharacters(htmlString);
+
+    if (characterCount > characterLimit) {
+        return { success: false, reason: "plain_text_too_long" };
+    }
+
+    if (htmlString.length > htmlLimit) {
+        return { success: false, reason: "html_too_long" };
+    }
+
+    return { success: true };
 }

@@ -391,6 +391,11 @@ async function performSave(): Promise<void> {
           errorMsg = t("premiumAccessRequiredError");
           break;
         }
+        case "plain_text_too_long":
+        case "html_too_long": {
+          errorMsg = t("updateError");
+          break;
+        }
         default: {
           // TypeScript exhaustiveness check - this should never be reached
           const _exhaustiveCheck: never = response.reason;

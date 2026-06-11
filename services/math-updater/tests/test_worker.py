@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from agora_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
-from agora_worker_shared.db import ClaimedWorkItem, PersistComputedAnalysisResult
+from agora_analysis_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
+from agora_analysis_worker_shared.db import ClaimedWorkItem, PersistComputedAnalysisResult
 from sqlalchemy import Engine, create_engine
 from valkey import Valkey
 
@@ -11,7 +11,7 @@ from math_updater import worker
 
 if TYPE_CHECKING:
     import pytest
-    from agora_worker_shared.description_input import ConversationDescriptionInput
+    from agora_analysis_worker_shared.description_input import ConversationDescriptionInput
 
 
 def _claim() -> ClaimedWorkItem:

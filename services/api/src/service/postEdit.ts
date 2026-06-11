@@ -9,7 +9,7 @@ import {
 import { eq } from "drizzle-orm";
 import { log } from "@/app.js";
 import { httpErrors } from "@fastify/sensible";
-import { toUnionUndefined } from "@/shared/shared.js";
+import { toUnionUndefined, validateRichTextInput } from "@/shared/shared.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import {
@@ -177,7 +177,7 @@ export async function updateConversation({
         try {
             sanitizedBody = processUserGeneratedHtml(
                 sanitizedBody,
-                true,
+                false,
                 "input",
             );
         } catch (error) {
@@ -189,6 +189,20 @@ export async function updateConversation({
                 );
             }
         }
+
+        const validationResult = validateRichTextInput({
+            htmlString: sanitizedBody,
+            mode: "conversation",
+        });
+        if (!validationResult.success) {
+            return validationResult;
+        }
+
+        sanitizedBody = processUserGeneratedHtml(
+            sanitizedBody,
+            true,
+            "input",
+        );
     }
 
     const result = await db.transaction(async (tx) => {

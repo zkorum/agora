@@ -5,7 +5,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**success** | **boolean** |  | [default to undefined]
 **conversationSlugId** | **string** |  | [default to undefined]
+**reason** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -13,7 +15,9 @@ Name | Type | Description | Notes
 import { ApiV1ConversationCreatePost200Response } from './api';
 
 const instance: ApiV1ConversationCreatePost200Response = {
+    success,
     conversationSlugId,
+    reason,
 };
 ```
 

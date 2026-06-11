@@ -1,25 +1,38 @@
 <template>
   <div class="container flexStyle">
-    <CheckpointTimeline
-      :checkpoints="analysisCheckpoints"
-      :selected-checkpoint-id="selectedRouteCheckpoint"
-      :is-live-selected="isLiveAnalysis"
-      :is-live-paused="isLivePaused"
-      :is-latest-checkpoint-live="isLatestCheckpointLive"
-      :is-live-closed="props.isConversationClosed"
-      :title="t('checkpointTimelineLabel')"
-      :start-label="t('checkpointTimelineStart')"
-      :now-label="timelineLiveLabel"
-      :previous-label="t('previousCheckpoint')"
-      :next-label="t('nextCheckpoint')"
-      :format-reason="formatCheckpointReason"
-      :format-reasons="formatCheckpointReasons"
-      :max-reason-count="6"
-      @select-checkpoint="setCheckpointRoute"
-      @select-live="goLive"
-    />
+    <div v-if="isInitialAnalysisLoading" class="analysis-initial-loading">
+      <PageLoadingSpinner />
+      <div class="analysis-initial-loading__text">
+        {{ t("loadingAnalysis") }}
+      </div>
+    </div>
+    <template v-else>
+      <div
+        v-if="isCheckpointTimelineLoading"
+        class="checkpoint-timeline-loading"
+      >
+        <PageLoadingSpinner />
+      </div>
+      <CheckpointTimeline
+        v-else
+        :checkpoints="analysisCheckpoints"
+        :selected-checkpoint-id="selectedRouteCheckpoint"
+        :is-live-selected="isLiveAnalysis"
+        :is-live-paused="isLivePaused"
+        :is-latest-checkpoint-live="isLatestCheckpointLive"
+        :is-live-closed="props.isConversationClosed"
+        :title="t('checkpointTimelineLabel')"
+        :start-label="t('checkpointTimelineStart')"
+        :now-label="timelineLiveLabel"
+        :previous-label="t('previousCheckpoint')"
+        :next-label="t('nextCheckpoint')"
+        :format-reason="formatCheckpointReason"
+        :format-reasons="formatCheckpointReasons"
+        :max-reason-count="6"
+        @select-checkpoint="setCheckpointRoute"
+        @select-live="goLive"
+      />
 
-    <AsyncStateHandler :query="analysisQuery" :config="asyncStateConfig">
       <div class="analysis-content">
         <div
           v-if="showAnalysisControls"
@@ -29,18 +42,22 @@
               analysisViewOptions.length === 0,
           }"
         >
-          <ZKDropdownSelectorButton
+          <div
             v-if="analysisViewOptions.length > 0"
-            :label="selectedAnalysisViewLabel"
-            :accessibility-label="t('analysisViewTitle')"
-            button-type="standardButton"
-            class="analysis-view-selector"
-            content-alignment="start"
-            icon-name="mdi-chevron-down"
-            icon-size="1rem"
-            label-overflow="truncate"
-            @click="showAnalysisViewDrawer = true"
-          />
+            class="analysis-view-selector-group"
+          >
+            <ZKDropdownSelectorButton
+              :label="selectedAnalysisViewLabel"
+              :accessibility-label="t('analysisViewTitle')"
+              button-type="standardButton"
+              class="analysis-view-selector"
+              content-alignment="start"
+              icon-name="mdi-chevron-down"
+              icon-size="1rem"
+              label-overflow="truncate"
+              @click="showAnalysisViewDrawer = true"
+            />
+          </div>
 
           <button
             v-if="showAnalysisPlaybackButton"
@@ -57,152 +74,178 @@
           </button>
         </div>
 
-        <div class="analysis-header">
-          <ShortcutBar
-            :model-value="currentTab"
-            :items="polisTabItems"
-            :get-label="getPolisTabLabel"
-            :get-route="getPolisTabRoute"
-            :on-same-tab-click="handleSameTabClick"
-            @update:model-value="onTabChange"
-          />
-          <div class="analysis-actions">
-            <SpaLink
-              v-if="showReportButton"
-              :to="{
-                name: '/conversation/[conversationSlugId]/report',
-                params: { conversationSlugId: props.conversationSlugId },
-                query: reportRouteQuery,
-              }"
-              class="report-button"
-              :title="t('generateReport')"
-              :aria-label="t('generateReport')"
-            >
-              <q-icon name="mdi-file-chart-outline" size="1rem" />
-              <div>{{ t("report") }}</div>
-            </SpaLink>
+        <div
+          v-if="isAnalysisForegroundLoading"
+          class="analysis-transition-loading"
+        >
+          <PageLoadingSpinner />
+          <div class="analysis-transition-loading__text">
+            {{ t("loadingAnalysis") }}
           </div>
         </div>
 
-        <!-- Me tab -->
-        <div
-          v-if="currentTab === 'Summary' || currentTab === 'Me'"
-          class="tabComponent"
+        <AsyncStateHandler
+          v-else
+          :query="analysisQuery"
+          :config="asyncStateConfig"
         >
-          <MeTab
-            :model-value="currentTab"
-            :cluster-key="userClusterData.clusterKey"
-            :ai-label="userClusterData.aiLabel"
-            :ai-summary="userClusterData.aiSummary"
-            :has-voted-on-all-available-opinions="
-              activeAnalysisData?.hasVotedOnAllAvailableOpinions
-            "
-            :navigate-to-discover-tab="props.navigateToDiscoverTab"
-            @update:model-value="onTabChange"
-          />
-        </div>
+          <div class="analysis-loaded-content">
+            <div class="analysis-header">
+              <ShortcutBar
+                :model-value="currentTab"
+                :items="polisTabItems"
+                :get-label="getPolisTabLabel"
+                :get-route="getPolisTabRoute"
+                :on-same-tab-click="handleSameTabClick"
+                @update:model-value="onTabChange"
+              />
+              <div class="analysis-actions">
+                <SpaLink
+                  v-if="showReportButton"
+                  :to="{
+                    name: '/conversation/[conversationSlugId]/report',
+                    params: { conversationSlugId: props.conversationSlugId },
+                    query: reportRouteQuery,
+                  }"
+                  class="report-button"
+                  :title="t('generateReport')"
+                  :aria-label="t('generateReport')"
+                >
+                  <q-icon name="mdi-file-chart-outline" size="1rem" />
+                  <div>{{ t("report") }}</div>
+                </SpaLink>
+              </div>
+            </div>
 
-        <!-- Opinion groups -->
-        <div
-          v-if="
-            currentTab === 'Summary' ||
-            currentTab === 'Groups' ||
-            currentTab === 'Me'
-          "
-          class="tabComponent"
-        >
-          <OpinionGroupTab
-            :conversation-slug-id="props.conversationSlugId"
-            :conversation-author-username="props.conversationAuthorUsername"
-            :conversation-organization-name="props.conversationOrganizationName"
-            :clusters="polisClusters"
-            :total-participant-count="analysisParticipantCount"
-            :analysis-frame-key="analysisFrameKey"
-            :ai-labeling-enabled="props.aiLabelingEnabled"
-            :compact-mode="currentTab === 'Summary'"
-            :conversation-scroll-context="props.conversationScrollContext"
-          />
-        </div>
+            <!-- Me tab -->
+            <div
+              v-if="currentTab === 'Summary' || currentTab === 'Me'"
+              class="tabComponent"
+            >
+              <MeTab
+                :model-value="currentTab"
+                :cluster-key="userClusterData.clusterKey"
+                :ai-label="userClusterData.aiLabel"
+                :ai-summary="userClusterData.aiSummary"
+                :has-voted-on-all-available-opinions="
+                  activeAnalysisData?.hasVotedOnAllAvailableOpinions
+                "
+                :navigate-to-discover-tab="props.navigateToDiscoverTab"
+                @update:model-value="onTabChange"
+              />
+            </div>
 
-        <!-- Agreements -->
-        <div
-          v-if="currentTab === 'Summary' || currentTab === 'Agreements'"
-          class="tabComponent"
-        >
-          <ConsensusTab
-            :model-value="currentTab"
-            direction="agree"
-            :conversation-slug-id="props.conversationSlugId"
-            :conversation-author-username="props.conversationAuthorUsername"
-            :conversation-organization-name="props.conversationOrganizationName"
-            :item-list="agreementItems"
-            :compact-mode="currentTab === 'Summary'"
-            :clusters="polisClusters"
-            :cluster-labels="clusterLabels"
-            @update:model-value="onTabChange"
-          />
-        </div>
+            <!-- Opinion groups -->
+            <div
+              v-if="
+                currentTab === 'Summary' ||
+                currentTab === 'Groups' ||
+                currentTab === 'Me'
+              "
+              class="tabComponent"
+            >
+              <OpinionGroupTab
+                :conversation-slug-id="props.conversationSlugId"
+                :conversation-author-username="props.conversationAuthorUsername"
+                :conversation-organization-name="
+                  props.conversationOrganizationName
+                "
+                :clusters="polisClusters"
+                :total-participant-count="analysisParticipantCount"
+                :analysis-frame-key="analysisFrameKey"
+                :ai-labeling-enabled="props.aiLabelingEnabled"
+                :compact-mode="currentTab === 'Summary'"
+                :conversation-scroll-context="props.conversationScrollContext"
+              />
+            </div>
 
-        <!-- Disagreements -->
-        <div
-          v-if="currentTab === 'Summary' || currentTab === 'Disagreements'"
-          class="tabComponent"
-        >
-          <ConsensusTab
-            :model-value="currentTab"
-            direction="disagree"
-            :conversation-slug-id="props.conversationSlugId"
-            :conversation-author-username="props.conversationAuthorUsername"
-            :conversation-organization-name="props.conversationOrganizationName"
-            :item-list="disagreementItems"
-            :compact-mode="currentTab === 'Summary'"
-            :clusters="polisClusters"
-            :cluster-labels="clusterLabels"
-            @update:model-value="onTabChange"
-          />
-        </div>
+            <!-- Agreements -->
+            <div
+              v-if="currentTab === 'Summary' || currentTab === 'Agreements'"
+              class="tabComponent"
+            >
+              <ConsensusTab
+                :model-value="currentTab"
+                direction="agree"
+                :conversation-slug-id="props.conversationSlugId"
+                :conversation-author-username="props.conversationAuthorUsername"
+                :conversation-organization-name="
+                  props.conversationOrganizationName
+                "
+                :item-list="agreementItems"
+                :compact-mode="currentTab === 'Summary'"
+                :clusters="polisClusters"
+                :cluster-labels="clusterLabels"
+                @update:model-value="onTabChange"
+              />
+            </div>
 
-        <!-- Divisive -->
-        <div
-          v-if="currentTab === 'Summary' || currentTab === 'Divisive'"
-          class="tabComponent"
-        >
-          <DivisiveTab
-            :model-value="currentTab"
-            :conversation-slug-id="props.conversationSlugId"
-            :conversation-author-username="props.conversationAuthorUsername"
-            :conversation-organization-name="props.conversationOrganizationName"
-            :item-list="controversialItems"
-            :compact-mode="currentTab === 'Summary'"
-            :clusters="polisClusters"
-            :cluster-labels="clusterLabels"
-            @update:model-value="onTabChange"
-          />
-        </div>
+            <!-- Disagreements -->
+            <div
+              v-if="currentTab === 'Summary' || currentTab === 'Disagreements'"
+              class="tabComponent"
+            >
+              <ConsensusTab
+                :model-value="currentTab"
+                direction="disagree"
+                :conversation-slug-id="props.conversationSlugId"
+                :conversation-author-username="props.conversationAuthorUsername"
+                :conversation-organization-name="
+                  props.conversationOrganizationName
+                "
+                :item-list="disagreementItems"
+                :compact-mode="currentTab === 'Summary'"
+                :clusters="polisClusters"
+                :cluster-labels="clusterLabels"
+                @update:model-value="onTabChange"
+              />
+            </div>
 
-        <!-- Survey -->
-        <div
-          v-if="
-            props.hasSurvey &&
-            (currentTab === 'Summary' || currentTab === 'Survey')
-          "
-          class="tabComponent"
-        >
-          <SurveyTab
-            :model-value="currentTab"
-            :conversation-slug-id="props.conversationSlugId"
-            :survey-gate="props.surveyGate"
-            :survey-query="props.surveyQuery"
-            :survey-results-override="pausedLiveSurveyResults"
-            :clusters="polisClusters"
-            :total-participant-count="analysisParticipantCount"
-            :compact-mode="currentTab === 'Summary'"
-            :conversation-scroll-context="props.conversationScrollContext"
-            @update:model-value="onTabChange"
-          />
-        </div>
+            <!-- Divisive -->
+            <div
+              v-if="currentTab === 'Summary' || currentTab === 'Divisive'"
+              class="tabComponent"
+            >
+              <DivisiveTab
+                :model-value="currentTab"
+                :conversation-slug-id="props.conversationSlugId"
+                :conversation-author-username="props.conversationAuthorUsername"
+                :conversation-organization-name="
+                  props.conversationOrganizationName
+                "
+                :item-list="controversialItems"
+                :compact-mode="currentTab === 'Summary'"
+                :clusters="polisClusters"
+                :cluster-labels="clusterLabels"
+                @update:model-value="onTabChange"
+              />
+            </div>
+
+            <!-- Survey -->
+            <div
+              v-if="
+                props.hasSurvey &&
+                (currentTab === 'Summary' || currentTab === 'Survey')
+              "
+              class="tabComponent"
+            >
+              <SurveyTab
+                :model-value="currentTab"
+                :conversation-slug-id="props.conversationSlugId"
+                :survey-gate="props.surveyGate"
+                :survey-query="props.surveyQuery"
+                :survey-results-override="pausedLiveSurveyResults"
+                :clusters="polisClusters"
+                :total-participant-count="analysisParticipantCount"
+                :compact-mode="currentTab === 'Summary'"
+                :conversation-scroll-context="props.conversationScrollContext"
+                @update:model-value="onTabChange"
+              />
+            </div>
+          </div>
+        </AsyncStateHandler>
       </div>
-    </AsyncStateHandler>
+    </template>
 
     <q-dialog v-model="showAnalysisViewDrawer" position="bottom">
       <ZKBottomDialogContainer
@@ -335,6 +378,7 @@
 import type { UseQueryReturnType } from "@tanstack/vue-query";
 import { useQuasar } from "quasar";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKChip from "src/components/ui-library/ZKChip.vue";
@@ -345,6 +389,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTabNavigation } from "src/composables/ui/useTabNavigation";
 import type {
   AnalysisCheckpoint,
+  AnalysisViewState,
   FetchAnalysisCheckpointsResponse,
   SurveyResultsAggregatedResponse,
 } from "src/shared/types/dto";
@@ -439,7 +484,10 @@ const showAnalysisViewDrawer = ref(false);
 const showAnalysisViewLearnMoreDrawer = ref(false);
 const pausedLiveAnalysisData = ref<AnalysisData | undefined>();
 const pausedLiveCheckpoints = ref<AnalysisCheckpoint[] | undefined>();
-const pausedLiveSurveyResults = ref<SurveyResultsAggregatedResponse | undefined>();
+const pausedLiveSurveyResults = ref<
+  SurveyResultsAggregatedResponse | undefined
+>();
+const lastLoadedAnalysisViewState = ref<AnalysisViewState | undefined>();
 
 const { currentTab, handleSameTabClick } = useTabNavigation({
   schema: shortcutItemSchema,
@@ -612,6 +660,49 @@ const analysisViewState = computed(
   () => activeAnalysisData.value?.analysisViewState
 );
 
+watch(
+  analysisViewState,
+  (state) => {
+    if (state !== undefined) {
+      lastLoadedAnalysisViewState.value = state;
+    }
+  },
+  { immediate: true }
+);
+
+const analysisViewStateForControls = computed(
+  () => analysisViewState.value ?? lastLoadedAnalysisViewState.value
+);
+
+const isAnalysisForegroundLoading = computed(
+  () =>
+    !analysisQuery.isError.value &&
+    (analysisQuery.isPending.value || analysisQuery.isRefetching.value) &&
+    analysisQuery.data.value === undefined
+);
+
+const isCheckpointTimelineLoading = computed(
+  () =>
+    !props.analysisCheckpointsQuery.isError.value &&
+    (props.analysisCheckpointsQuery.isPending.value ||
+      props.analysisCheckpointsQuery.isRefetching.value) &&
+    props.analysisCheckpointsQuery.data.value === undefined &&
+    pausedLiveCheckpoints.value === undefined
+);
+
+const hasLoadedCheckpoints = computed(
+  () =>
+    props.analysisCheckpointsQuery.data.value !== undefined ||
+    pausedLiveCheckpoints.value !== undefined
+);
+
+const isInitialAnalysisLoading = computed(
+  () =>
+    (lastLoadedAnalysisViewState.value === undefined &&
+      isAnalysisForegroundLoading.value) ||
+    (!hasLoadedCheckpoints.value && isCheckpointTimelineLoading.value)
+);
+
 const analysisFrameKey = computed(() => {
   const data = activeAnalysisData.value;
   if (data === undefined) {
@@ -626,7 +717,8 @@ const analysisFrameKey = computed(() => {
 });
 
 const noAnalysisViewOptions = computed<AnalysisViewOption[]>(() => {
-  const variantsEnabled = analysisViewState.value?.variantsEnabled === true;
+  const variantsEnabled =
+    analysisViewStateForControls.value?.variantsEnabled === true;
   const options: AnalysisViewOption[] = [];
 
   if (variantsEnabled) {
@@ -672,12 +764,12 @@ const noAnalysisViewOptions = computed<AnalysisViewOption[]>(() => {
 });
 
 const analysisViewOptions = computed(() => {
-  const options = analysisViewState.value?.options ?? [];
+  const options = analysisViewStateForControls.value?.options ?? [];
   if (options.length > 0) {
     return options;
   }
 
-  return analysisViewState.value?.resolvedBy === "no_analysis"
+  return analysisViewStateForControls.value?.resolvedBy === "no_analysis"
     ? noAnalysisViewOptions.value
     : options;
 });
@@ -750,7 +842,7 @@ const analysisViewLearnMoreItems = computed(() => [
 const selectedAnalysisView = computed(() =>
   getDisplayedAnalysisView({
     routeView: selectedRouteAnalysisView.value,
-    viewState: analysisViewState.value,
+    viewState: analysisViewStateForControls.value,
   })
 );
 
@@ -1075,7 +1167,7 @@ function getAnalysisViewReasonCaption(
   }
 
   if (
-    analysisViewState.value?.resolvedBy === "no_analysis" &&
+    analysisViewStateForControls.value?.resolvedBy === "no_analysis" &&
     option.reason === "recommended_default_unavailable"
   ) {
     return (
@@ -1131,7 +1223,7 @@ function getAnalysisViewCaption(
 function isAnalysisViewOptionSelectable(option: AnalysisViewOption): boolean {
   return getIsAnalysisViewOptionSelectable({
     option,
-    variantsEnabled: analysisViewState.value?.variantsEnabled,
+    variantsEnabled: analysisViewStateForControls.value?.variantsEnabled,
   });
 }
 
@@ -1146,7 +1238,7 @@ function getAnalysisViewOptionClasses(
       shouldShowAnalysisViewOptionStats(option),
     "analysis-view-drawer-option--muted": isAnalysisViewOptionMuted({
       option,
-      variantsEnabled: analysisViewState.value?.variantsEnabled,
+      variantsEnabled: analysisViewStateForControls.value?.variantsEnabled,
     }),
   };
 }
@@ -1484,6 +1576,33 @@ defineExpose({
   gap: 0.85rem;
 }
 
+.analysis-loaded-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.checkpoint-timeline-loading,
+.analysis-initial-loading,
+.analysis-transition-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 7rem;
+}
+
+.analysis-initial-loading,
+.analysis-transition-loading {
+  flex-direction: column;
+  gap: 0.75rem;
+  color: #6d6a74;
+}
+
+.analysis-initial-loading__text,
+.analysis-transition-loading__text {
+  font-size: 1rem;
+}
+
 .tabComponent {
   border-radius: 12px;
   padding: 0.5rem;
@@ -1509,6 +1628,13 @@ defineExpose({
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+}
+
+.analysis-view-selector-group {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.5rem;
 }
 
 .analysis-controls--playback-only {

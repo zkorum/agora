@@ -1182,7 +1182,7 @@ const { status, data } = await apiInstance.apiV1ConversationClosePost(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1ConversationCreatePost**
-> ApiV1MaxdiffLoadPostRequest apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest)
+> ApiV1ConversationCreatePost200Response apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest)
 
 
 ### Example
@@ -1213,7 +1213,7 @@ const { status, data } = await apiInstance.apiV1ConversationCreatePost(
 
 ### Return type
 
-**ApiV1MaxdiffLoadPostRequest**
+**ApiV1ConversationCreatePost200Response**
 
 ### Authorization
 

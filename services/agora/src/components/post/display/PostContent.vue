@@ -40,6 +40,7 @@
           :html-body="extendedPostData.payload.body"
           :compact-mode="compactMode"
           :enable-links="compactMode ? false : true"
+          :desktop-collapsed-line-count="18"
         />
       </div>
 

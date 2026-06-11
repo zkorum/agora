@@ -23,8 +23,8 @@
         "test": "./scripts/run-tests.sh",
         "image:buildx": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker buildx build --platform linux/amd64 -t agora-api:$tag --load .' --",
         "image:build": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker build -t agora-api:$tag .' --",
-        "image:tag:production": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker tag agora-api:$tag quay.io/zkorum/agora-api:$tag' --",
-        "image:push:production": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; TAG=\"$tag\" pnpm run image:tag:production && docker image push quay.io/zkorum/agora-api:$tag' --"
+        "image:tag": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker tag agora-api:$tag quay.io/zkorum/agora-api:$tag' --",
+        "image:push": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; TAG=\"$tag\" pnpm run image:tag && docker image push quay.io/zkorum/agora-api:$tag' --"
     },
     "type": "module",
     "engines": {

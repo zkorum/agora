@@ -22,12 +22,12 @@ import type {
 } from "@/shared/types/zod.js";
 import type {
     CloseConversationResponse,
+    CreateNewConversationResponse,
     OpenConversationResponse,
 } from "@/shared/types/dto.js";
-import { toUnionUndefined } from "@/shared/shared.js";
+import { toUnionUndefined, validateRichTextInput } from "@/shared/shared.js";
 import { postNewOpinion } from "./comment.js";
 import { createMaxdiffItem } from "./maxdiffItem.js";
-import type { ConversationIds } from "@/utils/dataStructure.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import { deleteAllConversationExports } from "@/service/conversationExport/index.js";
 import * as authUtilService from "@/service/authUtil.js";
@@ -94,7 +94,7 @@ export async function createNewPost({
     importCreatedAt,
     importAuthor,
     importMethod,
-}: CreateNewPostProps): Promise<ConversationIds> {
+}: CreateNewPostProps): Promise<CreateNewConversationResponse> {
     if (seedOpinionList.length > MAX_CONVERSATION_SEED_ITEMS) {
         throw httpErrors.badRequest(
             `A conversation can have at most ${String(MAX_CONVERSATION_SEED_ITEMS)} seed items`,
@@ -119,7 +119,7 @@ export async function createNewPost({
         try {
             conversationBody = processUserGeneratedHtml(
                 conversationBody,
-                true,
+                false,
                 "input",
             );
         } catch (error) {
@@ -131,9 +131,38 @@ export async function createNewPost({
                 );
             }
         }
+
+        const validationResult = validateRichTextInput({
+            htmlString: conversationBody,
+            mode: "conversation",
+        });
+        if (!validationResult.success) {
+            return validationResult;
+        }
+
+        conversationBody = processUserGeneratedHtml(
+            conversationBody,
+            true,
+            "input",
+        );
     }
 
-    const { conversationId, conversationContentId } = await db.transaction(
+    for (const seedOpinion of seedOpinionList) {
+        const sanitizedSeedOpinion = processUserGeneratedHtml(
+            seedOpinion,
+            false,
+            "input",
+        );
+        const validationResult = validateRichTextInput({
+            htmlString: sanitizedSeedOpinion,
+            mode: "opinion",
+        });
+        if (!validationResult.success) {
+            return validationResult;
+        }
+    }
+
+    const { conversationId } = await db.transaction(
         async (tx) => {
             const now = new Date();
             const insertPostResponse = await tx
@@ -223,7 +252,7 @@ export async function createNewPost({
                     }
 
                     for (const seedOpinionText of seedOpinionList) {
-                        await postNewOpinion({
+                        const seedOpinionResult = await postNewOpinion({
                             db,
                             tx,
                             commentBody: seedOpinionText,
@@ -246,6 +275,11 @@ export async function createNewPost({
                                     requiresEventTicket ?? null,
                             },
                         });
+                        if (!seedOpinionResult.success) {
+                            throw httpErrors.internalServerError(
+                                "Failed to create seed opinion",
+                            );
+                        }
                     }
                 }
             }
@@ -269,7 +303,6 @@ export async function createNewPost({
 
             return {
                 conversationId: insertedConversationId,
-                conversationContentId: insertedConversationContentId,
             };
         },
     );
@@ -288,9 +321,8 @@ export async function createNewPost({
     }
 
     return {
-        conversationId: conversationId,
+        success: true,
         conversationSlugId: conversationSlugId,
-        conversationContentId: conversationContentId,
     };
 }
 

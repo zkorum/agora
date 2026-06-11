@@ -3785,8 +3785,7 @@
                                     },
                                     "opinionBody": {
                                         "type": "string",
-                                        "minLength": 1,
-                                        "maxLength": 840
+                                        "minLength": 1
                                     }
                                 },
                                 "required": [
@@ -3966,16 +3965,27 @@
                                                     ]
                                                 },
                                                 "reason": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "conversation_locked",
-                                                        "conversation_closed",
-                                                        "event_ticket_required",
-                                                        "account_required",
-                                                        "strong_verification_required",
-                                                        "email_verification_required",
-                                                        "survey_required",
-                                                        "survey_outdated"
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "conversation_locked",
+                                                                "conversation_closed",
+                                                                "event_ticket_required",
+                                                                "account_required",
+                                                                "strong_verification_required",
+                                                                "email_verification_required",
+                                                                "survey_required",
+                                                                "survey_outdated"
+                                                            ]
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "plain_text_too_long",
+                                                                "html_too_long"
+                                                            ]
+                                                        }
                                                     ]
                                                 }
                                             },
@@ -6687,8 +6697,7 @@
                                         "type": "array",
                                         "items": {
                                             "type": "string",
-                                            "minLength": 1,
-                                            "maxLength": 840
+                                            "minLength": 1
                                         }
                                     },
                                     "requiresEventTicket": {
@@ -7000,16 +7009,50 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "conversationSlugId": {
-                                            "type": "string"
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "conversationSlugId": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "conversationSlugId"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "plain_text_too_long",
+                                                        "html_too_long"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
                                         }
-                                    },
-                                    "required": [
-                                        "conversationSlugId"
-                                    ],
-                                    "additionalProperties": false
+                                    ]
                                 }
                             }
                         }
@@ -8578,7 +8621,9 @@
                                                         "conversation_locked",
                                                         "invalid_access_settings",
                                                         "premium_access_expired",
-                                                        "premium_access_required"
+                                                        "premium_access_required",
+                                                        "plain_text_too_long",
+                                                        "html_too_long"
                                                     ]
                                                 }
                                             },

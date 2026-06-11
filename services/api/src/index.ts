@@ -2589,7 +2589,7 @@ server.after(() => {
                 });
             }
 
-            const { conversationSlugId } = await postService.createNewPost({
+            const createResult = await postService.createNewPost({
                 db: db,
                 conversationTitle: request.body.conversationTitle,
                 conversationBody: request.body.conversationBody ?? null,
@@ -2610,6 +2610,11 @@ server.after(() => {
                 googleCloudCredentials,
             });
 
+            if (!createResult.success) {
+                reply.send(createResult);
+                return;
+            }
+
             // Broadcast to all connected clients (except the creator) that a new conversation exists
             realtimeSSEManager.broadcastToAllExcept({
                 event: "new_conversation",
@@ -2617,7 +2622,7 @@ server.after(() => {
                 excludeUserId: deviceStatus.userId,
             });
 
-            reply.send({ conversationSlugId });
+            reply.send(createResult);
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({

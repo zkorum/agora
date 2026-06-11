@@ -42,7 +42,7 @@
       rounded
       severity="secondary"
       class="delete-button"
-      @click.stop="showDeleteConfirm = true"
+      @click.stop="handleDeleteClick"
       @mousedown.stop
     />
 
@@ -62,7 +62,7 @@ import Button from "primevue/button";
 import Card from "primevue/card";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { MAX_LENGTH_OPINION } from "src/shared/shared";
+import { htmlToCountedText, MAX_LENGTH_OPINION } from "src/shared/shared";
 import { defineAsyncComponent, ref } from "vue";
 
 import {
@@ -115,6 +115,15 @@ const handleCardClick = (): void => {
     editorRef.value?.focus();
   }
 };
+
+function handleDeleteClick(): void {
+  if (htmlToCountedText(props.modelValue).trim().length === 0) {
+    emit("remove");
+    return;
+  }
+
+  showDeleteConfirm.value = true;
+}
 
 // Expose focus method for parent component
 const focus = (): void => {

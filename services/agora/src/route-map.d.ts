@@ -282,6 +282,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dev/analysis-variant-loading-test': RouteRecordInfo<
+      '/dev/analysis-variant-loading-test',
+      '/dev/analysis-variant-loading-test',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/dev/component-testing': RouteRecordInfo<
       '/dev/component-testing',
       '/dev/component-testing',
@@ -306,6 +313,13 @@ declare module 'vue-router/auto-routes' {
     '/dev/test-components/AnalysisReportTest': RouteRecordInfo<
       '/dev/test-components/AnalysisReportTest',
       '/dev/test-components/AnalysisReportTest',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/dev/test-components/AnalysisVariantLoadingTest': RouteRecordInfo<
+      '/dev/test-components/AnalysisVariantLoadingTest',
+      '/dev/test-components/AnalysisVariantLoadingTest',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -848,6 +862,12 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/dev/analysis-variant-loading-test.vue': {
+      routes:
+        | '/dev/analysis-variant-loading-test'
+      views:
+        | never
+    }
     'src/pages/dev/component-testing.vue': {
       routes:
         | '/dev/component-testing'
@@ -869,6 +889,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dev/test-components/AnalysisReportTest.vue': {
       routes:
         | '/dev/test-components/AnalysisReportTest'
+      views:
+        | never
+    }
+    'src/pages/dev/test-components/AnalysisVariantLoadingTest.vue': {
+      routes:
+        | '/dev/test-components/AnalysisVariantLoadingTest'
       views:
         | never
     }

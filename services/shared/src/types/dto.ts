@@ -42,6 +42,7 @@ import {
     zodImportFailureReason,
     zodParticipationMode,
     zodParticipationBlockedReason,
+    zodRichTextValidationFailureReason,
     zodMaxdiffComparison,
     zodConversationType,
     zodConversationViewSnapshotCheckpointReason,
@@ -386,9 +387,20 @@ export class Dto {
             surveyConfig: zodSurveyConfig.nullable().optional(),
         })
         .strict();
-    static createNewConversationResponse = z
-        .object({ conversationSlugId: z.string() })
-        .strict();
+    static createNewConversationResponse = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+                conversationSlugId: z.string(),
+            })
+            .strict(),
+        z
+            .object({
+                success: z.literal(false),
+                reason: zodRichTextValidationFailureReason,
+            })
+            .strict(),
+    ]);
     static importConversationRequest = z
         .object({
             polisUrl: zodPolisUrl,
@@ -626,6 +638,8 @@ export class Dto {
                     "invalid_access_settings",
                     "premium_access_expired",
                     "premium_access_required",
+                    "plain_text_too_long",
+                    "html_too_long",
                 ]),
             })
             .strict(),
@@ -772,7 +786,10 @@ export class Dto {
         z
             .object({
                 success: z.literal(false),
-                reason: zodParticipationBlockedReason,
+                reason: z.union([
+                    zodParticipationBlockedReason,
+                    zodRichTextValidationFailureReason,
+                ]),
             })
             .strict(),
     ]);

@@ -1,12 +1,12 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI coding agents when working with code in this repository.
 
 ## External Repository References
 
 When the user mentions needing to understand an external library or repository, **first check if it's cloned locally** in the `external/` directory at the repository root before fetching from GitHub or using web search.
 
-**Important**: The repository root is where CLAUDE.md is located. Claude's working directory may be a subdirectory (e.g., `services/agora/`), so use paths relative to the repository root or use `../../external/` to navigate up from subdirectories.
+**Important**: The repository root is where AGENTS.md is located. An agent's working directory may be a subdirectory (e.g., `services/agora/`), so use paths relative to the repository root or use `../../external/` to navigate up from subdirectories.
 
 **Pattern**: External repos are sometimes cloned into `external/` at repository root for analysis. This directory is gitignored.
 

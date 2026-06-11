@@ -582,6 +582,10 @@ async function submitPostClicked() {
           case "survey_outdated":
             showLoginDialog.value = true;
             break;
+          case "plain_text_too_long":
+          case "html_too_long":
+            showNotifyMessage(t("createOpinionError"));
+            break;
         }
       }
     }
