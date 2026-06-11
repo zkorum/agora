@@ -15,6 +15,7 @@
       </p>
     </SpaLink>
 
+    <AnalysisVariantLoadingTest />
     <PreferencesDialogTest />
     <OpinionGroupVisualizationTest />
     <AnalysisReportTest />
@@ -34,6 +35,7 @@ import {
   componentTestingTranslations,
 } from "./component-testing.i18n";
 import AnalysisReportTest from "./test-components/AnalysisReportTest.vue";
+import AnalysisVariantLoadingTest from "./test-components/AnalysisVariantLoadingTest.vue";
 import AsyncStateHandlerTest from "./test-components/AsyncStateHandlerTest.vue";
 import EmbeddedBrowserWarningTest from "./test-components/EmbeddedBrowserWarningTest.vue";
 import OpinionGroupVisualizationTest from "./test-components/OpinionGroupVisualizationTest.vue";

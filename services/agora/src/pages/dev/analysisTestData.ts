@@ -1,9 +1,19 @@
-import type { SurveyResultsAggregatedResponse } from "src/shared/types/dto";
 import type {
+  AnalysisCheckpoint,
+  AnalysisFrameKey,
+  AnalysisViewState,
+  SurveyResultsAggregatedResponse,
+} from "src/shared/types/dto";
+import type {
+  AnalysisOpinionItem,
+  AnalysisView,
+  ClusterStats,
+  PolisClusters,
   PolisKey,
   SurveyAggregateRow,
   SurveyAggregateSuppressionReason,
 } from "src/shared/types/zod";
+import type { AnalysisData } from "src/utils/api/comment/comment";
 
 export const longAiLabels = [
   "Écologistes progressistes pour la transition énergétique",
@@ -47,7 +57,373 @@ export const mockStatements = [
 
 export const polisKeys: PolisKey[] = ["0", "1", "2", "3", "4", "5"];
 
+export const fixedAnalysisViews = [
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+] satisfies AnalysisView[];
+
 export const surveySuppressionThreshold = 5;
+
+function getStatement({ index }: { index: number }): string {
+  return (
+    mockStatements[index % mockStatements.length] ?? "Dev analysis statement"
+  );
+}
+
+export function buildMockClusterStats({
+  clusterCount,
+}: {
+  clusterCount: number;
+}): ClusterStats[] {
+  return polisKeys.slice(0, clusterCount).map((key) => {
+    const index = Number(key);
+    return {
+      key,
+      isAuthorInCluster: key === "0",
+      numUsers: 24 + index * 7,
+      numAgrees: 12 + index,
+      numDisagrees: 5 + index,
+      numPasses: 3,
+    };
+  });
+}
+
+export function buildMockAnalysisOpinion({
+  index,
+  clusterCount,
+  suffix = "",
+}: {
+  index: number;
+  clusterCount: number;
+  suffix?: string;
+}): AnalysisOpinionItem {
+  const participantCount = 52 + index * 3;
+  const suffixText = suffix === "" ? "" : ` (${suffix})`;
+  return {
+    opinionSlugId: `mock-op-${suffix}-${String(index)}`,
+    createdAt: new Date("2026-01-01T00:00:00Z"),
+    updatedAt: new Date("2026-01-01T00:00:00Z"),
+    opinion: `${getStatement({ index })}${suffixText}`,
+    numParticipants: participantCount,
+    numAgrees: Math.floor(participantCount * 0.62),
+    numDisagrees: Math.floor(participantCount * 0.25),
+    numPasses: Math.floor(participantCount * 0.13),
+    username: `dev-user-${String(index + 1)}`,
+    moderation: { status: "unmoderated" },
+    isSeed: false,
+    clustersStats: buildMockClusterStats({ clusterCount }),
+    groupAwareConsensusAgree: 0.6 + index * 0.01,
+    groupAwareConsensusDisagree: 0.58 + index * 0.01,
+    divisiveScore: 1.2 + index * 0.2,
+  };
+}
+
+export function buildMockPolisClusters({
+  clusterCount,
+  aiLabelMode,
+  scaleMultiplier = 1,
+  representativeCount = 5,
+}: {
+  clusterCount: number;
+  aiLabelMode: AiLabelMode;
+  scaleMultiplier?: number;
+  representativeCount?: number;
+}): Partial<PolisClusters> {
+  const clusters: Partial<PolisClusters> = {};
+  const aiLabels =
+    aiLabelMode === "long"
+      ? longAiLabels
+      : aiLabelMode === "short"
+        ? shortAiLabels
+        : undefined;
+  const baseSizes = [145, 112, 87, 63, 48, 35].map(
+    (size) => size * scaleMultiplier
+  );
+
+  for (const key of polisKeys.slice(0, clusterCount)) {
+    const index = Number(key);
+    const representative = Array.from(
+      { length: representativeCount },
+      (_, offset) =>
+        buildMockAnalysisOpinion({
+          index: index * representativeCount + offset,
+          clusterCount,
+          suffix: `${String(clusterCount)} groups`,
+        })
+    );
+
+    clusters[key] = {
+      key,
+      numUsers: baseSizes[index] ?? 5,
+      aiLabel: aiLabels?.[index],
+      aiSummary: aiLabels === undefined ? undefined : aiSummaries[index],
+      isUserInCluster: key === "0",
+      representative,
+    };
+  }
+
+  return clusters;
+}
+
+export function getMockAnalysisResolvedGroupCount(view: AnalysisView): number {
+  switch (view) {
+    case "2":
+      return 2;
+    case "3":
+      return 3;
+    case "4":
+      return 4;
+    case "5":
+      return 5;
+    case "6":
+      return 6;
+    case "facilitator_preference":
+      return 3;
+    case "auto":
+      return 4;
+  }
+}
+
+function getMockAnalysisResolvedBy(
+  view: AnalysisView
+): AnalysisViewState["resolvedBy"] {
+  switch (view) {
+    case "facilitator_preference":
+      return "facilitator_preference";
+    case "auto":
+      return "auto";
+    case "2":
+    case "3":
+    case "4":
+    case "5":
+    case "6":
+      return "fixed_count";
+  }
+}
+
+function buildMockAnalysisFrameKey(groupCount: number): AnalysisFrameKey {
+  return {
+    conversationViewSnapshotId: 100,
+    analysisSnapshotId: 10,
+    candidateId: groupCount,
+  };
+}
+
+function buildMockAnalysisViewState({
+  view,
+}: {
+  view: AnalysisView;
+}): AnalysisViewState {
+  const fixedOptions: AnalysisViewState["options"] = fixedAnalysisViews.map(
+    (fixedView) => {
+      const groupCount = Number(fixedView);
+      return {
+        view: fixedView,
+        status: groupCount === 4 ? "recommended" : "available",
+        candidate: {
+          candidateId: groupCount,
+          groupCount,
+          assessment: {
+            selectionScore: groupCount === 4 ? 0.91 : 0.58 + groupCount * 0.04,
+            silhouetteScore: 0.18 + groupCount * 0.05,
+            balanceScore: 0.5 + groupCount * 0.06,
+          },
+        },
+      };
+    }
+  );
+
+  return {
+    requestedView: view,
+    canonicalView: view,
+    resolvedGroupCount: getMockAnalysisResolvedGroupCount(view),
+    resolvedCandidateId: getMockAnalysisResolvedGroupCount(view),
+    resolvedBy: getMockAnalysisResolvedBy(view),
+    variantsEnabled: true,
+    options: [
+      {
+        view: "facilitator_preference",
+        resolvesToView: "3",
+        status: "available",
+        candidate: {
+          candidateId: 3,
+          groupCount: 3,
+          assessment: {
+            selectionScore: 0.72,
+            silhouetteScore: 0.34,
+            balanceScore: 0.66,
+          },
+        },
+      },
+      {
+        view: "auto",
+        resolvesToView: "4",
+        status: "recommended",
+        candidate: {
+          candidateId: 4,
+          groupCount: 4,
+          assessment: {
+            selectionScore: 0.91,
+            silhouetteScore: 0.48,
+            balanceScore: 0.82,
+          },
+        },
+      },
+      ...fixedOptions,
+    ],
+  };
+}
+
+export function buildMockAnalysisData({
+  view,
+}: {
+  view: AnalysisView;
+}): AnalysisData {
+  const clusterCount = getMockAnalysisResolvedGroupCount(view);
+  const frameKey = buildMockAnalysisFrameKey(clusterCount);
+  const conversationViewSnapshot = {
+    conversationViewSnapshotId: frameKey.conversationViewSnapshotId,
+    analysisSnapshotId: frameKey.analysisSnapshotId,
+    opinionCount: 128,
+    voteCount: 4230,
+    participantCount: 271,
+    totalOpinionCount: 301,
+    totalVoteCount: 11000,
+    totalParticipantCount: 271,
+    moderatedOpinionCount: 0,
+    hiddenOpinionCount: 0,
+    isClosed: false,
+  };
+  const agreementItems = Array.from({ length: 4 }, (_, index) =>
+    buildMockAnalysisOpinion({
+      index,
+      clusterCount,
+      suffix: `${String(clusterCount)} groups agree`,
+    })
+  );
+  const disagreementItems = Array.from({ length: 4 }, (_, index) =>
+    buildMockAnalysisOpinion({
+      index: index + 4,
+      clusterCount,
+      suffix: `${String(clusterCount)} groups disagree`,
+    })
+  );
+  const divisiveItems = Array.from({ length: 3 }, (_, index) =>
+    buildMockAnalysisOpinion({
+      index: index + 8,
+      clusterCount,
+      suffix: `${String(clusterCount)} groups divisive`,
+    })
+  );
+  const analysisViewState = buildMockAnalysisViewState({ view });
+
+  return {
+    consensusAgree: agreementItems,
+    consensusDisagree: disagreementItems,
+    controversial: divisiveItems,
+    polisClusters: buildMockPolisClusters({
+      clusterCount,
+      aiLabelMode: "short",
+      representativeCount: 1,
+    }),
+    frameKey,
+    manifest: {
+      frameKey,
+      conversationViewSnapshot,
+      counters: conversationViewSnapshot,
+      analysisViewResolution: analysisViewState,
+      aiLabelsExpected: true,
+      hasVotedOnAllAvailableOpinions: false,
+    },
+    conversationViewSnapshotId: frameKey.conversationViewSnapshotId,
+    analysisSnapshotId: frameKey.analysisSnapshotId,
+    conversationViewSnapshot,
+    analysisViewState,
+    displayableGroupCounts: [2, 3, 4, 5, 6],
+    hasVotedOnAllAvailableOpinions: false,
+  };
+}
+
+export function buildMockAnalysisCheckpoints(): AnalysisCheckpoint[] {
+  return [
+    {
+      conversationViewSnapshotId: 20,
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+      activatedAt: new Date("2026-01-01T00:00:00Z"),
+      opinionCount: 25,
+      voteCount: 200,
+      participantCount: 30,
+      totalOpinionCount: 25,
+      totalVoteCount: 200,
+      totalParticipantCount: 30,
+      moderatedOpinionCount: 0,
+      hiddenOpinionCount: 0,
+      isClosed: false,
+      reasons: [
+        {
+          reason: "first_displayable_analysis",
+          groupCount: null,
+          previousGroupCount: null,
+          participantCount: 30,
+          participantMilestone: null,
+          voteCount: 200,
+          voteMilestone: null,
+        },
+      ],
+    },
+    {
+      conversationViewSnapshotId: 60,
+      createdAt: new Date("2026-01-02T00:00:00Z"),
+      activatedAt: new Date("2026-01-02T00:00:00Z"),
+      opinionCount: 80,
+      voteCount: 1700,
+      participantCount: 120,
+      totalOpinionCount: 90,
+      totalVoteCount: 1900,
+      totalParticipantCount: 120,
+      moderatedOpinionCount: 0,
+      hiddenOpinionCount: 0,
+      isClosed: false,
+      reasons: [3, 4, 5, 6].map((groupCount) => ({
+        reason: "first_group_count_available",
+        groupCount,
+        previousGroupCount: null,
+        participantCount: 120,
+        participantMilestone: null,
+        voteCount: 1700,
+        voteMilestone: null,
+      })),
+    },
+    {
+      conversationViewSnapshotId: 100,
+      createdAt: new Date("2026-01-03T00:00:00Z"),
+      activatedAt: new Date("2026-01-03T00:00:00Z"),
+      opinionCount: 128,
+      voteCount: 4230,
+      participantCount: 271,
+      totalOpinionCount: 301,
+      totalVoteCount: 11000,
+      totalParticipantCount: 271,
+      moderatedOpinionCount: 0,
+      hiddenOpinionCount: 0,
+      isClosed: false,
+      reasons: [
+        {
+          reason: "default_group_count_changed",
+          groupCount: 4,
+          previousGroupCount: 3,
+          participantCount: 271,
+          participantMilestone: null,
+          voteCount: 4230,
+          voteMilestone: null,
+        },
+      ],
+    },
+  ];
+}
 
 interface SurveyCounts {
   dominant: number;

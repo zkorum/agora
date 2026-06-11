@@ -292,7 +292,9 @@ function getTranslatedLabelGraceFreshness({
     enablePrimaryFallback: true,
     minimumConversationViewSnapshotId:
       freshness?.minimumConversationViewSnapshotId ?? null,
-    expectedDescriptionLocales: expectedLabelLocales(parsedDisplayLanguage.data),
+    expectedDescriptionLocales: expectedLabelLocales(
+      parsedDisplayLanguage.data
+    ),
   };
 }
 
@@ -420,6 +422,7 @@ async function fetchFrameGroupLabelsWithTranslationGrace({
         freshness,
       }),
     staleTime: labelStaleTime,
+    retry: false,
   });
 
   if (!shouldWaitForTranslatedLabels({ groupLabels, displayLanguage })) {
@@ -443,8 +446,9 @@ async function fetchFrameGroupLabelsWithTranslationGrace({
             freshness,
             displayLanguage,
           }),
-      }),
+        }),
       staleTime: 0,
+      retry: false,
     });
   } catch {
     return groupLabels;
@@ -489,6 +493,7 @@ async function runFrameLabelCatchUpAttempt({
         freshness,
       }),
     staleTime: 0,
+    retry: false,
   });
 
   queryClient.setQueryData<AnalysisData>(analysisQueryKey, (current) => {
@@ -665,6 +670,7 @@ export async function fetchAnalysisDataWithCache({
         freshness,
       }),
     staleTime: getManifestStaleTime({ freshness, voteCount }),
+    retry: false,
   });
 
   if (!hasManifestFrame(manifest)) {
@@ -689,6 +695,7 @@ export async function fetchAnalysisDataWithCache({
             freshness,
           }),
         staleTime: frameSectionStaleTime,
+        retry: false,
       }),
       fetchFrameGroupLabelsWithTranslationGrace({
         queryClient,
@@ -715,6 +722,7 @@ export async function fetchAnalysisDataWithCache({
             freshness,
           }),
         staleTime: frameSectionStaleTime,
+        retry: false,
       }),
       queryClient.fetchQuery({
         queryKey: [
@@ -731,6 +739,7 @@ export async function fetchAnalysisDataWithCache({
             freshness,
           }),
         staleTime: frameSectionStaleTime,
+        retry: false,
       }),
       queryClient.fetchQuery({
         queryKey: [
@@ -747,6 +756,7 @@ export async function fetchAnalysisDataWithCache({
             freshness,
           }),
         staleTime: frameSectionStaleTime,
+        retry: false,
       }),
     ]);
 
@@ -823,9 +833,8 @@ export function useAnalysisQuery({
         resolvedAiLabelingEnabled,
         resolvedDisplayLanguage,
       ];
-      const previousAnalysis = queryClient.getQueryData<AnalysisData>(
-        resolvedQueryKey
-      );
+      const previousAnalysis =
+        queryClient.getQueryData<AnalysisData>(resolvedQueryKey);
       const freshness = buildAnalysisFreshnessRequest({
         previousAnalysis,
         expectedSnapshotId: null,
@@ -881,7 +890,6 @@ export function useAnalysisQuery({
     staleTime: getAnalysisStaleTime(toValue(voteCount)), // Dynamic cache based on conversation size
     // Note: When votes/comments happen, markAnalysisAsStale() is called
     // This marks data as stale immediately, so next access will refetch
-    placeholderData: (previousData) => previousData, // Preserve previous data during analysis refreshes
     retry: false, // Disable auto-retry
   });
 }
@@ -908,7 +916,6 @@ export function useAnalysisCheckpointsQuery({
       () => toValue(enabled) && toValue(conversationSlugId) !== ""
     ),
     staleTime: 30000,
-    placeholderData: (previousData) => previousData, // Preserve timeline during refreshes
     retry: false,
   });
 }
