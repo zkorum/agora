@@ -18,6 +18,7 @@ import type {
   AnalysisFrameOpinionList,
   AnalysisFrameOpinionListKind,
   AnalysisFreshnessRequest,
+  CreateCommentResponse,
   FetchAnalysisCheckpointsResponse,
   FetchCommentStatsResponse,
 } from "src/shared/types/dto";
@@ -55,7 +56,7 @@ type CreateNewCommentResult =
     }
   | {
       success: false;
-      reason?: string;
+      reason?: Extract<CreateCommentResponse, { success: false }>["reason"];
     };
 
 export function useBackendCommentApi() {

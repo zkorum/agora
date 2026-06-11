@@ -1,4 +1,4 @@
-# ApiV1ConversationCreatePost200Response
+# ApiV1ConversationCreatePost200ResponseOneOf1
 
 
 ## Properties
@@ -6,17 +6,15 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **boolean** |  | [default to undefined]
-**conversationSlugId** | **string** |  | [default to undefined]
 **reason** | **string** |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import { ApiV1ConversationCreatePost200Response } from './api';
+import { ApiV1ConversationCreatePost200ResponseOneOf1 } from './api';
 
-const instance: ApiV1ConversationCreatePost200Response = {
+const instance: ApiV1ConversationCreatePost200ResponseOneOf1 = {
     success,
-    conversationSlugId,
     reason,
 };
 ```

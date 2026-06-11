@@ -9,7 +9,10 @@ import {
   DefaultApiFactory,
 } from "src/api";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { ImportCsvConversationResponse } from "src/shared/types/dto";
+import type {
+  CreateNewConversationResponse,
+  ImportCsvConversationResponse,
+} from "src/shared/types/dto";
 import type {
   FetchFeedResponse,
   GetActiveImportResponse,
@@ -191,7 +194,7 @@ export function useBackendPostApi() {
   }
 
   type CreateNewPostSuccessResponse =
-    AxiosSuccessResponse<{ conversationSlugId: string }>;
+    AxiosSuccessResponse<CreateNewConversationResponse>;
   type CreateNewPostResponse =
     | CreateNewPostSuccessResponse
     | AxiosErrorResponse;
@@ -354,7 +357,7 @@ export function useBackendPostApi() {
       );
 
       return {
-        data: response.data,
+        data: Dto.createNewConversationResponse.parse(response.data),
         status: "success",
       };
     } catch (e) {

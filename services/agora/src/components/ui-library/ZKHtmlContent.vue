@@ -69,11 +69,13 @@ const props = withDefaults(
     contentRole?: HtmlContentRole;
     collapsible?: boolean;
     collapsedLineCount?: number;
+    desktopCollapsedLineCount?: number;
   }>(),
   {
     contentRole: "body",
     collapsible: true,
     collapsedLineCount: 10,
+    desktopCollapsedLineCount: 10,
   }
 );
 
@@ -114,6 +116,7 @@ const showDisclosureButton = computed(
 
 const contentStyle = computed(() => ({
   "--collapsed-line-count": props.collapsedLineCount.toString(),
+  "--desktop-collapsed-line-count": props.desktopCollapsedLineCount.toString(),
 }));
 
 function observeContentElement(contentElement: HTMLElement | null): void {
@@ -207,6 +210,11 @@ watch(contentRef, (contentElement) => {
   -webkit-line-clamp: var(--collapsed-line-count);
   line-clamp: var(--collapsed-line-count);
   -webkit-box-orient: vertical;
+
+  @media (min-width: $breakpoint-sm) {
+    -webkit-line-clamp: var(--desktop-collapsed-line-count);
+    line-clamp: var(--desktop-collapsed-line-count);
+  }
 }
 
 .disclosure-button {

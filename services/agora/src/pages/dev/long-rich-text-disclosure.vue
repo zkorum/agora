@@ -145,7 +145,12 @@ type DescriptionMode =
   | "long"
   | "long-with-empty-lines";
 type ConversationMode = "full" | "compact";
-type StatementMode = "short" | "long" | "mixed";
+type StatementMode =
+  | "short"
+  | "single-empty-line"
+  | "multiple-empty-lines"
+  | "long"
+  | "mixed";
 
 interface SelectOption<T extends string> {
   label: string;
@@ -179,6 +184,8 @@ const conversationModeOptions: Array<SelectOption<ConversationMode>> = [
 
 const statementModeOptions: Array<SelectOption<StatementMode>> = [
   { label: "Short", value: "short" },
+  { label: "Single preserved empty line", value: "single-empty-line" },
+  { label: "Multiple empty lines collapse", value: "multiple-empty-lines" },
   { label: "Long", value: "long" },
   { label: "Mixed", value: "mixed" },
 ];
@@ -279,6 +286,24 @@ const shortStatement = createStatement({
   opinion: "<p>A short statement should not show read more.</p>",
 });
 
+const singleEmptyLineStatement = createStatement({
+  slugId: "singleblank1",
+  opinion: [
+    "<p>This statement has one intentionally empty paragraph.</p>",
+    "<p> </p>",
+    "<p>This sentence should appear after one visible blank line.</p>",
+  ].join(""),
+});
+
+const multipleEmptyLinesStatement = createStatement({
+  slugId: "multiblank1",
+  opinion: [
+    "<p>This statement has several empty paragraphs.</p>",
+    "<p> </p><p>&nbsp;</p><p><br></p><p>   </p>",
+    "<p>This sentence should still appear after only one visible blank line.</p>",
+  ].join(""),
+});
+
 const longStatement = createStatement({
   slugId: "longs1",
   opinion: [
@@ -306,8 +331,14 @@ const conversationPreview = computed(() => {
 
 const displayedStatements = computed(() => {
   if (statementMode.value === "short") return [shortStatement];
+  if (statementMode.value === "single-empty-line") {
+    return [singleEmptyLineStatement];
+  }
+  if (statementMode.value === "multiple-empty-lines") {
+    return [multipleEmptyLinesStatement];
+  }
   if (statementMode.value === "long") return [longStatement];
-  return [shortStatement, longStatement];
+  return [shortStatement, singleEmptyLineStatement, multipleEmptyLinesStatement, longStatement];
 });
 
 const votingUtilities: OpinionVotingUtilities = {

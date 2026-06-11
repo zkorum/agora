@@ -73,6 +73,17 @@ export function usePublishConversationDraft() {
         return false;
       }
 
+      if (!response.data.success) {
+        switch (response.data.reason) {
+          case "plain_text_too_long":
+          case "html_too_long": {
+            showNotifyMessage(defaultErrorMessage);
+            break;
+          }
+        }
+        return false;
+      }
+
       if (conversationDraft.externalSourceConfig !== null) {
         await syncMaxDiff({
           conversationSlugId: response.data.conversationSlugId,
