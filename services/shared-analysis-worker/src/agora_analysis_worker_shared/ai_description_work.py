@@ -60,6 +60,7 @@ from agora_analysis_worker_shared.generated_models import (
 from agora_analysis_worker_shared.generated_shared_types import (
     SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES,
 )
+from agora_analysis_worker_shared.provider_errors import is_provider_timeout_error
 
 log = logging.getLogger(__name__)
 POSTGRES_INSERT_BIND_PARAM_LIMIT = 60_000
@@ -3146,7 +3147,7 @@ def process_lineage_description_work_items_batch(
             groups=[request.conversation.groups[0] for request in requests],
             analysis_snapshot_id=first_request.conversation.analysis_snapshot_id,
         )
-        generated = _generate_label_summaries_with_partial_retry(
+        generated = generate_label_summaries_with_partial_retry(
             generate_descriptions=generate_descriptions,
             conversation=conversation,
             attempts=2,
@@ -3245,7 +3246,7 @@ def process_lineage_description_work_items_batch(
     )
 
 
-def _generate_label_summaries_with_partial_retry(
+def generate_label_summaries_with_partial_retry(
     *,
     generate_descriptions: DescriptionGenerator,
     conversation: ConversationDescriptionInput,
@@ -3255,7 +3256,7 @@ def _generate_label_summaries_with_partial_retry(
     generated_mode = "strict"
     group_by_key = {group.group_key: group for group in conversation.groups}
     remaining_group_keys = set(group_by_key)
-    for _attempt in range(attempts):
+    for attempt in range(1, attempts + 1):
         if not remaining_group_keys:
             break
         attempt_conversation = ConversationDescriptionInput(
@@ -3264,7 +3265,30 @@ def _generate_label_summaries_with_partial_retry(
             groups=[group_by_key[group_key] for group_key in sorted(remaining_group_keys)],
             analysis_snapshot_id=conversation.analysis_snapshot_id,
         )
-        generated = generate_descriptions(attempt_conversation)
+        try:
+            generated = generate_descriptions(attempt_conversation)
+        except Exception as error:
+            if is_provider_timeout_error(error):
+                log.warning(
+                    "[AiDescriptionWorkDB] AI label/summary partial retry attempt %d/%d timed out",
+                    attempt,
+                    attempts,
+                    exc_info=True,
+                )
+                if generated_clusters:
+                    break
+                raise
+            log.warning(
+                "[AiDescriptionWorkDB] AI label/summary partial retry attempt %d/%d failed",
+                attempt,
+                attempts,
+                exc_info=True,
+            )
+            if attempt == attempts:
+                if generated_clusters:
+                    break
+                raise
+            continue
         generated_mode = "loose" if generated.mode == "loose" else generated_mode
         for group_key in sorted(remaining_group_keys):
             label_summary = generated.clusters.get(group_key)

@@ -119,7 +119,6 @@ def generate_label_summaries_with_bedrock(
     parsed = parse_bedrock_label_summary_text(
         model_response_text,
         expected_group_keys={group.group_key for group in conversation.groups},
-        allow_partial=True,
     )
     log.info(
         "[DescriptionGenerator] Bedrock label/summary parsed "
@@ -159,7 +158,6 @@ def parse_bedrock_label_summary_response(
     response: object,
     *,
     expected_group_keys: set[str] | None = None,
-    allow_partial: bool = False,
 ) -> ParsedLabelSummaryOutput:
     model_response_text = extract_text_content_from_response(response)
     if model_response_text is None:
@@ -168,7 +166,6 @@ def parse_bedrock_label_summary_response(
     return parse_bedrock_label_summary_text(
         model_response_text,
         expected_group_keys=expected_group_keys,
-        allow_partial=allow_partial,
     )
 
 
@@ -176,7 +173,6 @@ def parse_bedrock_label_summary_text(
     model_response_text: str,
     *,
     expected_group_keys: set[str] | None = None,
-    allow_partial: bool = False,
 ) -> ParsedLabelSummaryOutput:
     last_error: BedrockLabelSummaryError | None = None
     for model_response in iter_llm_output_json_candidates(model_response_text):
@@ -185,7 +181,6 @@ def parse_bedrock_label_summary_text(
                 return parse_label_summary_output_for_groups(
                     model_response,
                     expected_group_keys=expected_group_keys,
-                    allow_partial=allow_partial,
                 )
             return parse_label_summary_output(model_response)
         except BedrockLabelSummaryError as error:
@@ -261,7 +256,6 @@ def parse_label_summary_output_for_groups(
     model_response: dict[str, object],
     *,
     expected_group_keys: set[str],
-    allow_partial: bool = False,
 ) -> ParsedLabelSummaryOutput:
     unexpected_keys = expected_group_keys - CLUSTER_KEYS
     if unexpected_keys:
@@ -277,26 +271,17 @@ def parse_label_summary_output_for_groups(
     for group_key in sorted(expected_group_keys):
         raw_cluster = clusters.get(group_key)
         if not _is_string_key_mapping(raw_cluster):
-            if allow_partial:
-                continue
-            msg = f"missing generated description for group {group_key}"
-            raise BedrockLabelSummaryError(msg)
+            continue
         parsed_cluster = _parse_cluster_value(raw_cluster, strict=True)
         if parsed_cluster is None:
             parsed_cluster = _parse_cluster_value(raw_cluster, strict=False)
             used_loose_mode = parsed_cluster is not None
         if parsed_cluster is None:
-            if allow_partial:
-                continue
-            msg = f"invalid generated description for group {group_key}"
-            raise BedrockLabelSummaryError(msg)
+            continue
         parsed_clusters[group_key] = parsed_cluster
 
     if not parsed_clusters:
         msg = "AI label/summary output did not include any valid expected clusters"
-        raise BedrockLabelSummaryError(msg)
-    if not allow_partial and set(parsed_clusters) != expected_group_keys:
-        msg = "AI label/summary output did not include exactly the expected clusters"
         raise BedrockLabelSummaryError(msg)
     return ParsedLabelSummaryOutput(
         mode="loose" if used_loose_mode else "strict",

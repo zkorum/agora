@@ -298,7 +298,6 @@ def generate_description_translations_with_bedrock(
             model_response_text,
             expected_description_ids={description.description_id for description in descriptions},
             expected_locale=target_language_code,
-            allow_partial=True,
         )
         log.info(
             "[DescriptionTranslator] Bedrock translation parsed "
@@ -345,7 +344,6 @@ def parse_bedrock_translation_response(
     *,
     expected_description_ids: set[int] | None = None,
     expected_locale: str | None = None,
-    allow_partial: bool = False,
 ) -> list[DescriptionTranslation]:
     model_response_text = extract_text_content_from_response(response)
     if model_response_text is None:
@@ -355,7 +353,6 @@ def parse_bedrock_translation_response(
         model_response_text,
         expected_description_ids=expected_description_ids,
         expected_locale=expected_locale,
-        allow_partial=allow_partial,
     )
 
 
@@ -364,7 +361,6 @@ def parse_bedrock_translation_text(
     *,
     expected_description_ids: set[int] | None = None,
     expected_locale: str | None = None,
-    allow_partial: bool = False,
 ) -> list[DescriptionTranslation]:
     last_error: DescriptionTranslationError | None = None
     for model_response in iter_llm_output_json_candidates(model_response_text):
@@ -373,7 +369,6 @@ def parse_bedrock_translation_text(
                 model_response,
                 expected_description_ids=expected_description_ids,
                 expected_locale=expected_locale,
-                allow_partial=allow_partial,
             )
         except DescriptionTranslationError as error:
             last_error = error
@@ -386,7 +381,6 @@ def parse_description_translation_output(
     *,
     expected_description_ids: set[int] | None = None,
     expected_locale: str | None = None,
-    allow_partial: bool = False,
 ) -> list[DescriptionTranslation]:
     raw_translations = model_response.get("translations")
     if not _is_object_sequence(raw_translations):
@@ -404,9 +398,7 @@ def parse_description_translation_output(
                 seen_description_ids=seen_description_ids,
             )
         except DescriptionTranslationError:
-            if allow_partial:
-                continue
-            raise
+            continue
         description_id = translation.description_id
         seen_description_ids.add(description_id)
         translations.append(translation)
@@ -415,13 +407,6 @@ def parse_description_translation_output(
         msg = "Bedrock translation output did not include any valid translations"
         raise DescriptionTranslationError(msg)
 
-    if (
-        not allow_partial
-        and expected_description_ids is not None
-        and seen_description_ids != expected_description_ids
-    ):
-        msg = "Bedrock translation output did not include exactly the expected descriptions"
-        raise DescriptionTranslationError(msg)
     return translations
 
 

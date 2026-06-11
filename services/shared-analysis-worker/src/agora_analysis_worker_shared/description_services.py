@@ -4,10 +4,6 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from botocore.exceptions import ConnectTimeoutError, ReadTimeoutError
-from google.api_core.exceptions import DeadlineExceeded
-from google.api_core.exceptions import RetryError as GoogleRetryError
-
 from agora_analysis_worker_shared.bedrock_label_summary import (
     BedrockLabelSummaryConfig,
     BedrockLabelSummaryError,
@@ -20,6 +16,7 @@ from agora_analysis_worker_shared.description_translation import (
     generate_description_translations_with_bedrock,
     initialize_google_translation_service,
 )
+from agora_analysis_worker_shared.provider_errors import is_provider_timeout_error
 from agora_analysis_worker_shared.simulation_providers import (
     generate_simulated_description_translations,
     generate_simulated_label_summaries,
@@ -113,51 +110,20 @@ def build_description_translator(settings: Settings) -> DescriptionTranslatorBun
 
     if bedrock_config is not None and google_service is not None:
 
-        def translate_with_bedrock_then_google(
+        def translate(
             descriptions: list[DescriptionForTranslation],
             target_language_codes: list[str],
         ) -> list[DescriptionTranslation]:
-            try:
-                bedrock_translations = _generate_bedrock_translations_with_partial_retries(
-                    config=bedrock_config,
-                    descriptions=descriptions,
-                    target_language_codes=target_language_codes,
-                    attempts=2,
-                )
-                return fill_missing_translations_with_google(
-                    google_service=google_service,
-                    descriptions=descriptions,
-                    target_language_codes=target_language_codes,
-                    translations=bedrock_translations,
-                )
-            except Exception as error:
-                if _is_timeout_error(error):
-                    raise
-                log.warning(
-                    "[DescriptionTranslator] Bedrock translation exhausted; falling back to Google",
-                    exc_info=True,
-                )
-                translations = _retry_translation_provider(
-                    provider_name="Google",
-                    attempts=2,
-                    call=lambda: _generate_google_translations(
-                        google_service=google_service,
-                        descriptions=descriptions,
-                        target_language_codes=target_language_codes,
-                    ),
-                )
-                log.info(
-                    "[DescriptionTranslator] Google fallback translation succeeded "
-                    "description_count=%d locale_count=%d output_count=%d",
-                    len(descriptions),
-                    len(target_language_codes),
-                    len(translations),
-                )
-                return translations
+            return translate_with_bedrock_then_google(
+                bedrock_config=bedrock_config,
+                google_service=google_service,
+                descriptions=descriptions,
+                target_language_codes=target_language_codes,
+            )
 
         return DescriptionTranslatorBundle(
             mode="bedrock_with_google_fallback",
-            translate=translate_with_bedrock_then_google,
+            translate=translate,
         )
 
     if bedrock_config is not None:
@@ -166,7 +132,7 @@ def build_description_translator(settings: Settings) -> DescriptionTranslatorBun
             descriptions: list[DescriptionForTranslation],
             target_language_codes: list[str],
         ) -> list[DescriptionTranslation]:
-            return _generate_bedrock_translations_with_partial_retries(
+            return generate_bedrock_translations_with_partial_retries(
                 config=bedrock_config,
                 descriptions=descriptions,
                 target_language_codes=target_language_codes,
@@ -235,7 +201,45 @@ def _generate_google_translations(
     )
 
 
-def _generate_bedrock_translations_with_partial_retries(
+def translate_with_bedrock_then_google(
+    *,
+    bedrock_config: BedrockTranslationConfig,
+    google_service: GoogleTranslationService,
+    descriptions: list[DescriptionForTranslation],
+    target_language_codes: list[str],
+) -> list[DescriptionTranslation]:
+    bedrock_translations: list[DescriptionTranslation] = []
+    try:
+        bedrock_translations = generate_bedrock_translations_with_partial_retries(
+            config=bedrock_config,
+            descriptions=descriptions,
+            target_language_codes=target_language_codes,
+            attempts=2,
+        )
+    except Exception:
+        log.warning(
+            "[DescriptionTranslator] Bedrock translation unavailable; falling back to Google",
+            exc_info=True,
+        )
+
+    translations = fill_missing_translations_with_google(
+        google_service=google_service,
+        descriptions=descriptions,
+        target_language_codes=target_language_codes,
+        translations=bedrock_translations,
+    )
+    if len(translations) > len(bedrock_translations):
+        log.info(
+            "[DescriptionTranslator] Google fallback translation succeeded "
+            "description_count=%d locale_count=%d output_count=%d",
+            len(descriptions),
+            len(target_language_codes),
+            len(translations),
+        )
+    return translations
+
+
+def generate_bedrock_translations_with_partial_retries(
     *,
     config: BedrockTranslationConfig,
     descriptions: list[DescriptionForTranslation],
@@ -268,13 +272,15 @@ def _generate_bedrock_translations_with_partial_retries(
             )
         except Exception as error:
             last_error = error
-            if _is_timeout_error(error):
+            if is_provider_timeout_error(error):
                 log.warning(
                     "[DescriptionTranslator] Bedrock translation attempt %d/%d timed out",
                     attempt,
                     attempts,
                     exc_info=True,
                 )
+                if translations:
+                    return translations
                 raise
             log.warning(
                 "[DescriptionTranslator] Bedrock translation attempt %d/%d failed",
@@ -314,17 +320,31 @@ def fill_missing_translations_with_google(
             target_language_code,
             [description.description_id for description in missing_descriptions],
         )
-        google_translations = _retry_translation_provider(
-            provider_name="Google",
-            attempts=2,
-            call=lambda descriptions_for_locale=missing_descriptions, locale=target_language_code: (
-                _generate_google_translations(
-                    google_service=google_service,
-                    descriptions=descriptions_for_locale,
-                    target_language_codes=[locale],
+        def generate_missing_google_translations(
+            descriptions_for_locale: list[DescriptionForTranslation] = missing_descriptions,
+            locale: str = target_language_code,
+        ) -> list[DescriptionTranslation]:
+            return _generate_google_translations(
+                google_service=google_service,
+                descriptions=descriptions_for_locale,
+                target_language_codes=[locale],
+            )
+
+        try:
+            google_translations = _retry_translation_provider(
+                provider_name="Google",
+                attempts=2,
+                call=generate_missing_google_translations,
+            )
+        except Exception:
+            if translations or missing_translations:
+                log.warning(
+                    "[DescriptionTranslator] Google fallback failed after partial translation; "
+                    "returning partial output",
+                    exc_info=True,
                 )
-            ),
-        )
+                return [*translations, *missing_translations]
+            raise
         missing_translations.extend(google_translations)
         translation_keys.update(
             (translation.description_id, translation.locale)
@@ -382,7 +402,7 @@ def _retry_translation_provider(
             return call()
         except Exception as error:
             last_error = error
-            if _is_timeout_error(error):
+            if is_provider_timeout_error(error):
                 log.warning(
                     "[DescriptionTranslator] %s translation attempt %d/%d timed out",
                     provider_name,
@@ -414,6 +434,15 @@ def _retry_description_provider(
             return call()
         except Exception as error:
             last_error = error
+            if is_provider_timeout_error(error):
+                log.warning(
+                    "[DescriptionGenerator] %s description attempt %d/%d timed out",
+                    provider_name,
+                    attempt,
+                    attempts,
+                    exc_info=True,
+                )
+                raise
             log.warning(
                 "[DescriptionGenerator] %s description attempt %d/%d failed",
                 provider_name,
@@ -423,32 +452,3 @@ def _retry_description_provider(
             )
     msg = f"{provider_name} description generation failed after {attempts} attempt(s)"
     raise BedrockLabelSummaryError(msg) from last_error
-
-
-def _is_timeout_error(error: BaseException) -> bool:
-    seen: set[int] = set()
-    stack: list[BaseException] = [error]
-    while stack:
-        current = stack.pop()
-        current_id = id(current)
-        if current_id in seen:
-            continue
-        seen.add(current_id)
-
-        if isinstance(
-            current,
-            TimeoutError | ConnectTimeoutError | DeadlineExceeded | ReadTimeoutError,
-        ):
-            return True
-
-        if isinstance(current, GoogleRetryError):
-            cause = current.cause
-            if isinstance(cause, BaseException):
-                stack.append(cause)
-
-        if current.__cause__ is not None:
-            stack.append(current.__cause__)
-        if current.__context__ is not None:
-            stack.append(current.__context__)
-
-    return False

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING
 from uuid import uuid4
 
 import pytest
@@ -24,6 +23,7 @@ from agora_analysis_worker_shared.ai_description_work import (
     extend_ai_description_locale_work_leases,
     fetch_claimable_ai_description_work_conversation_ids,
     finalize_first_pass_ai_description_work_batch,
+    generate_label_summaries_with_partial_retry,
     lineage_description_work_demands_for_candidate_requests,
     materialize_requested_description_translation_work,
     materialize_requested_lineage_description_work,
@@ -34,6 +34,10 @@ from agora_analysis_worker_shared.ai_description_work import (
     retry_ai_description_locale_work_item,
     translation_work_demands_for_candidate_requests,
 )
+from agora_analysis_worker_shared.bedrock_label_summary import (
+    LabelSummary,
+    ParsedLabelSummaryOutput,
+)
 from agora_analysis_worker_shared.db import (
     ClaimedWorkItem,
     claim_work_items_batch,
@@ -42,7 +46,12 @@ from agora_analysis_worker_shared.db import (
     fetch_claimable_work_conversation_ids,
     recover_expired_running_work,
 )
-from agora_analysis_worker_shared.description_input import DescriptionOutputError
+from agora_analysis_worker_shared.description_input import (
+    ConversationDescriptionInput,
+    DescriptionOutputError,
+    GroupDescriptionInput,
+    RepresentativeOpinionText,
+)
 from agora_analysis_worker_shared.description_translation import (
     DescriptionForTranslation,
     DescriptionTranslation,
@@ -71,14 +80,11 @@ from agora_analysis_worker_shared.generated_models import (
     OpinionGroupVariant,
     ParticipationMode,
     RealtimeEventOutbox,
+    VoteEnumSimple,
 )
 from agora_analysis_worker_shared.generated_shared_types import (
     SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES,
 )
-
-if TYPE_CHECKING:
-    from agora_analysis_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
-    from agora_analysis_worker_shared.description_input import ConversationDescriptionInput
 
 NOW = datetime(2026, 5, 21, 12, 0, 0, tzinfo=UTC)
 
@@ -305,6 +311,62 @@ def _translation_claim(
         attempt_count=1,
         lease_token=lease_token,
     )
+
+
+def test_label_summary_partial_retry_stops_after_timeout() -> None:
+    calls: list[list[str]] = []
+
+    def generate_descriptions(
+        conversation: ConversationDescriptionInput,
+    ) -> ParsedLabelSummaryOutput:
+        calls.append([group.group_key for group in conversation.groups])
+        if len(calls) == 1:
+            return ParsedLabelSummaryOutput(
+                mode="strict",
+                clusters={
+                    "0": LabelSummary(
+                        reasoning="ok",
+                        label="Transitists",
+                        summary="Supports transit.",
+                    )
+                },
+            )
+        raise TimeoutError("bedrock timed out")
+
+    result = generate_label_summaries_with_partial_retry(
+        generate_descriptions=generate_descriptions,
+        conversation=ConversationDescriptionInput(
+            conversation_title="Transit funding",
+            conversation_body="How should transit be funded?",
+            groups=[
+                GroupDescriptionInput(
+                    group_key="0",
+                    representative_opinions=[
+                        RepresentativeOpinionText(
+                            opinion_id=10,
+                            stance=VoteEnumSimple.agree,
+                            content="Fund transit",
+                        )
+                    ],
+                ),
+                GroupDescriptionInput(
+                    group_key="1",
+                    representative_opinions=[
+                        RepresentativeOpinionText(
+                            opinion_id=20,
+                            stance=VoteEnumSimple.disagree,
+                            content="Raise fares",
+                        )
+                    ],
+                ),
+            ],
+            analysis_snapshot_id=30,
+        ),
+        attempts=3,
+    )
+
+    assert calls == [["0", "1"], ["1"]]
+    assert list(result.clusters) == ["0"]
 
 
 def _insert_attempted_eager_translation_work(session: Session) -> None:

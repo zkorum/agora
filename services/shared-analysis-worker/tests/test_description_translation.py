@@ -8,6 +8,7 @@ import pytest
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+import agora_analysis_worker_shared.description_services as description_services
 from agora_analysis_worker_shared.description_services import fill_missing_translations_with_google
 from agora_analysis_worker_shared.description_translation import (
     BedrockTranslationConfig,
@@ -244,30 +245,31 @@ def test_parse_description_translation_output_rejects_missing_reasoning() -> Non
         )
 
 
-def test_parse_description_translation_output_rejects_duplicate_ids() -> None:
-    with pytest.raises(DescriptionTranslationError):
-        parse_description_translation_output(
-            {
-                "translations": [
-                    {
-                        "descriptionId": 10,
-                        "locale": "fr",
-                        "reasoning": "First translation.",
-                        "label": "Sceptiques",
-                        "summary": "Ce groupe rejette les affirmations trop optimistes.",
-                    },
-                    {
-                        "descriptionId": 10,
-                        "locale": "fr",
-                        "reasoning": "Duplicate translation.",
-                        "label": "Critiques",
-                        "summary": "Ce groupe rejette les affirmations trop optimistes.",
-                    },
-                ]
-            },
-            expected_description_ids={10},
-            expected_locale="fr",
-        )
+def test_parse_description_translation_output_keeps_first_duplicate_id() -> None:
+    translations = parse_description_translation_output(
+        {
+            "translations": [
+                {
+                    "descriptionId": 10,
+                    "locale": "fr",
+                    "reasoning": "First translation.",
+                    "label": "Sceptiques",
+                    "summary": "Ce groupe rejette les affirmations trop optimistes.",
+                },
+                {
+                    "descriptionId": 10,
+                    "locale": "fr",
+                    "reasoning": "Duplicate translation.",
+                    "label": "Critiques",
+                    "summary": "Ce groupe rejette les affirmations trop optimistes.",
+                },
+            ]
+        },
+        expected_description_ids={10},
+        expected_locale="fr",
+    )
+
+    assert [translation.label for translation in translations] == ["Sceptiques"]
 
 
 def test_parse_bedrock_translation_text_skips_preceding_example_json() -> None:
@@ -331,6 +333,204 @@ def test_partial_bedrock_translation_fills_missing_items_with_google() -> None:
     ]
 
 
+def test_bedrock_timeout_falls_back_to_google_without_retry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bedrock_calls: list[list[int]] = []
+
+    def raise_timeout(
+        *,
+        config: BedrockTranslationConfig,
+        descriptions: list[DescriptionForTranslation],
+        target_language_codes: list[str],
+    ) -> list[DescriptionTranslation]:
+        del config, target_language_codes
+        bedrock_calls.append([description.description_id for description in descriptions])
+        raise TimeoutError("bedrock timed out")
+
+    monkeypatch.setattr(
+        description_services,
+        "generate_description_translations_with_bedrock",
+        raise_timeout,
+    )
+    google_client = FakeTranslationClient()
+
+    translations = description_services.translate_with_bedrock_then_google(
+        bedrock_config=BedrockTranslationConfig(
+            region="us-east-1",
+            model_id="model",
+            temperature=0.1,
+            top_p=0.9,
+            max_tokens=1024,
+            prompt="Translate",
+            connect_timeout_seconds=2.0,
+            read_timeout_seconds=12.0,
+        ),
+        google_service=GoogleTranslationService(
+            client=google_client,
+            config=GoogleTranslationConfig(
+                project_id="project",
+                location="us-central1",
+                request_timeout_seconds=5.0,
+            ),
+        ),
+        descriptions=[
+            DescriptionForTranslation(
+                description_id=10,
+                label="Transitists",
+                summary="Supports transit.",
+            )
+        ],
+        target_language_codes=["fr"],
+    )
+
+    assert bedrock_calls == [[10]]
+    assert [(translation.description_id, translation.label) for translation in translations] == [
+        (10, "fr:Transitists")
+    ]
+
+
+def test_google_fallback_failure_returns_bedrock_partials(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def partial_bedrock(
+        *,
+        config: BedrockTranslationConfig,
+        descriptions: list[DescriptionForTranslation],
+        target_language_codes: list[str],
+    ) -> list[DescriptionTranslation]:
+        del config, descriptions, target_language_codes
+        return [
+            DescriptionTranslation(
+                description_id=10,
+                locale="fr",
+                label="Transitistes",
+                summary="Soutient les transports.",
+            )
+        ]
+
+    def raise_google_timeout(
+        *,
+        google_service: GoogleTranslationService,
+        descriptions: list[DescriptionForTranslation],
+        target_language_codes: list[str],
+    ) -> list[DescriptionTranslation]:
+        del google_service, descriptions, target_language_codes
+        raise TimeoutError("google timed out")
+
+    monkeypatch.setattr(
+        description_services,
+        "generate_description_translations_with_bedrock",
+        partial_bedrock,
+    )
+    monkeypatch.setattr(
+        description_services,
+        "_generate_google_translations",
+        raise_google_timeout,
+    )
+
+    translations = description_services.translate_with_bedrock_then_google(
+        bedrock_config=BedrockTranslationConfig(
+            region="us-east-1",
+            model_id="model",
+            temperature=0.1,
+            top_p=0.9,
+            max_tokens=1024,
+            prompt="Translate",
+            connect_timeout_seconds=2.0,
+            read_timeout_seconds=12.0,
+        ),
+        google_service=GoogleTranslationService(
+            client=FakeTranslationClient(),
+            config=GoogleTranslationConfig(
+                project_id="project",
+                location="us-central1",
+                request_timeout_seconds=5.0,
+            ),
+        ),
+        descriptions=[
+            DescriptionForTranslation(
+                description_id=10,
+                label="Transitists",
+                summary="Supports transit.",
+            ),
+            DescriptionForTranslation(
+                description_id=20,
+                label="Skeptics",
+                summary="Questions cost.",
+            ),
+        ],
+        target_language_codes=["fr"],
+    )
+
+    assert [(translation.description_id, translation.label) for translation in translations] == [
+        (10, "Transitistes")
+    ]
+
+
+def test_bedrock_partial_retry_stops_after_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bedrock_calls: list[list[int]] = []
+
+    def partial_then_timeout(
+        *,
+        config: BedrockTranslationConfig,
+        descriptions: list[DescriptionForTranslation],
+        target_language_codes: list[str],
+    ) -> list[DescriptionTranslation]:
+        del config, target_language_codes
+        bedrock_calls.append([description.description_id for description in descriptions])
+        if len(bedrock_calls) == 1:
+            return [
+                DescriptionTranslation(
+                    description_id=10,
+                    locale="fr",
+                    label="Transitistes",
+                    summary="Soutient les transports.",
+                )
+            ]
+        raise TimeoutError("bedrock timed out")
+
+    monkeypatch.setattr(
+        description_services,
+        "generate_description_translations_with_bedrock",
+        partial_then_timeout,
+    )
+
+    translations = description_services.generate_bedrock_translations_with_partial_retries(
+        config=BedrockTranslationConfig(
+            region="us-east-1",
+            model_id="model",
+            temperature=0.1,
+            top_p=0.9,
+            max_tokens=1024,
+            prompt="Translate",
+            connect_timeout_seconds=2.0,
+            read_timeout_seconds=12.0,
+        ),
+        descriptions=[
+            DescriptionForTranslation(
+                description_id=10,
+                label="Transitists",
+                summary="Supports transit.",
+            ),
+            DescriptionForTranslation(
+                description_id=20,
+                label="Skeptics",
+                summary="Questions cost.",
+            ),
+        ],
+        target_language_codes=["fr"],
+        attempts=3,
+    )
+
+    assert bedrock_calls == [[10, 20], [20]]
+    assert [(translation.description_id, translation.label) for translation in translations] == [
+        (10, "Transitistes")
+    ]
+
+
 def test_parse_bedrock_translation_text_can_return_partial_valid_items() -> None:
     translations = parse_bedrock_translation_text(
         '{"translations":['
@@ -341,7 +541,6 @@ def test_parse_bedrock_translation_text_can_return_partial_valid_items() -> None
         ']}',
         expected_description_ids={10, 20},
         expected_locale="fr",
-        allow_partial=True,
     )
 
     assert [(translation.description_id, translation.label) for translation in translations] == [
