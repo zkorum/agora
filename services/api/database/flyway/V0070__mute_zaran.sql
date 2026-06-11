@@ -1,0 +1,1 @@
+ALTER TABLE "conversation_content" ALTER COLUMN "body" SET DATA TYPE text;

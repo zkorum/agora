@@ -484,6 +484,13 @@
       "when": 1780275338435,
       "tag": "0068_lonely_speed",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1781188761613,
+      "tag": "0069_mute_zaran",
+      "breakpoints": true
     }
   ]
 }
