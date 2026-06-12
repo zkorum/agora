@@ -144,6 +144,12 @@ class ModerationReasonEnum(StrEnum):
     spam = "spam"
 
 
+class PremiumFeature(StrEnum):
+    survey = "survey"
+    event_ticket = "event_ticket"
+    analysis_variants = "analysis_variants"
+
+
 class SurveyQuestionType(StrEnum):
     choice = "choice"
     free_text = "free_text"
@@ -664,6 +670,33 @@ class Opinion(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
     last_reacted_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class PremiumFeatureEntitlement(Base):
+    __tablename__ = "premium_feature_entitlement"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    organization_id: Mapped[int] = mapped_column(Integer)
+    feature: Mapped[PremiumFeature] = mapped_column(
+        SaEnum(PremiumFeature, values_callable=_enum_values, native_enum=False),
+    )
+    starts_at: Mapped[datetime] = mapped_column(DateTime)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    admin_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by_user_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
+    updated_by_user_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class ProjectOrganizationOwnership(Base):
+    __tablename__ = "project_organization_ownership"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    project_id: Mapped[int] = mapped_column(Integer)
+    organization_id: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
 class RealtimeEventOutbox(Base):

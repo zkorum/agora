@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from uuid import uuid4
 
 import pytest
 from sqlalchemy import Engine, create_engine, select
@@ -108,8 +107,7 @@ def _insert_non_processable_ai_work_state(
         Conversation(
             id=10,
             slug_id="abc12345",
-            author_id=uuid4(),
-            organization_id=None,
+            project_id=1,
             current_content_id=None,
             current_ranking_score_id=None,
             is_indexed=True,
