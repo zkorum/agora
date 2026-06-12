@@ -177,7 +177,6 @@ type BackendCommentApi = ReturnType<typeof useBackendCommentApi>;
 type AnalysisQueryKey = readonly unknown[];
 
 const LABEL_CATCH_UP_MAX_ATTEMPTS = 5;
-const TRANSLATED_LABEL_FALLBACK_GRACE_MS = 2_000;
 const labelCatchUpStateByKey = new Map<
   string,
   { attemptCount: number; timeout: ReturnType<typeof setTimeout> | undefined }
@@ -251,51 +250,6 @@ function expectedLabelLocales(
   displayLanguage: SupportedDisplayLanguageCodes
 ): SupportedDisplayLanguageCodes[] {
   return displayLanguage === "en" ? ["en"] : ["en", displayLanguage];
-}
-
-function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-function shouldWaitForTranslatedLabels({
-  groupLabels,
-  displayLanguage,
-}: {
-  groupLabels: AnalysisFrameGroupLabels;
-  displayLanguage: string;
-}): boolean {
-  const parsedDisplayLanguage =
-    ZodSupportedDisplayLanguageCodes.safeParse(displayLanguage);
-  if (!parsedDisplayLanguage.success || parsedDisplayLanguage.data === "en") {
-    return false;
-  }
-
-  return groupLabels.groupDescriptionDisplay.displayedLocale === "en";
-}
-
-function getTranslatedLabelGraceFreshness({
-  freshness,
-  displayLanguage,
-}: {
-  freshness: AnalysisFreshnessRequest | null;
-  displayLanguage: string;
-}): AnalysisFreshnessRequest | null {
-  const parsedDisplayLanguage =
-    ZodSupportedDisplayLanguageCodes.safeParse(displayLanguage);
-  if (!parsedDisplayLanguage.success || parsedDisplayLanguage.data === "en") {
-    return freshness;
-  }
-
-  return {
-    enablePrimaryFallback: true,
-    minimumConversationViewSnapshotId:
-      freshness?.minimumConversationViewSnapshotId ?? null,
-    expectedDescriptionLocales: expectedLabelLocales(
-      parsedDisplayLanguage.data
-    ),
-  };
 }
 
 function labelCatchUpKey({
@@ -395,7 +349,7 @@ interface FetchFrameGroupLabelsParams {
   labelStaleTime: number;
 }
 
-async function fetchFrameGroupLabelsWithTranslationGrace({
+async function fetchFrameGroupLabels({
   queryClient,
   fetchAnalysisFrameGroupLabels,
   conversationSlugId,
@@ -413,7 +367,7 @@ async function fetchFrameGroupLabelsWithTranslationGrace({
     aiLabelingEnabled,
     displayLanguage,
   ];
-  const groupLabels = await queryClient.fetchQuery({
+  return await queryClient.fetchQuery({
     queryKey: labelQueryKey,
     queryFn: () =>
       fetchAnalysisFrameGroupLabels({
@@ -424,35 +378,6 @@ async function fetchFrameGroupLabelsWithTranslationGrace({
     staleTime: labelStaleTime,
     retry: false,
   });
-
-  if (!shouldWaitForTranslatedLabels({ groupLabels, displayLanguage })) {
-    return groupLabels;
-  }
-
-  await wait(TRANSLATED_LABEL_FALLBACK_GRACE_MS);
-  await queryClient.invalidateQueries({
-    queryKey: labelQueryKey,
-    exact: true,
-    refetchType: "none",
-  });
-  try {
-    return await queryClient.fetchQuery({
-      queryKey: labelQueryKey,
-      queryFn: () =>
-        fetchAnalysisFrameGroupLabels({
-          conversationSlugId,
-          frameKey,
-          freshness: getTranslatedLabelGraceFreshness({
-            freshness,
-            displayLanguage,
-          }),
-        }),
-      staleTime: 0,
-      retry: false,
-    });
-  } catch {
-    return groupLabels;
-  }
 }
 
 async function runFrameLabelCatchUpAttempt({
@@ -697,7 +622,7 @@ export async function fetchAnalysisDataWithCache({
         staleTime: frameSectionStaleTime,
         retry: false,
       }),
-      fetchFrameGroupLabelsWithTranslationGrace({
+      fetchFrameGroupLabels({
         queryClient,
         fetchAnalysisFrameGroupLabels,
         conversationSlugId,
