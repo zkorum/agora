@@ -196,26 +196,26 @@ def test_parse_label_summary_output_for_groups_returns_valid_partial_clusters() 
             }
         },
         expected_group_keys={"0", "1"},
-        allow_partial=True,
     )
 
     assert list(parsed.clusters) == ["0"]
 
 
-def test_parse_label_summary_output_for_groups_requires_exact_when_not_partial() -> None:
-    with pytest.raises(BedrockLabelSummaryError):
-        parse_label_summary_output_for_groups(
-            {
-                "clusters": {
-                    "0": {
-                        "reasoning": "ok",
-                        "label": "Transitists",
-                        "summary": "Summary",
-                    }
+def test_parse_label_summary_output_for_groups_keeps_valid_missing_expected() -> None:
+    parsed = parse_label_summary_output_for_groups(
+        {
+            "clusters": {
+                "0": {
+                    "reasoning": "ok",
+                    "label": "Transitists",
+                    "summary": "Summary",
                 }
-            },
-            expected_group_keys={"0", "1"},
-        )
+            }
+        },
+        expected_group_keys={"0", "1"},
+    )
+
+    assert list(parsed.clusters) == ["0"]
 
 
 def test_parse_bedrock_label_summary_text_uses_later_semantic_match() -> None:
