@@ -1080,7 +1080,7 @@ export const projectTable = pgTable("project", {
         .notNull(),
 });
 
-/** @service scoring-worker, api, math-updater, import-worker */
+/** @service scoring-worker, api, math-updater, shared-analysis-worker, import-worker */
 export const projectOrganizationOwnershipTable = pgTable(
     "project_organization_ownership",
     {
@@ -1158,7 +1158,7 @@ export const organizationMembershipAllProjectCapabilityTable = pgTable(
     ],
 );
 
-/** @service api, math-updater */
+/** @service api, math-updater, shared-analysis-worker */
 export const premiumFeatureEntitlementTable = pgTable(
     "premium_feature_entitlement",
     {
