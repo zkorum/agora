@@ -1,12 +1,14 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, asc } from "drizzle-orm";
 import {
     conversationTable,
     maxdiffItemTable,
     maxdiffItemContentTable,
     maxdiffItemExternalSourceTable,
+    organizationMembershipTable,
+    projectOrganizationOwnershipTable,
 } from "@/shared-backend/schema.js";
 import { zodExternalSourceConfig } from "@/shared/types/zod.js";
 import { createMaxdiffItem } from "@/service/maxdiffItem.js";
@@ -18,7 +20,31 @@ import {
 } from "@/shared-app-api/html.js";
 import { marked } from "marked";
 import type { GitHubClient, GitHubIssue, SyncResult } from "./index.js";
-import { isConversationOwner } from "@/service/conversationAccess.js";
+import { requireProjectCapability } from "@/service/projectAccess.js";
+
+async function getDeterministicProjectMemberUserId({
+    db,
+    projectId,
+}: {
+    db: PostgresDatabase;
+    projectId: number;
+}): Promise<string | undefined> {
+    const rows = await db
+        .select({ userId: organizationMembershipTable.userId })
+        .from(projectOrganizationOwnershipTable)
+        .innerJoin(
+            organizationMembershipTable,
+            eq(
+                organizationMembershipTable.organizationId,
+                projectOrganizationOwnershipTable.organizationId,
+            ),
+        )
+        .where(eq(projectOrganizationOwnershipTable.projectId, projectId))
+        .orderBy(asc(organizationMembershipTable.createdAt), asc(organizationMembershipTable.id))
+        .limit(1);
+
+    return rows.at(0)?.userId;
+}
 
 // --- Pure functions ---
 
@@ -148,9 +174,9 @@ export async function handleIssueWebhook({
     const conversations = await db
         .select({
             id: conversationTable.id,
+            projectId: conversationTable.projectId,
             slugId: conversationTable.slugId,
             currentContentId: conversationTable.currentContentId,
-            authorId: conversationTable.authorId,
             externalSourceConfig: conversationTable.externalSourceConfig,
         })
         .from(conversationTable)
@@ -198,12 +224,23 @@ export async function handleIssueWebhook({
         if (conversation.currentContentId === null) continue;
 
         try {
+            const authorId = await getDeterministicProjectMemberUserId({
+                db,
+                projectId: conversation.projectId,
+            });
+            if (authorId === undefined) {
+                log.warn(
+                    `[GitHub] Skipping webhook item for conversation ${conversation.slugId}: no project member author found`,
+                );
+                continue;
+            }
+
             await upsertItemFromGitHubIssue({
                 db,
                 conversationId: conversation.id,
                 conversationSlugId: conversation.slugId,
                 conversationContentId: conversation.currentContentId,
-                authorId: conversation.authorId,
+                authorId,
                 externalId,
                 issue: {
                     number: issue.number,
@@ -556,8 +593,7 @@ export async function syncGitHubIssues({
         .select({
             id: conversationTable.id,
             currentContentId: conversationTable.currentContentId,
-            authorId: conversationTable.authorId,
-            organizationId: conversationTable.organizationId,
+            projectId: conversationTable.projectId,
             externalSourceConfig: conversationTable.externalSourceConfig,
             conversationType: conversationTable.conversationType,
         })
@@ -570,15 +606,13 @@ export async function syncGitHubIssues({
 
     const conversation = conversationRows[0];
 
-    const isOwner = await isConversationOwner({
+    await requireProjectCapability({
         db,
         userId: requestingUserId,
-        authorId: conversation.authorId,
-        organizationId: conversation.organizationId,
+        projectId: conversation.projectId,
+        capability: "conversation_manage_integrations",
+        message: "Missing conversation_manage_integrations capability",
     });
-    if (!isOwner) {
-        throw new Error("Only conversation owners can trigger sync");
-    }
 
     if (conversation.conversationType !== "maxdiff") {
         throw new Error("Sync is only available for MaxDiff conversations");
@@ -616,7 +650,7 @@ export async function syncGitHubIssues({
                 conversationId: conversation.id,
                 conversationSlugId,
                 conversationContentId: conversation.currentContentId,
-                authorId: conversation.authorId,
+                authorId: requestingUserId,
                 externalId,
                 issue,
                 valkey,

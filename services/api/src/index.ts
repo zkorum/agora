@@ -54,6 +54,7 @@ import { fetchAnalysisCheckpointsByConversationSlugId } from "@/service/conversa
 import { createExportWorker } from "@/service/conversationExport/core.js";
 import type { ValkeyRef } from "@/service/valkeyRef.js";
 import { validateS3Access } from "./service/s3.js";
+import { resolveConversationCreateTarget } from "@/service/projectAccess.js";
 
 import {
     httpMethodToAbility,
@@ -181,8 +182,9 @@ import {
     conversationTable,
     deviceTable,
     organizationTable,
+    projectOrganizationOwnershipTable,
 } from "./shared-backend/schema.js";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import {
     initializeGoogleCloudCredentials,
     type GoogleCloudCredentials,
@@ -432,14 +434,29 @@ async function assertMaxdiffGitHubAllowedForConversation({
 }): Promise<void> {
     const rows = await db
         .select({
-            organizationName: organizationTable.name,
+            organizationName: organizationTable.slug,
         })
         .from(conversationTable)
-        .leftJoin(
-            organizationTable,
-            eq(conversationTable.organizationId, organizationTable.id),
+        .innerJoin(
+            projectOrganizationOwnershipTable,
+            eq(
+                projectOrganizationOwnershipTable.projectId,
+                conversationTable.projectId,
+            ),
         )
-        .where(eq(conversationTable.slugId, conversationSlugId))
+        .innerJoin(
+            organizationTable,
+            eq(
+                organizationTable.id,
+                projectOrganizationOwnershipTable.organizationId,
+            ),
+        )
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                isNull(organizationTable.autoProvisionedForUserId),
+            ),
+        )
         .limit(1);
 
     assertMaxdiffGitHubAllowed({
@@ -2300,13 +2317,14 @@ server.after(() => {
             const displayLanguage = getRequestDisplayLanguage({
                 request,
             });
+            const personalizationUserId = deviceStatus.isKnown
+                ? deviceStatus.userId
+                : undefined;
 
             return await fetchAnalysisFrameManifestByConversationSlugId({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
-                personalizationUserId: deviceStatus.isKnown
-                    ? deviceStatus.userId
-                    : undefined,
+                personalizationUserId,
                 displayLanguage,
                 analysisView: request.body.analysisView,
                 checkpointViewSnapshotId: request.body.checkpointViewSnapshotId,
@@ -2349,7 +2367,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+            await verifyUcanOptionalAuth(db, request);
             const displayLanguage = getRequestDisplayLanguage({
                 request,
             });
@@ -2678,23 +2696,11 @@ server.after(() => {
                 }
             }
 
-            // Verify organization membership if specified
-            if (
-                request.body.postAsOrganization !== undefined &&
-                request.body.postAsOrganization !== ""
-            ) {
-                const organizationId =
-                    await authUtilService.isUserPartOfOrganization({
-                        db,
-                        organizationName: request.body.postAsOrganization,
-                        userId: deviceStatus.userId,
-                    });
-                if (organizationId === undefined) {
-                    throw server.httpErrors.forbidden(
-                        `User '${deviceStatus.userId}' is not part of the organization: '${request.body.postAsOrganization}'`,
-                    );
-                }
-            }
+            const createTarget = await resolveConversationCreateTarget({
+                db,
+                userId: deviceStatus.userId,
+                postAsOrganizationSlug: request.body.postAsOrganization,
+            });
 
             const premiumFeatures =
                 premiumEntitlementService.getPremiumFeaturesFromCreateRequest({
@@ -2706,15 +2712,10 @@ server.after(() => {
             if (premiumFeatures.length > 0) {
                 await premiumEntitlementService.requirePremiumAccess({
                     db,
-                    subject:
-                        await premiumEntitlementService.getPremiumEntitlementSubjectForCreate(
-                            {
-                                db,
-                                userId: deviceStatus.userId,
-                                postAsOrganization:
-                                    request.body.postAsOrganization,
-                            },
-                        ),
+                    subject: {
+                        projectId: createTarget.projectId,
+                        userId: deviceStatus.userId,
+                    },
                     features: premiumFeatures,
                     mode: "creation",
                     now: nowZeroMs(),
@@ -2725,9 +2726,9 @@ server.after(() => {
             return await conversationImportService.requestUrlImport({
                 db,
                 userId: deviceStatus.userId,
+                projectId: createTarget.projectId,
                 polisUrl: request.body.polisUrl,
                 formData: {
-                    postAsOrganization: request.body.postAsOrganization,
                     participationMode: request.body.participationMode,
                     isIndexed: request.body.isIndexed,
                     requiresEventTicket: request.body.requiresEventTicket,
@@ -2871,20 +2872,11 @@ server.after(() => {
                 }
             }
 
-            // Verify organization membership if specified
-            if (parsedFields.postAsOrganization !== undefined) {
-                const organizationId =
-                    await authUtilService.isUserPartOfOrganization({
-                        db,
-                        organizationName: parsedFields.postAsOrganization,
-                        userId: deviceStatus.userId,
-                    });
-                if (organizationId === undefined) {
-                    throw server.httpErrors.forbidden(
-                        `User '${deviceStatus.userId}' is not part of the organization: '${parsedFields.postAsOrganization}'`,
-                    );
-                }
-            }
+            const createTarget = await resolveConversationCreateTarget({
+                db,
+                userId: deviceStatus.userId,
+                postAsOrganizationSlug: parsedFields.postAsOrganization,
+            });
 
             const premiumFeatures =
                 premiumEntitlementService.getPremiumFeaturesFromCreateRequest({
@@ -2896,15 +2888,10 @@ server.after(() => {
             if (premiumFeatures.length > 0) {
                 await premiumEntitlementService.requirePremiumAccess({
                     db,
-                    subject:
-                        await premiumEntitlementService.getPremiumEntitlementSubjectForCreate(
-                            {
-                                db,
-                                userId: deviceStatus.userId,
-                                postAsOrganization:
-                                    parsedFields.postAsOrganization,
-                            },
-                        ),
+                    subject: {
+                        projectId: createTarget.projectId,
+                        userId: deviceStatus.userId,
+                    },
                     features: premiumFeatures,
                     mode: "creation",
                     now: nowZeroMs(),
@@ -2916,9 +2903,9 @@ server.after(() => {
                 await conversationImportService.requestConversationImport({
                     db,
                     userId: deviceStatus.userId,
+                    projectId: createTarget.projectId,
                     files: parsedFiles.data,
                     formData: {
-                        postAsOrganization: parsedFields.postAsOrganization,
                         participationMode: parsedFields.participationMode,
                         isIndexed: parsedFields.isIndexed,
                         requiresEventTicket: parsedFields.requiresEventTicket,

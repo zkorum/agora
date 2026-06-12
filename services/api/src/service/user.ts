@@ -4,6 +4,8 @@ import {
     opinionTable,
     opinionModerationTable,
     conversationTable,
+    organizationMembershipTable,
+    projectOrganizationOwnershipTable,
     userTable,
     voteTable,
     eventTicketTable,
@@ -22,7 +24,6 @@ import {
     eq,
     lt,
     or,
-    ne,
     desc,
     inArray,
     isNotNull,
@@ -37,14 +38,12 @@ import {
 import { fetchPostBySlugId } from "./post.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
 import {
-    getOrganizationIdsByUserId,
     getOrganizationMembershipsByUserId,
 } from "./administrator/organization.js";
-import { getConversationOwnerFilter } from "./conversationAccess.js";
+import { getProjectIdsWithCapability } from "./projectAccess.js";
 import type { ImportPolisResults } from "@/shared/types/polis.js";
 import { generateUUID } from "@/crypto.js";
 import type { UserIdPerParticipantId } from "@/utils/dataStructure.js";
-import { alias } from "drizzle-orm/pg-core";
 
 interface GetAllUserCommentsProps {
     db: PostgresJsDatabase;
@@ -117,9 +116,6 @@ export async function getUserComments({
             authorId: userId,
         });
 
-        // Fetch a list of comment IDs first
-        const conversationAuthorTable = alias(userTable, "conversationAuthor");
-
         const preparedQuery = db
             .select({
                 opinionId: opinionTable.id,
@@ -148,10 +144,6 @@ export async function getUserComments({
                 conversationTable,
                 eq(conversationTable.id, opinionTable.conversationId),
             )
-            .innerJoin(
-                conversationAuthorTable,
-                eq(conversationAuthorTable.id, conversationTable.authorId),
-            )
             .leftJoin(
                 opinionModerationTable,
                 eq(opinionModerationTable.opinionId, opinionTable.id),
@@ -168,12 +160,10 @@ export async function getUserComments({
                               ),
                           ),
                           isNotNull(opinionTable.currentContentId),
-                          eq(conversationAuthorTable.isDeleted, false),
                       )
                     : and(
                           eq(opinionTable.authorId, userId),
                           isNotNull(opinionTable.currentContentId),
-                          eq(conversationAuthorTable.isDeleted, false),
                       ),
             )
             .orderBy(desc(opinionTable.createdAt), desc(opinionTable.id));
@@ -253,44 +243,36 @@ interface GetUserPostProps {
 async function getOwnedActiveConversationCount({
     db,
     userId,
-    organizationIds,
 }: {
     db: PostgresJsDatabase;
     userId: string;
-    organizationIds: number[];
 }): Promise<number> {
-    const authorCountRows = await db
+    const countRows = await db
         .select({ count: count() })
         .from(conversationTable)
-        .innerJoin(userTable, eq(userTable.id, conversationTable.authorId))
+        .innerJoin(
+            projectOrganizationOwnershipTable,
+            eq(
+                projectOrganizationOwnershipTable.projectId,
+                conversationTable.projectId,
+            ),
+        )
+        .innerJoin(
+            organizationMembershipTable,
+            eq(
+                organizationMembershipTable.organizationId,
+                projectOrganizationOwnershipTable.organizationId,
+            ),
+        )
         .where(
             and(
-                eq(conversationTable.authorId, userId),
+                eq(organizationMembershipTable.userId, userId),
                 eq(conversationTable.isImporting, false),
                 isNotNull(conversationTable.currentContentId),
-                eq(userTable.isDeleted, false),
             ),
         );
 
-    if (organizationIds.length === 0) {
-        return authorCountRows[0].count;
-    }
-
-    const organizationCountRows = await db
-        .select({ count: count() })
-        .from(conversationTable)
-        .innerJoin(userTable, eq(userTable.id, conversationTable.authorId))
-        .where(
-            and(
-                inArray(conversationTable.organizationId, organizationIds),
-                ne(conversationTable.authorId, userId),
-                eq(conversationTable.isImporting, false),
-                isNotNull(conversationTable.currentContentId),
-                eq(userTable.isDeleted, false),
-            ),
-        );
-
-    return authorCountRows[0].count + organizationCountRows[0].count;
+    return countRows[0].count;
 }
 
 export async function getUserPosts({
@@ -307,19 +289,19 @@ export async function getUserPosts({
             lastSlugId: lastPostSlugId,
             db: db,
         });
-        const organizationIds = await getOrganizationIdsByUserId({
+        const projectIds = await getProjectIdsWithCapability({
             db,
             userId,
+            capability: "conversation_update",
         });
-        const ownershipFilter = getConversationOwnerFilter({
-            userId,
-            organizationIds,
-        });
+        if (projectIds.length === 0) {
+            return new Map();
+        }
 
         const whereClause =
             lastCursor !== undefined
                 ? and(
-                      ownershipFilter,
+                      inArray(conversationTable.projectId, projectIds),
                       eq(conversationTable.isImporting, false),
                       isNotNull(conversationTable.currentContentId),
                       or(
@@ -337,7 +319,7 @@ export async function getUserPosts({
                       ),
                   )
                 : and(
-                      ownershipFilter,
+                      inArray(conversationTable.projectId, projectIds),
                       eq(conversationTable.isImporting, false),
                       isNotNull(conversationTable.currentContentId),
                   );
@@ -448,13 +430,9 @@ export async function getUserProfile({
                     userId,
                     baseImageServiceUrl,
                 });
-            const organizationIds = organizationMemberships.map(
-                (membership) => membership.organizationId,
-            );
             const activePostCount = await getOwnedActiveConversationCount({
                 db,
                 userId,
-                organizationIds,
             });
 
             // Fetch verified event tickets for this user
@@ -550,6 +528,7 @@ export async function bulkInsertUsersFromExternalPolisConvo({
         return {
             id: userId,
             username: `ext_${conversationSlugId}_${String(participantId)}`,
+            firstName: `ext_${conversationSlugId}_${String(participantId)}`,
             isImported: true,
         };
     });

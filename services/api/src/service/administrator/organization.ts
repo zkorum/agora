@@ -1,6 +1,6 @@
 import {
+    organizationMembershipTable,
     organizationTable,
-    userOrganizationMappingTable,
 } from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { and, eq } from "drizzle-orm";
@@ -13,6 +13,16 @@ import type {
 } from "@/shared/types/dto.js";
 import type { OrganizationProperties } from "@/shared/types/zod.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
+
+function slugifyOrganizationName(name: string): string {
+    const slug = name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 65);
+    return slug === "" ? "organization" : slug;
+}
 
 interface GetAllOrganizationsProps {
     db: PostgresJsDatabase;
@@ -27,7 +37,7 @@ export async function getAllOrganizations({
 
     const organizationTableResponse = await db
         .select({
-            name: organizationTable.name,
+            name: organizationTable.displayName,
             description: organizationTable.description,
             imagePath: organizationTable.imagePath,
             isFullImagePath: organizationTable.isFullImagePath,
@@ -123,9 +133,9 @@ export async function getOrganizationIdsByUserId({
     userId,
 }: GetOrganizationIdsByUserIdProps): Promise<number[]> {
     const organizationTableResponse = await db
-        .select({ organizationId: userOrganizationMappingTable.organizationId })
-        .from(userOrganizationMappingTable)
-        .where(eq(userOrganizationMappingTable.userId, userId));
+        .select({ organizationId: organizationMembershipTable.organizationId })
+        .from(organizationMembershipTable)
+        .where(eq(organizationMembershipTable.userId, userId));
 
     return organizationTableResponse.map((response) => response.organizationId);
 }
@@ -138,21 +148,21 @@ export async function getOrganizationMembershipsByUserId({
     const organizationTableResponse = await db
         .select({
             organizationId: organizationTable.id,
-            name: organizationTable.name,
+            name: organizationTable.displayName,
             description: organizationTable.description,
             imagePath: organizationTable.imagePath,
             isFullImagePath: organizationTable.isFullImagePath,
             websiteUrl: organizationTable.websiteUrl,
         })
-        .from(userOrganizationMappingTable)
+        .from(organizationMembershipTable)
         .innerJoin(
             organizationTable,
             eq(
                 organizationTable.id,
-                userOrganizationMappingTable.organizationId,
+                organizationMembershipTable.organizationId,
             ),
         )
-        .where(eq(userOrganizationMappingTable.userId, userId));
+        .where(eq(organizationMembershipTable.userId, userId));
 
     return organizationTableResponse.map((response) => ({
         organizationId: response.organizationId,
@@ -195,12 +205,12 @@ export async function removeUserOrganizationMapping({
             throw httpErrors.notFound("Failed to locate organization ID");
         } else {
             const deletedMapping = await db
-                .delete(userOrganizationMappingTable)
+                .delete(organizationMembershipTable)
                 .where(
                     and(
-                        eq(userOrganizationMappingTable.userId, targetUserId),
+                        eq(organizationMembershipTable.userId, targetUserId),
                         eq(
-                            userOrganizationMappingTable.organizationId,
+                            organizationMembershipTable.organizationId,
                             organizationId,
                         ),
                     ),
@@ -246,7 +256,7 @@ export async function addUserOrganizationMapping({
         if (organizationId == undefined) {
             throw httpErrors.notFound("Failed to locate organization ID");
         } else {
-            await db.insert(userOrganizationMappingTable).values({
+            await db.insert(organizationMembershipTable).values({
                 userId: targetUserId,
                 organizationId: organizationId,
             });
@@ -279,7 +289,9 @@ export async function createOrganization({
     try {
         // Create a new organization entry
         await db.insert(organizationTable).values({
-            name: organizationName,
+            slug: slugifyOrganizationName(organizationName),
+            displayName: organizationName,
+            directoryVisibility: "listed",
             imagePath: imagePath,
             isFullImagePath: isFullImagePath,
             websiteUrl: websiteUrl,
@@ -305,7 +317,7 @@ export async function deleteOrganization({
     try {
         await db
             .delete(organizationTable)
-            .where(eq(organizationTable.name, organizationName));
+            .where(eq(organizationTable.slug, organizationName));
     } catch (err: unknown) {
         log.error(err);
         throw httpErrors.internalServerError(
@@ -325,7 +337,7 @@ async function getOrganizationIdFromOrganizationName(
                 organizationId: organizationTable.id,
             })
             .from(organizationTable)
-            .where(eq(organizationTable.name, organizationName));
+            .where(eq(organizationTable.slug, organizationName));
 
         if (organizationTableResponse.length != 1) {
             return undefined;

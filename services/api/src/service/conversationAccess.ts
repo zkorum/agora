@@ -1,77 +1,31 @@
-import { eq, inArray, or } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { httpErrors } from "@fastify/sensible";
 import { conversationTable } from "@/shared-backend/schema.js";
-import * as authUtilService from "@/service/authUtil.js";
+import { hasProjectCapability } from "@/service/projectAccess.js";
 
 export type ConversationViewAccessLevel = "public" | "owner";
-
-export function getConversationOwnerFilter({
-    userId,
-    organizationIds,
-}: {
-    userId: string;
-    organizationIds: number[];
-}) {
-    const authorFilter = eq(conversationTable.authorId, userId);
-    if (organizationIds.length === 0) {
-        return authorFilter;
-    }
-
-    return or(
-        authorFilter,
-        inArray(conversationTable.organizationId, organizationIds),
-    );
-}
-
-export async function isConversationOwner({
-    db,
-    userId,
-    authorId,
-    organizationId,
-}: {
-    db: PostgresDatabase;
-    userId: string;
-    authorId: string;
-    organizationId: number | null;
-}): Promise<boolean> {
-    if (authorId === userId) {
-        return true;
-    }
-
-    if (organizationId === null) {
-        return false;
-    }
-
-    return await authUtilService.isUserPartOfOrganizationById({
-        db,
-        userId,
-        organizationId,
-    });
-}
 
 export async function getConversationViewAccessLevelForConversation({
     db,
     userId,
-    authorId,
-    organizationId,
+    projectId,
 }: {
     db: PostgresDatabase;
     userId: string | undefined;
-    authorId: string;
-    organizationId: number | null;
+    projectId: number;
 }): Promise<ConversationViewAccessLevel> {
     if (userId === undefined) {
         return "public";
     }
 
-    const isOwner = await isConversationOwner({
+    const canUpdateConversation = await hasProjectCapability({
         db,
         userId,
-        authorId,
-        organizationId,
+        projectId,
+        capability: "conversation_update",
     });
-    return isOwner ? "owner" : "public";
+    return canUpdateConversation ? "owner" : "public";
 }
 
 export async function getConversationViewAccessLevel({
@@ -85,8 +39,7 @@ export async function getConversationViewAccessLevel({
 }): Promise<ConversationViewAccessLevel> {
     const conversationRows = await db
         .select({
-            authorId: conversationTable.authorId,
-            organizationId: conversationTable.organizationId,
+            projectId: conversationTable.projectId,
         })
         .from(conversationTable)
         .where(eq(conversationTable.id, conversationId))
@@ -99,7 +52,6 @@ export async function getConversationViewAccessLevel({
     return await getConversationViewAccessLevelForConversation({
         db,
         userId,
-        authorId: conversation.authorId,
-        organizationId: conversation.organizationId,
+        projectId: conversation.projectId,
     });
 }

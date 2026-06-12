@@ -601,6 +601,36 @@ export const premiumFeatureEnum = pgEnum("premium_feature", [
     "analysis_variants",
 ]);
 
+export const directoryVisibilityEnum = pgEnum("directory_visibility", [
+    "listed",
+    "unlisted",
+]);
+
+export const organizationMembershipCapabilityEnum = pgEnum(
+    "organization_membership_capability_enum",
+    [
+        "organization_manage_members",
+        "organization_manage_profile",
+        "project_create",
+    ],
+);
+
+export const organizationMembershipAllProjectCapabilityEnum = pgEnum(
+    "organization_membership_all_project_capability_enum",
+    [
+        "project_update",
+        "project_delete",
+        "project_manage_owner_organizations",
+        "conversation_create",
+        "conversation_update",
+        "conversation_delete",
+        "conversation_view_private_results",
+        "conversation_export_owner_data",
+        "conversation_moderate",
+        "conversation_manage_integrations",
+    ],
+);
+
 export const surveyQuestionTypeEnum = pgEnum("survey_question_type", [
     "choice",
     "free_text",
@@ -802,6 +832,8 @@ export const userTable = pgTable(
         username: varchar("username", { length: MAX_LENGTH_USERNAME })
             .notNull()
             .unique(),
+        firstName: varchar("first_name", { length: MAX_LENGTH_NAME_CREATOR })
+            .notNull(),
         isSiteModerator: boolean("is_site_moderator").notNull().default(false),
         isSiteOrgAdmin: boolean("is_site_org_admin").notNull().default(false),
         isImported: boolean("is_imported").notNull().default(false),
@@ -829,9 +861,8 @@ export const userTable = pgTable(
     },
 );
 
-/** @service import-worker */
-export const userOrganizationMappingTable = pgTable(
-    "user_organization_mapping",
+export const organizationMembershipTable = pgTable(
+    "organization_membership",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         userId: uuid("user_id")
@@ -846,12 +877,19 @@ export const userOrganizationMappingTable = pgTable(
         })
             .defaultNow()
             .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
     },
     (t) => [
-        unique("unique_user_orgaization_mapping").on(
+        unique("organization_membership_user_organization_unique").on(
             t.userId,
             t.organizationId,
         ),
+        index("organization_membership_organization_idx").on(t.organizationId),
     ],
 );
 
@@ -986,8 +1024,14 @@ export const userDisplayLanguageTable = pgTable(
 /** @service import-worker */
 export const organizationTable = pgTable("organization", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    name: varchar("name", { length: MAX_LENGTH_NAME_CREATOR })
+    slug: varchar("slug", { length: MAX_LENGTH_NAME_CREATOR })
         .notNull()
+        .unique(),
+    displayName: varchar("display_name", { length: MAX_LENGTH_NAME_CREATOR })
+        .notNull(),
+    directoryVisibility: directoryVisibilityEnum("directory_visibility").notNull(),
+    autoProvisionedForUserId: uuid("auto_provisioned_for_user_id")
+        .references(() => userTable.id)
         .unique(),
     imagePath: text("image_path").notNull(),
     isFullImagePath: boolean("is_full_image_path").notNull(),
@@ -1009,15 +1053,120 @@ export const organizationTable = pgTable("organization", {
         .notNull(),
 });
 
-/** @service api, shared-analysis-worker */
+/** @service scoring-worker, api, math-updater, import-worker */
+export const projectTable = pgTable("project", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    slug: varchar("slug", { length: MAX_LENGTH_NAME_CREATOR })
+        .notNull()
+        .unique(),
+    displayName: varchar("display_name", { length: MAX_LENGTH_NAME_CREATOR })
+        .notNull(),
+    directoryVisibility: directoryVisibilityEnum("directory_visibility").notNull(),
+    autoProvisionedForOrganizationId: integer(
+        "auto_provisioned_for_organization_id",
+    )
+        .references(() => organizationTable.id)
+        .unique(),
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+    updatedAt: timestamp("updated_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
+
+/** @service scoring-worker, api, math-updater, import-worker */
+export const projectOrganizationOwnershipTable = pgTable(
+    "project_organization_ownership",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectId: integer("project_id")
+            .references(() => projectTable.id)
+            .notNull(),
+        organizationId: integer("organization_id")
+            .references(() => organizationTable.id)
+            .notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("project_organization_ownership_project_org_unique").on(
+            table.projectId,
+            table.organizationId,
+        ),
+        index("project_organization_ownership_organization_idx").on(
+            table.organizationId,
+        ),
+    ],
+);
+
+/** @service api */
+export const organizationMembershipCapabilityTable = pgTable(
+    "organization_membership_capability",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        organizationMembershipId: integer("organization_membership_id")
+            .references(() => organizationMembershipTable.id)
+            .notNull(),
+        capability: organizationMembershipCapabilityEnum("capability").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("organization_membership_capability_unique").on(
+            table.organizationMembershipId,
+            table.capability,
+        ),
+    ],
+);
+
+/** @service api */
+export const organizationMembershipAllProjectCapabilityTable = pgTable(
+    "organization_membership_all_project_capability",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        organizationMembershipId: integer("organization_membership_id")
+            .references(() => organizationMembershipTable.id)
+            .notNull(),
+        capability:
+            organizationMembershipAllProjectCapabilityEnum("capability").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("organization_membership_all_project_capability_unique").on(
+            table.organizationMembershipId,
+            table.capability,
+        ),
+    ],
+);
+
+/** @service api, math-updater */
 export const premiumFeatureEntitlementTable = pgTable(
     "premium_feature_entitlement",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        userId: uuid("user_id").references(() => userTable.id),
         organizationId: integer("organization_id").references(
             () => organizationTable.id,
-        ),
+        ).notNull(),
         feature: premiumFeatureEnum("feature").notNull(),
         startsAt: timestamp("starts_at", {
             mode: "date",
@@ -1052,17 +1201,6 @@ export const premiumFeatureEntitlementTable = pgTable(
             .notNull(),
     },
     (table) => [
-        check(
-            "premium_feature_entitlement_single_subject_check",
-            sqlOr(
-                sqlAnd(isNotNull(table.userId), isNull(table.organizationId)),
-                sqlAnd(isNull(table.userId), isNotNull(table.organizationId)),
-            ),
-        ),
-        index("premium_feature_entitlement_user_idx").on(
-            table.userId,
-            table.feature,
-        ),
         index("premium_feature_entitlement_org_idx").on(
             table.organizationId,
             table.feature,
@@ -1444,12 +1582,9 @@ export const conversationTable = pgTable(
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         slugId: varchar("slug_id", { length: 8 }).notNull().unique(), // used for permanent URL
-        authorId: uuid("author_id") // "postAs"
-            .notNull()
-            .references(() => userTable.id), // the author of the conversation
-        organizationId: integer("organization_id").references(
-            () => organizationTable.id,
-        ),
+        projectId: integer("project_id")
+            .references(() => projectTable.id)
+            .notNull(),
         currentContentId: integer("current_content_id")
             .references((): AnyPgColumn => conversationContentTable.id)
             .unique(), // null if conversation was deleted
@@ -1519,19 +1654,11 @@ export const conversationTable = pgTable(
             table.isImporting,
             table.conversationType,
         ),
-        // Composite for user conversation timeline: filters authorId + isImporting, sorts by createdAt/id
-        index("conversation_author_timeline_idx").using(
-            "btree",
-            table.authorId,
-            table.isImporting,
-            sql`${table.createdAt} DESC`,
-            sql`${table.id} DESC`,
-        ),
-        // Composite for organization conversation timeline: filters organizationId + isImporting, sorts by createdAt/id
-        index("conversation_organization_timeline_idx")
+        index("conversation_project_id_idx").on(table.projectId),
+        index("conversation_project_timeline_idx")
             .using(
                 "btree",
-                table.organizationId,
+                table.projectId,
                 table.isImporting,
                 sql`${table.createdAt} DESC`,
                 sql`${table.id} DESC`,

@@ -206,8 +206,7 @@ interface ConversationExportConversationRecord {
     id: number;
     slugId: string;
     title: string;
-    authorId: string;
-    organizationId: number | null;
+    projectId: number;
 }
 
 async function findConversationRecord({
@@ -222,8 +221,7 @@ async function findConversationRecord({
             id: conversationTable.id,
             slugId: conversationTable.slugId,
             title: conversationContentTable.title,
-            authorId: conversationTable.authorId,
-            organizationId: conversationTable.organizationId,
+            projectId: conversationTable.projectId,
         })
         .from(conversationTable)
         .innerJoin(
@@ -735,8 +733,7 @@ export async function requestConversationExport({
         await getConversationViewAccessLevelForConversation({
             db,
             userId,
-            authorId: conversation.authorId,
-            organizationId: conversation.organizationId,
+            projectId: conversation.projectId,
         });
 
     const opinionCount = await getOpinionCount({
@@ -875,8 +872,7 @@ interface RequestStatusRecord {
     status: ExportRequestStatus;
     conversationId: number;
     conversationSlugId: string;
-    conversationAuthorId: string;
-    conversationOrganizationId: number | null;
+    conversationProjectId: number;
     failureReason: ExportFailureReason | null;
     cancellationReason: ExportCancellationReason | null;
     createdAt: Date;
@@ -896,8 +892,7 @@ async function getRequestStatusRecord({
             status: conversationExportRequestTable.status,
             conversationId: conversationTable.id,
             conversationSlugId: conversationTable.slugId,
-            conversationAuthorId: conversationTable.authorId,
-            conversationOrganizationId: conversationTable.organizationId,
+            conversationProjectId: conversationTable.projectId,
             failureReason: conversationExportRequestTable.failureReason,
             cancellationReason:
                 conversationExportRequestTable.cancellationReason,
@@ -1039,8 +1034,7 @@ export async function getConversationExportStatus({
         await getConversationViewAccessLevelForConversation({
             db,
             userId,
-            authorId: request.conversationAuthorId,
-            organizationId: request.conversationOrganizationId,
+            projectId: request.conversationProjectId,
         });
 
     if (request.deletedAt !== null || request.expiresAt < new Date()) {

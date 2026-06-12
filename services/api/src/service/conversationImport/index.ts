@@ -26,9 +26,9 @@ import { log } from "@/app.js";
 interface RequestConversationImportParams {
     db: PostgresDatabase;
     userId: string;
+    projectId: number;
     files: CsvFiles;
     formData: {
-        postAsOrganization?: string;
         participationMode: ParticipationMode;
         isIndexed: boolean;
         requiresEventTicket?: EventSlug;
@@ -53,6 +53,7 @@ export async function requestConversationImport(
     const {
         db,
         userId,
+        projectId,
         files,
         formData,
         didWrite,
@@ -113,10 +114,11 @@ export async function requestConversationImport(
             type: "csv",
             importSlugId: createImportResult.importSlugId,
             userId,
+            actorUserId: userId,
+            projectId,
             files,
             formData,
             didWrite,
-            authorId: userId,
         });
     } catch (error) {
         try {
@@ -157,9 +159,9 @@ export async function requestConversationImport(
 interface RequestUrlImportParams {
     db: PostgresDatabase;
     userId: string;
+    projectId: number;
     polisUrl: string;
     formData: {
-        postAsOrganization?: string;
         participationMode: ParticipationMode;
         isIndexed: boolean;
         requiresEventTicket?: EventSlug;
@@ -180,6 +182,7 @@ export async function requestUrlImport(
     const {
         db,
         userId,
+        projectId,
         polisUrl,
         formData,
         didWrite,
@@ -203,10 +206,11 @@ export async function requestUrlImport(
             type: "url",
             importSlugId: createImportResult.importSlugId,
             userId,
+            actorUserId: userId,
+            projectId,
             polisUrl,
             formData,
             didWrite,
-            authorId: userId,
         });
     } catch (error) {
         try {

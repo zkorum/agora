@@ -34,7 +34,7 @@ import {
     buildAnalysisDescriptionReadiness,
     shouldUseSystemDescriptions,
 } from "./analysisDescriptionReadiness.js";
-import { hasPremiumAnalysisVariantsAccess } from "./premiumEntitlement.js";
+import { isPremiumFeatureEnabledForProject } from "./projectAccess.js";
 
 export type { AnalysisViewState };
 
@@ -89,8 +89,7 @@ export interface OpinionGroupAnalysisSelection {
 
 export interface LatestOpinionGroupResultRow {
     conversationId: number;
-    authorId: string;
-    organizationId: number | null;
+    projectId: number;
     preferredOpinionGroupCount: number | null;
     variantsEnabled: boolean;
     aiLabelingEnabled: boolean;
@@ -230,8 +229,7 @@ async function getEmptyAnalysisSelectionContext({
         checkpointViewSnapshotId === undefined
             ? await db
                   .select({
-                      authorId: conversationTable.authorId,
-                      organizationId: conversationTable.organizationId,
+                      projectId: conversationTable.projectId,
                       preferredGroupCount:
                           conversationTable.preferredOpinionGroupCount,
                   })
@@ -240,8 +238,7 @@ async function getEmptyAnalysisSelectionContext({
                   .limit(1)
             : await db
                   .select({
-                      authorId: conversationTable.authorId,
-                      organizationId: conversationTable.organizationId,
+                      projectId: conversationTable.projectId,
                       preferredGroupCount:
                           conversationViewSnapshotTable.preferredOpinionGroupCount,
                   })
@@ -273,9 +270,10 @@ async function getEmptyAnalysisSelectionContext({
     }
 
     return {
-        variantsEnabled: await hasPremiumAnalysisVariantsAccess({
+        variantsEnabled: await isPremiumFeatureEnabledForProject({
             db,
-            conversation,
+            projectId: conversation.projectId,
+            feature: "analysis_variants",
             now: new Date(),
         }),
         preferredGroupCount: conversation.preferredGroupCount,
@@ -747,8 +745,7 @@ export async function getOpinionGroupAnalysisSelection({
     const latestResultRows = await db
         .select({
             conversationId: conversationTable.id,
-            authorId: conversationTable.authorId,
-            organizationId: conversationTable.organizationId,
+            projectId: conversationTable.projectId,
             preferredOpinionGroupCount:
                 checkpointViewSnapshotId === undefined
                     ? conversationTable.preferredOpinionGroupCount

@@ -909,10 +909,12 @@ export async function registerWithPhoneNumber({
 
         if (existingUser.length === 0) {
             // New user registration
+            const username = await generateUnusedRandomUsername({
+                db: db,
+            });
             await tx.insert(userTable).values({
-                username: await generateUnusedRandomUsername({
-                    db: db,
-                }),
+                username,
+                firstName: username,
                 id: userId,
             });
             await tx.insert(deviceTable).values({
@@ -961,8 +963,10 @@ export async function createGuestUser({
     const loginSessionExpiry = new Date(now);
     try {
         return await db.transaction(async (tx) => {
+            const username = await generateUnusedRandomUsername({ db: db });
             await tx.insert(userTable).values({
-                username: await generateUnusedRandomUsername({ db: db }),
+                username,
+                firstName: username,
                 id: userId,
             });
             const insertedDevice = await tx
@@ -1024,8 +1028,10 @@ export async function registerWithZKP({
 
         if (existingUser.length === 0) {
             // New user registration
+            const username = await generateUnusedRandomUsername({ db: db });
             await tx.insert(userTable).values({
-                username: await generateUnusedRandomUsername({ db: db }),
+                username,
+                firstName: username,
                 id: userId,
             });
             await tx.insert(deviceTable).values({
@@ -2875,10 +2881,12 @@ async function registerWithEmail({
 
         if (existingUser.length === 0) {
             // New user registration
+            const username = await generateUnusedRandomUsername({
+                db: db,
+            });
             await tx.insert(userTable).values({
-                username: await generateUnusedRandomUsername({
-                    db: db,
-                }),
+                username,
+                firstName: username,
                 id: userId,
             });
             await tx.insert(deviceTable).values({

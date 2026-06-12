@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Protocol
@@ -26,9 +25,7 @@ from import_worker.generated_models import (
     OpinionContent,
     OpinionGroupSpec,
     OpinionModeration,
-    Organization,
     User,
-    UserOrganizationMapping,
     Vote,
     VoteContent,
 )
@@ -43,6 +40,7 @@ from import_worker.import_models import ImportPolisResults
 from import_worker.polis_url import extract_polis_id_from_url
 
 if TYPE_CHECKING:
+    import uuid
     from collections.abc import Iterable
 
     from sqlalchemy.orm import Session
@@ -198,30 +196,6 @@ def _timestamp_from_polis(value: int | float | None) -> datetime | None:
     return datetime.fromtimestamp(value / 1000, UTC).replace(tzinfo=None)
 
 
-def _get_organization_id(
-    session: Session,
-    *,
-    organization_name: str | None,
-    user_id: uuid.UUID,
-) -> int | None:
-    if organization_name is None or organization_name == "":
-        return None
-
-    row = session.execute(
-        select(Organization.id)
-        .join(UserOrganizationMapping, UserOrganizationMapping.organization_id == Organization.id)
-        .where(
-            and_(
-                Organization.name == organization_name,
-                UserOrganizationMapping.user_id == user_id,
-            ),
-        ),
-    ).first()
-    if row is None:
-        raise ValueError(f"User {user_id} is not part of organization {organization_name}")
-    return row.id
-
-
 def _build_imported_polis_conversation(request: ImportRequest) -> tuple[ImportPolisResults, str]:
     if request.type == "csv":
         return build_import_from_csv(request.files.model_dump(by_alias=True)), "csv"
@@ -278,12 +252,6 @@ def _create_conversation(
     imported: ImportPolisResults,
     polis_url_type: str,
 ) -> ConversationIds:
-    author_id = uuid.UUID(request.author_id)
-    organization_id = _get_organization_id(
-        session,
-        organization_name=request.form_data.post_as_organization,
-        user_id=author_id,
-    )
     conversation_url, report_url = _conversation_urls(
         request=request,
         imported=imported,
@@ -307,9 +275,8 @@ def _create_conversation(
     conversation_row = session.execute(
         sqlalchemy_insert(Conversation)
         .values(
-            author_id=author_id,
             slug_id=conversation_slug_id,
-            organization_id=organization_id,
+            project_id=request.project_id,
             is_indexed=request.form_data.is_indexed,
             participation_mode=request.form_data.participation_mode.value,
             conversation_type="polis",
@@ -350,14 +317,6 @@ def _create_conversation(
         .where(Conversation.id == conversation_id)
         .values(current_content_id=conversation_content_id),
     )
-    session.execute(
-        update(User)
-        .where(User.id == author_id)
-        .values(
-            active_conversation_count=User.active_conversation_count + 1,
-            total_conversation_count=User.total_conversation_count + 1,
-        ),
-    )
     session.commit()
     return ConversationIds(
         conversation_slug_id=conversation_slug_id,
@@ -387,6 +346,7 @@ def _insert_imported_users(
             {
                 "id": user_id_per_participant_id[participant_id],
                 "username": f"ext_{conversation_slug_id}_{participant_id}",
+                "first_name": f"ext_{conversation_slug_id}_{participant_id}",
                 "is_imported": True,
             }
             for participant_id in participant_ids
@@ -900,9 +860,7 @@ def _delete_imported_conversation(
     conversation_id: int,
 ) -> None:
     conversation_row = session.execute(
-        select(Conversation.author_id, Conversation.current_content_id).where(
-            Conversation.id == conversation_id,
-        ),
+        select(Conversation.current_content_id).where(Conversation.id == conversation_id),
     ).first()
     if conversation_row is None or conversation_row.current_content_id is None:
         return
@@ -910,11 +868,6 @@ def _delete_imported_conversation(
         update(Conversation)
         .where(Conversation.id == conversation_id)
         .values(current_content_id=None),
-    )
-    session.execute(
-        update(User)
-        .where(User.id == conversation_row.author_id)
-        .values(active_conversation_count=User.active_conversation_count - 1),
     )
     session.execute(
         update(Opinion)
@@ -949,20 +902,28 @@ def _create_import_notification(
     return notification_slug_id, notification_row.id
 
 
-def _get_import_record(session: Session, *, import_slug_id: str) -> tuple[int, uuid.UUID]:
+def _get_import_user_id(session: Session, *, import_slug_id: str) -> uuid.UUID:
     row = session.execute(
-        select(ConversationImport.id, ConversationImport.user_id).where(
+        select(ConversationImport.user_id).where(
             ConversationImport.slug_id == import_slug_id,
         ),
     ).first()
     if row is None:
         raise RuntimeError(f"Import record not found for {import_slug_id}")
-    return row.id, row.user_id
+    return row.user_id
 
 
 def process_import_request(session: Session, *, request: ImportRequest) -> ImportProcessResult:
     conversation_id: int | None = None
     try:
+        import_user_id = _get_import_user_id(session, import_slug_id=request.import_slug_id)
+        if str(import_user_id) != request.actor_user_id:
+            raise RuntimeError(
+                f"Import actor mismatch for {request.import_slug_id}: "
+                f"payload actor {request.actor_user_id} does not match "
+                f"import owner {import_user_id}",
+            )
+
         imported, polis_url_type = _build_imported_polis_conversation(request)
         conversation_ids = _create_conversation(
             session,
@@ -995,7 +956,6 @@ def process_import_request(session: Session, *, request: ImportRequest) -> Impor
             participant_data=participant_data,
         )
 
-        _import_id, _user_id = _get_import_record(session, import_slug_id=request.import_slug_id)
         session.execute(
             update(ConversationImport)
             .where(ConversationImport.slug_id == request.import_slug_id)

@@ -44,6 +44,7 @@ from agora_analysis_worker_shared.generated_models import (
     OpinionModeration,
     OpinionModerationAction,
     PremiumFeatureEntitlement,
+    ProjectOrganizationOwnership,
     RealtimeEventOutbox,
     SurveyAggregateOption,
     SurveyAggregateQuestion,
@@ -1642,51 +1643,17 @@ def _fetch_premium_analysis_conversation_ids(
     if not conversation_ids:
         return set()
 
-    conversation_rows = session.execute(
-        select(Conversation.id, Conversation.author_id, Conversation.organization_id).where(
-            Conversation.id.in_(sorted(set(conversation_ids)))
+    rows = session.execute(
+        select(Conversation.id)
+        .join(
+            ProjectOrganizationOwnership,
+            Conversation.project_id == ProjectOrganizationOwnership.project_id,
         )
-    ).all()
-    if not conversation_rows:
-        return set()
-
-    author_ids = sorted({row.author_id for row in conversation_rows})
-    organization_ids = sorted(
-        {row.organization_id for row in conversation_rows if row.organization_id is not None}
-    )
-    author_entitlement_filter: ColumnElement[bool] | None = None
-    if author_ids:
-        author_entitlement_filter = and_(
-            PremiumFeatureEntitlement.user_id.in_(author_ids),
-            PremiumFeatureEntitlement.organization_id.is_(None),
-        )
-    organization_entitlement_filter: ColumnElement[bool] | None = None
-    if organization_ids:
-        organization_entitlement_filter = and_(
-            PremiumFeatureEntitlement.organization_id.in_(organization_ids),
-            PremiumFeatureEntitlement.user_id.is_(None),
-        )
-
-    subject_entitlement_filter: ColumnElement[bool] | None
-    if author_entitlement_filter is not None and organization_entitlement_filter is not None:
-        subject_entitlement_filter = or_(
-            author_entitlement_filter,
-            organization_entitlement_filter,
-        )
-    elif author_entitlement_filter is not None:
-        subject_entitlement_filter = author_entitlement_filter
-    else:
-        subject_entitlement_filter = organization_entitlement_filter
-
-    if subject_entitlement_filter is None:
-        return set()
-
-    entitlement_rows = session.execute(
-        select(
-            PremiumFeatureEntitlement.user_id,
-            PremiumFeatureEntitlement.organization_id,
-        ).where(
+        .join(
+            PremiumFeatureEntitlement,
             and_(
+                PremiumFeatureEntitlement.organization_id
+                == ProjectOrganizationOwnership.organization_id,
                 PremiumFeatureEntitlement.feature == PREMIUM_ANALYSIS_FEATURE,
                 PremiumFeatureEntitlement.starts_at <= now,
                 PremiumFeatureEntitlement.revoked_at.is_(None),
@@ -1694,21 +1661,13 @@ def _fetch_premium_analysis_conversation_ids(
                     PremiumFeatureEntitlement.expires_at.is_(None),
                     PremiumFeatureEntitlement.expires_at > now,
                 ),
-                subject_entitlement_filter,
-            )
+            ),
         )
+        .where(Conversation.id.in_(sorted(set(conversation_ids))))
+        .distinct()
     ).all()
-    active_author_ids = {row.user_id for row in entitlement_rows if row.user_id is not None}
-    active_organization_ids = {
-        row.organization_id for row in entitlement_rows if row.organization_id is not None
-    }
 
-    return {
-        row.id
-        for row in conversation_rows
-        if row.author_id in active_author_ids
-        or (row.organization_id is not None and row.organization_id in active_organization_ids)
-    }
+    return {row.id for row in rows}
 
 
 def artifact_candidate_ids_by_pair(

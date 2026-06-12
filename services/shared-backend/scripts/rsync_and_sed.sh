@@ -31,7 +31,7 @@ for service in "${TS_BACKEND_SERVICES[@]}"; do
     echo "  → Syncing to $service..."
 
     # Use rsync to copy files
-    rsync -av --delete "$SHARED_BACKEND_DIR/src/" "$TARGET_DIR/"
+    rsync -av --delete --delete-excluded --exclude="*.orig" "$SHARED_BACKEND_DIR/src/" "$TARGET_DIR/"
 
     # Add warning comment to all TypeScript files
     find "$TARGET_DIR" -name "*.ts" -print0 | while read -d $'\0' file; do

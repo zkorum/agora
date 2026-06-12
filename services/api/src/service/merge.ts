@@ -6,9 +6,10 @@ import {
     followedTopicTable,
     notificationTable,
     opinionTable,
+    organizationMembershipTable,
     phoneTable,
+    projectOrganizationOwnershipTable,
     userDisplayLanguageTable,
-    userOrganizationMappingTable,
     userSpokenLanguagesTable,
     userTable,
     voteTable,
@@ -78,25 +79,19 @@ export async function mergeGuestIntoVerifiedUser({
         .set({ userId: verifiedUserId })
         .where(eq(zkPassportTable.userId, guestUserId));
 
-    // 6. Transfer conversations (uses authorId, not userId)
-    await db
-        .update(conversationTable)
-        .set({ authorId: verifiedUserId })
-        .where(eq(conversationTable.authorId, guestUserId));
-
-    // 7. Transfer opinions (uses authorId, not userId)
+    // 6. Transfer opinions (uses authorId, not userId)
     await db
         .update(opinionTable)
         .set({ authorId: verifiedUserId })
         .where(eq(opinionTable.authorId, guestUserId));
 
-    // 8. Transfer notifications (uses userId)
+    // 7. Transfer notifications (uses userId)
     await db
         .update(notificationTable)
         .set({ userId: verifiedUserId })
         .where(eq(notificationTable.userId, guestUserId));
 
-    // 9. Transfer followed topics (unique constraint: userId + topicId)
+    // 8. Transfer followed topics (unique constraint: userId + topicId)
     // Get guest topics, insert as verified user, skip conflicts
     const guestFollowedTopics = await db
         .select()
@@ -114,7 +109,7 @@ export async function mergeGuestIntoVerifiedUser({
             .onConflictDoNothing();
     }
 
-    // 10. Transfer user spoken languages (unique constraint: userId + languageCode)
+    // 9. Transfer user spoken languages (unique constraint: userId + languageCode)
     const guestSpokenLanguages = await db
         .select()
         .from(userSpokenLanguagesTable)
@@ -130,7 +125,7 @@ export async function mergeGuestIntoVerifiedUser({
             .onConflictDoNothing();
     }
 
-    // 11. Transfer user display language (unique constraint: userId + languageCode)
+    // 10. Transfer user display language (unique constraint: userId + languageCode)
     const guestDisplayLanguages = await db
         .select()
         .from(userDisplayLanguageTable)
@@ -146,15 +141,15 @@ export async function mergeGuestIntoVerifiedUser({
             .onConflictDoNothing();
     }
 
-    // 12. Transfer organization mappings (unique constraint: userId + organizationId)
+    // 11. Transfer organization memberships (unique constraint: userId + organizationId)
     const guestOrgMappings = await db
         .select()
-        .from(userOrganizationMappingTable)
-        .where(eq(userOrganizationMappingTable.userId, guestUserId));
+        .from(organizationMembershipTable)
+        .where(eq(organizationMembershipTable.userId, guestUserId));
 
     for (const mapping of guestOrgMappings) {
         await db
-            .insert(userOrganizationMappingTable)
+            .insert(organizationMembershipTable)
             .values({
                 userId: verifiedUserId,
                 organizationId: mapping.organizationId,
@@ -162,7 +157,7 @@ export async function mergeGuestIntoVerifiedUser({
             .onConflictDoNothing();
     }
 
-    // 13. Transfer votes (uses authorId, unique constraint: authorId + opinionId)
+    // 12. Transfer votes (uses authorId, unique constraint: authorId + opinionId)
     const guestVotes = await db
         .select()
         .from(voteTable)
@@ -181,7 +176,7 @@ export async function mergeGuestIntoVerifiedUser({
             .onConflictDoNothing();
     }
 
-    // 14. Reconcile conversation counters for all affected conversations
+    // 13. Reconcile conversation counters for all affected conversations
     // This ensures vote counts, opinion counts, and participant counts are updated
     const conversationIdsSet = new Set<number>();
 
@@ -208,13 +203,27 @@ export async function mergeGuestIntoVerifiedUser({
         conversationIdsSet.add(opinion.conversationId),
     );
 
-    // From transferred conversations
+    // From conversations owned through transferred memberships
     const transferredConversations = await db
-        .select()
+        .select({ conversationId: conversationTable.id })
         .from(conversationTable)
-        .where(eq(conversationTable.authorId, verifiedUserId));
+        .innerJoin(
+            projectOrganizationOwnershipTable,
+            eq(
+                projectOrganizationOwnershipTable.projectId,
+                conversationTable.projectId,
+            ),
+        )
+        .innerJoin(
+            organizationMembershipTable,
+            eq(
+                organizationMembershipTable.organizationId,
+                projectOrganizationOwnershipTable.organizationId,
+            ),
+        )
+        .where(eq(organizationMembershipTable.userId, verifiedUserId));
     transferredConversations.forEach((conversation) =>
-        conversationIdsSet.add(conversation.id),
+        conversationIdsSet.add(conversation.conversationId),
     );
 
     log.info(
@@ -229,7 +238,7 @@ export async function mergeGuestIntoVerifiedUser({
         });
     }
 
-    // 15. Soft-delete the guest user
+    // 14. Soft-delete the guest user
     await db
         .update(userTable)
         .set({

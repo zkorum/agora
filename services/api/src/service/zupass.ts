@@ -829,8 +829,10 @@ export async function registerWithZupass({
 }: RegisterWithZupassProps): Promise<void> {
     log.info("[Zupass] Register with Zupass");
     await db.transaction(async (tx) => {
+        const username = await generateUnusedRandomUsername({ db: db });
         await tx.insert(userTable).values({
-            username: await generateUnusedRandomUsername({ db: db }),
+            username,
+            firstName: username,
             id: userId,
         });
         await tx.insert(deviceTable).values({
