@@ -861,32 +861,6 @@ export const userTable = pgTable(
     },
 );
 
-/** @service import-worker */
-export const userOrganizationMappingTable = pgTable(
-    "user_organization_mapping",
-    {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        userId: uuid("user_id")
-            .references(() => userTable.id)
-            .notNull(),
-        organizationId: integer("organization_id")
-            .references(() => organizationTable.id)
-            .notNull(),
-        createdAt: timestamp("created_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-    },
-    (t) => [
-        unique("unique_user_orgaization_mapping").on(
-            t.userId,
-            t.organizationId,
-        ),
-    ],
-);
-
 export const organizationMembershipTable = pgTable(
     "organization_membership",
     {
@@ -1050,9 +1024,6 @@ export const userDisplayLanguageTable = pgTable(
 /** @service import-worker */
 export const organizationTable = pgTable("organization", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    name: varchar("name", { length: MAX_LENGTH_NAME_CREATOR })
-        .notNull()
-        .unique(),
     slug: varchar("slug", { length: MAX_LENGTH_NAME_CREATOR })
         .notNull()
         .unique(),
@@ -1193,10 +1164,9 @@ export const premiumFeatureEntitlementTable = pgTable(
     "premium_feature_entitlement",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        userId: uuid("user_id").references(() => userTable.id),
         organizationId: integer("organization_id").references(
             () => organizationTable.id,
-        ),
+        ).notNull(),
         feature: premiumFeatureEnum("feature").notNull(),
         startsAt: timestamp("starts_at", {
             mode: "date",
@@ -1231,17 +1201,6 @@ export const premiumFeatureEntitlementTable = pgTable(
             .notNull(),
     },
     (table) => [
-        check(
-            "premium_feature_entitlement_single_subject_check",
-            sqlOr(
-                sqlAnd(isNotNull(table.userId), isNull(table.organizationId)),
-                sqlAnd(isNull(table.userId), isNotNull(table.organizationId)),
-            ),
-        ),
-        index("premium_feature_entitlement_user_idx").on(
-            table.userId,
-            table.feature,
-        ),
         index("premium_feature_entitlement_org_idx").on(
             table.organizationId,
             table.feature,
@@ -1623,12 +1582,6 @@ export const conversationTable = pgTable(
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         slugId: varchar("slug_id", { length: 8 }).notNull().unique(), // used for permanent URL
-        authorId: uuid("author_id") // "postAs"
-            .notNull()
-            .references(() => userTable.id), // the author of the conversation
-        organizationId: integer("organization_id").references(
-            () => organizationTable.id,
-        ),
         projectId: integer("project_id")
             .references(() => projectTable.id)
             .notNull(),
@@ -1701,24 +1654,6 @@ export const conversationTable = pgTable(
             table.isImporting,
             table.conversationType,
         ),
-        // Composite for user conversation timeline: filters authorId + isImporting, sorts by createdAt/id
-        index("conversation_author_timeline_idx").using(
-            "btree",
-            table.authorId,
-            table.isImporting,
-            sql`${table.createdAt} DESC`,
-            sql`${table.id} DESC`,
-        ),
-        // Composite for organization conversation timeline: filters organizationId + isImporting, sorts by createdAt/id
-        index("conversation_organization_timeline_idx")
-            .using(
-                "btree",
-                table.organizationId,
-                table.isImporting,
-                sql`${table.createdAt} DESC`,
-                sql`${table.id} DESC`,
-            )
-            .where(isNotNull(table.currentContentId)),
         index("conversation_project_id_idx").on(table.projectId),
         index("conversation_project_timeline_idx")
             .using(
