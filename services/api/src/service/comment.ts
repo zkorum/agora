@@ -83,7 +83,7 @@ import type {
 } from "@/utils/dataStructure.js";
 import { nowZeroMs } from "@/shared/util.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
-import { validateRichTextInput } from "@/shared/shared.js";
+import { htmlToCountedText, validateRichTextInput } from "@/shared/shared.js";
 import {
     getOpinionGroupAnalysisSelection,
     getSelectedOpinionGroupCandidate,
@@ -2259,6 +2259,7 @@ interface PostNewOpinionProps {
     db: PostgresJsDatabase;
     tx?: PostgresJsDatabase;
     commentBody: string;
+    opinionPlainText: string;
     conversationSlugId: string;
     didWrite: string;
     userAgent: string;
@@ -2282,6 +2283,7 @@ export async function postNewOpinion({
     db,
     tx,
     commentBody,
+    opinionPlainText,
     conversationSlugId,
     didWrite,
     userAgent,
@@ -2317,6 +2319,16 @@ export async function postNewOpinion({
     }
 
     commentBody = processUserGeneratedHtml(commentBody, true, "input");
+    const contentPlainText = htmlToCountedText(commentBody);
+    if (contentPlainText !== opinionPlainText) {
+        log.info(
+            {
+                frontendPlainTextChars: opinionPlainText.length,
+                serverPlainTextChars: contentPlainText.length,
+            },
+            "[OpinionPlainText] Frontend/backend plain text mismatch",
+        );
+    }
 
     const participationContext:
         | ParticipationContext
@@ -2388,6 +2400,7 @@ export async function postNewOpinion({
                 conversationContentId:
                     participationContext.conversationContentId,
                 content: commentBody,
+                contentPlainText,
             })
             .returning({ commentContentTableId: opinionContentTable.id });
 
@@ -2737,10 +2750,12 @@ export async function bulkInsertOpinionsFromExternalPolisConvo({
                         true,
                         "output",
                     );
+                    const contentPlainText = htmlToCountedText(commentBody);
                     return {
                         opinionId: opinionId,
                         conversationContentId: conversationContentId,
                         content: commentBody,
+                        contentPlainText,
                     };
                 } catch (error) {
                     if (error instanceof Error) {

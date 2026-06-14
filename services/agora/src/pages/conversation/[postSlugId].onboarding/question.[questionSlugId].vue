@@ -113,6 +113,7 @@
               <Editor
                 v-else
                 v-model="textValueHtml"
+                v-model:plain-text="textValuePlain"
                 :placeholder="t('writeAnswerPlaceholder')"
                 min-height="8rem"
                 :show-toolbar="true"
@@ -265,6 +266,7 @@ const nextQuestionSlugId = computed(() => {
 const selectedSingleOptionSlugId = ref<string | null>(null);
 const selectedMultiOptionSlugIds = ref<string[]>([]);
 const textValueHtml = ref("");
+const textValuePlain = ref("");
 
 watch(
   question,

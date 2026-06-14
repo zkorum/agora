@@ -1,6 +1,6 @@
 {
-  "id": "11fdb245-8b7f-4daa-9c81-d43cf472d0bb",
-  "prevId": "b4151289-cd82-4269-b057-4905bca6bdf5",
+  "id": "1254f2bd-2a71-4062-9716-6509fb402161",
+  "prevId": "11fdb245-8b7f-4daa-9c81-d43cf472d0bb",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2511,23 +2511,11 @@
           "primaryKey": false,
           "notNull": true
         },
-        "author_id": {
-          "name": "author_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "project_id": {
           "name": "project_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "current_content_id": {
           "name": "current_content_id",
@@ -2721,73 +2709,6 @@
           "method": "btree",
           "with": {}
         },
-        "conversation_author_timeline_idx": {
-          "name": "conversation_author_timeline_idx",
-          "columns": [
-            {
-              "expression": "author_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "is_importing",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "\"created_at\" DESC",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "\"id\" DESC",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "conversation_organization_timeline_idx": {
-          "name": "conversation_organization_timeline_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "is_importing",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "\"created_at\" DESC",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "\"id\" DESC",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"conversation\".\"current_content_id\" is not null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "conversation_project_id_idx": {
           "name": "conversation_project_id_idx",
           "columns": [
@@ -2839,32 +2760,6 @@
         }
       },
       "foreignKeys": {
-        "conversation_author_id_user_id_fk": {
-          "name": "conversation_author_id_user_id_fk",
-          "tableFrom": "conversation",
-          "tableTo": "user",
-          "columnsFrom": [
-            "author_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "conversation_organization_id_organization_id_fk": {
-          "name": "conversation_organization_id_organization_id_fk",
-          "tableFrom": "conversation",
-          "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
         "conversation_project_id_project_id_fk": {
           "name": "conversation_project_id_project_id_fk",
           "tableFrom": "conversation",
@@ -8125,30 +8020,24 @@
             "cycle": false
           }
         },
-        "name": {
-          "name": "name",
-          "type": "varchar(65)",
-          "primaryKey": false,
-          "notNull": true
-        },
         "slug": {
           "name": "slug",
           "type": "varchar(65)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "display_name": {
           "name": "display_name",
           "type": "varchar(65)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "directory_visibility": {
           "name": "directory_visibility",
           "type": "directory_visibility",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "auto_provisioned_for_user_id": {
           "name": "auto_provisioned_for_user_id",
@@ -8213,13 +8102,6 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "organization_name_unique": {
-          "name": "organization_name_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
-        },
         "organization_slug_unique": {
           "name": "organization_slug_unique",
           "nullsNotDistinct": false,
@@ -8548,17 +8430,11 @@
             "cycle": false
           }
         },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
         "organization_id": {
           "name": "organization_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "feature": {
           "name": "feature",
@@ -8619,27 +8495,6 @@
         }
       },
       "indexes": {
-        "premium_feature_entitlement_user_idx": {
-          "name": "premium_feature_entitlement_user_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "feature",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "premium_feature_entitlement_org_idx": {
           "name": "premium_feature_entitlement_org_idx",
           "columns": [
@@ -8663,19 +8518,6 @@
         }
       },
       "foreignKeys": {
-        "premium_feature_entitlement_user_id_user_id_fk": {
-          "name": "premium_feature_entitlement_user_id_user_id_fk",
-          "tableFrom": "premium_feature_entitlement",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
         "premium_feature_entitlement_organization_id_organization_id_fk": {
           "name": "premium_feature_entitlement_organization_id_organization_id_fk",
           "tableFrom": "premium_feature_entitlement",
@@ -8719,12 +8561,7 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {
-        "premium_feature_entitlement_single_subject_check": {
-          "name": "premium_feature_entitlement_single_subject_check",
-          "value": "((\"premium_feature_entitlement\".\"user_id\" is not null AND \"premium_feature_entitlement\".\"organization_id\" is null) OR (\"premium_feature_entitlement\".\"user_id\" is null AND \"premium_feature_entitlement\".\"organization_id\" is not null))"
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.project_organization_ownership": {
@@ -11289,91 +11126,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.user_organization_mapping": {
-      "name": "user_organization_mapping",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "user_organization_mapping_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "user_organization_mapping_user_id_user_id_fk": {
-          "name": "user_organization_mapping_user_id_user_id_fk",
-          "tableFrom": "user_organization_mapping",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "user_organization_mapping_organization_id_organization_id_fk": {
-          "name": "user_organization_mapping_organization_id_organization_id_fk",
-          "tableFrom": "user_organization_mapping",
-          "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "unique_user_orgaization_mapping": {
-          "name": "unique_user_orgaization_mapping",
-          "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "organization_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.user_spoken_languages": {
       "name": "user_spoken_languages",
       "schema": "",
@@ -11474,7 +11226,7 @@
           "name": "first_name",
           "type": "varchar(65)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "is_site_moderator": {
           "name": "is_site_moderator",

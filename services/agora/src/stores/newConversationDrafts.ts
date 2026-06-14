@@ -101,7 +101,8 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     // Check basic content changes
     const hasContentChanges =
       current.title !== emptyDraft.title ||
-      current.content !== emptyDraft.content;
+      current.content !== emptyDraft.content ||
+      current.contentPlainText !== emptyDraft.contentPlainText;
 
     // Check seed opinions changes
     const hasSeedOpinionsChanges =

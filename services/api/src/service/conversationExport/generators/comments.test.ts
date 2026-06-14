@@ -10,6 +10,7 @@ describe("buildCommentRows", () => {
                 {
                     authorId: "user-1",
                     content: "<p>Hello, <strong>world</strong></p>",
+                    contentPlainText: null,
                     createdAt: new Date("2026-01-02T03:04:05.000Z"),
                     numAgrees: 2,
                     numDisagrees: 3,

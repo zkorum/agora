@@ -190,6 +190,11 @@ import {
     type GoogleCloudCredentials,
 } from "./shared-backend/googleCloudAuth.js";
 import { nowZeroMs } from "./shared/util.js";
+import {
+    backfillConversationContentMetadata,
+    logActiveConversationBodyLimits,
+    logConversationBodyLimitCompatibility,
+} from "./service/conversationTextMaintenance.js";
 
 server.register(fastifySensible);
 server.register(fastifyAuth);
@@ -382,6 +387,8 @@ server.setErrorHandler((error: FastifyError, _request, reply) => {
 // await node.waitForPeers([Protocols.LightPush]);
 
 const db = await createDb(config, log);
+logActiveConversationBodyLimits();
+void logConversationBodyLimitCompatibility({ db });
 
 function assertMaxdiffGitHubAllowed({
     userId,
@@ -518,6 +525,7 @@ if (
         "[API] Google Cloud Translation not configured - translations disabled",
     );
 }
+void backfillConversationContentMetadata({ db, googleCloudCredentials });
 
 // Initialize Valkey (optional - for vote buffer persistence and UCAN replay protection)
 const queueValkeyRef: ValkeyRef = {
@@ -2250,6 +2258,7 @@ server.after(() => {
             const newOpinionResponse = await postNewOpinion({
                 db: db,
                 commentBody: request.body.opinionBody,
+                opinionPlainText: request.body.opinionPlainText,
                 conversationSlugId: request.body.conversationSlugId,
                 didWrite: didWrite,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
@@ -2611,6 +2620,8 @@ server.after(() => {
                 db: db,
                 conversationTitle: request.body.conversationTitle,
                 conversationBody: request.body.conversationBody ?? null,
+                conversationBodyPlainText:
+                    request.body.conversationBodyPlainText,
                 authorId: deviceStatus.userId,
                 didWrite: didWrite,
                 postAsOrganization: request.body.postAsOrganization,
@@ -2625,6 +2636,7 @@ server.after(() => {
                     request.body.preferredOpinionGroupCount,
                 externalSourceConfig: request.body.externalSourceConfig ?? null,
                 surveyConfig: request.body.surveyConfig ?? null,
+                languageSetting: request.body.languageSetting,
                 googleCloudCredentials,
             });
 
@@ -3075,31 +3087,12 @@ server.after(() => {
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
-            const parsedHeaderDisplayLanguage =
-                ZodSupportedDisplayLanguageCodes.safeParse(
-                    request.headers["accept-language"],
-                );
-            const headerDisplayLanguage: SupportedDisplayLanguageCodes =
-                parsedHeaderDisplayLanguage.success
-                    ? parsedHeaderDisplayLanguage.data
-                    : "en";
-            const displayLanguage = deviceStatus.isKnown
-                ? await getLanguagePreferences({
-                      db,
-                      userId: deviceStatus.userId,
-                      request: {
-                          currentDisplayLanguage: headerDisplayLanguage,
-                      },
-                  }).then((prefs) => prefs.displayLanguage)
-                : headerDisplayLanguage;
             return await surveyService.fetchSurveyForm({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
                 participantId: deviceStatus.isKnown
                     ? deviceStatus.userId
                     : undefined,
-                displayLanguage,
-                googleCloudCredentials,
             });
         },
     });
@@ -3194,7 +3187,6 @@ server.after(() => {
                 surveyConfig: request.body.surveyConfig,
                 now: nowZeroMs(),
                 valkey: queueValkeyRef.current,
-                googleCloudCredentials,
             });
         },
     });

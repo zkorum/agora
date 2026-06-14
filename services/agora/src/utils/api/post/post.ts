@@ -181,6 +181,7 @@ export function useBackendPostApi() {
   interface CreateNewPostProps {
     postTitle: string;
     postBody: string | undefined;
+    postBodyPlainText: string;
     postAsOrganizationName: string;
     isIndexed: boolean;
     participationMode: ParticipationMode;
@@ -321,6 +322,7 @@ export function useBackendPostApi() {
   async function createNewPost({
     postTitle,
     postBody,
+    postBodyPlainText,
     postAsOrganizationName,
     isIndexed,
     participationMode,
@@ -336,6 +338,7 @@ export function useBackendPostApi() {
       const params = Dto.createNewConversationRequest.parse({
         conversationTitle: postTitle,
         conversationBody: postBody,
+        conversationBodyPlainText: postBodyPlainText,
         isIndexed: isIndexed,
         participationMode: participationMode,
         conversationType: conversationType,

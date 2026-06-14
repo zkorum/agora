@@ -25,7 +25,11 @@ import type {
     CreateNewConversationResponse,
     OpenConversationResponse,
 } from "@/shared/types/dto.js";
-import { toUnionUndefined, validateRichTextInput } from "@/shared/shared.js";
+import {
+    htmlToCountedText,
+    toUnionUndefined,
+    validateRichTextInput,
+} from "@/shared/shared.js";
 import { postNewOpinion } from "./comment.js";
 import { createMaxdiffItem } from "./maxdiffItem.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
@@ -34,7 +38,6 @@ import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js
 import {
     getSurveyGateSummary,
     setSurveyConfigForConversation,
-    warmSurveyTranslationsForConversation,
 } from "@/service/survey.js";
 import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
 import { createConversationViewSnapshotsFromCurrentState } from "@/service/conversationViewSnapshot.js";
@@ -44,6 +47,11 @@ import {
     requireProjectCapability,
     resolveConversationCreateTarget,
 } from "@/service/projectAccess.js";
+import {
+    resolveConversationLanguageSetting,
+    upsertConversationLanguageSetting,
+} from "@/service/conversationLanguage.js";
+import type { ConversationLanguageSettingInput } from "@/shared/types/zod.js";
 
 const MAX_CONVERSATION_SEED_ITEMS = 50;
 
@@ -51,6 +59,7 @@ interface CreateNewPostProps {
     db: PostgresDatabase;
     conversationTitle: string;
     conversationBody: string | null;
+    conversationBodyPlainText: string;
     authorId: string;
     didWrite: string;
     postAsOrganization?: string;
@@ -64,6 +73,7 @@ interface CreateNewPostProps {
     preferredOpinionGroupCount: PreferredOpinionGroupCount;
     externalSourceConfig?: ExternalSourceConfig | null;
     surveyConfig?: SurveyConfig | null;
+    languageSetting?: ConversationLanguageSettingInput;
     googleCloudCredentials?: GoogleCloudCredentials;
     importUrl?: string;
     importConversationUrl?: string;
@@ -77,6 +87,7 @@ export async function createNewPost({
     db,
     conversationTitle,
     conversationBody,
+    conversationBodyPlainText,
     authorId,
     didWrite,
     postAsOrganization,
@@ -90,6 +101,7 @@ export async function createNewPost({
     preferredOpinionGroupCount,
     externalSourceConfig,
     surveyConfig,
+    languageSetting,
     googleCloudCredentials,
     importUrl,
     importConversationUrl,
@@ -110,6 +122,7 @@ export async function createNewPost({
     });
     const conversationSlugId = generateRandomSlugId();
 
+    let bodyPlainText = "";
     if (conversationBody != null) {
         try {
             conversationBody = processUserGeneratedHtml(
@@ -140,6 +153,16 @@ export async function createNewPost({
             true,
             "input",
         );
+        bodyPlainText = htmlToCountedText(conversationBody);
+        if (bodyPlainText !== conversationBodyPlainText) {
+            log.info(
+                {
+                    frontendPlainTextChars: conversationBodyPlainText.length,
+                    serverPlainTextChars: bodyPlainText.length,
+                },
+                "[ConversationPlainText] Frontend/backend plain text mismatch on create",
+            );
+        }
     }
 
     for (const seedOpinion of seedOpinionList) {
@@ -157,7 +180,15 @@ export async function createNewPost({
         }
     }
 
-    const { conversationId } = await db.transaction(
+    const resolvedLanguageSetting = await resolveConversationLanguageSetting({
+        request: languageSetting,
+        existing: undefined,
+        conversationTitle,
+        bodyPlainText,
+        googleCloudCredentials,
+    });
+
+    await db.transaction(
         async (tx) => {
             const now = new Date();
             const insertPostResponse = await tx
@@ -194,6 +225,11 @@ export async function createNewPost({
                     conversationId: insertedConversationId,
                     title: conversationTitle,
                     body: conversationBody,
+                    bodyPlainText,
+                    sourceLanguageCode:
+                        resolvedLanguageSetting.detectedRawLanguageCode,
+                    sourceLanguageConfidence:
+                        resolvedLanguageSetting.detectionConfidence,
                 })
                 .returning({
                     conversationContentId: conversationContentTable.id,
@@ -208,6 +244,13 @@ export async function createNewPost({
                     currentContentId: insertedConversationContentId,
                 })
                 .where(eq(conversationTable.id, insertedConversationId));
+
+            await upsertConversationLanguageSetting({
+                db: tx,
+                conversationId: insertedConversationId,
+                setting: resolvedLanguageSetting,
+                now,
+            });
 
             if (seedOpinionList.length > 0) {
                 if (conversationType === "maxdiff") {
@@ -241,6 +284,9 @@ export async function createNewPost({
                             db,
                             tx,
                             commentBody: seedOpinionText,
+                            opinionPlainText: htmlToCountedText(
+                                seedOpinionText,
+                            ),
                             conversationSlugId,
                             didWrite,
                             userAgent: "Seed Opinion Creation",
@@ -286,24 +332,9 @@ export async function createNewPost({
                 viewReason: "conversation_content_updated",
             });
 
-            return {
-                conversationId: insertedConversationId,
-            };
+            return undefined;
         },
     );
-
-    if (surveyConfig !== undefined && surveyConfig !== null) {
-        void warmSurveyTranslationsForConversation({
-            db,
-            conversationId,
-            googleCloudCredentials,
-        }).catch((error: unknown) => {
-            log.warn(
-                error,
-                `[Survey Translation] Async warm-up failed after creating conversation ${conversationSlugId}`,
-            );
-        });
-    }
 
     return {
         success: true,

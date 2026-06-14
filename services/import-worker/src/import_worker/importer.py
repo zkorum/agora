@@ -17,6 +17,8 @@ from import_worker.generated_models import (
     Conversation,
     ConversationContent,
     ConversationImport,
+    ConversationLanguageSetting,
+    ConversationLanguageSettingMode,
     ConversationViewSnapshot,
     ConversationViewSnapshotReasonEnum,
     Notification,
@@ -34,7 +36,7 @@ from import_worker.generated_shared_types import (
     MAX_LENGTH_OPINION_HTML_OUTPUT,
     MAX_LENGTH_TITLE,
 )
-from import_worker.html import process_user_generated_html
+from import_worker.html import html_to_counted_text, process_user_generated_html
 from import_worker.ids import generate_random_slug_id, generate_uuid
 from import_worker.import_models import ImportPolisResults
 from import_worker.polis_url import extract_polis_id_from_url
@@ -269,6 +271,7 @@ def _create_conversation(
         ellipsis=" [...].",
     )
     body = process_user_generated_html(body, enable_links=True, mode="input")
+    body_plain_text = html_to_counted_text(body)
     conversation_slug_id = generate_random_slug_id()
     import_url = request.polis_url if request.type == "url" else None
 
@@ -305,7 +308,12 @@ def _create_conversation(
 
     content_row = session.execute(
         sqlalchemy_insert(ConversationContent)
-        .values(conversation_id=conversation_id, title=title, body=body)
+        .values(
+            conversation_id=conversation_id,
+            title=title,
+            body=body,
+            body_plain_text=body_plain_text,
+        )
         .returning(ConversationContent.id),
     ).first()
     if content_row is None:
@@ -316,6 +324,19 @@ def _create_conversation(
         update(Conversation)
         .where(Conversation.id == conversation_id)
         .values(current_content_id=conversation_content_id),
+    )
+    session.execute(
+        sqlalchemy_insert(ConversationLanguageSetting).values(
+            conversation_id=conversation_id,
+            mode=ConversationLanguageSettingMode.auto,
+            language_code=None,
+            detected_language_code=None,
+            detected_raw_language_code=None,
+            detection_confidence=None,
+            detected_from_corpus_hash=None,
+            created_at=now,
+            updated_at=now,
+        ),
     )
     session.commit()
     return ConversationIds(
@@ -446,22 +467,25 @@ def _insert_opinions(
         statement_id_per_opinion_slug_id[row.slug_id]: row.id for row in inserted_opinion_rows
     }
 
-    content_values = [
-        {
-            "opinion_id": opinion_id_per_statement_id[comment.statement_id],
-            "conversation_content_id": conversation_ids.conversation_content_id,
-            "content": process_user_generated_html(
-                _truncate_with_ellipsis(
-                    comment.txt,
-                    max_length=MAX_LENGTH_OPINION_HTML_OUTPUT,
-                    ellipsis=" [...]",
-                ),
-                enable_links=True,
-                mode="output",
+    content_values: list[dict[str, Any]] = []
+    for comment in imported.comments_data:
+        content = process_user_generated_html(
+            _truncate_with_ellipsis(
+                comment.txt,
+                max_length=MAX_LENGTH_OPINION_HTML_OUTPUT,
+                ellipsis=" [...]",
             ),
-        }
-        for comment in imported.comments_data
-    ]
+            enable_links=True,
+            mode="output",
+        )
+        content_values.append(
+            {
+                "opinion_id": opinion_id_per_statement_id[comment.statement_id],
+                "conversation_content_id": conversation_ids.conversation_content_id,
+                "content": content,
+                "content_plain_text": html_to_counted_text(content),
+            },
+        )
     raw_inserted_content_rows: object = (
         session.execute(
             sqlalchemy_insert(OpinionContent)

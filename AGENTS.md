@@ -415,13 +415,18 @@ server.route({
 });
 ```
 
-### Background Jobs (pg-boss)
+### Background Jobs and Queues
 
-Math-updater uses PostgreSQL-based job queue:
+Do not use pg-boss. Older docs may mention it, but it is not part of the current target architecture.
 
-- **Job types**: `scan-conversations`, `update-conversation-math`
-- **Singleton pattern**: Jobs deduplicated with `singletonSeconds`
-- **Known issue**: Early queue locking prevents duplicate job bug (see `services/math-updater/src/index.ts`)
+Current queue patterns:
+
+- **Import queue**: API pushes import requests to Valkey list `queue:imports` with `RPUSH`; `services/import-worker` consumes batches with `LPOP`. Delivery is at-most-once, and `conversation_import` remains the user-facing source of truth. Import-worker pushes notification events to `queue:imports:events` for API SSE fanout.
+- **Opinion-group analysis queue**: API/shared-backend scheduling and import-worker add dirty conversations to Valkey sorted set `analysis:dirty` with `ZADD`; `services/math-updater` consumes with `ZPOPMIN`, requeues on retryable failures or shutdown, and uses Postgres analysis work-state rows with leases for durable computation/AI-description work coordination.
+- **Solidago scoring queue**: API marks conversations dirty in Valkey sorted set `scoring:dirty:solidago`; `services/scoring-worker` consumes with `ZPOPMIN` lightest-first and re-adds items on retryable failures or shutdown.
+- **AI description and translation retries**: Python workers use Postgres work tables with `lease_owner`, `lease_token`, and `lease_expires_at`; workers claim rows with database leases, heartbeat active leases, recover expired leases, and retry according to persisted work state.
+
+For new durable background work, prefer a Postgres table that is both the job source of truth and result/progress record, with explicit status, retry metadata, and lease/claim fields. Valkey is appropriate for dirty-set wakeups, rate limits, and ephemeral buffers, but correctness should not depend on a lossy queue unless a durable database row is the source of truth.
 
 ### Authentication
 

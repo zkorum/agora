@@ -227,6 +227,13 @@ function createConversation({
       isClosed: false,
       isEdited: false,
       moderation: { status: "unmoderated" },
+      languageSetting: {
+        mode: "auto",
+        languageCode: null,
+        detectedLanguageCode: null,
+        detectedRawLanguageCode: null,
+        detectionConfidence: null,
+      },
       externalSourceConfig: null,
     },
     payload: {

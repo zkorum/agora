@@ -9,7 +9,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, DateTime, Integer, String, Text, Uuid
+from sqlalchemy import JSON, Boolean, DateTime, Float, Integer, String, Text, Uuid
 from sqlalchemy import Enum as SaEnum
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -42,6 +42,11 @@ class ImportFailureReasonEnum(StrEnum):
     timeout = "timeout"
     server_restart = "server_restart"
     invalid_data_format = "invalid_data_format"
+
+
+class ConversationLanguageSettingMode(StrEnum):
+    auto = "auto"
+    manual = "manual"
 
 
 class ParticipationMode(StrEnum):
@@ -156,6 +161,9 @@ class ConversationContent(Base):
     conversation_id: Mapped[int] = mapped_column(Integer)
     title: Mapped[str] = mapped_column(String(140))
     body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    body_plain_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
@@ -174,6 +182,23 @@ class ConversationImport(Base):
         nullable=True,
     )
     csv_file_metadata: Mapped[Any | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class ConversationLanguageSetting(Base):
+    __tablename__ = "conversation_language_setting"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    mode: Mapped[ConversationLanguageSettingMode] = mapped_column(
+        SaEnum(ConversationLanguageSettingMode, values_callable=_enum_values, native_enum=False),
+    )
+    language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    detected_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    detected_raw_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    detection_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    detected_from_corpus_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
@@ -277,6 +302,9 @@ class OpinionContent(Base):
     opinion_id: Mapped[int] = mapped_column(Integer)
     conversation_content_id: Mapped[int] = mapped_column(Integer)
     content: Mapped[str] = mapped_column(String(3000))
+    content_plain_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 

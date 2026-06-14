@@ -594,6 +594,10 @@ export const conversationTypeEnum = pgEnum("conversation_type", [
     "polis",
     "maxdiff",
 ]);
+export const conversationLanguageSettingModeEnum = pgEnum(
+    "conversation_language_setting_mode",
+    ["auto", "manual"],
+);
 export const premiumFeatureEnum = pgEnum("premium_feature", [
     "survey",
     "event_ticket",
@@ -1567,6 +1571,9 @@ export const conversationContentTable = pgTable("conversation_content", {
         .notNull(),
     title: varchar("title", { length: MAX_LENGTH_TITLE }).notNull(),
     body: text("body"),
+    bodyPlainText: text("body_plain_text"),
+    sourceLanguageCode: varchar("source_language_code", { length: 35 }),
+    sourceLanguageConfidence: real("source_language_confidence"),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -1666,6 +1673,48 @@ export const conversationTable = pgTable(
         check(
             "conversation_preferred_opinion_group_count_check",
             sql`${table.preferredOpinionGroupCount} IS NULL OR ${table.preferredOpinionGroupCount} >= 2`,
+        ),
+    ],
+);
+
+/** @service api, shared-analysis-worker, import-worker */
+export const conversationLanguageSettingTable = pgTable(
+    "conversation_language_setting",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        conversationId: integer("conversation_id")
+            .notNull()
+            .references(() => conversationTable.id),
+        mode: conversationLanguageSettingModeEnum("mode").notNull(),
+        languageCode: varchar("language_code", { length: 35 }),
+        detectedLanguageCode: varchar("detected_language_code", { length: 35 }),
+        detectedRawLanguageCode: varchar("detected_raw_language_code", {
+            length: 35,
+        }),
+        detectionConfidence: real("detection_confidence"),
+        detectedFromCorpusHash: varchar("detected_from_corpus_hash", {
+            length: 64,
+        }),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("conversation_language_setting_conversation_unique").on(
+            table.conversationId,
+        ),
+        check(
+            "conversation_language_setting_manual_language_check",
+            sql`(${table.mode} <> 'manual') OR (${table.languageCode} IS NOT NULL)`,
         ),
     ],
 );
@@ -2144,6 +2193,9 @@ export const opinionContentTable = pgTable("opinion_content", {
         .references(() => conversationContentTable.id)
         .notNull(), // used to cascade delete all opinionContent when deleting a conversation(content)
     content: varchar("content", { length: MAX_LENGTH_OPINION_HTML }).notNull(),
+    contentPlainText: text("content_plain_text"),
+    sourceLanguageCode: varchar("source_language_code", { length: 35 }),
+    sourceLanguageConfidence: real("source_language_confidence"),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,

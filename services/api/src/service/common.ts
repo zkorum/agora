@@ -8,6 +8,7 @@ import {
     organizationTable,
     maxdiffItemTable,
     projectOrganizationOwnershipTable,
+    conversationLanguageSettingTable,
 } from "@/shared-backend/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type {
@@ -41,6 +42,10 @@ import { imagePathToUrl } from "@/utils/organizationLogic.js";
 import { getConversationEngagementScore } from "./recommendationSystem.js";
 import { log } from "@/app.js";
 import { alias } from "drizzle-orm/pg-core";
+import {
+    conversationLanguageSettingToOutput,
+    normalizeConversationLanguageSettingRow,
+} from "./conversationLanguage.js";
 
 export function useCommonUser() {
     interface GetUserIdFromUsernameProps {
@@ -261,6 +266,16 @@ export function useCommonPost() {
                 isEdited: conversationTable.isEdited,
                 requiresEventTicket: conversationTable.requiresEventTicket,
                 externalSourceConfig: conversationTable.externalSourceConfig,
+                languageSettingMode: conversationLanguageSettingTable.mode,
+                languageCode: conversationLanguageSettingTable.languageCode,
+                detectedLanguageCode:
+                    conversationLanguageSettingTable.detectedLanguageCode,
+                detectedRawLanguageCode:
+                    conversationLanguageSettingTable.detectedRawLanguageCode,
+                detectionConfidence:
+                    conversationLanguageSettingTable.detectionConfidence,
+                detectedFromCorpusHash:
+                    conversationLanguageSettingTable.detectedFromCorpusHash,
                 // import metadata
                 importUrl: conversationTable.importUrl,
                 importConversationUrl: conversationTable.importConversationUrl,
@@ -309,6 +324,13 @@ export function useCommonPost() {
                 conversationModerationTable,
                 eq(
                     conversationModerationTable.conversationId,
+                    conversationTable.id,
+                ),
+            )
+            .leftJoin(
+                conversationLanguageSettingTable,
+                eq(
+                    conversationLanguageSettingTable.conversationId,
                     conversationTable.id,
                 ),
             )
@@ -415,6 +437,24 @@ export function useCommonPost() {
                 isIndexed: postItem.isIndexed,
                 aiLabelingEnabled: postItem.aiLabelingEnabled,
                 preferredOpinionGroupCount: postItem.preferredOpinionGroupCount,
+                languageSetting: conversationLanguageSettingToOutput({
+                    setting: normalizeConversationLanguageSettingRow(
+                        postItem.languageSettingMode === null
+                            ? undefined
+                            : {
+                                  mode: postItem.languageSettingMode,
+                                  languageCode: postItem.languageCode,
+                                  detectedLanguageCode:
+                                      postItem.detectedLanguageCode,
+                                  detectedRawLanguageCode:
+                                      postItem.detectedRawLanguageCode,
+                                  detectionConfidence:
+                                      postItem.detectionConfidence,
+                                  detectedFromCorpusHash:
+                                      postItem.detectedFromCorpusHash,
+                              },
+                    ),
+                }),
                 participationMode: postItem.participationMode,
                 conversationType: postItem.conversationType,
                 isClosed: postItem.isClosed,

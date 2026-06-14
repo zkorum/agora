@@ -51,6 +51,7 @@ export function usePublishConversationDraft() {
         postTitle: conversationDraft.title,
         postBody:
           conversationDraft.content === "" ? undefined : conversationDraft.content,
+        postBodyPlainText: conversationDraft.contentPlainText,
         postAsOrganizationName: conversationDraft.postAs.postAsOrganization
           ? conversationDraft.postAs.organizationName
           : "",

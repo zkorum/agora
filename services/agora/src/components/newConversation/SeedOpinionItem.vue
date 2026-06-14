@@ -16,6 +16,7 @@
 
             <Editor
               ref="editorRef"
+              v-model:plain-text="plainText"
               :model-value="modelValue"
               class="textarea-border-style"
               :placeholder="t('inputTextPlaceholder')"
@@ -105,6 +106,7 @@ const { t } = useComponentI18n<SeedOpinionItemTranslations>(
 
 const editorRef = ref<InstanceType<typeof Editor>>();
 const showDeleteConfirm = ref(false);
+const plainText = ref("");
 
 function onCharacterCountUpdate(count: number) {
   emit("update:characterCount", count);

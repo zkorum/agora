@@ -7,6 +7,7 @@ import {
     zodAnalysisOpinionItem,
     zodConversationTitle,
     zodConversationBodyInput,
+    zodConversationBodyPlainTextInput,
     zodConversationBodyOutput,
     zodOpinionContentInput,
     zodVotingOption,
@@ -46,6 +47,8 @@ import {
     zodRichTextValidationFailureReason,
     zodMaxdiffComparison,
     zodConversationType,
+    zodConversationLanguageSettingInput,
+    zodConversationLanguageSettingOutput,
     zodConversationViewSnapshotCheckpointReason,
     zodMaxdiffLifecycleStatus,
     zodExternalSourceConfig,
@@ -375,10 +378,12 @@ export class Dto {
         .object({
             conversationTitle: zodConversationTitle,
             conversationBody: zodConversationBodyInput,
+            conversationBodyPlainText: zodConversationBodyPlainTextInput,
             postAsOrganization: z.string().optional(),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
             conversationType: zodConversationType,
+            languageSetting: zodConversationLanguageSettingInput.optional(),
             seedOpinionList: z.array(zodOpinionContentInput).max(50),
             requiresEventTicket: zodEventSlug.optional(),
             aiLabelingEnabled: z.boolean().default(true),
@@ -589,6 +594,7 @@ export class Dto {
                 conversationSlugId: zodSlugId,
                 conversationTitle: zodConversationTitle,
                 conversationBody: zodConversationBodyOutput,
+                languageSetting: zodConversationLanguageSettingOutput,
                 isIndexed: z.boolean(),
                 participationMode: zodParticipationMode,
                 requiresEventTicket: zodEventSlug.optional(),
@@ -614,8 +620,10 @@ export class Dto {
             conversationSlugId: zodSlugId,
             conversationTitle: zodConversationTitle,
             conversationBody: zodConversationBodyInput,
+            conversationBodyPlainText: zodConversationBodyPlainTextInput,
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
+            languageSetting: zodConversationLanguageSettingInput.optional(),
             requiresEventTicket: zodEventSlug.optional(),
             aiLabelingEnabled: z.boolean().optional(),
             preferredOpinionGroupCount:
@@ -774,6 +782,7 @@ export class Dto {
         .object({
             conversationSlugId: z.string(),
             opinionBody: zodOpinionContentInput,
+            opinionPlainText: z.string(),
         })
         .strict();
     static createOpinionResponse = z.discriminatedUnion("success", [
@@ -1535,6 +1544,7 @@ export type CheckPremiumFeatureAccessResponse = z.infer<
     typeof Dto.checkPremiumFeatureAccessResponse
 >;
 export type CreateCommentResponse = z.infer<typeof Dto.createOpinionResponse>;
+export type CreateOpinionRequest = z.infer<typeof Dto.createOpinionRequest>;
 export type FetchUserVotesForPostSlugIdsResponse = z.infer<
     typeof Dto.getUserVotesByConversationsResponse
 >;

@@ -9,7 +9,7 @@ import {
     MAX_LENGTH_USERNAME,
     MAX_LENGTH_BODY,
     MAX_LENGTH_BODY_HTML,
-    MAX_LENGTH_CONVERSATION_BODY_HTML,
+    LEGACY_MAX_LENGTH_CONVERSATION_BODY_HTML_OUTPUT,
     MAX_LENGTH_USER_REPORT_EXPLANATION,
     MAX_LENGTH_OPINION_HTML_OUTPUT,
     normalizeRichTextEmptyLines,
@@ -49,6 +49,28 @@ export const zodParticipationMode = z.enum([
     "guest",
 ]);
 export const zodConversationType = z.enum(["polis", "maxdiff"]);
+export const zodConversationLanguageSettingMode = z.enum(["auto", "manual"]);
+export const zodConversationLanguageSettingInput = z.discriminatedUnion(
+    "mode",
+    [
+        z.object({ mode: z.literal("auto") }).strict(),
+        z
+            .object({
+                mode: z.literal("manual"),
+                languageCode: ZodSupportedDisplayLanguageCodes,
+            })
+            .strict(),
+    ],
+);
+export const zodConversationLanguageSettingOutput = z
+    .object({
+        mode: zodConversationLanguageSettingMode,
+        languageCode: ZodSupportedDisplayLanguageCodes.nullable(),
+        detectedLanguageCode: ZodSupportedDisplayLanguageCodes.nullable(),
+        detectedRawLanguageCode: z.string().nullable(),
+        detectionConfidence: z.number().nullable(),
+    })
+    .strict();
 export const zodConversationViewSnapshotCheckpointReason = z.enum([
     "first_displayable_analysis",
     "first_group_count_available",
@@ -187,12 +209,13 @@ function normalizeRichTextInput(val: unknown): unknown {
 export const zodConversationBodyInput = z
     .preprocess(normalizeRichTextInput, z.string())
     .optional();
+export const zodConversationBodyPlainTextInput = z.string();
 
 // For database/API output - validates HTML string length only (after linkification may add extra chars)
 export const zodConversationBodyOutput = z
     .string()
-    .max(MAX_LENGTH_CONVERSATION_BODY_HTML, {
-        message: `Raw HTML content exceeds maximum length of ${String(MAX_LENGTH_CONVERSATION_BODY_HTML)} characters`,
+    .max(LEGACY_MAX_LENGTH_CONVERSATION_BODY_HTML_OUTPUT, {
+        message: `Raw HTML content exceeds maximum length of ${String(LEGACY_MAX_LENGTH_CONVERSATION_BODY_HTML_OUTPUT)} characters`,
     })
     .optional();
 export const zodConversationDataWithResult = z
@@ -832,6 +855,7 @@ export const zodConversationMetadata = z
         isIndexed: z.boolean(),
         aiLabelingEnabled: z.boolean(),
         preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
+        languageSetting: zodConversationLanguageSettingOutput,
         isClosed: z.boolean(),
         isEdited: z.boolean(),
         organization: zodOrganization.optional(),
@@ -863,6 +887,7 @@ export const zodConversationMetadataWithId = z
         isIndexed: z.boolean(),
         aiLabelingEnabled: z.boolean(),
         preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
+        languageSetting: zodConversationLanguageSettingOutput,
         isClosed: z.boolean(),
         isEdited: z.boolean(),
         organization: zodOrganization.optional(),
@@ -1622,6 +1647,12 @@ export type PolisClusters = z.infer<typeof zodPolisClusters>;
 export type PolisClustersMetadata = z.infer<typeof zodPolisClustersMetadata>;
 export type ClusterMetadata = z.infer<typeof zodClusterMetadata>;
 export type ParticipationMode = z.infer<typeof zodParticipationMode>;
+export type ConversationLanguageSettingInput = z.infer<
+    typeof zodConversationLanguageSettingInput
+>;
+export type ConversationLanguageSettingOutput = z.infer<
+    typeof zodConversationLanguageSettingOutput
+>;
 export type EventSlug = z.infer<typeof zodEventSlug>;
 export type ExportStatus = z.infer<typeof zodExportStatus>;
 export type ExportFailureReason = z.infer<typeof zodExportFailureReason>;

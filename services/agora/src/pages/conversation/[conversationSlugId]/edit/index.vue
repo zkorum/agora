@@ -78,6 +78,7 @@
 
           <Editor
             v-model="title"
+            v-model:plain-text="titlePlainText"
             :placeholder="t('titlePlaceholder')"
             :show-toolbar="false"
             :single-line="true"
@@ -95,6 +96,7 @@
           <div class="editor-style">
             <Editor
               v-model="content"
+              v-model:plain-text="contentPlainText"
               :placeholder="t('bodyPlaceholder')"
               min-height="5rem"
               :show-toolbar="true"
@@ -172,6 +174,7 @@ const isDataLoaded = ref(false);
 const loadError = ref(false);
 const errorTitle = ref("");
 const errorMessage = ref("");
+const titlePlainText = ref("");
 
 type EditPermissions = Extract<
   GetConversationForEditResponse,
@@ -282,6 +285,7 @@ const hasUnsavedChanges = computed(() => {
 const {
   title,
   content,
+  contentPlainText,
   isPrivate,
   participationMode,
   requiresEventTicket,
@@ -347,6 +351,7 @@ async function performSave(): Promise<void> {
       conversationSlugId: conversationSlugId,
       conversationTitle: title.value,
       conversationBody: content.value,
+      conversationBodyPlainText: contentPlainText.value,
       isIndexed: !isPrivate.value,
       participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
@@ -469,6 +474,7 @@ onMounted(async () => {
     initializeFromData({
       title: response.conversationTitle,
       content: response.conversationBody ?? "",
+      contentPlainText: "",
       isPrivate: !response.isIndexed,
       participationMode: response.participationMode,
       requiresEventTicket: response.requiresEventTicket,

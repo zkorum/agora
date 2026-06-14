@@ -5,6 +5,7 @@
         v-if="isEditorMounted"
         ref="editorRef"
         v-model="opinionBody"
+        v-model:plain-text="opinionPlainText"
         :placeholder="innerFocus ? t('placeholderExpanded') : t('placeholder')"
         :min-height="innerFocus ? '6rem' : '2rem'"
         :show-toolbar="innerFocus"
@@ -288,6 +289,7 @@ if (newOpinionIntention.enabled) {
 }
 
 const opinionBody = ref(newOpinionIntention.opinionBody);
+const opinionPlainText = ref("");
 
 const showLoginDialog = ref(false);
 const showGuidelinesDialog = ref(false);
@@ -529,6 +531,7 @@ async function submitPostClicked() {
   try {
     const response = await createNewComment(
       opinionBody.value,
+      opinionPlainText.value,
       props.postSlugId
     );
 

@@ -55,6 +55,8 @@ export interface ConversationDraft {
   title: string;
   /** The main content/body text of the conversation post */
   content: string;
+  /** The visible plain text emitted by the rich-text editor for the body */
+  contentPlainText: string;
   /** Initial opinion responses to seed the conversation */
   seedOpinions: string[];
 
@@ -167,6 +169,7 @@ export interface ConversationFormState {
   // Basic content
   title: string;
   content: string;
+  contentPlainText: string;
 
   // Privacy settings
   isPrivate: boolean;

@@ -412,6 +412,42 @@ export function parseDisplayLanguage(
     return "en";
 }
 
+export function parseSupportedDisplayLanguageOrUndefined(
+    code: string,
+): SupportedDisplayLanguageCodes | undefined {
+    const trimmedCode = code.trim();
+    if (trimmedCode.length === 0) return undefined;
+
+    const exactMatch = ZodSupportedDisplayLanguageCodes.safeParse(trimmedCode);
+    if (exactMatch.success) return exactMatch.data;
+
+    let normalizedCode = trimmedCode;
+    try {
+        normalizedCode = Intl.getCanonicalLocales(trimmedCode)[0] ?? trimmedCode;
+    } catch {
+        normalizedCode = trimmedCode;
+    }
+
+    const normalizedExactMatch =
+        ZodSupportedDisplayLanguageCodes.safeParse(normalizedCode);
+    if (normalizedExactMatch.success) return normalizedExactMatch.data;
+
+    if (
+        normalizedCode === "zh-HK" ||
+        normalizedCode === "zh-TW" ||
+        normalizedCode === "zh-MO"
+    ) {
+        return "zh-Hant";
+    }
+    if (normalizedCode.startsWith("zh")) return "zh-Hans";
+
+    const primary = normalizedCode.split("-")[0];
+    const primaryMatch = ZodSupportedDisplayLanguageCodes.safeParse(primary);
+    if (primaryMatch.success) return primaryMatch.data;
+
+    return undefined;
+}
+
 export function parseSpokenLanguage(
     code: string,
 ): SupportedSpokenLanguageCodes {
