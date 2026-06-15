@@ -16,8 +16,8 @@
     "author": "ZKorum SAS <hello@zkorum.com>",
     "license": "MPL-2.0",
     "dependencies": {
-        "libphonenumber-js": "^1.12.41",
-        "sanitize-html": "^2.17.4",
+        "libphonenumber-js": "^1.13.6",
+        "sanitize-html": "^2.17.5",
         "uint8arrays": "^5.1.0",
         "zod": "^4.3.6"
     },
