@@ -2,6 +2,7 @@ all: dev
 
 LOG_RUNNER := node scripts/dev-log-runner.mjs
 LOAD_TEST_CONVERSATIONS := $(or $(CONVERSATION_SLUG_IDS),$(conversations))
+CONTENT_TRANSLATION_WORKER_DEV_SCENARIO ?= simulated-success
 
 PYTHON_TYPECHECK_PATTERNS := \
 	services/shared-analysis-worker/src/**/*.py \
@@ -201,7 +202,7 @@ dev-description-translation-retry-worker-scenario-raw:
 dev-description-translation-worker: dev-description-translation-retry-worker
 
 dev-content-translation-worker:
-	$(LOG_RUNNER) --service content-translation-worker -- $(MAKE) dev-content-translation-worker-raw
+	$(LOG_RUNNER) --service content-translation-worker -- $(MAKE) dev-content-translation-worker-scenario-raw SCENARIO="$(CONTENT_TRANSLATION_WORKER_DEV_SCENARIO)"
 
 dev-content-translation-worker-raw:
 	cd services/content-translation-worker && PYTHONUNBUFFERED=1 uv run python -m content_translation_worker.worker
@@ -210,7 +211,7 @@ dev-content-translation-worker-scenario:
 	$(LOG_RUNNER) --service content-translation-worker -- $(MAKE) dev-content-translation-worker-scenario-raw
 
 dev-content-translation-worker-scenario-raw:
-	scripts/run-worker-scenario.sh content-translation-worker "$(SCENARIO)"
+	scripts/run-worker-scenario.sh content-translation-worker "$(or $(SCENARIO),$(CONTENT_TRANSLATION_WORKER_DEV_SCENARIO))"
 
 dev-import-worker:
 	$(LOG_RUNNER) --service import-worker -- $(MAKE) dev-import-worker-raw
