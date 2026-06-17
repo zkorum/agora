@@ -29,6 +29,7 @@ case "$worker" in
     ;;
   content-translation-worker)
     service_dir="$repo_root/services/content-translation-worker"
+    shared_env_file="$repo_root/services/api/.env"
     scenario_file="$service_dir/scenarios/env.$scenario"
     module="content_translation_worker.worker"
     ;;
@@ -46,6 +47,9 @@ fi
 
 cd "$service_dir"
 set -a
+if [ -n "${shared_env_file:-}" ] && [ -f "$shared_env_file" ]; then
+  . "$shared_env_file"
+fi
 if [ -f .env ]; then
   . ./.env
 fi
