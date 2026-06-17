@@ -281,7 +281,7 @@ pnpm db:undo
 
 ### Migration Authoring Rules
 
-- For schema changes, edit only `services/shared-backend/src/schema.ts` and use `pnpm db:*` commands to generate/apply migrations. Do not manually edit generated Drizzle SQL files or Flyway SQL files for normal schema changes.
+- For schema changes, edit only `services/api/src/shared-backend/schema.ts` and use `pnpm db:*` commands to generate/apply migrations. Do not manually edit generated Drizzle SQL files or Flyway SQL files for normal schema changes.
 - If a migration command is interactive or destructive, such as dropping/regenerating migrations, ask the user to run it or explicitly approve it first.
 - Creating Flyway SQL by hand is allowed for data backfills only. Backfill means changing existing data, not changing schema structure.
 - Hand-written Flyway SQL is also allowed for database features not representable in `schema.ts`, such as PostgreSQL functions/triggers/NOTIFY behavior.
@@ -326,13 +326,13 @@ Shared code is distributed via **rsync** (not npm linking) because Drizzle ORM r
 
 - `services/shared/` → synced to TypeScript services and used for generated Python constants
 - `services/shared-app-api/` → synced to frontend + API (UCAN, auth)
-- `services/shared-backend/` → synced to API and used for generated Python SQLAlchemy models
+- `services/api/src/shared-backend/schema.ts` → source schema for API and generated Python SQLAlchemy models
 
 Files generated from shared directories have warning comments at the top. Always edit source files in `services/shared*/src/`, never the synced copies.
 
 ### Database Layer
 
-- **ORM**: Drizzle with TypeScript schema in `services/shared-backend/src/schema.ts`
+- **ORM**: Drizzle with TypeScript schema in `services/api/src/shared-backend/schema.ts`
 - **Read replicas**: Automatic routing via `withReplicas()` - SELECTs use replica, writes use primary
 - **Migrations**: Flyway-based versioned migrations in `services/api/database/flyway/`
 - **Connection**: Supports both direct connection strings and AWS Secrets Manager
@@ -444,8 +444,8 @@ Authorization headers built via `buildAuthorizationHeader(encodedUcan)` in front
 - `services/app/vite.config.ts`: Vite plugins (Tailwind, SvelteKit)
 - `services/app/svelte.config.js`: SvelteKit adapter configuration
 - `services/api/src/index.ts`: Main backend entry point, route registration
-- `services/shared-backend/src/schema.ts`: Database schema (all tables)
-- `services/shared-backend/src/db.ts`: Database connection with read replica routing
+- `services/api/src/shared-backend/schema.ts`: Database schema (all tables)
+- `services/api/src/shared-backend/db.ts`: Database connection with read replica routing
 - `services/agora/src/stores/`: Pinia state management
 - `services/agora/src/utils/api/`: Frontend API wrapper layer
 - `services/math-updater/src/index.ts`: Background job worker
@@ -813,12 +813,11 @@ The frontend has a dedicated component testing page at `/dev/component-testing` 
 
 ### Adding a Database Table
 
-1. Edit `services/shared-backend/src/schema.ts` to add table definition
-2. Run `cd services/shared-backend && pnpm run sync` to distribute changes
-3. Run `cd services/api && pnpm db:generate` to create migration
-4. Review generated SQL in `services/api/drizzle/`
-5. Run `pnpm db:migrate` to apply migration
-6. Import new table in service code: `import { newTable } from '@/shared-backend/schema'`
+1. Edit `services/api/src/shared-backend/schema.ts` to add table definition
+2. Run `cd services/api && pnpm db:generate` to create migration
+3. Review generated SQL in `services/api/drizzle/`
+4. Run `pnpm db:migrate` to apply migration
+5. Import new table in service code: `import { newTable } from '@/shared-backend/schema'`
 
 ### Working with Shared Code
 
@@ -829,7 +828,7 @@ The frontend has a dedicated component testing page at `/dev/component-testing` 
 
 ### Scoring Worker Schema Codegen
 
-The scoring worker's SQLAlchemy models (`services/scoring-worker/src/scoring_worker/generated_models.py`) are auto-generated from `services/shared-backend/src/schema.ts`. **Never hand-write table definitions in the Python code.**
+The scoring worker's SQLAlchemy models (`services/scoring-worker/src/scoring_worker/generated_models.py`) are auto-generated from `services/api/src/shared-backend/schema.ts`. **Never hand-write table definitions in the Python code.**
 
 To add a table to the scoring worker:
 

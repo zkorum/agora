@@ -65,6 +65,7 @@ import {
 } from "@/shared/types/zod.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { log } from "@/app.js";
+import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import {
     getConversationViewAccessLevelForConversation,
 } from "@/service/conversationAccess.js";
@@ -82,6 +83,7 @@ import {
     getPremiumEntitlementSubjectForConversation,
     requirePremiumAccess,
 } from "./premiumEntitlement.js";
+import { resolveContentLanguageMetadata } from "./contentLanguageMetadata.js";
 
 interface ConversationAccessContext {
     conversationId: number;
@@ -1275,14 +1277,20 @@ async function insertSurveyQuestion({
     conversationId,
     question,
     now,
+    googleCloudCredentials,
 }: {
     db: PostgresJsDatabase;
     surveyConfigId: number;
     conversationId: number;
     question: SurveyQuestionConfig;
     now: Date;
+    googleCloudCredentials: GoogleCloudCredentials | undefined;
 }): Promise<void> {
     const questionSlugId = question.questionSlugId ?? generateRandomSlugId();
+    const questionLanguageMetadata = await resolveContentLanguageMetadata({
+        text: question.questionText,
+        googleCloudCredentials,
+    });
     const insertedQuestions = await db
         .insert(surveyQuestionTable)
         .values({
@@ -1314,6 +1322,9 @@ async function insertSurveyQuestion({
             surveyQuestionId,
             questionText: question.questionText,
             constraints: question.constraints,
+            sourceLanguageCode: questionLanguageMetadata.sourceLanguageCode,
+            sourceLanguageConfidence:
+                questionLanguageMetadata.sourceLanguageConfidence,
             createdAt: now,
         })
         .returning({ id: surveyQuestionContentTable.id });
@@ -1326,6 +1337,10 @@ async function insertSurveyQuestion({
     const options = getSurveyQuestionConfigOptions({ question });
     for (const option of options) {
         const optionSlugId = option.optionSlugId ?? generateRandomSlugId();
+        const optionLanguageMetadata = await resolveContentLanguageMetadata({
+            text: option.optionText,
+            googleCloudCredentials,
+        });
         const insertedOptions = await db
             .insert(surveyQuestionOptionTable)
             .values({
@@ -1344,6 +1359,9 @@ async function insertSurveyQuestion({
             .values({
                 surveyQuestionOptionId,
                 optionText: option.optionText,
+                sourceLanguageCode: optionLanguageMetadata.sourceLanguageCode,
+                sourceLanguageConfidence:
+                    optionLanguageMetadata.sourceLanguageConfidence,
                 createdAt: now,
             })
             .returning({ id: surveyQuestionOptionContentTable.id });
@@ -1370,11 +1388,13 @@ async function replaceSurveyConfigById({
     surveyConfigId,
     surveyConfig,
     now,
+    googleCloudCredentials,
 }: {
     db: PostgresJsDatabase;
     surveyConfigId: number;
     surveyConfig: SurveyConfig;
     now: Date;
+    googleCloudCredentials: GoogleCloudCredentials | undefined;
 }): Promise<{ didSemanticChange: boolean }> {
     const surveyConfigRows = await db
         .select({ conversationId: surveyConfigTable.conversationId })
@@ -1435,6 +1455,7 @@ async function replaceSurveyConfigById({
                 conversationId: surveyConfigRow.conversationId,
                 question,
                 now,
+                googleCloudCredentials,
             });
             continue;
         }
@@ -1452,6 +1473,7 @@ async function replaceSurveyConfigById({
                 conversationId: surveyConfigRow.conversationId,
                 question,
                 now,
+                googleCloudCredentials,
             });
             continue;
         }
@@ -1501,12 +1523,19 @@ async function replaceSurveyConfigById({
         }
 
         if (questionTextChanged || constraintsChanged) {
+            const questionLanguageMetadata = await resolveContentLanguageMetadata({
+                text: question.questionText,
+                googleCloudCredentials,
+            });
             const insertedContent = await db
                 .insert(surveyQuestionContentTable)
                 .values({
                     surveyQuestionId: existingQuestion.id,
                     questionText: question.questionText,
                     constraints: question.constraints,
+                    sourceLanguageCode: questionLanguageMetadata.sourceLanguageCode,
+                    sourceLanguageConfidence:
+                        questionLanguageMetadata.sourceLanguageConfidence,
                     createdAt: now,
                 })
                 .returning({ id: surveyQuestionContentTable.id });
@@ -1554,6 +1583,10 @@ async function replaceSurveyConfigById({
                     didSemanticChange = true;
                 }
                 const optionSlugId = generateRandomSlugId();
+                const optionLanguageMetadata = await resolveContentLanguageMetadata({
+                    text: option.optionText,
+                    googleCloudCredentials,
+                });
                 const insertedOption = await db
                     .insert(surveyQuestionOptionTable)
                     .values({
@@ -1570,6 +1603,9 @@ async function replaceSurveyConfigById({
                     .values({
                         surveyQuestionOptionId: insertedOption[0].id,
                         optionText: option.optionText,
+                        sourceLanguageCode: optionLanguageMetadata.sourceLanguageCode,
+                        sourceLanguageConfidence:
+                            optionLanguageMetadata.sourceLanguageConfidence,
                         createdAt: now,
                     })
                     .returning({ id: surveyQuestionOptionContentTable.id });
@@ -1587,6 +1623,10 @@ async function replaceSurveyConfigById({
             );
             if (existingOption === undefined) {
                 semanticChanged = true;
+                const optionLanguageMetadata = await resolveContentLanguageMetadata({
+                    text: option.optionText,
+                    googleCloudCredentials,
+                });
                 if (questionAffectsEligibility) {
                     didSemanticChange = true;
                 }
@@ -1606,6 +1646,9 @@ async function replaceSurveyConfigById({
                     .values({
                         surveyQuestionOptionId: insertedOption[0].id,
                         optionText: option.optionText,
+                        sourceLanguageCode: optionLanguageMetadata.sourceLanguageCode,
+                        sourceLanguageConfidence:
+                            optionLanguageMetadata.sourceLanguageConfidence,
                         createdAt: now,
                     })
                     .returning({ id: surveyQuestionOptionContentTable.id });
@@ -1619,6 +1662,10 @@ async function replaceSurveyConfigById({
             }
 
             if (existingOption.optionText !== option.optionText) {
+                const optionLanguageMetadata = await resolveContentLanguageMetadata({
+                    text: option.optionText,
+                    googleCloudCredentials,
+                });
                 if (option.textChangeIsSemantic === true) {
                     semanticChanged = true;
                     if (questionAffectsEligibility) {
@@ -1630,6 +1677,9 @@ async function replaceSurveyConfigById({
                     .values({
                         surveyQuestionOptionId: existingOption.id,
                         optionText: option.optionText,
+                        sourceLanguageCode: optionLanguageMetadata.sourceLanguageCode,
+                        sourceLanguageConfidence:
+                            optionLanguageMetadata.sourceLanguageConfidence,
                         createdAt: now,
                     })
                     .returning({ id: surveyQuestionOptionContentTable.id });
@@ -1717,11 +1767,13 @@ export async function setSurveyConfigForConversation({
     conversationId,
     surveyConfig,
     now,
+    googleCloudCredentials,
 }: {
     db: PostgresJsDatabase;
     conversationId: number;
     surveyConfig: SurveyConfig | null;
     now: Date;
+    googleCloudCredentials?: GoogleCloudCredentials;
 }): Promise<SurveyConfigUpdateEffect> {
     const normalizedSurveyConfig = normalizeSurveyConfigInput({ surveyConfig });
     const previousSurveyConfig = await getActiveSurveyConfigRecord({
@@ -1788,6 +1840,7 @@ export async function setSurveyConfigForConversation({
                 conversationId,
                 question,
                 now,
+                googleCloudCredentials,
             });
         }
         return {
@@ -1802,6 +1855,7 @@ export async function setSurveyConfigForConversation({
         surveyConfigId: existingSurveyConfig.id,
         surveyConfig: normalizedSurveyConfig,
         now,
+        googleCloudCredentials,
     });
 
     return {
@@ -2796,6 +2850,7 @@ export async function updateSurveyConfigByAuthor({
     userId,
     surveyConfig,
     now,
+    googleCloudCredentials,
     valkey,
 }: {
     db: PostgresJsDatabase;
@@ -2803,6 +2858,7 @@ export async function updateSurveyConfigByAuthor({
     userId: string;
     surveyConfig: SurveyConfig;
     now: Date;
+    googleCloudCredentials?: GoogleCloudCredentials;
     valkey?: Valkey;
 }): Promise<{
     currentRevision: number;
@@ -2839,6 +2895,7 @@ export async function updateSurveyConfigByAuthor({
             conversationId: conversation.conversationId,
             surveyConfig,
             now,
+            googleCloudCredentials,
         });
     });
 

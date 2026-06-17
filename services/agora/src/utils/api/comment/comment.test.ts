@@ -104,6 +104,10 @@ function conversationMetadata(
       detectedRawLanguageCode: null,
       detectionConfidence: null,
     },
+    multilingualSetting: {
+      additionalLanguageCodes: [],
+      dynamicTranslationEnabled: false,
+    },
     externalSourceConfig: null,
     ...overrides,
   };

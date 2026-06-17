@@ -20,9 +20,18 @@
 
     <div class="postDiv">
       <div>
+        <ContentTranslationControl
+          v-if="contentTranslation?.isAvailable === true"
+          :model-value="contentTranslation.mode"
+          :source-language-label="contentTranslation.sourceLanguageLabel"
+          :translation-status="contentTranslation.translationStatus"
+          class="translation-control"
+          @update:model-value="emit('update:contentTranslationMode', $event)"
+        />
+
         <ConversationTitle
           :is-private="!extendedPostData.metadata.isIndexed"
-          :title="extendedPostData.payload.title"
+          :title="displayedTitle"
           size="medium"
           :conversation-type="extendedPostData.metadata.conversationType"
           :external-source-config="extendedPostData.metadata.externalSourceConfig"
@@ -31,13 +40,13 @@
 
       <div
         v-if="
-          extendedPostData.payload.body != undefined &&
-          extendedPostData.payload.body.length > 0
+          displayedBody != undefined &&
+          displayedBody.length > 0
         "
         class="bodyDiv"
       >
         <ZKHtmlContent
-          :html-body="extendedPostData.payload.body"
+          :html-body="displayedBody"
           :compact-mode="compactMode"
           :enable-links="compactMode ? false : true"
           :desktop-collapsed-line-count="18"
@@ -68,8 +77,13 @@
 </template>
 
 <script setup lang="ts">
-import type { ExtendedConversation } from "src/shared/types/zod";
-import { defineAsyncComponent } from "vue";
+import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
+import type {
+  ExtendedConversation,
+  LocalizedContentTranslationStatus,
+} from "src/shared/types/zod";
+import type { ContentTranslationDisplayMode } from "src/utils/translation/contentTranslation";
+import { computed, defineAsyncComponent } from "vue";
 
 import ConversationTitle from "../../features/conversation/ConversationTitle.vue";
 import ZKCard from "../../ui-library/ZKCard.vue";
@@ -77,16 +91,41 @@ import ZKHtmlContent from "../../ui-library/ZKHtmlContent.vue";
 import PostLockedMessage from "./PostLockedMessage.vue";
 import PostMetadata from "./PostMetadata.vue";
 
-defineProps<{
+interface PostContentTranslationPreview {
+  isAvailable: boolean;
+  mode: ContentTranslationDisplayMode;
+  sourceLanguageLabel: string;
+  translationStatus: LocalizedContentTranslationStatus;
+  translatedTitle: string;
+  translatedBody: string | undefined;
+}
+
+const props = defineProps<{
   extendedPostData: ExtendedConversation;
   compactMode: boolean;
+  contentTranslation: PostContentTranslationPreview | undefined;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   openModerationHistory: [];
   conversationDeleted: [];
   verified: [payload: { userIdChanged: boolean; needsCacheRefresh: boolean }];
+  "update:contentTranslationMode": [mode: ContentTranslationDisplayMode];
 }>();
+
+const displayedTitle = computed(() => {
+  if (props.contentTranslation?.mode === "translated") {
+    return props.contentTranslation.translatedTitle;
+  }
+  return props.extendedPostData.payload.title;
+});
+
+const displayedBody = computed(() => {
+  if (props.contentTranslation?.mode === "translated") {
+    return props.contentTranslation.translatedBody;
+  }
+  return props.extendedPostData.payload.body;
+});
 
 const ImportedConversationIndicator = defineAsyncComponent(
   () => import("./ImportedConversationIndicator.vue")
@@ -108,6 +147,10 @@ const ImportedConversationIndicator = defineAsyncComponent(
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.translation-control {
+  margin-bottom: 0.45rem;
 }
 
 .lockCardStyle {

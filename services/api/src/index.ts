@@ -20,6 +20,7 @@ import fastifyRateLimit from "@fastify/rate-limit";
 import fastifySensible from "@fastify/sensible";
 import fastifySSE from "@fastify/sse";
 import fastifySwagger from "@fastify/swagger";
+import { Script } from "@valkey/valkey-glide";
 import * as ucans from "@ucans/ucans";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import {
@@ -50,6 +51,7 @@ import { checkFeatureAccess } from "@/shared-app-api/featureAccess.js";
 import { zodCsvFiles } from "@/service/csvImport.js";
 import * as conversationExportService from "@/service/conversationExport/index.js";
 import * as conversationImportService from "@/service/conversationImport/index.js";
+import * as contentTranslationService from "@/service/contentTranslation.js";
 import { fetchAnalysisCheckpointsByConversationSlugId } from "@/service/conversationViewSnapshot.js";
 import { createExportWorker } from "@/service/conversationExport/core.js";
 import type { ValkeyRef } from "@/service/valkeyRef.js";
@@ -141,16 +143,23 @@ import {
 import twilio from "twilio";
 import { initializeValkey } from "./shared-backend/valkey.js";
 import { createVoteBuffer } from "./service/voteBuffer.js";
+import {
+    consumeContentTranslationUserRateLimit,
+    CONTENT_TRANSLATION_USER_RATE_LIMIT_SCRIPT,
+    ENQUEUE_CONTENT_TRANSLATION_WORK_SCRIPT,
+} from "./shared-backend/contentTranslationQueue.js";
 import { createImportBuffer } from "./service/importBuffer.js";
 import { createImportWorkerEventBridge } from "./service/importWorkerEventBridge.js";
 import {
     createRealtimeEventOutboxBridge,
     fetchConversationAnalysisUpdatedEventForLatestViewSnapshot,
     fetchConversationRealtimeEventsAfterId,
+    fetchRealtimeTopicEventsAfterId,
 } from "./service/realtimeEventOutbox.js";
 import { createUcanReplayGuard } from "./service/ucanReplayGuard.js";
 import {
-    parseRealtimeSubscribedConversationSlugId,
+    parseRealtimeSubscriptionRequest,
+    type RealtimeSubscriptionRequest,
     RealtimeSSEManager,
 } from "./service/realtimeSSE.js";
 import {
@@ -180,6 +189,8 @@ import {
 import { createDb } from "./shared-backend/db.js";
 import {
     conversationTable,
+    conversationTranslationSettingTable,
+    conversationTranslationTargetLanguageTable,
     deviceTable,
     organizationTable,
     projectOrganizationOwnershipTable,
@@ -284,6 +295,8 @@ const githubWebhookRateLimitConfig = {
     timeWindow: 60 * 1000,
     groupId: "maxdiff-github-webhook",
 };
+const CONTENT_TRANSLATION_USER_RATE_LIMIT_MAX = 20;
+const CONTENT_TRANSLATION_USER_RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
 let twilioClient: twilio.Twilio | undefined;
 if (mustSendActualSms) {
@@ -472,6 +485,55 @@ async function assertMaxdiffGitHubAllowedForConversation({
     });
 }
 
+async function assertContentTranslationAllowedForConversation({
+    conversationSlugId,
+    targetLanguageCode,
+}: {
+    conversationSlugId: string;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+}): Promise<void> {
+    const rows = await db
+        .select({
+            dynamicTranslationEnabled:
+                conversationTranslationSettingTable.dynamicTranslationEnabled,
+            targetLanguageCode:
+                conversationTranslationTargetLanguageTable.languageCode,
+        })
+        .from(conversationTable)
+        .leftJoin(
+            conversationTranslationSettingTable,
+            eq(
+                conversationTranslationSettingTable.conversationId,
+                conversationTable.id,
+            ),
+        )
+        .leftJoin(
+            conversationTranslationTargetLanguageTable,
+            eq(
+                conversationTranslationTargetLanguageTable.translationSettingId,
+                conversationTranslationSettingTable.id,
+            ),
+        )
+        .where(eq(conversationTable.slugId, conversationSlugId));
+
+    if (rows.length === 0) {
+        throw server.httpErrors.notFound(
+            "Content translation subject not found",
+        );
+    }
+
+    const translationAllowed = rows.some(
+        (row) =>
+            row.dynamicTranslationEnabled === true ||
+            row.targetLanguageCode === targetLanguageCode,
+    );
+    if (!translationAllowed) {
+        throw server.httpErrors.forbidden(
+            "Content translation is not enabled for this target language",
+        );
+    }
+}
+
 // Validate S3 configuration if export feature is enabled
 if (config.EXPORT_CONVOS_ENABLED) {
     if (
@@ -535,6 +597,12 @@ const queueValkeyRef: ValkeyRef = {
         type: "Queue",
     }),
 };
+const contentTranslationQueueScript = new Script(
+    ENQUEUE_CONTENT_TRANSLATION_WORK_SCRIPT,
+);
+const contentTranslationUserRateLimitScript = new Script(
+    CONTENT_TRANSLATION_USER_RATE_LIMIT_SCRIPT,
+);
 
 let queueValkeyReconnectInterval: NodeJS.Timeout | undefined;
 let queueValkeyReconnectInProgress = false;
@@ -1036,14 +1104,14 @@ async function sendLatestSubscribedConversationAnalysisEvent({
     }
 }
 
-async function replaySubscribedConversationEvents({
+async function replaySubscribedRealtimeEvents({
     reply,
-    conversationSlugId,
+    subscription,
 }: {
     reply: FastifyReply;
-    conversationSlugId: string | undefined;
+    subscription: RealtimeSubscriptionRequest;
 }): Promise<void> {
-    if (conversationSlugId === undefined || reply.sse.lastEventId === null) {
+    if (reply.sse.lastEventId === null) {
         return;
     }
 
@@ -1056,11 +1124,9 @@ async function replaySubscribedConversationEvents({
         let nextLastEventId = lastEventId;
         let replayedEventCount = 0;
         while (replayedEventCount < REALTIME_REPLAY_MAX_EVENTS) {
-            const events = await fetchConversationRealtimeEventsAfterId({
-                db,
-                conversationSlugId,
+            const events = await fetchSubscribedRealtimeEventsAfterId({
+                subscription,
                 lastEventId: nextLastEventId,
-                limit: REALTIME_REPLAY_BATCH_LIMIT,
             });
             if (events.length === 0) {
                 return;
@@ -1083,14 +1149,48 @@ async function replaySubscribedConversationEvents({
         }
 
         log.warn(
-            `[RealtimeSSE] Replay event cap reached conversationSlugId=${conversationSlugId} lastEventId=${String(lastEventId)} maxEvents=${String(REALTIME_REPLAY_MAX_EVENTS)}`,
+            `[RealtimeSSE] Replay event cap reached topics=${subscription.topics.join(",")} lastEventId=${String(lastEventId)} maxEvents=${String(REALTIME_REPLAY_MAX_EVENTS)}`,
         );
     } catch (error) {
         log.error(
             error,
-            `[RealtimeSSE] Failed to replay events conversationSlugId=${conversationSlugId} lastEventId=${String(lastEventId)}`,
+            `[RealtimeSSE] Failed to replay events topics=${subscription.topics.join(",")} lastEventId=${String(lastEventId)}`,
         );
     }
+}
+
+async function fetchSubscribedRealtimeEventsAfterId({
+    subscription,
+    lastEventId,
+}: {
+    subscription: RealtimeSubscriptionRequest;
+    lastEventId: number;
+}): ReturnType<typeof fetchRealtimeTopicEventsAfterId> {
+    const [conversationEvents, topicEvents] = await Promise.all([
+        subscription.conversationSlugId === undefined
+            ? []
+            : fetchConversationRealtimeEventsAfterId({
+                  db,
+                  conversationSlugId: subscription.conversationSlugId,
+                  lastEventId,
+                  limit: REALTIME_REPLAY_BATCH_LIMIT,
+              }),
+        fetchRealtimeTopicEventsAfterId({
+            db,
+            topics: subscription.topics,
+            lastEventId,
+            limit: REALTIME_REPLAY_BATCH_LIMIT,
+        }),
+    ]);
+
+    const eventsById = new Map<number, (typeof topicEvents)[number]>();
+    for (const event of [...conversationEvents, ...topicEvents]) {
+        eventsById.set(event.id, event);
+    }
+
+    return Array.from(eventsById.values())
+        .sort((first, second) => first.id - second.id)
+        .slice(0, REALTIME_REPLAY_BATCH_LIMIT);
 }
 
 // always return userId !== undefined
@@ -2264,6 +2364,7 @@ server.after(() => {
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now: now,
                 isSeed: false,
+                googleCloudCredentials,
                 voteBuffer: voteBuffer,
                 realtimeSSEManager: realtimeSSEManager,
             });
@@ -2589,6 +2690,7 @@ server.after(() => {
                     hasSurvey,
                     preferredOpinionGroupCount:
                         request.body.preferredOpinionGroupCount,
+                    multilingualSetting: request.body.multilingualSetting,
                 });
 
             if (request.body.externalSourceConfig != null) {
@@ -2637,6 +2739,7 @@ server.after(() => {
                 externalSourceConfig: request.body.externalSourceConfig ?? null,
                 surveyConfig: request.body.surveyConfig ?? null,
                 languageSetting: request.body.languageSetting,
+                multilingualSetting: request.body.multilingualSetting,
                 googleCloudCredentials,
             });
 
@@ -2720,6 +2823,7 @@ server.after(() => {
                     hasSurvey: false,
                     preferredOpinionGroupCount:
                         request.body.preferredOpinionGroupCount,
+                    multilingualSetting: request.body.multilingualSetting,
                 });
             if (premiumFeatures.length > 0) {
                 await premiumEntitlementService.requirePremiumAccess({
@@ -2747,6 +2851,8 @@ server.after(() => {
                     aiLabelingEnabled: request.body.aiLabelingEnabled,
                     preferredOpinionGroupCount:
                         request.body.preferredOpinionGroupCount,
+                    languageSetting: request.body.languageSetting,
+                    multilingualSetting: request.body.multilingualSetting,
                 },
                 didWrite,
                 importBuffer,
@@ -2896,6 +3002,7 @@ server.after(() => {
                     hasSurvey: false,
                     preferredOpinionGroupCount:
                         parsedFields.preferredOpinionGroupCount,
+                    multilingualSetting: parsedFields.multilingualSetting,
                 });
             if (premiumFeatures.length > 0) {
                 await premiumEntitlementService.requirePremiumAccess({
@@ -2924,6 +3031,8 @@ server.after(() => {
                         aiLabelingEnabled: parsedFields.aiLabelingEnabled,
                         preferredOpinionGroupCount:
                             parsedFields.preferredOpinionGroupCount,
+                        languageSetting: parsedFields.languageSetting,
+                        multilingualSetting: parsedFields.multilingualSetting,
                     },
                     didWrite,
                     importBuffer,
@@ -3186,6 +3295,7 @@ server.after(() => {
                 userId: deviceStatus.userId,
                 surveyConfig: request.body.surveyConfig,
                 now: nowZeroMs(),
+                googleCloudCredentials,
                 valkey: queueValkeyRef.current,
             });
         },
@@ -3965,10 +4075,9 @@ server.after(() => {
         url: `/api/${apiVersion}/realtime/stream`,
         sse: true, // Enable SSE mode - provides reply.sse.* methods
         handler: async (request, reply) => {
-            let subscribedConversationSlugId: string | undefined;
+            let subscription: RealtimeSubscriptionRequest;
             try {
-                subscribedConversationSlugId =
-                    parseRealtimeSubscribedConversationSlugId(request.query);
+                subscription = parseRealtimeSubscriptionRequest(request.query);
             } catch (error) {
                 log.warn(error, "Invalid realtime stream query");
                 return reply.code(400).send("Invalid realtime stream query");
@@ -3987,15 +4096,15 @@ server.after(() => {
                     realtimeSSEManager.connect({
                         userId: authResult.deviceStatus.userId,
                         reply,
-                        subscribedConversationSlugId,
+                        subscribedTopics: subscription.topics,
                     });
-                    await replaySubscribedConversationEvents({
+                    await replaySubscribedRealtimeEvents({
                         reply,
-                        conversationSlugId: subscribedConversationSlugId,
+                        subscription,
                     });
                     await sendLatestSubscribedConversationAnalysisEvent({
                         reply,
-                        conversationSlugId: subscribedConversationSlugId,
+                        conversationSlugId: subscription.conversationSlugId,
                     });
 
                     await new Promise<void>((resolve) => {
@@ -4015,15 +4124,15 @@ server.after(() => {
                     reply.sse.keepAlive();
                     realtimeSSEManager.connectAnonymous({
                         reply,
-                        subscribedConversationSlugId,
+                        subscribedTopics: subscription.topics,
                     });
-                    await replaySubscribedConversationEvents({
+                    await replaySubscribedRealtimeEvents({
                         reply,
-                        conversationSlugId: subscribedConversationSlugId,
+                        subscription,
                     });
                     await sendLatestSubscribedConversationAnalysisEvent({
                         reply,
-                        conversationSlugId: subscribedConversationSlugId,
+                        conversationSlugId: subscription.conversationSlugId,
                     });
 
                     await new Promise<void>((resolve) => {
@@ -4100,6 +4209,89 @@ server.after(() => {
                 userId: deviceStatus.userId,
                 preferences: request.body,
             });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/content-translation/request`,
+        schema: {
+            body: Dto.contentTranslationRequest,
+            response: {
+                200: Dto.contentTranslationResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+
+            const queueValkey = queueValkeyRef.current;
+
+            await assertContentTranslationAllowedForConversation({
+                conversationSlugId: request.body.subject.conversationSlugId,
+                targetLanguageCode: request.body.targetLanguageCode,
+            });
+
+            const response =
+                await contentTranslationService.requestContentTranslation({
+                    db,
+                    valkey: queueValkey,
+                    queueScript: contentTranslationQueueScript,
+                    subject: request.body.subject,
+                    targetLanguageCode: request.body.targetLanguageCode,
+                    include: request.body.include,
+                    now: nowZeroMs(),
+                    log,
+                    beforeQueueTranslationWork: async () => {
+                        if (queueValkey === undefined) {
+                            throw server.httpErrors.serviceUnavailable(
+                                "Content translation rate limiter is unavailable",
+                            );
+                        }
+                        let rateLimit: Awaited<
+                            ReturnType<
+                                typeof consumeContentTranslationUserRateLimit
+                            >
+                        >;
+                        try {
+                            rateLimit =
+                                await consumeContentTranslationUserRateLimit({
+                                    valkey: queueValkey,
+                                    script: contentTranslationUserRateLimitScript,
+                                    userId: deviceStatus.userId,
+                                    maxRequests:
+                                        CONTENT_TRANSLATION_USER_RATE_LIMIT_MAX,
+                                    windowMs:
+                                        CONTENT_TRANSLATION_USER_RATE_LIMIT_WINDOW_MS,
+                                });
+                        } catch (error) {
+                            log.error(
+                                error,
+                                "[ContentTranslation] User rate limiter failed",
+                            );
+                            throw server.httpErrors.serviceUnavailable(
+                                "Content translation rate limiter is unavailable",
+                            );
+                        }
+                        if (!rateLimit.isAllowed) {
+                            throw server.httpErrors.createError(
+                                429,
+                                `Content translation rate limit exceeded. Retry after ${String(Math.ceil(rateLimit.retryAfterMs / 1000))}s`,
+                            );
+                        }
+                    },
+                });
+            if (response === undefined) {
+                throw server.httpErrors.notFound(
+                    "Content translation subject not found",
+                );
+            }
+            return response;
         },
     });
 
@@ -4300,6 +4492,9 @@ const shutdown = async (signal: string) => {
 
         // Stop UCAN replay guard cleanup interval
         ucanReplayGuard.shutdown();
+
+        contentTranslationQueueScript.release();
+        contentTranslationUserRateLimitScript.release();
 
         // Stop popular conversation periodic check
         clearInterval(popularConversationCheckInterval);

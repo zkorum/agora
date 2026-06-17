@@ -12,6 +12,7 @@ import { log } from "@/app.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import type {
+    ConversationMultilingualSetting,
     ConversationType,
     EventSlug,
     ExtendedConversation,
@@ -48,9 +49,14 @@ import {
     resolveConversationCreateTarget,
 } from "@/service/projectAccess.js";
 import {
+    conversationLanguageSettingToSourceMetadata,
     resolveConversationLanguageSetting,
     upsertConversationLanguageSetting,
 } from "@/service/conversationLanguage.js";
+import {
+    normalizeConversationMultilingualSetting,
+    upsertConversationMultilingualSetting,
+} from "@/service/conversationMultilingual.js";
 import type { ConversationLanguageSettingInput } from "@/shared/types/zod.js";
 
 const MAX_CONVERSATION_SEED_ITEMS = 50;
@@ -73,7 +79,8 @@ interface CreateNewPostProps {
     preferredOpinionGroupCount: PreferredOpinionGroupCount;
     externalSourceConfig?: ExternalSourceConfig | null;
     surveyConfig?: SurveyConfig | null;
-    languageSetting?: ConversationLanguageSettingInput;
+    languageSetting: ConversationLanguageSettingInput;
+    multilingualSetting: ConversationMultilingualSetting;
     googleCloudCredentials?: GoogleCloudCredentials;
     importUrl?: string;
     importConversationUrl?: string;
@@ -102,6 +109,7 @@ export async function createNewPost({
     externalSourceConfig,
     surveyConfig,
     languageSetting,
+    multilingualSetting,
     googleCloudCredentials,
     importUrl,
     importConversationUrl,
@@ -187,154 +195,163 @@ export async function createNewPost({
         bodyPlainText,
         googleCloudCredentials,
     });
+    const sourceLanguageMetadata = conversationLanguageSettingToSourceMetadata({
+        setting: resolvedLanguageSetting,
+    });
+    const normalizedMultilingualSetting =
+        normalizeConversationMultilingualSetting({
+            languageSetting,
+            multilingualSetting,
+            canUseDynamicTranslation: true,
+        });
 
-    await db.transaction(
-        async (tx) => {
-            const now = new Date();
-            const insertPostResponse = await tx
-                .insert(conversationTable)
-                .values({
-                    slugId: conversationSlugId,
-                    projectId: target.projectId,
-                    isIndexed: isIndexed,
-                    participationMode: participationMode,
-                    conversationType: conversationType,
-                    isImporting: isImporting,
-                    requiresEventTicket: requiresEventTicket,
-                    aiLabelingEnabled,
-                    preferredOpinionGroupCount,
-                    currentContentId: null,
-                    createdAt: now,
-                    updatedAt: now,
-                    lastReactedAt: now,
-                    importUrl,
-                    importConversationUrl,
-                    importExportUrl,
-                    importCreatedAt,
-                    importAuthor,
-                    importMethod,
-                    externalSourceConfig: externalSourceConfig ?? undefined,
-                })
-                .returning({ conversationId: conversationTable.id });
+    await db.transaction(async (tx) => {
+        const now = new Date();
+        const insertPostResponse = await tx
+            .insert(conversationTable)
+            .values({
+                slugId: conversationSlugId,
+                projectId: target.projectId,
+                isIndexed: isIndexed,
+                participationMode: participationMode,
+                conversationType: conversationType,
+                isImporting: isImporting,
+                requiresEventTicket: requiresEventTicket,
+                aiLabelingEnabled,
+                preferredOpinionGroupCount,
+                currentContentId: null,
+                createdAt: now,
+                updatedAt: now,
+                lastReactedAt: now,
+                importUrl,
+                importConversationUrl,
+                importExportUrl,
+                importCreatedAt,
+                importAuthor,
+                importMethod,
+                externalSourceConfig: externalSourceConfig ?? undefined,
+            })
+            .returning({ conversationId: conversationTable.id });
 
-            const insertedConversationId = insertPostResponse[0].conversationId;
+        const insertedConversationId = insertPostResponse[0].conversationId;
 
-            const conversationContentTableResponse = await tx
-                .insert(conversationContentTable)
-                .values({
-                    conversationId: insertedConversationId,
-                    title: conversationTitle,
-                    body: conversationBody,
-                    bodyPlainText,
-                    sourceLanguageCode:
-                        resolvedLanguageSetting.detectedRawLanguageCode,
-                    sourceLanguageConfidence:
-                        resolvedLanguageSetting.detectionConfidence,
-                })
-                .returning({
-                    conversationContentId: conversationContentTable.id,
-                });
-
-            const insertedConversationContentId =
-                conversationContentTableResponse[0].conversationContentId;
-
-            await tx
-                .update(conversationTable)
-                .set({
-                    currentContentId: insertedConversationContentId,
-                })
-                .where(eq(conversationTable.id, insertedConversationId));
-
-            await upsertConversationLanguageSetting({
-                db: tx,
+        const conversationContentTableResponse = await tx
+            .insert(conversationContentTable)
+            .values({
                 conversationId: insertedConversationId,
-                setting: resolvedLanguageSetting,
-                now,
+                title: conversationTitle,
+                body: conversationBody,
+                bodyPlainText,
+                sourceLanguageCode: sourceLanguageMetadata.sourceLanguageCode,
+                sourceLanguageConfidence:
+                    sourceLanguageMetadata.sourceLanguageConfidence,
+            })
+            .returning({
+                conversationContentId: conversationContentTable.id,
             });
 
-            if (seedOpinionList.length > 0) {
-                if (conversationType === "maxdiff") {
-                    for (const seedTitle of seedOpinionList) {
-                        await createMaxdiffItem({
-                            db,
-                            tx,
+        const insertedConversationContentId =
+            conversationContentTableResponse[0].conversationContentId;
+
+        await tx
+            .update(conversationTable)
+            .set({
+                currentContentId: insertedConversationContentId,
+            })
+            .where(eq(conversationTable.id, insertedConversationId));
+
+        await upsertConversationLanguageSetting({
+            db: tx,
+            conversationId: insertedConversationId,
+            setting: resolvedLanguageSetting,
+            now,
+        });
+        await upsertConversationMultilingualSetting({
+            db: tx,
+            conversationId: insertedConversationId,
+            setting: normalizedMultilingualSetting,
+            now,
+        });
+
+        if (seedOpinionList.length > 0) {
+            if (conversationType === "maxdiff") {
+                for (const seedTitle of seedOpinionList) {
+                    await createMaxdiffItem({
+                        db,
+                        tx,
+                        conversationId: insertedConversationId,
+                        conversationContentId: insertedConversationContentId,
+                        authorId,
+                        title: seedTitle,
+                        isSeed: true,
+                    });
+                }
+            } else {
+                const authorRows = await tx
+                    .select({ username: userTable.username })
+                    .from(userTable)
+                    .where(eq(userTable.id, authorId))
+                    .limit(1);
+                const author = authorRows.at(0);
+                if (author === undefined) {
+                    throw httpErrors.internalServerError(
+                        "Failed to locate seed opinion author",
+                    );
+                }
+
+                for (const seedOpinionText of seedOpinionList) {
+                    const seedOpinionResult = await postNewOpinion({
+                        db,
+                        tx,
+                        commentBody: seedOpinionText,
+                        opinionPlainText: htmlToCountedText(seedOpinionText),
+                        conversationSlugId,
+                        didWrite,
+                        userAgent: "Seed Opinion Creation",
+                        now,
+                        isSeed: true,
+                        googleCloudCredentials,
+                        conversationMetadata: {
                             conversationId: insertedConversationId,
                             conversationContentId:
                                 insertedConversationContentId,
-                            authorId,
-                            title: seedTitle,
-                            isSeed: true,
-                        });
-                    }
-                } else {
-                    const authorRows = await tx
-                        .select({ username: userTable.username })
-                        .from(userTable)
-                        .where(eq(userTable.id, authorId))
-                        .limit(1);
-                    const author = authorRows.at(0);
-                    if (author === undefined) {
+                            conversationAuthorId: authorId,
+                            conversationAuthorUsername: author.username,
+                            conversationIsIndexed: isIndexed,
+                            conversationParticipationMode: participationMode,
+                            conversationIsClosed: false,
+                            requiresEventTicket: requiresEventTicket ?? null,
+                        },
+                    });
+                    if (!seedOpinionResult.success) {
                         throw httpErrors.internalServerError(
-                            "Failed to locate seed opinion author",
+                            "Failed to create seed opinion",
                         );
-                    }
-
-                    for (const seedOpinionText of seedOpinionList) {
-                        const seedOpinionResult = await postNewOpinion({
-                            db,
-                            tx,
-                            commentBody: seedOpinionText,
-                            opinionPlainText: htmlToCountedText(
-                                seedOpinionText,
-                            ),
-                            conversationSlugId,
-                            didWrite,
-                            userAgent: "Seed Opinion Creation",
-                            now,
-                            isSeed: true,
-                            conversationMetadata: {
-                                conversationId: insertedConversationId,
-                                conversationContentId:
-                                    insertedConversationContentId,
-                                conversationAuthorId: authorId,
-                                conversationAuthorUsername: author.username,
-                                conversationIsIndexed: isIndexed,
-                                conversationParticipationMode:
-                                    participationMode,
-                                conversationIsClosed: false,
-                                requiresEventTicket:
-                                    requiresEventTicket ?? null,
-                            },
-                        });
-                        if (!seedOpinionResult.success) {
-                            throw httpErrors.internalServerError(
-                                "Failed to create seed opinion",
-                            );
-                        }
                     }
                 }
             }
+        }
 
-            if (surveyConfig !== undefined) {
-                await setSurveyConfigForConversation({
-                    db: tx,
-                    conversationId: insertedConversationId,
-                    surveyConfig: surveyConfig ?? null,
-                    now,
-                });
-            }
-
-            // Create the initial coherent display state even before analysis exists.
-            // There is no dedicated "created" enum yet, so reuse the content-update reason.
-            await createConversationViewSnapshotsFromCurrentState({
+        if (surveyConfig !== undefined) {
+            await setSurveyConfigForConversation({
                 db: tx,
                 conversationId: insertedConversationId,
-                viewReason: "conversation_content_updated",
+                surveyConfig: surveyConfig ?? null,
+                now,
+                googleCloudCredentials,
             });
+        }
 
-            return undefined;
-        },
-    );
+        // Create the initial coherent display state even before analysis exists.
+        // There is no dedicated "created" enum yet, so reuse the content-update reason.
+        await createConversationViewSnapshotsFromCurrentState({
+            db: tx,
+            conversationId: insertedConversationId,
+            viewReason: "conversation_content_updated",
+        });
+
+        return undefined;
+    });
 
     return {
         success: true,
@@ -652,26 +669,6 @@ export async function openConversation({
 
     return { success: true };
 }
-
-// interface CreateConversationFromPolisProps {
-//     db: PostgresDatabase;
-//     externalPolisConversationId: string;
-//     axiosExternalPolis: AxiosInstance;
-// }
-
-// export async function createConversationFromPolis({
-//     axiosExternalPolis,
-//     externalPolisConversationId,
-// }: CreateConversationFromPolisProps) {
-//     console.log("Sending request");
-//     const polisParticipationInit =
-//         await externalPolisService.getParticipationInit({
-//             axiosExternalPolis,
-//             externalPolisConversationId,
-//         });
-//     console.log(polisParticipationInit.pca["votes-base"]["0"].A.length);
-// }
-//
 
 export async function getConversationContent({
     db,

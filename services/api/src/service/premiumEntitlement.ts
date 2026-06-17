@@ -8,6 +8,8 @@ import {
 } from "@/shared-backend/analysisScheduler.js";
 import {
     conversationTable,
+    conversationTranslationSettingTable,
+    conversationTranslationTargetLanguageTable,
     organizationMembershipTable,
     organizationTable,
     premiumFeatureEntitlementTable,
@@ -26,6 +28,7 @@ import {
     type EventSlug,
     type GrantablePremiumFeature,
     type PremiumFeature,
+    type ConversationMultilingualSetting,
 } from "@/shared/types/zod.js";
 import { log } from "@/app.js";
 import {
@@ -39,10 +42,13 @@ type PremiumFeatureEntitlementUpdateValues = Partial<
 
 const PREMIUM_EDIT_GRACE_DAYS = 5;
 const PREMIUM_ANALYSIS_FEATURE: GrantablePremiumFeature = "analysis_variants";
+const PREMIUM_DYNAMIC_TRANSLATION_FEATURE: GrantablePremiumFeature =
+    "dynamic_translation";
 const premiumFeatureSortValues = {
     survey: 0,
     event_ticket: 1,
     analysis_variants: 2,
+    dynamic_translation: 3,
 } satisfies Record<PremiumFeature, number>;
 
 export type PremiumEntitlementSubject =
@@ -70,6 +76,7 @@ export interface ConversationEditPermissions {
     canChangeEventTicket: boolean;
     canRemoveEventTicket: boolean;
     canUseAnalysisVariantsPreference: boolean;
+    canUseDynamicTranslation: boolean;
     restrictedPremiumFeatures: PremiumFeature[];
     premiumEditAccessEndsAt?: Date;
 }
@@ -471,6 +478,35 @@ export async function getPremiumFeaturesInConversation({
         features.push("survey");
     }
 
+    const translationRows = await db
+        .select({
+            dynamicTranslationEnabled:
+                conversationTranslationSettingTable.dynamicTranslationEnabled,
+            languageId: conversationTranslationTargetLanguageTable.id,
+        })
+        .from(conversationTranslationSettingTable)
+        .leftJoin(
+            conversationTranslationTargetLanguageTable,
+            eq(
+                conversationTranslationTargetLanguageTable.translationSettingId,
+                conversationTranslationSettingTable.id,
+            ),
+        )
+        .where(
+            eq(
+                conversationTranslationSettingTable.conversationId,
+                conversation.conversationId,
+            ),
+        );
+
+    if (
+        translationRows.some(
+            (row) => row.dynamicTranslationEnabled || row.languageId !== null,
+        )
+    ) {
+        features.push(PREMIUM_DYNAMIC_TRANSLATION_FEATURE);
+    }
+
     return uniqueSortedFeatures(features);
 }
 
@@ -478,10 +514,12 @@ export function getPremiumFeaturesFromCreateRequest({
     requiresEventTicket,
     hasSurvey,
     preferredOpinionGroupCount,
+    multilingualSetting,
 }: {
     requiresEventTicket?: EventSlug;
     hasSurvey: boolean;
     preferredOpinionGroupCount?: number | null;
+    multilingualSetting?: ConversationMultilingualSetting;
 }): GrantablePremiumFeature[] {
     const features: GrantablePremiumFeature[] = [];
 
@@ -498,6 +536,14 @@ export function getPremiumFeaturesFromCreateRequest({
         preferredOpinionGroupCount !== null
     ) {
         features.push(PREMIUM_ANALYSIS_FEATURE);
+    }
+
+    if (
+        multilingualSetting !== undefined &&
+        (multilingualSetting.additionalLanguageCodes.length > 0 ||
+            multilingualSetting.dynamicTranslationEnabled)
+    ) {
+        features.push(PREMIUM_DYNAMIC_TRANSLATION_FEATURE);
     }
 
     return uniqueSortedFeatures(features);
@@ -595,6 +641,13 @@ export async function buildConversationEditPermissions({
         mode: "creation",
         now,
     });
+    const restrictedDynamicTranslation = await getRestrictedPremiumFeatures({
+        db,
+        subject,
+        features: [PREMIUM_DYNAMIC_TRANSLATION_FEATURE],
+        mode: "creation",
+        now,
+    });
 
     return {
         canEditNormalSettings: true,
@@ -606,6 +659,7 @@ export async function buildConversationEditPermissions({
         canRemoveEventTicket: true,
         canUseAnalysisVariantsPreference:
             restrictedAnalysisPreference.length === 0,
+        canUseDynamicTranslation: restrictedDynamicTranslation.length === 0,
         restrictedPremiumFeatures: restrictedConversationFeatures,
         premiumEditAccessEndsAt: await getPremiumEditAccessEndsAt({
             db,

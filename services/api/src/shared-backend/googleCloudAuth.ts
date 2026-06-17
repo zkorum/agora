@@ -1,4 +1,3 @@
-/** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 /**
  * Google Cloud Translation API authentication helper
  * Handles both local development (GOOGLE_APPLICATION_CREDENTIALS) and production (AWS Secrets Manager)

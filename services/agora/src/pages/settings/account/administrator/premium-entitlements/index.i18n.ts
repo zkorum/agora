@@ -21,6 +21,7 @@ export interface AdministratorPremiumEntitlementsTranslations {
   surveyFeature: string;
   eventTicketFeature: string;
   analysisVariantsFeature: string;
+  dynamicTranslationFeature: string;
 }
 
 const en: AdministratorPremiumEntitlementsTranslations = {
@@ -44,6 +45,7 @@ const en: AdministratorPremiumEntitlementsTranslations = {
   surveyFeature: "Survey",
   eventTicketFeature: "Event ticket",
   analysisVariantsFeature: "Analysis variants (2-6 groups)",
+  dynamicTranslationFeature: "Dynamic Translation",
 };
 
 export const administratorPremiumEntitlementsTranslations: Record<

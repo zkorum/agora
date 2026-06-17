@@ -71,6 +71,14 @@ export const zodConversationLanguageSettingOutput = z
         detectionConfidence: z.number().nullable(),
     })
     .strict();
+export const zodConversationMultilingualSetting = z
+    .object({
+        additionalLanguageCodes: z
+            .array(ZodSupportedDisplayLanguageCodes)
+            .max(2),
+        dynamicTranslationEnabled: z.boolean(),
+    })
+    .strict();
 export const zodConversationViewSnapshotCheckpointReason = z.enum([
     "first_displayable_analysis",
     "first_group_count_available",
@@ -83,11 +91,13 @@ export const zodPremiumFeature = z.enum([
     "survey",
     "event_ticket",
     "analysis_variants",
+    "dynamic_translation",
 ]);
 export const zodGrantablePremiumFeature = z.enum([
     "survey",
     "event_ticket",
     "analysis_variants",
+    "dynamic_translation",
 ]);
 export const zodParticipationBlockedReason = z.enum([
     "conversation_locked",
@@ -218,6 +228,104 @@ export const zodConversationBodyOutput = z
         message: `Raw HTML content exceeds maximum length of ${String(LEGACY_MAX_LENGTH_CONVERSATION_BODY_HTML_OUTPUT)} characters`,
     })
     .optional();
+export const zodLocalizedContentDisplayMode = z.enum(["original", "translated"]);
+export const zodLocalizedContentTranslationStatus = z.enum([
+    "not_requested",
+    "pending",
+    "running",
+    "failed",
+    "completed",
+]);
+export const zodContentTranslationSubject = z.discriminatedUnion("kind", [
+    z
+        .object({
+            kind: z.literal("conversation"),
+            conversationSlugId: zodSlugId,
+        })
+        .strict(),
+    z
+        .object({
+            kind: z.literal("opinion"),
+            conversationSlugId: zodSlugId,
+            opinionSlugId: zodSlugId,
+        })
+        .strict(),
+    z
+        .object({
+            kind: z.literal("survey_question"),
+            conversationSlugId: zodSlugId,
+            questionSlugId: zodSlugId,
+        })
+        .strict(),
+]);
+const zodLocalizedContentTranslationMetadata = z
+    .object({
+        targetLanguageCode: ZodSupportedDisplayLanguageCodes,
+        sourceLanguageLabel: z.string().min(1),
+        status: zodLocalizedContentTranslationStatus,
+    })
+    .strict();
+const zodCompletedLocalizedContentTranslationMetadata =
+    zodLocalizedContentTranslationMetadata.extend({
+        status: z.literal("completed"),
+    });
+
+export function createZodLocalizedContent<TContent extends z.ZodType>(
+    contentSchema: TContent,
+) {
+    return z.union([
+        z
+            .object({
+                kind: z.literal("original_only"),
+                sourceVersion: z.string().min(1),
+                initialMode: z.literal("original"),
+                variants: z
+                    .object({
+                        original: contentSchema,
+                    })
+                    .strict(),
+            })
+            .strict(),
+        z
+            .object({
+                kind: z.literal("translatable"),
+                sourceVersion: z.string().min(1),
+                initialMode: z.literal("original"),
+                translation: zodLocalizedContentTranslationMetadata,
+                variants: z
+                    .object({
+                        original: contentSchema,
+                        translated: contentSchema.optional(),
+                    })
+                    .strict(),
+            })
+            .strict(),
+        z
+            .object({
+                kind: z.literal("translatable"),
+                sourceVersion: z.string().min(1),
+                initialMode: z.literal("translated"),
+                translation: zodCompletedLocalizedContentTranslationMetadata,
+                variants: z
+                    .object({
+                        original: contentSchema.optional(),
+                        translated: contentSchema,
+                    })
+                    .strict(),
+            })
+            .strict(),
+    ]);
+}
+
+export const zodConversationContentVariant = z
+    .object({
+        title: zodConversationTitle,
+        body: zodConversationBodyOutput,
+    })
+    .strict();
+export const zodLocalizedConversationContent = createZodLocalizedContent(
+    zodConversationContentVariant,
+);
 export const zodConversationDataWithResult = z
     .object({
         title: zodConversationTitle,
@@ -545,6 +653,22 @@ export const zodSurveyQuestionOption = z
         textChangeIsSemantic: z.boolean().optional(),
     })
     .strict();
+export const zodSurveyQuestionContentVariant = z
+    .object({
+        questionText: z.string().min(1).max(MAX_LENGTH_SURVEY_QUESTION),
+        options: z.array(
+            z
+                .object({
+                    optionSlugId: zodSlugId,
+                    optionText: z.string().min(1).max(MAX_LENGTH_SURVEY_OPTION),
+                })
+                .strict(),
+        ),
+    })
+    .strict();
+export const zodLocalizedSurveyQuestionContent = createZodLocalizedContent(
+    zodSurveyQuestionContentVariant,
+);
 
 const zodSurveyQuestionBase = z
     .object({
@@ -856,6 +980,7 @@ export const zodConversationMetadata = z
         aiLabelingEnabled: z.boolean(),
         preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
         languageSetting: zodConversationLanguageSettingOutput,
+        multilingualSetting: zodConversationMultilingualSetting,
         isClosed: z.boolean(),
         isEdited: z.boolean(),
         organization: zodOrganization.optional(),
@@ -888,6 +1013,7 @@ export const zodConversationMetadataWithId = z
         aiLabelingEnabled: z.boolean(),
         preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
         languageSetting: zodConversationLanguageSettingOutput,
+        multilingualSetting: zodConversationMultilingualSetting,
         isClosed: z.boolean(),
         isEdited: z.boolean(),
         organization: zodOrganization.optional(),
@@ -939,6 +1065,14 @@ export const zodOpinionContentOutput = z
     .max(MAX_LENGTH_OPINION_HTML_OUTPUT, {
         message: `Raw HTML content exceeds maximum length of ${String(MAX_LENGTH_OPINION_HTML_OUTPUT)} characters`,
     });
+export const zodOpinionContentVariant = z
+    .object({
+        content: zodOpinionContentOutput,
+    })
+    .strict();
+export const zodLocalizedOpinionContent = createZodLocalizedContent(
+    zodOpinionContentVariant,
+);
 export const zodAgreementType = z.enum(["agree", "disagree"]);
 export const zodVotingOption = z.enum(["agree", "disagree", "pass"]);
 export const zodVotingAction = z.enum(["agree", "disagree", "pass", "cancel"]);
@@ -1546,7 +1680,26 @@ export type ConversationMetadata = z.infer<typeof zodConversationMetadata>;
 export type ExtendedConversationPayload = z.infer<
     typeof zodConversationDataWithResult
 >;
+export type LocalizedContentDisplayMode = z.infer<
+    typeof zodLocalizedContentDisplayMode
+>;
+export type LocalizedContentTranslationStatus = z.infer<
+    typeof zodLocalizedContentTranslationStatus
+>;
+export type ContentTranslationSubject = z.infer<
+    typeof zodContentTranslationSubject
+>;
+export type ConversationContentVariant = z.infer<
+    typeof zodConversationContentVariant
+>;
+export type LocalizedConversationContent = z.infer<
+    typeof zodLocalizedConversationContent
+>;
 export type CommentContent = z.infer<typeof zodOpinionContentOutput>;
+export type OpinionContentVariant = z.infer<typeof zodOpinionContentVariant>;
+export type LocalizedOpinionContent = z.infer<
+    typeof zodLocalizedOpinionContent
+>;
 export type OpinionItem = z.infer<typeof zodOpinionItem>;
 export type AnalysisOpinionItem = z.infer<typeof zodAnalysisOpinionItem>;
 export type OpinionItemPerSlugId = z.infer<typeof zodOpinionItemPerSlugId>;
@@ -1569,6 +1722,12 @@ export type SurveyQuestionConstraints = z.infer<
     typeof zodSurveyQuestionConstraints
 >;
 export type SurveyQuestionOption = z.infer<typeof zodSurveyQuestionOption>;
+export type SurveyQuestionContentVariant = z.infer<
+    typeof zodSurveyQuestionContentVariant
+>;
+export type LocalizedSurveyQuestionContent = z.infer<
+    typeof zodLocalizedSurveyQuestionContent
+>;
 export type SurveyQuestionConfig = z.infer<typeof zodSurveyQuestionConfig>;
 export type SurveyConfig = z.infer<typeof zodSurveyConfig>;
 export type SurveyAnswerDraft = z.infer<typeof zodSurveyAnswerDraft>;
@@ -1652,6 +1811,9 @@ export type ConversationLanguageSettingInput = z.infer<
 >;
 export type ConversationLanguageSettingOutput = z.infer<
     typeof zodConversationLanguageSettingOutput
+>;
+export type ConversationMultilingualSetting = z.infer<
+    typeof zodConversationMultilingualSetting
 >;
 export type EventSlug = z.infer<typeof zodEventSlug>;
 export type ExportStatus = z.infer<typeof zodExportStatus>;

@@ -23,8 +23,17 @@
       </div>
 
       <div>
+        <ContentTranslationControl
+          v-if="contentTranslation?.isAvailable === true"
+          :model-value="contentTranslation.mode"
+          :source-language-label="contentTranslation.sourceLanguageLabel"
+          :translation-status="contentTranslation.translationStatus"
+          class="translation-control"
+          @update:model-value="emit('update:contentTranslationMode', $event)"
+        />
+
         <ZKHtmlContent
-          :html-body="commentItem.opinion"
+          :html-body="displayedOpinion"
           :compact-mode="false"
           :enable-links="true"
         />
@@ -58,18 +67,30 @@
 
 <script setup lang="ts">
 import OpinionIdentityCard from "src/components/post/comments/OpinionIdentityCard.vue";
+import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
 import type {
   EventSlug,
+  LocalizedContentTranslationStatus,
   OpinionItem,
   ParticipationMode,
   SurveyGateSummary,
 } from "src/shared/types/zod";
+import type { ContentTranslationDisplayMode } from "src/utils/translation/contentTranslation";
+import { computed } from "vue";
 
 import ZKHtmlContent from "../../../../ui-library/ZKHtmlContent.vue";
 import CommentActionBar from "./CommentActionBar.vue";
 import CommentActionOptions from "./CommentActionOptions.vue";
 import CommentModeration from "./CommentModeration.vue";
+
+interface CommentContentTranslationPreview {
+  isAvailable: boolean;
+  mode: ContentTranslationDisplayMode;
+  sourceLanguageLabel: string;
+  translationStatus: LocalizedContentTranslationStatus;
+  translatedOpinion: string;
+}
 
 const props = defineProps<{
   commentItem: OpinionItem;
@@ -82,12 +103,21 @@ const props = defineProps<{
   surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
+  contentTranslation: CommentContentTranslationPreview | undefined;
 }>();
 
 const emit = defineEmits<{
   deleted: [opinionSlugId: string];
   mutedComment: [];
+  "update:contentTranslationMode": [mode: ContentTranslationDisplayMode];
 }>();
+
+const displayedOpinion = computed(() => {
+  if (props.contentTranslation?.mode === "translated") {
+    return props.contentTranslation.translatedOpinion;
+  }
+  return props.commentItem.opinion;
+});
 
 function deletedComment() {
   emit("deleted", props.commentItem.opinionSlugId);
@@ -117,5 +147,9 @@ function mutedComment() {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.translation-control {
+  margin-bottom: 0.45rem;
 }
 </style>

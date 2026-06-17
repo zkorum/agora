@@ -348,15 +348,7 @@
     <q-dialog v-model="showAnalysisViewLearnMoreDrawer" position="bottom">
       <ZKBottomDialogContainer :title="t('analysisViewLearnMoreTitle')">
         <template #leadingAction>
-          <q-btn
-            flat
-            round
-            dense
-            :icon="analysisViewBackIcon"
-            size="sm"
-            class="analysis-view-drawer-header-button"
-            @click="goBackToAnalysisViewOptions"
-          />
+          <ZKBottomDialogBackButton @click="goBackToAnalysisViewOptions" />
         </template>
 
         <div class="analysis-view-learn-more-content">
@@ -376,10 +368,10 @@
 
 <script setup lang="ts">
 import type { UseQueryReturnType } from "@tanstack/vue-query";
-import { useQuasar } from "quasar";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import SpaLink from "src/components/ui-library/SpaLink.vue";
+import ZKBottomDialogBackButton from "src/components/ui-library/ZKBottomDialogBackButton.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKChip from "src/components/ui-library/ZKChip.vue";
 import ZKDropdownSelectorButton from "src/components/ui-library/ZKDropdownSelectorButton.vue";
@@ -479,7 +471,6 @@ const { t: tShortcut } = useComponentI18n<ShortcutBarTranslations>(
 
 const route = useRoute();
 const router = useRouter();
-const $q = useQuasar();
 const showAnalysisViewDrawer = ref(false);
 const showAnalysisViewLearnMoreDrawer = ref(false);
 const pausedLiveAnalysisData = ref<AnalysisData | undefined>();
@@ -794,10 +785,6 @@ const fixedAnalysisViewOptions = computed(() =>
       option.view === "5" ||
       option.view === "6"
   )
-);
-
-const analysisViewBackIcon = computed(() =>
-  $q.lang.rtl ? "mdi-chevron-right" : "mdi-chevron-left"
 );
 
 const analysisViewLearnMoreItems = computed(() => [
@@ -1716,15 +1703,6 @@ defineExpose({
   font-size: 0.85rem;
   font-weight: var(--font-weight-medium);
   padding: 0.2rem 0.35rem;
-
-  &:hover,
-  &:focus-visible {
-    background: #f5f5f7;
-  }
-}
-
-.analysis-view-drawer-header-button {
-  color: #6d6a74;
 
   &:hover,
   &:focus-visible {

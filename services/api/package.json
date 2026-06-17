@@ -9,7 +9,7 @@
         "start:dev": "tsx watch --trace-uncaught src/index.ts",
         "start:dev:capacitor": "MODE=capacitor tsx watch src/index.ts",
         "db:drop": "drizzle-kit drop",
-        "db:generate": "cd ../shared-backend && pnpm run sync && cd ../api && drizzle-kit generate && ./scripts/rename_sql_migration_file.sh drizzle/",
+        "db:generate": "drizzle-kit generate && ./scripts/rename_sql_migration_file.sh drizzle/",
         "db:migrate": "docker run --rm --network host -v ${PWD}/database/flyway:/flyway/conf -v ${PWD}/database/flyway:/flyway/sql flyway/flyway migrate",
         "db:undo": "docker run --rm --network host -v ${PWD}/database/flyway:/flyway/conf -v ${PWD}/database/flyway:/flyway/sql flyway/flyway undo",
         "db:sudo:migrate": "sudo docker run --rm --network host -v ${PWD}/database/flyway:/flyway/conf -v ${PWD}/database/flyway:/flyway/sql flyway/flyway  migrate",

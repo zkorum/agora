@@ -14,14 +14,58 @@ import { z } from "zod";
 const zodRealtimeStreamQuery = z
     .object({
         conversationSlugId: zodSlugId.min(1).optional(),
+        topic: z
+            .union([z.string().min(1), z.array(z.string().min(1))])
+            .optional(),
     })
     .loose();
 
-export function parseRealtimeSubscribedConversationSlugId(
+export interface RealtimeSubscriptionRequest {
+    conversationSlugId: string | undefined;
+    topics: string[];
+}
+
+export function buildRealtimeConversationTopic({
+    conversationSlugId,
+}: {
+    conversationSlugId: string;
+}): string {
+    return `conversation:${conversationSlugId}`;
+}
+
+export function buildContentTranslationTopic({
+    conversationSlugId,
+    targetLanguageCode,
+}: {
+    conversationSlugId: string;
+    targetLanguageCode: string;
+}): string {
+    return `translation:conversation:${conversationSlugId}:target:${targetLanguageCode}`;
+}
+
+export function parseRealtimeSubscriptionRequest(
     rawQuery: unknown,
-): string | undefined {
+): RealtimeSubscriptionRequest {
     const query = zodRealtimeStreamQuery.parse(rawQuery);
-    return query.conversationSlugId;
+    const explicitTopics =
+        query.topic === undefined
+            ? []
+            : Array.isArray(query.topic)
+              ? query.topic
+              : [query.topic];
+    const topics = new Set(explicitTopics);
+    if (query.conversationSlugId !== undefined) {
+        topics.add(
+            buildRealtimeConversationTopic({
+                conversationSlugId: query.conversationSlugId,
+            }),
+        );
+    }
+
+    return {
+        conversationSlugId: query.conversationSlugId,
+        topics: Array.from(topics),
+    };
 }
 
 type ConversationSubscriptionEvent =
@@ -47,7 +91,7 @@ type ConversationSubscriptionEvent =
       };
 
 interface RealtimeConnectionOptions {
-    subscribedConversationSlugId: string | undefined;
+    subscribedTopics: readonly string[];
 }
 
 /**
@@ -62,7 +106,7 @@ export class RealtimeSSEManager {
     // Anonymous connections (no userId)
     private anonymousConnections: Set<FastifyReply>;
     private connectionTimestamps: Map<FastifyReply, number>;
-    private connectionConversationSubscriptions: Map<FastifyReply, string>;
+    private connectionTopicSubscriptions: Map<FastifyReply, Set<string>>;
     private cleanupInterval: NodeJS.Timeout | null;
     private isShuttingDown: boolean;
     private readonly CONNECTION_TIMEOUT_MS = 3600000; // 1 hour
@@ -71,7 +115,7 @@ export class RealtimeSSEManager {
         this.connections = new Map();
         this.anonymousConnections = new Set();
         this.connectionTimestamps = new Map();
-        this.connectionConversationSubscriptions = new Map();
+        this.connectionTopicSubscriptions = new Map();
         this.cleanupInterval = null;
         this.isShuttingDown = false;
     }
@@ -95,7 +139,7 @@ export class RealtimeSSEManager {
     public connect({
         userId,
         reply,
-        subscribedConversationSlugId,
+        subscribedTopics,
     }: {
         userId: string;
         reply: FastifyReply;
@@ -116,9 +160,9 @@ export class RealtimeSSEManager {
         }
         userConnections.add(reply);
         this.connectionTimestamps.set(reply, Date.now());
-        this.setConnectionConversationSubscriptions({
+        this.setConnectionTopicSubscriptions({
             reply,
-            subscribedConversationSlugId,
+            subscribedTopics,
         });
 
         // Setup cleanup on connection close using @fastify/sse plugin's onClose method
@@ -142,6 +186,14 @@ export class RealtimeSSEManager {
                     `Failed to send realtime connection event to user ${userId}`,
                 );
             });
+        void this.sendSubscriptionReady({ reply, subscribedTopics }).catch(
+            (error: unknown) => {
+                log.error(
+                    error,
+                    `Failed to send realtime subscription ready event to user ${userId}`,
+                );
+            },
+        );
     }
 
     /**
@@ -149,7 +201,7 @@ export class RealtimeSSEManager {
      */
     public connectAnonymous({
         reply,
-        subscribedConversationSlugId,
+        subscribedTopics,
     }: {
         reply: FastifyReply;
     } & RealtimeConnectionOptions): void {
@@ -160,9 +212,9 @@ export class RealtimeSSEManager {
 
         this.anonymousConnections.add(reply);
         this.connectionTimestamps.set(reply, Date.now());
-        this.setConnectionConversationSubscriptions({
+        this.setConnectionTopicSubscriptions({
             reply,
-            subscribedConversationSlugId,
+            subscribedTopics,
         });
 
         reply.sse.onClose(() => {
@@ -180,6 +232,14 @@ export class RealtimeSSEManager {
                     "Failed to send realtime connection event to anonymous client",
                 );
             });
+        void this.sendSubscriptionReady({ reply, subscribedTopics }).catch(
+            (error: unknown) => {
+                log.error(
+                    error,
+                    "Failed to send realtime subscription ready event to anonymous client",
+                );
+            },
+        );
     }
 
     /**
@@ -202,7 +262,7 @@ export class RealtimeSSEManager {
             }
         }
         this.connectionTimestamps.delete(reply);
-        this.connectionConversationSubscriptions.delete(reply);
+        this.connectionTopicSubscriptions.delete(reply);
     }
 
     /**
@@ -211,7 +271,7 @@ export class RealtimeSSEManager {
     public disconnectAnonymous(reply: FastifyReply): void {
         this.anonymousConnections.delete(reply);
         this.connectionTimestamps.delete(reply);
-        this.connectionConversationSubscriptions.delete(reply);
+        this.connectionTopicSubscriptions.delete(reply);
     }
 
     public async sendToConnection<TEvent extends SSEEventType>({
@@ -236,32 +296,43 @@ export class RealtimeSSEManager {
     }: ConversationSubscriptionEvent & {
         conversationSlugId: string;
     }): void {
+        this.broadcastToTopicSubscribers({
+            topic: buildRealtimeConversationTopic({ conversationSlugId }),
+            id,
+            event,
+            data,
+        });
+    }
+
+    public broadcastToTopicSubscribers<TEvent extends SSEEventType>({
+        topic,
+        id,
+        event,
+        data,
+    }: {
+        topic: string;
+        id: number | undefined;
+        event: TEvent;
+        data: SSEEventDataByType[TEvent];
+    }): void {
         const deadAuthenticated: { userId: string; reply: FastifyReply }[] = [];
         const deadAnonymous: FastifyReply[] = [];
 
         for (const [userId, userConnections] of this.connections) {
             for (const reply of userConnections) {
-                if (
-                    !this.isSubscribedToConversation({
-                        reply,
-                        conversationSlugId,
-                    })
-                ) {
+                if (!this.isSubscribedToTopic({ reply, topic })) {
                     continue;
                 }
-                reply.sse.send({ id: id?.toString(), event, data }).catch(() => {
-                    deadAuthenticated.push({ userId, reply });
-                });
+                reply.sse
+                    .send({ id: id?.toString(), event, data })
+                    .catch(() => {
+                        deadAuthenticated.push({ userId, reply });
+                    });
             }
         }
 
         for (const reply of this.anonymousConnections) {
-            if (
-                !this.isSubscribedToConversation({
-                    reply,
-                    conversationSlugId,
-                })
-            ) {
+            if (!this.isSubscribedToTopic({ reply, topic })) {
                 continue;
             }
             reply.sse.send({ id: id?.toString(), event, data }).catch(() => {
@@ -296,24 +367,30 @@ export class RealtimeSSEManager {
             }
             for (const reply of userConnections) {
                 if (
-                    !this.isSubscribedToConversation({
+                    !this.isSubscribedToTopic({
                         reply,
-                        conversationSlugId,
+                        topic: buildRealtimeConversationTopic({
+                            conversationSlugId,
+                        }),
                     })
                 ) {
                     continue;
                 }
-                reply.sse.send({ id: id?.toString(), event, data }).catch(() => {
-                    deadAuthenticated.push({ userId, reply });
-                });
+                reply.sse
+                    .send({ id: id?.toString(), event, data })
+                    .catch(() => {
+                        deadAuthenticated.push({ userId, reply });
+                    });
             }
         }
 
         for (const reply of this.anonymousConnections) {
             if (
-                !this.isSubscribedToConversation({
+                !this.isSubscribedToTopic({
                     reply,
-                    conversationSlugId,
+                    topic: buildRealtimeConversationTopic({
+                        conversationSlugId,
+                    }),
                 })
             ) {
                 continue;
@@ -567,34 +644,46 @@ export class RealtimeSSEManager {
         this.connections.clear();
         this.anonymousConnections.clear();
         this.connectionTimestamps.clear();
-        this.connectionConversationSubscriptions.clear();
+        this.connectionTopicSubscriptions.clear();
     }
 
-    private setConnectionConversationSubscriptions({
+    private async sendSubscriptionReady({
         reply,
-        subscribedConversationSlugId,
+        subscribedTopics,
     }: {
         reply: FastifyReply;
-        subscribedConversationSlugId: string | undefined;
+        subscribedTopics: readonly string[];
+    }): Promise<void> {
+        await reply.sse.send({
+            event: "subscription_ready",
+            data: { topics: [...subscribedTopics], timestamp: Date.now() },
+        });
+    }
+
+    private setConnectionTopicSubscriptions({
+        reply,
+        subscribedTopics,
+    }: {
+        reply: FastifyReply;
+        subscribedTopics: readonly string[];
     }): void {
-        if (subscribedConversationSlugId === undefined) {
-            this.connectionConversationSubscriptions.delete(reply);
+        if (subscribedTopics.length === 0) {
+            this.connectionTopicSubscriptions.delete(reply);
             return;
         }
 
-        this.connectionConversationSubscriptions.set(reply, subscribedConversationSlugId);
+        this.connectionTopicSubscriptions.set(reply, new Set(subscribedTopics));
     }
 
-    private isSubscribedToConversation({
+    private isSubscribedToTopic({
         reply,
-        conversationSlugId,
+        topic,
     }: {
         reply: FastifyReply;
-        conversationSlugId: string;
+        topic: string;
     }): boolean {
         return (
-            this.connectionConversationSubscriptions.get(reply) ===
-            conversationSlugId
+            this.connectionTopicSubscriptions.get(reply)?.has(topic) ?? false
         );
     }
 }

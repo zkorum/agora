@@ -24,15 +24,22 @@ import {
     opinionGroupCandidateTable,
     opinionGroupVariantTable,
     realtimeEventOutboxTable,
+    realtimeEventOutboxTopicTable,
 } from "@/shared-backend/schema.js";
 import type { SSEEventDataByType } from "@/shared/types/dto.js";
-import { zodSSEConversationAnalysisUpdatedData } from "@/shared/types/sse.js";
+import {
+    zodSSEContentTranslationUpdatedData,
+    zodSSEConversationAnalysisUpdatedData,
+} from "@/shared/types/sse.js";
 import {
     zodEventSlug,
     zodParticipationMode,
     zodPreferredOpinionGroupCount,
 } from "@/shared/types/zod.js";
-import type { RealtimeSSEManager } from "./realtimeSSE.js";
+import {
+    buildContentTranslationTopic,
+    type RealtimeSSEManager,
+} from "./realtimeSSE.js";
 
 const REALTIME_EVENT_OUTBOX_CHANNEL = "realtime_event_outbox";
 const RECENT_EVENT_CATCHUP_MS = 5 * 60 * 1000;
@@ -89,7 +96,7 @@ interface RealtimeEventOutboxRow {
     payload: unknown;
 }
 
-type ConversationReplayEvent =
+type RealtimeReplayEvent =
     | {
           id: number;
           event: "conversation_analysis_updated";
@@ -104,6 +111,11 @@ type ConversationReplayEvent =
           id: number;
           event: "conversation_settings_updated";
           data: SSEEventDataByType["conversation_settings_updated"];
+      }
+    | {
+          id: number;
+          event: "content_translation_updated";
+          data: SSEEventDataByType["content_translation_updated"];
       };
 
 function hasPrimaryDb(db: PostgresJsDatabase): db is PrimaryReplicaDb {
@@ -619,7 +631,7 @@ function parseRealtimeEventOutboxRow({
     id: number;
     eventType: string;
     payload: unknown;
-}): ConversationReplayEvent | undefined {
+}): RealtimeReplayEvent | undefined {
     switch (eventType) {
         case "conversation_analysis_updated": {
             try {
@@ -656,6 +668,17 @@ function parseRealtimeEventOutboxRow({
                 data: result.data,
             };
         }
+        case "content_translation_updated": {
+            const result = zodSSEContentTranslationUpdatedData.safeParse(payload);
+            if (!result.success) {
+                return undefined;
+            }
+            return {
+                id,
+                event: eventType,
+                data: result.data,
+            };
+        }
         default: {
             return undefined;
         }
@@ -672,7 +695,7 @@ export async function fetchConversationRealtimeEventsAfterId({
     conversationSlugId: string;
     lastEventId: number;
     limit: number;
-}): Promise<ConversationReplayEvent[]> {
+}): Promise<RealtimeReplayEvent[]> {
     const primaryDb = getPrimaryDb(db);
     const rows = await primaryDb
         .select({
@@ -694,8 +717,62 @@ export async function fetchConversationRealtimeEventsAfterId({
         .orderBy(realtimeEventOutboxTable.id)
         .limit(limit);
 
-    const events: ConversationReplayEvent[] = [];
+    const events: RealtimeReplayEvent[] = [];
     for (const row of rows) {
+        const event = parseRealtimeEventOutboxRow(row);
+        if (event !== undefined) {
+            events.push(event);
+        }
+    }
+    return events;
+}
+
+export async function fetchRealtimeTopicEventsAfterId({
+    db,
+    topics,
+    lastEventId,
+    limit,
+}: {
+    db: PostgresJsDatabase;
+    topics: string[];
+    lastEventId: number;
+    limit: number;
+}): Promise<RealtimeReplayEvent[]> {
+    if (topics.length === 0) {
+        return [];
+    }
+
+    const primaryDb = getPrimaryDb(db);
+    const rows = await primaryDb
+        .select({
+            id: realtimeEventOutboxTable.id,
+            eventType: realtimeEventOutboxTable.eventType,
+            payload: realtimeEventOutboxTable.payload,
+        })
+        .from(realtimeEventOutboxTopicTable)
+        .innerJoin(
+            realtimeEventOutboxTable,
+            eq(
+                realtimeEventOutboxTable.id,
+                realtimeEventOutboxTopicTable.eventId,
+            ),
+        )
+        .where(
+            and(
+                gt(realtimeEventOutboxTable.id, lastEventId),
+                inArray(realtimeEventOutboxTopicTable.topic, topics),
+            ),
+        )
+        .orderBy(realtimeEventOutboxTable.id)
+        .limit(limit);
+
+    const seenEventIds = new Set<number>();
+    const events: RealtimeReplayEvent[] = [];
+    for (const row of rows) {
+        if (seenEventIds.has(row.id)) {
+            continue;
+        }
+        seenEventIds.add(row.id);
         const event = parseRealtimeEventOutboxRow(row);
         if (event !== undefined) {
             events.push(event);
@@ -766,6 +843,20 @@ export function createRealtimeEventOutboxBridge({
             case "conversation_settings_updated": {
                 realtimeSSEManager.broadcastToConversationSubscribers({
                     conversationSlugId: realtimeEvent.data.conversationSlugId,
+                    id: realtimeEvent.id,
+                    event: realtimeEvent.event,
+                    data: realtimeEvent.data,
+                });
+                break;
+            }
+            case "content_translation_updated": {
+                realtimeSSEManager.broadcastToTopicSubscribers({
+                    topic: buildContentTranslationTopic({
+                        conversationSlugId:
+                            realtimeEvent.data.subject.conversationSlugId,
+                        targetLanguageCode:
+                            realtimeEvent.data.targetLanguageCode,
+                    }),
                     id: realtimeEvent.id,
                     event: realtimeEvent.event,
                     data: realtimeEvent.data,

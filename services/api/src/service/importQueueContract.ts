@@ -1,9 +1,13 @@
 import type {
+    ConversationLanguageSettingInput,
+    ConversationMultilingualSetting,
     EventSlug,
     ParticipationMode,
     PreferredOpinionGroupCount,
 } from "@/shared/types/zod.js";
 import {
+    zodConversationLanguageSettingInput,
+    zodConversationMultilingualSetting,
     zodEventSlug,
     zodParticipationMode,
 } from "@/shared/types/zod.js";
@@ -30,6 +34,13 @@ const zodImportFormData = withJsonSchemaId(
                 .max(6)
                 .nullable()
                 .optional(),
+            languageSetting: zodConversationLanguageSettingInput.default({
+                mode: "auto",
+            }),
+            multilingualSetting: zodConversationMultilingualSetting.default({
+                additionalLanguageCodes: [],
+                dynamicTranslationEnabled: false,
+            }),
         })
         .strict(),
 );
@@ -119,6 +130,8 @@ interface ImportRequestBase {
         requiresEventTicket?: EventSlug;
         aiLabelingEnabled: boolean;
         preferredOpinionGroupCount?: PreferredOpinionGroupCount;
+        languageSetting: ConversationLanguageSettingInput;
+        multilingualSetting: ConversationMultilingualSetting;
     };
     didWrite: string;
 }

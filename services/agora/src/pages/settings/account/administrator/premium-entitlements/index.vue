@@ -177,6 +177,7 @@ const featureOptions = computed<
   { label: t("surveyFeature"), value: "survey" },
   { label: t("eventTicketFeature"), value: "event_ticket" },
   { label: t("analysisVariantsFeature"), value: "analysis_variants" },
+  { label: t("dynamicTranslationFeature"), value: "dynamic_translation" },
 ]);
 
 onMounted(async () => {
@@ -208,6 +209,8 @@ function getFeatureLabel(value: PremiumFeature): string {
       return t("eventTicketFeature");
     case "analysis_variants":
       return t("analysisVariantsFeature");
+    case "dynamic_translation":
+      return t("dynamicTranslationFeature");
   }
 }
 

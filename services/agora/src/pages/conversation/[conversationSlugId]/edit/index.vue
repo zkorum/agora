@@ -40,6 +40,8 @@
         v-model:external-source-config="externalSourceConfig"
         v-model:title="title"
         v-model:content="content"
+        v-model:language-setting="languageSetting"
+        v-model:multilingual-setting="multilingualSetting"
         v-model:conversation-type="conversationType"
         v-model:ai-labeling-enabled="aiLabelingEnabled"
         v-model:preferred-opinion-group-count="preferredOpinionGroupCount"
@@ -48,6 +50,8 @@
         :can-change-event-ticket="canChangeEventTicket"
         :can-remove-event-ticket="canRemoveEventTicket"
         :can-use-analysis-variants-preference="canUseAnalysisVariantsPreference"
+        :can-use-dynamic-translation="canUseDynamicTranslation"
+        :can-edit-conversation-content="canEditConversationContent"
       />
 
       <ZKCard
@@ -125,6 +129,9 @@ import NewConversationLayout from "src/components/newConversation/NewConversatio
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import {
+  areConversationLanguageSettingsEqual,
+  areConversationMultilingualSettingsEqual,
+  conversationLanguageSettingInputFromOutput,
   useConversationDraft,
   type ValidationErrorField,
 } from "src/composables/conversation/draft";
@@ -132,6 +139,8 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_LENGTH_CONVERSATION_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
 import type { GetConversationForEditResponse } from "src/shared/types/dto";
 import type {
+  ConversationLanguageSettingInput,
+  ConversationMultilingualSetting,
   ParticipationMode,
   PreferredOpinionGroupCount,
   SurveyConfig,
@@ -191,6 +200,8 @@ const originalState = ref<{
   isPrivate: boolean;
   participationMode: ParticipationMode;
   requiresEventTicket: string | undefined;
+  languageSetting: ConversationLanguageSettingInput;
+  multilingualSetting: ConversationMultilingualSetting;
   aiLabelingEnabled: boolean;
   preferredOpinionGroupCount: PreferredOpinionGroupCount;
   surveyConfig: SurveyConfig | null;
@@ -200,6 +211,11 @@ const originalState = ref<{
   isPrivate: false,
   participationMode: "account_required",
   requiresEventTicket: undefined,
+  languageSetting: { mode: "auto" },
+  multilingualSetting: {
+    additionalLanguageCodes: [],
+    dynamicTranslationEnabled: false,
+  },
   aiLabelingEnabled: true,
   preferredOpinionGroupCount: null,
   surveyConfig: null,
@@ -231,6 +247,9 @@ const canRemoveEventTicket = computed(() => {
 });
 const canUseAnalysisVariantsPreference = computed(() => {
   return editPermissions.value?.canUseAnalysisVariantsPreference ?? false;
+});
+const canUseDynamicTranslation = computed(() => {
+  return editPermissions.value?.canUseDynamicTranslation ?? false;
 });
 const showPremiumEditRestrictedBanner = computed(() => {
   return (editPermissions.value?.restrictedPremiumFeatures.length ?? 0) > 0;
@@ -267,6 +286,24 @@ const hasUnsavedChanges = computed(() => {
     return true;
   }
 
+  if (
+    !areConversationLanguageSettingsEqual({
+      left: languageSetting.value,
+      right: originalState.value.languageSetting,
+    })
+  ) {
+    return true;
+  }
+
+  if (
+    !areConversationMultilingualSettingsEqual({
+      left: multilingualSetting.value,
+      right: originalState.value.multilingualSetting,
+    })
+  ) {
+    return true;
+  }
+
   if (aiLabelingEnabled.value !== originalState.value.aiLabelingEnabled) {
     return true;
   }
@@ -286,6 +323,8 @@ const {
   title,
   content,
   contentPlainText,
+  languageSetting,
+  multilingualSetting,
   isPrivate,
   participationMode,
   requiresEventTicket,
@@ -352,6 +391,8 @@ async function performSave(): Promise<void> {
       conversationTitle: title.value,
       conversationBody: content.value,
       conversationBodyPlainText: contentPlainText.value,
+      languageSetting: languageSetting.value,
+      multilingualSetting: multilingualSetting.value,
       isIndexed: !isPrivate.value,
       participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
@@ -471,10 +512,16 @@ onMounted(async () => {
       return;
     }
 
+    const loadedLanguageSetting = conversationLanguageSettingInputFromOutput({
+      output: response.languageSetting,
+    });
+
     initializeFromData({
       title: response.conversationTitle,
       content: response.conversationBody ?? "",
       contentPlainText: "",
+      languageSetting: loadedLanguageSetting,
+      multilingualSetting: response.multilingualSetting,
       isPrivate: !response.isIndexed,
       participationMode: response.participationMode,
       requiresEventTicket: response.requiresEventTicket,
@@ -491,6 +538,8 @@ onMounted(async () => {
       isPrivate: !response.isIndexed,
       participationMode: response.participationMode,
       requiresEventTicket: response.requiresEventTicket,
+      languageSetting: loadedLanguageSetting,
+      multilingualSetting: response.multilingualSetting,
       aiLabelingEnabled: response.aiLabelingEnabled,
       preferredOpinionGroupCount: response.preferredOpinionGroupCount,
       surveyConfig: response.surveyConfig ?? null,

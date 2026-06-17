@@ -64,6 +64,10 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
         detectedRawLanguageCode: null,
         detectionConfidence: null,
       },
+      multilingualSetting: {
+        additionalLanguageCodes: [],
+        dynamicTranslationEnabled: false,
+      },
       externalSourceConfig: null,
     },
     payload: {

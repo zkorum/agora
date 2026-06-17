@@ -46,6 +46,10 @@ import {
     conversationLanguageSettingToOutput,
     normalizeConversationLanguageSettingRow,
 } from "./conversationLanguage.js";
+import {
+    DEFAULT_CONVERSATION_MULTILINGUAL_SETTING,
+    getConversationMultilingualSettingsByConversationId,
+} from "./conversationMultilingual.js";
 
 export function useCommonUser() {
     interface GetUserIdFromUsernameProps {
@@ -361,6 +365,13 @@ export function useCommonPost() {
                     (postItem) => postItem.conversationId,
                 ),
             });
+        const multilingualSettingsByConversationId =
+            await getConversationMultilingualSettingsByConversationId({
+                db,
+                conversationIds: postItems.map(
+                    (postItem) => postItem.conversationId,
+                ),
+            });
 
         if (sortAlgorithm == "following") {
             postItems.sort((post1, post2) => {
@@ -453,8 +464,12 @@ export function useCommonPost() {
                                   detectedFromCorpusHash:
                                       postItem.detectedFromCorpusHash,
                               },
-                    ),
+                        ),
                 }),
+                multilingualSetting:
+                    multilingualSettingsByConversationId.get(
+                        postItem.conversationId,
+                    ) ?? DEFAULT_CONVERSATION_MULTILINGUAL_SETTING,
                 participationMode: postItem.participationMode,
                 conversationType: postItem.conversationType,
                 isClosed: postItem.isClosed,

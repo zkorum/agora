@@ -52,34 +52,28 @@
           />
         </div>
 
-        <q-select
+        <ZKSearchableBottomSheetSelect
           :model-value="question.questionType"
-          outlined
-          emit-value
-          map-options
           :label="texts.questionTypeLabel"
           :options="questionTypeOptions"
           :disable="props.readOnly"
-          @update:model-value="
-            (value) =>
-              updateQuestionType({ questionIndex, questionType: value })
+          @selected="
+            (questionType) =>
+              updateQuestionType({ questionIndex, questionType })
           "
         />
 
-        <q-select
+        <ZKSearchableBottomSheetSelect
           v-if="question.questionType !== 'free_text'"
           :model-value="question.choiceDisplay"
-          outlined
-          emit-value
-          map-options
           :label="texts.choiceDisplayLabel"
           :options="choiceDisplayOptions"
           :disable="props.readOnly"
-          @update:model-value="
-            (value) =>
+          @selected="
+            (choiceDisplay) =>
               updateQuestionChoiceDisplay({
                 questionIndex,
-                choiceDisplay: value,
+                choiceDisplay,
               })
           "
         />
@@ -211,21 +205,18 @@
           v-else-if="question.questionType === 'free_text'"
           class="survey-config-editor__constraints-stack"
         >
-          <q-select
+          <ZKSearchableBottomSheetSelect
             :model-value="
               question.constraints.type === 'free_text'
                 ? question.constraints.inputMode
                 : 'rich_text'
             "
-            outlined
-            emit-value
-            map-options
             :label="templateTexts.answerFormatLabel"
             :options="freeTextInputModeOptions"
             :disable="props.readOnly"
-            @update:model-value="
-              (value) =>
-                updateFreeTextInputMode({ questionIndex, inputMode: value })
+            @selected="
+              (inputMode) =>
+                updateFreeTextInputMode({ questionIndex, inputMode })
             "
           />
 
@@ -519,6 +510,7 @@ import AnalysisActionButton from "src/components/post/analysis/common/AnalysisAc
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
+import ZKSearchableBottomSheetSelect from "src/components/ui-library/ZKSearchableBottomSheetSelect.vue";
 import {
   type SupportedDisplayLanguageCodes,
   ZodSupportedDisplayLanguageCodes,

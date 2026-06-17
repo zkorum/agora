@@ -1,10 +1,15 @@
-import { createHash } from "crypto";
+import { createHash } from "node:crypto";
 import { eq } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { log } from "@/app.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import { conversationLanguageSettingTable } from "@/shared-backend/schema.js";
 import { detectLanguage } from "@/shared-backend/translate.js";
+import {
+    detectLanguageWithFallback,
+    type GoogleLanguageDetector,
+    type LocalLanguageDetector,
+} from "./languageDetection.js";
 import {
     MAX_CONVERSATION_LANGUAGE_DETECTION_BODY_CHARS,
     MIN_CONVERSATION_LANGUAGE_DETECTION_CHARS,
@@ -37,11 +42,13 @@ interface ConversationLanguageSettingRow {
 }
 
 interface ResolveConversationLanguageSettingParams {
-    request: ConversationLanguageSettingInput | undefined;
+    request: ConversationLanguageSettingInput;
     existing: StoredConversationLanguageSetting | undefined;
     conversationTitle: string;
     bodyPlainText: string;
     googleCloudCredentials: GoogleCloudCredentials | undefined;
+    localLanguageDetector?: LocalLanguageDetector;
+    googleLanguageDetector?: GoogleLanguageDetector;
 }
 
 export function buildConversationLanguageDetectionCorpus({
@@ -135,41 +142,71 @@ export function conversationLanguageSettingToOutput({
     };
 }
 
+export function conversationLanguageSettingToSourceMetadata({
+    setting,
+}: {
+    setting: StoredConversationLanguageSetting;
+}): {
+    sourceLanguageCode: string | null;
+    sourceLanguageConfidence: number | null;
+} {
+    if (setting.mode === "manual") {
+        return {
+            sourceLanguageCode: setting.languageCode,
+            sourceLanguageConfidence: null,
+        };
+    }
+
+    return {
+        sourceLanguageCode: setting.detectedRawLanguageCode,
+        sourceLanguageConfidence: setting.detectionConfidence,
+    };
+}
+
 async function detectConversationLanguage({
     corpus,
     corpusHash,
     googleCloudCredentials,
+    localLanguageDetector,
+    googleLanguageDetector,
 }: {
     corpus: string;
     corpusHash: string;
     googleCloudCredentials: GoogleCloudCredentials | undefined;
+    localLanguageDetector?: LocalLanguageDetector;
+    googleLanguageDetector?: GoogleLanguageDetector;
 }): Promise<StoredConversationLanguageSetting> {
-    if (googleCloudCredentials === undefined) {
-        return emptyAutoLanguageSetting({ corpusHash: null });
-    }
-
     try {
-        const detectedLanguage = await detectLanguage({
-            client: googleCloudCredentials.client,
-            text: corpus,
-            projectId: googleCloudCredentials.config.projectId,
-            location: googleCloudCredentials.config.location,
-        });
-        if (detectedLanguage === undefined) {
-            return emptyAutoLanguageSetting({ corpusHash });
-        }
+        const resolvedGoogleLanguageDetector =
+            googleLanguageDetector ??
+            (googleCloudCredentials === undefined
+                ? undefined
+                : async ({ text }) => {
+                      return await detectLanguage({
+                          client: googleCloudCredentials.client,
+                          text,
+                          projectId: googleCloudCredentials.config.projectId,
+                          location: googleCloudCredentials.config.location,
+                      });
+                  });
 
-        const detectedLanguageCode =
-            parseSupportedDisplayLanguageOrUndefined(
-                detectedLanguage.languageCode,
-            ) ?? null;
+        const detectionOutcome = await detectLanguageWithFallback({
+            text: corpus,
+            localDetector: localLanguageDetector,
+            googleDetector: resolvedGoogleLanguageDetector,
+        });
+        if (detectionOutcome.result === undefined) {
+            return emptyAutoLanguageSetting({
+                corpusHash: detectionOutcome.cacheable ? corpusHash : null,
+            });
+        }
 
         return {
             mode: "auto",
-            languageCode: detectedLanguageCode,
-            detectedLanguageCode,
-            detectedRawLanguageCode: detectedLanguage.languageCode,
-            detectionConfidence: detectedLanguage.confidence,
+            languageCode: detectionOutcome.result.languageCode,
+            detectedLanguageCode: detectionOutcome.result.languageCode,
+            detectedRawLanguageCode: detectionOutcome.result.rawLanguageCode,
+            detectionConfidence: detectionOutcome.result.confidence,
             detectedFromCorpusHash: corpusHash,
         };
     } catch (error) {
@@ -184,18 +221,13 @@ export async function resolveConversationLanguageSetting({
     conversationTitle,
     bodyPlainText,
     googleCloudCredentials,
+    localLanguageDetector,
+    googleLanguageDetector,
 }: ResolveConversationLanguageSettingParams): Promise<StoredConversationLanguageSetting> {
-    if (request === undefined && existing !== undefined) {
-        return existing;
-    }
-
-    const resolvedRequest: ConversationLanguageSettingInput = request ?? {
-        mode: "auto",
-    };
-    if (resolvedRequest.mode === "manual") {
+    if (request.mode === "manual") {
         return {
             mode: "manual",
-            languageCode: resolvedRequest.languageCode,
+            languageCode: request.languageCode,
             detectedLanguageCode: existing?.detectedLanguageCode ?? null,
             detectedRawLanguageCode: existing?.detectedRawLanguageCode ?? null,
             detectionConfidence: existing?.detectionConfidence ?? null,
@@ -224,6 +256,8 @@ export async function resolveConversationLanguageSetting({
         corpus,
         corpusHash,
         googleCloudCredentials,
+        localLanguageDetector,
+        googleLanguageDetector,
     });
 }
 
@@ -248,7 +282,9 @@ export async function getConversationLanguageSetting({
                 conversationLanguageSettingTable.detectedFromCorpusHash,
         })
         .from(conversationLanguageSettingTable)
-        .where(eq(conversationLanguageSettingTable.conversationId, conversationId))
+        .where(
+            eq(conversationLanguageSettingTable.conversationId, conversationId),
+        )
         .limit(1);
 
     return normalizeConversationLanguageSettingRow(rows.at(0));

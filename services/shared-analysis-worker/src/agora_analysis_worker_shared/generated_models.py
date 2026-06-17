@@ -1,4 +1,4 @@
-# WARNING: GENERATED FROM shared-backend/src/schema.ts
+# WARNING: GENERATED FROM services/api/src/shared-backend/schema.ts
 # DO NOT MODIFY -- Re-generate with: make sync
 # Service: shared-analysis-worker
 
@@ -88,6 +88,20 @@ class ImportMethod(StrEnum):
     csv = "csv"
 
 
+class DisplayLanguageCode(StrEnum):
+    en = "en"
+    es = "es"
+    fr = "fr"
+    zh_hant = "zh-Hant"
+    zh_hans = "zh-Hans"
+    ja = "ja"
+    ar = "ar"
+    fa = "fa"
+    he = "he"
+    ky = "ky"
+    ru = "ru"
+
+
 class ConversationViewSnapshotCheckpointReasonEnum(StrEnum):
     first_displayable_analysis = "first_displayable_analysis"
     first_group_count_available = "first_group_count_available"
@@ -153,6 +167,7 @@ class PremiumFeature(StrEnum):
     survey = "survey"
     event_ticket = "event_ticket"
     analysis_variants = "analysis_variants"
+    dynamic_translation = "dynamic_translation"
 
 
 class SurveyQuestionType(StrEnum):
@@ -353,6 +368,27 @@ class Conversation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
     last_reacted_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class ConversationTranslationSetting(Base):
+    __tablename__ = "conversation_translation_setting"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class ConversationTranslationTargetLanguage(Base):
+    __tablename__ = "conversation_translation_target_language"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    translation_setting_id: Mapped[int] = mapped_column(Integer)
+    language_code: Mapped[DisplayLanguageCode] = mapped_column(
+        SaEnum(DisplayLanguageCode, values_callable=_enum_values, native_enum=False),
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
 class ConversationViewSnapshotCheckpointReason(Base):

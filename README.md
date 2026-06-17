@@ -59,8 +59,6 @@ For detailed information about each service, licenses, and documentation, see [C
 
 **[Shared App-API](./services/shared-app-api)** - TypeScript code shared specifically between the frontend (agora) and API service.
 
-**[Shared Backend](./services/shared-backend)** - Backend-specific TypeScript code for the API and source schema for generated Python worker artifacts.
-
 **[Shared Analysis Worker](./services/shared-analysis-worker)** - Shared Python package used by analysis and description workers for generated models/types, queue helpers, retry logic, AI providers, and red-dwarf integration.
 
 ### Development Tools

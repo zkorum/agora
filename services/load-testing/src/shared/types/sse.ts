@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ZodSupportedDisplayLanguageCodes } from "../languages.js";
 import {
     zodEventSlug,
+    zodContentTranslationSubject,
     zodNotificationItem,
     zodParticipationMode,
     zodPreferredOpinionGroupCount,
@@ -165,6 +166,29 @@ export type SSEConversationSettingsUpdatedData = z.infer<
     typeof zodSSEConversationSettingsUpdatedData
 >;
 
+export const zodSSEContentTranslationUpdatedData = z
+    .object({
+        subject: zodContentTranslationSubject,
+        targetLanguageCode: ZodSupportedDisplayLanguageCodes,
+        status: z.enum(["completed", "failed"]),
+        sourceVersion: z.string().min(1),
+        timestamp: z.number(),
+    })
+    .strict();
+export type SSEContentTranslationUpdatedData = z.infer<
+    typeof zodSSEContentTranslationUpdatedData
+>;
+
+export const zodSSESubscriptionReadyData = z
+    .object({
+        topics: z.array(z.string().min(1)),
+        timestamp: z.number(),
+    })
+    .strict();
+export type SSESubscriptionReadyData = z.infer<
+    typeof zodSSESubscriptionReadyData
+>;
+
 /**
  * Data sent when the server is shutting down
  */
@@ -185,6 +209,8 @@ export const zodSSEEventDataByType = {
     conversation_comment_stats_updated:
         zodSSEConversationCommentStatsUpdatedData,
     conversation_settings_updated: zodSSEConversationSettingsUpdatedData,
+    content_translation_updated: zodSSEContentTranslationUpdatedData,
+    subscription_ready: zodSSESubscriptionReadyData,
     shutdown: zodSSEShutdownData,
 } as const;
 
@@ -216,6 +242,9 @@ export type SSEConversationCommentStatsUpdatedEvent =
     SSEEvent<"conversation_comment_stats_updated">;
 export type SSEConversationSettingsUpdatedEvent =
     SSEEvent<"conversation_settings_updated">;
+export type SSEContentTranslationUpdatedEvent =
+    SSEEvent<"content_translation_updated">;
+export type SSESubscriptionReadyEvent = SSEEvent<"subscription_ready">;
 export type SSEShutdownEvent = SSEEvent<"shutdown">;
 
 /**
@@ -230,4 +259,6 @@ export type AnySSEEvent =
     | SSEConversationAnalysisUpdatedEvent
     | SSEConversationCommentStatsUpdatedEvent
     | SSEConversationSettingsUpdatedEvent
+    | SSEContentTranslationUpdatedEvent
+    | SSESubscriptionReadyEvent
     | SSEShutdownEvent;

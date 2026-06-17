@@ -48,6 +48,7 @@ import {
     zodConversationType,
     zodConversationLanguageSettingInput,
     zodConversationLanguageSettingOutput,
+    zodConversationMultilingualSetting,
     zodConversationViewSnapshotCheckpointReason,
     zodMaxdiffLifecycleStatus,
     zodExternalSourceConfig,
@@ -63,6 +64,10 @@ import {
     zodPremiumFeature,
     zodUserId,
     zodPreferredOpinionGroupCount,
+    zodContentTranslationSubject,
+    zodLocalizedConversationContent,
+    zodLocalizedOpinionContent,
+    zodLocalizedSurveyQuestionContent,
 } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
@@ -80,6 +85,7 @@ const zodConversationEditPermissions = z
         canChangeEventTicket: z.boolean(),
         canRemoveEventTicket: z.boolean(),
         canUseAnalysisVariantsPreference: z.boolean(),
+        canUseDynamicTranslation: z.boolean(),
         restrictedPremiumFeatures: z.array(zodPremiumFeature),
         premiumEditAccessEndsAt: zodDateTimeFlexible.optional(),
     })
@@ -135,6 +141,50 @@ const zodAnalysisFrameOpinionListKind = z.enum([
     "agreements",
     "disagreements",
     "divisive",
+]);
+
+const zodContentTranslationConversationResponse = z
+    .object({
+        subject: z
+            .object({
+                kind: z.literal("conversation"),
+                conversationSlugId: zodSlugId,
+            })
+            .strict(),
+        content: zodLocalizedConversationContent,
+    })
+    .strict();
+
+const zodContentTranslationOpinionResponse = z
+    .object({
+        subject: z
+            .object({
+                kind: z.literal("opinion"),
+                conversationSlugId: zodSlugId,
+                opinionSlugId: zodSlugId,
+            })
+            .strict(),
+        content: zodLocalizedOpinionContent,
+    })
+    .strict();
+
+const zodContentTranslationSurveyQuestionResponse = z
+    .object({
+        subject: z
+            .object({
+                kind: z.literal("survey_question"),
+                conversationSlugId: zodSlugId,
+                questionSlugId: zodSlugId,
+            })
+            .strict(),
+        content: zodLocalizedSurveyQuestionContent,
+    })
+    .strict();
+
+const zodContentTranslationResponse = z.union([
+    zodContentTranslationConversationResponse,
+    zodContentTranslationOpinionResponse,
+    zodContentTranslationSurveyQuestionResponse,
 ]);
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
@@ -382,7 +432,8 @@ export class Dto {
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
             conversationType: zodConversationType,
-            languageSetting: zodConversationLanguageSettingInput.optional(),
+            languageSetting: zodConversationLanguageSettingInput,
+            multilingualSetting: zodConversationMultilingualSetting,
             seedOpinionList: z.array(zodOpinionContentInput).max(50),
             requiresEventTicket: zodEventSlug.optional(),
             aiLabelingEnabled: z.boolean().default(true),
@@ -412,6 +463,13 @@ export class Dto {
             postAsOrganization: z.string().optional(),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
+            languageSetting: zodConversationLanguageSettingInput.default({
+                mode: "auto",
+            }),
+            multilingualSetting: zodConversationMultilingualSetting.default({
+                additionalLanguageCodes: [],
+                dynamicTranslationEnabled: false,
+            }),
             requiresEventTicket: zodEventSlug.optional(),
             aiLabelingEnabled: z.boolean().default(true),
             preferredOpinionGroupCount:
@@ -447,6 +505,32 @@ export class Dto {
                 if (val === "false" || val === false) return "guest";
                 return val; // Already a valid participation mode string
             }, zodParticipationMode),
+            languageSetting: z.preprocess((val) => {
+                if (val === "" || val === undefined || val === null) {
+                    return { mode: "auto" };
+                }
+                if (typeof val === "string") {
+                    const parsed: unknown = JSON.parse(val);
+                    return parsed;
+                }
+                return val;
+            }, zodConversationLanguageSettingInput.default({ mode: "auto" })),
+            multilingualSetting: z.preprocess((val) => {
+                if (val === "" || val === undefined || val === null) {
+                    return {
+                        additionalLanguageCodes: [],
+                        dynamicTranslationEnabled: false,
+                    };
+                }
+                if (typeof val === "string") {
+                    const parsed: unknown = JSON.parse(val);
+                    return parsed;
+                }
+                return val;
+            }, zodConversationMultilingualSetting.default({
+                additionalLanguageCodes: [],
+                dynamicTranslationEnabled: false,
+            })),
             requiresEventTicket: z.preprocess(
                 (val) => (val === "" || val === undefined ? undefined : val),
                 zodEventSlug.optional(),
@@ -594,6 +678,7 @@ export class Dto {
                 conversationTitle: zodConversationTitle,
                 conversationBody: zodConversationBodyOutput,
                 languageSetting: zodConversationLanguageSettingOutput,
+                multilingualSetting: zodConversationMultilingualSetting,
                 isIndexed: z.boolean(),
                 participationMode: zodParticipationMode,
                 requiresEventTicket: zodEventSlug.optional(),
@@ -622,7 +707,8 @@ export class Dto {
             conversationBodyPlainText: zodConversationBodyPlainTextInput,
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
-            languageSetting: zodConversationLanguageSettingInput.optional(),
+            languageSetting: zodConversationLanguageSettingInput,
+            multilingualSetting: zodConversationMultilingualSetting,
             requiresEventTicket: zodEventSlug.optional(),
             aiLabelingEnabled: z.boolean().optional(),
             preferredOpinionGroupCount:
@@ -664,6 +750,14 @@ export class Dto {
             hasAccess: z.boolean(),
         })
         .strict();
+    static contentTranslationRequest = z
+        .object({
+            subject: zodContentTranslationSubject,
+            targetLanguageCode: ZodSupportedDisplayLanguageCodes,
+            include: z.enum(["original", "translation", "both"]),
+        })
+        .strict();
+    static contentTranslationResponse = zodContentTranslationResponse;
     static surveyFormFetchRequest = z
         .object({
             conversationSlugId: zodSlugId,

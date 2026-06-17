@@ -1,4 +1,4 @@
-# WARNING: GENERATED FROM shared-backend/src/schema.ts
+# WARNING: GENERATED FROM services/api/src/shared-backend/schema.ts
 # DO NOT MODIFY -- Re-generate with: make sync
 # Service: scoring-worker
 

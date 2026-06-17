@@ -12,6 +12,9 @@
       :survey-gate="conversationData.interaction.surveyGate"
       :on-view-analysis="props.onViewAnalysis"
       :is-voting-disabled="isVotingDisabled"
+      :dynamic-translation-enabled="
+        conversationData.metadata.multilingualSetting.dynamicTranslationEnabled
+      "
       :preloaded-queries="{
         commentsDiscoverQuery,
         commentsNewQuery,

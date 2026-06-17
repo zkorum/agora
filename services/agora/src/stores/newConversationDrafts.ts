@@ -8,7 +8,11 @@ import type {
   ConversationDraft,
   ConversationImportType,
 } from "src/composables/conversation/draft/conversationDraft.types";
-import { createEmptyDraft } from "src/composables/conversation/draft/conversationDraft.utils";
+import {
+  areConversationLanguageSettingsEqual,
+  areConversationMultilingualSettingsEqual,
+  createEmptyDraft,
+} from "src/composables/conversation/draft/conversationDraft.utils";
 import type { OrganizationProperties } from "src/shared/types/zod";
 import {
   checkFeatureAccess,
@@ -104,6 +108,17 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       current.content !== emptyDraft.content ||
       current.contentPlainText !== emptyDraft.contentPlainText;
 
+    const hasLanguageSettingChanges = !areConversationLanguageSettingsEqual({
+      left: current.languageSetting,
+      right: emptyDraft.languageSetting,
+    });
+
+    const hasMultilingualSettingChanges =
+      !areConversationMultilingualSettingsEqual({
+        left: current.multilingualSetting,
+        right: emptyDraft.multilingualSetting,
+      });
+
     // Check seed opinions changes
     const hasSeedOpinionsChanges =
       JSON.stringify(current.seedOpinions) !==
@@ -147,6 +162,8 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
 
     return (
       hasContentChanges ||
+      hasLanguageSettingChanges ||
+      hasMultilingualSettingChanges ||
       hasSeedOpinionsChanges ||
       hasConversationTypeChanges ||
       hasPostAsChanges ||

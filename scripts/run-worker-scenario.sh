@@ -27,6 +27,11 @@ case "$worker" in
     scenario_file="$service_dir/scenarios/env.$scenario"
     module="description_translation_retry_worker.worker"
     ;;
+  content-translation-worker)
+    service_dir="$repo_root/services/content-translation-worker"
+    scenario_file="$service_dir/scenarios/env.$scenario"
+    module="content_translation_worker.worker"
+    ;;
   *)
     echo "Unknown worker: $worker" >&2
     exit 2

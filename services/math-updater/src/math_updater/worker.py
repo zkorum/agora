@@ -27,6 +27,7 @@ from agora_analysis_worker_shared.ai_description_work import (
     lineage_description_work_claim_batches,
     mark_non_retryable_ai_description_locale_work_item,
     process_description_translation_work_items_batch,
+    process_first_pass_lineage_description_work_items_batch,
     process_lineage_description_work_items_batch,
     recover_expired_ai_description_work,
     retry_ai_description_locale_work_item,
@@ -456,7 +457,6 @@ def _process_ai_description_conversation_ids(
     retry_first_pass_once: bool = False,
     claim_lineage_descriptions: bool = True,
     claim_translations: bool = True,
-    require_pending_status: bool = False,
 ) -> int:
     completed_non_processable_ids = complete_non_processable_ai_description_work_batch(
         primary_engine,
@@ -480,21 +480,26 @@ def _process_ai_description_conversation_ids(
     if not processable_conversation_ids:
         return 0
 
+    first_pass_view_snapshot_ids = (
+        conversation_view_snapshot_ids
+        if retry_first_pass_once and conversation_view_snapshot_ids is not None
+        else None
+    )
+    is_first_pass_scope = first_pass_view_snapshot_ids is not None
     claim_started_at = time.perf_counter()
     ai_claims: list[ClaimedAiDescriptionLocaleWorkItem] = []
     if claim_lineage_descriptions:
-        if retry_first_pass_once and conversation_view_snapshot_ids is not None:
+        if is_first_pass_scope:
             ai_claims = claim_first_pass_ai_description_locale_work_items_batch(
                 primary_engine,
                 worker_id=worker_id,
                 conversation_ids=processable_conversation_ids,
-                conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+                conversation_view_snapshot_ids=first_pass_view_snapshot_ids,
                 lease_ttl_seconds=lease_ttl_seconds,
                 limit=claim_limit,
                 ai_description_epoch=ai_description_epoch,
                 translation_enabled=description_translator is not None,
                 claim_translations=False,
-                require_pending_status=require_pending_status,
             )
         else:
             ai_claims = claim_ai_description_locale_work_items_batch(
@@ -507,10 +512,9 @@ def _process_ai_description_conversation_ids(
                 ai_description_epoch=ai_description_epoch,
                 translation_enabled=description_translator is not None,
                 claim_translations=False,
-                require_pending_status=require_pending_status,
             )
     translation_claim_limit = claim_limit
-    if retry_first_pass_once:
+    if is_first_pass_scope:
         translation_claim_limit = _first_pass_translation_claim_limit(
             claim_limit=claim_limit,
             max_workers=max_workers,
@@ -521,19 +525,18 @@ def _process_ai_description_conversation_ids(
         and description_translator is not None
         and remaining_translation_claim_limit > 0
     ):
-        if retry_first_pass_once and conversation_view_snapshot_ids is not None:
+        if is_first_pass_scope:
             ai_claims.extend(
                 claim_first_pass_ai_description_locale_work_items_batch(
                     primary_engine,
                     worker_id=worker_id,
                     conversation_ids=processable_conversation_ids,
-                    conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+                    conversation_view_snapshot_ids=first_pass_view_snapshot_ids,
                     lease_ttl_seconds=lease_ttl_seconds,
                     limit=remaining_translation_claim_limit,
                     ai_description_epoch=ai_description_epoch,
                     translation_enabled=True,
                     claim_lineage_descriptions=False,
-                    require_pending_status=require_pending_status,
                 )
             )
         else:
@@ -548,9 +551,8 @@ def _process_ai_description_conversation_ids(
                     ai_description_epoch=ai_description_epoch,
                     translation_enabled=True,
                     claim_lineage_descriptions=False,
-                    require_pending_status=require_pending_status,
                 )
-    )
+            )
     if not ai_claims:
         log.debug(
             "[MathUpdater] No claimable AI description locale work for "
@@ -560,15 +562,13 @@ def _process_ai_description_conversation_ids(
             (time.perf_counter() - claim_started_at) * 1000,
         )
         return 0
-    work_log = log.debug if retry_first_pass_once else log.info
+    work_log = log.debug if is_first_pass_scope else log.info
     work_log(
         "[MathUpdater] Claimed %d AI description locale work item(s) claim_ms=%.1f "
         "claimScope=%s",
         len(ai_claims),
         (time.perf_counter() - claim_started_at) * 1000,
-        "first-pass-unactivated"
-        if conversation_view_snapshot_ids is not None
-        else "latest-or-checkpoint",
+        "first-pass-unactivated" if is_first_pass_scope else "latest-or-checkpoint",
     )
 
     def process_claim_error(
@@ -611,9 +611,9 @@ def _process_ai_description_conversation_ids(
                 claim.conversation_slug_id,
                 claim.locale,
                 _ai_description_claim_target_log(claim),
-            )
+        )
         is_timeout = _is_timeout_error(error)
-        is_first_pass_timeout = retry_first_pass_once and is_timeout
+        is_first_pass_timeout = is_first_pass_scope and is_timeout
         schedule = retry_ai_description_locale_work_item(
             primary_engine,
             claim=claim,
@@ -662,7 +662,12 @@ def _process_ai_description_conversation_ids(
         if not processable_claims:
             return retry_schedules
         try:
-            result = process_lineage_description_work_items_batch(
+            process_lineage_descriptions = (
+                process_first_pass_lineage_description_work_items_batch
+                if is_first_pass_scope
+                else process_lineage_description_work_items_batch
+            )
+            result = process_lineage_descriptions(
                 primary_engine,
                 claims=processable_claims,
                 generate_descriptions=description_generator,
@@ -884,7 +889,6 @@ def _process_ai_description_first_pass_phase(
             retry_first_pass_once=True,
             claim_lineage_descriptions=phase == "english",
             claim_translations=phase == "translation",
-            require_pending_status=True,
         )
         log.debug(
             "[MathUpdater] first_pass %s phase processed count=%d "

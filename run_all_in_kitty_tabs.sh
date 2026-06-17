@@ -23,6 +23,7 @@ usage() {
   print "  math-updater=<scenario>" >&2
   print "  ai-description-retry-worker=<scenario>" >&2
   print "  description-translation-retry-worker=<scenario>" >&2
+  print "  content-translation-worker=<scenario>" >&2
   print "" >&2
   print "Examples:" >&2
   print "  $SCRIPT_NAME" >&2
@@ -108,9 +109,9 @@ launch_tab "API" "make dev-api"
 launch_worker_tab "math-updater" "Math-Updater" "dev-math-updater" "dev-math-updater-scenario"
 launch_worker_tab "ai-description-retry-worker" "AI-Description-Retry" "dev-ai-description-retry-worker" "dev-ai-description-retry-worker-scenario"
 launch_worker_tab "description-translation-retry-worker" "Description-Translation-Retry" "dev-description-translation-retry-worker" "dev-description-translation-retry-worker-scenario"
+launch_worker_tab "content-translation-worker" "Content-Translation-Worker" "dev-content-translation-worker" "dev-content-translation-worker-scenario"
 launch_tab "Import-Worker" "make dev-import-worker"
 launch_tab "Scoring-Worker" "make dev-scoring-worker"
 launch_tab "OpenAPI" "make dev-generate"
 launch_tab "Shared" "make dev-sync"
 launch_tab "Shared-App-API" "make dev-sync-app-api"
-launch_tab "Shared-Backend" "make dev-sync-ts-backend"

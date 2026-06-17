@@ -1,4 +1,3 @@
-/** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 import {
     pgEnum,
     pgTable,
@@ -22,6 +21,10 @@ import {
 } from "drizzle-orm/pg-core";
 import { isNotNull, isNull, type SQL } from "drizzle-orm";
 import { sql } from "drizzle-orm/sql";
+import {
+    ZodSupportedDisplayLanguageCodes,
+    ZodSupportedSpokenLanguageCodes,
+} from "@/shared/languages.js";
 // import { MAX_LENGTH_TITLE, MAX_LENGTH_OPINION, MAX_LENGTH_BODY } from "./shared/shared.js"; // unfortunately it breaks drizzle generate... :o TODO: find a way
 // WARNING: when you modify these limits, change this in shared.ts as well
 const MAX_LENGTH_TITLE = 140;
@@ -599,11 +602,28 @@ export const conversationLanguageSettingModeEnum = pgEnum(
     "conversation_language_setting_mode",
     ["auto", "manual"],
 );
+export const displayLanguageCodeEnum = pgEnum(
+    "display_language_code",
+    ZodSupportedDisplayLanguageCodes.enum,
+);
+export const spokenLanguageCodeEnum = pgEnum(
+    "spoken_language_code",
+    ZodSupportedSpokenLanguageCodes.enum,
+);
 export const premiumFeatureEnum = pgEnum("premium_feature", [
     "survey",
     "event_ticket",
     "analysis_variants",
+    "dynamic_translation",
 ]);
+export const contentTranslationSourceKindEnum = pgEnum(
+    "content_translation_source_kind",
+    ["conversation", "opinion", "survey_question"],
+);
+export const contentTranslationWorkStatusEnum = pgEnum(
+    "content_translation_work_status",
+    ["pending", "running", "completed", "failed"],
+);
 
 export const directoryVisibilityEnum = pgEnum("directory_visibility", [
     "listed",
@@ -981,7 +1001,7 @@ export const userSpokenLanguagesTable = pgTable(
         userId: uuid("user_id")
             .references(() => userTable.id, { onDelete: "cascade" })
             .notNull(),
-        languageCode: varchar("language_code", { length: 35 }).notNull(), // BCP 47 format
+        languageCode: spokenLanguageCodeEnum("language_code").notNull(),
         isDeleted: boolean("is_deleted").notNull().default(false),
         deletedAt: timestamp("deleted_at", {
             mode: "date",
@@ -1007,7 +1027,7 @@ export const userDisplayLanguageTable = pgTable(
         userId: uuid("user_id")
             .references(() => userTable.id, { onDelete: "cascade" })
             .notNull(),
-        languageCode: varchar("language_code", { length: 35 }).notNull(), // BCP 47 format
+        languageCode: displayLanguageCodeEnum("language_code").notNull(),
         isDeleted: boolean("is_deleted").notNull().default(false),
         deletedAt: timestamp("deleted_at", {
             mode: "date",
@@ -1022,6 +1042,9 @@ export const userDisplayLanguageTable = pgTable(
     },
     (t) => [
         unique("user_display_language_unique").on(t.userId, t.languageCode),
+        uniqueIndex("user_display_language_active_user_unique")
+            .on(t.userId)
+            .where(sql`${t.isDeleted} = false`),
     ],
 );
 
@@ -1564,7 +1587,7 @@ export const otpEmailDestinationStateTable = pgTable(
     ],
 );
 
-/** @service shared-analysis-worker, import-worker */
+/** @service shared-analysis-worker, import-worker, content-translation-worker */
 export const conversationContentTable = pgTable("conversation_content", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     conversationId: integer("conversation_id")
@@ -1583,7 +1606,7 @@ export const conversationContentTable = pgTable("conversation_content", {
         .notNull(),
 });
 
-/** @service scoring-worker, api, shared-analysis-worker, import-worker */
+/** @service scoring-worker, api, shared-analysis-worker, import-worker, content-translation-worker */
 export const conversationTable = pgTable(
     "conversation",
     {
@@ -1720,6 +1743,61 @@ export const conversationLanguageSettingTable = pgTable(
     ],
 );
 
+/** @service api, shared-analysis-worker, content-translation-worker, import-worker */
+export const conversationTranslationSettingTable = pgTable(
+    "conversation_translation_setting",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        conversationId: integer("conversation_id")
+            .notNull()
+            .references(() => conversationTable.id),
+        dynamicTranslationEnabled: boolean("dynamic_translation_enabled")
+            .notNull()
+            .default(false),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("conversation_translation_setting_conversation_unique").on(
+            table.conversationId,
+        ),
+    ],
+);
+
+/** @service api, shared-analysis-worker, content-translation-worker, import-worker */
+export const conversationTranslationTargetLanguageTable = pgTable(
+    "conversation_translation_target_language",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        translationSettingId: integer("translation_setting_id")
+            .notNull()
+            .references(() => conversationTranslationSettingTable.id),
+        languageCode: displayLanguageCodeEnum("language_code").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("conversation_translation_target_language_unique").on(
+            table.translationSettingId,
+            table.languageCode,
+        ),
+    ],
+);
+
 /** @service scoring-worker, api, shared-analysis-worker */
 export const surveyConfigTable = pgTable(
     "survey_config",
@@ -1758,7 +1836,7 @@ export const surveyConfigTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, shared-analysis-worker */
+/** @service scoring-worker, api, shared-analysis-worker, content-translation-worker */
 export const surveyQuestionTable = pgTable(
     "survey_question",
     {
@@ -1820,7 +1898,42 @@ export const surveyQuestionTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, shared-analysis-worker */
+/** @service api, content-translation-worker */
+export const conversationContentTranslationTable = pgTable(
+    "conversation_content_translation",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        conversationContentId: integer("conversation_content_id")
+            .notNull()
+            .references(() => conversationContentTable.id),
+        displayLanguageCode:
+            displayLanguageCodeEnum("display_language_code").notNull(),
+        translatedTitle: varchar("translated_title", {
+            length: MAX_LENGTH_TITLE,
+        }).notNull(),
+        translatedBody: text("translated_body"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("conversation_content_translation_unique").on(
+            table.conversationContentId,
+            table.displayLanguageCode,
+        ),
+    ],
+);
+
+/** @service scoring-worker, api, shared-analysis-worker, content-translation-worker */
 export const surveyQuestionContentTable = pgTable("survey_question_content", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     surveyQuestionId: integer("survey_question_id")
@@ -1842,7 +1955,7 @@ export const surveyQuestionContentTable = pgTable("survey_question_content", {
         .notNull(),
 });
 
-/** @service api */
+/** @service api, content-translation-worker */
 export const surveyQuestionContentTranslationTable = pgTable(
     "survey_question_content_translation",
     {
@@ -1850,9 +1963,8 @@ export const surveyQuestionContentTranslationTable = pgTable(
         surveyQuestionContentId: integer("survey_question_content_id")
             .notNull()
             .references(() => surveyQuestionContentTable.id),
-        displayLanguageCode: varchar("display_language_code", {
-            length: 10,
-        }).notNull(),
+        displayLanguageCode:
+            displayLanguageCodeEnum("display_language_code").notNull(),
         translatedQuestionText: text("translated_question_text").notNull(),
         createdAt: timestamp("created_at", {
             mode: "date",
@@ -1875,7 +1987,7 @@ export const surveyQuestionContentTranslationTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, shared-analysis-worker */
+/** @service scoring-worker, api, shared-analysis-worker, content-translation-worker */
 export const surveyQuestionOptionTable = pgTable(
     "survey_question_option",
     {
@@ -1912,7 +2024,7 @@ export const surveyQuestionOptionTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, shared-analysis-worker */
+/** @service scoring-worker, api, shared-analysis-worker, content-translation-worker */
 export const surveyQuestionOptionContentTable = pgTable(
     "survey_question_option_content",
     {
@@ -1936,7 +2048,7 @@ export const surveyQuestionOptionContentTable = pgTable(
     },
 );
 
-/** @service api */
+/** @service api, content-translation-worker */
 export const surveyQuestionOptionContentTranslationTable = pgTable(
     "survey_question_option_content_translation",
     {
@@ -1946,9 +2058,8 @@ export const surveyQuestionOptionContentTranslationTable = pgTable(
         )
             .notNull()
             .references(() => surveyQuestionOptionContentTable.id),
-        displayLanguageCode: varchar("display_language_code", {
-            length: 10,
-        }).notNull(),
+        displayLanguageCode:
+            displayLanguageCodeEnum("display_language_code").notNull(),
         translatedOptionText: text("translated_option_text").notNull(),
         createdAt: timestamp("created_at", {
             mode: "date",
@@ -2119,7 +2230,7 @@ export const surveyAnswerOptionTable = pgTable(
     ],
 );
 
-/** @service shared-analysis-worker, import-worker */
+/** @service shared-analysis-worker, import-worker, content-translation-worker */
 export const opinionTable = pgTable(
     "opinion",
     {
@@ -2184,7 +2295,7 @@ export const opinionTable = pgTable(
     ],
 );
 
-/** @service shared-analysis-worker, import-worker */
+/** @service shared-analysis-worker, import-worker, content-translation-worker */
 export const opinionContentTable = pgTable("opinion_content", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     opinionId: integer("opinion_id")
@@ -2204,6 +2315,185 @@ export const opinionContentTable = pgTable("opinion_content", {
         .defaultNow()
         .notNull(),
 });
+
+/** @service api, content-translation-worker */
+export const opinionContentTranslationTable = pgTable(
+    "opinion_content_translation",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        opinionContentId: integer("opinion_content_id")
+            .notNull()
+            .references(() => opinionContentTable.id),
+        displayLanguageCode:
+            displayLanguageCodeEnum("display_language_code").notNull(),
+        translatedContent: text("translated_content").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("opinion_content_translation_unique").on(
+            table.opinionContentId,
+            table.displayLanguageCode,
+        ),
+    ],
+);
+
+/** @service api, content-translation-worker, import-worker */
+export const contentTranslationWorkTable = pgTable(
+    "content_translation_work",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        conversationId: integer("conversation_id")
+            .notNull()
+            .references(() => conversationTable.id),
+        sourceKind: contentTranslationSourceKindEnum("source_kind").notNull(),
+        conversationContentId: integer("conversation_content_id").references(
+            () => conversationContentTable.id,
+        ),
+        opinionContentId: integer("opinion_content_id").references(
+            () => opinionContentTable.id,
+        ),
+        surveyQuestionContentId: integer(
+            "survey_question_content_id",
+        ).references(() => surveyQuestionContentTable.id),
+        surveyQuestionOptionContentIds: integer(
+            "survey_question_option_content_ids",
+        ).array(),
+        displayLanguageCode:
+            displayLanguageCodeEnum("display_language_code").notNull(),
+        status: contentTranslationWorkStatusEnum("status")
+            .notNull()
+            .default("pending"),
+        priorityRank: integer("priority_rank").notNull().default(2),
+        attemptCount: integer("attempt_count").notNull().default(0),
+        leaseOwner: varchar("lease_owner", { length: 100 }),
+        leaseToken: varchar("lease_token", { length: 100 }),
+        leaseExpiresAt: timestamp("lease_expires_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        lastErrorCode: varchar("last_error_code", { length: 100 }),
+        lastErrorMessage: text("last_error_message"),
+        requestedAt: timestamp("requested_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        completedAt: timestamp("completed_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        failedAt: timestamp("failed_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        uniqueIndex("content_translation_work_conversation_unique")
+            .on(table.conversationContentId, table.displayLanguageCode)
+            .where(
+                sqlAnd(
+                    sql`${table.sourceKind} = 'conversation'`,
+                    isNotNull(table.conversationContentId),
+                ),
+            ),
+        uniqueIndex("content_translation_work_opinion_unique")
+            .on(table.opinionContentId, table.displayLanguageCode)
+            .where(
+                sqlAnd(
+                    sql`${table.sourceKind} = 'opinion'`,
+                    isNotNull(table.opinionContentId),
+                ),
+            ),
+        uniqueIndex("content_translation_work_survey_question_unique")
+            .on(
+                table.surveyQuestionContentId,
+                table.surveyQuestionOptionContentIds,
+                table.displayLanguageCode,
+            )
+            .where(
+                sqlAnd(
+                    sql`${table.sourceKind} = 'survey_question'`,
+                    isNotNull(table.surveyQuestionContentId),
+                    isNotNull(table.surveyQuestionOptionContentIds),
+                ),
+            ),
+        index("content_translation_work_claim_idx")
+            .on(table.priorityRank, table.updatedAt, table.id)
+            .where(sql`${table.status} = 'pending'`),
+        index("content_translation_work_lease_expiry_idx")
+            .on(table.leaseExpiresAt, table.id)
+            .where(sql`${table.status} = 'running'`),
+        check(
+            "content_translation_work_source_check",
+            sqlOr(
+                sqlAnd(
+                    sql`${table.sourceKind} = 'conversation'`,
+                    isNotNull(table.conversationContentId),
+                    isNull(table.opinionContentId),
+                    isNull(table.surveyQuestionContentId),
+                    isNull(table.surveyQuestionOptionContentIds),
+                ),
+                sqlAnd(
+                    sql`${table.sourceKind} = 'opinion'`,
+                    isNull(table.conversationContentId),
+                    isNotNull(table.opinionContentId),
+                    isNull(table.surveyQuestionContentId),
+                    isNull(table.surveyQuestionOptionContentIds),
+                ),
+                sqlAnd(
+                    sql`${table.sourceKind} = 'survey_question'`,
+                    isNull(table.conversationContentId),
+                    isNull(table.opinionContentId),
+                    isNotNull(table.surveyQuestionContentId),
+                    isNotNull(table.surveyQuestionOptionContentIds),
+                ),
+            ),
+        ),
+        check(
+            "content_translation_work_running_lease_check",
+            sqlOr(
+                sqlAnd(
+                    sql`${table.status} <> 'running'`,
+                    isNull(table.leaseOwner),
+                    isNull(table.leaseToken),
+                    isNull(table.leaseExpiresAt),
+                ),
+                sqlAnd(
+                    sql`${table.status} = 'running'`,
+                    isNotNull(table.leaseOwner),
+                    isNotNull(table.leaseToken),
+                    isNotNull(table.leaseExpiresAt),
+                ),
+            ),
+        ),
+        check(
+            "content_translation_work_priority_rank_check",
+            sql`${table.priorityRank} >= 0 AND ${table.priorityRank} <= 2`,
+        ),
+    ],
+);
 
 // like or dislike on opinions for each user
 /** @service shared-analysis-worker, import-worker */
@@ -3474,7 +3764,7 @@ export const conversationViewSnapshotTable = pgTable(
     ],
 );
 
-/** @service api, shared-analysis-worker */
+/** @service api, shared-analysis-worker, content-translation-worker */
 export const realtimeEventOutboxTable = pgTable(
     "realtime_event_outbox",
     {
@@ -3495,6 +3785,28 @@ export const realtimeEventOutboxTable = pgTable(
             .where(
                 sql`${t.eventType} IN ('conversation_analysis_updated', 'conversation_settings_updated')`,
             ),
+    ],
+);
+
+/** @service api, content-translation-worker */
+export const realtimeEventOutboxTopicTable = pgTable(
+    "realtime_event_outbox_topic",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        eventId: integer("event_id")
+            .notNull()
+            .references(() => realtimeEventOutboxTable.id),
+        topic: varchar("topic", { length: 255 }).notNull(),
+    },
+    (table) => [
+        unique("realtime_event_outbox_topic_unique").on(
+            table.eventId,
+            table.topic,
+        ),
+        index("realtime_event_outbox_topic_replay_idx").on(
+            table.topic,
+            table.eventId,
+        ),
     ],
 );
 

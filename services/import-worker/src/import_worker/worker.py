@@ -31,10 +31,17 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
     from sqlalchemy.orm import Session, sessionmaker
 
-    from import_worker.importer import AnalysisQueueSchedule, ImportProcessResult
+    from import_worker.importer import (
+        AnalysisQueueSchedule,
+        ContentTranslationQueueSchedule,
+        ImportProcessResult,
+    )
     from import_worker.queue import ImportNotificationEvent, ImportRequest, InvalidImportItem
 
 ANALYSIS_DIRTY_KEY = "analysis:dirty"
+CONTENT_TRANSLATION_DIRTY_KEY = "content-translation:dirty"
+CONTENT_TRANSLATION_EAGER_VISIBLE_PRIORITY = 1
+CONTENT_TRANSLATION_PRIORITY_SCORE_OFFSET = 10_000_000_000_000
 STARTUP_RETRY_INTERVAL_SECONDS = 5.0
 
 logging.basicConfig(
@@ -166,6 +173,29 @@ def _schedule_analysis(
     )
 
 
+def _schedule_content_translation(
+    vk: ImportValkeyClient,
+    *,
+    schedule: ContentTranslationQueueSchedule | None,
+) -> None:
+    if schedule is None:
+        return
+    score = (
+        CONTENT_TRANSLATION_EAGER_VISIBLE_PRIORITY
+        * CONTENT_TRANSLATION_PRIORITY_SCORE_OFFSET
+        + schedule.enqueued_at_ms
+    )
+    LOGGER.info(
+        "Queueing imported content translation work count=%s enqueuedAtMs=%s",
+        len(schedule.work_ids),
+        schedule.enqueued_at_ms,
+    )
+    vk.zadd(
+        CONTENT_TRANSLATION_DIRTY_KEY,
+        {str(work_id): score for work_id in schedule.work_ids},
+    )
+
+
 def _push_result_events(vk: ImportValkeyClient, *, processed: ProcessedImport) -> None:
     if processed.result is not None:
         if processed.result.event is not None:
@@ -173,6 +203,10 @@ def _push_result_events(vk: ImportValkeyClient, *, processed: ProcessedImport) -
         _schedule_analysis(
             vk,
             schedule=processed.result.analysis_schedule,
+        )
+        _schedule_content_translation(
+            vk,
+            schedule=processed.result.content_translation_schedule,
         )
     if processed.failure_event is not None:
         push_import_event(vk, event=processed.failure_event)

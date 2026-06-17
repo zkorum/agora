@@ -3,6 +3,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   type AnySSEEvent,
   type FetchCommentStatsResponse,
+  type SSEContentTranslationUpdatedData,
   type SSEConversationAnalysisUpdatedData,
   type SSEConversationCommentStatsUpdatedData,
   type SSEConversationSettingsUpdatedData,
@@ -29,6 +30,7 @@ import {
   parseRawSSEFrame,
   splitCompleteSSEFrames,
 } from "src/utils/sse/frameParser";
+import { publishContentTranslationFailed } from "src/utils/translation/contentTranslationEvents";
 import { useNotify } from "src/utils/ui/notify";
 import { type MaybeRefOrGetter, onUnmounted, ref, toValue, watch } from "vue";
 
@@ -215,8 +217,10 @@ function isCommentStatsQueryKey({
  */
 export function useRealtimeSSE({
   subscribedConversationSlugId,
+  subscribedTopics,
 }: {
   subscribedConversationSlugId?: MaybeRefOrGetter<string | undefined>;
+  subscribedTopics?: MaybeRefOrGetter<readonly string[] | undefined>;
 } = {}) {
   const { buildEncodedUcan } = useCommonApi();
   const notificationStore = useNotificationStore();
@@ -282,6 +286,14 @@ export function useRealtimeSSE({
     return toValue(subscribedConversationSlugId);
   }
 
+  function getSubscribedTopics(): readonly string[] {
+    return toValue(subscribedTopics) ?? [];
+  }
+
+  function getSubscribedTopicSignature(): string {
+    return getSubscribedTopics().join("\n");
+  }
+
   function shouldMaintainConnection(): boolean {
     return !didCleanup && !document.hidden && authStore.isAuthInitialized;
   }
@@ -295,11 +307,16 @@ export function useRealtimeSSE({
     const baseUrl = processEnv.VITE_API_BASE_URL || "";
     const path = "/api/v1/realtime/stream";
     const conversationSlugId = getSubscribedConversationSlugId();
-    if (conversationSlugId === undefined) {
+    const params = new URLSearchParams();
+    if (conversationSlugId !== undefined) {
+      params.set("conversationSlugId", conversationSlugId);
+    }
+    for (const topic of getSubscribedTopics()) {
+      params.append("topic", topic);
+    }
+    if (params.size === 0) {
       return `${baseUrl}${path}`;
     }
-
-    const params = new URLSearchParams({ conversationSlugId });
     return `${baseUrl}${path}?${params.toString()}`;
   }
 
@@ -599,6 +616,23 @@ export function useRealtimeSSE({
           zodSSEEventDataByType.conversation_settings_updated.safeParse(
             rawData
           );
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
+      }
+      case "content_translation_updated": {
+        const result =
+          zodSSEEventDataByType.content_translation_updated.safeParse(rawData);
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return { id: frame.id, event: { event: frame.event, data: result.data } };
+      }
+      case "subscription_ready": {
+        const result = zodSSEEventDataByType.subscription_ready.safeParse(rawData);
         if (!result.success) {
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
@@ -998,6 +1032,13 @@ export function useRealtimeSSE({
           });
           break;
         }
+        case "content_translation_updated": {
+          handleContentTranslationUpdated(sseEvent.data);
+          break;
+        }
+        case "subscription_ready": {
+          break;
+        }
         case "shutdown": {
           break;
         }
@@ -1005,6 +1046,20 @@ export function useRealtimeSSE({
     } catch {
       return;
     }
+  }
+
+  function handleContentTranslationUpdated(
+    data: SSEContentTranslationUpdatedData
+  ): void {
+    if (data.status === "failed") {
+      publishContentTranslationFailed(data);
+      return;
+    }
+
+    void queryClient.invalidateQueries({
+      queryKey: ["contentTranslation", data.subject, data.targetLanguageCode],
+      refetchType: "active",
+    });
   }
 
   function updateConversationCountsFromAnalysisEvent(
@@ -1236,6 +1291,26 @@ export function useRealtimeSSE({
       }
 
       if (conversationSlugId === previousConversationSlugId) {
+        return;
+      }
+
+      if (document.hidden) {
+        disconnectAndAllowLaterReconnect();
+        return;
+      }
+
+      if (shouldMaintainConnection()) {
+        forceReconnect();
+      } else {
+        disconnectAndAllowLaterReconnect();
+      }
+    }
+  );
+
+  watch(
+    () => getSubscribedTopicSignature(),
+    (topicSignature, previousTopicSignature) => {
+      if (topicSignature === previousTopicSignature) {
         return;
       }
 

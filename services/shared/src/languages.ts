@@ -50,7 +50,6 @@ export const ZodAllLanguageCodes = z.enum([
     "vi",
     "zh-Hans",
     "zh-Hant",
-    "ja",
 ]);
 export type AllLanguageCodes = z.infer<typeof ZodAllLanguageCodes>;
 

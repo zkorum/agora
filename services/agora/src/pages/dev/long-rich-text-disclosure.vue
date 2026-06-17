@@ -60,6 +60,20 @@
                 class="control-select"
               />
             </div>
+
+            <div class="control-item">
+              <label for="translation-scenario" class="control-label">
+                Translation
+              </label>
+              <PrimeSelect
+                id="translation-scenario"
+                v-model="translationScenario"
+                :options="translationScenarioOptions"
+                option-label="label"
+                option-value="value"
+                class="control-select"
+              />
+            </div>
           </div>
         </template>
       </PrimeCard>
@@ -69,6 +83,8 @@
           <PostContent
             :extended-post-data="conversationPreview"
             :compact-mode="conversationMode === 'compact'"
+            :content-translation="conversationTranslationPreview"
+            @update:content-translation-mode="conversationTranslationMode = $event"
           />
 
           <PostActionBar
@@ -102,7 +118,34 @@
               :survey-gate="undefined"
               :on-view-analysis="noop"
               :is-voting-disabled="true"
+              :content-translation="statementTranslationPreview(statement.opinion)"
+              @update:content-translation-mode="statementTranslationMode = $event"
             />
+          </div>
+
+          <div class="survey-preview-card">
+            <div class="survey-preview-card__eyebrow">Survey preview</div>
+            <ContentTranslationControl
+              v-if="surveyTranslationPreview.isAvailable"
+              :model-value="surveyTranslationMode"
+              :source-language-label="surveyTranslationPreview.sourceLanguageLabel"
+              :translation-status="surveyTranslationPreview.translationStatus"
+              class="survey-preview-card__translation-control"
+              @update:model-value="surveyTranslationMode = $event"
+            />
+            <div class="survey-preview-card__question">
+              {{ displayedSurveyQuestion }}
+            </div>
+            <div class="survey-preview-card__options">
+              <button
+                v-for="option in displayedSurveyOptions"
+                :key="option"
+                type="button"
+                class="survey-preview-card__option"
+              >
+                {{ option }}
+              </button>
+            </div>
           </div>
         </div>
       </ZKHoverEffect>
@@ -119,6 +162,7 @@ import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import CommentItem from "src/components/post/comments/group/item/CommentItem.vue";
 import PostContent from "src/components/post/display/PostContent.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
+import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
@@ -128,7 +172,11 @@ import type {
   OpinionItem,
   VotingAction,
 } from "src/shared/types/zod";
-import { computed, ref } from "vue";
+import {
+  type ContentTranslationDisplayMode,
+  resolveContentTranslationState,
+} from "src/utils/translation/contentTranslation";
+import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 defineOptions({
@@ -151,6 +199,13 @@ type StatementMode =
   | "multiple-empty-lines"
   | "long"
   | "mixed";
+type TranslationScenario =
+  | "off"
+  | "same-display"
+  | "spoken-not-display"
+  | "pending"
+  | "not-spoken"
+  | "unknown";
 
 interface SelectOption<T extends string> {
   label: string;
@@ -167,7 +222,11 @@ const now = new Date("2026-01-01T00:00:00Z");
 const descriptionMode = ref<DescriptionMode>("long-with-empty-lines");
 const conversationMode = ref<ConversationMode>("full");
 const statementMode = ref<StatementMode>("mixed");
+const translationScenario = ref<TranslationScenario>("not-spoken");
 const currentTab = ref<"comment" | "analysis">("comment");
+const conversationTranslationMode = ref<ContentTranslationDisplayMode>("original");
+const statementTranslationMode = ref<ContentTranslationDisplayMode>("original");
+const surveyTranslationMode = ref<ContentTranslationDisplayMode>("original");
 
 const descriptionModeOptions: Array<SelectOption<DescriptionMode>> = [
   { label: "Short", value: "short" },
@@ -188,6 +247,15 @@ const statementModeOptions: Array<SelectOption<StatementMode>> = [
   { label: "Multiple empty lines collapse", value: "multiple-empty-lines" },
   { label: "Long", value: "long" },
   { label: "Mixed", value: "mixed" },
+];
+
+const translationScenarioOptions: Array<SelectOption<TranslationScenario>> = [
+  { label: "Dynamic translation off", value: "off" },
+  { label: "Source matches display language", value: "same-display" },
+  { label: "Source is spoken by viewer", value: "spoken-not-display" },
+  { label: "Translation pending", value: "pending" },
+  { label: "Source is not spoken by viewer", value: "not-spoken" },
+  { label: "Unknown source language", value: "unknown" },
 ];
 
 function noop(): void {}
@@ -233,6 +301,10 @@ function createConversation({
         detectedLanguageCode: null,
         detectedRawLanguageCode: null,
         detectionConfidence: null,
+      },
+      multilingualSetting: {
+        additionalLanguageCodes: [],
+        dynamicTranslationEnabled: false,
       },
       externalSourceConfig: null,
     },
@@ -336,6 +408,114 @@ const conversationPreview = computed(() => {
   return createConversation({ body: conversationBody.value });
 });
 
+const translationInputs = computed(() => {
+  if (translationScenario.value === "off") {
+    return {
+      dynamicTranslationEnabled: false,
+      sourceLanguageCode: "ja",
+      displayLanguage: "en" as const,
+      spokenLanguages: ["en" as const],
+    };
+  }
+  if (translationScenario.value === "same-display") {
+    return {
+      dynamicTranslationEnabled: true,
+      sourceLanguageCode: "en",
+      displayLanguage: "en" as const,
+      spokenLanguages: ["en" as const],
+    };
+  }
+  if (translationScenario.value === "spoken-not-display") {
+    return {
+      dynamicTranslationEnabled: true,
+      sourceLanguageCode: "ja",
+      displayLanguage: "en" as const,
+      spokenLanguages: ["en" as const, "ja" as const],
+    };
+  }
+  if (translationScenario.value === "unknown") {
+    return {
+      dynamicTranslationEnabled: true,
+      sourceLanguageCode: null,
+      displayLanguage: "en" as const,
+      spokenLanguages: ["en" as const],
+    };
+  }
+  return {
+    dynamicTranslationEnabled: true,
+    sourceLanguageCode: "ja",
+    displayLanguage: "en" as const,
+    spokenLanguages: ["en" as const],
+  };
+});
+
+const translationState = computed(() =>
+  translationScenario.value === "pending"
+    ? {
+        isAvailable: true,
+        initialMode: "original" as const,
+        sourceLanguageLabel: "Japanese",
+        translationStatus: "pending" as const,
+      }
+    : resolveContentTranslationState({
+        ...translationInputs.value,
+        hasTranslatedContent: true,
+      })
+);
+
+watch(
+  translationState,
+  (state) => {
+    conversationTranslationMode.value = state.initialMode;
+    statementTranslationMode.value = state.initialMode;
+    surveyTranslationMode.value = state.initialMode;
+  },
+  { immediate: true }
+);
+
+const translatedConversationBody = computed(() => {
+  if (descriptionMode.value === "short") {
+    return "<p>Translated short description preview.</p>";
+  }
+  return paragraphs({ prefix: "Translated description", count: 10 });
+});
+
+const conversationTranslationPreview = computed(() => ({
+  isAvailable: translationState.value.isAvailable,
+  mode: conversationTranslationMode.value,
+  sourceLanguageLabel: translationState.value.sourceLanguageLabel,
+  translationStatus: translationState.value.translationStatus,
+  translatedTitle: "Translated long description conversation",
+  translatedBody: translatedConversationBody.value,
+}));
+
+function statementTranslationPreview(originalOpinion: string) {
+  return {
+    isAvailable: translationState.value.isAvailable,
+    mode: statementTranslationMode.value,
+    sourceLanguageLabel: translationState.value.sourceLanguageLabel,
+    translationStatus: translationState.value.translationStatus,
+    translatedOpinion:
+      originalOpinion.length < 120
+        ? "<p>Ugh, I'm so nervous.</p>"
+        : paragraphs({ prefix: "Translated statement", count: 8 }),
+  };
+}
+
+const surveyTranslationPreview = computed(() => translationState.value);
+
+const displayedSurveyQuestion = computed(() =>
+  surveyTranslationMode.value === "translated"
+    ? "Which translated option best represents your view?"
+    : "どの選択肢があなたの考えに一番近いですか？"
+);
+
+const displayedSurveyOptions = computed(() =>
+  surveyTranslationMode.value === "translated"
+    ? ["Strongly agree", "Not sure yet", "Strongly disagree"]
+    : ["強く賛成", "まだわからない", "強く反対"]
+);
+
 const displayedStatements = computed(() => {
   if (statementMode.value === "short") return [shortStatement];
   if (statementMode.value === "single-empty-line") {
@@ -415,5 +595,52 @@ const votingUtilities: OpinionVotingUtilities = {
   flex-direction: column;
   gap: 0.75rem;
   margin-top: 1rem;
+}
+
+.survey-preview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1rem $container-padding $container-padding;
+  padding: 1rem;
+  border: 1px solid $color-border-weak;
+  border-radius: 1rem;
+  background: white;
+}
+
+.survey-preview-card__eyebrow {
+  color: $color-text-weak;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.survey-preview-card__translation-control {
+  margin-bottom: -0.15rem;
+}
+
+.survey-preview-card__question {
+  color: $ink-darkest;
+  font-size: 1rem;
+  font-weight: var(--font-weight-medium);
+  line-height: 1.35;
+}
+
+.survey-preview-card__options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.survey-preview-card__option {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid $color-border-weak;
+  border-radius: 0.75rem;
+  background: white;
+  color: $ink-darker;
+  font: inherit;
+  text-align: start;
 }
 </style>

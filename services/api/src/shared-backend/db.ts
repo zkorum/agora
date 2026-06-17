@@ -1,4 +1,3 @@
-/** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { withReplicas } from "drizzle-orm/pg-core";

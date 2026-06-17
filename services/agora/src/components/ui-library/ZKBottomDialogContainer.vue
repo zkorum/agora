@@ -40,7 +40,9 @@
         <slot name="subtitleAction" />
       </div>
     </div>
-    <slot />
+    <div class="dialog-body">
+      <slot />
+    </div>
   </div>
 </template>
 
@@ -199,7 +201,7 @@ onBeforeUnmount(() => {
   width: min(30rem, 100%);
   max-height: 62vh;
   max-height: 62dvh;
-  overflow-y: auto;
+  overflow: hidden;
   transition: transform 160ms ease-out;
   will-change: transform;
 
@@ -207,6 +209,20 @@ onBeforeUnmount(() => {
     gap: 1rem;
     padding: 2rem;
     max-height: 85dvh;
+  }
+}
+
+.dialog-body {
+  min-height: 0;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  @media (min-width: $breakpoint-sm-min) {
+    gap: 1rem;
   }
 }
 

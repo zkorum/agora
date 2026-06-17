@@ -50,15 +50,6 @@ updates:
         update-types: ["minor", "patch"]
 
   - package-ecosystem: "npm"
-    directory: "/services/shared-backend"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    groups:
-      minor-and-patch:
-        update-types: ["minor", "patch"]
-
-  - package-ecosystem: "npm"
     directory: "/services/load-testing"
     schedule:
       interval: "weekly"

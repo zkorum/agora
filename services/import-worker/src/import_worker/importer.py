@@ -14,13 +14,19 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from import_worker.csv_import import build_import_from_csv
 from import_worker.generated_models import (
     AnalysisWorkState,
+    ContentTranslationSourceKind,
+    ContentTranslationWork,
+    ContentTranslationWorkStatus,
     Conversation,
     ConversationContent,
     ConversationImport,
     ConversationLanguageSetting,
     ConversationLanguageSettingMode,
+    ConversationTranslationSetting,
+    ConversationTranslationTargetLanguage,
     ConversationViewSnapshot,
     ConversationViewSnapshotReasonEnum,
+    DisplayLanguageCode,
     Notification,
     NotificationImport,
     Opinion,
@@ -39,6 +45,7 @@ from import_worker.generated_shared_types import (
 from import_worker.html import html_to_counted_text, process_user_generated_html
 from import_worker.ids import generate_random_slug_id, generate_uuid
 from import_worker.import_models import ImportPolisResults
+from import_worker.language_detection import detect_source_language_with_lingua
 from import_worker.polis_url import extract_polis_id_from_url
 
 if TYPE_CHECKING:
@@ -114,9 +121,16 @@ class AnalysisQueueSchedule:
 
 
 @dataclass(frozen=True)
+class ContentTranslationQueueSchedule:
+    work_ids: list[int]
+    enqueued_at_ms: int
+
+
+@dataclass(frozen=True)
 class ImportProcessResult:
     event: ImportNotificationEvent | None
     analysis_schedule: AnalysisQueueSchedule | None
+    content_translation_schedule: ContentTranslationQueueSchedule | None
 
 
 @dataclass(frozen=True)
@@ -143,6 +157,7 @@ class ParticipantData:
 class OpinionInsertData:
     opinion_id_per_statement_id: dict[int, int]
     opinion_content_id_per_opinion_id: dict[int, int]
+    seed_opinion_content_ids: list[int]
 
 
 @dataclass(frozen=True)
@@ -272,6 +287,7 @@ def _create_conversation(
     )
     body = process_user_generated_html(body, enable_links=True, mode="input")
     body_plain_text = html_to_counted_text(body)
+    language_metadata = detect_source_language_with_lingua(f"{title}\n{body_plain_text}")
     conversation_slug_id = generate_random_slug_id()
     import_url = request.polis_url if request.type == "url" else None
 
@@ -313,6 +329,8 @@ def _create_conversation(
             title=title,
             body=body,
             body_plain_text=body_plain_text,
+            source_language_code=language_metadata.language_code,
+            source_language_confidence=language_metadata.confidence,
         )
         .returning(ConversationContent.id),
     ).first()
@@ -325,19 +343,57 @@ def _create_conversation(
         .where(Conversation.id == conversation_id)
         .values(current_content_id=conversation_content_id),
     )
+    language_setting = request.form_data.language_setting
+    language_setting_mode = (
+        ConversationLanguageSettingMode.manual
+        if language_setting.mode == "manual"
+        else ConversationLanguageSettingMode.auto
+    )
+    manual_language_code = (
+        language_setting.language_code.value
+        if language_setting.mode == "manual"
+        else None
+    )
     session.execute(
         sqlalchemy_insert(ConversationLanguageSetting).values(
             conversation_id=conversation_id,
-            mode=ConversationLanguageSettingMode.auto,
-            language_code=None,
-            detected_language_code=None,
-            detected_raw_language_code=None,
-            detection_confidence=None,
+            mode=language_setting_mode,
+            language_code=manual_language_code,
+            detected_language_code=language_metadata.language_code,
+            detected_raw_language_code=language_metadata.language_code,
+            detection_confidence=language_metadata.confidence,
             detected_from_corpus_hash=None,
             created_at=now,
             updated_at=now,
         ),
     )
+    translation_setting_row = session.execute(
+        sqlalchemy_insert(ConversationTranslationSetting)
+        .values(
+            conversation_id=conversation_id,
+            dynamic_translation_enabled=(
+                request.form_data.multilingual_setting.dynamic_translation_enabled
+            ),
+            created_at=now,
+            updated_at=now,
+        )
+        .returning(ConversationTranslationSetting.id),
+    ).first()
+    if translation_setting_row is None:
+        raise RuntimeError("Failed to create conversation translation setting")
+    target_languages = request.form_data.multilingual_setting.additional_language_codes
+    if target_languages:
+        session.execute(
+            sqlalchemy_insert(ConversationTranslationTargetLanguage),
+            [
+                {
+                    "translation_setting_id": translation_setting_row.id,
+                    "language_code": DisplayLanguageCode(language_code.value),
+                    "created_at": now,
+                }
+                for language_code in target_languages
+            ],
+        )
     session.commit()
     return ConversationIds(
         conversation_slug_id=conversation_slug_id,
@@ -478,12 +534,16 @@ def _insert_opinions(
             enable_links=True,
             mode="output",
         )
+        content_plain_text = html_to_counted_text(content)
+        language_metadata = detect_source_language_with_lingua(content_plain_text)
         content_values.append(
             {
                 "opinion_id": opinion_id_per_statement_id[comment.statement_id],
                 "conversation_content_id": conversation_ids.conversation_content_id,
                 "content": content,
-                "content_plain_text": html_to_counted_text(content),
+                "content_plain_text": content_plain_text,
+                "source_language_code": language_metadata.language_code,
+                "source_language_confidence": language_metadata.confidence,
             },
         )
     raw_inserted_content_rows: object = (
@@ -528,6 +588,11 @@ def _insert_opinions(
     return OpinionInsertData(
         opinion_id_per_statement_id=opinion_id_per_statement_id,
         opinion_content_id_per_opinion_id=opinion_content_id_per_opinion_id,
+        seed_opinion_content_ids=[
+            opinion_content_id_per_opinion_id[opinion_id_per_statement_id[comment.statement_id]]
+            for comment in imported.comments_data
+            if comment.is_seed
+        ],
     )
 
 
@@ -607,6 +672,83 @@ def _insert_votes(
             ),
         )
     session.commit()
+
+
+def _create_content_translation_work(
+    session: Session,
+    *,
+    conversation_ids: ConversationIds,
+    opinions: OpinionInsertData,
+) -> ContentTranslationQueueSchedule | None:
+    target_language_rows = session.execute(
+        select(ConversationTranslationTargetLanguage.language_code)
+        .join(
+            ConversationTranslationSetting,
+            ConversationTranslationSetting.id
+            == ConversationTranslationTargetLanguage.translation_setting_id,
+        )
+        .where(
+            and_(
+                ConversationTranslationSetting.conversation_id
+                == conversation_ids.conversation_id,
+                ConversationTranslationSetting.dynamic_translation_enabled.is_(True),
+            ),
+        )
+        .order_by(ConversationTranslationTargetLanguage.id.asc()),
+    ).all()
+    target_language_codes = [row.language_code for row in target_language_rows]
+    if not target_language_codes:
+        return None
+
+    now = now_zero_ms()
+    work_values: list[dict[str, object]] = []
+    for language_code in target_language_codes:
+        work_values.append(
+            {
+                "conversation_id": conversation_ids.conversation_id,
+                "source_kind": ContentTranslationSourceKind.conversation,
+                "conversation_content_id": conversation_ids.conversation_content_id,
+                "opinion_content_id": None,
+                "survey_question_content_id": None,
+                "survey_question_option_content_ids": None,
+                "display_language_code": language_code,
+                "status": ContentTranslationWorkStatus.pending,
+                "priority_rank": 1,
+                "requested_at": now,
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+        for opinion_content_id in opinions.seed_opinion_content_ids:
+            work_values.append(
+                {
+                    "conversation_id": conversation_ids.conversation_id,
+                    "source_kind": ContentTranslationSourceKind.opinion,
+                    "conversation_content_id": None,
+                    "opinion_content_id": opinion_content_id,
+                    "survey_question_content_id": None,
+                    "survey_question_option_content_ids": None,
+                    "display_language_code": language_code,
+                    "status": ContentTranslationWorkStatus.pending,
+                    "priority_rank": 1,
+                    "requested_at": now,
+                    "created_at": now,
+                    "updated_at": now,
+                },
+            )
+
+    work_rows = session.execute(
+        sqlalchemy_insert(ContentTranslationWork)
+        .values(work_values)
+        .returning(ContentTranslationWork.id),
+    ).all()
+    work_ids = [row.id for row in work_rows]
+    if not work_ids:
+        return None
+    return ContentTranslationQueueSchedule(
+        work_ids=work_ids,
+        enqueued_at_ms=int(now.timestamp() * 1000),
+    )
 
 
 def _update_counts_and_schedule(
@@ -974,6 +1116,11 @@ def process_import_request(session: Session, *, request: ImportRequest) -> Impor
             participant_data=participant_data,
             conversation_slug_id=conversation_ids.conversation_slug_id,
         )
+        content_translation_schedule = _create_content_translation_work(
+            session,
+            conversation_ids=conversation_ids,
+            opinions=opinions,
+        )
         schedule = _update_counts_and_schedule(
             session,
             conversation_id=conversation_ids.conversation_id,
@@ -1001,6 +1148,7 @@ def process_import_request(session: Session, *, request: ImportRequest) -> Impor
         return ImportProcessResult(
             event=None,
             analysis_schedule=analysis_queue_schedule,
+            content_translation_schedule=content_translation_schedule,
         )
     except Exception:
         session.rollback()

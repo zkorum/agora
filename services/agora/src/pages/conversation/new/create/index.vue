@@ -33,6 +33,8 @@
         v-model:external-source-config="externalSourceConfig"
         v-model:title="title"
         v-model:content="content"
+        v-model:language-setting="languageSetting"
+        v-model:multilingual-setting="multilingualSetting"
         v-model:ai-labeling-enabled="aiLabelingEnabled"
         v-model:preferred-opinion-group-count="preferredOpinionGroupCount"
       />
@@ -218,6 +220,8 @@ const {
   title,
   content,
   contentPlainText,
+  languageSetting,
+  multilingualSetting,
   conversationType,
   isPrivate,
   participationMode,

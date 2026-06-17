@@ -1127,6 +1127,101 @@
                                                                 "minimum": 2,
                                                                 "maximum": 6
                                                             },
+                                                            "languageSetting": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "mode": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "auto",
+                                                                            "manual"
+                                                                        ]
+                                                                    },
+                                                                    "languageCode": {
+                                                                        "nullable": true,
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "en",
+                                                                            "es",
+                                                                            "fr",
+                                                                            "zh-Hant",
+                                                                            "zh-Hans",
+                                                                            "ja",
+                                                                            "ar",
+                                                                            "fa",
+                                                                            "he",
+                                                                            "ky",
+                                                                            "ru"
+                                                                        ]
+                                                                    },
+                                                                    "detectedLanguageCode": {
+                                                                        "nullable": true,
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "en",
+                                                                            "es",
+                                                                            "fr",
+                                                                            "zh-Hant",
+                                                                            "zh-Hans",
+                                                                            "ja",
+                                                                            "ar",
+                                                                            "fa",
+                                                                            "he",
+                                                                            "ky",
+                                                                            "ru"
+                                                                        ]
+                                                                    },
+                                                                    "detectedRawLanguageCode": {
+                                                                        "nullable": true,
+                                                                        "type": "string"
+                                                                    },
+                                                                    "detectionConfidence": {
+                                                                        "nullable": true,
+                                                                        "type": "number"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "mode",
+                                                                    "languageCode",
+                                                                    "detectedLanguageCode",
+                                                                    "detectedRawLanguageCode",
+                                                                    "detectionConfidence"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
+                                                            "multilingualSetting": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "additionalLanguageCodes": {
+                                                                        "maxItems": 2,
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "en",
+                                                                                "es",
+                                                                                "fr",
+                                                                                "zh-Hant",
+                                                                                "zh-Hans",
+                                                                                "ja",
+                                                                                "ar",
+                                                                                "fa",
+                                                                                "he",
+                                                                                "ky",
+                                                                                "ru"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "dynamicTranslationEnabled": {
+                                                                        "type": "boolean"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "additionalLanguageCodes",
+                                                                    "dynamicTranslationEnabled"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
                                                             "isClosed": {
                                                                 "type": "boolean"
                                                             },
@@ -1311,6 +1406,8 @@
                                                             "isIndexed",
                                                             "aiLabelingEnabled",
                                                             "preferredOpinionGroupCount",
+                                                            "languageSetting",
+                                                            "multilingualSetting",
                                                             "isClosed",
                                                             "isEdited",
                                                             "moderation",
@@ -1965,7 +2062,8 @@
                                         "enum": [
                                             "survey",
                                             "event_ticket",
-                                            "analysis_variants"
+                                            "analysis_variants",
+                                            "dynamic_translation"
                                         ]
                                     }
                                 },
@@ -2123,6 +2221,101 @@
                                                         "type": "integer",
                                                         "minimum": 2,
                                                         "maximum": 6
+                                                    },
+                                                    "languageSetting": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "mode": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "auto",
+                                                                    "manual"
+                                                                ]
+                                                            },
+                                                            "languageCode": {
+                                                                "nullable": true,
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "en",
+                                                                    "es",
+                                                                    "fr",
+                                                                    "zh-Hant",
+                                                                    "zh-Hans",
+                                                                    "ja",
+                                                                    "ar",
+                                                                    "fa",
+                                                                    "he",
+                                                                    "ky",
+                                                                    "ru"
+                                                                ]
+                                                            },
+                                                            "detectedLanguageCode": {
+                                                                "nullable": true,
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "en",
+                                                                    "es",
+                                                                    "fr",
+                                                                    "zh-Hant",
+                                                                    "zh-Hans",
+                                                                    "ja",
+                                                                    "ar",
+                                                                    "fa",
+                                                                    "he",
+                                                                    "ky",
+                                                                    "ru"
+                                                                ]
+                                                            },
+                                                            "detectedRawLanguageCode": {
+                                                                "nullable": true,
+                                                                "type": "string"
+                                                            },
+                                                            "detectionConfidence": {
+                                                                "nullable": true,
+                                                                "type": "number"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "mode",
+                                                            "languageCode",
+                                                            "detectedLanguageCode",
+                                                            "detectedRawLanguageCode",
+                                                            "detectionConfidence"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    "multilingualSetting": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "additionalLanguageCodes": {
+                                                                "maxItems": 2,
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "en",
+                                                                        "es",
+                                                                        "fr",
+                                                                        "zh-Hant",
+                                                                        "zh-Hans",
+                                                                        "ja",
+                                                                        "ar",
+                                                                        "fa",
+                                                                        "he",
+                                                                        "ky",
+                                                                        "ru"
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "dynamicTranslationEnabled": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "additionalLanguageCodes",
+                                                            "dynamicTranslationEnabled"
+                                                        ],
+                                                        "additionalProperties": false
                                                     },
                                                     "isClosed": {
                                                         "type": "boolean"
@@ -2308,6 +2501,8 @@
                                                     "isIndexed",
                                                     "aiLabelingEnabled",
                                                     "preferredOpinionGroupCount",
+                                                    "languageSetting",
+                                                    "multilingualSetting",
                                                     "isClosed",
                                                     "isEdited",
                                                     "moderation",
@@ -2524,6 +2719,101 @@
                                                                 "minimum": 2,
                                                                 "maximum": 6
                                                             },
+                                                            "languageSetting": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "mode": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "auto",
+                                                                            "manual"
+                                                                        ]
+                                                                    },
+                                                                    "languageCode": {
+                                                                        "nullable": true,
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "en",
+                                                                            "es",
+                                                                            "fr",
+                                                                            "zh-Hant",
+                                                                            "zh-Hans",
+                                                                            "ja",
+                                                                            "ar",
+                                                                            "fa",
+                                                                            "he",
+                                                                            "ky",
+                                                                            "ru"
+                                                                        ]
+                                                                    },
+                                                                    "detectedLanguageCode": {
+                                                                        "nullable": true,
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "en",
+                                                                            "es",
+                                                                            "fr",
+                                                                            "zh-Hant",
+                                                                            "zh-Hans",
+                                                                            "ja",
+                                                                            "ar",
+                                                                            "fa",
+                                                                            "he",
+                                                                            "ky",
+                                                                            "ru"
+                                                                        ]
+                                                                    },
+                                                                    "detectedRawLanguageCode": {
+                                                                        "nullable": true,
+                                                                        "type": "string"
+                                                                    },
+                                                                    "detectionConfidence": {
+                                                                        "nullable": true,
+                                                                        "type": "number"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "mode",
+                                                                    "languageCode",
+                                                                    "detectedLanguageCode",
+                                                                    "detectedRawLanguageCode",
+                                                                    "detectionConfidence"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
+                                                            "multilingualSetting": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "additionalLanguageCodes": {
+                                                                        "maxItems": 2,
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "en",
+                                                                                "es",
+                                                                                "fr",
+                                                                                "zh-Hant",
+                                                                                "zh-Hans",
+                                                                                "ja",
+                                                                                "ar",
+                                                                                "fa",
+                                                                                "he",
+                                                                                "ky",
+                                                                                "ru"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "dynamicTranslationEnabled": {
+                                                                        "type": "boolean"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "additionalLanguageCodes",
+                                                                    "dynamicTranslationEnabled"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
                                                             "isClosed": {
                                                                 "type": "boolean"
                                                             },
@@ -2708,6 +2998,8 @@
                                                             "isIndexed",
                                                             "aiLabelingEnabled",
                                                             "preferredOpinionGroupCount",
+                                                            "languageSetting",
+                                                            "multilingualSetting",
                                                             "isClosed",
                                                             "isEdited",
                                                             "moderation",
@@ -3786,11 +4078,15 @@
                                     "opinionBody": {
                                         "type": "string",
                                         "minLength": 1
+                                    },
+                                    "opinionPlainText": {
+                                        "type": "string"
                                     }
                                 },
                                 "required": [
                                     "conversationSlugId",
-                                    "opinionBody"
+                                    "opinionBody",
+                                    "opinionPlainText"
                                 ],
                                 "additionalProperties": false
                             }
@@ -6670,6 +6966,9 @@
                                     "conversationBody": {
                                         "type": "string"
                                     },
+                                    "conversationBodyPlainText": {
+                                        "type": "string"
+                                    },
                                     "postAsOrganization": {
                                         "type": "string"
                                     },
@@ -6691,6 +6990,90 @@
                                             "polis",
                                             "maxdiff"
                                         ]
+                                    },
+                                    "languageSetting": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "mode": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "auto"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "mode"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "mode": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "manual"
+                                                        ]
+                                                    },
+                                                    "languageCode": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "en",
+                                                            "es",
+                                                            "fr",
+                                                            "zh-Hant",
+                                                            "zh-Hans",
+                                                            "ja",
+                                                            "ar",
+                                                            "fa",
+                                                            "he",
+                                                            "ky",
+                                                            "ru"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "mode",
+                                                    "languageCode"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        ]
+                                    },
+                                    "multilingualSetting": {
+                                        "type": "object",
+                                        "properties": {
+                                            "additionalLanguageCodes": {
+                                                "maxItems": 2,
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "en",
+                                                        "es",
+                                                        "fr",
+                                                        "zh-Hant",
+                                                        "zh-Hans",
+                                                        "ja",
+                                                        "ar",
+                                                        "fa",
+                                                        "he",
+                                                        "ky",
+                                                        "ru"
+                                                    ]
+                                                }
+                                            },
+                                            "dynamicTranslationEnabled": {
+                                                "type": "boolean"
+                                            }
+                                        },
+                                        "required": [
+                                            "additionalLanguageCodes",
+                                            "dynamicTranslationEnabled"
+                                        ],
+                                        "additionalProperties": false
                                     },
                                     "seedOpinionList": {
                                         "maxItems": 50,
@@ -6993,9 +7376,12 @@
                                 },
                                 "required": [
                                     "conversationTitle",
+                                    "conversationBodyPlainText",
                                     "isIndexed",
                                     "participationMode",
                                     "conversationType",
+                                    "languageSetting",
+                                    "multilingualSetting",
                                     "seedOpinionList"
                                 ],
                                 "additionalProperties": false
@@ -7087,6 +7473,97 @@
                                             "email_verification",
                                             "guest"
                                         ]
+                                    },
+                                    "languageSetting": {
+                                        "default": {
+                                            "mode": "auto"
+                                        },
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "mode": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "auto"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "mode"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "mode": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "manual"
+                                                        ]
+                                                    },
+                                                    "languageCode": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "en",
+                                                            "es",
+                                                            "fr",
+                                                            "zh-Hant",
+                                                            "zh-Hans",
+                                                            "ja",
+                                                            "ar",
+                                                            "fa",
+                                                            "he",
+                                                            "ky",
+                                                            "ru"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "mode",
+                                                    "languageCode"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        ]
+                                    },
+                                    "multilingualSetting": {
+                                        "default": {
+                                            "additionalLanguageCodes": [],
+                                            "dynamicTranslationEnabled": false
+                                        },
+                                        "type": "object",
+                                        "properties": {
+                                            "additionalLanguageCodes": {
+                                                "maxItems": 2,
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "en",
+                                                        "es",
+                                                        "fr",
+                                                        "zh-Hant",
+                                                        "zh-Hans",
+                                                        "ja",
+                                                        "ar",
+                                                        "fa",
+                                                        "he",
+                                                        "ky",
+                                                        "ru"
+                                                    ]
+                                                }
+                                            },
+                                            "dynamicTranslationEnabled": {
+                                                "type": "boolean"
+                                            }
+                                        },
+                                        "required": [
+                                            "additionalLanguageCodes",
+                                            "dynamicTranslationEnabled"
+                                        ],
+                                        "additionalProperties": false
                                     },
                                     "requiresEventTicket": {
                                         "type": "string",
@@ -7554,6 +8031,101 @@
                                                             "minimum": 2,
                                                             "maximum": 6
                                                         },
+                                                        "languageSetting": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "mode": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "auto",
+                                                                        "manual"
+                                                                    ]
+                                                                },
+                                                                "languageCode": {
+                                                                    "nullable": true,
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "en",
+                                                                        "es",
+                                                                        "fr",
+                                                                        "zh-Hant",
+                                                                        "zh-Hans",
+                                                                        "ja",
+                                                                        "ar",
+                                                                        "fa",
+                                                                        "he",
+                                                                        "ky",
+                                                                        "ru"
+                                                                    ]
+                                                                },
+                                                                "detectedLanguageCode": {
+                                                                    "nullable": true,
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "en",
+                                                                        "es",
+                                                                        "fr",
+                                                                        "zh-Hant",
+                                                                        "zh-Hans",
+                                                                        "ja",
+                                                                        "ar",
+                                                                        "fa",
+                                                                        "he",
+                                                                        "ky",
+                                                                        "ru"
+                                                                    ]
+                                                                },
+                                                                "detectedRawLanguageCode": {
+                                                                    "nullable": true,
+                                                                    "type": "string"
+                                                                },
+                                                                "detectionConfidence": {
+                                                                    "nullable": true,
+                                                                    "type": "number"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "mode",
+                                                                "languageCode",
+                                                                "detectedLanguageCode",
+                                                                "detectedRawLanguageCode",
+                                                                "detectionConfidence"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        "multilingualSetting": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "additionalLanguageCodes": {
+                                                                    "maxItems": 2,
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "en",
+                                                                            "es",
+                                                                            "fr",
+                                                                            "zh-Hant",
+                                                                            "zh-Hans",
+                                                                            "ja",
+                                                                            "ar",
+                                                                            "fa",
+                                                                            "he",
+                                                                            "ky",
+                                                                            "ru"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "dynamicTranslationEnabled": {
+                                                                    "type": "boolean"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "additionalLanguageCodes",
+                                                                "dynamicTranslationEnabled"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
                                                         "isClosed": {
                                                             "type": "boolean"
                                                         },
@@ -7738,6 +8310,8 @@
                                                         "isIndexed",
                                                         "aiLabelingEnabled",
                                                         "preferredOpinionGroupCount",
+                                                        "languageSetting",
+                                                        "multilingualSetting",
                                                         "isClosed",
                                                         "isEdited",
                                                         "moderation",
@@ -7882,6 +8456,101 @@
                                                 "conversationBody": {
                                                     "type": "string",
                                                     "maxLength": 60000
+                                                },
+                                                "languageSetting": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "mode": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "auto",
+                                                                "manual"
+                                                            ]
+                                                        },
+                                                        "languageCode": {
+                                                            "nullable": true,
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "en",
+                                                                "es",
+                                                                "fr",
+                                                                "zh-Hant",
+                                                                "zh-Hans",
+                                                                "ja",
+                                                                "ar",
+                                                                "fa",
+                                                                "he",
+                                                                "ky",
+                                                                "ru"
+                                                            ]
+                                                        },
+                                                        "detectedLanguageCode": {
+                                                            "nullable": true,
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "en",
+                                                                "es",
+                                                                "fr",
+                                                                "zh-Hant",
+                                                                "zh-Hans",
+                                                                "ja",
+                                                                "ar",
+                                                                "fa",
+                                                                "he",
+                                                                "ky",
+                                                                "ru"
+                                                            ]
+                                                        },
+                                                        "detectedRawLanguageCode": {
+                                                            "nullable": true,
+                                                            "type": "string"
+                                                        },
+                                                        "detectionConfidence": {
+                                                            "nullable": true,
+                                                            "type": "number"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "mode",
+                                                        "languageCode",
+                                                        "detectedLanguageCode",
+                                                        "detectedRawLanguageCode",
+                                                        "detectionConfidence"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                "multilingualSetting": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "additionalLanguageCodes": {
+                                                            "maxItems": 2,
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "en",
+                                                                    "es",
+                                                                    "fr",
+                                                                    "zh-Hant",
+                                                                    "zh-Hans",
+                                                                    "ja",
+                                                                    "ar",
+                                                                    "fa",
+                                                                    "he",
+                                                                    "ky",
+                                                                    "ru"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "dynamicTranslationEnabled": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "additionalLanguageCodes",
+                                                        "dynamicTranslationEnabled"
+                                                    ],
+                                                    "additionalProperties": false
                                                 },
                                                 "isIndexed": {
                                                     "type": "boolean"
@@ -8200,6 +8869,9 @@
                                                         "canUseAnalysisVariantsPreference": {
                                                             "type": "boolean"
                                                         },
+                                                        "canUseDynamicTranslation": {
+                                                            "type": "boolean"
+                                                        },
                                                         "restrictedPremiumFeatures": {
                                                             "type": "array",
                                                             "items": {
@@ -8207,7 +8879,8 @@
                                                                 "enum": [
                                                                     "survey",
                                                                     "event_ticket",
-                                                                    "analysis_variants"
+                                                                    "analysis_variants",
+                                                                    "dynamic_translation"
                                                                 ]
                                                             }
                                                         },
@@ -8225,6 +8898,7 @@
                                                         "canChangeEventTicket",
                                                         "canRemoveEventTicket",
                                                         "canUseAnalysisVariantsPreference",
+                                                        "canUseDynamicTranslation",
                                                         "restrictedPremiumFeatures"
                                                     ],
                                                     "additionalProperties": false
@@ -8234,6 +8908,8 @@
                                                 "success",
                                                 "conversationSlugId",
                                                 "conversationTitle",
+                                                "languageSetting",
+                                                "multilingualSetting",
                                                 "isIndexed",
                                                 "participationMode",
                                                 "aiLabelingEnabled",
@@ -8297,6 +8973,9 @@
                                     "conversationBody": {
                                         "type": "string"
                                     },
+                                    "conversationBodyPlainText": {
+                                        "type": "string"
+                                    },
                                     "isIndexed": {
                                         "type": "boolean"
                                     },
@@ -8308,6 +8987,90 @@
                                             "email_verification",
                                             "guest"
                                         ]
+                                    },
+                                    "languageSetting": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "mode": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "auto"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "mode"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "mode": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "manual"
+                                                        ]
+                                                    },
+                                                    "languageCode": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "en",
+                                                            "es",
+                                                            "fr",
+                                                            "zh-Hant",
+                                                            "zh-Hans",
+                                                            "ja",
+                                                            "ar",
+                                                            "fa",
+                                                            "he",
+                                                            "ky",
+                                                            "ru"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "mode",
+                                                    "languageCode"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        ]
+                                    },
+                                    "multilingualSetting": {
+                                        "type": "object",
+                                        "properties": {
+                                            "additionalLanguageCodes": {
+                                                "maxItems": 2,
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "en",
+                                                        "es",
+                                                        "fr",
+                                                        "zh-Hant",
+                                                        "zh-Hans",
+                                                        "ja",
+                                                        "ar",
+                                                        "fa",
+                                                        "he",
+                                                        "ky",
+                                                        "ru"
+                                                    ]
+                                                }
+                                            },
+                                            "dynamicTranslationEnabled": {
+                                                "type": "boolean"
+                                            }
+                                        },
+                                        "required": [
+                                            "additionalLanguageCodes",
+                                            "dynamicTranslationEnabled"
+                                        ],
+                                        "additionalProperties": false
                                     },
                                     "requiresEventTicket": {
                                         "type": "string",
@@ -8574,8 +9337,11 @@
                                 "required": [
                                     "conversationSlugId",
                                     "conversationTitle",
+                                    "conversationBodyPlainText",
                                     "isIndexed",
-                                    "participationMode"
+                                    "participationMode",
+                                    "languageSetting",
+                                    "multilingualSetting"
                                 ],
                                 "additionalProperties": false
                             }
@@ -10617,7 +11383,8 @@
                                                         "enum": [
                                                             "survey",
                                                             "event_ticket",
-                                                            "analysis_variants"
+                                                            "analysis_variants",
+                                                            "dynamic_translation"
                                                         ]
                                                     },
                                                     "startsAt": {
@@ -10696,7 +11463,8 @@
                                             "enum": [
                                                 "survey",
                                                 "event_ticket",
-                                                "analysis_variants"
+                                                "analysis_variants",
+                                                "dynamic_translation"
                                             ]
                                         }
                                     },
@@ -12259,6 +13027,1169 @@
                 "responses": {
                     "200": {
                         "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/content-translation/request": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "subject": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "conversation"
+                                                        ]
+                                                    },
+                                                    "conversationSlugId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    }
+                                                },
+                                                "required": [
+                                                    "kind",
+                                                    "conversationSlugId"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "opinion"
+                                                        ]
+                                                    },
+                                                    "conversationSlugId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    },
+                                                    "opinionSlugId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    }
+                                                },
+                                                "required": [
+                                                    "kind",
+                                                    "conversationSlugId",
+                                                    "opinionSlugId"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "survey_question"
+                                                        ]
+                                                    },
+                                                    "conversationSlugId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    },
+                                                    "questionSlugId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    }
+                                                },
+                                                "required": [
+                                                    "kind",
+                                                    "conversationSlugId",
+                                                    "questionSlugId"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        ]
+                                    },
+                                    "targetLanguageCode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "en",
+                                            "es",
+                                            "fr",
+                                            "zh-Hant",
+                                            "zh-Hans",
+                                            "ja",
+                                            "ar",
+                                            "fa",
+                                            "he",
+                                            "ky",
+                                            "ru"
+                                        ]
+                                    },
+                                    "include": {
+                                        "type": "string",
+                                        "enum": [
+                                            "original",
+                                            "translation",
+                                            "both"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "subject",
+                                    "targetLanguageCode",
+                                    "include"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "subject": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "conversation"
+                                                            ]
+                                                        },
+                                                        "conversationSlugId": {
+                                                            "type": "string",
+                                                            "maxLength": 10
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "kind",
+                                                        "conversationSlugId"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                "content": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "original_only"
+                                                                    ]
+                                                                },
+                                                                "sourceVersion": {
+                                                                    "type": "string",
+                                                                    "minLength": 1
+                                                                },
+                                                                "initialMode": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "original"
+                                                                    ]
+                                                                },
+                                                                "variants": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "original": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "title": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 140
+                                                                                },
+                                                                                "body": {
+                                                                                    "type": "string",
+                                                                                    "maxLength": 60000
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "title"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "original"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "kind",
+                                                                "sourceVersion",
+                                                                "initialMode",
+                                                                "variants"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "translatable"
+                                                                    ]
+                                                                },
+                                                                "sourceVersion": {
+                                                                    "type": "string",
+                                                                    "minLength": 1
+                                                                },
+                                                                "initialMode": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "original"
+                                                                    ]
+                                                                },
+                                                                "translation": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "targetLanguageCode": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "en",
+                                                                                "es",
+                                                                                "fr",
+                                                                                "zh-Hant",
+                                                                                "zh-Hans",
+                                                                                "ja",
+                                                                                "ar",
+                                                                                "fa",
+                                                                                "he",
+                                                                                "ky",
+                                                                                "ru"
+                                                                            ]
+                                                                        },
+                                                                        "sourceLanguageLabel": {
+                                                                            "type": "string",
+                                                                            "minLength": 1
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "not_requested",
+                                                                                "pending",
+                                                                                "running",
+                                                                                "failed",
+                                                                                "completed"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "targetLanguageCode",
+                                                                        "sourceLanguageLabel",
+                                                                        "status"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                "variants": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "original": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "title": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 140
+                                                                                },
+                                                                                "body": {
+                                                                                    "type": "string",
+                                                                                    "maxLength": 60000
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "title"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        },
+                                                                        "translated": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "title": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 140
+                                                                                },
+                                                                                "body": {
+                                                                                    "type": "string",
+                                                                                    "maxLength": 60000
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "title"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "original"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "kind",
+                                                                "sourceVersion",
+                                                                "initialMode",
+                                                                "translation",
+                                                                "variants"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "translatable"
+                                                                    ]
+                                                                },
+                                                                "sourceVersion": {
+                                                                    "type": "string",
+                                                                    "minLength": 1
+                                                                },
+                                                                "initialMode": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "translated"
+                                                                    ]
+                                                                },
+                                                                "translation": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "targetLanguageCode": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "en",
+                                                                                "es",
+                                                                                "fr",
+                                                                                "zh-Hant",
+                                                                                "zh-Hans",
+                                                                                "ja",
+                                                                                "ar",
+                                                                                "fa",
+                                                                                "he",
+                                                                                "ky",
+                                                                                "ru"
+                                                                            ]
+                                                                        },
+                                                                        "sourceLanguageLabel": {
+                                                                            "type": "string",
+                                                                            "minLength": 1
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "completed"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "targetLanguageCode",
+                                                                        "sourceLanguageLabel",
+                                                                        "status"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                "variants": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "original": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "title": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 140
+                                                                                },
+                                                                                "body": {
+                                                                                    "type": "string",
+                                                                                    "maxLength": 60000
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "title"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        },
+                                                                        "translated": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "title": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 140
+                                                                                },
+                                                                                "body": {
+                                                                                    "type": "string",
+                                                                                    "maxLength": 60000
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "title"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "translated"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "kind",
+                                                                "sourceVersion",
+                                                                "initialMode",
+                                                                "translation",
+                                                                "variants"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "subject",
+                                                "content"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "subject": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "opinion"
+                                                            ]
+                                                        },
+                                                        "conversationSlugId": {
+                                                            "type": "string",
+                                                            "maxLength": 10
+                                                        },
+                                                        "opinionSlugId": {
+                                                            "type": "string",
+                                                            "maxLength": 10
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "kind",
+                                                        "conversationSlugId",
+                                                        "opinionSlugId"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                "content": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "original_only"
+                                                                    ]
+                                                                },
+                                                                "sourceVersion": {
+                                                                    "type": "string",
+                                                                    "minLength": 1
+                                                                },
+                                                                "initialMode": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "original"
+                                                                    ]
+                                                                },
+                                                                "variants": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "original": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "content": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 3000
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "content"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "original"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "kind",
+                                                                "sourceVersion",
+                                                                "initialMode",
+                                                                "variants"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "translatable"
+                                                                    ]
+                                                                },
+                                                                "sourceVersion": {
+                                                                    "type": "string",
+                                                                    "minLength": 1
+                                                                },
+                                                                "initialMode": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "original"
+                                                                    ]
+                                                                },
+                                                                "translation": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "targetLanguageCode": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "en",
+                                                                                "es",
+                                                                                "fr",
+                                                                                "zh-Hant",
+                                                                                "zh-Hans",
+                                                                                "ja",
+                                                                                "ar",
+                                                                                "fa",
+                                                                                "he",
+                                                                                "ky",
+                                                                                "ru"
+                                                                            ]
+                                                                        },
+                                                                        "sourceLanguageLabel": {
+                                                                            "type": "string",
+                                                                            "minLength": 1
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "not_requested",
+                                                                                "pending",
+                                                                                "running",
+                                                                                "failed",
+                                                                                "completed"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "targetLanguageCode",
+                                                                        "sourceLanguageLabel",
+                                                                        "status"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                "variants": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "original": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "content": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 3000
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "content"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        },
+                                                                        "translated": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "content": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 3000
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "content"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "original"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "kind",
+                                                                "sourceVersion",
+                                                                "initialMode",
+                                                                "translation",
+                                                                "variants"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "translatable"
+                                                                    ]
+                                                                },
+                                                                "sourceVersion": {
+                                                                    "type": "string",
+                                                                    "minLength": 1
+                                                                },
+                                                                "initialMode": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "translated"
+                                                                    ]
+                                                                },
+                                                                "translation": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "targetLanguageCode": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "en",
+                                                                                "es",
+                                                                                "fr",
+                                                                                "zh-Hant",
+                                                                                "zh-Hans",
+                                                                                "ja",
+                                                                                "ar",
+                                                                                "fa",
+                                                                                "he",
+                                                                                "ky",
+                                                                                "ru"
+                                                                            ]
+                                                                        },
+                                                                        "sourceLanguageLabel": {
+                                                                            "type": "string",
+                                                                            "minLength": 1
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "completed"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "targetLanguageCode",
+                                                                        "sourceLanguageLabel",
+                                                                        "status"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                "variants": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "original": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "content": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 3000
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "content"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        },
+                                                                        "translated": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "content": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 3000
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "content"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "translated"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "kind",
+                                                                "sourceVersion",
+                                                                "initialMode",
+                                                                "translation",
+                                                                "variants"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "subject",
+                                                "content"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "subject": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "survey_question"
+                                                            ]
+                                                        },
+                                                        "conversationSlugId": {
+                                                            "type": "string",
+                                                            "maxLength": 10
+                                                        },
+                                                        "questionSlugId": {
+                                                            "type": "string",
+                                                            "maxLength": 10
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "kind",
+                                                        "conversationSlugId",
+                                                        "questionSlugId"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                "content": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "original_only"
+                                                                    ]
+                                                                },
+                                                                "sourceVersion": {
+                                                                    "type": "string",
+                                                                    "minLength": 1
+                                                                },
+                                                                "initialMode": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "original"
+                                                                    ]
+                                                                },
+                                                                "variants": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "original": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "questionText": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 500
+                                                                                },
+                                                                                "options": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "object",
+                                                                                        "properties": {
+                                                                                            "optionSlugId": {
+                                                                                                "type": "string",
+                                                                                                "maxLength": 10
+                                                                                            },
+                                                                                            "optionText": {
+                                                                                                "type": "string",
+                                                                                                "minLength": 1,
+                                                                                                "maxLength": 200
+                                                                                            }
+                                                                                        },
+                                                                                        "required": [
+                                                                                            "optionSlugId",
+                                                                                            "optionText"
+                                                                                        ],
+                                                                                        "additionalProperties": false
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "questionText",
+                                                                                "options"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "original"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "kind",
+                                                                "sourceVersion",
+                                                                "initialMode",
+                                                                "variants"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "translatable"
+                                                                    ]
+                                                                },
+                                                                "sourceVersion": {
+                                                                    "type": "string",
+                                                                    "minLength": 1
+                                                                },
+                                                                "initialMode": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "original"
+                                                                    ]
+                                                                },
+                                                                "translation": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "targetLanguageCode": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "en",
+                                                                                "es",
+                                                                                "fr",
+                                                                                "zh-Hant",
+                                                                                "zh-Hans",
+                                                                                "ja",
+                                                                                "ar",
+                                                                                "fa",
+                                                                                "he",
+                                                                                "ky",
+                                                                                "ru"
+                                                                            ]
+                                                                        },
+                                                                        "sourceLanguageLabel": {
+                                                                            "type": "string",
+                                                                            "minLength": 1
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "not_requested",
+                                                                                "pending",
+                                                                                "running",
+                                                                                "failed",
+                                                                                "completed"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "targetLanguageCode",
+                                                                        "sourceLanguageLabel",
+                                                                        "status"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                "variants": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "original": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "questionText": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 500
+                                                                                },
+                                                                                "options": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "object",
+                                                                                        "properties": {
+                                                                                            "optionSlugId": {
+                                                                                                "type": "string",
+                                                                                                "maxLength": 10
+                                                                                            },
+                                                                                            "optionText": {
+                                                                                                "type": "string",
+                                                                                                "minLength": 1,
+                                                                                                "maxLength": 200
+                                                                                            }
+                                                                                        },
+                                                                                        "required": [
+                                                                                            "optionSlugId",
+                                                                                            "optionText"
+                                                                                        ],
+                                                                                        "additionalProperties": false
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "questionText",
+                                                                                "options"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        },
+                                                                        "translated": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "questionText": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 500
+                                                                                },
+                                                                                "options": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "object",
+                                                                                        "properties": {
+                                                                                            "optionSlugId": {
+                                                                                                "type": "string",
+                                                                                                "maxLength": 10
+                                                                                            },
+                                                                                            "optionText": {
+                                                                                                "type": "string",
+                                                                                                "minLength": 1,
+                                                                                                "maxLength": 200
+                                                                                            }
+                                                                                        },
+                                                                                        "required": [
+                                                                                            "optionSlugId",
+                                                                                            "optionText"
+                                                                                        ],
+                                                                                        "additionalProperties": false
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "questionText",
+                                                                                "options"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "original"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "kind",
+                                                                "sourceVersion",
+                                                                "initialMode",
+                                                                "translation",
+                                                                "variants"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "translatable"
+                                                                    ]
+                                                                },
+                                                                "sourceVersion": {
+                                                                    "type": "string",
+                                                                    "minLength": 1
+                                                                },
+                                                                "initialMode": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "translated"
+                                                                    ]
+                                                                },
+                                                                "translation": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "targetLanguageCode": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "en",
+                                                                                "es",
+                                                                                "fr",
+                                                                                "zh-Hant",
+                                                                                "zh-Hans",
+                                                                                "ja",
+                                                                                "ar",
+                                                                                "fa",
+                                                                                "he",
+                                                                                "ky",
+                                                                                "ru"
+                                                                            ]
+                                                                        },
+                                                                        "sourceLanguageLabel": {
+                                                                            "type": "string",
+                                                                            "minLength": 1
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "completed"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "targetLanguageCode",
+                                                                        "sourceLanguageLabel",
+                                                                        "status"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                "variants": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "original": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "questionText": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 500
+                                                                                },
+                                                                                "options": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "object",
+                                                                                        "properties": {
+                                                                                            "optionSlugId": {
+                                                                                                "type": "string",
+                                                                                                "maxLength": 10
+                                                                                            },
+                                                                                            "optionText": {
+                                                                                                "type": "string",
+                                                                                                "minLength": 1,
+                                                                                                "maxLength": 200
+                                                                                            }
+                                                                                        },
+                                                                                        "required": [
+                                                                                            "optionSlugId",
+                                                                                            "optionText"
+                                                                                        ],
+                                                                                        "additionalProperties": false
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "questionText",
+                                                                                "options"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        },
+                                                                        "translated": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "questionText": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 500
+                                                                                },
+                                                                                "options": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "object",
+                                                                                        "properties": {
+                                                                                            "optionSlugId": {
+                                                                                                "type": "string",
+                                                                                                "maxLength": 10
+                                                                                            },
+                                                                                            "optionText": {
+                                                                                                "type": "string",
+                                                                                                "minLength": 1,
+                                                                                                "maxLength": 200
+                                                                                            }
+                                                                                        },
+                                                                                        "required": [
+                                                                                            "optionSlugId",
+                                                                                            "optionText"
+                                                                                        ],
+                                                                                        "additionalProperties": false
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "questionText",
+                                                                                "options"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "translated"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "kind",
+                                                                "sourceVersion",
+                                                                "initialMode",
+                                                                "translation",
+                                                                "variants"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "subject",
+                                                "content"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
                     }
                 }
             }

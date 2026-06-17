@@ -1,4 +1,3 @@
-/** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 import { GlideClient, Decoder } from "@valkey/valkey-glide";
 import type { BaseLogger } from "pino";
 

@@ -23,6 +23,9 @@ export type {
 
 // Utility functions
 export {
+  areConversationLanguageSettingsEqual,
+  areConversationMultilingualSettingsEqual,
+  conversationLanguageSettingInputFromOutput,
   createEmptyDraft,
   hasContentThatWouldBeCleared,
 } from "./conversationDraft.utils";

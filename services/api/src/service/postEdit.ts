@@ -34,16 +34,20 @@ import {
     getPremiumFeaturesInConversation,
     getRestrictedPremiumFeatures,
 } from "@/service/premiumEntitlement.js";
-import {
-    createConversationViewSnapshotsFromCurrentState,
-} from "@/service/conversationViewSnapshot.js";
+import { createConversationViewSnapshotsFromCurrentState } from "@/service/conversationViewSnapshot.js";
 import { queueConversationSettingsUpdatedEvent } from "@/service/realtimeEventOutbox.js";
 import {
+    conversationLanguageSettingToSourceMetadata,
     conversationLanguageSettingToOutput,
     getConversationLanguageSetting,
     resolveConversationLanguageSetting,
     upsertConversationLanguageSetting,
 } from "@/service/conversationLanguage.js";
+import {
+    getConversationMultilingualSetting,
+    normalizeConversationMultilingualSetting,
+    upsertConversationMultilingualSetting,
+} from "@/service/conversationMultilingual.js";
 
 interface GetConversationForEditProps {
     db: PostgresDatabase;
@@ -71,7 +75,8 @@ export async function getConversationForEdit({
             preferredOpinionGroupCount:
                 conversationTable.preferredOpinionGroupCount,
             postAsOrganizationName: organizationTable.displayName,
-            autoProvisionedForUserId: organizationTable.autoProvisionedForUserId,
+            autoProvisionedForUserId:
+                organizationTable.autoProvisionedForUserId,
             createdAt: conversationTable.createdAt,
             updatedAt: conversationTable.updatedAt,
             moderationAction: conversationModerationTable.moderationAction,
@@ -131,15 +136,19 @@ export async function getConversationForEdit({
         db,
         conversationId: conversation.conversationId,
     });
+    const multilingualSetting = await getConversationMultilingualSetting({
+        db,
+        conversationId: conversation.conversationId,
+    });
 
     const editPermissions = await buildConversationEditPermissions({
         db,
-            conversation: {
-                conversationId: conversation.conversationId,
-                projectId: conversation.projectId,
-                userId,
-                requiresEventTicket: conversation.requiresEventTicket,
-            },
+        conversation: {
+            conversationId: conversation.conversationId,
+            projectId: conversation.projectId,
+            userId,
+            requiresEventTicket: conversation.requiresEventTicket,
+        },
         hasSurvey: surveyConfig !== undefined,
         now: new Date(),
     });
@@ -152,6 +161,7 @@ export async function getConversationForEdit({
         languageSetting: conversationLanguageSettingToOutput({
             setting: languageSetting,
         }),
+        multilingualSetting,
         isIndexed: conversation.isIndexed,
         participationMode: conversation.participationMode,
         requiresEventTicket: toUnionUndefined(conversation.requiresEventTicket),
@@ -196,6 +206,7 @@ export async function updateConversation({
         isIndexed,
         participationMode,
         languageSetting,
+        multilingualSetting,
         requiresEventTicket,
         aiLabelingEnabled,
         preferredOpinionGroupCount,
@@ -230,11 +241,7 @@ export async function updateConversation({
             return validationResult;
         }
 
-        sanitizedBody = processUserGeneratedHtml(
-            sanitizedBody,
-            true,
-            "input",
-        );
+        sanitizedBody = processUserGeneratedHtml(sanitizedBody, true, "input");
         bodyPlainText = htmlToCountedText(sanitizedBody);
         if (bodyPlainText !== conversationBodyPlainText) {
             log.info(
@@ -333,16 +340,46 @@ export async function updateConversation({
             db: tx,
             conversationId,
         });
-        const resolvedLanguageSetting = await resolveConversationLanguageSetting({
-            request: languageSetting,
-            existing: currentLanguageSetting,
-            conversationTitle,
-            bodyPlainText,
-            googleCloudCredentials,
-        });
+        const resolvedLanguageSetting =
+            await resolveConversationLanguageSetting({
+                request: languageSetting,
+                existing: currentLanguageSetting,
+                conversationTitle,
+                bodyPlainText,
+                googleCloudCredentials,
+            });
         const subject = getPremiumEntitlementSubjectForConversation({
             conversation: { projectId: conversation.projectId, userId },
         });
+        const restrictedDynamicTranslationFeatures =
+            await getRestrictedPremiumFeatures({
+                db: tx,
+                subject,
+                features: ["dynamic_translation"],
+                mode: "creation",
+                now,
+            });
+        const normalizedMultilingualSetting =
+            normalizeConversationMultilingualSetting({
+                languageSetting,
+                multilingualSetting,
+                canUseDynamicTranslation:
+                    restrictedDynamicTranslationFeatures.length === 0,
+            });
+        if (
+            restrictedDynamicTranslationFeatures.length > 0 &&
+            (multilingualSetting.dynamicTranslationEnabled ||
+                multilingualSetting.additionalLanguageCodes.length > 0)
+        ) {
+            return {
+                success: false,
+                reason: "premium_access_required",
+            } as const;
+        }
+        const sourceLanguageMetadata =
+            conversationLanguageSettingToSourceMetadata({
+                setting: resolvedLanguageSetting,
+            });
         const currentBody = toUnionUndefined(conversation.currentBody);
         const contentChanged =
             conversation.currentTitle !== conversationTitle ||
@@ -460,9 +497,9 @@ export async function updateConversation({
                     body: sanitizedBody,
                     bodyPlainText,
                     sourceLanguageCode:
-                        resolvedLanguageSetting.detectedRawLanguageCode,
+                        sourceLanguageMetadata.sourceLanguageCode,
                     sourceLanguageConfidence:
-                        resolvedLanguageSetting.detectionConfidence,
+                        sourceLanguageMetadata.sourceLanguageConfidence,
                 })
                 .returning({
                     conversationContentId: conversationContentTable.id,
@@ -510,6 +547,12 @@ export async function updateConversation({
             setting: resolvedLanguageSetting,
             now,
         });
+        await upsertConversationMultilingualSetting({
+            db: tx,
+            conversationId,
+            setting: normalizedMultilingualSetting,
+            now,
+        });
 
         if (surveyConfig !== undefined) {
             await setSurveyConfigForConversation({
@@ -517,6 +560,7 @@ export async function updateConversation({
                 conversationId,
                 surveyConfig: surveyConfig ?? null,
                 now,
+                googleCloudCredentials,
             });
         }
 

@@ -23,6 +23,7 @@
               :survey-gate="props.surveyGate"
               :on-view-analysis="props.onViewAnalysis"
               :is-voting-disabled="props.isVotingDisabled"
+              :dynamic-translation-enabled="props.dynamicTranslationEnabled"
               @deleted="(opinionSlugId) => handleOpinionDeleted(opinionSlugId)"
               @muted-comment="handleOpinionMuted()"
             />
@@ -91,6 +92,7 @@ const props = defineProps<{
   surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
+  dynamicTranslationEnabled: boolean;
   preloadedQueries: {
     commentsDiscoverQuery: UseQueryReturnType<OpinionItem[], Error>;
     commentsNewQuery: UseQueryReturnType<OpinionItem[], Error>;
