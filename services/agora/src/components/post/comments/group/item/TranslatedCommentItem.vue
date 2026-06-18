@@ -18,13 +18,16 @@
 </template>
 
 <script setup lang="ts">
+import { useParticipationGate } from "src/composables/conversation/useParticipationGate";
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
   EventSlug,
   OpinionItem,
   ParticipationMode,
   SurveyGateSummary,
 } from "src/shared/types/zod";
+import { useUserStore } from "src/stores/user";
 import { useOpinionContentTranslationPreview } from "src/utils/translation/useContentTranslationPreview";
 import { computed } from "vue";
 
@@ -42,6 +45,7 @@ const props = defineProps<{
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
   dynamicTranslationEnabled: boolean;
+  supportedTargetLanguageCodes: SupportedDisplayLanguageCodes[];
 }>();
 
 const emit = defineEmits<{
@@ -49,16 +53,44 @@ const emit = defineEmits<{
   mutedComment: [];
 }>();
 
+const userStore = useUserStore();
+
+const isOwnStatement = computed(
+  () =>
+    userStore.profileData.userName !== "" &&
+    userStore.profileData.userName === props.commentItem.username
+);
+
 const translationSubject = computed(() => ({
   kind: "opinion" as const,
   conversationSlugId: props.postSlugId,
   opinionSlugId: props.commentItem.opinionSlugId,
 }));
 
+const participationGate = useParticipationGate({
+  conversationSlugId: computed(() => props.postSlugId),
+  participationMode: computed(() => props.participationMode),
+  requiresEventTicket: computed(() => props.requiresEventTicket),
+  surveyGate: computed(() => props.surveyGate),
+});
+
 const { preview: translationPreview, setMode: setTranslationMode } =
   useOpinionContentTranslationPreview({
     subject: translationSubject,
-    dynamicTranslationEnabled: computed(() => props.dynamicTranslationEnabled),
-    sourceLanguageCode: undefined,
+    dynamicTranslationEnabled: computed(
+      () => props.dynamicTranslationEnabled && !isOwnStatement.value
+    ),
+    sourceLanguageCode: computed(() => props.commentItem.sourceLanguageCode),
+    supportedTargetLanguageCodes: computed(() => props.supportedTargetLanguageCodes),
+    shouldRequestTranslation: async () => {
+      if (await participationGate.shouldOpenParticipationModal()) {
+        await participationGate.openParticipationOnboarding();
+        return false;
+      }
+      return true;
+    },
+    onParticipationBlocked: async ({ reason }) => {
+      await participationGate.handleBlockedReason({ reason });
+    },
   });
 </script>

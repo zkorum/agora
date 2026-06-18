@@ -367,6 +367,7 @@ function generateMockOpinion({
     createdAt: new Date("2025-11-20"),
     updatedAt: new Date("2025-11-20"),
     opinion: mockStatements[index % mockStatements.length],
+    sourceLanguageCode: null,
     numParticipants,
     numAgrees,
     numDisagrees,

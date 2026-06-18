@@ -52,6 +52,7 @@
         :can-use-analysis-variants-preference="canUseAnalysisVariantsPreference"
         :can-use-dynamic-translation="canUseDynamicTranslation"
         :can-edit-conversation-content="canEditConversationContent"
+        :detected-language-code="detectedLanguageCode"
       />
 
       <ZKCard
@@ -140,6 +141,7 @@ import { MAX_LENGTH_CONVERSATION_BODY, MAX_LENGTH_TITLE } from "src/shared/share
 import type { GetConversationForEditResponse } from "src/shared/types/dto";
 import type {
   ConversationLanguageSettingInput,
+  ConversationLanguageSettingOutput,
   ConversationMultilingualSetting,
   ParticipationMode,
   PreferredOpinionGroupCount,
@@ -190,6 +192,9 @@ type EditPermissions = Extract<
   { success: true }
 >["editPermissions"];
 const editPermissions = ref<EditPermissions | null>(null);
+const detectedLanguageCode = ref<
+  ConversationLanguageSettingOutput["detectedLanguageCode"]
+>(null);
 
 const titleInputRef = ref<HTMLDivElement>();
 
@@ -515,6 +520,7 @@ onMounted(async () => {
     const loadedLanguageSetting = conversationLanguageSettingInputFromOutput({
       output: response.languageSetting,
     });
+    detectedLanguageCode.value = response.languageSetting.detectedLanguageCode;
 
     initializeFromData({
       title: response.conversationTitle,

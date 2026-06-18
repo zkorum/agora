@@ -196,6 +196,13 @@ const zodContentTranslationResponse = z.union([
             multilingualSetting: zodConversationMultilingualSetting,
         })
         .strict(),
+    z
+        .object({
+            success: z.literal(false),
+            reason: z.literal("participation_blocked"),
+            blockedReason: zodParticipationBlockedReason,
+        })
+        .strict(),
 ]);
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class

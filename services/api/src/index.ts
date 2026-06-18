@@ -4233,13 +4233,24 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+            const { didWrite } = await verifyUcan(request);
+            const now = nowZeroMs();
+
+            const participationCheck = await checkConversationParticipation({
                 db,
-                request,
-                {
-                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-                },
-            );
+                conversationSlugId: request.body.subject.conversationSlugId,
+                didWrite,
+                userAgent: request.headers["user-agent"] ?? "Unknown device",
+                now,
+            });
+            if (!participationCheck.success) {
+                const productFailureResponse = {
+                    success: false,
+                    reason: "participation_blocked",
+                    blockedReason: participationCheck.reason,
+                } satisfies ContentTranslationResponse;
+                return productFailureResponse;
+            }
 
             const queueValkey = queueValkeyRef.current;
 
@@ -4265,7 +4276,7 @@ server.after(() => {
                     subject: request.body.subject,
                     targetLanguageCode: request.body.targetLanguageCode,
                     include: request.body.include,
-                    now: nowZeroMs(),
+                    now,
                     log,
                     beforeQueueTranslationWork: async () => {
                         if (queueValkey === undefined) {
@@ -4283,7 +4294,7 @@ server.after(() => {
                                 await consumeContentTranslationUserRateLimit({
                                     valkey: queueValkey,
                                     script: contentTranslationUserRateLimitScript,
-                                    userId: deviceStatus.userId,
+                                    userId: participationCheck.participantId,
                                     maxRequests:
                                         CONTENT_TRANSLATION_USER_RATE_LIMIT_MAX,
                                     windowMs:

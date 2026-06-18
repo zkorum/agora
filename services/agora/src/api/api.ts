@@ -715,13 +715,26 @@ export interface ApiV1ContentTranslationRequestPost200Response {
     'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf2Content;
     'reason': ApiV1ContentTranslationRequestPost200ResponseReasonEnum;
     'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting;
+    'blockedReason': ApiV1ContentTranslationRequestPost200ResponseBlockedReasonEnum;
 }
 
 export const ApiV1ContentTranslationRequestPost200ResponseReasonEnum = {
-    ContentTranslationNotEnabled: 'content_translation_not_enabled',
+    ParticipationBlocked: 'participation_blocked',
 } as const;
 
 export type ApiV1ContentTranslationRequestPost200ResponseReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseReasonEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseBlockedReasonEnum = {
+    ConversationLocked: 'conversation_locked',
+    ConversationClosed: 'conversation_closed',
+    EventTicketRequired: 'event_ticket_required',
+    AccountRequired: 'account_required',
+    StrongVerificationRequired: 'strong_verification_required',
+    EmailVerificationRequired: 'email_verification_required',
+    SurveyRequired: 'survey_required',
+    SurveyOutdated: 'survey_outdated',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseBlockedReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseBlockedReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseBlockedReasonEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf {
     'success': boolean;
@@ -933,6 +946,30 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf3ReasonEnum = {
 
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOf3ReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ReasonEnum];
 
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4 {
+    'success': boolean;
+    'reason': ApiV1ContentTranslationRequestPost200ResponseAnyOf4ReasonEnum;
+    'blockedReason': ApiV1ContentTranslationRequestPost200ResponseAnyOf4BlockedReasonEnum;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4ReasonEnum = {
+    ParticipationBlocked: 'participation_blocked',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf4ReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ReasonEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4BlockedReasonEnum = {
+    ConversationLocked: 'conversation_locked',
+    ConversationClosed: 'conversation_closed',
+    EventTicketRequired: 'event_ticket_required',
+    AccountRequired: 'account_required',
+    StrongVerificationRequired: 'strong_verification_required',
+    EmailVerificationRequired: 'email_verification_required',
+    SurveyRequired: 'survey_required',
+    SurveyOutdated: 'survey_outdated',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf4BlockedReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4BlockedReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4BlockedReasonEnum];
+
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContent {
     'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentKindEnum;
     'sourceVersion': string;
@@ -991,7 +1028,7 @@ export type ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1Initi
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1Translation {
     'targetLanguageCode': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationTargetLanguageCodeEnum;
-    'sourceLanguageLabel': string;
+    'sourceLanguageLabel'?: string;
     'status': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationStatusEnum;
 }
 
@@ -1045,7 +1082,7 @@ export type ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Initi
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Translation {
     'targetLanguageCode': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationTargetLanguageCodeEnum;
-    'sourceLanguageLabel': string;
+    'sourceLanguageLabel'?: string;
     'status': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationStatusEnum;
 }
 
@@ -1871,6 +1908,7 @@ export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner
 
 export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization {
     'name': string;
+    'slug'?: string;
     'imageUrl'?: string;
     'websiteUrl'?: string;
     'description': string;
@@ -2853,6 +2891,7 @@ export interface ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClust
     'createdAt': string;
     'updatedAt': string;
     'opinion': string;
+    'sourceLanguageCode': string | null;
     'numParticipants': number;
     'numAgrees': number;
     'numDisagrees': number;
@@ -3879,6 +3918,7 @@ export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem {
     'createdAt': string;
     'updatedAt': string;
     'opinion': string;
+    'sourceLanguageCode': string | null;
     'numParticipants': number;
     'numAgrees': number;
     'numDisagrees': number;

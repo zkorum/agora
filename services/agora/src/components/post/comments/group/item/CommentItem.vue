@@ -87,7 +87,7 @@ import CommentModeration from "./CommentModeration.vue";
 interface CommentContentTranslationPreview {
   isAvailable: boolean;
   mode: ContentTranslationDisplayMode;
-  sourceLanguageLabel: string;
+  sourceLanguageLabel: string | undefined;
   translationStatus: LocalizedContentTranslationStatus;
   translatedOpinion: string;
 }

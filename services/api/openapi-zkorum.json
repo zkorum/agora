@@ -3094,6 +3094,10 @@
                                                         "minLength": 1,
                                                         "maxLength": 3000
                                                     },
+                                                    "sourceLanguageCode": {
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
                                                     "numParticipants": {
                                                         "type": "integer",
                                                         "minimum": 0,
@@ -3195,6 +3199,7 @@
                                                     "createdAt",
                                                     "updatedAt",
                                                     "opinion",
+                                                    "sourceLanguageCode",
                                                     "numParticipants",
                                                     "numAgrees",
                                                     "numDisagrees",
@@ -4124,6 +4129,10 @@
                                                             "minLength": 1,
                                                             "maxLength": 3000
                                                         },
+                                                        "sourceLanguageCode": {
+                                                            "nullable": true,
+                                                            "type": "string"
+                                                        },
                                                         "numParticipants": {
                                                             "type": "integer",
                                                             "minimum": 0,
@@ -4225,6 +4234,7 @@
                                                         "createdAt",
                                                         "updatedAt",
                                                         "opinion",
+                                                        "sourceLanguageCode",
                                                         "numParticipants",
                                                         "numAgrees",
                                                         "numDisagrees",
@@ -4362,6 +4372,10 @@
                                                 "minLength": 1,
                                                 "maxLength": 3000
                                             },
+                                            "sourceLanguageCode": {
+                                                "nullable": true,
+                                                "type": "string"
+                                            },
                                             "numParticipants": {
                                                 "type": "integer",
                                                 "minimum": 0,
@@ -4463,6 +4477,7 @@
                                             "createdAt",
                                             "updatedAt",
                                             "opinion",
+                                            "sourceLanguageCode",
                                             "numParticipants",
                                             "numAgrees",
                                             "numDisagrees",
@@ -5489,6 +5504,10 @@
                                                                     "minLength": 1,
                                                                     "maxLength": 3000
                                                                 },
+                                                                "sourceLanguageCode": {
+                                                                    "nullable": true,
+                                                                    "type": "string"
+                                                                },
                                                                 "numParticipants": {
                                                                     "type": "integer",
                                                                     "minimum": 0,
@@ -5653,6 +5672,7 @@
                                                                 "createdAt",
                                                                 "updatedAt",
                                                                 "opinion",
+                                                                "sourceLanguageCode",
                                                                 "numParticipants",
                                                                 "numAgrees",
                                                                 "numDisagrees",
@@ -6049,6 +6069,10 @@
                                                         "minLength": 1,
                                                         "maxLength": 3000
                                                     },
+                                                    "sourceLanguageCode": {
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
                                                     "numParticipants": {
                                                         "type": "integer",
                                                         "minimum": 0,
@@ -6213,6 +6237,7 @@
                                                     "createdAt",
                                                     "updatedAt",
                                                     "opinion",
+                                                    "sourceLanguageCode",
                                                     "numParticipants",
                                                     "numAgrees",
                                                     "numDisagrees",
@@ -6472,6 +6497,10 @@
                                                 "minLength": 1,
                                                 "maxLength": 3000
                                             },
+                                            "sourceLanguageCode": {
+                                                "nullable": true,
+                                                "type": "string"
+                                            },
                                             "numParticipants": {
                                                 "type": "integer",
                                                 "minimum": 0,
@@ -6573,6 +6602,7 @@
                                             "createdAt",
                                             "updatedAt",
                                             "opinion",
+                                            "sourceLanguageCode",
                                             "numParticipants",
                                             "numAgrees",
                                             "numDisagrees",
@@ -6644,6 +6674,10 @@
                                                 "minLength": 1,
                                                 "maxLength": 3000
                                             },
+                                            "sourceLanguageCode": {
+                                                "nullable": true,
+                                                "type": "string"
+                                            },
                                             "numParticipants": {
                                                 "type": "integer",
                                                 "minimum": 0,
@@ -6745,6 +6779,7 @@
                                             "createdAt",
                                             "updatedAt",
                                             "opinion",
+                                            "sourceLanguageCode",
                                             "numParticipants",
                                             "numAgrees",
                                             "numDisagrees",
@@ -13282,7 +13317,6 @@
                                                                     },
                                                                     "required": [
                                                                         "targetLanguageCode",
-                                                                        "sourceLanguageLabel",
                                                                         "status"
                                                                     ],
                                                                     "additionalProperties": false
@@ -13393,7 +13427,6 @@
                                                                     },
                                                                     "required": [
                                                                         "targetLanguageCode",
-                                                                        "sourceLanguageLabel",
                                                                         "status"
                                                                     ],
                                                                     "additionalProperties": false
@@ -13605,7 +13638,6 @@
                                                                     },
                                                                     "required": [
                                                                         "targetLanguageCode",
-                                                                        "sourceLanguageLabel",
                                                                         "status"
                                                                     ],
                                                                     "additionalProperties": false
@@ -13708,7 +13740,6 @@
                                                                     },
                                                                     "required": [
                                                                         "targetLanguageCode",
-                                                                        "sourceLanguageLabel",
                                                                         "status"
                                                                     ],
                                                                     "additionalProperties": false
@@ -13935,7 +13966,6 @@
                                                                     },
                                                                     "required": [
                                                                         "targetLanguageCode",
-                                                                        "sourceLanguageLabel",
                                                                         "status"
                                                                     ],
                                                                     "additionalProperties": false
@@ -14084,7 +14114,6 @@
                                                                     },
                                                                     "required": [
                                                                         "targetLanguageCode",
-                                                                        "sourceLanguageLabel",
                                                                         "status"
                                                                     ],
                                                                     "additionalProperties": false
@@ -14245,6 +14274,42 @@
                                                 "success",
                                                 "reason",
                                                 "multilingualSetting"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "participation_blocked"
+                                                    ]
+                                                },
+                                                "blockedReason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "conversation_locked",
+                                                        "conversation_closed",
+                                                        "event_ticket_required",
+                                                        "account_required",
+                                                        "strong_verification_required",
+                                                        "email_verification_required",
+                                                        "survey_required",
+                                                        "survey_outdated"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason",
+                                                "blockedReason"
                                             ],
                                             "additionalProperties": false
                                         }

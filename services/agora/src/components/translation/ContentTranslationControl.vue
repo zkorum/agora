@@ -13,7 +13,7 @@
       type="button"
       class="content-translation-control__button"
       :disabled="translationStatus === 'pending' || translationStatus === 'running'"
-      @click.stop="toggleMode"
+      @click="handleToggleClick"
     >
       {{ mode === "translated" ? t("showOriginal") : t("showTranslation") }}
     </button>
@@ -32,7 +32,7 @@ import {
 } from "./ContentTranslationControl.i18n";
 
 const { sourceLanguageLabel, translationStatus } = defineProps<{
-  sourceLanguageLabel: string;
+  sourceLanguageLabel: string | undefined;
   translationStatus: LocalizedContentTranslationStatus;
 }>();
 
@@ -43,7 +43,7 @@ const { t } = useComponentI18n<ContentTranslationControlTranslations>(
 );
 
 const translatedLabel = computed(() => {
-  if (sourceLanguageLabel === "undetermined language") {
+  if (sourceLanguageLabel === undefined) {
     return undefined;
   }
   return t("translatedFrom", { language: sourceLanguageLabel });
@@ -54,6 +54,12 @@ function toggleMode(): void {
     return;
   }
   mode.value = mode.value === "translated" ? "original" : "translated";
+}
+
+function handleToggleClick(event: MouseEvent): void {
+  event.preventDefault();
+  event.stopPropagation();
+  toggleMode();
 }
 </script>
 

@@ -7,7 +7,9 @@ export interface ConversationLanguageSettingDialogTranslations {
   primaryLanguageDescription: string;
   autoDetectTitle: string;
   autoDetectDescription: string;
+  autoDetectDetectedDescription: string;
   manualTitle: string;
+  manualOptionDescription: string;
   manualLanguageDialogTitle: string;
   manualLanguageDescription: string;
   additionalLanguagesTitle: string;
@@ -27,7 +29,9 @@ const englishTranslations: ConversationLanguageSettingDialogTranslations = {
     "Choose the main target language for generated descriptions.",
   autoDetectTitle: "Auto-detect",
   autoDetectDescription: "Detect from the title and body.",
+  autoDetectDetectedDescription: "Detected: {language}",
   manualTitle: "Manual language",
+  manualOptionDescription: "Choose a fixed language instead.",
   manualLanguageDialogTitle: "Manual language",
   manualLanguageDescription: "Choose the main target language.",
   additionalLanguagesTitle: "Additional languages",
@@ -64,7 +68,9 @@ export const conversationLanguageSettingDialogTranslations: Record<
     primaryLanguageTitle: "Langue principale",
     autoDetectTitle: "Détection automatique",
     autoDetectDescription: "Détecter à partir du titre et du corps.",
+    autoDetectDetectedDescription: "Détecté : {language}",
     manualTitle: "Langue manuelle",
+    manualOptionDescription: "Choisir une langue fixe à la place.",
     manualLanguageDialogTitle: "Langue manuelle",
     additionalLanguagesTitle: "Langues supplémentaires",
     additionalLanguagesNone: "Aucune",

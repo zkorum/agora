@@ -1,5 +1,6 @@
 import type {
     ContentTranslationSubject,
+    LocalizedContentTranslationStatus,
     LocalizedSurveyQuestionContent,
 } from "@/shared/types/zod.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
@@ -61,9 +62,11 @@ export function buildSurveyQuestionSourceVersion({
     return `survey_question_content:${String(surveyQuestionContentId)}:option_content:${optionContentIds.map((contentId) => String(contentId)).join(",")}`;
 }
 
-export function getSourceLanguageLabel(sourceLanguageCode: string | null): string {
+export function getSourceLanguageLabel(
+    sourceLanguageCode: string | null,
+): string | undefined {
     if (sourceLanguageCode === null || sourceLanguageCode.trim().length === 0) {
-        return "unknown";
+        return undefined;
     }
 
     try {
@@ -72,6 +75,25 @@ export function getSourceLanguageLabel(sourceLanguageCode: string | null): strin
     } catch {
         return sourceLanguageCode;
     }
+}
+
+export function buildTranslationMetadata<
+    TStatus extends LocalizedContentTranslationStatus,
+>({
+    targetLanguageCode,
+    sourceLanguageCode,
+    status,
+}: {
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+    sourceLanguageCode: string | null;
+    status: TStatus;
+}) {
+    const sourceLanguageLabel = getSourceLanguageLabel(sourceLanguageCode);
+    return {
+        targetLanguageCode,
+        ...(sourceLanguageLabel === undefined ? {} : { sourceLanguageLabel }),
+        status,
+    };
 }
 
 export function buildLocalizedSurveyQuestionContent({
@@ -131,9 +153,11 @@ export function buildLocalizedSurveyQuestionContent({
                 sourceVersion,
                 initialMode: "translated",
                 translation: {
-                    targetLanguageCode,
-                    sourceLanguageLabel: getSourceLanguageLabel(source.sourceLanguageCode),
-                    status: "completed",
+                    ...buildTranslationMetadata({
+                        targetLanguageCode,
+                        sourceLanguageCode: source.sourceLanguageCode,
+                        status: "completed",
+                    }),
                 },
                 variants: { translated },
             },
@@ -148,9 +172,11 @@ export function buildLocalizedSurveyQuestionContent({
                 sourceVersion,
                 initialMode: "translated",
                 translation: {
-                    targetLanguageCode,
-                    sourceLanguageLabel: getSourceLanguageLabel(source.sourceLanguageCode),
-                    status: "completed",
+                    ...buildTranslationMetadata({
+                        targetLanguageCode,
+                        sourceLanguageCode: source.sourceLanguageCode,
+                        status: "completed",
+                    }),
                 },
                 variants: { original, translated },
             },
@@ -164,14 +190,16 @@ export function buildLocalizedSurveyQuestionContent({
             sourceVersion,
             initialMode: "original",
             translation: {
-                targetLanguageCode,
-                sourceLanguageLabel: getSourceLanguageLabel(source.sourceLanguageCode),
-                status:
-                    translated === undefined && include === "original"
-                        ? "not_requested"
-                        : translated === undefined
-                          ? "pending"
-                          : "completed",
+                ...buildTranslationMetadata({
+                    targetLanguageCode,
+                    sourceLanguageCode: source.sourceLanguageCode,
+                    status:
+                        translated === undefined && include === "original"
+                            ? "not_requested"
+                            : translated === undefined
+                              ? "pending"
+                              : "completed",
+                }),
             },
             variants: {
                 original,

@@ -262,7 +262,7 @@ export const zodContentTranslationSubject = z.discriminatedUnion("kind", [
 const zodLocalizedContentTranslationMetadata = z
     .object({
         targetLanguageCode: ZodSupportedDisplayLanguageCodes,
-        sourceLanguageLabel: z.string().min(1),
+        sourceLanguageLabel: z.string().min(1).optional(),
         status: zodLocalizedContentTranslationStatus,
     })
     .strict();
@@ -1091,6 +1091,7 @@ export const zodOpinionItem = z
         createdAt: zodDateTimeFlexible,
         updatedAt: zodDateTimeFlexible,
         opinion: zodOpinionContentOutput,
+        sourceLanguageCode: z.string().nullable(),
         numParticipants: z.number().int().nonnegative(),
         numAgrees: z.number().int().nonnegative(),
         numDisagrees: z.number().int().nonnegative(),

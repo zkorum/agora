@@ -5,7 +5,7 @@ import {
 } from "@/shared/languages.js";
 
 export const LINGUA_MINIMUM_RELATIVE_DISTANCE = 0.2;
-export const LINGUA_MINIMUM_LANGUAGE_CONFIDENCE = 0.5;
+export const LINGUA_MINIMUM_LANGUAGE_CONFIDENCE = 0.4;
 export const GOOGLE_MINIMUM_LANGUAGE_CONFIDENCE = 0.5;
 
 const CYRILLIC_LETTER_REGEX = /\p{Script=Cyrillic}/u;

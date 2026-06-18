@@ -138,6 +138,7 @@ function opinion(overrides: Partial<AnalysisOpinionItem> = {}): AnalysisOpinionI
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
     updatedAt: new Date("2026-01-01T00:00:00.000Z"),
     opinion: "Statement",
+    sourceLanguageCode: null,
     numParticipants: 7,
     numAgrees: 5,
     numDisagrees: 1,

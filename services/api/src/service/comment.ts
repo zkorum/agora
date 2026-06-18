@@ -408,6 +408,7 @@ export async function fetchOpinionsByPostId({
             createdAt: opinionTable.createdAt,
             updatedAt: opinionTable.updatedAt,
             comment: opinionContentTable.content,
+            sourceLanguageCode: opinionContentTable.sourceLanguageCode,
             authorId: opinionTable.authorId,
             numAgrees: countAnalysisSnapshotOpinionTable.numAgrees,
             numDisagrees: countAnalysisSnapshotOpinionTable.numDisagrees,
@@ -490,6 +491,7 @@ export async function fetchOpinionsByPostId({
 
         const item: OpinionItem = {
             opinion: opinionResponse.comment,
+            sourceLanguageCode: opinionResponse.sourceLanguageCode,
             opinionSlugId: opinionResponse.commentSlugId,
             createdAt: opinionResponse.createdAt,
             numParticipants: latestCountSnapshot.participantCount,
@@ -609,6 +611,7 @@ export async function fetchOpinionsByOpinionSlugIdList({
                 createdAt: opinionTable.createdAt,
                 updatedAt: opinionTable.updatedAt,
                 comment: opinionContentTable.content,
+                sourceLanguageCode: opinionContentTable.sourceLanguageCode,
                 username: userTable.username,
                 isSeed: opinionTable.isSeed,
                 moderationAction: opinionModerationTable.moderationAction,
@@ -657,6 +660,7 @@ export async function fetchOpinionsByOpinionSlugIdList({
 
             opinionItemList.push({
                 opinion: commentResponse.comment,
+                sourceLanguageCode: commentResponse.sourceLanguageCode,
                 opinionSlugId: commentResponse.commentSlugId,
                 createdAt: commentResponse.createdAt,
                 updatedAt: commentResponse.updatedAt,
@@ -704,6 +708,7 @@ interface SnapshotAnalysisOpinionRow {
     createdAt: Date;
     updatedAt: Date;
     opinion: string;
+    sourceLanguageCode: string | null;
     authorId: string;
     username: string;
     isSeed: boolean;
@@ -823,6 +828,7 @@ function getSnapshotAnalysisOpinionSelectFields() {
         createdAt: opinionTable.createdAt,
         updatedAt: opinionTable.updatedAt,
         opinion: opinionContentTable.content,
+        sourceLanguageCode: opinionContentTable.sourceLanguageCode,
         authorId: opinionTable.authorId,
         username: userTable.username,
         isSeed: opinionTable.isSeed,
@@ -1198,6 +1204,7 @@ async function buildAnalysisOpinionsByIdFromRows({
                     ? "[moderated]"
                     : row.opinion,
             opinionSlugId: row.opinionSlugId,
+            sourceLanguageCode: row.sourceLanguageCode,
             createdAt: row.createdAt,
             numParticipants: conversationParticipantCount,
             numDisagrees: row.numDisagrees,
@@ -2485,6 +2492,7 @@ export async function postNewOpinion({
 
         const opinionItem: OpinionItem = {
             opinion: commentBody,
+            sourceLanguageCode: languageMetadata.sourceLanguageCode,
             opinionSlugId,
             createdAt: insertCommentResponse[0].createdAt,
             updatedAt: insertCommentResponse[0].updatedAt,

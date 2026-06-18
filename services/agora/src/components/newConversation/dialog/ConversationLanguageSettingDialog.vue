@@ -236,6 +236,7 @@ interface LanguageOption {
 const props = defineProps<{
   canEditPrimaryLanguage: boolean;
   canUseDynamicTranslation: boolean;
+  detectedLanguageCode?: SupportedDisplayLanguageCodes | null;
 }>();
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
@@ -273,12 +274,6 @@ const languageOptions: LanguageOption[] =
       value: language.code,
     })
   );
-
-const manualLanguageCode = computed<SupportedDisplayLanguageCodes>(() => {
-  return languageSetting.value.mode === "manual"
-    ? languageSetting.value.languageCode
-    : "en";
-});
 
 const primaryLanguageLabel = computed(() => {
   if (languageSetting.value.mode === "auto") {
@@ -344,17 +339,31 @@ const primarySelectedValue = computed(() => languageSetting.value.mode);
 const forwardIcon = computed(() =>
   $q.lang.rtl ? "mdi-chevron-left" : "mdi-chevron-right"
 );
+const autoDetectOptionDescription = computed(() => {
+  if (props.detectedLanguageCode === undefined || props.detectedLanguageCode === null) {
+    return t("autoDetectDescription");
+  }
+
+  return t("autoDetectDetectedDescription", {
+    language: getLanguageLabel(props.detectedLanguageCode),
+  });
+});
+const manualLanguageOptionDescription = computed(() =>
+  languageSetting.value.mode === "manual"
+    ? getLanguageLabel(languageSetting.value.languageCode)
+    : t("manualOptionDescription")
+);
 
 const primaryLanguageOptions = computed<DialogOption[]>(() => [
   {
     title: t("autoDetectTitle"),
-    description: t("autoDetectDescription"),
+    description: autoDetectOptionDescription.value,
     value: "auto",
     disabled: !props.canEditPrimaryLanguage,
   },
   {
     title: t("manualTitle"),
-    description: getLanguageLabel(manualLanguageCode.value),
+    description: manualLanguageOptionDescription.value,
     value: "manual",
     disabled: !props.canEditPrimaryLanguage,
   },

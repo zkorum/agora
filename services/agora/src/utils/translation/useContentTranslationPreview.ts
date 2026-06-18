@@ -2,10 +2,12 @@ import { useQueryClient } from "@tanstack/vue-query";
 import { isAxiosError } from "axios";
 import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type { SSEContentTranslationUpdatedData } from "src/shared/types/sse";
 import type {
   ContentTranslationSubject,
   LocalizedContentTranslationStatus,
+  ParticipationBlockedReason,
 } from "src/shared/types/zod";
 import {
   zodConversationContentVariant,
@@ -31,6 +33,14 @@ import {
 } from "./useContentTranslationPreview.i18n";
 
 const TRANSLATION_WAIT_TIMEOUT_MS = 30_000;
+
+type HandleParticipationBlocked = ({
+  reason,
+}: {
+  reason: ParticipationBlockedReason;
+}) => Promise<void>;
+
+type ShouldRequestTranslation = () => Promise<boolean>;
 
 function isRateLimitError(error: unknown): boolean {
   return isAxiosError(error) && error.response?.status === 429;
@@ -66,7 +76,7 @@ function isSameContentTranslationSubject({
 export interface ConversationContentTranslationPreview {
   isAvailable: boolean;
   mode: ContentTranslationDisplayMode;
-  sourceLanguageLabel: string;
+  sourceLanguageLabel: string | undefined;
   translationStatus: LocalizedContentTranslationStatus;
   translatedTitle: string;
   translatedBody: string | undefined;
@@ -75,7 +85,7 @@ export interface ConversationContentTranslationPreview {
 export interface OpinionContentTranslationPreview {
   isAvailable: boolean;
   mode: ContentTranslationDisplayMode;
-  sourceLanguageLabel: string;
+  sourceLanguageLabel: string | undefined;
   translationStatus: LocalizedContentTranslationStatus;
   translatedOpinion: string;
 }
@@ -83,7 +93,7 @@ export interface OpinionContentTranslationPreview {
 export interface SurveyQuestionContentTranslationPreview {
   isAvailable: boolean;
   mode: ContentTranslationDisplayMode;
-  sourceLanguageLabel: string;
+  sourceLanguageLabel: string | undefined;
   translationStatus: LocalizedContentTranslationStatus;
   translatedQuestionText: string;
   translatedOptions: { optionSlugId: string; optionText: string }[];
@@ -91,20 +101,26 @@ export interface SurveyQuestionContentTranslationPreview {
 
 interface ContentTranslationController {
   mode: Readonly<{ value: ContentTranslationDisplayMode }>;
-  sourceLanguageLabel: Readonly<{ value: string }>;
+  sourceLanguageLabel: Readonly<{ value: string | undefined }>;
   translationStatus: Readonly<{ value: LocalizedContentTranslationStatus }>;
   isAvailable: Readonly<{ value: boolean }>;
-  setMode: (mode: ContentTranslationDisplayMode) => void;
+  setMode: (mode: ContentTranslationDisplayMode) => Promise<void>;
 }
 
 function useContentTranslationController({
   subject,
   dynamicTranslationEnabled,
   sourceLanguageCode,
+  supportedTargetLanguageCodes,
+  shouldRequestTranslation,
+  onParticipationBlocked,
 }: {
   subject: MaybeRefOrGetter<ContentTranslationSubject>;
   dynamicTranslationEnabled: MaybeRefOrGetter<boolean>;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
+  supportedTargetLanguageCodes: MaybeRefOrGetter<SupportedDisplayLanguageCodes[]>;
+  shouldRequestTranslation?: ShouldRequestTranslation;
+  onParticipationBlocked?: HandleParticipationBlocked;
 }): ContentTranslationController & {
   query: ReturnType<typeof useContentTranslationQuery>;
 } {
@@ -125,6 +141,7 @@ function useContentTranslationController({
       sourceLanguageCode: toValue(sourceLanguageCode),
       displayLanguage: displayLanguage.value,
       spokenLanguages: spokenLanguages.value,
+      supportedTargetLanguageCodes: toValue(supportedTargetLanguageCodes),
       hasTranslatedContent: true,
     })
   );
@@ -160,6 +177,9 @@ function useContentTranslationController({
     if (!hasRequestedTranslation.value) {
       return "not_requested";
     }
+    if (query.isFetching.value) {
+      return "pending";
+    }
     if (query.isError.value) {
       return "failed";
     }
@@ -189,12 +209,21 @@ function useContentTranslationController({
     return getLanguageDisplayName(toValue(sourceLanguageCode));
   });
 
-  function setMode(nextMode: ContentTranslationDisplayMode): void {
-    requestedMode.value = nextMode;
+  async function setMode(nextMode: ContentTranslationDisplayMode): Promise<void> {
     if (nextMode === "translated") {
+      const canRequestTranslation =
+        shouldRequestTranslation === undefined
+          ? true
+          : await shouldRequestTranslation();
+      if (!canRequestTranslation) {
+        resetToOriginal();
+        return;
+      }
+      requestedMode.value = "translated";
       hasRequestedTranslation.value = true;
       return;
     }
+    requestedMode.value = nextMode;
     hasRequestedTranslation.value = false;
   }
 
@@ -205,7 +234,10 @@ function useContentTranslationController({
 
   function applyTranslationNotEnabledResponse(): void {
     const response = query.data.value;
-    if (response?.success !== false) {
+    if (
+      response?.success !== false ||
+      response.reason !== "content_translation_not_enabled"
+    ) {
       return;
     }
     const currentSubject = toValue(subject);
@@ -222,6 +254,22 @@ function useContentTranslationController({
     });
     resetToOriginal();
     showNotifyMessage(t("translationNotEnabled"));
+  }
+
+  async function applyParticipationBlockedResponse(): Promise<void> {
+    const response = query.data.value;
+    if (
+      response?.success !== false ||
+      response.reason !== "participation_blocked"
+    ) {
+      return;
+    }
+    resetToOriginal();
+    if (onParticipationBlocked === undefined) {
+      showNotifyMessage(t("translationFailed"));
+      return;
+    }
+    await onParticipationBlocked({ reason: response.blockedReason });
   }
 
   function showQueryFailureToast(): void {
@@ -284,7 +332,11 @@ function useContentTranslationController({
     () => query.data.value,
     (response) => {
       if (response?.success === false && hasRequestedTranslation.value) {
-        applyTranslationNotEnabledResponse();
+        if (response.reason === "content_translation_not_enabled") {
+          applyTranslationNotEnabledResponse();
+          return;
+        }
+        void applyParticipationBlockedResponse();
       }
     }
   );
@@ -308,17 +360,26 @@ export function useConversationContentTranslationPreview({
   subject,
   dynamicTranslationEnabled,
   sourceLanguageCode,
+  supportedTargetLanguageCodes,
+  shouldRequestTranslation,
+  onParticipationBlocked,
 }: {
   subject: MaybeRefOrGetter<
     Extract<ContentTranslationSubject, { kind: "conversation" }>
   >;
   dynamicTranslationEnabled: MaybeRefOrGetter<boolean>;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
+  supportedTargetLanguageCodes: MaybeRefOrGetter<SupportedDisplayLanguageCodes[]>;
+  shouldRequestTranslation?: ShouldRequestTranslation;
+  onParticipationBlocked?: HandleParticipationBlocked;
 }) {
   const controller = useContentTranslationController({
     subject,
     dynamicTranslationEnabled,
     sourceLanguageCode,
+    supportedTargetLanguageCodes,
+    shouldRequestTranslation,
+    onParticipationBlocked,
   });
 
   const preview = computed<ConversationContentTranslationPreview | undefined>(
@@ -360,17 +421,26 @@ export function useOpinionContentTranslationPreview({
   subject,
   dynamicTranslationEnabled,
   sourceLanguageCode,
+  supportedTargetLanguageCodes,
+  shouldRequestTranslation,
+  onParticipationBlocked,
 }: {
   subject: MaybeRefOrGetter<
     Extract<ContentTranslationSubject, { kind: "opinion" }>
   >;
   dynamicTranslationEnabled: MaybeRefOrGetter<boolean>;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
+  supportedTargetLanguageCodes: MaybeRefOrGetter<SupportedDisplayLanguageCodes[]>;
+  shouldRequestTranslation?: ShouldRequestTranslation;
+  onParticipationBlocked?: HandleParticipationBlocked;
 }) {
   const controller = useContentTranslationController({
     subject,
     dynamicTranslationEnabled,
     sourceLanguageCode,
+    supportedTargetLanguageCodes,
+    shouldRequestTranslation,
+    onParticipationBlocked,
   });
 
   const preview = computed<OpinionContentTranslationPreview | undefined>(() => {
@@ -407,17 +477,26 @@ export function useSurveyQuestionContentTranslationPreview({
   subject,
   dynamicTranslationEnabled,
   sourceLanguageCode,
+  supportedTargetLanguageCodes,
+  shouldRequestTranslation,
+  onParticipationBlocked,
 }: {
   subject: MaybeRefOrGetter<
     Extract<ContentTranslationSubject, { kind: "survey_question" }>
   >;
   dynamicTranslationEnabled: MaybeRefOrGetter<boolean>;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
+  supportedTargetLanguageCodes: MaybeRefOrGetter<SupportedDisplayLanguageCodes[]>;
+  shouldRequestTranslation?: ShouldRequestTranslation;
+  onParticipationBlocked?: HandleParticipationBlocked;
 }) {
   const controller = useContentTranslationController({
     subject,
     dynamicTranslationEnabled,
     sourceLanguageCode,
+    supportedTargetLanguageCodes,
+    shouldRequestTranslation,
+    onParticipationBlocked,
   });
 
   const preview = computed<SurveyQuestionContentTranslationPreview | undefined>(

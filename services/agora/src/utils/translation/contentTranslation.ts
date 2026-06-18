@@ -3,14 +3,18 @@ import {
   type SupportedSpokenLanguageCodes,
   SupportedSpokenLanguageMetadataList,
 } from "src/shared/languages";
-import type { LocalizedContentTranslationStatus } from "src/shared/types/zod";
+import type {
+  ConversationLanguageSettingOutput,
+  ConversationMultilingualSetting,
+  LocalizedContentTranslationStatus,
+} from "src/shared/types/zod";
 
 export type ContentTranslationDisplayMode = "original" | "translated";
 
 export interface ContentTranslationState {
   isAvailable: boolean;
   initialMode: ContentTranslationDisplayMode;
-  sourceLanguageLabel: string;
+  sourceLanguageLabel: string | undefined;
   translationStatus: LocalizedContentTranslationStatus;
 }
 
@@ -19,6 +23,7 @@ export interface ResolveContentTranslationStateParams {
   sourceLanguageCode: string | null | undefined;
   displayLanguage: SupportedDisplayLanguageCodes;
   spokenLanguages: SupportedSpokenLanguageCodes[];
+  supportedTargetLanguageCodes: SupportedDisplayLanguageCodes[];
   hasTranslatedContent: boolean;
 }
 
@@ -29,9 +34,25 @@ function getLanguageComparisonKey(languageCode: string): string {
   return languageCode.split("-")[0]?.toLowerCase() ?? languageCode.toLowerCase();
 }
 
-export function getLanguageDisplayName(languageCode: string | null | undefined): string {
+function viewerUnderstandsSourceLanguage({
+  sourceLanguageKey,
+  displayLanguage,
+  spokenLanguages,
+}: {
+  sourceLanguageKey: string;
+  displayLanguage: SupportedDisplayLanguageCodes;
+  spokenLanguages: SupportedSpokenLanguageCodes[];
+}): boolean {
+  const understoodLanguageKeys = new Set<string>([
+    getLanguageComparisonKey(displayLanguage),
+    ...spokenLanguages.map((languageCode) => getLanguageComparisonKey(languageCode)),
+  ]);
+  return understoodLanguageKeys.has(sourceLanguageKey);
+}
+
+export function getLanguageDisplayName(languageCode: string | null | undefined): string | undefined {
   if (languageCode === undefined || languageCode === null || languageCode === "") {
-    return "undetermined language";
+    return undefined;
   }
 
   const language = SupportedSpokenLanguageMetadataList.find(
@@ -54,10 +75,12 @@ export function resolveContentTranslationState({
   sourceLanguageCode,
   displayLanguage,
   spokenLanguages,
+  supportedTargetLanguageCodes,
   hasTranslatedContent,
 }: ResolveContentTranslationStateParams): ContentTranslationState {
   const sourceLanguageLabel = getLanguageDisplayName(sourceLanguageCode);
-  if (!dynamicTranslationEnabled || !hasTranslatedContent) {
+  const supportsDisplayLanguage = supportedTargetLanguageCodes.includes(displayLanguage);
+  if (!dynamicTranslationEnabled || !hasTranslatedContent || !supportsDisplayLanguage) {
     return {
       isAvailable: false,
       initialMode: "original",
@@ -78,10 +101,13 @@ export function resolveContentTranslationState({
       };
     }
 
-    const isSpokenByViewer = spokenLanguages.some(
-      (languageCode) => getLanguageComparisonKey(languageCode) === sourceLanguageKey
-    );
-    if (isSpokenByViewer) {
+    if (
+      viewerUnderstandsSourceLanguage({
+        sourceLanguageKey,
+        displayLanguage,
+        spokenLanguages,
+      })
+    ) {
       return {
         isAvailable: true,
         initialMode: "original",
@@ -97,4 +123,25 @@ export function resolveContentTranslationState({
     sourceLanguageLabel,
     translationStatus: "completed",
   };
+}
+
+export function getSupportedContentTranslationTargetLanguageCodes({
+  languageSetting,
+  multilingualSetting,
+}: {
+  languageSetting: ConversationLanguageSettingOutput;
+  multilingualSetting: ConversationMultilingualSetting;
+}): SupportedDisplayLanguageCodes[] {
+  const supportedLanguageCodes = new Set<SupportedDisplayLanguageCodes>();
+  const primaryLanguageCode =
+    languageSetting.languageCode ?? languageSetting.detectedLanguageCode;
+  if (primaryLanguageCode !== null) {
+    supportedLanguageCodes.add(primaryLanguageCode);
+  }
+
+  for (const languageCode of multilingualSetting.additionalLanguageCodes) {
+    supportedLanguageCodes.add(languageCode);
+  }
+
+  return [...supportedLanguageCodes];
 }

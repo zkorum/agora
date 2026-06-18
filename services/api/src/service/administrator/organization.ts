@@ -72,7 +72,8 @@ export async function getAllOrganizations({
             isFullImagePath: organizationTable.isFullImagePath,
             websiteUrl: organizationTable.websiteUrl,
         })
-        .from(organizationTable);
+        .from(organizationTable)
+        .where(eq(organizationTable.directoryVisibility, "listed"));
     organizationTableResponse.forEach((response) => {
         if (response.name) {
             organizationList.push(buildOrganizationProperties({
@@ -189,7 +190,12 @@ export async function getOrganizationMembershipsByUserId({
                 organizationMembershipTable.organizationId,
             ),
         )
-        .where(eq(organizationMembershipTable.userId, userId));
+        .where(
+            and(
+                eq(organizationMembershipTable.userId, userId),
+                eq(organizationTable.directoryVisibility, "listed"),
+            ),
+        );
 
     return organizationTableResponse.map((response) => ({
         organizationId: response.organizationId,

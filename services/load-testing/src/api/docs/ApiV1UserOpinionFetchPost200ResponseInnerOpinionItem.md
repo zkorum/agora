@@ -9,6 +9,7 @@ Name | Type | Description | Notes
 **createdAt** | **string** |  | [default to undefined]
 **updatedAt** | **string** |  | [default to undefined]
 **opinion** | **string** |  | [default to undefined]
+**sourceLanguageCode** | **string** |  | [default to undefined]
 **numParticipants** | **number** |  | [default to undefined]
 **numAgrees** | **number** |  | [default to undefined]
 **numDisagrees** | **number** |  | [default to undefined]
@@ -27,6 +28,7 @@ const instance: ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem = {
     createdAt,
     updatedAt,
     opinion,
+    sourceLanguageCode,
     numParticipants,
     numAgrees,
     numDisagrees,

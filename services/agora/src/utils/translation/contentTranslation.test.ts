@@ -11,12 +11,14 @@ function resolveState({
   sourceLanguageCode = "ja",
   displayLanguage = "en",
   spokenLanguages = ["en"],
+  supportedTargetLanguageCodes = ["en"],
   hasTranslatedContent = true,
 }: {
   dynamicTranslationEnabled?: boolean;
   sourceLanguageCode?: string | null;
   displayLanguage?: SupportedDisplayLanguageCodes;
   spokenLanguages?: SupportedSpokenLanguageCodes[];
+  supportedTargetLanguageCodes?: SupportedDisplayLanguageCodes[];
   hasTranslatedContent?: boolean;
 }) {
   return resolveContentTranslationState({
@@ -24,6 +26,7 @@ function resolveState({
     sourceLanguageCode,
     displayLanguage,
     spokenLanguages,
+    supportedTargetLanguageCodes,
     hasTranslatedContent,
   });
 }
@@ -43,9 +46,61 @@ describe("resolveContentTranslationState", () => {
     });
   });
 
+  it("hides the control when the display language is not a supported target", () => {
+    expect(
+      resolveState({
+        displayLanguage: "ru",
+        supportedTargetLanguageCodes: ["es", "fr"],
+      })
+    ).toMatchObject({
+      isAvailable: false,
+      initialMode: "original",
+    });
+  });
+
+  it("shows the control when the display language is an additional target", () => {
+    expect(
+      resolveState({
+        displayLanguage: "fr",
+        sourceLanguageCode: "ja",
+        spokenLanguages: ["en"],
+        supportedTargetLanguageCodes: ["es", "fr"],
+      })
+    ).toMatchObject({
+      isAvailable: true,
+      initialMode: "translated",
+    });
+  });
+
   it("hides the control when the source matches the display language", () => {
     expect(resolveState({ sourceLanguageCode: "en-US" })).toMatchObject({
       isAvailable: false,
+      initialMode: "original",
+    });
+  });
+
+  it("treats the display language as understood", () => {
+    expect(
+      resolveState({
+        sourceLanguageCode: "fr",
+        displayLanguage: "fr",
+        spokenLanguages: ["en"],
+      })
+    ).toMatchObject({
+      isAvailable: false,
+      initialMode: "original",
+    });
+  });
+
+  it("shows original content first when the viewer display language differs but they speak the source", () => {
+    expect(
+      resolveState({
+        sourceLanguageCode: "fr",
+        displayLanguage: "en",
+        spokenLanguages: ["fr"],
+      })
+    ).toMatchObject({
+      isAvailable: true,
       initialMode: "original",
     });
   });
@@ -69,7 +124,7 @@ describe("resolveContentTranslationState", () => {
     expect(resolveState({ sourceLanguageCode: null })).toMatchObject({
       isAvailable: true,
       initialMode: "translated",
-      sourceLanguageLabel: "undetermined language",
+      sourceLanguageLabel: undefined,
     });
   });
 });

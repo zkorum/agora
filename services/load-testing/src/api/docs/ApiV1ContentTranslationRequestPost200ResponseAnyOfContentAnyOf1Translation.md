@@ -6,7 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **targetLanguageCode** | **string** |  | [default to undefined]
-**sourceLanguageLabel** | **string** |  | [default to undefined]
+**sourceLanguageLabel** | **string** |  | [optional] [default to undefined]
 **status** | **string** |  | [default to undefined]
 
 ## Example

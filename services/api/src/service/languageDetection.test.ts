@@ -225,6 +225,18 @@ describe("detectLanguageWithFallback", () => {
         });
         expect(outcome.cacheable).toBe(true);
     });
+
+    it("real local detector detects short unaccented French statements", async () => {
+        const outcome = await detectLanguageWithFallback({
+            text: "ceci est un message en francais",
+        });
+
+        expect(outcome.result).toMatchObject({
+            languageCode: "fr",
+            sourceLanguageCode: "fr",
+        });
+        expect(outcome.cacheable).toBe(true);
+    });
 });
 
 describe("resolveConversationLanguageSetting", () => {

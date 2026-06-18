@@ -24,6 +24,7 @@
               :on-view-analysis="props.onViewAnalysis"
               :is-voting-disabled="props.isVotingDisabled"
               :dynamic-translation-enabled="props.dynamicTranslationEnabled"
+              :supported-target-language-codes="props.supportedTargetLanguageCodes"
               @deleted="(opinionSlugId) => handleOpinionDeleted(opinionSlugId)"
               @muted-comment="handleOpinionMuted()"
             />
@@ -55,6 +56,7 @@ import { useOpinionPagination } from "src/composables/opinion/useOpinionPaginati
 import { useOpinionVoting } from "src/composables/opinion/useOpinionVoting";
 import { useTargetOpinion } from "src/composables/opinion/useTargetOpinion";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
   EventSlug,
   OpinionItem,
@@ -93,6 +95,7 @@ const props = defineProps<{
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
   dynamicTranslationEnabled: boolean;
+  supportedTargetLanguageCodes: SupportedDisplayLanguageCodes[];
   preloadedQueries: {
     commentsDiscoverQuery: UseQueryReturnType<OpinionItem[], Error>;
     commentsNewQuery: UseQueryReturnType<OpinionItem[], Error>;

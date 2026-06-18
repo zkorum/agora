@@ -331,6 +331,7 @@ function createStatement({
     createdAt: now,
     updatedAt: now,
     opinion,
+    sourceLanguageCode: null,
     numParticipants: 6,
     numAgrees: 3,
     numDisagrees: 2,
@@ -415,6 +416,7 @@ const translationInputs = computed(() => {
       sourceLanguageCode: "ja",
       displayLanguage: "en" as const,
       spokenLanguages: ["en" as const],
+      supportedTargetLanguageCodes: ["en" as const],
     };
   }
   if (translationScenario.value === "same-display") {
@@ -423,6 +425,7 @@ const translationInputs = computed(() => {
       sourceLanguageCode: "en",
       displayLanguage: "en" as const,
       spokenLanguages: ["en" as const],
+      supportedTargetLanguageCodes: ["en" as const],
     };
   }
   if (translationScenario.value === "spoken-not-display") {
@@ -431,6 +434,7 @@ const translationInputs = computed(() => {
       sourceLanguageCode: "ja",
       displayLanguage: "en" as const,
       spokenLanguages: ["en" as const, "ja" as const],
+      supportedTargetLanguageCodes: ["en" as const],
     };
   }
   if (translationScenario.value === "unknown") {
@@ -439,6 +443,7 @@ const translationInputs = computed(() => {
       sourceLanguageCode: null,
       displayLanguage: "en" as const,
       spokenLanguages: ["en" as const],
+      supportedTargetLanguageCodes: ["en" as const],
     };
   }
   return {
@@ -446,6 +451,7 @@ const translationInputs = computed(() => {
     sourceLanguageCode: "ja",
     displayLanguage: "en" as const,
     spokenLanguages: ["en" as const],
+    supportedTargetLanguageCodes: ["en" as const],
   };
 });
 

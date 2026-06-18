@@ -31,7 +31,7 @@ import type {
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import {
     buildLocalizedSurveyQuestionContent,
-    getSourceLanguageLabel,
+    buildTranslationMetadata,
     hasCompleteSurveyQuestionTranslation,
     shouldQueueTranslationWork,
 } from "./contentTranslationContent.js";
@@ -605,9 +605,11 @@ async function buildConversationResponse({
                 sourceVersion: `conversation_content:${String(source.contentId)}`,
                 initialMode: "translated",
                 translation: {
-                    targetLanguageCode,
-                    sourceLanguageLabel: getSourceLanguageLabel(source.sourceLanguageCode),
-                    status: "completed",
+                    ...buildTranslationMetadata({
+                        targetLanguageCode,
+                        sourceLanguageCode: source.sourceLanguageCode,
+                        status: "completed",
+                    }),
                 },
                 variants: {
                     translated: {
@@ -630,9 +632,11 @@ async function buildConversationResponse({
                 sourceVersion: `conversation_content:${String(source.contentId)}`,
                 initialMode: "translated",
                 translation: {
-                    targetLanguageCode,
-                    sourceLanguageLabel: getSourceLanguageLabel(source.sourceLanguageCode),
-                    status: "completed",
+                    ...buildTranslationMetadata({
+                        targetLanguageCode,
+                        sourceLanguageCode: source.sourceLanguageCode,
+                        status: "completed",
+                    }),
                 },
                 variants: {
                     original,
@@ -655,14 +659,16 @@ async function buildConversationResponse({
             sourceVersion: `conversation_content:${String(source.contentId)}`,
             initialMode: "original",
             translation: {
-                targetLanguageCode,
-                sourceLanguageLabel: getSourceLanguageLabel(source.sourceLanguageCode),
-                status:
-                    translation === undefined && include === "original"
-                        ? "not_requested"
-                        : translation === undefined
-                          ? "pending"
-                          : "completed",
+                ...buildTranslationMetadata({
+                    targetLanguageCode,
+                    sourceLanguageCode: source.sourceLanguageCode,
+                    status:
+                        translation === undefined && include === "original"
+                            ? "not_requested"
+                            : translation === undefined
+                              ? "pending"
+                              : "completed",
+                }),
             },
             variants: {
                 original,
@@ -721,9 +727,11 @@ async function buildOpinionResponse({
                 sourceVersion: `opinion_content:${String(source.contentId)}`,
                 initialMode: "translated",
                 translation: {
-                    targetLanguageCode,
-                    sourceLanguageLabel: getSourceLanguageLabel(source.sourceLanguageCode),
-                    status: "completed",
+                    ...buildTranslationMetadata({
+                        targetLanguageCode,
+                        sourceLanguageCode: source.sourceLanguageCode,
+                        status: "completed",
+                    }),
                 },
                 variants: {
                     translated: { content: translation.translatedContent },
@@ -744,9 +752,11 @@ async function buildOpinionResponse({
                 sourceVersion: `opinion_content:${String(source.contentId)}`,
                 initialMode: "translated",
                 translation: {
-                    targetLanguageCode,
-                    sourceLanguageLabel: getSourceLanguageLabel(source.sourceLanguageCode),
-                    status: "completed",
+                    ...buildTranslationMetadata({
+                        targetLanguageCode,
+                        sourceLanguageCode: source.sourceLanguageCode,
+                        status: "completed",
+                    }),
                 },
                 variants: {
                     original,
@@ -767,14 +777,16 @@ async function buildOpinionResponse({
             sourceVersion: `opinion_content:${String(source.contentId)}`,
             initialMode: "original",
             translation: {
-                targetLanguageCode,
-                sourceLanguageLabel: getSourceLanguageLabel(source.sourceLanguageCode),
-                status:
-                    translation === undefined && include === "original"
-                        ? "not_requested"
-                        : translation === undefined
-                          ? "pending"
-                          : "completed",
+                ...buildTranslationMetadata({
+                    targetLanguageCode,
+                    sourceLanguageCode: source.sourceLanguageCode,
+                    status:
+                        translation === undefined && include === "original"
+                            ? "not_requested"
+                            : translation === undefined
+                              ? "pending"
+                              : "completed",
+                }),
             },
             variants: {
                 original,

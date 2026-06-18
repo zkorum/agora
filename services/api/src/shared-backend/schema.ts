@@ -1056,7 +1056,11 @@ export const organizationTable = pgTable("organization", {
         .unique(),
     displayName: varchar("display_name", { length: MAX_LENGTH_NAME_CREATOR })
         .notNull(),
+    // Controls organization-facing exposure, such as directories and "post as organization" pickers.
+    // Auto-provisioned personal backing orgs start unlisted; promoting one to a real org lists it.
     directoryVisibility: directoryVisibilityEnum("directory_visibility").notNull(),
+    // Links the default personal organization provisioned for a user. This is also historical
+    // provenance if the org is later promoted; do not use it as a visibility flag.
     autoProvisionedForUserId: uuid("auto_provisioned_for_user_id")
         .references(() => userTable.id)
         .unique(),

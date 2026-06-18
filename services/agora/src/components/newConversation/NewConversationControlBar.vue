@@ -68,6 +68,7 @@
     v-model:multilingual-setting="multilingualSetting"
     :can-edit-primary-language="props.canEditConversationContent"
     :can-use-dynamic-translation="canUseDynamicTranslation"
+    :detected-language-code="props.detectedLanguageCode"
   />
 
   <LoginRequirementDialog
@@ -156,6 +157,7 @@ interface Props {
   canUseAnalysisVariantsPreference?: boolean;
   canUseDynamicTranslation?: boolean;
   canEditConversationContent?: boolean;
+  detectedLanguageCode?: SupportedDisplayLanguageCodes | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -165,6 +167,7 @@ const props = withDefaults(defineProps<Props>(), {
   canUseAnalysisVariantsPreference: false,
   canUseDynamicTranslation: false,
   canEditConversationContent: true,
+  detectedLanguageCode: null,
 });
 
 const { t } = useComponentI18n<NewConversationControlBarTranslations>(

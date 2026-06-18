@@ -94,7 +94,7 @@ import PostMetadata from "./PostMetadata.vue";
 interface PostContentTranslationPreview {
   isAvailable: boolean;
   mode: ContentTranslationDisplayMode;
-  sourceLanguageLabel: string;
+  sourceLanguageLabel: string | undefined;
   translationStatus: LocalizedContentTranslationStatus;
   translatedTitle: string;
   translatedBody: string | undefined;

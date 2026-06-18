@@ -4,6 +4,7 @@ import type { ContentTranslationSubject } from "src/shared/types/zod";
 import type { MaybeRefOrGetter } from "vue";
 import { computed, toValue } from "vue";
 
+import { useBackendAuthApi } from "../auth";
 import {
   type ContentTranslationResponse,
   useBackendContentTranslationApi,
@@ -33,6 +34,7 @@ export function useContentTranslationQuery({
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { requestContentTranslation } = useBackendContentTranslationApi();
+  const { updateAuthState } = useBackendAuthApi();
 
   return useQuery<ContentTranslationResponse>({
     queryKey: computed(() =>
@@ -41,12 +43,17 @@ export function useContentTranslationQuery({
         targetLanguageCode: toValue(targetLanguageCode),
       })
     ),
-    queryFn: async () =>
-      await requestContentTranslation({
+    queryFn: async () => {
+      const response = await requestContentTranslation({
         subject: toValue(subject),
         targetLanguageCode: toValue(targetLanguageCode),
         include: toValue(include),
-      }),
+      });
+      if (response.success) {
+        void updateAuthState({ partialLoginStatus: { isKnown: true } });
+      }
+      return response;
+    },
     enabled: computed(() => toValue(enabled)),
     retry: false,
     staleTime: 0,
