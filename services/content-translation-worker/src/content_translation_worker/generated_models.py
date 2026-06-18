@@ -105,7 +105,7 @@ class ContentTranslationWork(Base):
     priority_rank: Mapped[int] = mapped_column(Integer, server_default="2")
     attempt_count: Mapped[int] = mapped_column(Integer, server_default="0")
     lease_owner: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    lease_token: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    lease_token: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
     lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     last_error_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
     last_error_message: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -165,8 +165,10 @@ export const zodExportBundleInfo = z
 export const zodOrganization = z
     .object({
         name: z.string(),
-        imageUrl: z.string(),
-        websiteUrl: z.url({ message: "Invalid organization website url" }),
+        imageUrl: z.string().optional(),
+        websiteUrl: z
+            .url({ message: "Invalid organization website url" })
+            .optional(),
         description: z.string(),
     })
     .strict();

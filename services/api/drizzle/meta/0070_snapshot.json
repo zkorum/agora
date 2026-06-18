@@ -1,5 +1,5 @@
 {
-  "id": "76439c93-92a2-4fa5-aca2-c06d2c370a27",
+  "id": "b6d99db1-034f-4a2b-b5f7-00e5c0c437ba",
   "prevId": "e7ec5c0a-95ba-40db-a5f1-02aa2195cae9",
   "version": "7",
   "dialect": "postgresql",
@@ -1134,7 +1134,7 @@
         },
         "lease_token": {
           "name": "lease_token",
-          "type": "varchar(100)",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -8833,7 +8833,7 @@
           "name": "image_path",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "is_full_image_path": {
           "name": "is_full_image_path",
@@ -8905,13 +8905,6 @@
           "nullsNotDistinct": false,
           "columns": [
             "auto_provisioned_for_user_id"
-          ]
-        },
-        "organization_website_url_unique": {
-          "name": "organization_website_url_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "website_url"
           ]
         }
       },

@@ -476,20 +476,28 @@ export function useCommonPost() {
                 isEdited: postItem.isEdited,
                 requiresEventTicket: postItem.requiresEventTicket ?? undefined,
                 organization:
-                    postItem.authorName === null &&
-                    postItem.organizationDescription !== null &&
-                    postItem.organizationWebsiteUrl !== null
-                        ? {
-                              name: postItem.organizationName,
-                              description: postItem.organizationDescription,
-                              websiteUrl: postItem.organizationWebsiteUrl,
-                              imageUrl: imagePathToUrl({
+                    postItem.authorName === null
+                        ? (() => {
+                              const imageUrl = imagePathToUrl({
                                   imagePath: postItem.organizationImagePath,
                                   isFullImagePath:
                                       postItem.organizationIsFullImagePath,
                                   baseImageServiceUrl,
-                              }),
-                          }
+                              });
+
+                              return {
+                                  name: postItem.organizationName,
+                                  description:
+                                      postItem.organizationDescription ?? "",
+                                  ...(postItem.organizationWebsiteUrl === null
+                                      ? {}
+                                      : {
+                                            websiteUrl:
+                                                postItem.organizationWebsiteUrl,
+                                        }),
+                                  ...(imageUrl === undefined ? {} : { imageUrl }),
+                              };
+                          })()
                         : undefined,
                 externalSourceConfig: (() => {
                     const parsed = zodExternalSourceConfig.safeParse(

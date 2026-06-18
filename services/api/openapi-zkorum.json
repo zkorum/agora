@@ -1247,8 +1247,6 @@
                                                                 },
                                                                 "required": [
                                                                     "name",
-                                                                    "imageUrl",
-                                                                    "websiteUrl",
                                                                     "description"
                                                                 ],
                                                                 "additionalProperties": false
@@ -2011,8 +2009,6 @@
                                                 },
                                                 "required": [
                                                     "name",
-                                                    "imageUrl",
-                                                    "websiteUrl",
                                                     "description"
                                                 ],
                                                 "additionalProperties": false
@@ -2342,8 +2338,6 @@
                                                         },
                                                         "required": [
                                                             "name",
-                                                            "imageUrl",
-                                                            "websiteUrl",
                                                             "description"
                                                         ],
                                                         "additionalProperties": false
@@ -2839,8 +2833,6 @@
                                                                 },
                                                                 "required": [
                                                                     "name",
-                                                                    "imageUrl",
-                                                                    "websiteUrl",
                                                                     "description"
                                                                 ],
                                                                 "additionalProperties": false
@@ -8151,8 +8143,6 @@
                                                             },
                                                             "required": [
                                                                 "name",
-                                                                "imageUrl",
-                                                                "websiteUrl",
                                                                 "description"
                                                             ],
                                                             "additionalProperties": false
@@ -11698,8 +11688,6 @@
                                                 },
                                                 "required": [
                                                     "name",
-                                                    "imageUrl",
-                                                    "websiteUrl",
                                                     "description"
                                                 ],
                                                 "additionalProperties": false
@@ -11748,8 +11736,6 @@
                                                 },
                                                 "required": [
                                                     "name",
-                                                    "imageUrl",
-                                                    "websiteUrl",
                                                     "description"
                                                 ],
                                                 "additionalProperties": false
@@ -11797,7 +11783,6 @@
                                     "organizationName",
                                     "imagePath",
                                     "isFullImagePath",
-                                    "websiteUrl",
                                     "description"
                                 ],
                                 "additionalProperties": false

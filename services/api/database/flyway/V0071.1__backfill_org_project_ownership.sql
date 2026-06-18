@@ -68,7 +68,7 @@ SELECT
     "user".first_name AS display_name,
     'unlisted'::directory_visibility AS directory_visibility,
     "user".id AS auto_provisioned_for_user_id,
-    '' AS image_path,
+    NULL AS image_path,
     false AS is_full_image_path,
     now() AS created_at,
     now() AS updated_at

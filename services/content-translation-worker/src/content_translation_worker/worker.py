@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import logging
 import signal
-import socket
 import sys
 import time
 from typing import TYPE_CHECKING, Protocol, TypeGuard
-from uuid import uuid4
 
 import valkey as valkey_lib
 from pydantic import ValidationError
@@ -47,6 +45,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 _running = True
+WORKER_ID = "content-translation-worker"
 
 
 def _handle_signal(signum: int, frame: object) -> None:
@@ -141,7 +140,7 @@ def main() -> int:
     signal.signal(signal.SIGTERM, _handle_signal)
     signal.signal(signal.SIGINT, _handle_signal)
 
-    worker_id = f"{socket.gethostname()}:{uuid4()}"
+    worker_id = WORKER_ID
     log.info(
         "[Worker] Starting content-translation-worker id=%s provider=%s translation_model=%s",
         worker_id,

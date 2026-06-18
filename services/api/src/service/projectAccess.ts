@@ -159,7 +159,7 @@ export async function getOrCreatePersonalOrganization({
             displayName: user.firstName,
             directoryVisibility: "unlisted",
             autoProvisionedForUserId: userId,
-            imagePath: "",
+            imagePath: null,
             isFullImagePath: false,
         })
         .returning({ organizationId: organizationTable.id });

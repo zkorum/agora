@@ -47,14 +47,15 @@ export default defineBoot(({ router }) => {
     if (!(anchor instanceof HTMLAnchorElement)) return;
     if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
     if (!anchor.href.startsWith(window.location.origin)) return;
-    // Skip entirely if click target is an interactive element inside the <a>.
-    // These elements have their own @click.stop handlers (e.g., share, vote count,
-    // hamburger menu). We must not call e.preventDefault() here — that would
-    // interfere with Vue's event delegation for the button handlers.
-    // Browsers give priority to inner interactive elements over the outer <a>.
+    // Let nested controls handle their own click, but suppress the outer anchor.
+    // This prevents card-level navigation when clicking controls like translation
+    // toggles, share buttons, vote counts, or overflow menus.
     const target = e.target as HTMLElement;
     const interactive = target.closest("button, [role='button'], input, select, textarea");
-    if (interactive && anchor.contains(interactive)) return;
+    if (interactive && anchor.contains(interactive)) {
+      e.preventDefault();
+      return;
+    }
     e.preventDefault();
     // Deferred SpaLinks (data-spa-handled) handle their own navigation —
     // used by analysis/comment tabs that need custom history management.

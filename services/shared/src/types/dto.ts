@@ -1136,7 +1136,7 @@ export class Dto {
             organizationName: z.string(),
             imagePath: z.string(),
             isFullImagePath: z.boolean(),
-            websiteUrl: z.url(),
+            websiteUrl: z.url().optional(),
             description: z.string(),
         })
         .strict();

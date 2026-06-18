@@ -36,6 +36,7 @@
         @click="setPostAs(true, organization.name)"
       >
         <DynamicProfileImage
+          v-if="organization.imageUrl !== undefined"
           :user-identity="organization.name"
           :size="32"
           :organization-image-url="organization.imageUrl"

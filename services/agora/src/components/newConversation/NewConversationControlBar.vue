@@ -1,6 +1,7 @@
 <template>
   <div class="control-bar">
     <DynamicProfileImage
+      v-if="showPostAsImage"
       :user-identity="postAsDisplayName"
       :size="35"
       :organization-image-url="selectedOrganizationImageUrl"
@@ -230,6 +231,10 @@ const selectedOrganizationImageUrl = computed(() => {
     return selectedOrg?.imageUrl || "";
   }
   return "";
+});
+
+const showPostAsImage = computed(() => {
+  return !postAs.value.postAsOrganization || selectedOrganizationImageUrl.value !== "";
 });
 
 const showPostAsDialogVisible = ref(false);

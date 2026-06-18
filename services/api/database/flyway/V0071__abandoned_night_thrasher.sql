@@ -20,7 +20,7 @@ CREATE TABLE "content_translation_work" (
 	"priority_rank" integer DEFAULT 2 NOT NULL,
 	"attempt_count" integer DEFAULT 0 NOT NULL,
 	"lease_owner" varchar(100),
-	"lease_token" varchar(100),
+	"lease_token" uuid,
 	"lease_expires_at" timestamp (0),
 	"last_error_code" varchar(100),
 	"last_error_message" text,
@@ -139,6 +139,8 @@ CREATE TABLE "realtime_event_outbox_topic" (
 	CONSTRAINT "realtime_event_outbox_topic_unique" UNIQUE("event_id","topic")
 );
 --> statement-breakpoint
+ALTER TABLE "organization" DROP CONSTRAINT "organization_website_url_unique";--> statement-breakpoint
+ALTER TABLE "organization" ALTER COLUMN "image_path" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "survey_question_content_translation" ALTER COLUMN "display_language_code" SET DATA TYPE "public"."display_language_code" USING "display_language_code"::"public"."display_language_code";--> statement-breakpoint
 ALTER TABLE "survey_question_option_content_translation" ALTER COLUMN "display_language_code" SET DATA TYPE "public"."display_language_code" USING "display_language_code"::"public"."display_language_code";--> statement-breakpoint
 ALTER TABLE "user_display_language" ALTER COLUMN "language_code" SET DATA TYPE "public"."display_language_code" USING "language_code"::"public"."display_language_code";--> statement-breakpoint

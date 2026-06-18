@@ -6,8 +6,8 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **name** | **string** |  | [default to undefined]
-**imageUrl** | **string** |  | [default to undefined]
-**websiteUrl** | **string** |  | [default to undefined]
+**imageUrl** | **string** |  | [optional] [default to undefined]
+**websiteUrl** | **string** |  | [optional] [default to undefined]
 **description** | **string** |  | [default to undefined]
 
 ## Example

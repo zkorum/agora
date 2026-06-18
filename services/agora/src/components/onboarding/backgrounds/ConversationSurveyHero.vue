@@ -1,7 +1,7 @@
 <template>
   <div class="hero">
     <div class="hero__content">
-      <div class="hero__avatar">
+      <div v-if="showOwnerImage" class="hero__avatar">
         <DynamicProfileImage
           :user-identity="ownerIdentity"
           :organization-image-url="organizationImageUrl || undefined"
@@ -37,6 +37,10 @@ const props = defineProps<{
 
 const ownerIdentity = computed(() => {
   return props.organizationName || props.authorUsername;
+});
+
+const showOwnerImage = computed(() => {
+  return props.organizationName.length === 0 || props.organizationImageUrl.length > 0;
 });
 
 </script>

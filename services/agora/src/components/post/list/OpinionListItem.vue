@@ -39,6 +39,7 @@
           :user-identity="opinionItem.username"
           :show-verified-text="false"
           organization-image-url=""
+          :show-avatar-fallback="true"
         />
 
         <div>

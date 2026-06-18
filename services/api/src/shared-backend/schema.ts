@@ -1060,9 +1060,9 @@ export const organizationTable = pgTable("organization", {
     autoProvisionedForUserId: uuid("auto_provisioned_for_user_id")
         .references(() => userTable.id)
         .unique(),
-    imagePath: text("image_path").notNull(),
+    imagePath: text("image_path"),
     isFullImagePath: boolean("is_full_image_path").notNull(),
-    websiteUrl: text("website_url").unique(),
+    websiteUrl: text("website_url"),
     description: varchar("description", {
         length: MAX_LENGTH_DESCRIPTION_CREATOR,
     }),
@@ -2377,7 +2377,7 @@ export const contentTranslationWorkTable = pgTable(
         priorityRank: integer("priority_rank").notNull().default(2),
         attemptCount: integer("attempt_count").notNull().default(0),
         leaseOwner: varchar("lease_owner", { length: 100 }),
-        leaseToken: varchar("lease_token", { length: 100 }),
+        leaseToken: uuid("lease_token"),
         leaseExpiresAt: timestamp("lease_expires_at", {
             mode: "date",
             precision: 0,

@@ -14,6 +14,35 @@ import type {
 import type { OrganizationProperties } from "@/shared/types/zod.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
 
+function buildOrganizationProperties({
+    name,
+    description,
+    imagePath,
+    isFullImagePath,
+    websiteUrl,
+    baseImageServiceUrl,
+}: {
+    name: string;
+    description: string | null;
+    imagePath: string | null;
+    isFullImagePath: boolean;
+    websiteUrl: string | null;
+    baseImageServiceUrl: string;
+}): OrganizationProperties {
+    const imageUrl = imagePathToUrl({
+        imagePath,
+        isFullImagePath,
+        baseImageServiceUrl,
+    });
+
+    return {
+        name,
+        description: description ?? "",
+        ...(imageUrl === undefined ? {} : { imageUrl }),
+        ...(websiteUrl === null ? {} : { websiteUrl }),
+    };
+}
+
 function slugifyOrganizationName(name: string): string {
     const slug = name
         .trim()
@@ -46,16 +75,14 @@ export async function getAllOrganizations({
         .from(organizationTable);
     organizationTableResponse.forEach((response) => {
         if (response.name) {
-            organizationList.push({
+            organizationList.push(buildOrganizationProperties({
                 name: response.name,
-                description: response.description ?? "",
-                imageUrl: imagePathToUrl({
-                    imagePath: response.imagePath,
-                    isFullImagePath: response.isFullImagePath,
-                    baseImageServiceUrl,
-                }),
-                websiteUrl: response.websiteUrl ?? "",
-            });
+                description: response.description,
+                imagePath: response.imagePath,
+                isFullImagePath: response.isFullImagePath,
+                websiteUrl: response.websiteUrl,
+                baseImageServiceUrl,
+            }));
         }
     });
 
@@ -166,16 +193,14 @@ export async function getOrganizationMembershipsByUserId({
 
     return organizationTableResponse.map((response) => ({
         organizationId: response.organizationId,
-        organization: {
+        organization: buildOrganizationProperties({
             name: response.name,
-            description: response.description ?? "",
-            imageUrl: imagePathToUrl({
-                imagePath: response.imagePath,
-                isFullImagePath: response.isFullImagePath,
-                baseImageServiceUrl,
-            }),
-            websiteUrl: response.websiteUrl ?? "",
-        },
+            description: response.description,
+            imagePath: response.imagePath,
+            isFullImagePath: response.isFullImagePath,
+            websiteUrl: response.websiteUrl,
+            baseImageServiceUrl,
+        }),
     }));
 }
 
@@ -272,9 +297,9 @@ export async function addUserOrganizationMapping({
 interface CreateOrganizationProps {
     db: PostgresJsDatabase;
     organizationName: string;
-    imagePath: string;
+    imagePath: string | undefined;
     isFullImagePath: boolean;
-    websiteUrl: string;
+    websiteUrl: string | undefined;
     description: string;
 }
 
@@ -292,9 +317,12 @@ export async function createOrganization({
             slug: slugifyOrganizationName(organizationName),
             displayName: organizationName,
             directoryVisibility: "listed",
-            imagePath: imagePath,
+            imagePath:
+                imagePath === undefined || imagePath.trim() === ""
+                    ? null
+                    : imagePath,
             isFullImagePath: isFullImagePath,
-            websiteUrl: websiteUrl,
+            websiteUrl: websiteUrl ?? null,
             description: description,
         });
     } catch (err: unknown) {

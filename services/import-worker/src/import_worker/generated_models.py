@@ -205,7 +205,7 @@ class ContentTranslationWork(Base):
     priority_rank: Mapped[int] = mapped_column(Integer, server_default="2")
     attempt_count: Mapped[int] = mapped_column(Integer, server_default="0")
     lease_owner: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    lease_token: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    lease_token: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
     lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     last_error_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
     last_error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -457,7 +457,7 @@ class Organization(Base):
         SaEnum(DirectoryVisibility, values_callable=_enum_values, native_enum=False),
     )
     auto_provisioned_for_user_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
-    image_path: Mapped[str] = mapped_column(Text)
+    image_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_full_image_path: Mapped[bool] = mapped_column(Boolean)
     website_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     description: Mapped[str | None] = mapped_column(String(280), nullable=True)

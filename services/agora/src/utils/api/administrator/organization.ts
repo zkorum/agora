@@ -186,7 +186,7 @@ export function useBackendAdministratorOrganizationApi() {
           imagePath: imagePath,
           isFullImagePath: isFullImagePath,
           organizationName: organizationName,
-          websiteUrl: websiteUrl,
+          ...(websiteUrl.trim() === "" ? {} : { websiteUrl: websiteUrl.trim() }),
         };
 
       const { url, options } =

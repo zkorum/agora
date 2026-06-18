@@ -48,6 +48,10 @@ ALLOWED_TRANSLATED_HTML_TAGS = frozenset(
 )
 
 
+def create_lease_token() -> uuid.UUID:
+    return uuid.uuid4()
+
+
 def sanitize_translated_html(value: str) -> str:
     return bleach.clean(
         value,
@@ -67,7 +71,7 @@ class ClaimedContentTranslationWork:
     survey_question_content_id: int | None
     survey_question_option_content_ids: list[int] | None
     display_language_code: DisplayLanguageCode
-    lease_token: str
+    lease_token: uuid.UUID
 
 
 @dataclass(frozen=True)
@@ -139,7 +143,7 @@ def claim_content_translation_work_batch(
 
     claims: list[ClaimedContentTranslationWork] = []
     for row in rows:
-        lease_token = f"{worker_id}:{uuid.uuid4()}"
+        lease_token = create_lease_token()
         row.status = ContentTranslationWorkStatus.running
         row.attempt_count += 1
         row.lease_owner = worker_id

@@ -22,7 +22,7 @@
         />
       </div>
 
-      <div>
+      <div class="comment-content">
         <ContentTranslationControl
           v-if="contentTranslation?.isAvailable === true"
           :model-value="contentTranslation.mode"
@@ -48,7 +48,7 @@
           :conversation-organization-name="conversationOrganizationName"
         />
 
-        <div>
+        <div class="comment-actions">
           <CommentActionBar
             :comment-item="commentItem"
             :post-slug-id="postSlugId"
@@ -133,7 +133,7 @@ function mutedComment() {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.5rem;
   margin: $container-padding;
 }
 
@@ -146,10 +146,28 @@ function mutedComment() {
 .commentAdditionalDetailsFlex {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.875rem;
+}
+
+.comment-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.comment-content :deep(p) {
+  margin-block: 0;
+}
+
+.comment-content :deep(p + p) {
+  margin-top: 0.5rem;
+}
+
+.comment-actions {
+  margin-top: 0.125rem;
 }
 
 .translation-control {
-  margin-bottom: 0.45rem;
+  margin-bottom: 0;
 }
 </style>

@@ -50,7 +50,14 @@ type AllStoresState = {
  * Only redacts non-empty values - empty strings/nulls are preserved as they
  * provide useful debugging information without exposing PII
  */
-function redactString(value: string, fieldName: string): string {
+function redactString(
+  value: string | undefined,
+  fieldName: string
+): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
   // Preserve empty values as they are useful for debugging
   if (value === "") {
     return value;
