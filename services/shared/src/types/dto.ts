@@ -29,6 +29,7 @@ import {
     zodPolisKey,
     zodAnalysisView,
     zodOrganization,
+    zodOrganizationSlug,
     zodTopicObject,
     zodFeedSortAlgorithm,
     zodLinkType,
@@ -445,7 +446,10 @@ export class Dto {
             conversationTitle: zodConversationTitle,
             conversationBody: zodConversationBodyInput,
             conversationBodyPlainText: zodConversationBodyPlainTextInput,
-            postAsOrganization: z.string().optional(),
+            postAsOrganization: z.preprocess(
+                (val) => (val === "" || val === undefined ? undefined : val),
+                zodOrganizationSlug.optional(),
+            ),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
             conversationType: zodConversationType,
@@ -477,7 +481,10 @@ export class Dto {
     static importConversationRequest = z
         .object({
             polisUrl: zodPolisUrl,
-            postAsOrganization: z.string().optional(),
+            postAsOrganization: z.preprocess(
+                (val) => (val === "" || val === undefined ? undefined : val),
+                zodOrganizationSlug.optional(),
+            ),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
             languageSetting: zodConversationLanguageSettingInput.default({
@@ -500,7 +507,10 @@ export class Dto {
         .strict();
     static importCsvConversationRequest = z
         .object({
-            postAsOrganization: z.string().optional(),
+            postAsOrganization: z.preprocess(
+                (val) => (val === "" || val === undefined ? undefined : val),
+                zodOrganizationSlug.optional(),
+            ),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
         })
@@ -509,7 +519,7 @@ export class Dto {
         .object({
             postAsOrganization: z.preprocess(
                 (val) => (val === "" || val === undefined ? undefined : val),
-                z.string().optional(),
+                zodOrganizationSlug.optional(),
             ),
             isIndexed: z.preprocess(
                 (val) => val === "true" || val === true,
@@ -758,7 +768,10 @@ export class Dto {
 
     static checkPremiumFeatureAccessRequest = z
         .object({
-            postAsOrganization: z.string().optional(),
+            postAsOrganization: z.preprocess(
+                (val) => (val === "" || val === undefined ? undefined : val),
+                zodOrganizationSlug.optional(),
+            ),
             feature: zodGrantablePremiumFeature,
         })
         .strict();
@@ -1141,6 +1154,7 @@ export class Dto {
     static createOrganizationRequest = z
         .object({
             organizationName: z.string(),
+            organizationSlug: zodOrganizationSlug,
             imagePath: z.string(),
             isFullImagePath: z.boolean(),
             websiteUrl: z.url().optional(),
@@ -1149,7 +1163,7 @@ export class Dto {
         .strict();
     static deleteOrganizationRequest = z
         .object({
-            organizationName: z.string(),
+            organizationName: zodOrganizationSlug,
         })
         .strict();
     static getOrganizationsByUsernameRequest = z
@@ -1170,19 +1184,19 @@ export class Dto {
     static addUserOrganizationMappingRequest = z
         .object({
             username: zodUsername,
-            organizationName: z.string(),
+            organizationName: zodOrganizationSlug,
         })
         .strict();
     static removeUserOrganizationMappingRequest = z
         .object({
             username: zodUsername,
-            organizationName: z.string(),
+            organizationName: zodOrganizationSlug,
         })
         .strict();
     static premiumFeatureEntitlementSubjectRequest = z
         .object({
             username: zodUsername.optional(),
-            organizationName: z.string().optional(),
+            organizationName: zodOrganizationSlug.optional(),
         })
         .strict()
         .refine(

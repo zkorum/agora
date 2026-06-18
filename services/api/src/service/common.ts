@@ -256,6 +256,7 @@ export function useCommonPost() {
                 lastReactedAt: conversationTable.lastReactedAt,
                 authorName: personalOrganizationUserTable.username,
                 organizationName: organizationTable.displayName,
+                organizationSlug: organizationTable.slug,
                 organizationImagePath: organizationTable.imagePath,
                 organizationWebsiteUrl: organizationTable.websiteUrl,
                 organizationIsFullImagePath: organizationTable.isFullImagePath,
@@ -487,6 +488,7 @@ export function useCommonPost() {
 
                               return {
                                   name: postItem.organizationName,
+                                  slug: postItem.organizationSlug,
                                   description:
                                       postItem.organizationDescription ?? "",
                                   ...(postItem.organizationWebsiteUrl === null

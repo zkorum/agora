@@ -116,6 +116,26 @@ async function getOrCreateMembership({
     return inserted.id;
 }
 
+export async function ensureOrganizationMembershipBaselineCapabilities({
+    db,
+    userId,
+    organizationId,
+}: {
+    db: PostgresDatabase;
+    userId: string;
+    organizationId: number;
+}): Promise<void> {
+    const membershipId = await getOrCreateMembership({
+        db,
+        userId,
+        organizationId,
+    });
+    await ensureBaselineCapabilities({
+        db,
+        organizationMembershipId: membershipId,
+    });
+}
+
 export async function getOrCreatePersonalOrganization({
     db,
     userId,
@@ -196,6 +216,11 @@ export async function getOrCreateDefaultProjectForOrganization({
         .limit(1);
     const existing = existingRows.at(0);
     if (existing !== undefined) {
+        await db
+            .insert(projectOrganizationOwnershipTable)
+            .values({ projectId: existing.projectId, organizationId })
+            .onConflictDoNothing();
+
         return existing;
     }
 

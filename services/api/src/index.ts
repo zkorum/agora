@@ -3804,6 +3804,7 @@ server.after(() => {
             await createOrganization({
                 db: db,
                 organizationName: request.body.organizationName,
+                organizationSlug: request.body.organizationSlug,
                 imagePath: request.body.imagePath,
                 isFullImagePath: request.body.isFullImagePath,
                 websiteUrl: request.body.websiteUrl,

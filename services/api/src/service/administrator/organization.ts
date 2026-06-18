@@ -13,9 +13,11 @@ import type {
 } from "@/shared/types/dto.js";
 import type { OrganizationProperties } from "@/shared/types/zod.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
+import { ensureOrganizationMembershipBaselineCapabilities } from "../projectAccess.js";
 
 function buildOrganizationProperties({
     name,
+    slug,
     description,
     imagePath,
     isFullImagePath,
@@ -23,6 +25,7 @@ function buildOrganizationProperties({
     baseImageServiceUrl,
 }: {
     name: string;
+    slug: string;
     description: string | null;
     imagePath: string | null;
     isFullImagePath: boolean;
@@ -37,20 +40,20 @@ function buildOrganizationProperties({
 
     return {
         name,
+        slug,
         description: description ?? "",
         ...(imageUrl === undefined ? {} : { imageUrl }),
         ...(websiteUrl === null ? {} : { websiteUrl }),
     };
 }
 
-function slugifyOrganizationName(name: string): string {
-    const slug = name
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .slice(0, 65);
-    return slug === "" ? "organization" : slug;
+function isUniqueViolation(error: unknown): boolean {
+    return (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "23505"
+    );
 }
 
 interface GetAllOrganizationsProps {
@@ -67,6 +70,7 @@ export async function getAllOrganizations({
     const organizationTableResponse = await db
         .select({
             name: organizationTable.displayName,
+            slug: organizationTable.slug,
             description: organizationTable.description,
             imagePath: organizationTable.imagePath,
             isFullImagePath: organizationTable.isFullImagePath,
@@ -78,6 +82,7 @@ export async function getAllOrganizations({
         if (response.name) {
             organizationList.push(buildOrganizationProperties({
                 name: response.name,
+                slug: response.slug,
                 description: response.description,
                 imagePath: response.imagePath,
                 isFullImagePath: response.isFullImagePath,
@@ -177,6 +182,7 @@ export async function getOrganizationMembershipsByUserId({
         .select({
             organizationId: organizationTable.id,
             name: organizationTable.displayName,
+            slug: organizationTable.slug,
             description: organizationTable.description,
             imagePath: organizationTable.imagePath,
             isFullImagePath: organizationTable.isFullImagePath,
@@ -201,6 +207,7 @@ export async function getOrganizationMembershipsByUserId({
         organizationId: response.organizationId,
         organization: buildOrganizationProperties({
             name: response.name,
+            slug: response.slug,
             description: response.description,
             imagePath: response.imagePath,
             isFullImagePath: response.isFullImagePath,
@@ -287,9 +294,10 @@ export async function addUserOrganizationMapping({
         if (organizationId == undefined) {
             throw httpErrors.notFound("Failed to locate organization ID");
         } else {
-            await db.insert(organizationMembershipTable).values({
+            await ensureOrganizationMembershipBaselineCapabilities({
+                db,
                 userId: targetUserId,
-                organizationId: organizationId,
+                organizationId,
             });
         }
     } catch (err: unknown) {
@@ -303,6 +311,7 @@ export async function addUserOrganizationMapping({
 interface CreateOrganizationProps {
     db: PostgresJsDatabase;
     organizationName: string;
+    organizationSlug: string;
     imagePath: string | undefined;
     isFullImagePath: boolean;
     websiteUrl: string | undefined;
@@ -312,6 +321,7 @@ interface CreateOrganizationProps {
 export async function createOrganization({
     db,
     organizationName,
+    organizationSlug,
     imagePath,
     isFullImagePath,
     websiteUrl,
@@ -320,7 +330,7 @@ export async function createOrganization({
     try {
         // Create a new organization entry
         await db.insert(organizationTable).values({
-            slug: slugifyOrganizationName(organizationName),
+            slug: organizationSlug,
             displayName: organizationName,
             directoryVisibility: "listed",
             imagePath:
@@ -332,6 +342,10 @@ export async function createOrganization({
             description: description,
         });
     } catch (err: unknown) {
+        if (isUniqueViolation(err)) {
+            throw httpErrors.conflict("Organization slug already exists");
+        }
+
         log.error(err);
         throw httpErrors.internalServerError(
             "Database error while setting user organization profile",

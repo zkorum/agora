@@ -115,6 +115,7 @@ import type {
   ConversationType,
   EventSlug,
   ExternalSourceConfig,
+  OrganizationProperties,
   ParticipationMode,
   PreferredOpinionGroupCount,
 } from "src/shared/types/zod";
@@ -218,22 +219,30 @@ const multilingualSetting = defineModel<ConversationMultilingualSetting>(
 const title = defineModel<string>("title", { required: true });
 const content = defineModel<string>("content", { required: true });
 
+function getOrganizationIdentifier(organization: OrganizationProperties): string {
+  return organization.slug ?? organization.name;
+}
+
+const selectedOrganization = computed(() => {
+  if (!postAs.value.postAsOrganization) {
+    return undefined;
+  }
+
+  return profileData.value.organizationList.find(
+    (org) => getOrganizationIdentifier(org) === postAs.value.organizationName
+  );
+});
+
 const postAsDisplayName = computed(() => {
-  if (postAs.value.postAsOrganization) {
-    return postAs.value.organizationName;
-  } else {
+  if (!postAs.value.postAsOrganization) {
     return profileData.value.userName;
   }
+
+  return selectedOrganization.value?.name ?? postAs.value.organizationName;
 });
 
 const selectedOrganizationImageUrl = computed(() => {
-  if (postAs.value.postAsOrganization) {
-    const selectedOrg = profileData.value.organizationList.find(
-      (org) => org.name === postAs.value.organizationName
-    );
-    return selectedOrg?.imageUrl || "";
-  }
-  return "";
+  return selectedOrganization.value?.imageUrl ?? "";
 });
 
 const showPostAsImage = computed(() => {

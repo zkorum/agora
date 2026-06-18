@@ -2,6 +2,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface CreateOrganizationFormTranslations {
   nameLabel: string;
+  slugLabel: string;
   descriptionLabel: string;
   imagePathLabel: string;
   fileNameExample: string;
@@ -16,6 +17,7 @@ export const createOrganizationFormTranslations: Record<
 > = {
   en: {
     nameLabel: "Name",
+    slugLabel: "URL slug",
     descriptionLabel: "Description",
     imagePathLabel: "Image Path (file name or https path)",
     fileNameExample: "File name: avatar_default_0.png",
@@ -26,6 +28,7 @@ export const createOrganizationFormTranslations: Record<
   },
   ar: {
     nameLabel: "الاسم",
+    slugLabel: "URL slug",
     descriptionLabel: "الوصف",
     imagePathLabel: "مسار الصورة (اسم الملف أو مسار https)",
     fileNameExample: "اسم الملف: avatar_default_0.png",
@@ -36,6 +39,7 @@ export const createOrganizationFormTranslations: Record<
   },
   es: {
     nameLabel: "Nombre",
+    slugLabel: "URL slug",
     descriptionLabel: "Descripción",
     imagePathLabel: "Ruta de imagen (nombre de archivo o ruta https)",
     fileNameExample: "Nombre de archivo: avatar_default_0.png",
@@ -46,6 +50,7 @@ export const createOrganizationFormTranslations: Record<
   },
   fa: {
     nameLabel: "نام",
+    slugLabel: "URL slug",
     descriptionLabel: "توضیحات",
     imagePathLabel: "مسیر تصویر (نام فایل یا مسیر https)",
     fileNameExample: "نام فایل: avatar_default_0.png",
@@ -56,6 +61,7 @@ export const createOrganizationFormTranslations: Record<
   },
   fr: {
     nameLabel: "Nom",
+    slugLabel: "Slug d'URL",
     descriptionLabel: "Description",
     imagePathLabel: "Chemin d'image (nom de fichier ou chemin https)",
     fileNameExample: "Nom de fichier : avatar_default_0.png",
@@ -66,6 +72,7 @@ export const createOrganizationFormTranslations: Record<
   },
   "zh-Hans": {
     nameLabel: "名称",
+    slugLabel: "URL slug",
     descriptionLabel: "描述",
     imagePathLabel: "图片路径（文件名或 https 路径）",
     fileNameExample: "文件名：avatar_default_0.png",
@@ -76,6 +83,7 @@ export const createOrganizationFormTranslations: Record<
   },
   "zh-Hant": {
     nameLabel: "名稱",
+    slugLabel: "URL slug",
     descriptionLabel: "描述",
     imagePathLabel: "圖片路徑（檔案名稱或 https 路徑）",
     fileNameExample: "檔案名稱：avatar_default_0.png",
@@ -86,6 +94,7 @@ export const createOrganizationFormTranslations: Record<
   },
   he: {
     nameLabel: "שם",
+    slugLabel: "URL slug",
     descriptionLabel: "תיאור",
     imagePathLabel: "נתיב תמונה (שם קובץ או נתיב https)",
     fileNameExample: "שם קובץ: avatar_default_0.png",
@@ -96,6 +105,7 @@ export const createOrganizationFormTranslations: Record<
   },
   ja: {
     nameLabel: "名前",
+    slugLabel: "URL slug",
     descriptionLabel: "説明",
     imagePathLabel: "画像パス（ファイル名または https パス）",
     fileNameExample: "ファイル名：avatar_default_0.png",
@@ -106,6 +116,7 @@ export const createOrganizationFormTranslations: Record<
   },
   ky: {
     nameLabel: "Аты",
+    slugLabel: "URL slug",
     descriptionLabel: "Сүрөттөмө",
     imagePathLabel: "Сүрөт жолу (файлдын аты же https жолу)",
     fileNameExample: "Файлдын аты: avatar_default_0.png",
@@ -116,6 +127,7 @@ export const createOrganizationFormTranslations: Record<
   },
   ru: {
     nameLabel: "Название",
+    slugLabel: "URL slug",
     descriptionLabel: "Описание",
     imagePathLabel: "Путь к изображению (имя файла или https-путь)",
     fileNameExample: "Имя файла: avatar_default_0.png",

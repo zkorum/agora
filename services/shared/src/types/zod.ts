@@ -6,6 +6,7 @@ import {
     MAX_LENGTH_SURVEY_QUESTION,
     MIN_LENGTH_USERNAME,
     MAX_LENGTH_USERNAME,
+    MAX_LENGTH_NAME_CREATOR,
     MAX_LENGTH_BODY,
     MAX_LENGTH_BODY_HTML,
     LEGACY_MAX_LENGTH_CONVERSATION_BODY_HTML_OUTPUT,
@@ -21,6 +22,13 @@ import {
 
 export const zodDateTimeFlexible = z.coerce.date();
 export const zodSlugId = z.string().max(10);
+export const zodOrganizationSlug = z
+    .string()
+    .max(MAX_LENGTH_NAME_CREATOR)
+    .regex(
+        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+        "Organization slug may only contain lower-cased letters, numbers and single hyphens",
+    );
 
 export const zodEventSlug = z.enum(["devconnect-2025"]);
 
@@ -165,6 +173,7 @@ export const zodExportBundleInfo = z
 export const zodOrganization = z
     .object({
         name: z.string(),
+        slug: zodOrganizationSlug,
         imageUrl: z.string().optional(),
         websiteUrl: z
             .url({ message: "Invalid organization website url" })

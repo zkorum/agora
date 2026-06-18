@@ -23,11 +23,14 @@
           outlined
           :label="t('usernameLabel')"
         />
-        <q-input
+        <q-select
           v-else
-          v-model="organizationName"
+          v-model="organizationSlug"
           outlined
+          emit-value
+          map-options
           :label="t('organizationNameLabel')"
+          :options="organizationOptions"
         />
 
         <q-select
@@ -126,8 +129,10 @@ import type {
 } from "src/shared/types/dto";
 import type {
   GrantablePremiumFeature,
+  OrganizationProperties,
   PremiumFeature,
 } from "src/shared/types/zod";
+import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { useBackendAdministratorPremiumEntitlementApi } from "src/utils/api/administrator/premiumEntitlement";
 import { computed, onMounted, ref } from "vue";
 
@@ -153,14 +158,16 @@ const {
   createPremiumFeatureEntitlement,
   revokePremiumFeatureEntitlement,
 } = useBackendAdministratorPremiumEntitlementApi();
+const { getAllOrganizations } = useBackendAdministratorOrganizationApi();
 
 const entitlements = ref<PremiumFeatureEntitlementItem[]>([]);
+const organizationList = ref<OrganizationProperties[]>([]);
 const isLoading = ref(true);
 const isCreating = ref(false);
 const revokingEntitlementId = ref<number | null>(null);
 const subjectType = ref<SubjectType>("user");
 const username = ref<string | number | null>("");
-const organizationName = ref<string | number | null>("");
+const organizationSlug = ref<string | number | null>("");
 const features = ref<GrantablePremiumFeature[]>(["survey"]);
 const startsAt = ref<string | number | null>(toDateTimeLocal(new Date()));
 const expiresAt = ref<string | number | null>("");
@@ -180,8 +187,27 @@ const featureOptions = computed<
   { label: t("dynamicTranslationFeature"), value: "dynamic_translation" },
 ]);
 
+const organizationOptions = computed<Array<SelectOption<string>>>(() =>
+  organizationList.value.flatMap((organization) => {
+    if (organization.slug === undefined) {
+      return [];
+    }
+
+    return [
+      {
+        label: `${organization.name} (${organization.slug})`,
+        value: organization.slug,
+      },
+    ];
+  })
+);
+
 onMounted(async () => {
-  await refreshEntitlements();
+  const [organizations] = await Promise.all([
+    getAllOrganizations(),
+    refreshEntitlements(),
+  ]);
+  organizationList.value = organizations;
 });
 
 function toDateTimeLocal(date: Date): string {
@@ -238,7 +264,7 @@ function buildCreateRequest(): CreatePremiumFeatureEntitlementRequest {
     subject:
       subjectType.value === "user"
         ? { username: getInputString(username.value).trim() }
-        : { organizationName: getInputString(organizationName.value).trim() },
+        : { organizationName: getInputString(organizationSlug.value).trim() },
     features: features.value,
     startsAt: new Date(getInputString(startsAt.value)).toISOString(),
     expiresAt:

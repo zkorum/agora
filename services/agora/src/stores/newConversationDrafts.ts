@@ -222,6 +222,10 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     conversationDraft.value.postAs.organizationName = organizationName;
   }
 
+  function getOrganizationIdentifier(organization: OrganizationProperties): string {
+    return organization.slug ?? organization.name;
+  }
+
   /**
    * Disables posting as an organization and switches to personal posting
    */
@@ -247,16 +251,23 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       return;
     }
 
-    // Check if the selected organization still exists in user's organization list
-    const organizationExists = userOrganizationList.some(
-      (org) => org.name === draft.postAs.organizationName
+    const selectedOrganization = userOrganizationList.find(
+      (org) =>
+        getOrganizationIdentifier(org) === draft.postAs.organizationName ||
+        org.name === draft.postAs.organizationName
     );
 
-    if (!organizationExists) {
+    if (selectedOrganization === undefined) {
       console.warn(
         `Selected organization "${draft.postAs.organizationName}" no longer exists in user's organization list. Resetting draft.`
       );
       resetDraft();
+      return;
+    }
+
+    const organizationIdentifier = getOrganizationIdentifier(selectedOrganization);
+    if (draft.postAs.organizationName !== organizationIdentifier) {
+      draft.postAs.organizationName = organizationIdentifier;
     }
   }
 
