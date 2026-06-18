@@ -5,6 +5,7 @@ import {
 } from "@/shared/languages.js";
 
 export const LINGUA_MINIMUM_RELATIVE_DISTANCE = 0.2;
+export const LINGUA_MINIMUM_LANGUAGE_CONFIDENCE = 0.5;
 export const GOOGLE_MINIMUM_LANGUAGE_CONFIDENCE = 0.5;
 
 const CYRILLIC_LETTER_REGEX = /\p{Script=Cyrillic}/u;
@@ -31,6 +32,83 @@ const LINGUA_LANGUAGE_TO_DISPLAY_CODE: ReadonlyMap<
     ["Spanish", "es"],
 ]);
 
+const LINGUA_LANGUAGE_TO_SOURCE_CODE: ReadonlyMap<string, string> = new Map([
+    ["Afrikaans", "af"],
+    ["Albanian", "sq"],
+    ["Arabic", "ar"],
+    ["Armenian", "hy"],
+    ["Azerbaijani", "az"],
+    ["Basque", "eu"],
+    ["Belarusian", "be"],
+    ["Bengali", "bn"],
+    ["Bokmal", "nb"],
+    ["Bosnian", "bs"],
+    ["Bulgarian", "bg"],
+    ["Catalan", "ca"],
+    ["Croatian", "hr"],
+    ["Czech", "cs"],
+    ["Danish", "da"],
+    ["Dutch", "nl"],
+    ["English", "en"],
+    ["Esperanto", "eo"],
+    ["Estonian", "et"],
+    ["Finnish", "fi"],
+    ["French", "fr"],
+    ["Ganda", "lg"],
+    ["Georgian", "ka"],
+    ["German", "de"],
+    ["Greek", "el"],
+    ["Gujarati", "gu"],
+    ["Hebrew", "he"],
+    ["Hindi", "hi"],
+    ["Hungarian", "hu"],
+    ["Icelandic", "is"],
+    ["Indonesian", "id"],
+    ["Irish", "ga"],
+    ["Italian", "it"],
+    ["Japanese", "ja"],
+    ["Kazakh", "kk"],
+    ["Korean", "ko"],
+    ["Latin", "la"],
+    ["Latvian", "lv"],
+    ["Lithuanian", "lt"],
+    ["Macedonian", "mk"],
+    ["Malay", "ms"],
+    ["Maori", "mi"],
+    ["Marathi", "mr"],
+    ["Mongolian", "mn"],
+    ["Nynorsk", "nn"],
+    ["Persian", "fa"],
+    ["Polish", "pl"],
+    ["Portuguese", "pt"],
+    ["Punjabi", "pa"],
+    ["Romanian", "ro"],
+    ["Russian", "ru"],
+    ["Serbian", "sr"],
+    ["Shona", "sn"],
+    ["Slovak", "sk"],
+    ["Slovene", "sl"],
+    ["Somali", "so"],
+    ["Sotho", "st"],
+    ["Spanish", "es"],
+    ["Swahili", "sw"],
+    ["Swedish", "sv"],
+    ["Tagalog", "tl"],
+    ["Tamil", "ta"],
+    ["Telugu", "te"],
+    ["Thai", "th"],
+    ["Tsonga", "ts"],
+    ["Tswana", "tn"],
+    ["Turkish", "tr"],
+    ["Ukrainian", "uk"],
+    ["Urdu", "ur"],
+    ["Vietnamese", "vi"],
+    ["Welsh", "cy"],
+    ["Xhosa", "xh"],
+    ["Yoruba", "yo"],
+    ["Zulu", "zu"],
+]);
+
 export interface LocalLanguageDetection {
     rawLanguageCode: string;
     confidence: number | null;
@@ -50,6 +128,7 @@ export type GoogleLanguageDetector = ({
 
 export interface LanguageDetectionResult {
     languageCode: SupportedDisplayLanguageCodes | null;
+    sourceLanguageCode: string | null;
     rawLanguageCode: string;
     confidence: number | null;
 }
@@ -173,6 +252,26 @@ function normalizeChineseLanguageCode({
     return inferChineseScriptLanguage({ text }) ?? null;
 }
 
+function normalizeBcp47SourceLanguageCode({
+    rawLanguageCode,
+}: {
+    rawLanguageCode: string;
+}): string | null {
+    const trimmedLanguageCode = rawLanguageCode.trim();
+    if (trimmedLanguageCode.length === 0) {
+        return null;
+    }
+
+    try {
+        return Intl.getCanonicalLocales(trimmedLanguageCode)[0] ?? null;
+    } catch {
+        if (/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(trimmedLanguageCode)) {
+            return trimmedLanguageCode.toLowerCase();
+        }
+        return null;
+    }
+}
+
 function normalizeDetectedLanguageCode({
     rawLanguageCode,
     text,
@@ -193,6 +292,39 @@ function normalizeDetectedLanguageCode({
     return parseSupportedDisplayCode({ languageCode: canonicalLanguageCode }) ?? null;
 }
 
+function normalizeDetectedSourceLanguageCode({
+    rawLanguageCode,
+    text,
+}: {
+    rawLanguageCode: string;
+    text: string;
+}): string | null {
+    if (rawLanguageCode === "Chinese" || rawLanguageCode.startsWith("zh")) {
+        return normalizeChineseLanguageCode({ rawLanguageCode, text });
+    }
+
+    const linguaSourceCode = LINGUA_LANGUAGE_TO_SOURCE_CODE.get(rawLanguageCode);
+    if (linguaSourceCode !== undefined) {
+        return linguaSourceCode;
+    }
+
+    const canonicalLanguageCode = canonicalizeLanguageCode({ rawLanguageCode });
+    return normalizeBcp47SourceLanguageCode({
+        rawLanguageCode: canonicalLanguageCode,
+    });
+}
+
+function localDetectionHasEnoughConfidence({
+    detection,
+}: {
+    detection: LocalLanguageDetection;
+}): boolean {
+    return (
+        detection.confidence === null ||
+        detection.confidence >= LINGUA_MINIMUM_LANGUAGE_CONFIDENCE
+    );
+}
+
 function normalizeLocalDetection({
     detection,
     text,
@@ -200,11 +332,21 @@ function normalizeLocalDetection({
     detection: LocalLanguageDetection;
     text: string;
 }): LanguageDetectionResult {
+    const sourceLanguageCode = localDetectionHasEnoughConfidence({ detection })
+        ? normalizeDetectedSourceLanguageCode({
+              rawLanguageCode: detection.rawLanguageCode,
+              text,
+          })
+        : null;
     return {
-        languageCode: normalizeDetectedLanguageCode({
-            rawLanguageCode: detection.rawLanguageCode,
-            text,
-        }),
+        languageCode:
+            sourceLanguageCode === null
+                ? null
+                : normalizeDetectedLanguageCode({
+                      rawLanguageCode: sourceLanguageCode,
+                      text,
+                  }),
+        sourceLanguageCode,
         rawLanguageCode: detection.rawLanguageCode,
         confidence: detection.confidence,
     };
@@ -217,16 +359,23 @@ function normalizeGoogleDetection({
     detection: DetectedLanguageResult;
     text: string;
 }): LanguageDetectionResult {
-    const languageCode =
+    const sourceLanguageCode =
         detection.confidence >= GOOGLE_MINIMUM_LANGUAGE_CONFIDENCE
-            ? normalizeDetectedLanguageCode({
+            ? normalizeDetectedSourceLanguageCode({
                   rawLanguageCode: detection.languageCode,
                   text,
               })
             : null;
 
     return {
-        languageCode,
+        languageCode:
+            sourceLanguageCode === null
+                ? null
+                : normalizeDetectedLanguageCode({
+                      rawLanguageCode: sourceLanguageCode,
+                      text,
+                  }),
+        sourceLanguageCode,
         rawLanguageCode: detection.languageCode,
         confidence: detection.confidence,
     };
@@ -237,7 +386,7 @@ async function getDefaultLocalDetector(): Promise<
 > {
     defaultLocalDetectorPromise ??= (async () => {
         try {
-            const lingua = await import("@zkorum/agora-lingua-wasm");
+            const lingua = await import("@zkorum/lingua-wasm");
             const builder = lingua.LanguageDetectorBuilder.fromAllSpokenLanguages();
             const detector = builder
                 .withMinimumRelativeDistance(LINGUA_MINIMUM_RELATIVE_DISTANCE)
@@ -346,7 +495,10 @@ export async function detectLanguageWithFallback({
             ? undefined
             : normalizeLocalDetection({ detection: localDetection, text });
 
-    if (localResult?.languageCode !== undefined && localResult.languageCode !== null) {
+    if (
+        localResult?.sourceLanguageCode !== undefined &&
+        localResult.sourceLanguageCode !== null
+    ) {
         return { result: localResult, cacheable: true };
     }
 

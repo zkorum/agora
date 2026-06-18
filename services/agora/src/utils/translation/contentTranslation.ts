@@ -37,7 +37,16 @@ export function getLanguageDisplayName(languageCode: string | null | undefined):
   const language = SupportedSpokenLanguageMetadataList.find(
     (candidate) => candidate.code === languageCode
   );
-  return language?.englishName ?? languageCode;
+  if (language !== undefined) {
+    return language.englishName;
+  }
+
+  try {
+    const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
+    return displayNames.of(languageCode) ?? languageCode;
+  } catch {
+    return languageCode;
+  }
 }
 
 export function resolveContentTranslationState({

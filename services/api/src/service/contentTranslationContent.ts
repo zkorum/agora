@@ -62,7 +62,16 @@ export function buildSurveyQuestionSourceVersion({
 }
 
 export function getSourceLanguageLabel(sourceLanguageCode: string | null): string {
-    return sourceLanguageCode ?? "unknown";
+    if (sourceLanguageCode === null || sourceLanguageCode.trim().length === 0) {
+        return "unknown";
+    }
+
+    try {
+        const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
+        return displayNames.of(sourceLanguageCode) ?? sourceLanguageCode;
+    } catch {
+        return sourceLanguageCode;
+    }
 }
 
 export function buildLocalizedSurveyQuestionContent({

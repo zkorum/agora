@@ -108,6 +108,32 @@ def test_translate_texts_preserves_empty_texts_and_normalizes_target_language() 
     ]
 
 
+def test_translate_texts_lets_google_auto_detect_source_language() -> None:
+    client = FakeTranslationClient()
+    service = _service(client)
+
+    result = translate_texts(
+        service=service,
+        texts=["Guten Tag"],
+        source_language_code="de",
+        target_language_code="fr",
+        mime_type="text/plain",
+    )
+
+    assert result == ["translated:Guten Tag"]
+    assert client.calls == [
+        CapturedCall(
+            contents=["Guten Tag"],
+            source_language_code=None,
+            target_language_code="fr",
+            model=(
+                "projects/test-project/locations/global/models/"
+                "general/translation-llm"
+            ),
+        )
+    ]
+
+
 def test_translate_texts_uses_configured_google_model() -> None:
     client = FakeTranslationClient()
     service = _service(client, model=GoogleTranslationModel.NMT)

@@ -1,4 +1,4 @@
-declare module "@zkorum/agora-lingua-wasm" {
+declare module "@zkorum/lingua-wasm" {
     export interface LanguageDetector {
         detectLanguageOf: (text: string) => string | undefined;
         computeLanguageConfidence: (text: string, language: string) => number;

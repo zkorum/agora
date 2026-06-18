@@ -45,7 +45,7 @@ from import_worker.generated_shared_types import (
 from import_worker.html import html_to_counted_text, process_user_generated_html
 from import_worker.ids import generate_random_slug_id, generate_uuid
 from import_worker.import_models import ImportPolisResults
-from import_worker.language_detection import detect_source_language_with_lingua
+from import_worker.language_detection import detect_source_language
 from import_worker.polis_url import extract_polis_id_from_url
 
 if TYPE_CHECKING:
@@ -287,7 +287,7 @@ def _create_conversation(
     )
     body = process_user_generated_html(body, enable_links=True, mode="input")
     body_plain_text = html_to_counted_text(body)
-    language_metadata = detect_source_language_with_lingua(f"{title}\n{body_plain_text}")
+    language_metadata = detect_source_language(f"{title}\n{body_plain_text}")
     conversation_slug_id = generate_random_slug_id()
     import_url = request.polis_url if request.type == "url" else None
 
@@ -535,7 +535,7 @@ def _insert_opinions(
             mode="output",
         )
         content_plain_text = html_to_counted_text(content)
-        language_metadata = detect_source_language_with_lingua(content_plain_text)
+        language_metadata = detect_source_language(content_plain_text)
         content_values.append(
             {
                 "opinion_id": opinion_id_per_statement_id[comment.statement_id],

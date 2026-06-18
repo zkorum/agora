@@ -80,6 +80,7 @@ describe("detectLanguageWithFallback", () => {
         expect(outcome).toStrictEqual({
             result: {
                 languageCode: "ky",
+                sourceLanguageCode: "ky",
                 rawLanguageCode: "ky",
                 confidence: 0.92,
             },
@@ -108,7 +109,7 @@ describe("detectLanguageWithFallback", () => {
         expect(localDetectorCalled).toBe(false);
     });
 
-    it("returns unknown for unsupported local languages", async () => {
+    it("keeps supported non-display local source languages", async () => {
         const outcome = await detectLanguageWithFallback({
             text: "Қаладағы қоғамдық көлікті қалай жақсарта аламыз?",
             localDetector: createLocalDetector({
@@ -120,6 +121,7 @@ describe("detectLanguageWithFallback", () => {
         expect(outcome).toStrictEqual({
             result: {
                 languageCode: null,
+                sourceLanguageCode: "kk",
                 rawLanguageCode: "Kazakh",
                 confidence: 1,
             },
@@ -139,6 +141,7 @@ describe("detectLanguageWithFallback", () => {
         expect(outcome).toStrictEqual({
             result: {
                 languageCode: null,
+                sourceLanguageCode: null,
                 rawLanguageCode: "Chinese",
                 confidence: 1,
             },
@@ -161,11 +164,66 @@ describe("detectLanguageWithFallback", () => {
         expect(outcome).toStrictEqual({
             result: {
                 languageCode: null,
+                sourceLanguageCode: null,
                 rawLanguageCode: "ky",
                 confidence: 0.3,
             },
             cacheable: true,
         });
+    });
+
+    it("falls back to Google for low-confidence local misattribution", async () => {
+        const outcome = await detectLanguageWithFallback({
+            text: "Aloha kakou. Pehea kakou e malama ai i ka aina a me na kai o ko kakou kulanakauhale?",
+            localDetector: createLocalDetector({
+                rawLanguageCode: "Sotho",
+                confidence: 0.35,
+            }),
+            googleDetector: createGoogleDetector({
+                languageCode: "haw",
+                confidence: 0.91,
+            }),
+        });
+
+        expect(outcome).toStrictEqual({
+            result: {
+                languageCode: null,
+                sourceLanguageCode: "haw",
+                rawLanguageCode: "haw",
+                confidence: 0.91,
+            },
+            cacheable: true,
+        });
+    });
+
+    it("real local detector returns unknown for unsupported languages", async () => {
+        const outcome = await detectLanguageWithFallback({
+            text: "jan ale li kama pona. mi wile e ni: jan li toki pona li pali pona lon ma tomo.",
+        });
+
+        expect(outcome).toStrictEqual({ result: undefined, cacheable: true });
+    });
+
+    it("real local detector returns unknown instead of low-confidence misattribution", async () => {
+        const outcome = await detectLanguageWithFallback({
+            text: "Aloha kakou. Pehea kakou e malama ai i ka aina a me na kai o ko kakou kulanakauhale?",
+        });
+
+        expect(outcome.result?.languageCode ?? null).toBeNull();
+        expect(outcome.result?.sourceLanguageCode ?? null).toBeNull();
+        expect(outcome.cacheable).toBe(true);
+    });
+
+    it("real local detector detects supported non-display source languages", async () => {
+        const outcome = await detectLanguageWithFallback({
+            text: "Wie koennen wir den oeffentlichen Nahverkehr in unserer Stadt verbessern und bezahlbar halten?",
+        });
+
+        expect(outcome.result).toMatchObject({
+            languageCode: null,
+            sourceLanguageCode: "de",
+        });
+        expect(outcome.cacheable).toBe(true);
     });
 });
 

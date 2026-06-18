@@ -35,7 +35,7 @@ export async function resolveContentLanguageMetadata({
             googleDetector,
         });
         return {
-            sourceLanguageCode: detectionOutcome.result?.rawLanguageCode ?? null,
+            sourceLanguageCode: detectionOutcome.result?.sourceLanguageCode ?? null,
             sourceLanguageConfidence: detectionOutcome.result?.confidence ?? null,
         };
     } catch (error) {

@@ -90,7 +90,7 @@ describe("content translation pure content helpers", () => {
                 initialMode: "original",
                 translation: {
                     targetLanguageCode: "fr",
-                    sourceLanguageLabel: "en",
+                    sourceLanguageLabel: "English",
                     status: "pending",
                 },
                 variants: {

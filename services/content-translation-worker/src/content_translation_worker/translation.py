@@ -236,9 +236,7 @@ def _translate_text_chunk(
         parent=f"projects/{service.config.project_id}/locations/{service.config.location}",
         contents=texts,
         mime_type=mime_type,
-        source_language_code=_normalize_source_language_code_for_google(source_language_code)
-        if source_language_code is not None
-        else None,
+        source_language_code=None,
         target_language_code=_normalize_target_language_code_for_google(target_language_code),
         model=build_google_translation_model_path(
             project_id=service.config.project_id,

@@ -205,7 +205,7 @@ async function detectConversationLanguage({
             mode: "auto",
             languageCode: detectionOutcome.result.languageCode,
             detectedLanguageCode: detectionOutcome.result.languageCode,
-            detectedRawLanguageCode: detectionOutcome.result.rawLanguageCode,
+            detectedRawLanguageCode: detectionOutcome.result.sourceLanguageCode,
             detectionConfidence: detectionOutcome.result.confidence,
             detectedFromCorpusHash: corpusHash,
         };
