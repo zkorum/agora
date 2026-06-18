@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/vue-query";
 import { isAxiosError } from "axios";
 import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -13,6 +14,7 @@ import {
 } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
 import { useContentTranslationQuery } from "src/utils/api/contentTranslation/useContentTranslationQueries";
+import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
 import { useNotify } from "src/utils/ui/notify";
 import type { MaybeRefOrGetter } from "vue";
 import { computed, onScopeDispose, ref, toValue, watch } from "vue";
@@ -108,6 +110,7 @@ function useContentTranslationController({
 } {
   const languageStore = useLanguageStore();
   const { displayLanguage, spokenLanguages } = storeToRefs(languageStore);
+  const queryClient = useQueryClient();
   const { showNotifyMessage } = useNotify();
   const { t } = useComponentI18n<ContentTranslationPreviewTranslations>(
     contentTranslationPreviewTranslations
@@ -136,7 +139,8 @@ function useContentTranslationController({
   });
 
   const translatedVariant = computed(() => {
-    const content = query.data.value?.content;
+    const response = query.data.value;
+    const content = response?.success === true ? response.content : undefined;
     if (content?.kind !== "translatable") {
       return undefined;
     }
@@ -144,7 +148,8 @@ function useContentTranslationController({
   });
 
   const translationStatus = computed<LocalizedContentTranslationStatus>(() => {
-    const content = query.data.value?.content;
+    const response = query.data.value;
+    const content = response?.success === true ? response.content : undefined;
     if (
       content?.kind === "translatable" &&
       content.translation.status === "completed" &&
@@ -176,7 +181,8 @@ function useContentTranslationController({
   });
 
   const sourceLanguageLabel = computed(() => {
-    const content = query.data.value?.content;
+    const response = query.data.value;
+    const content = response?.success === true ? response.content : undefined;
     if (content?.kind === "translatable") {
       return content.translation.sourceLanguageLabel;
     }
@@ -195,6 +201,27 @@ function useContentTranslationController({
   function resetToOriginal(): void {
     requestedMode.value = "original";
     hasRequestedTranslation.value = false;
+  }
+
+  function applyTranslationNotEnabledResponse(): void {
+    const response = query.data.value;
+    if (response?.success !== false) {
+      return;
+    }
+    const currentSubject = toValue(subject);
+    updateConversationQueryCache({
+      queryClient,
+      conversationSlugId: currentSubject.conversationSlugId,
+      updateConversation: (conversation) => ({
+        ...conversation,
+        metadata: {
+          ...conversation.metadata,
+          multilingualSetting: response.multilingualSetting,
+        },
+      }),
+    });
+    resetToOriginal();
+    showNotifyMessage(t("translationNotEnabled"));
   }
 
   function showQueryFailureToast(): void {
@@ -253,6 +280,15 @@ function useContentTranslationController({
     }
   });
 
+  watch(
+    () => query.data.value,
+    (response) => {
+      if (response?.success === false && hasRequestedTranslation.value) {
+        applyTranslationNotEnabledResponse();
+      }
+    }
+  );
+
   onScopeDispose(() => {
     clearWaitTimeout();
     unsubscribeFailedEvents();
@@ -292,7 +328,8 @@ export function useConversationContentTranslationPreview({
       }
       const response = controller.query.data.value;
       const rawTranslatedVariant =
-        response?.subject.kind === "conversation" &&
+        response?.success === true &&
+        response.subject.kind === "conversation" &&
         response.content.kind === "translatable"
           ? response.content.variants.translated
           : undefined;
@@ -342,7 +379,8 @@ export function useOpinionContentTranslationPreview({
     }
     const response = controller.query.data.value;
     const rawTranslatedVariant =
-      response?.subject.kind === "opinion" &&
+      response?.success === true &&
+      response.subject.kind === "opinion" &&
       response.content.kind === "translatable"
         ? response.content.variants.translated
         : undefined;
@@ -389,7 +427,8 @@ export function useSurveyQuestionContentTranslationPreview({
       }
       const response = controller.query.data.value;
       const rawTranslatedVariant =
-        response?.subject.kind === "survey_question" &&
+        response?.success === true &&
+        response.subject.kind === "survey_question" &&
         response.content.kind === "translatable"
           ? response.content.variants.translated
           : undefined;

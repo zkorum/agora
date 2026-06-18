@@ -76,11 +76,6 @@ from agora_analysis_worker_shared.logging_utils import (
     log_database_error,
 )
 from agora_analysis_worker_shared.postgres_engine import create_ready_postgres_engine
-from agora_analysis_worker_shared.schema_readiness import (
-    StartupSchemaRetryState,
-    handle_startup_schema_retry,
-    mark_startup_schema_ready,
-)
 from agora_analysis_worker_shared.simulation_providers import (
     SimulatedRetryableError,
     build_simulation_runtime,
@@ -1255,7 +1250,6 @@ def _run_worker_once() -> None:
     monotonic_start = time.monotonic()
     last_reconcile = monotonic_start - settings.reconciliation_interval_seconds
     last_recover = monotonic_start - settings.running_recovery_interval_seconds
-    schema_retry_state = StartupSchemaRetryState()
 
     while _running:
         set_active_analysis_claims([])
@@ -1281,17 +1275,7 @@ def _run_worker_once() -> None:
                         len(claimable_ids),
                         _format_ids(claimable_ids),
                     )
-            except Exception as error:
-                retry_decision = handle_startup_schema_retry(
-                    state=schema_retry_state,
-                    error=error,
-                    logger=log,
-                    log_prefix="[MathUpdater]",
-                )
-                schema_retry_state = retry_decision.state
-                if retry_decision.should_retry:
-                    time.sleep(settings.worker_poll_idle_sleep_seconds)
-                    continue
+            except Exception:
                 log.exception("[MathUpdater] Reconciliation failed")
             last_reconcile = monotonic_now
 
@@ -1317,18 +1301,7 @@ def _run_worker_once() -> None:
                         "[MathUpdater] Recovered %d expired running/first-pass items",
                         len(recovered_ids),
                     )
-                schema_retry_state = mark_startup_schema_ready(state=schema_retry_state)
-            except Exception as error:
-                retry_decision = handle_startup_schema_retry(
-                    state=schema_retry_state,
-                    error=error,
-                    logger=log,
-                    log_prefix="[MathUpdater]",
-                )
-                schema_retry_state = retry_decision.state
-                if retry_decision.should_retry:
-                    time.sleep(settings.worker_poll_idle_sleep_seconds)
-                    continue
+            except Exception:
                 log.exception("[MathUpdater] Running-work recovery failed")
             last_recover = monotonic_now
 
@@ -1407,17 +1380,6 @@ def _run_worker_once() -> None:
                 analysis_engine_epoch=settings.analysis_engine_epoch,
             )
         except SQLAlchemyError as error:
-            retry_decision = handle_startup_schema_retry(
-                state=schema_retry_state,
-                error=error,
-                logger=log,
-                log_prefix="[MathUpdater]",
-            )
-            schema_retry_state = retry_decision.state
-            if retry_decision.should_retry:
-                requeue_conversations(vk, conversations=processable_items)
-                time.sleep(settings.worker_poll_idle_sleep_seconds)
-                continue
             log_database_error(
                 logger=log,
                 message="[MathUpdater] Failed to claim analysis work",

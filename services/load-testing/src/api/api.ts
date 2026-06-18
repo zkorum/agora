@@ -710,14 +710,26 @@ export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1Rar
 export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1RarimoStatusEnum = typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1RarimoStatusEnum[keyof typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1RarimoStatusEnum];
 
 export interface ApiV1ContentTranslationRequestPost200Response {
+    'success': boolean;
     'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf2;
     'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf2Content;
+    'reason': ApiV1ContentTranslationRequestPost200ResponseReasonEnum;
+    'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting;
 }
+
+export const ApiV1ContentTranslationRequestPost200ResponseReasonEnum = {
+    ContentTranslationNotEnabled: 'content_translation_not_enabled',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseReasonEnum];
+
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf {
+    'success': boolean;
     'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf;
     'content': ApiV1ContentTranslationRequestPost200ResponseAnyOfContent;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1 {
+    'success': boolean;
     'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf1;
     'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf1Content;
 }
@@ -811,6 +823,7 @@ export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf
     'content': string;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf2 {
+    'success': boolean;
     'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf2;
     'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf2Content;
 }
@@ -908,6 +921,18 @@ export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOf
     'optionSlugId': string;
     'optionText': string;
 }
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3 {
+    'success': boolean;
+    'reason': ApiV1ContentTranslationRequestPost200ResponseAnyOf3ReasonEnum;
+    'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf3ReasonEnum = {
+    ContentTranslationNotEnabled: 'content_translation_not_enabled',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf3ReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ReasonEnum];
+
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContent {
     'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentKindEnum;
     'sourceVersion': string;
@@ -4753,7 +4778,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          *
-         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -7759,7 +7784,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          *
-         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -8838,7 +8863,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          *
-         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -9715,7 +9740,7 @@ export class DefaultApi extends BaseAPI {
 
     /**
      *
-     * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+     * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
@@ -10442,5 +10467,3 @@ export class DefaultApi extends BaseAPI {
         return DefaultApiFp(this.configuration).apiV1WebhookGithubPost(options).then((request) => request(this.axios, this.basePath));
     }
 }
-
-

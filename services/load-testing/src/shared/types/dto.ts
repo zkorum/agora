@@ -146,6 +146,7 @@ const zodAnalysisFrameOpinionListKind = z.enum([
 
 const zodContentTranslationConversationResponse = z
     .object({
+        success: z.literal(true),
         subject: z
             .object({
                 kind: z.literal("conversation"),
@@ -158,6 +159,7 @@ const zodContentTranslationConversationResponse = z
 
 const zodContentTranslationOpinionResponse = z
     .object({
+        success: z.literal(true),
         subject: z
             .object({
                 kind: z.literal("opinion"),
@@ -171,6 +173,7 @@ const zodContentTranslationOpinionResponse = z
 
 const zodContentTranslationSurveyQuestionResponse = z
     .object({
+        success: z.literal(true),
         subject: z
             .object({
                 kind: z.literal("survey_question"),
@@ -186,6 +189,13 @@ const zodContentTranslationResponse = z.union([
     zodContentTranslationConversationResponse,
     zodContentTranslationOpinionResponse,
     zodContentTranslationSurveyQuestionResponse,
+    z
+        .object({
+            success: z.literal(false),
+            reason: z.literal("content_translation_not_enabled"),
+            multilingualSetting: zodConversationMultilingualSetting,
+        })
+        .strict(),
 ]);
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class

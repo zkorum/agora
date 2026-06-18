@@ -5,7 +5,7 @@
     </span>
     <span v-else-if="mode === 'translated' && translationStatus === 'completed'" class="content-translation-control__meta">
       <img src="/images/icons/stars.svg" alt="" class="content-translation-control__icon" />
-      <span class="content-translation-control__label">
+      <span v-if="translatedLabel !== undefined" class="content-translation-control__label">
         {{ translatedLabel }}
       </span>
     </span>
@@ -44,7 +44,7 @@ const { t } = useComponentI18n<ContentTranslationControlTranslations>(
 
 const translatedLabel = computed(() => {
   if (sourceLanguageLabel === "undetermined language") {
-    return t("translatedFromUndeterminedLanguage");
+    return undefined;
   }
   return t("translatedFrom", { language: sourceLanguageLabel });
 });

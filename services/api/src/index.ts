@@ -35,6 +35,7 @@ import {
     type ZodTypeProvider,
 } from "fastify-type-provider-zod";
 import fs from "fs";
+import type { z } from "zod";
 import { config, log, server } from "./app.js";
 import * as authService from "@/service/auth.js";
 import * as authUtilService from "@/service/authUtil.js";
@@ -170,7 +171,10 @@ import {
     getOrganizationsByUsername,
     removeUserOrganizationMapping,
 } from "./service/administrator/organization.js";
-import type { DeviceIsKnownTrueLoginStatus } from "./shared/types/zod.js";
+import type {
+    ConversationMultilingualSetting,
+    DeviceIsKnownTrueLoginStatus,
+} from "./shared/types/zod.js";
 import type { DeviceLoginStatusInternal } from "./service/authUtil.js";
 import {
     getAllTopics,
@@ -196,6 +200,8 @@ import {
     projectOrganizationOwnershipTable,
 } from "./shared-backend/schema.js";
 import { and, eq, isNull } from "drizzle-orm";
+
+type ContentTranslationResponse = z.infer<typeof Dto.contentTranslationResponse>;
 import {
     initializeGoogleCloudCredentials,
     type GoogleCloudCredentials,
@@ -485,13 +491,16 @@ async function assertMaxdiffGitHubAllowedForConversation({
     });
 }
 
-async function assertContentTranslationAllowedForConversation({
+async function getContentTranslationAvailabilityForConversation({
     conversationSlugId,
     targetLanguageCode,
 }: {
     conversationSlugId: string;
     targetLanguageCode: SupportedDisplayLanguageCodes;
-}): Promise<void> {
+}): Promise<{
+    isAllowed: boolean;
+    multilingualSetting: ConversationMultilingualSetting;
+}> {
     const rows = await db
         .select({
             dynamicTranslationEnabled:
@@ -516,22 +525,24 @@ async function assertContentTranslationAllowedForConversation({
         )
         .where(eq(conversationTable.slugId, conversationSlugId));
 
-    if (rows.length === 0) {
+    const firstRow = rows.at(0);
+    if (firstRow === undefined) {
         throw server.httpErrors.notFound(
             "Content translation subject not found",
         );
     }
-
+    const multilingualSetting: ConversationMultilingualSetting = {
+        dynamicTranslationEnabled: firstRow.dynamicTranslationEnabled ?? false,
+        additionalLanguageCodes: rows.flatMap((row) =>
+            row.targetLanguageCode === null ? [] : [row.targetLanguageCode],
+        ),
+    };
     const translationAllowed = rows.some(
         (row) =>
             row.dynamicTranslationEnabled === true ||
             row.targetLanguageCode === targetLanguageCode,
     );
-    if (!translationAllowed) {
-        throw server.httpErrors.forbidden(
-            "Content translation is not enabled for this target language",
-        );
-    }
+    return { isAllowed: translationAllowed, multilingualSetting };
 }
 
 // Validate S3 configuration if export feature is enabled
@@ -4232,10 +4243,19 @@ server.after(() => {
 
             const queueValkey = queueValkeyRef.current;
 
-            await assertContentTranslationAllowedForConversation({
-                conversationSlugId: request.body.subject.conversationSlugId,
-                targetLanguageCode: request.body.targetLanguageCode,
-            });
+            const availability =
+                await getContentTranslationAvailabilityForConversation({
+                    conversationSlugId: request.body.subject.conversationSlugId,
+                    targetLanguageCode: request.body.targetLanguageCode,
+                });
+            if (!availability.isAllowed) {
+                const productFailureResponse = {
+                    success: false,
+                    reason: "content_translation_not_enabled",
+                    multilingualSetting: availability.multilingualSetting,
+                } satisfies ContentTranslationResponse;
+                return productFailureResponse;
+            }
 
             const response =
                 await contentTranslationService.requestContentTranslation({
@@ -4291,7 +4311,11 @@ server.after(() => {
                     "Content translation subject not found",
                 );
             }
-            return response;
+            const productSuccessResponse = {
+                ...response,
+                success: true,
+            } satisfies ContentTranslationResponse;
+            return productSuccessResponse;
         },
     });
 

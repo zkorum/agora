@@ -13159,6 +13159,12 @@
                                         {
                                             "type": "object",
                                             "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
                                                 "subject": {
                                                     "type": "object",
                                                     "properties": {
@@ -13466,6 +13472,7 @@
                                                 }
                                             },
                                             "required": [
+                                                "success",
                                                 "subject",
                                                 "content"
                                             ],
@@ -13474,6 +13481,12 @@
                                         {
                                             "type": "object",
                                             "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
                                                 "subject": {
                                                     "type": "object",
                                                     "properties": {
@@ -13766,6 +13779,7 @@
                                                 }
                                             },
                                             "required": [
+                                                "success",
                                                 "subject",
                                                 "content"
                                             ],
@@ -13774,6 +13788,12 @@
                                         {
                                             "type": "object",
                                             "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
                                                 "subject": {
                                                     "type": "object",
                                                     "properties": {
@@ -14181,8 +14201,65 @@
                                                 }
                                             },
                                             "required": [
+                                                "success",
                                                 "subject",
                                                 "content"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "content_translation_not_enabled"
+                                                    ]
+                                                },
+                                                "multilingualSetting": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "additionalLanguageCodes": {
+                                                            "maxItems": 2,
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "en",
+                                                                    "es",
+                                                                    "fr",
+                                                                    "zh-Hant",
+                                                                    "zh-Hans",
+                                                                    "ja",
+                                                                    "ar",
+                                                                    "fa",
+                                                                    "he",
+                                                                    "ky",
+                                                                    "ru"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "dynamicTranslationEnabled": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "additionalLanguageCodes",
+                                                        "dynamicTranslationEnabled"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason",
+                                                "multilingualSetting"
                                             ],
                                             "additionalProperties": false
                                         }
