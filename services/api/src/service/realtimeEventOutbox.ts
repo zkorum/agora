@@ -23,6 +23,7 @@ import {
     opinionGroupCandidateAssessmentTable,
     opinionGroupCandidateTable,
     opinionGroupVariantTable,
+    opinionTable,
     realtimeEventOutboxTable,
     realtimeEventOutboxTopicTable,
 } from "@/shared-backend/schema.js";
@@ -57,6 +58,17 @@ const zodConversationCommentStatsUpdatedData = z.object({
     moderatedOpinionCount: z.number().int().nonnegative(),
     hiddenOpinionCount: z.number().int().nonnegative(),
     isClosed: z.boolean(),
+    opinionVoteCounts: z.array(
+        z
+            .object({
+                opinionSlugId: z.string().min(1),
+                numParticipants: z.number().int().nonnegative(),
+                numAgrees: z.number().int().nonnegative(),
+                numDisagrees: z.number().int().nonnegative(),
+                numPasses: z.number().int().nonnegative(),
+            })
+            .strict(),
+    ).default([]),
     timestamp: z.number().int().nonnegative(),
 });
 
@@ -222,6 +234,7 @@ interface QueueConversationAnalysisUpdatedEventsForViewSnapshotsProps {
 interface QueueConversationCommentStatsUpdatedEventsForViewSnapshotsProps {
     db: PostgresJsDatabase;
     conversationViewSnapshotIds: number[];
+    changedOpinionIds?: number[];
 }
 
 interface QueueConversationAnalysisUpdatedEventsForLatestViewSnapshotsProps {
@@ -233,6 +246,40 @@ interface QueueConversationSettingsUpdatedEventProps {
     db: PostgresJsDatabase;
     conversationSlugId: string;
     settings: SSEEventDataByType["conversation_settings_updated"]["settings"];
+}
+
+type LiveOpinionVoteCount =
+    SSEEventDataByType["conversation_comment_stats_updated"]["opinionVoteCounts"][number];
+
+async function fetchLiveOpinionVoteCounts({
+    db,
+    opinionIds,
+}: {
+    db: PostgresJsDatabase;
+    opinionIds: number[];
+}): Promise<LiveOpinionVoteCount[]> {
+    const uniqueOpinionIds = Array.from(new Set(opinionIds));
+    if (uniqueOpinionIds.length === 0) {
+        return [];
+    }
+
+    const rows = await db
+        .select({
+            opinionSlugId: opinionTable.slugId,
+            numAgrees: opinionTable.numAgrees,
+            numDisagrees: opinionTable.numDisagrees,
+            numPasses: opinionTable.numPasses,
+        })
+        .from(opinionTable)
+        .where(inArray(opinionTable.id, uniqueOpinionIds));
+
+    return rows.map((row) => ({
+        opinionSlugId: row.opinionSlugId,
+        numParticipants: row.numAgrees + row.numDisagrees + row.numPasses,
+        numAgrees: row.numAgrees,
+        numDisagrees: row.numDisagrees,
+        numPasses: row.numPasses,
+    }));
 }
 
 export async function queueConversationSettingsUpdatedEvent({
@@ -363,12 +410,17 @@ export async function queueConversationAnalysisUpdatedEventsForViewSnapshots({
 export async function queueConversationCommentStatsUpdatedEventsForViewSnapshots({
     db,
     conversationViewSnapshotIds,
+    changedOpinionIds = [],
 }: QueueConversationCommentStatsUpdatedEventsForViewSnapshotsProps): Promise<void> {
     if (conversationViewSnapshotIds.length === 0) {
         return;
     }
 
     const primaryDb = getPrimaryDb(db);
+    const opinionVoteCounts = await fetchLiveOpinionVoteCounts({
+        db: primaryDb,
+        opinionIds: changedOpinionIds,
+    });
     const rows = await primaryDb
         .select({
             conversationSlugId: conversationTable.slugId,
@@ -415,6 +467,7 @@ export async function queueConversationCommentStatsUpdatedEventsForViewSnapshots
             moderatedOpinionCount: row.moderatedOpinionCount,
             hiddenOpinionCount: row.hiddenOpinionCount,
             isClosed: row.isClosed,
+            opinionVoteCounts,
             timestamp,
         };
         return { eventType: "conversation_comment_stats_updated", payload };

@@ -11,6 +11,7 @@ import {
 } from "src/shared/types/dto";
 import type {
   ExtendedConversation,
+  OpinionItem,
   ParticipationMode,
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -277,6 +278,10 @@ export function useRealtimeSSE({
     number
   >();
   const latestSettingsEventTimestampByConversationSlugId = new Map<
+    string,
+    number
+  >();
+  const latestCommentStatsEventTimestampByConversationSlugId = new Map<
     string,
     number
   >();
@@ -1123,6 +1128,19 @@ export function useRealtimeSSE({
   function updateCommentStatsFromEvent(
     data: SSEConversationCommentStatsUpdatedData
   ): void {
+    const previousTimestamp =
+      latestCommentStatsEventTimestampByConversationSlugId.get(
+        data.conversationSlugId
+      );
+    if (previousTimestamp !== undefined && previousTimestamp > data.timestamp) {
+      return;
+    }
+
+    latestCommentStatsEventTimestampByConversationSlugId.set(
+      data.conversationSlugId,
+      data.timestamp
+    );
+
     const stats: FetchCommentStatsResponse = {
       conversationViewSnapshotId: data.conversationViewSnapshotId,
       opinionCount: data.opinionCount,
@@ -1136,7 +1154,105 @@ export function useRealtimeSSE({
       isClosed: data.isClosed,
     };
 
-    queryClient.setQueryData(["commentStats", data.conversationSlugId], stats);
+    queryClient.setQueriesData<FetchCommentStatsResponse>(
+      { queryKey: ["commentStats", data.conversationSlugId] },
+      stats
+    );
+
+    updateConversationQueryCache({
+      queryClient,
+      conversationSlugId: data.conversationSlugId,
+      updateConversation: (conversation) => {
+        const previousSnapshotId =
+          conversation.metadata.conversationViewSnapshotId;
+        if (
+          previousSnapshotId !== undefined &&
+          data.conversationViewSnapshotId < previousSnapshotId
+        ) {
+          return conversation;
+        }
+
+        return {
+          ...conversation,
+          metadata: {
+            ...conversation.metadata,
+            conversationViewSnapshotId: data.conversationViewSnapshotId,
+            opinionCount: data.opinionCount,
+            voteCount: data.voteCount,
+            participantCount: data.participantCount,
+            totalOpinionCount: data.totalOpinionCount,
+            totalVoteCount: data.totalVoteCount,
+            totalParticipantCount: data.totalParticipantCount,
+            moderatedOpinionCount: data.moderatedOpinionCount,
+            hiddenOpinionCount: data.hiddenOpinionCount,
+            isClosed: data.isClosed,
+          },
+        };
+      },
+    });
+
+    updateVotedVisibleOpinionCountsFromEvent(data);
+  }
+
+  function updateVotedVisibleOpinionCountsFromEvent(
+    data: SSEConversationCommentStatsUpdatedData
+  ): void {
+    if (data.opinionVoteCounts.length === 0) {
+      return;
+    }
+
+    const userVotes =
+      queryClient.getQueryData<Array<{ opinionSlugId: string }>>([
+        "userVotes",
+        data.conversationSlugId,
+      ]) ?? [];
+    const votedOpinionSlugIds = new Set(
+      userVotes.map((vote) => vote.opinionSlugId)
+    );
+    if (votedOpinionSlugIds.size === 0) {
+      return;
+    }
+
+    const liveCountsByOpinionSlugId = new Map(
+      data.opinionVoteCounts
+        .filter((counts) => votedOpinionSlugIds.has(counts.opinionSlugId))
+        .map((counts) => [counts.opinionSlugId, counts])
+    );
+    if (liveCountsByOpinionSlugId.size === 0) {
+      return;
+    }
+
+    queryClient.setQueriesData<OpinionItem[]>(
+      {
+        predicate: (query) =>
+          isConversationCommentsQueryKey({
+            queryKey: query.queryKey,
+            conversationSlugId: data.conversationSlugId,
+          }),
+      },
+      (opinions) => {
+        if (opinions === undefined) {
+          return opinions;
+        }
+
+        return opinions.map((opinion) => {
+          const liveCounts = liveCountsByOpinionSlugId.get(
+            opinion.opinionSlugId
+          );
+          if (liveCounts === undefined) {
+            return opinion;
+          }
+
+          return {
+            ...opinion,
+            numParticipants: liveCounts.numParticipants,
+            numAgrees: liveCounts.numAgrees,
+            numDisagrees: liveCounts.numDisagrees,
+            numPasses: liveCounts.numPasses,
+          };
+        });
+      }
+    );
   }
 
   function refreshActiveConversationQueriesAfterReconnect({

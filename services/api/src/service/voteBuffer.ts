@@ -779,6 +779,20 @@ export function createVoteBuffer({
                                     conversationId,
                                     viewReason: "conversation_content_updated",
                                     emitCommentStatsRealtimeEvent: true,
+                                    changedOpinionIds: Array.from(
+                                        new Set(
+                                            voteBatch
+                                                .filter(
+                                                    (vote) =>
+                                                        vote.conversationId ===
+                                                            conversationId &&
+                                                        counterDeltas.has(
+                                                            vote.opinionId,
+                                                        ),
+                                                )
+                                                .map((vote) => vote.opinionId),
+                                        ),
+                                    ),
                                 },
                             );
                         }

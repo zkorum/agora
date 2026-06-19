@@ -6,14 +6,12 @@ import {
   type ComputedRef,
   type MaybeRefOrGetter,
   onDeactivated,
-  onUnmounted,
   type Ref,
   ref,
   toValue,
   watch,
 } from "vue";
 
-const NEW_STATEMENTS_SUPPRESSION_MS = 15_000;
 const TOP_COMMENT_COUNT = 3;
 const filtersAffectedByNewOpinions = new Set<CommentFilterOptions>([
   "new",
@@ -44,11 +42,8 @@ export function useNewStatementsPill({
   scrollToNewStatements,
 }: UseNewStatementsPillParams) {
   const isPillVisible = ref(false);
-  const isSuppressed = ref(false);
-  const hasPendingChangeDuringSuppression = ref(false);
   const acknowledgedTopOpinionSlugIds = ref<string[] | undefined>();
   const latestDetectedTopOpinionSlugIds = ref<string[] | undefined>();
-  let suppressionTimer: ReturnType<typeof setTimeout> | undefined;
   let previewRequestId = 0;
   let isPreviewFetchInFlight = false;
 
@@ -82,55 +77,13 @@ export function useNewStatementsPill({
     );
   }
 
-  function clearSuppressionTimer(): void {
-    if (suppressionTimer === undefined) {
-      return;
-    }
-
-    clearTimeout(suppressionTimer);
-    suppressionTimer = undefined;
-  }
-
-  function startSuppressionWindow(): void {
-    clearSuppressionTimer();
-    isSuppressed.value = true;
-    hasPendingChangeDuringSuppression.value = false;
-
-    const timerConversationSlugId = toValue(postSlugId);
-    const timerFilter = currentFilter.value;
-    suppressionTimer = setTimeout(() => {
-      suppressionTimer = undefined;
-      isSuppressed.value = false;
-
-      const isStillSameView =
-        isCommentTabActive.value &&
-        toValue(postSlugId) === timerConversationSlugId &&
-        currentFilter.value === timerFilter;
-      if (!isStillSameView) {
-        hasPendingChangeDuringSuppression.value = false;
-        return;
-      }
-
-      if (hasPendingChangeDuringSuppression.value) {
-        isPillVisible.value = true;
-      }
-      hasPendingChangeDuringSuppression.value = false;
-    }, NEW_STATEMENTS_SUPPRESSION_MS);
-  }
-
   function requestPillDisplay(): void {
-    if (isSuppressed.value) {
-      hasPendingChangeDuringSuppression.value = true;
-      return;
-    }
-
     isPillVisible.value = true;
   }
 
   function acknowledgeOpinions({ opinions }: { opinions: OpinionItem[] }): void {
     acknowledgedTopOpinionSlugIds.value = getTopOpinionSlugIds({ opinions });
     latestDetectedTopOpinionSlugIds.value = undefined;
-    hasPendingChangeDuringSuppression.value = false;
     isPillVisible.value = false;
   }
 
@@ -143,14 +96,11 @@ export function useNewStatementsPill({
 
     acknowledgedTopOpinionSlugIds.value = undefined;
     latestDetectedTopOpinionSlugIds.value = undefined;
-    hasPendingChangeDuringSuppression.value = false;
     isPillVisible.value = false;
   }
 
   function resetForCurrentView(): void {
     previewRequestId += 1;
-    clearSuppressionTimer();
-    isSuppressed.value = false;
     acknowledgeCurrentData();
   }
 
@@ -160,8 +110,7 @@ export function useNewStatementsPill({
       !isCommentTabActive.value ||
       !filtersAffectedByNewOpinions.has(filter) ||
       activeQuery.value.data.value === undefined ||
-      isPreviewFetchInFlight ||
-      (isSuppressed.value && hasPendingChangeDuringSuppression.value)
+      isPreviewFetchInFlight
     ) {
       return;
     }
@@ -217,7 +166,6 @@ export function useNewStatementsPill({
     if (result.data !== undefined) {
       acknowledgeOpinions({ opinions: result.data });
     }
-    startSuppressionWindow();
   }
 
   function dismissNewStatementsPill(): void {
@@ -226,7 +174,6 @@ export function useNewStatementsPill({
     if (detectedTopOpinionSlugIds !== undefined) {
       acknowledgedTopOpinionSlugIds.value = detectedTopOpinionSlugIds;
     }
-    startSuppressionWindow();
   }
 
   async function refetchActiveQueryAndAcknowledge(): Promise<void> {
@@ -264,13 +211,8 @@ export function useNewStatementsPill({
   );
 
   onDeactivated(() => {
-    clearSuppressionTimer();
-    isSuppressed.value = false;
-    hasPendingChangeDuringSuppression.value = false;
     isPillVisible.value = false;
   });
-
-  onUnmounted(clearSuppressionTimer);
 
   return {
     shouldShowNewStatementsPill,

@@ -131,6 +131,17 @@ export const zodSSEConversationCommentStatsUpdatedData = z
         moderatedOpinionCount: z.number().int().nonnegative(),
         hiddenOpinionCount: z.number().int().nonnegative(),
         isClosed: z.boolean(),
+        opinionVoteCounts: z.array(
+            z
+                .object({
+                    opinionSlugId: zodSlugId,
+                    numParticipants: z.number().int().nonnegative(),
+                    numAgrees: z.number().int().nonnegative(),
+                    numDisagrees: z.number().int().nonnegative(),
+                    numPasses: z.number().int().nonnegative(),
+                })
+                .strict(),
+        ).default([]),
         timestamp: z.number(),
     })
     .strict();
