@@ -87,7 +87,12 @@ class ContentTranslationWork(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     conversation_id: Mapped[int] = mapped_column(Integer)
     source_kind: Mapped[ContentTranslationSourceKind] = mapped_column(
-        SaEnum(ContentTranslationSourceKind, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            ContentTranslationSourceKind,
+            name="content_translation_source_kind",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     conversation_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     opinion_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -97,10 +102,20 @@ class ContentTranslationWork(Base):
         nullable=True,
     )
     display_language_code: Mapped[DisplayLanguageCode] = mapped_column(
-        SaEnum(DisplayLanguageCode, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            DisplayLanguageCode,
+            name="display_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     status: Mapped[ContentTranslationWorkStatus] = mapped_column(
-        SaEnum(ContentTranslationWorkStatus, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            ContentTranslationWorkStatus,
+            name="content_translation_work_status",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     priority_rank: Mapped[int] = mapped_column(Integer, server_default="2")
     attempt_count: Mapped[int] = mapped_column(Integer, server_default="0")
@@ -135,7 +150,12 @@ class ConversationContentTranslation(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     conversation_content_id: Mapped[int] = mapped_column(Integer)
     display_language_code: Mapped[DisplayLanguageCode] = mapped_column(
-        SaEnum(DisplayLanguageCode, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            DisplayLanguageCode,
+            name="display_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     translated_title: Mapped[str] = mapped_column(String(140))
     translated_body: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -153,16 +173,26 @@ class Conversation(Base):
     current_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_indexed: Mapped[bool] = mapped_column(Boolean, server_default="true")
     participation_mode: Mapped[ParticipationMode] = mapped_column(
-        SaEnum(ParticipationMode, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            ParticipationMode,
+            name="participation_mode",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     conversation_type: Mapped[ConversationType] = mapped_column(
-        SaEnum(ConversationType, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            ConversationType,
+            name="conversation_type",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     is_importing: Mapped[bool] = mapped_column(Boolean, server_default="false")
     is_closed: Mapped[bool] = mapped_column(Boolean, server_default="false")
     is_edited: Mapped[bool] = mapped_column(Boolean, server_default="false")
     requires_event_ticket: Mapped[EventSlug | None] = mapped_column(
-        SaEnum(EventSlug, values_callable=_enum_values, native_enum=False),
+        SaEnum(EventSlug, name="event_slug", values_callable=_enum_values, native_enum=True),
         nullable=True,
     )
     ai_labeling_enabled: Mapped[bool] = mapped_column(Boolean, server_default="true")
@@ -174,7 +204,7 @@ class Conversation(Base):
     import_created_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     import_author: Mapped[str | None] = mapped_column(Text, nullable=True)
     import_method: Mapped[ImportMethod | None] = mapped_column(
-        SaEnum(ImportMethod, values_callable=_enum_values, native_enum=False),
+        SaEnum(ImportMethod, name="import_method", values_callable=_enum_values, native_enum=True),
         nullable=True,
     )
     external_source_config: Mapped[Any | None] = mapped_column(
@@ -202,7 +232,12 @@ class ConversationTranslationTargetLanguage(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     translation_setting_id: Mapped[int] = mapped_column(Integer)
     language_code: Mapped[DisplayLanguageCode] = mapped_column(
-        SaEnum(DisplayLanguageCode, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            DisplayLanguageCode,
+            name="display_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
@@ -226,7 +261,12 @@ class OpinionContentTranslation(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     opinion_content_id: Mapped[int] = mapped_column(Integer)
     display_language_code: Mapped[DisplayLanguageCode] = mapped_column(
-        SaEnum(DisplayLanguageCode, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            DisplayLanguageCode,
+            name="display_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     translated_content: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime)
@@ -285,7 +325,12 @@ class SurveyQuestionContentTranslation(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     survey_question_content_id: Mapped[int] = mapped_column(Integer)
     display_language_code: Mapped[DisplayLanguageCode] = mapped_column(
-        SaEnum(DisplayLanguageCode, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            DisplayLanguageCode,
+            name="display_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     translated_question_text: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime)
@@ -309,7 +354,12 @@ class SurveyQuestionOptionContentTranslation(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     survey_question_option_content_id: Mapped[int] = mapped_column(Integer)
     display_language_code: Mapped[DisplayLanguageCode] = mapped_column(
-        SaEnum(DisplayLanguageCode, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            DisplayLanguageCode,
+            name="display_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     translated_option_text: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime)
@@ -336,10 +386,20 @@ class SurveyQuestion(Base):
     survey_config_id: Mapped[int] = mapped_column(Integer)
     conversation_id: Mapped[int] = mapped_column(Integer)
     question_type: Mapped[SurveyQuestionType] = mapped_column(
-        SaEnum(SurveyQuestionType, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            SurveyQuestionType,
+            name="survey_question_type",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     choice_display: Mapped[SurveyChoiceDisplay] = mapped_column(
-        SaEnum(SurveyChoiceDisplay, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            SurveyChoiceDisplay,
+            name="survey_choice_display",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     current_semantic_version: Mapped[int] = mapped_column(Integer, server_default="1")

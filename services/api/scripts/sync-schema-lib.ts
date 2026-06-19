@@ -235,7 +235,7 @@ export function mapSqlType(
             const cls = toPascalCase(enumName);
             return {
                 pyType: cls,
-                saType: `SaEnum(${cls}, values_callable=_enum_values, native_enum=False)`,
+                saType: `SaEnum(${cls}, name="${enumName}", values_callable=_enum_values, native_enum=True)`,
             };
         }
     }
@@ -254,16 +254,18 @@ function formatMappedColumnArg({
     }
 
     const enumMatch =
-        /^SaEnum\(([^,]+), values_callable=_enum_values, native_enum=False\)$/.exec(
+        /^SaEnum\(([^,]+), name="([^"]+)", values_callable=_enum_values, native_enum=True\)$/.exec(
             arg,
         );
     const enumClassName = enumMatch?.[1];
+    const enumName = enumMatch?.[2];
     if (enumClassName !== undefined) {
         return (
             `${indent}SaEnum(\n` +
             `${indent}    ${enumClassName},\n` +
+            `${indent}    name="${enumName}",\n` +
             `${indent}    values_callable=_enum_values,\n` +
-            `${indent}    native_enum=False,\n` +
+            `${indent}    native_enum=True,\n` +
             `${indent}),\n`
         );
     }
@@ -428,6 +430,5 @@ export function generateSqlAlchemyModels({
         }
     }
 
-    out += "\n";
     return out;
 }

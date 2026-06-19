@@ -3,6 +3,8 @@ CREATE TYPE "public"."content_translation_work_status" AS ENUM('pending', 'runni
 CREATE TYPE "public"."conversation_language_setting_mode" AS ENUM('auto', 'manual');--> statement-breakpoint
 CREATE TYPE "public"."directory_visibility" AS ENUM('listed', 'unlisted');--> statement-breakpoint
 CREATE TYPE "public"."display_language_code" AS ENUM('en', 'es', 'fr', 'zh-Hant', 'zh-Hans', 'ja', 'ar', 'fa', 'he', 'ky', 'ru');--> statement-breakpoint
+CREATE TYPE "public"."language_code" AS ENUM('en', 'es', 'fr', 'en-GB', 'ar', 'bn', 'eu', 'bg', 'ca', 'hr', 'cs', 'da', 'nl', 'fil', 'fi', 'gl', 'de', 'el', 'gu', 'he', 'hi', 'hu', 'id', 'ga', 'it', 'ja', 'kn', 'ko', 'ky', 'ms', 'mr', 'no', 'fa', 'pl', 'pt', 'ro', 'ru', 'sr', 'sk', 'sv', 'ta', 'th', 'tr', 'uk', 'ur', 'vi', 'zh-Hans', 'zh-Hant', 'af', 'sq', 'hy', 'az', 'be', 'nb', 'bs', 'eo', 'et', 'lg', 'ka', 'is', 'kk', 'la', 'lv', 'lt', 'mk', 'mi', 'mn', 'nn', 'pa', 'sn', 'sl', 'so', 'st', 'sw', 'te', 'ts', 'tn', 'cy', 'xh', 'yo', 'zu');--> statement-breakpoint
+CREATE TYPE "public"."language_detection_provider" AS ENUM('lingua', 'google');--> statement-breakpoint
 CREATE TYPE "public"."organization_membership_all_project_capability_enum" AS ENUM('project_update', 'project_delete', 'project_manage_owner_organizations', 'conversation_create', 'conversation_update', 'conversation_delete', 'conversation_view_private_results', 'conversation_export_owner_data', 'conversation_moderate', 'conversation_manage_integrations');--> statement-breakpoint
 CREATE TYPE "public"."organization_membership_capability_enum" AS ENUM('organization_manage_members', 'organization_manage_profile', 'project_create');--> statement-breakpoint
 CREATE TYPE "public"."spoken_language_code" AS ENUM('en', 'es', 'fr', 'en-GB', 'ar', 'bn', 'eu', 'bg', 'ca', 'hr', 'cs', 'da', 'nl', 'fil', 'fi', 'gl', 'de', 'el', 'gu', 'he', 'hi', 'hu', 'id', 'ga', 'it', 'ja', 'kn', 'ko', 'ky', 'ms', 'mr', 'no', 'fa', 'pl', 'pt', 'ro', 'ru', 'sr', 'sk', 'sv', 'ta', 'th', 'tr', 'uk', 'ur', 'vi', 'zh-Hans', 'zh-Hant');--> statement-breakpoint
@@ -49,9 +51,11 @@ CREATE TABLE "conversation_language_setting" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_language_setting_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"conversation_id" integer NOT NULL,
 	"mode" "conversation_language_setting_mode" NOT NULL,
-	"language_code" varchar(35),
-	"detected_language_code" varchar(35),
+	"language_code" "display_language_code",
+	"detected_language_code" "display_language_code",
+	"detected_source_language_code" "language_code",
 	"detected_raw_language_code" varchar(35),
+	"detected_raw_language_provider" "language_detection_provider",
 	"detection_confidence" real,
 	"detected_from_corpus_hash" varchar(64),
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
@@ -140,11 +144,18 @@ CREATE TABLE "realtime_event_outbox_topic" (
 );
 --> statement-breakpoint
 ALTER TABLE "organization" DROP CONSTRAINT "organization_website_url_unique";--> statement-breakpoint
+ALTER TABLE "premium_feature_entitlement" DROP CONSTRAINT "premium_feature_entitlement_single_subject_check";--> statement-breakpoint
+DROP INDEX "og_candidate_desc_locale_request_translation_updated_idx";--> statement-breakpoint
+DROP INDEX "premium_feature_entitlement_user_idx";--> statement-breakpoint
+ALTER TABLE "opinion_group_candidate_description_locale_request" ALTER COLUMN "locale" SET DATA TYPE "display_language_code" USING "locale"::"display_language_code";--> statement-breakpoint
+ALTER TABLE "opinion_group_description" ALTER COLUMN "locale" SET DATA TYPE "display_language_code" USING "locale"::"display_language_code";--> statement-breakpoint
+ALTER TABLE "opinion_group_description_translation" ALTER COLUMN "locale" SET DATA TYPE "display_language_code" USING "locale"::"display_language_code";--> statement-breakpoint
+ALTER TABLE "opinion_group_description_translation_work" ALTER COLUMN "locale" SET DATA TYPE "display_language_code" USING "locale"::"display_language_code";--> statement-breakpoint
 ALTER TABLE "organization" ALTER COLUMN "image_path" DROP NOT NULL;--> statement-breakpoint
-ALTER TABLE "survey_question_content_translation" ALTER COLUMN "display_language_code" SET DATA TYPE "public"."display_language_code" USING "display_language_code"::"public"."display_language_code";--> statement-breakpoint
-ALTER TABLE "survey_question_option_content_translation" ALTER COLUMN "display_language_code" SET DATA TYPE "public"."display_language_code" USING "display_language_code"::"public"."display_language_code";--> statement-breakpoint
-ALTER TABLE "user_display_language" ALTER COLUMN "language_code" SET DATA TYPE "public"."display_language_code" USING "language_code"::"public"."display_language_code";--> statement-breakpoint
-ALTER TABLE "user_spoken_languages" ALTER COLUMN "language_code" SET DATA TYPE "public"."spoken_language_code" USING "language_code"::"public"."spoken_language_code";--> statement-breakpoint
+ALTER TABLE "survey_question_content_translation" ALTER COLUMN "display_language_code" SET DATA TYPE "display_language_code" USING "display_language_code"::"display_language_code";--> statement-breakpoint
+ALTER TABLE "survey_question_option_content_translation" ALTER COLUMN "display_language_code" SET DATA TYPE "display_language_code" USING "display_language_code"::"display_language_code";--> statement-breakpoint
+ALTER TABLE "user_display_language" ALTER COLUMN "language_code" SET DATA TYPE "display_language_code" USING "language_code"::"display_language_code";--> statement-breakpoint
+ALTER TABLE "user_spoken_languages" ALTER COLUMN "language_code" SET DATA TYPE "spoken_language_code" USING "language_code"::"spoken_language_code";--> statement-breakpoint
 ALTER TABLE "conversation_content" ADD COLUMN "body_plain_text" text;--> statement-breakpoint
 ALTER TABLE "conversation_content" ADD COLUMN "source_language_code" varchar(35);--> statement-breakpoint
 ALTER TABLE "conversation_content" ADD COLUMN "source_language_confidence" real;--> statement-breakpoint

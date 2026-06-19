@@ -1,3 +1,5 @@
+import { toPythonEnumMember } from "./sync-schema-lib.js";
+
 const STRING_LITERAL_PATTERN = /"((?:[^"\\]|\\.)*)"/g;
 
 export interface SharedTypesSources {
@@ -76,6 +78,19 @@ function formatPythonTuple({
     return `${name}: tuple[str, ...] = (\n${formattedValues}\n)`;
 }
 
+function formatDisplayLanguageTuple({
+    name,
+    values,
+}: {
+    name: string;
+    values: string[];
+}): string {
+    const formattedValues = values
+        .map((value) => `    DisplayLanguageCode.${toPythonEnumMember(value)},`)
+        .join("\n");
+    return `${name}: tuple[DisplayLanguageCode, ...] = (\n${formattedValues}\n)`;
+}
+
 interface PythonSharedSection {
     title: string;
     body: string;
@@ -90,10 +105,10 @@ function generateDisplayLanguageSection({
     );
     return {
         title: "Display Languages",
-        body: `${formatPythonTuple({
+        body: `${formatDisplayLanguageTuple({
             name: "SUPPORTED_DISPLAY_LANGUAGE_CODES",
             values: displayLanguageCodes,
-        })}\n\n${formatPythonTuple({
+        })}\n\n${formatDisplayLanguageTuple({
             name: "SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES",
             values: targetLanguageCodes,
         })}`,
@@ -148,5 +163,5 @@ export function generatePythonSharedTypes({
     const sectionBody = sections
         .map((section) => `# ${section.title}\n${section.body}`)
         .join("\n\n");
-    return `# WARNING: GENERATED FROM ${sourceList}. DO NOT EDIT.\nfrom __future__ import annotations\n\n${sectionBody}\n`;
+    return `# WARNING: GENERATED FROM ${sourceList}. DO NOT EDIT.\nfrom __future__ import annotations\n\nfrom .generated_models import DisplayLanguageCode\n\n${sectionBody}\n`;
 }

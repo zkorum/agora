@@ -261,7 +261,7 @@ describe("mapSqlType", () => {
         const enums = new Map([["my_status", ["a", "b"]]]);
         expect(mapSqlType('"my_status"', enums)).toEqual({
             pyType: "MyStatus",
-            saType: "SaEnum(MyStatus, values_callable=_enum_values, native_enum=False)",
+            saType: 'SaEnum(MyStatus, name="my_status", values_callable=_enum_values, native_enum=True)',
         });
     });
 
@@ -406,7 +406,7 @@ describe("generateSqlAlchemyModels", () => {
         expect(output).toContain('    active = "active"');
         expect(output).toContain('    done = "done"');
         expect(output).toContain(
-            "SaEnum(MyStatus, values_callable=_enum_values, native_enum=False)",
+            'SaEnum(MyStatus, name="my_status", values_callable=_enum_values, native_enum=True)',
         );
         expect(output).toContain(
             "def _enum_values(enum_cls: type[StrEnum]) -> list[str]:",

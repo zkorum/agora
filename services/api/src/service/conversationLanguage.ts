@@ -8,6 +8,7 @@ import { detectLanguage } from "@/shared-backend/translate.js";
 import {
     detectLanguageWithFallback,
     type GoogleLanguageDetector,
+    type LanguageDetectionProvider,
     type LocalLanguageDetector,
 } from "./languageDetection.js";
 import {
@@ -15,7 +16,9 @@ import {
     MIN_CONVERSATION_LANGUAGE_DETECTION_CHARS,
 } from "@/shared/shared.js";
 import {
+    parseNormalizedLanguageOrUndefined,
     parseSupportedDisplayLanguageOrUndefined,
+    type NormalizedLanguageCodes,
     type SupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
 import type {
@@ -27,7 +30,9 @@ export interface StoredConversationLanguageSetting {
     mode: "auto" | "manual";
     languageCode: SupportedDisplayLanguageCodes | null;
     detectedLanguageCode: SupportedDisplayLanguageCodes | null;
+    detectedSourceLanguageCode: NormalizedLanguageCodes | null;
     detectedRawLanguageCode: string | null;
+    detectedRawLanguageProvider: LanguageDetectionProvider | null;
     detectionConfidence: number | null;
     detectedFromCorpusHash: string | null;
 }
@@ -36,7 +41,9 @@ interface ConversationLanguageSettingRow {
     mode: "auto" | "manual";
     languageCode: string | null;
     detectedLanguageCode: string | null;
+    detectedSourceLanguageCode: string | null;
     detectedRawLanguageCode: string | null;
+    detectedRawLanguageProvider: LanguageDetectionProvider | null;
     detectionConfidence: number | null;
     detectedFromCorpusHash: string | null;
 }
@@ -89,7 +96,9 @@ function emptyAutoLanguageSetting({
         mode: "auto",
         languageCode: null,
         detectedLanguageCode: null,
+        detectedSourceLanguageCode: null,
         detectedRawLanguageCode: null,
+        detectedRawLanguageProvider: null,
         detectionConfidence: null,
         detectedFromCorpusHash: corpusHash,
     };
@@ -104,6 +113,15 @@ function normalizeLanguageCodeForOutput(
     return parseSupportedDisplayLanguageOrUndefined(languageCode) ?? null;
 }
 
+function normalizeSourceLanguageCodeForOutput(
+    languageCode: string | null,
+): NormalizedLanguageCodes | null {
+    if (languageCode === null) {
+        return null;
+    }
+    return parseNormalizedLanguageOrUndefined(languageCode) ?? null;
+}
+
 export function normalizeConversationLanguageSettingRow(
     row: ConversationLanguageSettingRow | undefined,
 ): StoredConversationLanguageSetting | undefined {
@@ -115,12 +133,17 @@ export function normalizeConversationLanguageSettingRow(
     const detectedLanguageCode = normalizeLanguageCodeForOutput(
         row.detectedLanguageCode,
     );
+    const detectedSourceLanguageCode = normalizeSourceLanguageCodeForOutput(
+        row.detectedSourceLanguageCode,
+    );
 
     return {
         mode: row.mode,
         languageCode,
         detectedLanguageCode,
+        detectedSourceLanguageCode,
         detectedRawLanguageCode: row.detectedRawLanguageCode,
+        detectedRawLanguageProvider: row.detectedRawLanguageProvider,
         detectionConfidence: row.detectionConfidence,
         detectedFromCorpusHash: row.detectedFromCorpusHash,
     };
@@ -137,7 +160,9 @@ export function conversationLanguageSettingToOutput({
         mode: resolvedSetting.mode,
         languageCode: resolvedSetting.languageCode,
         detectedLanguageCode: resolvedSetting.detectedLanguageCode,
+        detectedSourceLanguageCode: resolvedSetting.detectedSourceLanguageCode,
         detectedRawLanguageCode: resolvedSetting.detectedRawLanguageCode,
+        detectedRawLanguageProvider: resolvedSetting.detectedRawLanguageProvider,
         detectionConfidence: resolvedSetting.detectionConfidence,
     };
 }
@@ -158,7 +183,7 @@ export function conversationLanguageSettingToSourceMetadata({
     }
 
     return {
-        sourceLanguageCode: setting.detectedRawLanguageCode,
+        sourceLanguageCode: setting.detectedSourceLanguageCode,
         sourceLanguageConfidence: setting.detectionConfidence,
     };
 }
@@ -205,7 +230,9 @@ async function detectConversationLanguage({
             mode: "auto",
             languageCode: detectionOutcome.result.languageCode,
             detectedLanguageCode: detectionOutcome.result.languageCode,
-            detectedRawLanguageCode: detectionOutcome.result.sourceLanguageCode,
+            detectedSourceLanguageCode: detectionOutcome.result.sourceLanguageCode,
+            detectedRawLanguageCode: detectionOutcome.result.rawLanguageCode,
+            detectedRawLanguageProvider: detectionOutcome.result.provider,
             detectionConfidence: detectionOutcome.result.confidence,
             detectedFromCorpusHash: corpusHash,
         };
@@ -229,7 +256,9 @@ export async function resolveConversationLanguageSetting({
             mode: "manual",
             languageCode: request.languageCode,
             detectedLanguageCode: existing?.detectedLanguageCode ?? null,
+            detectedSourceLanguageCode: existing?.detectedSourceLanguageCode ?? null,
             detectedRawLanguageCode: existing?.detectedRawLanguageCode ?? null,
+            detectedRawLanguageProvider: existing?.detectedRawLanguageProvider ?? null,
             detectionConfidence: existing?.detectionConfidence ?? null,
             detectedFromCorpusHash: existing?.detectedFromCorpusHash ?? null,
         };
@@ -274,8 +303,12 @@ export async function getConversationLanguageSetting({
             languageCode: conversationLanguageSettingTable.languageCode,
             detectedLanguageCode:
                 conversationLanguageSettingTable.detectedLanguageCode,
+            detectedSourceLanguageCode:
+                conversationLanguageSettingTable.detectedSourceLanguageCode,
             detectedRawLanguageCode:
                 conversationLanguageSettingTable.detectedRawLanguageCode,
+            detectedRawLanguageProvider:
+                conversationLanguageSettingTable.detectedRawLanguageProvider,
             detectionConfidence:
                 conversationLanguageSettingTable.detectionConfidence,
             detectedFromCorpusHash:
@@ -308,7 +341,9 @@ export async function upsertConversationLanguageSetting({
             mode: setting.mode,
             languageCode: setting.languageCode,
             detectedLanguageCode: setting.detectedLanguageCode,
+            detectedSourceLanguageCode: setting.detectedSourceLanguageCode,
             detectedRawLanguageCode: setting.detectedRawLanguageCode,
+            detectedRawLanguageProvider: setting.detectedRawLanguageProvider,
             detectionConfidence: setting.detectionConfidence,
             detectedFromCorpusHash: setting.detectedFromCorpusHash,
             createdAt: now,
@@ -320,7 +355,9 @@ export async function upsertConversationLanguageSetting({
                 mode: setting.mode,
                 languageCode: setting.languageCode,
                 detectedLanguageCode: setting.detectedLanguageCode,
+                detectedSourceLanguageCode: setting.detectedSourceLanguageCode,
                 detectedRawLanguageCode: setting.detectedRawLanguageCode,
+                detectedRawLanguageProvider: setting.detectedRawLanguageProvider,
                 detectionConfidence: setting.detectionConfidence,
                 detectedFromCorpusHash: setting.detectedFromCorpusHash,
                 updatedAt: now,

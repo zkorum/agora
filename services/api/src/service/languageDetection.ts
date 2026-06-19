@@ -1,6 +1,9 @@
 import type { DetectedLanguageResult } from "@/shared-backend/translate.js";
+import { log } from "@/app.js";
 import {
+    parseNormalizedLanguageOrUndefined,
     ZodSupportedDisplayLanguageCodes,
+    type NormalizedLanguageCodes,
     type SupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
 
@@ -32,7 +35,7 @@ const LINGUA_LANGUAGE_TO_DISPLAY_CODE: ReadonlyMap<
     ["Spanish", "es"],
 ]);
 
-const LINGUA_LANGUAGE_TO_SOURCE_CODE: ReadonlyMap<string, string> = new Map([
+export const LINGUA_LANGUAGE_TO_SOURCE_CODE_ENTRIES = [
     ["Afrikaans", "af"],
     ["Albanian", "sq"],
     ["Arabic", "ar"],
@@ -93,7 +96,7 @@ const LINGUA_LANGUAGE_TO_SOURCE_CODE: ReadonlyMap<string, string> = new Map([
     ["Spanish", "es"],
     ["Swahili", "sw"],
     ["Swedish", "sv"],
-    ["Tagalog", "tl"],
+    ["Tagalog", "fil"],
     ["Tamil", "ta"],
     ["Telugu", "te"],
     ["Thai", "th"],
@@ -107,7 +110,12 @@ const LINGUA_LANGUAGE_TO_SOURCE_CODE: ReadonlyMap<string, string> = new Map([
     ["Xhosa", "xh"],
     ["Yoruba", "yo"],
     ["Zulu", "zu"],
-]);
+] satisfies ReadonlyArray<readonly [string, NormalizedLanguageCodes]>;
+
+const LINGUA_LANGUAGE_TO_SOURCE_CODE: ReadonlyMap<
+    string,
+    NormalizedLanguageCodes
+> = new Map(LINGUA_LANGUAGE_TO_SOURCE_CODE_ENTRIES);
 
 export interface LocalLanguageDetection {
     rawLanguageCode: string;
@@ -126,10 +134,13 @@ export type GoogleLanguageDetector = ({
     text: string;
 }) => Promise<DetectedLanguageResult | undefined>;
 
+export type LanguageDetectionProvider = "lingua" | "google";
+
 export interface LanguageDetectionResult {
     languageCode: SupportedDisplayLanguageCodes | null;
-    sourceLanguageCode: string | null;
+    sourceLanguageCode: NormalizedLanguageCodes | null;
     rawLanguageCode: string;
+    provider: LanguageDetectionProvider;
     confidence: number | null;
 }
 
@@ -256,17 +267,24 @@ function normalizeBcp47SourceLanguageCode({
     rawLanguageCode,
 }: {
     rawLanguageCode: string;
-}): string | null {
+}): NormalizedLanguageCodes | null {
     const trimmedLanguageCode = rawLanguageCode.trim();
     if (trimmedLanguageCode.length === 0) {
         return null;
     }
 
     try {
-        return Intl.getCanonicalLocales(trimmedLanguageCode)[0] ?? null;
+        const canonicalLanguageCode =
+            Intl.getCanonicalLocales(trimmedLanguageCode)[0] ?? null;
+        return canonicalLanguageCode === null
+            ? null
+            : (parseNormalizedLanguageOrUndefined(canonicalLanguageCode) ?? null);
     } catch {
         if (/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(trimmedLanguageCode)) {
-            return trimmedLanguageCode.toLowerCase();
+            return (
+                parseNormalizedLanguageOrUndefined(trimmedLanguageCode.toLowerCase()) ??
+                null
+            );
         }
         return null;
     }
@@ -298,7 +316,7 @@ function normalizeDetectedSourceLanguageCode({
 }: {
     rawLanguageCode: string;
     text: string;
-}): string | null {
+}): NormalizedLanguageCodes | null {
     if (rawLanguageCode === "Chinese" || rawLanguageCode.startsWith("zh")) {
         return normalizeChineseLanguageCode({ rawLanguageCode, text });
     }
@@ -325,6 +343,34 @@ function localDetectionHasEnoughConfidence({
     );
 }
 
+function shouldWarnUnnormalizedLanguage({
+    rawLanguageCode,
+    sourceLanguageCode,
+}: {
+    rawLanguageCode: string;
+    sourceLanguageCode: NormalizedLanguageCodes | null;
+}): boolean {
+    if (sourceLanguageCode !== null) {
+        return false;
+    }
+    return rawLanguageCode !== "Chinese" && !rawLanguageCode.startsWith("zh");
+}
+
+function warnUnnormalizedLanguage({
+    provider,
+    rawLanguageCode,
+    confidence,
+}: {
+    provider: LanguageDetectionProvider;
+    rawLanguageCode: string;
+    confidence: number | null;
+}): void {
+    log.warn(
+        { provider, rawLanguageCode, confidence },
+        "[LanguageDetection] Detector returned an unrecognized language code",
+    );
+}
+
 function normalizeLocalDetection({
     detection,
     text,
@@ -338,6 +384,19 @@ function normalizeLocalDetection({
               text,
           })
         : null;
+    if (
+        localDetectionHasEnoughConfidence({ detection }) &&
+        shouldWarnUnnormalizedLanguage({
+            rawLanguageCode: detection.rawLanguageCode,
+            sourceLanguageCode,
+        })
+    ) {
+        warnUnnormalizedLanguage({
+            provider: "lingua",
+            rawLanguageCode: detection.rawLanguageCode,
+            confidence: detection.confidence,
+        });
+    }
     return {
         languageCode:
             sourceLanguageCode === null
@@ -348,6 +407,7 @@ function normalizeLocalDetection({
                   }),
         sourceLanguageCode,
         rawLanguageCode: detection.rawLanguageCode,
+        provider: "lingua",
         confidence: detection.confidence,
     };
 }
@@ -366,6 +426,19 @@ function normalizeGoogleDetection({
                   text,
               })
             : null;
+    if (
+        detection.confidence >= GOOGLE_MINIMUM_LANGUAGE_CONFIDENCE &&
+        shouldWarnUnnormalizedLanguage({
+            rawLanguageCode: detection.languageCode,
+            sourceLanguageCode,
+        })
+    ) {
+        warnUnnormalizedLanguage({
+            provider: "google",
+            rawLanguageCode: detection.languageCode,
+            confidence: detection.confidence,
+        });
+    }
 
     return {
         languageCode:
@@ -377,6 +450,7 @@ function normalizeGoogleDetection({
                   }),
         sourceLanguageCode,
         rawLanguageCode: detection.languageCode,
+        provider: "google",
         confidence: detection.confidence,
     };
 }

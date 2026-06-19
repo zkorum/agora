@@ -22,6 +22,7 @@ import {
 import { isNotNull, isNull, type SQL } from "drizzle-orm";
 import { sql } from "drizzle-orm/sql";
 import {
+    ZodNormalizedLanguageCodes,
     ZodSupportedDisplayLanguageCodes,
     ZodSupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
@@ -602,9 +603,17 @@ export const conversationLanguageSettingModeEnum = pgEnum(
     "conversation_language_setting_mode",
     ["auto", "manual"],
 );
+export const languageDetectionProviderEnum = pgEnum(
+    "language_detection_provider",
+    ["lingua", "google"],
+);
 export const displayLanguageCodeEnum = pgEnum(
     "display_language_code",
     ZodSupportedDisplayLanguageCodes.enum,
+);
+export const languageCodeEnum = pgEnum(
+    "language_code",
+    ZodNormalizedLanguageCodes.enum,
 );
 export const spokenLanguageCodeEnum = pgEnum(
     "spoken_language_code",
@@ -1714,11 +1723,15 @@ export const conversationLanguageSettingTable = pgTable(
             .notNull()
             .references(() => conversationTable.id),
         mode: conversationLanguageSettingModeEnum("mode").notNull(),
-        languageCode: varchar("language_code", { length: 35 }),
-        detectedLanguageCode: varchar("detected_language_code", { length: 35 }),
+        languageCode: displayLanguageCodeEnum("language_code"),
+        detectedLanguageCode: displayLanguageCodeEnum("detected_language_code"),
+        detectedSourceLanguageCode: languageCodeEnum("detected_source_language_code"),
         detectedRawLanguageCode: varchar("detected_raw_language_code", {
             length: 35,
         }),
+        detectedRawLanguageProvider: languageDetectionProviderEnum(
+            "detected_raw_language_provider",
+        ),
         detectionConfidence: real("detection_confidence"),
         detectedFromCorpusHash: varchar("detected_from_corpus_hash", {
             length: 64,
@@ -3357,7 +3370,7 @@ export const opinionGroupDescriptionTable = pgTable(
     "opinion_group_description",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        locale: varchar("locale", { length: 10 }).notNull(),
+        locale: displayLanguageCodeEnum("locale").notNull(),
         label: varchar("label", { length: 100 }).notNull(),
         summary: varchar("summary", { length: 1000 }).notNull(),
         createdAt: timestamp("created_at", {
@@ -3377,7 +3390,7 @@ export const opinionGroupDescriptionTranslationTable = pgTable(
         descriptionId: integer("description_id")
             .notNull()
             .references(() => opinionGroupDescriptionTable.id),
-        locale: varchar("locale", { length: 10 }).notNull(),
+        locale: displayLanguageCodeEnum("locale").notNull(),
         label: varchar("label", { length: 100 }).notNull(),
         summary: varchar("summary", { length: 1000 }).notNull(),
         createdAt: timestamp("created_at", {
@@ -3406,7 +3419,7 @@ export const opinionGroupDescriptionTranslationWorkTable = pgTable(
         conversationId: integer("conversation_id")
             .notNull()
             .references(() => conversationTable.id),
-        locale: varchar("locale", { length: 10 }).notNull(),
+        locale: displayLanguageCodeEnum("locale").notNull(),
         attemptCount: integer("attempt_count").notNull().default(0),
         leaseOwner: varchar("lease_owner", { length: 100 }),
         leaseToken: varchar("lease_token", { length: 100 }),
@@ -3525,7 +3538,7 @@ export const opinionGroupCandidateDescriptionLocaleRequestTable = pgTable(
         candidateId: integer("candidate_id")
             .notNull()
             .references(() => opinionGroupCandidateTable.id),
-        locale: varchar("locale", { length: 10 }).notNull(),
+        locale: displayLanguageCodeEnum("locale").notNull(),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,

@@ -1,32 +1,34 @@
 # WARNING: GENERATED FROM ../shared/src/languages.ts, ../shared/src/shared.ts. DO NOT EDIT.
 from __future__ import annotations
 
+from .generated_models import DisplayLanguageCode
+
 # Display Languages
-SUPPORTED_DISPLAY_LANGUAGE_CODES: tuple[str, ...] = (
-    "en",
-    "es",
-    "fr",
-    "zh-Hant",
-    "zh-Hans",
-    "ja",
-    "ar",
-    "fa",
-    "he",
-    "ky",
-    "ru",
+SUPPORTED_DISPLAY_LANGUAGE_CODES: tuple[DisplayLanguageCode, ...] = (
+    DisplayLanguageCode.en,
+    DisplayLanguageCode.es,
+    DisplayLanguageCode.fr,
+    DisplayLanguageCode.zh_hant,
+    DisplayLanguageCode.zh_hans,
+    DisplayLanguageCode.ja,
+    DisplayLanguageCode.ar,
+    DisplayLanguageCode.fa,
+    DisplayLanguageCode.he,
+    DisplayLanguageCode.ky,
+    DisplayLanguageCode.ru,
 )
 
-SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES: tuple[str, ...] = (
-    "es",
-    "fr",
-    "zh-Hant",
-    "zh-Hans",
-    "ja",
-    "ar",
-    "fa",
-    "he",
-    "ky",
-    "ru",
+SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES: tuple[DisplayLanguageCode, ...] = (
+    DisplayLanguageCode.es,
+    DisplayLanguageCode.fr,
+    DisplayLanguageCode.zh_hant,
+    DisplayLanguageCode.zh_hans,
+    DisplayLanguageCode.ja,
+    DisplayLanguageCode.ar,
+    DisplayLanguageCode.fa,
+    DisplayLanguageCode.he,
+    DisplayLanguageCode.ky,
+    DisplayLanguageCode.ru,
 )
 
 # Length Constants

@@ -101,7 +101,9 @@ function conversationMetadata(
       mode: "auto",
       languageCode: null,
       detectedLanguageCode: null,
+      detectedSourceLanguageCode: null,
       detectedRawLanguageCode: null,
+      detectedRawLanguageProvider: null,
       detectionConfidence: null,
     },
     multilingualSetting: {

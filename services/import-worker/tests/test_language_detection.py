@@ -43,7 +43,8 @@ def test_lingua_detection_returns_unknown_instead_of_low_confidence_misattributi
 
 def test_lingua_detection_detects_supported_non_display_language() -> None:
     metadata = detect_source_language_with_lingua(
-        "Wie koennen wir den oeffentlichen Nahverkehr in unserer Stadt verbessern und bezahlbar halten?"
+        "Wie koennen wir den oeffentlichen Nahverkehr in unserer Stadt verbessern "
+        "und bezahlbar halten?"
     )
 
     assert metadata.language_code == "de"

@@ -75,6 +75,7 @@ from agora_analysis_worker_shared.generated_models import (
     ConversationViewSnapshotCheckpointReason,
     ConversationViewSnapshotCheckpointReasonEnum,
     ConversationViewSnapshotReasonEnum,
+    DisplayLanguageCode,
     OpinionGroup,
     OpinionGroupCandidate,
     OpinionGroupCandidateAssessment,
@@ -408,7 +409,8 @@ def _insert_attempted_eager_translation_work(session: Session) -> None:
     }
     next_id = 10_000
     for locale in SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES:
-        existing_work = existing_work_by_locale.get(locale)
+        locale_code = DisplayLanguageCode(locale)
+        existing_work = existing_work_by_locale.get(locale_code)
         if existing_work is not None:
             existing_work.attempt_count = 1
             continue
@@ -417,7 +419,7 @@ def _insert_attempted_eager_translation_work(session: Session) -> None:
                 id=next_id,
                 description_id=501,
                 conversation_id=10,
-                locale=locale,
+                locale=locale_code,
                 attempt_count=1,
                 lease_owner=None,
                 lease_token=None,

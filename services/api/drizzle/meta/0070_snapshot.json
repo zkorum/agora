@@ -1,5 +1,5 @@
 {
-  "id": "b6d99db1-034f-4a2b-b5f7-00e5c0c437ba",
+  "id": "4fa494d3-e140-4734-9816-cc6072cf45a0",
   "prevId": "e7ec5c0a-95ba-40db-a5f1-02aa2195cae9",
   "version": "7",
   "dialect": "postgresql",
@@ -2627,19 +2627,32 @@
         },
         "language_code": {
           "name": "language_code",
-          "type": "varchar(35)",
+          "type": "display_language_code",
           "primaryKey": false,
           "notNull": false
         },
         "detected_language_code": {
           "name": "detected_language_code",
-          "type": "varchar(35)",
+          "type": "display_language_code",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "detected_source_language_code": {
+          "name": "detected_source_language_code",
+          "type": "language_code",
           "primaryKey": false,
           "notNull": false
         },
         "detected_raw_language_code": {
           "name": "detected_raw_language_code",
           "type": "varchar(35)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "detected_raw_language_provider": {
+          "name": "detected_raw_language_provider",
+          "type": "language_detection_provider",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         },
@@ -6379,7 +6392,7 @@
         },
         "locale": {
           "name": "locale",
-          "type": "varchar(10)",
+          "type": "display_language_code",
           "primaryKey": false,
           "notNull": true
         },
@@ -6416,28 +6429,6 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "og_candidate_desc_locale_request_translation_updated_idx": {
-          "name": "og_candidate_desc_locale_request_translation_updated_idx",
-          "columns": [
-            {
-              "expression": "updated_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"opinion_group_candidate_description_locale_request\".\"locale\" <> 'en'",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -6768,7 +6759,7 @@
         },
         "locale": {
           "name": "locale",
-          "type": "varchar(10)",
+          "type": "display_language_code",
           "primaryKey": false,
           "notNull": true
         },
@@ -6829,7 +6820,7 @@
         },
         "locale": {
           "name": "locale",
-          "type": "varchar(10)",
+          "type": "display_language_code",
           "primaryKey": false,
           "notNull": true
         },
@@ -6919,7 +6910,7 @@
         },
         "locale": {
           "name": "locale",
-          "type": "varchar(10)",
+          "type": "display_language_code",
           "primaryKey": false,
           "notNull": true
         },
@@ -9285,27 +9276,6 @@
         }
       },
       "indexes": {
-        "premium_feature_entitlement_user_idx": {
-          "name": "premium_feature_entitlement_user_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "feature",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "premium_feature_entitlement_org_idx": {
           "name": "premium_feature_entitlement_org_idx",
           "columns": [
@@ -9385,12 +9355,7 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {
-        "premium_feature_entitlement_single_subject_check": {
-          "name": "premium_feature_entitlement_single_subject_check",
-          "value": "((\"premium_feature_entitlement\".\"user_id\" is not null AND \"premium_feature_entitlement\".\"organization_id\" is null) OR (\"premium_feature_entitlement\".\"user_id\" is null AND \"premium_feature_entitlement\".\"organization_id\" is not null))"
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.project_organization_ownership": {
@@ -12999,6 +12964,101 @@
         "processing",
         "completed",
         "failed"
+      ]
+    },
+    "public.language_code": {
+      "name": "language_code",
+      "schema": "public",
+      "values": [
+        "en",
+        "es",
+        "fr",
+        "en-GB",
+        "ar",
+        "bn",
+        "eu",
+        "bg",
+        "ca",
+        "hr",
+        "cs",
+        "da",
+        "nl",
+        "fil",
+        "fi",
+        "gl",
+        "de",
+        "el",
+        "gu",
+        "he",
+        "hi",
+        "hu",
+        "id",
+        "ga",
+        "it",
+        "ja",
+        "kn",
+        "ko",
+        "ky",
+        "ms",
+        "mr",
+        "no",
+        "fa",
+        "pl",
+        "pt",
+        "ro",
+        "ru",
+        "sr",
+        "sk",
+        "sv",
+        "ta",
+        "th",
+        "tr",
+        "uk",
+        "ur",
+        "vi",
+        "zh-Hans",
+        "zh-Hant",
+        "af",
+        "sq",
+        "hy",
+        "az",
+        "be",
+        "nb",
+        "bs",
+        "eo",
+        "et",
+        "lg",
+        "ka",
+        "is",
+        "kk",
+        "la",
+        "lv",
+        "lt",
+        "mk",
+        "mi",
+        "mn",
+        "nn",
+        "pa",
+        "sn",
+        "sl",
+        "so",
+        "st",
+        "sw",
+        "te",
+        "ts",
+        "tn",
+        "cy",
+        "xh",
+        "yo",
+        "zu"
+      ]
+    },
+    "public.language_detection_provider": {
+      "name": "language_detection_provider",
+      "schema": "public",
+      "values": [
+        "lingua",
+        "google"
       ]
     },
     "public.maxdiff_lifecycle_status": {

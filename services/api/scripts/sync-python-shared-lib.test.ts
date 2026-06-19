@@ -76,7 +76,10 @@ describe("generatePythonSharedTypes", () => {
         expect(output).toContain("SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES");
         expect(output).toContain("MAX_LENGTH_TITLE");
         expect(output).toContain("MAX_LENGTH_CONVERSATION_BODY_HTML");
-        expect(output).toContain('    "zh-Hant",');
+        expect(output).toContain(
+            "from .generated_models import DisplayLanguageCode",
+        );
+        expect(output).toContain("    DisplayLanguageCode.zh_hant,");
         expect(output).not.toContain(
             'SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES: tuple[str, ...] = (\n    "en",',
         );

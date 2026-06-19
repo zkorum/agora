@@ -275,8 +275,12 @@ export function useCommonPost() {
                 languageCode: conversationLanguageSettingTable.languageCode,
                 detectedLanguageCode:
                     conversationLanguageSettingTable.detectedLanguageCode,
+                detectedSourceLanguageCode:
+                    conversationLanguageSettingTable.detectedSourceLanguageCode,
                 detectedRawLanguageCode:
                     conversationLanguageSettingTable.detectedRawLanguageCode,
+                detectedRawLanguageProvider:
+                    conversationLanguageSettingTable.detectedRawLanguageProvider,
                 detectionConfidence:
                     conversationLanguageSettingTable.detectionConfidence,
                 detectedFromCorpusHash:
@@ -458,8 +462,12 @@ export function useCommonPost() {
                                   languageCode: postItem.languageCode,
                                   detectedLanguageCode:
                                       postItem.detectedLanguageCode,
+                                  detectedSourceLanguageCode:
+                                      postItem.detectedSourceLanguageCode,
                                   detectedRawLanguageCode:
                                       postItem.detectedRawLanguageCode,
+                                  detectedRawLanguageProvider:
+                                      postItem.detectedRawLanguageProvider,
                                   detectionConfidence:
                                       postItem.detectionConfidence,
                                   detectedFromCorpusHash:

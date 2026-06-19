@@ -16,6 +16,7 @@ import {
 } from "../shared.js";
 import { isValidPolisUrl } from "../utils/polis.js";
 import {
+    ZodNormalizedLanguageCodes,
     ZodSupportedSpokenLanguageCodes,
     ZodSupportedDisplayLanguageCodes,
 } from "../languages.js";
@@ -57,6 +58,7 @@ export const zodParticipationMode = z.enum([
 ]);
 export const zodConversationType = z.enum(["polis", "maxdiff"]);
 export const zodConversationLanguageSettingMode = z.enum(["auto", "manual"]);
+export const zodLanguageDetectionProvider = z.enum(["lingua", "google"]);
 export const zodConversationLanguageSettingInput = z.discriminatedUnion(
     "mode",
     [
@@ -74,7 +76,9 @@ export const zodConversationLanguageSettingOutput = z
         mode: zodConversationLanguageSettingMode,
         languageCode: ZodSupportedDisplayLanguageCodes.nullable(),
         detectedLanguageCode: ZodSupportedDisplayLanguageCodes.nullable(),
+        detectedSourceLanguageCode: ZodNormalizedLanguageCodes.nullable(),
         detectedRawLanguageCode: z.string().nullable(),
+        detectedRawLanguageProvider: zodLanguageDetectionProvider.nullable(),
         detectionConfidence: z.number().nullable(),
     })
     .strict();

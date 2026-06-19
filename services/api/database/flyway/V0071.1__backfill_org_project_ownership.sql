@@ -6,14 +6,12 @@ WITH normalized AS (
     SELECT
         organization.id,
         organization.name AS display_name,
-        lower(
-            trim(
-                both '-' from regexp_replace(
-                    regexp_replace(organization.name, '[^[:alnum:]]+', '-', 'g'),
-                    '-+',
-                    '-',
-                    'g'
-                )
+        trim(
+            both '-' from regexp_replace(
+                regexp_replace(lower(organization.name), '[^a-z0-9]+', '-', 'g'),
+                '-+',
+                '-',
+                'g'
             )
         ) AS raw_slug
     FROM organization
@@ -24,7 +22,8 @@ WITH normalized AS (
         normalized.display_name,
         CASE
             WHEN normalized.raw_slug = '' THEN 'org-' || normalized.id::text
-            ELSE left(normalized.raw_slug, 65)
+            WHEN trim(both '-' from left(normalized.raw_slug, 65)) = '' THEN 'org-' || normalized.id::text
+            ELSE trim(both '-' from left(normalized.raw_slug, 65))
         END AS base_slug
     FROM normalized
 ), slugged AS (
@@ -36,7 +35,13 @@ WITH normalized AS (
                 PARTITION BY slug_candidates.base_slug
                 ORDER BY slug_candidates.id
             ) = 1 THEN slug_candidates.base_slug
-            ELSE left(slug_candidates.base_slug, 58) || '-' || row_number() OVER (
+            ELSE trim(both '-' from left(
+                slug_candidates.base_slug,
+                64 - length(row_number() OVER (
+                    PARTITION BY slug_candidates.base_slug
+                    ORDER BY slug_candidates.id
+                )::text)
+            )) || '-' || row_number() OVER (
                 PARTITION BY slug_candidates.base_slug
                 ORDER BY slug_candidates.id
             )::text

@@ -47,6 +47,7 @@ from agora_analysis_worker_shared.generated_models import (
     ConversationViewSnapshot,
     ConversationViewSnapshotCheckpointReason,
     ConversationViewSnapshotReasonEnum,
+    DisplayLanguageCode,
     OpinionContent,
     OpinionGroup,
     OpinionGroupCandidate,
@@ -976,9 +977,13 @@ def _fetch_candidate_locale_request_rows(
 
     locale_filter: ColumnElement[bool]
     if locale is not None:
-        locale_filter = OpinionGroupCandidateDescriptionLocaleRequest.locale == locale
+        locale_filter = (
+            OpinionGroupCandidateDescriptionLocaleRequest.locale == locale
+        )
     elif non_english_only:
-        locale_filter = OpinionGroupCandidateDescriptionLocaleRequest.locale != "en"
+        locale_filter = (
+            OpinionGroupCandidateDescriptionLocaleRequest.locale != DisplayLanguageCode.en
+        )
     else:
         locale_filter = true()
 

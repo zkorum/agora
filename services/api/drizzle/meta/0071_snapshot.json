@@ -1,6 +1,6 @@
 {
-  "id": "031ad6db-4120-4278-9152-a3c0ab000e5b",
-  "prevId": "b6d99db1-034f-4a2b-b5f7-00e5c0c437ba",
+  "id": "3bdee714-134c-4eba-8427-1216b92c31f2",
+  "prevId": "4fa494d3-e140-4734-9816-cc6072cf45a0",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2627,19 +2627,32 @@
         },
         "language_code": {
           "name": "language_code",
-          "type": "varchar(35)",
+          "type": "display_language_code",
           "primaryKey": false,
           "notNull": false
         },
         "detected_language_code": {
           "name": "detected_language_code",
-          "type": "varchar(35)",
+          "type": "display_language_code",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "detected_source_language_code": {
+          "name": "detected_source_language_code",
+          "type": "language_code",
           "primaryKey": false,
           "notNull": false
         },
         "detected_raw_language_code": {
           "name": "detected_raw_language_code",
           "type": "varchar(35)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "detected_raw_language_provider": {
+          "name": "detected_raw_language_provider",
+          "type": "language_detection_provider",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         },
@@ -6274,7 +6287,7 @@
         },
         "locale": {
           "name": "locale",
-          "type": "varchar(10)",
+          "type": "display_language_code",
           "primaryKey": false,
           "notNull": true
         },
@@ -6663,7 +6676,7 @@
         },
         "locale": {
           "name": "locale",
-          "type": "varchar(10)",
+          "type": "display_language_code",
           "primaryKey": false,
           "notNull": true
         },
@@ -6724,7 +6737,7 @@
         },
         "locale": {
           "name": "locale",
-          "type": "varchar(10)",
+          "type": "display_language_code",
           "primaryKey": false,
           "notNull": true
         },
@@ -6814,7 +6827,7 @@
         },
         "locale": {
           "name": "locale",
-          "type": "varchar(10)",
+          "type": "display_language_code",
           "primaryKey": false,
           "notNull": true
         },
@@ -12751,6 +12764,101 @@
         "processing",
         "completed",
         "failed"
+      ]
+    },
+    "public.language_code": {
+      "name": "language_code",
+      "schema": "public",
+      "values": [
+        "en",
+        "es",
+        "fr",
+        "en-GB",
+        "ar",
+        "bn",
+        "eu",
+        "bg",
+        "ca",
+        "hr",
+        "cs",
+        "da",
+        "nl",
+        "fil",
+        "fi",
+        "gl",
+        "de",
+        "el",
+        "gu",
+        "he",
+        "hi",
+        "hu",
+        "id",
+        "ga",
+        "it",
+        "ja",
+        "kn",
+        "ko",
+        "ky",
+        "ms",
+        "mr",
+        "no",
+        "fa",
+        "pl",
+        "pt",
+        "ro",
+        "ru",
+        "sr",
+        "sk",
+        "sv",
+        "ta",
+        "th",
+        "tr",
+        "uk",
+        "ur",
+        "vi",
+        "zh-Hans",
+        "zh-Hant",
+        "af",
+        "sq",
+        "hy",
+        "az",
+        "be",
+        "nb",
+        "bs",
+        "eo",
+        "et",
+        "lg",
+        "ka",
+        "is",
+        "kk",
+        "la",
+        "lv",
+        "lt",
+        "mk",
+        "mi",
+        "mn",
+        "nn",
+        "pa",
+        "sn",
+        "sl",
+        "so",
+        "st",
+        "sw",
+        "te",
+        "ts",
+        "tn",
+        "cy",
+        "xh",
+        "yo",
+        "zu"
+      ]
+    },
+    "public.language_detection_provider": {
+      "name": "language_detection_provider",
+      "schema": "public",
+      "values": [
+        "lingua",
+        "google"
       ]
     },
     "public.maxdiff_lifecycle_status": {

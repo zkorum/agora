@@ -199,8 +199,12 @@ async function backfillConversationLanguageSettings({
                 languageCode: conversationLanguageSettingTable.languageCode,
                 detectedLanguageCode:
                     conversationLanguageSettingTable.detectedLanguageCode,
+                detectedSourceLanguageCode:
+                    conversationLanguageSettingTable.detectedSourceLanguageCode,
                 detectedRawLanguageCode:
                     conversationLanguageSettingTable.detectedRawLanguageCode,
+                detectedRawLanguageProvider:
+                    conversationLanguageSettingTable.detectedRawLanguageProvider,
                 detectionConfidence:
                     conversationLanguageSettingTable.detectionConfidence,
                 detectedFromCorpusHash:
@@ -246,7 +250,11 @@ async function backfillConversationLanguageSettings({
                           mode: row.settingMode,
                           languageCode: row.languageCode,
                           detectedLanguageCode: row.detectedLanguageCode,
+                          detectedSourceLanguageCode:
+                              row.detectedSourceLanguageCode,
                           detectedRawLanguageCode: row.detectedRawLanguageCode,
+                          detectedRawLanguageProvider:
+                              row.detectedRawLanguageProvider,
                           detectionConfidence: row.detectionConfidence,
                           detectedFromCorpusHash: row.detectedFromCorpusHash,
                       },
@@ -268,7 +276,7 @@ async function backfillConversationLanguageSettings({
             await db
                 .update(conversationContentTable)
                 .set({
-                    sourceLanguageCode: setting.detectedRawLanguageCode,
+                    sourceLanguageCode: setting.detectedSourceLanguageCode,
                     sourceLanguageConfidence: setting.detectionConfidence,
                 })
                 .where(eq(conversationContentTable.id, row.conversationContentId));
