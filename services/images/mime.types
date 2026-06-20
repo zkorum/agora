@@ -1,5 +1,0 @@
-types {
-    image/jpeg      jpeg jpg;
-    image/png       png;
-    image/svg+xml   svg svgz;
-}

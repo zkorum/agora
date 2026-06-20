@@ -37,6 +37,8 @@ For detailed information about each service, licenses, and documentation, see [C
 
 ### Frontend
 
+**[Landing Page](./services/app)** - A SvelteKit application for the public Agora Citizen Network website.
+
 **[Agora](./services/agora)** - A Quasar application (Vue.js frontend) providing the user interface for Agora Citizen Network.
 
 ### Backend Services
@@ -48,6 +50,8 @@ For detailed information about each service, licenses, and documentation, see [C
 **[AI Description Retry Worker](./services/ai-description-retry-worker)** - Python worker that retries and backfills AI-generated opinion-group labels and summaries requested by analysis views.
 
 **[Description Translation Retry Worker](./services/description-translation-retry-worker)** - Python worker that retries and backfills translated opinion-group labels and summaries for requested display languages.
+
+**[Content Translation Worker](./services/content-translation-worker)** - Python worker that processes durable content translation work and stores translated dynamic user content.
 
 **[Import Worker](./services/import-worker)** - Python worker that consumes conversation import jobs and imports Polis URLs or CSV archives.
 
@@ -65,33 +69,30 @@ For detailed information about each service, licenses, and documentation, see [C
 
 **[LLM](./services/llm)** - LLM prompts and Python scripts for AI-related development.
 
+**[X Analyzer](./services/x-analyzer)** - X/Twitter reply and quote-tweet analyzer for producing Polis-compatible import data.
+
 ### OpenAPI
 
 We generate an `openapi-zkorum.json` file from the backend, and then use [openapi-generator-cli](https://openapi-generator.tech/) to generate the corresponding frontend client.
 
 ### Getting started
 
-Please read READMEs in `/services/agora`, `/services/api`, `/services/import-worker`, `/services/math-updater`, and `/services/scoring-worker`.
+Please read the README for the service you are working on. Start with `/services/app`, `/services/agora`, `/services/api`, and the worker directory you are running.
 
 ### Run in dev mode
 
-Frontend App:
-
-```
-make dev-app
-```
-
-Backend API:
-
-```
-make dev-api
-```
-
-Import Worker:
-
-```
-make dev-import-worker
-```
+| Service | Command |
+| --- | --- |
+| Landing page | `make dev-landing` |
+| Agora frontend | `make dev-app` |
+| API | `make dev-api` |
+| Math updater | `make dev-math-updater` |
+| AI description retry worker | `make dev-ai-description-retry-worker` |
+| Description translation retry worker | `make dev-description-translation-retry-worker` |
+| Content translation worker | `make dev-content-translation-worker` |
+| Import worker | `make dev-import-worker` |
+| Scoring worker | `make dev-scoring-worker` |
+| X analyzer | `make dev-x-analyzer` |
 
 ### Development logs
 
