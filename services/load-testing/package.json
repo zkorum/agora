@@ -28,7 +28,7 @@
         "@zkorum/keystore-idb": "^0.18.1",
         "fast-text-encoding": "^1.0.6",
         "tweetnacl": "^1.0.3",
-        "uint8arrays": "^5.1.0"
+        "uint8arrays": "^6.1.1"
     },
     "pnpm": {
         "overrides": {
