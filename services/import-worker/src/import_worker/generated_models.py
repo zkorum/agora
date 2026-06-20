@@ -162,7 +162,7 @@ class LanguageCode(StrEnum):
 
 class LanguageDetectionProvider(StrEnum):
     lingua = "lingua"
-    google = "google"
+    google_translate = "google_translate"
 
 
 class ParticipationMode(StrEnum):

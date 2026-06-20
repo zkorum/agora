@@ -785,7 +785,7 @@ export class Dto {
         .object({
             subject: zodContentTranslationSubject,
             targetLanguageCode: ZodSupportedDisplayLanguageCodes,
-            include: z.enum(["original", "translation", "both"]),
+            requestMode: z.enum(["read_existing", "queue_if_missing"]),
         })
         .strict();
     static contentTranslationResponse = zodContentTranslationResponse;
@@ -1374,6 +1374,12 @@ export class Dto {
                 .min(1)
                 .optional(),
             displayLanguage: ZodSupportedDisplayLanguageCodes.optional(),
+        })
+        .strict();
+
+    static updateLanguagePreferencesResponse = z
+        .object({
+            success: z.literal(true),
         })
         .strict();
 

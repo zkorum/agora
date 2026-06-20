@@ -1,11 +1,15 @@
 import type {
     ContentTranslationSubject,
+    LanguageDetectionProvider,
     LocalizedContentTranslationStatus,
     LocalizedSurveyQuestionContent,
 } from "@/shared/types/zod.js";
-import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
+import type {
+    NormalizedLanguageCodes,
+    SupportedDisplayLanguageCodes,
+} from "@/shared/languages.js";
 
-export type ContentTranslationInclude = "original" | "translation" | "both";
+export type ContentTranslationRequestMode = "read_existing" | "queue_if_missing";
 
 export interface SurveyQuestionLocalizedContentSource {
     conversationSlugId: string;
@@ -22,17 +26,28 @@ export interface SurveyQuestionLocalizedContentSource {
 
 export interface SurveyQuestionTranslationSource {
     translatedQuestionText: string;
+    sourceLanguageCode: NormalizedLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    sourceLanguageProvider: LanguageDetectionProvider | null;
+    sourceLanguageConfidence: number | null;
     translatedOptionsByContentId: ReadonlyMap<number, string>;
 }
 
+export interface TranslationSourceMetadata {
+    sourceLanguageCode: NormalizedLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    sourceLanguageProvider: LanguageDetectionProvider | null;
+    sourceLanguageConfidence: number | null;
+}
+
 export function shouldQueueTranslationWork({
-    include,
+    requestMode,
     translationExists,
 }: {
-    include: ContentTranslationInclude;
+    requestMode: ContentTranslationRequestMode;
     translationExists: boolean;
 }): boolean {
-    return include !== "original" && !translationExists;
+    return requestMode === "queue_if_missing" && !translationExists;
 }
 
 export function hasCompleteSurveyQuestionTranslation({
@@ -81,16 +96,18 @@ export function buildTranslationMetadata<
     TStatus extends LocalizedContentTranslationStatus,
 >({
     targetLanguageCode,
-    sourceLanguageCode,
+    sourceMetadata,
     status,
 }: {
     targetLanguageCode: SupportedDisplayLanguageCodes;
-    sourceLanguageCode: string | null;
+    sourceMetadata: TranslationSourceMetadata | undefined;
     status: TStatus;
 }) {
+    const sourceLanguageCode = sourceMetadata?.sourceLanguageCode ?? null;
     const sourceLanguageLabel = getSourceLanguageLabel(sourceLanguageCode);
     return {
         targetLanguageCode,
+        sourceLanguageCode,
         ...(sourceLanguageLabel === undefined ? {} : { sourceLanguageLabel }),
         status,
     };
@@ -100,12 +117,12 @@ export function buildLocalizedSurveyQuestionContent({
     source,
     translation,
     targetLanguageCode,
-    include,
+    requestMode,
 }: {
     source: SurveyQuestionLocalizedContentSource;
     translation: SurveyQuestionTranslationSource | undefined;
     targetLanguageCode: SupportedDisplayLanguageCodes;
-    include: ContentTranslationInclude;
+    requestMode: ContentTranslationRequestMode;
 }): {
     subject: Extract<ContentTranslationSubject, { kind: "survey_question" }>;
     content: LocalizedSurveyQuestionContent;
@@ -145,7 +162,7 @@ export function buildLocalizedSurveyQuestionContent({
         optionContentIds: source.options.map((option) => option.contentId),
     });
 
-    if (translated !== undefined && include === "translation") {
+    if (translated !== undefined) {
         return {
             subject,
             content: {
@@ -155,26 +172,7 @@ export function buildLocalizedSurveyQuestionContent({
                 translation: {
                     ...buildTranslationMetadata({
                         targetLanguageCode,
-                        sourceLanguageCode: source.sourceLanguageCode,
-                        status: "completed",
-                    }),
-                },
-                variants: { translated },
-            },
-        };
-    }
-
-    if (translated !== undefined && include === "both") {
-        return {
-            subject,
-            content: {
-                kind: "translatable",
-                sourceVersion,
-                initialMode: "translated",
-                translation: {
-                    ...buildTranslationMetadata({
-                        targetLanguageCode,
-                        sourceLanguageCode: source.sourceLanguageCode,
+                        sourceMetadata: translation,
                         status: "completed",
                     }),
                 },
@@ -192,18 +190,13 @@ export function buildLocalizedSurveyQuestionContent({
             translation: {
                 ...buildTranslationMetadata({
                     targetLanguageCode,
-                    sourceLanguageCode: source.sourceLanguageCode,
+                    sourceMetadata: translation,
                     status:
-                        translated === undefined && include === "original"
-                            ? "not_requested"
-                            : translated === undefined
-                              ? "pending"
-                              : "completed",
+                        requestMode === "read_existing" ? "not_requested" : "pending",
                 }),
             },
             variants: {
                 original,
-                ...(translated === undefined ? {} : { translated }),
             },
         },
     };

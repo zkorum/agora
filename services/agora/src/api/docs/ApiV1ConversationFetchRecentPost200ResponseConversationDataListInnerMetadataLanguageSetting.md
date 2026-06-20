@@ -8,7 +8,9 @@ Name | Type | Description | Notes
 **mode** | **string** |  | [default to undefined]
 **languageCode** | **string** |  | [default to undefined]
 **detectedLanguageCode** | **string** |  | [default to undefined]
+**detectedSourceLanguageCode** | **string** |  | [default to undefined]
 **detectedRawLanguageCode** | **string** |  | [default to undefined]
+**detectedRawLanguageProvider** | **string** |  | [default to undefined]
 **detectionConfidence** | **number** |  | [default to undefined]
 
 ## Example
@@ -20,7 +22,9 @@ const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListI
     mode,
     languageCode,
     detectedLanguageCode,
+    detectedSourceLanguageCode,
     detectedRawLanguageCode,
+    detectedRawLanguageProvider,
     detectionConfidence,
 };
 ```

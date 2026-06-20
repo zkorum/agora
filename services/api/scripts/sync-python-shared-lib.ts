@@ -65,19 +65,6 @@ export function parseNumericExport({
     return Number.parseInt(match[1], 10);
 }
 
-function formatPythonTuple({
-    name,
-    values,
-}: {
-    name: string;
-    values: string[];
-}): string {
-    const formattedValues = values
-        .map((value) => `    ${JSON.stringify(value)},`)
-        .join("\n");
-    return `${name}: tuple[str, ...] = (\n${formattedValues}\n)`;
-}
-
 function formatDisplayLanguageTuple({
     name,
     values,

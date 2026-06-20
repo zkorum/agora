@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from import_worker import language_detection
 from import_worker.language_detection import (
+    MANUAL_MAIN_LANGUAGE_HINT_WEIGHT,
+    SourceLanguageHint,
     SourceLanguageMetadata,
     detect_source_language_with_lingua,
 )
@@ -77,3 +79,49 @@ def test_source_language_detection_falls_back_to_google_for_kyrgyz_cyrillic() ->
 
     assert metadata.language_code == "ky"
     assert metadata.confidence == 0.92
+
+
+def test_hinted_source_language_keeps_strong_global_result() -> None:
+    metadata = language_detection.resolve_hinted_source_language(
+        "This is a public conversation about parks, libraries, and civic life.",
+        global_metadata=SourceLanguageMetadata(language_code="fr", confidence=0.7),
+        language_hints=[
+            SourceLanguageHint(
+                language_code="en",
+                weight=MANUAL_MAIN_LANGUAGE_HINT_WEIGHT,
+            ),
+        ],
+    )
+
+    assert metadata == SourceLanguageMetadata(language_code="fr", confidence=0.7)
+
+
+def test_hinted_source_language_uses_weight_to_break_ambiguous_global_result() -> None:
+    metadata = language_detection.resolve_hinted_source_language(
+        "This is a public conversation about parks, libraries, and civic life.",
+        global_metadata=SourceLanguageMetadata(language_code="nl", confidence=0.49),
+        language_hints=[
+            SourceLanguageHint(
+                language_code="en",
+                weight=MANUAL_MAIN_LANGUAGE_HINT_WEIGHT,
+            ),
+        ],
+    )
+
+    assert metadata.language_code == "en"
+    assert metadata.confidence is not None
+    assert metadata.confidence >= 0.5
+
+
+def test_source_language_detection_does_not_fallback_to_hint_for_unknown_text() -> None:
+    metadata = language_detection.detect_source_language(
+        "2323",
+        language_hints=[
+            SourceLanguageHint(
+                language_code="en",
+                weight=MANUAL_MAIN_LANGUAGE_HINT_WEIGHT,
+            ),
+        ],
+    )
+
+    assert metadata == SourceLanguageMetadata(language_code=None, confidence=None)

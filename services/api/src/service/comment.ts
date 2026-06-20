@@ -95,7 +95,11 @@ import {
     ZodSupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
-import { resolveContentLanguageMetadata } from "./contentLanguageMetadata.js";
+import {
+    getContentLanguageHintsForConversation,
+    resolveContentLanguageMetadata,
+} from "./contentLanguageMetadata.js";
+import type { LanguageDetectionHintInput } from "./languageDetection.js";
 
 interface PrimaryReplicaDb extends PostgresJsDatabase {
     $primary: PostgresJsDatabase;
@@ -2308,6 +2312,7 @@ interface PostNewOpinionProps {
     now: Date;
     isSeed: boolean;
     googleCloudCredentials?: GoogleCloudCredentials;
+    languageHints?: readonly LanguageDetectionHintInput[];
     voteBuffer?: VoteBuffer;
     realtimeSSEManager?: RealtimeSSEManager;
     conversationMetadata?: {
@@ -2333,6 +2338,7 @@ export async function postNewOpinion({
     now,
     isSeed,
     googleCloudCredentials,
+    languageHints,
     voteBuffer,
     realtimeSSEManager,
     conversationMetadata,
@@ -2410,9 +2416,16 @@ export async function postNewOpinion({
         return participationContext;
     }
 
+    const resolvedLanguageHints =
+        languageHints ??
+        (await getContentLanguageHintsForConversation({
+            db,
+            conversationId: participationContext.conversationId,
+        }));
     const languageMetadata = await resolveContentLanguageMetadata({
         text: contentPlainText,
         googleCloudCredentials,
+        languageHints: resolvedLanguageHints,
     });
 
     const opinionSlugId = generateRandomSlugId();

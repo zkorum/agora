@@ -8,13 +8,11 @@ import { detectLanguage } from "@/shared-backend/translate.js";
 import {
     detectLanguageWithFallback,
     type GoogleLanguageDetector,
+    type LanguageDetectionHintInput,
     type LanguageDetectionProvider,
     type LocalLanguageDetector,
 } from "./languageDetection.js";
-import {
-    MAX_CONVERSATION_LANGUAGE_DETECTION_BODY_CHARS,
-    MIN_CONVERSATION_LANGUAGE_DETECTION_CHARS,
-} from "@/shared/shared.js";
+import { MIN_CONVERSATION_LANGUAGE_DETECTION_CHARS } from "@/shared/shared.js";
 import {
     parseNormalizedLanguageOrUndefined,
     parseSupportedDisplayLanguageOrUndefined,
@@ -53,21 +51,50 @@ interface ResolveConversationLanguageSettingParams {
     existing: StoredConversationLanguageSetting | undefined;
     conversationTitle: string;
     bodyPlainText: string;
+    supplementalPlainText?: string;
     googleCloudCredentials: GoogleCloudCredentials | undefined;
+    languageHints?: readonly LanguageDetectionHintInput[];
     localLanguageDetector?: LocalLanguageDetector;
     googleLanguageDetector?: GoogleLanguageDetector;
 }
 
+const GOOGLE_CONVERSATION_LANGUAGE_DETECTION_BODY_CHARS = 400;
+
 export function buildConversationLanguageDetectionCorpus({
     conversationTitle,
     bodyPlainText,
+    supplementalPlainText = "",
 }: {
     conversationTitle: string;
     bodyPlainText: string;
+    supplementalPlainText?: string;
 }): string {
-    const croppedBody = bodyPlainText.slice(
+    const bodyAndSupplemental = [bodyPlainText, supplementalPlainText]
+        .map((text) => text.trim())
+        .filter((text) => text.length > 0)
+        .join("\n\n");
+    if (bodyAndSupplemental.length === 0) {
+        return conversationTitle;
+    }
+    return `${conversationTitle}\n\n${bodyAndSupplemental}`;
+}
+
+export function buildGoogleConversationLanguageDetectionCorpus({
+    conversationTitle,
+    bodyPlainText,
+    supplementalPlainText = "",
+}: {
+    conversationTitle: string;
+    bodyPlainText: string;
+    supplementalPlainText?: string;
+}): string {
+    const bodyAndSupplemental = [bodyPlainText, supplementalPlainText]
+        .map((text) => text.trim())
+        .filter((text) => text.length > 0)
+        .join("\n\n");
+    const croppedBody = bodyAndSupplemental.slice(
         0,
-        MAX_CONVERSATION_LANGUAGE_DETECTION_BODY_CHARS,
+        GOOGLE_CONVERSATION_LANGUAGE_DETECTION_BODY_CHARS,
     );
     if (croppedBody.length === 0) {
         return conversationTitle;
@@ -190,14 +217,18 @@ export function conversationLanguageSettingToSourceMetadata({
 
 async function detectConversationLanguage({
     corpus,
+    googleCorpus,
     corpusHash,
     googleCloudCredentials,
+    languageHints,
     localLanguageDetector,
     googleLanguageDetector,
 }: {
     corpus: string;
+    googleCorpus: string;
     corpusHash: string;
     googleCloudCredentials: GoogleCloudCredentials | undefined;
+    languageHints: readonly LanguageDetectionHintInput[];
     localLanguageDetector?: LocalLanguageDetector;
     googleLanguageDetector?: GoogleLanguageDetector;
 }): Promise<StoredConversationLanguageSetting> {
@@ -217,6 +248,8 @@ async function detectConversationLanguage({
 
         const detectionOutcome = await detectLanguageWithFallback({
             text: corpus,
+            googleText: googleCorpus,
+            languageHints,
             localDetector: localLanguageDetector,
             googleDetector: resolvedGoogleLanguageDetector,
         });
@@ -247,7 +280,9 @@ export async function resolveConversationLanguageSetting({
     existing,
     conversationTitle,
     bodyPlainText,
+    supplementalPlainText = "",
     googleCloudCredentials,
+    languageHints = [],
     localLanguageDetector,
     googleLanguageDetector,
 }: ResolveConversationLanguageSettingParams): Promise<StoredConversationLanguageSetting> {
@@ -267,6 +302,12 @@ export async function resolveConversationLanguageSetting({
     const corpus = buildConversationLanguageDetectionCorpus({
         conversationTitle,
         bodyPlainText,
+        supplementalPlainText,
+    });
+    const googleCorpus = buildGoogleConversationLanguageDetectionCorpus({
+        conversationTitle,
+        bodyPlainText,
+        supplementalPlainText,
     });
     const corpusHash = hashConversationLanguageDetectionCorpus(corpus);
     if (!isConversationLanguageDetectionCorpusMeaningful(corpus)) {
@@ -283,8 +324,10 @@ export async function resolveConversationLanguageSetting({
 
     return await detectConversationLanguage({
         corpus,
+        googleCorpus,
         corpusHash,
         googleCloudCredentials,
+        languageHints,
         localLanguageDetector,
         googleLanguageDetector,
     });

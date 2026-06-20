@@ -10,6 +10,14 @@ import {
 export const LINGUA_MINIMUM_RELATIVE_DISTANCE = 0.2;
 export const LINGUA_MINIMUM_LANGUAGE_CONFIDENCE = 0.4;
 export const GOOGLE_MINIMUM_LANGUAGE_CONFIDENCE = 0.5;
+export const HIGH_GLOBAL_LANGUAGE_CONFIDENCE = 0.55;
+export const MINIMUM_HINT_LANGUAGE_CONFIDENCE = 0.5;
+export const MINIMUM_HINT_WITHOUT_GLOBAL_LANGUAGE_CONFIDENCE = 0.55;
+export const MINIMUM_HINT_CONFIDENCE_MARGIN = 0.15;
+export const HINT_CAN_OVERRIDE_GLOBAL_CONFIDENCE_DELTA = 0.1;
+export const MANUAL_MAIN_LANGUAGE_HINT_WEIGHT = 0.08;
+export const AUTO_MAIN_LANGUAGE_HINT_WEIGHT = 0.04;
+export const ADDITIONAL_LANGUAGE_HINT_WEIGHT = 0;
 
 const CYRILLIC_LETTER_REGEX = /\p{Script=Cyrillic}/u;
 const LETTER_REGEX = /\p{Letter}/u;
@@ -110,12 +118,20 @@ export const LINGUA_LANGUAGE_TO_SOURCE_CODE_ENTRIES = [
     ["Xhosa", "xh"],
     ["Yoruba", "yo"],
     ["Zulu", "zu"],
-] satisfies ReadonlyArray<readonly [string, NormalizedLanguageCodes]>;
+] satisfies readonly (readonly [string, NormalizedLanguageCodes])[];
 
 const LINGUA_LANGUAGE_TO_SOURCE_CODE: ReadonlyMap<
     string,
     NormalizedLanguageCodes
 > = new Map(LINGUA_LANGUAGE_TO_SOURCE_CODE_ENTRIES);
+
+const SOURCE_CODE_TO_LINGUA_LANGUAGE: ReadonlyMap<string, string> = new Map([
+    ...LINGUA_LANGUAGE_TO_SOURCE_CODE_ENTRIES.map(
+        ([languageName, sourceCode]) => [sourceCode, languageName] as const,
+    ),
+    ["zh-Hans", "Chinese"],
+    ["zh-Hant", "Chinese"],
+]);
 
 export interface LocalLanguageDetection {
     rawLanguageCode: string;
@@ -126,6 +142,13 @@ export interface LocalLanguageDetector {
     detect: ({ text }: { text: string }) => Promise<
         LocalLanguageDetection | undefined
     >;
+    computeLanguageConfidence?: ({
+        text,
+        rawLanguageCode,
+    }: {
+        text: string;
+        rawLanguageCode: string;
+    }) => Promise<number | null>;
 }
 
 export type GoogleLanguageDetector = ({
@@ -134,7 +157,7 @@ export type GoogleLanguageDetector = ({
     text: string;
 }) => Promise<DetectedLanguageResult | undefined>;
 
-export type LanguageDetectionProvider = "lingua" | "google";
+export type LanguageDetectionProvider = "lingua" | "google_translate";
 
 export interface LanguageDetectionResult {
     languageCode: SupportedDisplayLanguageCodes | null;
@@ -147,6 +170,28 @@ export interface LanguageDetectionResult {
 export interface LanguageDetectionOutcome {
     result: LanguageDetectionResult | undefined;
     cacheable: boolean;
+}
+
+export interface LanguageDetectionHint {
+    languageCode: string;
+    weight: number;
+}
+export type LanguageDetectionHintInput = string | LanguageDetectionHint;
+
+interface HintedLanguageDetectionResult {
+    result: LanguageDetectionResult;
+    score: number;
+}
+
+export interface HintedLanguageDetectionResolution {
+    result: LanguageDetectionResult | undefined;
+    reason:
+        | "strong_global"
+        | "global_same_as_hint"
+        | "hint_overrode_global"
+        | "weak_global"
+        | "hint_without_global"
+        | "unknown";
 }
 
 interface GoogleLanguageDetectionAttempt {
@@ -274,11 +319,8 @@ function normalizeBcp47SourceLanguageCode({
     }
 
     try {
-        const canonicalLanguageCode =
-            Intl.getCanonicalLocales(trimmedLanguageCode)[0] ?? null;
-        return canonicalLanguageCode === null
-            ? null
-            : (parseNormalizedLanguageOrUndefined(canonicalLanguageCode) ?? null);
+        const canonicalLanguageCode = Intl.getCanonicalLocales(trimmedLanguageCode)[0];
+        return parseNormalizedLanguageOrUndefined(canonicalLanguageCode) ?? null;
     } catch {
         if (/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(trimmedLanguageCode)) {
             return (
@@ -341,6 +383,117 @@ function localDetectionHasEnoughConfidence({
         detection.confidence === null ||
         detection.confidence >= LINGUA_MINIMUM_LANGUAGE_CONFIDENCE
     );
+}
+
+function languageDetectionConfidenceValue({
+    detection,
+}: {
+    detection: Pick<LanguageDetectionResult, "confidence">;
+}): number {
+    return detection.confidence ?? 0;
+}
+
+function getBestHintedDetections({
+    hintedResults,
+}: {
+    hintedResults: HintedLanguageDetectionResult[];
+}): {
+    bestHint: HintedLanguageDetectionResult | undefined;
+    secondBestHint: HintedLanguageDetectionResult | undefined;
+} {
+    const sortedHints = hintedResults
+        .filter((hint) => hint.result.sourceLanguageCode !== null)
+        .toSorted((left, right) => right.score - left.score);
+    return {
+        bestHint: sortedHints.at(0),
+        secondBestHint: sortedHints.at(1),
+    };
+}
+
+function normalizeLanguageDetectionHint({
+    hint,
+}: {
+    hint: LanguageDetectionHintInput;
+}): LanguageDetectionHint {
+    if (typeof hint === "string") {
+        return { languageCode: hint, weight: 0 };
+    }
+    return hint;
+}
+
+function hintHasEnoughMargin({
+    bestHint,
+    secondBestHint,
+}: {
+    bestHint: HintedLanguageDetectionResult;
+    secondBestHint: HintedLanguageDetectionResult | undefined;
+}): boolean {
+    if (secondBestHint === undefined) {
+        return true;
+    }
+    return (
+        bestHint.score - secondBestHint.score >= MINIMUM_HINT_CONFIDENCE_MARGIN
+    );
+}
+
+export function resolveHintedLanguageDetection({
+    globalResult,
+    hintedResults,
+}: {
+    globalResult: LanguageDetectionResult | undefined;
+    hintedResults: (LanguageDetectionResult | HintedLanguageDetectionResult)[];
+}): HintedLanguageDetectionResolution {
+    const knownGlobalResult =
+        globalResult?.sourceLanguageCode === null ? undefined : globalResult;
+    const weightedHintedResults: HintedLanguageDetectionResult[] =
+        hintedResults.map((hint) =>
+            "result" in hint
+                ? hint
+                : {
+                      result: hint,
+                      score: languageDetectionConfidenceValue({ detection: hint }),
+                  },
+        );
+    const { bestHint, secondBestHint } = getBestHintedDetections({
+        hintedResults: weightedHintedResults,
+    });
+
+    if (knownGlobalResult !== undefined) {
+        const globalConfidence = languageDetectionConfidenceValue({
+            detection: knownGlobalResult,
+        });
+        if (globalConfidence >= HIGH_GLOBAL_LANGUAGE_CONFIDENCE) {
+            return { result: knownGlobalResult, reason: "strong_global" };
+        }
+
+        if (bestHint?.result.sourceLanguageCode === knownGlobalResult.sourceLanguageCode) {
+            return { result: knownGlobalResult, reason: "global_same_as_hint" };
+        }
+
+        if (
+            bestHint !== undefined &&
+            languageDetectionConfidenceValue({ detection: bestHint.result }) >=
+                MINIMUM_HINT_LANGUAGE_CONFIDENCE &&
+            hintHasEnoughMargin({ bestHint, secondBestHint }) &&
+            bestHint.score >=
+                globalConfidence - HINT_CAN_OVERRIDE_GLOBAL_CONFIDENCE_DELTA
+        ) {
+            return { result: bestHint.result, reason: "hint_overrode_global" };
+        }
+
+        return { result: knownGlobalResult, reason: "weak_global" };
+    }
+
+    if (
+        bestHint !== undefined &&
+        languageDetectionConfidenceValue({ detection: bestHint.result }) >=
+            MINIMUM_HINT_WITHOUT_GLOBAL_LANGUAGE_CONFIDENCE &&
+        hintHasEnoughMargin({ bestHint, secondBestHint })
+    ) {
+        return { result: bestHint.result, reason: "hint_without_global" };
+    }
+
+    return { result: globalResult, reason: "unknown" };
 }
 
 function shouldWarnUnnormalizedLanguage({
@@ -434,7 +587,7 @@ function normalizeGoogleDetection({
         })
     ) {
         warnUnnormalizedLanguage({
-            provider: "google",
+            provider: "google_translate",
             rawLanguageCode: detection.languageCode,
             confidence: detection.confidence,
         });
@@ -450,7 +603,7 @@ function normalizeGoogleDetection({
                   }),
         sourceLanguageCode,
         rawLanguageCode: detection.languageCode,
-        provider: "google",
+        provider: "google_translate",
         confidence: detection.confidence,
     };
 }
@@ -480,6 +633,10 @@ async function getDefaultLocalDetector(): Promise<
                         ),
                     });
                 },
+                computeLanguageConfidence: ({ text, rawLanguageCode }) =>
+                    Promise.resolve(
+                        detector.computeLanguageConfidence(text, rawLanguageCode),
+                    ),
             };
         } catch {
             return undefined;
@@ -509,6 +666,52 @@ async function detectWithGoogle({
     }
 }
 
+async function computeHintedLocalDetectionResults({
+    text,
+    localDetector,
+    languageHints,
+}: {
+    text: string;
+    localDetector: LocalLanguageDetector;
+    languageHints: readonly LanguageDetectionHintInput[];
+}): Promise<HintedLanguageDetectionResult[]> {
+    if (localDetector.computeLanguageConfidence === undefined) {
+        return [];
+    }
+    const hintedResults: HintedLanguageDetectionResult[] = [];
+    const seenRawLanguageCodes = new Set<string>();
+    for (const rawLanguageHint of languageHints) {
+        const languageHint = normalizeLanguageDetectionHint({
+            hint: rawLanguageHint,
+        });
+        const rawLanguageCode = SOURCE_CODE_TO_LINGUA_LANGUAGE.get(
+            languageHint.languageCode,
+        );
+        if (
+            rawLanguageCode === undefined ||
+            seenRawLanguageCodes.has(rawLanguageCode)
+        ) {
+            continue;
+        }
+        seenRawLanguageCodes.add(rawLanguageCode);
+        const confidence = await localDetector.computeLanguageConfidence({
+            text,
+            rawLanguageCode,
+        });
+        const result = normalizeLocalDetection({
+            detection: { rawLanguageCode, confidence },
+            text,
+        });
+        hintedResults.push({
+            result,
+            score:
+                languageDetectionConfidenceValue({ detection: result }) +
+                languageHint.weight,
+        });
+    }
+    return hintedResults;
+}
+
 function googleAttemptToOutcome({
     attempt,
     text,
@@ -530,17 +733,24 @@ function googleAttemptToOutcome({
 
 export async function detectLanguageWithFallback({
     text,
+    googleText,
+    languageHints = [],
     localDetector,
     googleDetector,
 }: {
     text: string;
+    googleText?: string;
+    languageHints?: readonly LanguageDetectionHintInput[];
     localDetector?: LocalLanguageDetector;
     googleDetector?: GoogleLanguageDetector;
 }): Promise<LanguageDetectionOutcome> {
     if (hasMeaningfulCyrillicText({ text }) && googleDetector !== undefined) {
         return googleAttemptToOutcome({
-            attempt: await detectWithGoogle({ googleDetector, text }),
-            text,
+            attempt: await detectWithGoogle({
+                googleDetector,
+                text: googleText ?? text,
+            }),
+            text: googleText ?? text,
         });
     }
 
@@ -568,21 +778,33 @@ export async function detectLanguageWithFallback({
         localDetection === undefined
             ? undefined
             : normalizeLocalDetection({ detection: localDetection, text });
+    const hintedResults = await computeHintedLocalDetectionResults({
+        text,
+        localDetector: resolvedLocalDetector,
+        languageHints,
+    });
+    const hintedResolution = resolveHintedLanguageDetection({
+        globalResult: localResult,
+        hintedResults,
+    });
 
     if (
-        localResult?.sourceLanguageCode !== undefined &&
-        localResult.sourceLanguageCode !== null
+        hintedResolution.result?.sourceLanguageCode !== undefined &&
+        hintedResolution.result.sourceLanguageCode !== null
     ) {
-        return { result: localResult, cacheable: true };
+        return { result: hintedResolution.result, cacheable: true };
     }
 
     if (googleDetector === undefined) {
-        return { result: localResult, cacheable: true };
+        return { result: hintedResolution.result, cacheable: true };
     }
 
     const googleOutcome = googleAttemptToOutcome({
-        attempt: await detectWithGoogle({ googleDetector, text }),
-        text,
+        attempt: await detectWithGoogle({
+            googleDetector,
+            text: googleText ?? text,
+        }),
+        text: googleText ?? text,
     });
     if (googleOutcome.result !== undefined || !googleOutcome.cacheable) {
         return googleOutcome;

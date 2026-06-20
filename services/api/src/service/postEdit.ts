@@ -37,7 +37,8 @@ import {
 import { createConversationViewSnapshotsFromCurrentState } from "@/service/conversationViewSnapshot.js";
 import { queueConversationSettingsUpdatedEvent } from "@/service/realtimeEventOutbox.js";
 import {
-    conversationLanguageSettingToSourceMetadata,
+    buildConversationLanguageDetectionCorpus,
+    buildGoogleConversationLanguageDetectionCorpus,
     conversationLanguageSettingToOutput,
     getConversationLanguageSetting,
     resolveConversationLanguageSetting,
@@ -48,6 +49,12 @@ import {
     normalizeConversationMultilingualSetting,
     upsertConversationMultilingualSetting,
 } from "@/service/conversationMultilingual.js";
+import {
+    buildContentBlockLanguageDetectionCorpus,
+    buildSurveyLanguageDetectionCorpus,
+    getBlockLanguageHints,
+    resolveContentLanguageMetadata,
+} from "./contentLanguageMetadata.js";
 
 interface GetConversationForEditProps {
     db: PostgresDatabase;
@@ -336,6 +343,17 @@ export async function updateConversation({
         }
 
         const conversationId = conversation.conversationId;
+        const effectiveSurveyConfig =
+            surveyConfig === undefined
+                ? ((await getSurveyConfigForConversation({
+                      db: tx,
+                      conversationId,
+                  })) ?? null)
+                : surveyConfig;
+        const surveyLanguageDetectionCorpus = buildSurveyLanguageDetectionCorpus({
+            surveyConfig: effectiveSurveyConfig,
+        });
+        const blockLanguageHints = getBlockLanguageHints({ languageSetting });
         const currentLanguageSetting = await getConversationLanguageSetting({
             db: tx,
             conversationId,
@@ -346,7 +364,9 @@ export async function updateConversation({
                 existing: currentLanguageSetting,
                 conversationTitle,
                 bodyPlainText,
+                supplementalPlainText: surveyLanguageDetectionCorpus,
                 googleCloudCredentials,
+                languageHints: blockLanguageHints,
             });
         const subject = getPremiumEntitlementSubjectForConversation({
             conversation: { projectId: conversation.projectId, userId },
@@ -376,10 +396,22 @@ export async function updateConversation({
                 reason: "premium_access_required",
             } as const;
         }
-        const sourceLanguageMetadata =
-            conversationLanguageSettingToSourceMetadata({
-                setting: resolvedLanguageSetting,
-            });
+        const sourceLanguageMetadata = await resolveContentLanguageMetadata({
+            text: buildContentBlockLanguageDetectionCorpus({
+                conversationCorpus: buildConversationLanguageDetectionCorpus({
+                    conversationTitle,
+                    bodyPlainText,
+                }),
+                surveyConfig: effectiveSurveyConfig,
+            }),
+            googleText: buildGoogleConversationLanguageDetectionCorpus({
+                conversationTitle,
+                bodyPlainText,
+                supplementalPlainText: surveyLanguageDetectionCorpus,
+            }),
+            googleCloudCredentials,
+            languageHints: blockLanguageHints,
+        });
         const currentBody = toUnionUndefined(conversation.currentBody);
         const contentChanged =
             conversation.currentTitle !== conversationTitle ||
@@ -561,6 +593,7 @@ export async function updateConversation({
                 surveyConfig: surveyConfig ?? null,
                 now,
                 googleCloudCredentials,
+                sourceLanguageMetadata,
             });
         }
 

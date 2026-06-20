@@ -19,18 +19,24 @@ const surveyQuestionSource = {
 };
 
 describe("content translation pure content helpers", () => {
-    it("queues only when non-original content is missing", () => {
+    it("queues only when missing content is explicitly requested", () => {
         expect(
-            shouldQueueTranslationWork({ include: "original", translationExists: false }),
+            shouldQueueTranslationWork({
+                requestMode: "read_existing",
+                translationExists: false,
+            }),
         ).toBe(false);
         expect(
-            shouldQueueTranslationWork({ include: "translation", translationExists: true }),
+            shouldQueueTranslationWork({
+                requestMode: "queue_if_missing",
+                translationExists: true,
+            }),
         ).toBe(false);
         expect(
-            shouldQueueTranslationWork({ include: "translation", translationExists: false }),
-        ).toBe(true);
-        expect(
-            shouldQueueTranslationWork({ include: "both", translationExists: false }),
+            shouldQueueTranslationWork({
+                requestMode: "queue_if_missing",
+                translationExists: false,
+            }),
         ).toBe(true);
     });
 
@@ -72,10 +78,14 @@ describe("content translation pure content helpers", () => {
             source: surveyQuestionSource,
             translation: {
                 translatedQuestionText: "Que devrions-nous construire ensuite ?",
+                sourceLanguageCode: "en",
+                sourceRawLanguageCode: "en",
+                sourceLanguageProvider: "lingua",
+                sourceLanguageConfidence: 0.99,
                 translatedOptionsByContentId: new Map([[21, "Parcs"]]),
             },
             targetLanguageCode: "fr",
-            include: "translation",
+            requestMode: "queue_if_missing",
         });
 
         expect(result).toEqual({
@@ -90,6 +100,7 @@ describe("content translation pure content helpers", () => {
                 initialMode: "original",
                 translation: {
                     targetLanguageCode: "fr",
+                    sourceLanguageCode: "en",
                     sourceLanguageLabel: "English",
                     status: "pending",
                 },
@@ -111,13 +122,17 @@ describe("content translation pure content helpers", () => {
             source: surveyQuestionSource,
             translation: {
                 translatedQuestionText: "Que devrions-nous construire ensuite ?",
+                sourceLanguageCode: "en",
+                sourceRawLanguageCode: "en",
+                sourceLanguageProvider: "lingua",
+                sourceLanguageConfidence: 0.99,
                 translatedOptionsByContentId: new Map([
                     [21, "Parcs"],
                     [22, "Bibliotheques"],
                 ]),
             },
             targetLanguageCode: "fr",
-            include: "both",
+            requestMode: "read_existing",
         });
 
         expect(result.content.initialMode).toBe("translated");

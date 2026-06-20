@@ -49,6 +49,95 @@ class ContentTranslationWorkStatus(StrEnum):
     failed = "failed"
 
 
+class LanguageCode(StrEnum):
+    en = "en"
+    es = "es"
+    fr = "fr"
+    en_gb = "en-GB"
+    ar = "ar"
+    bn = "bn"
+    eu = "eu"
+    bg = "bg"
+    ca = "ca"
+    hr = "hr"
+    cs = "cs"
+    da = "da"
+    nl = "nl"
+    fil = "fil"
+    fi = "fi"
+    gl = "gl"
+    de = "de"
+    el = "el"
+    gu = "gu"
+    he = "he"
+    hi = "hi"
+    hu = "hu"
+    id = "id"
+    ga = "ga"
+    it = "it"
+    ja = "ja"
+    kn = "kn"
+    ko = "ko"
+    ky = "ky"
+    ms = "ms"
+    mr = "mr"
+    no = "no"
+    fa = "fa"
+    pl = "pl"
+    pt = "pt"
+    ro = "ro"
+    ru = "ru"
+    sr = "sr"
+    sk = "sk"
+    sv = "sv"
+    ta = "ta"
+    th = "th"
+    tr = "tr"
+    uk = "uk"
+    ur = "ur"
+    vi = "vi"
+    zh_hans = "zh-Hans"
+    zh_hant = "zh-Hant"
+    af = "af"
+    sq = "sq"
+    hy = "hy"
+    az = "az"
+    be = "be"
+    nb = "nb"
+    bs = "bs"
+    eo = "eo"
+    et = "et"
+    lg = "lg"
+    ka = "ka"
+    is_ = "is"
+    kk = "kk"
+    la = "la"
+    lv = "lv"
+    lt = "lt"
+    mk = "mk"
+    mi = "mi"
+    mn = "mn"
+    nn = "nn"
+    pa = "pa"
+    sn = "sn"
+    sl = "sl"
+    so = "so"
+    st = "st"
+    sw = "sw"
+    te = "te"
+    ts = "ts"
+    tn = "tn"
+    cy = "cy"
+    xh = "xh"
+    yo = "yo"
+    zu = "zu"
+
+
+class LanguageDetectionProvider(StrEnum):
+    lingua = "lingua"
+    google_translate = "google_translate"
+
+
 class ParticipationMode(StrEnum):
     account_required = "account_required"
     strong_verification = "strong_verification"
@@ -159,6 +248,21 @@ class ConversationContentTranslation(Base):
     )
     translated_title: Mapped[str] = mapped_column(String(140))
     translated_body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_language_code: Mapped[LanguageCode | None] = mapped_column(
+        SaEnum(LanguageCode, name="language_code", values_callable=_enum_values, native_enum=True),
+        nullable=True,
+    )
+    source_raw_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    source_language_provider: Mapped[LanguageDetectionProvider | None] = mapped_column(
+        SaEnum(
+            LanguageDetectionProvider,
+            name="language_detection_provider",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
@@ -269,6 +373,21 @@ class OpinionContentTranslation(Base):
         ),
     )
     translated_content: Mapped[str] = mapped_column(Text)
+    source_language_code: Mapped[LanguageCode | None] = mapped_column(
+        SaEnum(LanguageCode, name="language_code", values_callable=_enum_values, native_enum=True),
+        nullable=True,
+    )
+    source_raw_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    source_language_provider: Mapped[LanguageDetectionProvider | None] = mapped_column(
+        SaEnum(
+            LanguageDetectionProvider,
+            name="language_detection_provider",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
@@ -333,6 +452,21 @@ class SurveyQuestionContentTranslation(Base):
         ),
     )
     translated_question_text: Mapped[str] = mapped_column(Text)
+    source_language_code: Mapped[LanguageCode | None] = mapped_column(
+        SaEnum(LanguageCode, name="language_code", values_callable=_enum_values, native_enum=True),
+        nullable=True,
+    )
+    source_raw_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    source_language_provider: Mapped[LanguageDetectionProvider | None] = mapped_column(
+        SaEnum(
+            LanguageDetectionProvider,
+            name="language_detection_provider",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
@@ -362,6 +496,21 @@ class SurveyQuestionOptionContentTranslation(Base):
         ),
     )
     translated_option_text: Mapped[str] = mapped_column(Text)
+    source_language_code: Mapped[LanguageCode | None] = mapped_column(
+        SaEnum(LanguageCode, name="language_code", values_callable=_enum_values, native_enum=True),
+        nullable=True,
+    )
+    source_raw_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    source_language_provider: Mapped[LanguageDetectionProvider | None] = mapped_column(
+        SaEnum(
+            LanguageDetectionProvider,
+            name="language_detection_provider",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 

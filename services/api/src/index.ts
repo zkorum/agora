@@ -193,6 +193,7 @@ import {
 import { createDb } from "./shared-backend/db.js";
 import {
     conversationTable,
+    conversationLanguageSettingTable,
     conversationTranslationSettingTable,
     conversationTranslationTargetLanguageTable,
     deviceTable,
@@ -503,12 +504,22 @@ async function getContentTranslationAvailabilityForConversation({
 }> {
     const rows = await db
         .select({
+            languageCode: conversationLanguageSettingTable.languageCode,
+            detectedLanguageCode:
+                conversationLanguageSettingTable.detectedLanguageCode,
             dynamicTranslationEnabled:
                 conversationTranslationSettingTable.dynamicTranslationEnabled,
             targetLanguageCode:
                 conversationTranslationTargetLanguageTable.languageCode,
         })
         .from(conversationTable)
+        .leftJoin(
+            conversationLanguageSettingTable,
+            eq(
+                conversationLanguageSettingTable.conversationId,
+                conversationTable.id,
+            ),
+        )
         .leftJoin(
             conversationTranslationSettingTable,
             eq(
@@ -537,11 +548,16 @@ async function getContentTranslationAvailabilityForConversation({
             row.targetLanguageCode === null ? [] : [row.targetLanguageCode],
         ),
     };
-    const translationAllowed = rows.some(
-        (row) =>
-            row.dynamicTranslationEnabled === true ||
-            row.targetLanguageCode === targetLanguageCode,
-    );
+    const configuredTargetLanguageCodes = new Set<SupportedDisplayLanguageCodes>([
+        ...(firstRow.languageCode === null ? [] : [firstRow.languageCode]),
+        ...(firstRow.detectedLanguageCode === null
+            ? []
+            : [firstRow.detectedLanguageCode]),
+        ...multilingualSetting.additionalLanguageCodes,
+    ]);
+    const translationAllowed =
+        multilingualSetting.dynamicTranslationEnabled &&
+        configuredTargetLanguageCodes.has(targetLanguageCode);
     return { isAllowed: translationAllowed, multilingualSetting };
 }
 
@@ -2759,6 +2775,24 @@ server.after(() => {
                 return;
             }
 
+            try {
+                await contentTranslationService.scheduleEagerContentTranslationForConversation(
+                    {
+                        db,
+                        valkey: queueValkeyRef.current,
+                        queueScript: contentTranslationQueueScript,
+                        conversationSlugId: createResult.conversationSlugId,
+                        now: nowZeroMs(),
+                        log,
+                    },
+                );
+            } catch (error: unknown) {
+                log.error(
+                    error,
+                    `[ContentTranslation] Failed to schedule eager work for conversationSlugId=${createResult.conversationSlugId}`,
+                );
+            }
+
             // Broadcast to all connected clients (except the creator) that a new conversation exists
             realtimeSSEManager.broadcastToAllExcept({
                 event: "new_conversation",
@@ -4207,6 +4241,9 @@ server.after(() => {
         url: `/api/${apiVersion}/user/language-preferences/update`,
         schema: {
             body: Dto.updateLanguagePreferencesRequest,
+            response: {
+                200: Dto.updateLanguagePreferencesResponse,
+            },
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
@@ -4221,6 +4258,7 @@ server.after(() => {
                 userId: deviceStatus.userId,
                 preferences: request.body,
             });
+            return { success: true as const };
         },
     });
 
@@ -4276,7 +4314,7 @@ server.after(() => {
                     queueScript: contentTranslationQueueScript,
                     subject: request.body.subject,
                     targetLanguageCode: request.body.targetLanguageCode,
-                    include: request.body.include,
+                    requestMode: request.body.requestMode,
                     now,
                     log,
                     beforeQueueTranslationWork: async () => {

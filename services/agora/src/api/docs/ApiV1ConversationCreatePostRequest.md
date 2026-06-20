@@ -8,7 +8,7 @@ Name | Type | Description | Notes
 **conversationTitle** | **string** |  | [default to undefined]
 **conversationBody** | **string** |  | [optional] [default to undefined]
 **conversationBodyPlainText** | **string** |  | [default to undefined]
-**postAsOrganization** | **string** |  | [optional] [default to undefined]
+**postAsOrganization** | **string** |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
 **conversationType** | **string** |  | [default to undefined]

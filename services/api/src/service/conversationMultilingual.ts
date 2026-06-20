@@ -15,6 +15,23 @@ export const DEFAULT_CONVERSATION_MULTILINGUAL_SETTING: ConversationMultilingual
     dynamicTranslationEnabled: false,
 };
 
+export function getUniqueConfiguredConversationLanguageCodes({
+    mainLanguageCode,
+    additionalLanguageCodes,
+}: {
+    mainLanguageCode: SupportedDisplayLanguageCodes | null;
+    additionalLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+}): SupportedDisplayLanguageCodes[] {
+    const languageCodes = new Set<SupportedDisplayLanguageCodes>();
+    if (mainLanguageCode !== null) {
+        languageCodes.add(mainLanguageCode);
+    }
+    for (const languageCode of additionalLanguageCodes) {
+        languageCodes.add(languageCode);
+    }
+    return [...languageCodes];
+}
+
 export function normalizeConversationMultilingualSetting({
     languageSetting,
     multilingualSetting,

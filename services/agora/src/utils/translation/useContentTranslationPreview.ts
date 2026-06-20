@@ -16,6 +16,7 @@ import {
 } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
 import { useContentTranslationQuery } from "src/utils/api/contentTranslation/useContentTranslationQueries";
+import type { ContentTranslationRequestMode } from "src/utils/api/contentTranslation/useContentTranslationQueries";
 import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
 import { useNotify } from "src/utils/ui/notify";
 import type { MaybeRefOrGetter } from "vue";
@@ -131,7 +132,7 @@ function useContentTranslationController({
   const { t } = useComponentI18n<ContentTranslationPreviewTranslations>(
     contentTranslationPreviewTranslations
   );
-  const requestedMode = ref<ContentTranslationDisplayMode>("original");
+  const modePreference = ref<ContentTranslationDisplayMode | undefined>(undefined);
   const hasRequestedTranslation = ref(false);
   let waitTimeout: ReturnType<typeof setTimeout> | undefined;
 
@@ -145,14 +146,15 @@ function useContentTranslationController({
       hasTranslatedContent: true,
     })
   );
+  const requestMode = computed<ContentTranslationRequestMode>(() =>
+    hasRequestedTranslation.value ? "queue_if_missing" : "read_existing"
+  );
 
   const query = useContentTranslationQuery({
     subject,
     targetLanguageCode: displayLanguage,
-    include: "both",
-    enabled: computed(
-      () => resolvedState.value.isAvailable && hasRequestedTranslation.value
-    ),
+    requestMode,
+    enabled: computed(() => resolvedState.value.isAvailable),
   });
 
   const translatedVariant = computed(() => {
@@ -190,8 +192,9 @@ function useContentTranslationController({
   });
 
   const mode = computed<ContentTranslationDisplayMode>(() => {
+    const preferredMode = modePreference.value ?? resolvedState.value.initialMode;
     if (
-      requestedMode.value === "translated" &&
+      preferredMode === "translated" &&
       translationStatus.value === "completed" &&
       translatedVariant.value !== undefined
     ) {
@@ -204,9 +207,15 @@ function useContentTranslationController({
     const response = query.data.value;
     const content = response?.success === true ? response.content : undefined;
     if (content?.kind === "translatable") {
-      return content.translation.sourceLanguageLabel;
+      return getLanguageDisplayName({
+        languageCode: content.translation.sourceLanguageCode,
+        displayLanguage: displayLanguage.value,
+      });
     }
-    return getLanguageDisplayName(toValue(sourceLanguageCode));
+    return getLanguageDisplayName({
+      languageCode: toValue(sourceLanguageCode),
+      displayLanguage: displayLanguage.value,
+    });
   });
 
   async function setMode(nextMode: ContentTranslationDisplayMode): Promise<void> {
@@ -219,18 +228,29 @@ function useContentTranslationController({
         resetToOriginal();
         return;
       }
-      requestedMode.value = "translated";
-      hasRequestedTranslation.value = true;
+      modePreference.value = "translated";
+      if (
+        translationStatus.value !== "completed" ||
+        translatedVariant.value === undefined
+      ) {
+        hasRequestedTranslation.value = true;
+        await query.refetch();
+      }
       return;
     }
-    requestedMode.value = nextMode;
+    modePreference.value = nextMode;
     hasRequestedTranslation.value = false;
   }
 
   function resetToOriginal(): void {
-    requestedMode.value = "original";
+    modePreference.value = "original";
     hasRequestedTranslation.value = false;
   }
+
+  watch(displayLanguage, () => {
+    modePreference.value = undefined;
+    hasRequestedTranslation.value = false;
+  });
 
   function applyTranslationNotEnabledResponse(): void {
     const response = query.data.value;

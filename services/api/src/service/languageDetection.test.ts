@@ -4,7 +4,9 @@ import {
     hasMeaningfulCyrillicText,
     inferChineseScriptLanguage,
     LINGUA_LANGUAGE_TO_SOURCE_CODE_ENTRIES,
+    resolveHintedLanguageDetection,
     type GoogleLanguageDetector,
+    type LanguageDetectionResult,
     type LocalLanguageDetector,
 } from "./languageDetection.js";
 import { resolveConversationLanguageSetting } from "./conversationLanguage.js";
@@ -111,6 +113,31 @@ function createGoogleDetector({
     confidence: number;
 }): GoogleLanguageDetector {
     return () => Promise.resolve({ languageCode, confidence });
+}
+
+function detection({
+    sourceLanguageCode,
+    confidence,
+    provider = "lingua",
+}: {
+    sourceLanguageCode: LanguageDetectionResult["sourceLanguageCode"];
+    confidence: number | null;
+    provider?: "lingua" | "google_translate";
+}): LanguageDetectionResult {
+    return {
+        languageCode:
+            sourceLanguageCode === "en" ||
+            sourceLanguageCode === "es" ||
+            sourceLanguageCode === "fr" ||
+            sourceLanguageCode === "zh-Hans" ||
+            sourceLanguageCode === "zh-Hant"
+                ? sourceLanguageCode
+                : null,
+        sourceLanguageCode,
+        rawLanguageCode: sourceLanguageCode ?? "unknown",
+        provider,
+        confidence,
+    };
 }
 
 describe("inferChineseScriptLanguage", () => {
@@ -225,6 +252,171 @@ describe("Lingua normalization assumptions", () => {
     });
 });
 
+describe("resolveHintedLanguageDetection", () => {
+    it("keeps a strong global result even when it is outside hints", () => {
+        const globalResult = detection({ sourceLanguageCode: "fr", confidence: 0.9 });
+
+        expect(
+            resolveHintedLanguageDetection({
+                globalResult,
+                hintedResults: [
+                    detection({ sourceLanguageCode: "en", confidence: 0.6 }),
+                    detection({ sourceLanguageCode: "es", confidence: 0.7 }),
+                ],
+            }),
+        ).toStrictEqual({ result: globalResult, reason: "strong_global" });
+    });
+
+    it("lets a strong hinted language override a weak global result", () => {
+        const hintedResult = detection({ sourceLanguageCode: "en", confidence: 0.53 });
+
+        expect(
+            resolveHintedLanguageDetection({
+                globalResult: detection({ sourceLanguageCode: "nl", confidence: 0.43 }),
+                hintedResults: [
+                    hintedResult,
+                    detection({ sourceLanguageCode: "es", confidence: 0.2 }),
+                ],
+            }),
+        ).toStrictEqual({
+            result: hintedResult,
+            reason: "hint_overrode_global",
+        });
+    });
+
+    it("keeps a weak global result when hints are below the hint threshold", () => {
+        const globalResult = detection({ sourceLanguageCode: "fr", confidence: 0.48 });
+
+        expect(
+            resolveHintedLanguageDetection({
+                globalResult,
+                hintedResults: [
+                    detection({ sourceLanguageCode: "en", confidence: 0.44 }),
+                    detection({ sourceLanguageCode: "es", confidence: 0.2 }),
+                ],
+            }),
+        ).toStrictEqual({ result: globalResult, reason: "weak_global" });
+    });
+
+    it("keeps global over hints when hinted languages do not have enough margin", () => {
+        const globalResult = detection({ sourceLanguageCode: "it", confidence: 0.43 });
+
+        expect(
+            resolveHintedLanguageDetection({
+                globalResult,
+                hintedResults: [
+                    detection({ sourceLanguageCode: "es", confidence: 0.51 }),
+                    detection({ sourceLanguageCode: "en", confidence: 0.45 }),
+                ],
+            }),
+        ).toStrictEqual({ result: globalResult, reason: "weak_global" });
+    });
+
+    it("accepts a strong hinted language when global detection is unknown", () => {
+        const hintedResult = detection({ sourceLanguageCode: "en", confidence: 0.58 });
+
+        expect(
+            resolveHintedLanguageDetection({
+                globalResult: undefined,
+                hintedResults: [
+                    hintedResult,
+                    detection({ sourceLanguageCode: "es", confidence: 0.2 }),
+                ],
+            }),
+        ).toStrictEqual({
+            result: hintedResult,
+            reason: "hint_without_global",
+        });
+    });
+
+    it("rejects weak or close hinted languages when global detection is unknown", () => {
+        expect(
+            resolveHintedLanguageDetection({
+                globalResult: undefined,
+                hintedResults: [
+                    detection({ sourceLanguageCode: "en", confidence: 0.49 }),
+                    detection({ sourceLanguageCode: "es", confidence: 0.45 }),
+                ],
+            }),
+        ).toStrictEqual({ result: undefined, reason: "unknown" });
+    });
+
+    it("does not treat null confidence hinted languages as strong", () => {
+        expect(
+            resolveHintedLanguageDetection({
+                globalResult: undefined,
+                hintedResults: [
+                    detection({ sourceLanguageCode: "en", confidence: null }),
+                    detection({ sourceLanguageCode: "es", confidence: 0.2 }),
+                ],
+            }),
+        ).toStrictEqual({ result: undefined, reason: "unknown" });
+    });
+
+    it("preserves exact Chinese script variants", () => {
+        const traditionalResult = detection({
+            sourceLanguageCode: "zh-Hant",
+            confidence: 0.58,
+        });
+
+        expect(
+            resolveHintedLanguageDetection({
+                globalResult: undefined,
+                hintedResults: [
+                    traditionalResult,
+                    detection({ sourceLanguageCode: "zh-Hans", confidence: 0.2 }),
+                ],
+            }),
+        ).toStrictEqual({
+            result: traditionalResult,
+            reason: "hint_without_global",
+        });
+    });
+
+    it("keeps a strong different-language global result over a weighted main hint", () => {
+        const globalResult = detection({ sourceLanguageCode: "fr", confidence: 0.7 });
+        const hintedResult = detection({ sourceLanguageCode: "en", confidence: 0.62 });
+
+        expect(
+            resolveHintedLanguageDetection({
+                globalResult,
+                hintedResults: [{ result: hintedResult, score: 0.7 }],
+            }),
+        ).toStrictEqual({ result: globalResult, reason: "strong_global" });
+    });
+
+    it("lets a weighted manual-main hint break an ambiguous global result", () => {
+        const hintedResult = detection({ sourceLanguageCode: "en", confidence: 0.5 });
+
+        expect(
+            resolveHintedLanguageDetection({
+                globalResult: detection({ sourceLanguageCode: "nl", confidence: 0.49 }),
+                hintedResults: [{ result: hintedResult, score: 0.58 }],
+            }),
+        ).toStrictEqual({
+            result: hintedResult,
+            reason: "hint_overrode_global",
+        });
+    });
+
+    it("does not let hint weight turn weak raw confidence into a known source", () => {
+        expect(
+            resolveHintedLanguageDetection({
+                globalResult: undefined,
+                hintedResults: [
+                    {
+                        result: detection({
+                            sourceLanguageCode: "en",
+                            confidence: 0.49,
+                        }),
+                        score: 0.57,
+                    },
+                ],
+            }),
+        ).toStrictEqual({ result: undefined, reason: "unknown" });
+    });
+});
+
 describe("Google normalization assumptions", () => {
     it("normalizes Google aliases without calling the live API", async () => {
         const cases = [
@@ -253,7 +445,7 @@ describe("Google normalization assumptions", () => {
                 languageCode: testCase.displayCode,
                 sourceLanguageCode: testCase.sourceCode,
                 rawLanguageCode: testCase.rawCode,
-                provider: "google",
+                provider: "google_translate",
                 confidence: 1,
             });
             expect(outcome.cacheable, testCase.rawCode).toBe(true);
@@ -275,7 +467,7 @@ describe("Google normalization assumptions", () => {
                 languageCode: null,
                 sourceLanguageCode: null,
                 rawLanguageCode: "haw",
-                provider: "google",
+                provider: "google_translate",
                 confidence: 0.91,
             },
             cacheable: true,
@@ -302,7 +494,7 @@ describe("detectLanguageWithFallback", () => {
                 languageCode: "ky",
                 sourceLanguageCode: "ky",
                 rawLanguageCode: "ky",
-                provider: "google",
+                provider: "google_translate",
                 confidence: 0.92,
             },
             cacheable: true,
@@ -389,7 +581,7 @@ describe("detectLanguageWithFallback", () => {
                 languageCode: null,
                 sourceLanguageCode: null,
                 rawLanguageCode: "ky",
-                provider: "google",
+                provider: "google_translate",
                 confidence: 0.3,
             },
             cacheable: true,
@@ -414,7 +606,7 @@ describe("detectLanguageWithFallback", () => {
                 languageCode: null,
                 sourceLanguageCode: null,
                 rawLanguageCode: "haw",
-                provider: "google",
+                provider: "google_translate",
                 confidence: 0.91,
             },
             cacheable: true,

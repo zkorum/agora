@@ -49,7 +49,8 @@ import {
     resolveConversationCreateTarget,
 } from "@/service/projectAccess.js";
 import {
-    conversationLanguageSettingToSourceMetadata,
+    buildGoogleConversationLanguageDetectionCorpus,
+    buildConversationLanguageDetectionCorpus,
     resolveConversationLanguageSetting,
     upsertConversationLanguageSetting,
 } from "@/service/conversationLanguage.js";
@@ -58,6 +59,13 @@ import {
     upsertConversationMultilingualSetting,
 } from "@/service/conversationMultilingual.js";
 import type { ConversationLanguageSettingInput } from "@/shared/types/zod.js";
+import {
+    buildContentBlockLanguageDetectionCorpus,
+    buildSurveyLanguageDetectionCorpus,
+    getBlockLanguageHints,
+    getContentItemLanguageHints,
+    resolveContentLanguageMetadata,
+} from "./contentLanguageMetadata.js";
 
 const MAX_CONVERSATION_SEED_ITEMS = 50;
 
@@ -188,22 +196,45 @@ export async function createNewPost({
         }
     }
 
-    const resolvedLanguageSetting = await resolveConversationLanguageSetting({
-        request: languageSetting,
-        existing: undefined,
-        conversationTitle,
-        bodyPlainText,
-        googleCloudCredentials,
-    });
-    const sourceLanguageMetadata = conversationLanguageSettingToSourceMetadata({
-        setting: resolvedLanguageSetting,
-    });
     const normalizedMultilingualSetting =
         normalizeConversationMultilingualSetting({
             languageSetting,
             multilingualSetting,
             canUseDynamicTranslation: true,
         });
+    const surveyLanguageDetectionCorpus = buildSurveyLanguageDetectionCorpus({
+        surveyConfig,
+    });
+    const blockLanguageHints = getBlockLanguageHints({ languageSetting });
+    const resolvedLanguageSetting = await resolveConversationLanguageSetting({
+        request: languageSetting,
+        existing: undefined,
+        conversationTitle,
+        bodyPlainText,
+        supplementalPlainText: surveyLanguageDetectionCorpus,
+        googleCloudCredentials,
+        languageHints: blockLanguageHints,
+    });
+    const contentItemLanguageHints = getContentItemLanguageHints({
+        languageSetting: resolvedLanguageSetting,
+        additionalLanguageCodes: normalizedMultilingualSetting.additionalLanguageCodes,
+    });
+    const conversationSourceLanguageMetadata = await resolveContentLanguageMetadata({
+        text: buildContentBlockLanguageDetectionCorpus({
+            conversationCorpus: buildConversationLanguageDetectionCorpus({
+                conversationTitle,
+                bodyPlainText,
+            }),
+            surveyConfig,
+        }),
+        googleText: buildGoogleConversationLanguageDetectionCorpus({
+            conversationTitle,
+            bodyPlainText,
+            supplementalPlainText: surveyLanguageDetectionCorpus,
+        }),
+        googleCloudCredentials,
+        languageHints: blockLanguageHints,
+    });
 
     await db.transaction(async (tx) => {
         const now = new Date();
@@ -242,9 +273,10 @@ export async function createNewPost({
                 title: conversationTitle,
                 body: conversationBody,
                 bodyPlainText,
-                sourceLanguageCode: sourceLanguageMetadata.sourceLanguageCode,
+                sourceLanguageCode:
+                    conversationSourceLanguageMetadata.sourceLanguageCode,
                 sourceLanguageConfidence:
-                    sourceLanguageMetadata.sourceLanguageConfidence,
+                    conversationSourceLanguageMetadata.sourceLanguageConfidence,
             })
             .returning({
                 conversationContentId: conversationContentTable.id,
@@ -311,6 +343,7 @@ export async function createNewPost({
                         now,
                         isSeed: true,
                         googleCloudCredentials,
+                        languageHints: contentItemLanguageHints,
                         conversationMetadata: {
                             conversationId: insertedConversationId,
                             conversationContentId:
@@ -339,6 +372,7 @@ export async function createNewPost({
                 surveyConfig: surveyConfig ?? null,
                 now,
                 googleCloudCredentials,
+                sourceLanguageMetadata: conversationSourceLanguageMetadata,
             });
         }
 

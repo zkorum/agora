@@ -50,23 +50,25 @@ function viewerUnderstandsSourceLanguage({
   return understoodLanguageKeys.has(sourceLanguageKey);
 }
 
-export function getLanguageDisplayName(languageCode: string | null | undefined): string | undefined {
+export function getLanguageDisplayName({
+  languageCode,
+  displayLanguage,
+}: {
+  languageCode: string | null | undefined;
+  displayLanguage: SupportedDisplayLanguageCodes;
+}): string | undefined {
   if (languageCode === undefined || languageCode === null || languageCode === "") {
     return undefined;
   }
 
-  const language = SupportedSpokenLanguageMetadataList.find(
-    (candidate) => candidate.code === languageCode
-  );
-  if (language !== undefined) {
-    return language.englishName;
-  }
-
   try {
-    const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
+    const displayNames = new Intl.DisplayNames([displayLanguage], { type: "language" });
     return displayNames.of(languageCode) ?? languageCode;
   } catch {
-    return languageCode;
+    const language = SupportedSpokenLanguageMetadataList.find(
+      (candidate) => candidate.code === languageCode
+    );
+    return language?.englishName ?? languageCode;
   }
 }
 
@@ -78,7 +80,10 @@ export function resolveContentTranslationState({
   supportedTargetLanguageCodes,
   hasTranslatedContent,
 }: ResolveContentTranslationStateParams): ContentTranslationState {
-  const sourceLanguageLabel = getLanguageDisplayName(sourceLanguageCode);
+  const sourceLanguageLabel = getLanguageDisplayName({
+    languageCode: sourceLanguageCode,
+    displayLanguage,
+  });
   const supportsDisplayLanguage = supportedTargetLanguageCodes.includes(displayLanguage);
   if (!dynamicTranslationEnabled || !hasTranslatedContent || !supportsDisplayLanguage) {
     return {
@@ -134,7 +139,9 @@ export function getSupportedContentTranslationTargetLanguageCodes({
 }): SupportedDisplayLanguageCodes[] {
   const supportedLanguageCodes = new Set<SupportedDisplayLanguageCodes>();
   const primaryLanguageCode =
-    languageSetting.languageCode ?? languageSetting.detectedLanguageCode;
+    languageSetting.mode === "manual"
+      ? languageSetting.languageCode
+      : languageSetting.detectedLanguageCode;
   if (primaryLanguageCode !== null) {
     supportedLanguageCodes.add(primaryLanguageCode);
   }

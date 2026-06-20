@@ -1,6 +1,6 @@
 {
-  "id": "3bdee714-134c-4eba-8427-1216b92c31f2",
-  "prevId": "4fa494d3-e140-4734-9816-cc6072cf45a0",
+  "id": "d733a181-8187-42dc-8d60-78474f62b759",
+  "prevId": "bbd5db55-2f41-4cb6-a2f2-c48574827d4c",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1518,6 +1518,31 @@
           "primaryKey": false,
           "notNull": false
         },
+        "source_language_code": {
+          "name": "source_language_code",
+          "type": "language_code",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_raw_language_code": {
+          "name": "source_raw_language_code",
+          "type": "varchar(35)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_provider": {
+          "name": "source_language_provider",
+          "type": "language_detection_provider",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_confidence": {
+          "name": "source_language_confidence",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (0)",
@@ -1561,7 +1586,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "conversation_content_translation_source_metadata_check": {
+          "name": "conversation_content_translation_source_metadata_check",
+          "value": "((\"conversation_content_translation\".\"source_language_provider\" IS NULL AND \"conversation_content_translation\".\"source_raw_language_code\" IS NULL) OR (\"conversation_content_translation\".\"source_language_provider\" IS NOT NULL AND \"conversation_content_translation\".\"source_raw_language_code\" IS NOT NULL))"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.conversation_export_artifact": {
@@ -6116,6 +6146,31 @@
           "primaryKey": false,
           "notNull": true
         },
+        "source_language_code": {
+          "name": "source_language_code",
+          "type": "language_code",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_raw_language_code": {
+          "name": "source_raw_language_code",
+          "type": "varchar(35)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_provider": {
+          "name": "source_language_provider",
+          "type": "language_detection_provider",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_confidence": {
+          "name": "source_language_confidence",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (0)",
@@ -6159,7 +6214,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "opinion_content_translation_source_metadata_check": {
+          "name": "opinion_content_translation_source_metadata_check",
+          "value": "((\"opinion_content_translation\".\"source_language_provider\" IS NULL AND \"opinion_content_translation\".\"source_raw_language_code\" IS NULL) OR (\"opinion_content_translation\".\"source_language_provider\" IS NOT NULL AND \"opinion_content_translation\".\"source_raw_language_code\" IS NOT NULL))"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.opinion_group_candidate_assessment": {
@@ -10943,6 +11003,31 @@
           "primaryKey": false,
           "notNull": true
         },
+        "source_language_code": {
+          "name": "source_language_code",
+          "type": "language_code",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_raw_language_code": {
+          "name": "source_raw_language_code",
+          "type": "varchar(35)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_provider": {
+          "name": "source_language_provider",
+          "type": "language_detection_provider",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_confidence": {
+          "name": "source_language_confidence",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (0)",
@@ -10986,7 +11071,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "survey_question_content_translation_source_metadata_check": {
+          "name": "survey_question_content_translation_source_metadata_check",
+          "value": "((\"survey_question_content_translation\".\"source_language_provider\" IS NULL AND \"survey_question_content_translation\".\"source_raw_language_code\" IS NULL) OR (\"survey_question_content_translation\".\"source_language_provider\" IS NOT NULL AND \"survey_question_content_translation\".\"source_raw_language_code\" IS NOT NULL))"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.survey_question_option_content": {
@@ -11103,6 +11193,31 @@
           "primaryKey": false,
           "notNull": true
         },
+        "source_language_code": {
+          "name": "source_language_code",
+          "type": "language_code",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_raw_language_code": {
+          "name": "source_raw_language_code",
+          "type": "varchar(35)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_provider": {
+          "name": "source_language_provider",
+          "type": "language_detection_provider",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_confidence": {
+          "name": "source_language_confidence",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (0)",
@@ -11146,7 +11261,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "survey_question_option_content_translation_source_metadata_check": {
+          "name": "survey_question_option_content_translation_source_metadata_check",
+          "value": "((\"survey_question_option_content_translation\".\"source_language_provider\" IS NULL AND \"survey_question_option_content_translation\".\"source_raw_language_code\" IS NULL) OR (\"survey_question_option_content_translation\".\"source_language_provider\" IS NOT NULL AND \"survey_question_option_content_translation\".\"source_raw_language_code\" IS NOT NULL))"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.survey_question_option": {
@@ -12858,7 +12978,7 @@
       "schema": "public",
       "values": [
         "lingua",
-        "google"
+        "google_translate"
       ]
     },
     "public.maxdiff_lifecycle_status": {

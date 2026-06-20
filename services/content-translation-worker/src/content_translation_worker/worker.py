@@ -4,6 +4,7 @@ import logging
 import signal
 import sys
 import time
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Protocol, TypeGuard
 
 import valkey as valkey_lib
@@ -16,6 +17,7 @@ from content_translation_worker.db import (
     claim_content_translation_work_batch,
     process_claimed_work,
     recover_expired_leases,
+    retry_failed_eager_work,
 )
 from content_translation_worker.translation import (
     ContentTranslationProviderError,
@@ -179,6 +181,18 @@ def main() -> int:
                     if recovered > 0:
                         log.info("[Worker] Recovered %d expired lease(s)", recovered)
                 last_reconcile = now
+
+            retry_after = datetime.now(UTC) - timedelta(
+                seconds=settings.poll_interval_seconds,
+            )
+            with Session(primary_engine) as session, session.begin():
+                retried = retry_failed_eager_work(
+                    session,
+                    retry_after=retry_after,
+                    limit=settings.batch_size,
+                )
+                if retried > 0:
+                    log.info("[Worker] Retrying %d failed eager work item(s)", retried)
 
             dirty_batch = zpopmin_batch(vk, count=settings.batch_size)
             work_ids = [item.work_id for item in dirty_batch]

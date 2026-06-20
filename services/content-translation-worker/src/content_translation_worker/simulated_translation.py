@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 
 from content_translation_worker.translation import (
     ContentTranslationProviderError,
+    ContentTranslationResult,
 )
 from content_translation_worker.translation_model import SimulatedTranslationMode
 
@@ -35,7 +36,7 @@ class SimulatedTranslationService:
         source_language_code: str | None,
         target_language_code: str,
         mime_type: str,
-    ) -> list[str]:
+    ) -> list[ContentTranslationResult]:
         self._call_count += 1
         if self.mode is SimulatedTranslationMode.RETRYABLE_ERROR:
             _emit_simulation_event(
@@ -71,11 +72,17 @@ class SimulatedTranslationService:
             text_count=len(texts),
         )
         return [
-            simulate_translation(
-                text=text,
-                source_language_code=source_language_code,
-                target_language_code=target_language_code,
-                mime_type=mime_type,
+            ContentTranslationResult(
+                translated_text=simulate_translation(
+                    text=text,
+                    source_language_code=source_language_code,
+                    target_language_code=target_language_code,
+                    mime_type=mime_type,
+                ),
+                source_raw_language_code=source_language_code,
+                source_language_provider="google_translate"
+                if source_language_code is not None
+                else None,
             )
             for text in texts
         ]

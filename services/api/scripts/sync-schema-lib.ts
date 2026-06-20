@@ -259,7 +259,7 @@ function formatMappedColumnArg({
         );
     const enumClassName = enumMatch?.[1];
     const enumName = enumMatch?.[2];
-    if (enumClassName !== undefined) {
+    if (enumClassName !== undefined && enumName !== undefined) {
         return (
             `${indent}SaEnum(\n` +
             `${indent}    ${enumClassName},\n` +

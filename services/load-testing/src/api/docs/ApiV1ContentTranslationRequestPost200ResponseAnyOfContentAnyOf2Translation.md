@@ -6,6 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **targetLanguageCode** | **string** |  | [default to undefined]
+**sourceLanguageCode** | **string** |  | [optional] [default to undefined]
 **sourceLanguageLabel** | **string** |  | [optional] [default to undefined]
 **status** | **string** |  | [default to undefined]
 
@@ -16,6 +17,7 @@ import { ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Translat
 
 const instance: ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Translation = {
     targetLanguageCode,
+    sourceLanguageCode,
     sourceLanguageLabel,
     status,
 };

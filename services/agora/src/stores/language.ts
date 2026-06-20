@@ -67,20 +67,21 @@ export const useLanguageStore = defineStore("language", () => {
   async function updateLocale(
     localeCode: SupportedDisplayLanguageCodes
   ): Promise<void> {
+    // Update local state first so settings UI and stale backend loads see the new choice immediately.
+    displayLanguage.value = localeCode;
+
     // Load the locale messages if not already loaded
     await loadLocaleMessages(localeCode);
 
     // Set the locale using the boot helper
     setI18nLanguage(localeCode);
-
-    // Update local storage
-    displayLanguage.value = localeCode;
   }
 
   async function loadLanguagePreferencesFromBackend(): Promise<LanguagePreferences | null> {
+    const requestDisplayLanguage = displayLanguage.value;
     try {
       const response = await getLanguagePreferences({
-        currentDisplayLanguage: displayLanguage.value,
+        currentDisplayLanguage: requestDisplayLanguage,
       });
 
       if (response.status === "success") {
@@ -95,6 +96,10 @@ export const useLanguageStore = defineStore("language", () => {
         }
 
         const validated = validationResult.data;
+
+        if (displayLanguage.value !== requestDisplayLanguage) {
+          return validated;
+        }
 
         // Update spoken languages from backend
         spokenLanguages.value = validated.spokenLanguages;
@@ -172,7 +177,7 @@ export const useLanguageStore = defineStore("language", () => {
     try {
       spokenLanguages.value = newLanguages;
 
-      if (authStore.isLoggedIn) {
+      if (authStore.isGuestOrLoggedIn) {
         await saveSpokenLanguagesToBackend({
           newSpokenLanguages: newLanguages,
         });
@@ -196,14 +201,9 @@ export const useLanguageStore = defineStore("language", () => {
     try {
       await updateLocale(newLanguage);
 
-      // Save to backend if user is authenticated (in background)
-      if (authStore.isLoggedIn) {
-        void saveDisplayLanguageToBackend({
+      if (authStore.isGuestOrLoggedIn) {
+        await saveDisplayLanguageToBackend({
           newDisplayLanguage: newLanguage,
-        }).catch((err) => {
-          // Revert on failure
-          void updateLocale(originalLanguage);
-          console.error("Failed to save display language to backend:", err);
         });
       }
 
@@ -232,7 +232,7 @@ export const useLanguageStore = defineStore("language", () => {
       spokenLanguages.value = browserDefaultSpokenLanguages;
 
       // Save to backend if user is authenticated (in background)
-      if (authStore.isLoggedIn) {
+      if (authStore.isGuestOrLoggedIn) {
         await Promise.all([
           saveDisplayLanguageToBackend({
             newDisplayLanguage: browserDefaultDisplayLanguage,

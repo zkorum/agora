@@ -18,6 +18,8 @@ from content_translation_worker.generated_models import (
     ConversationContent,
     ConversationContentTranslation,
     DisplayLanguageCode,
+    LanguageCode,
+    LanguageDetectionProvider,
     Opinion,
     OpinionContent,
     OpinionContentTranslation,
@@ -32,8 +34,11 @@ from content_translation_worker.generated_models import (
 )
 from content_translation_worker.translation import (
     ContentTranslationProviderError,
+    ContentTranslationResult,
     ContentTranslationService,
 )
+
+EAGER_VISIBLE_PRIORITY_RANK = 1
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
@@ -58,6 +63,94 @@ def sanitize_translated_html(value: str) -> str:
         tags=ALLOWED_TRANSLATED_HTML_TAGS,
         attributes={},
         strip=True,
+    )
+
+
+@dataclass(frozen=True)
+class TranslationSourceMetadata:
+    source_language_code: LanguageCode | None
+    source_raw_language_code: str | None
+    source_language_provider: LanguageDetectionProvider | None
+    source_language_confidence: float | None = None
+
+
+EMPTY_TRANSLATION_SOURCE_METADATA = TranslationSourceMetadata(
+    source_language_code=None,
+    source_raw_language_code=None,
+    source_language_provider=None,
+)
+
+
+GOOGLE_TRANSLATE_LANGUAGE_ALIASES = {
+    "iw": "he",
+    "tl": "fil",
+    "zh": "zh-Hans",
+    "zh-CN": "zh-Hans",
+    "zh-SG": "zh-Hans",
+    "zh-HK": "zh-Hant",
+    "zh-MO": "zh-Hant",
+    "zh-TW": "zh-Hant",
+}
+
+
+def _normalize_google_translate_source_language_code(
+    raw_language_code: str,
+) -> LanguageCode | None:
+    trimmed_code = raw_language_code.strip()
+    if trimmed_code == "":
+        return None
+    normalized_code = GOOGLE_TRANSLATE_LANGUAGE_ALIASES.get(trimmed_code, trimmed_code)
+    try:
+        return LanguageCode(normalized_code)
+    except ValueError:
+        pass
+
+    primary_code = normalized_code.split("-", maxsplit=1)[0]
+    primary_code = GOOGLE_TRANSLATE_LANGUAGE_ALIASES.get(primary_code, primary_code)
+    try:
+        return LanguageCode(primary_code)
+    except ValueError:
+        return None
+
+
+def _translation_source_metadata_from_results(
+    results: list[ContentTranslationResult],
+    *,
+    fallback_source_language_code: str | None,
+    fallback_source_language_confidence: float | None,
+) -> TranslationSourceMetadata:
+    raw_language_codes = {
+        result.source_raw_language_code.strip()
+        for result in results
+        if result.source_language_provider == "google_translate"
+        and result.source_raw_language_code is not None
+        and result.source_raw_language_code.strip() != ""
+    }
+    fallback_metadata = TranslationSourceMetadata(
+        source_language_code=_normalize_google_translate_source_language_code(
+            fallback_source_language_code
+        )
+        if fallback_source_language_code is not None
+        else None,
+        source_raw_language_code=None,
+        source_language_provider=None,
+        source_language_confidence=fallback_source_language_confidence,
+    )
+    if len(raw_language_codes) != 1:
+        return fallback_metadata
+
+    raw_language_code = next(iter(raw_language_codes))
+    if len(raw_language_code) > 35:
+        return fallback_metadata
+
+    normalized_code = _normalize_google_translate_source_language_code(raw_language_code)
+    if normalized_code is None:
+        return fallback_metadata
+
+    return TranslationSourceMetadata(
+        source_language_code=normalized_code,
+        source_raw_language_code=raw_language_code,
+        source_language_provider=LanguageDetectionProvider.google_translate,
     )
 
 
@@ -107,6 +200,48 @@ def recover_expired_leases(session: Session) -> int:
         )
     )
     return len(expired_ids)
+
+
+def retry_failed_eager_work(
+    session: Session,
+    *,
+    retry_after: datetime,
+    limit: int,
+) -> int:
+    retryable_ids = list(
+        session.scalars(
+            select(ContentTranslationWork.id)
+            .where(
+                and_(
+                    ContentTranslationWork.status
+                    == ContentTranslationWorkStatus.failed,
+                    ContentTranslationWork.priority_rank
+                    == EAGER_VISIBLE_PRIORITY_RANK,
+                    ContentTranslationWork.failed_at.is_not(None),
+                    ContentTranslationWork.failed_at <= retry_after,
+                )
+            )
+            .order_by(ContentTranslationWork.failed_at.asc(), ContentTranslationWork.id.asc())
+            .limit(limit)
+        )
+    )
+    if not retryable_ids:
+        return 0
+
+    session.execute(
+        update(ContentTranslationWork)
+        .where(ContentTranslationWork.id.in_(retryable_ids))
+        .values(
+            status=ContentTranslationWorkStatus.pending,
+            lease_owner=None,
+            lease_token=None,
+            lease_expires_at=None,
+            last_error_code=None,
+            last_error_message=None,
+            updated_at=func.now(),
+        )
+    )
+    return len(retryable_ids)
 
 
 def claim_content_translation_work_batch(
@@ -309,6 +444,7 @@ class ConversationSource:
     title: str
     body: str | None
     source_language_code: str | None
+    source_language_confidence: float | None
 
 
 @dataclass(frozen=True)
@@ -318,6 +454,7 @@ class OpinionSource:
     content_id: int
     content: str
     source_language_code: str | None
+    source_language_confidence: float | None
 
 
 @dataclass(frozen=True)
@@ -326,6 +463,7 @@ class SurveyQuestionOptionSource:
     content_id: int
     option_text: str
     source_language_code: str | None
+    source_language_confidence: float | None
 
 
 @dataclass(frozen=True)
@@ -335,6 +473,7 @@ class SurveyQuestionSource:
     content_id: int
     question_text: str
     source_language_code: str | None
+    source_language_confidence: float | None
     options: list[SurveyQuestionOptionSource]
 
 
@@ -350,6 +489,7 @@ def _fetch_conversation_source(
             ConversationContent.title,
             ConversationContent.body,
             ConversationContent.source_language_code,
+            ConversationContent.source_language_confidence,
         )
         .join(Conversation, Conversation.id == ConversationContent.conversation_id)
         .where(
@@ -368,6 +508,7 @@ def _fetch_conversation_source(
         title=row.title,
         body=row.body,
         source_language_code=row.source_language_code,
+        source_language_confidence=row.source_language_confidence,
     )
 
 
@@ -383,6 +524,7 @@ def _fetch_opinion_source(
             OpinionContent.id,
             OpinionContent.content,
             OpinionContent.source_language_code,
+            OpinionContent.source_language_confidence,
         )
         .join(Opinion, Opinion.id == OpinionContent.opinion_id)
         .join(Conversation, Conversation.id == Opinion.conversation_id)
@@ -402,6 +544,7 @@ def _fetch_opinion_source(
         content_id=row.id,
         content=row.content,
         source_language_code=row.source_language_code,
+        source_language_confidence=row.source_language_confidence,
     )
 
 
@@ -418,6 +561,7 @@ def _fetch_survey_question_source(
             SurveyQuestionContent.id,
             SurveyQuestionContent.question_text,
             SurveyQuestionContent.source_language_code,
+            SurveyQuestionContent.source_language_confidence,
             SurveyQuestion.id.label("question_id"),
         )
         .join(SurveyQuestion, SurveyQuestion.id == SurveyQuestionContent.survey_question_id)
@@ -439,6 +583,7 @@ def _fetch_survey_question_source(
             SurveyQuestionOptionContent.id,
             SurveyQuestionOptionContent.option_text,
             SurveyQuestionOptionContent.source_language_code,
+            SurveyQuestionOptionContent.source_language_confidence,
         )
         .join(
             SurveyQuestionOptionContent,
@@ -457,12 +602,14 @@ def _fetch_survey_question_source(
         content_id=row.id,
         question_text=row.question_text,
         source_language_code=row.source_language_code,
+        source_language_confidence=row.source_language_confidence,
         options=[
             SurveyQuestionOptionSource(
                 option_slug_id=option.slug_id,
                 content_id=option.id,
                 option_text=option.option_text,
                 source_language_code=option.source_language_code,
+                source_language_confidence=option.source_language_confidence,
             )
             for option in option_rows
         ],
@@ -476,27 +623,40 @@ def _translate_conversation_source(
     source: ConversationSource,
     translation_service: ContentTranslationService,
 ) -> None:
-    title = translation_service.translate_texts(
+    title_result = translation_service.translate_texts(
         texts=[source.title],
         source_language_code=source.source_language_code,
         target_language_code=claim.display_language_code.value,
         mime_type="text/plain",
     )[0]
+    title = title_result.translated_text
     body = None
+    source_metadata_results = [title_result]
     if source.body is not None:
-        body = translation_service.translate_texts(
+        body_result = translation_service.translate_texts(
             texts=[source.body],
             source_language_code=source.source_language_code,
             target_language_code=claim.display_language_code.value,
             mime_type="text/html",
         )[0]
+        body = body_result.translated_text
         body = sanitize_translated_html(body)
+        source_metadata_results.append(body_result)
+    source_metadata = _translation_source_metadata_from_results(
+        source_metadata_results,
+        fallback_source_language_code=source.source_language_code,
+        fallback_source_language_confidence=source.source_language_confidence,
+    )
 
     stmt = pg_insert(ConversationContentTranslation).values(
         conversation_content_id=source.content_id,
         display_language_code=claim.display_language_code,
         translated_title=title,
         translated_body=body,
+        source_language_code=source_metadata.source_language_code,
+        source_raw_language_code=source_metadata.source_raw_language_code,
+        source_language_provider=source_metadata.source_language_provider,
+        source_language_confidence=source_metadata.source_language_confidence,
         created_at=func.now(),
         updated_at=func.now(),
     )
@@ -509,6 +669,10 @@ def _translate_conversation_source(
             set_={
                 "translated_title": title,
                 "translated_body": body,
+                "source_language_code": source_metadata.source_language_code,
+                "source_raw_language_code": source_metadata.source_raw_language_code,
+                "source_language_provider": source_metadata.source_language_provider,
+                "source_language_confidence": source_metadata.source_language_confidence,
                 "updated_at": func.now(),
             },
         )
@@ -528,17 +692,27 @@ def _translate_opinion_source(
     source: OpinionSource,
     translation_service: ContentTranslationService,
 ) -> None:
-    translated_content = translation_service.translate_texts(
+    translation_result = translation_service.translate_texts(
         texts=[source.content],
         source_language_code=source.source_language_code,
         target_language_code=claim.display_language_code.value,
         mime_type="text/html",
     )[0]
+    translated_content = translation_result.translated_text
     translated_content = sanitize_translated_html(translated_content)
+    source_metadata = _translation_source_metadata_from_results(
+        [translation_result],
+        fallback_source_language_code=source.source_language_code,
+        fallback_source_language_confidence=source.source_language_confidence,
+    )
     stmt = pg_insert(OpinionContentTranslation).values(
         opinion_content_id=source.content_id,
         display_language_code=claim.display_language_code,
         translated_content=translated_content,
+        source_language_code=source_metadata.source_language_code,
+        source_raw_language_code=source_metadata.source_raw_language_code,
+        source_language_provider=source_metadata.source_language_provider,
+        source_language_confidence=source_metadata.source_language_confidence,
         created_at=func.now(),
         updated_at=func.now(),
     )
@@ -548,7 +722,14 @@ def _translate_opinion_source(
                 OpinionContentTranslation.opinion_content_id,
                 OpinionContentTranslation.display_language_code,
             ],
-            set_={"translated_content": translated_content, "updated_at": func.now()},
+            set_={
+                "translated_content": translated_content,
+                "source_language_code": source_metadata.source_language_code,
+                "source_raw_language_code": source_metadata.source_raw_language_code,
+                "source_language_provider": source_metadata.source_language_provider,
+                "source_language_confidence": source_metadata.source_language_confidence,
+                "updated_at": func.now(),
+            },
         )
     )
     _insert_opinion_translation_event(
@@ -566,16 +747,26 @@ def _translate_survey_question_source(
     source: SurveyQuestionSource,
     translation_service: ContentTranslationService,
 ) -> None:
-    translated_question_text = translation_service.translate_texts(
+    question_result = translation_service.translate_texts(
         texts=[source.question_text],
         source_language_code=source.source_language_code,
         target_language_code=claim.display_language_code.value,
         mime_type="text/plain",
     )[0]
+    translated_question_text = question_result.translated_text
+    question_source_metadata = _translation_source_metadata_from_results(
+        [question_result],
+        fallback_source_language_code=source.source_language_code,
+        fallback_source_language_confidence=source.source_language_confidence,
+    )
     question_stmt = pg_insert(SurveyQuestionContentTranslation).values(
         survey_question_content_id=source.content_id,
         display_language_code=claim.display_language_code,
         translated_question_text=translated_question_text,
+        source_language_code=question_source_metadata.source_language_code,
+        source_raw_language_code=question_source_metadata.source_raw_language_code,
+        source_language_provider=question_source_metadata.source_language_provider,
+        source_language_confidence=question_source_metadata.source_language_confidence,
         created_at=func.now(),
         updated_at=func.now(),
     )
@@ -587,22 +778,36 @@ def _translate_survey_question_source(
             ],
             set_={
                 "translated_question_text": translated_question_text,
+                "source_language_code": question_source_metadata.source_language_code,
+                "source_raw_language_code": question_source_metadata.source_raw_language_code,
+                "source_language_provider": question_source_metadata.source_language_provider,
+                "source_language_confidence": question_source_metadata.source_language_confidence,
                 "updated_at": func.now(),
             },
         )
     )
 
     for option in source.options:
-        translated_option_text = translation_service.translate_texts(
+        option_result = translation_service.translate_texts(
             texts=[option.option_text],
             source_language_code=option.source_language_code,
             target_language_code=claim.display_language_code.value,
             mime_type="text/plain",
         )[0]
+        translated_option_text = option_result.translated_text
+        option_source_metadata = _translation_source_metadata_from_results(
+            [option_result],
+            fallback_source_language_code=option.source_language_code,
+            fallback_source_language_confidence=option.source_language_confidence,
+        )
         option_stmt = pg_insert(SurveyQuestionOptionContentTranslation).values(
             survey_question_option_content_id=option.content_id,
             display_language_code=claim.display_language_code,
             translated_option_text=translated_option_text,
+            source_language_code=option_source_metadata.source_language_code,
+            source_raw_language_code=option_source_metadata.source_raw_language_code,
+            source_language_provider=option_source_metadata.source_language_provider,
+            source_language_confidence=option_source_metadata.source_language_confidence,
             created_at=func.now(),
             updated_at=func.now(),
         )
@@ -614,6 +819,10 @@ def _translate_survey_question_source(
                 ],
                 set_={
                     "translated_option_text": translated_option_text,
+                    "source_language_code": option_source_metadata.source_language_code,
+                    "source_raw_language_code": option_source_metadata.source_raw_language_code,
+                    "source_language_provider": option_source_metadata.source_language_provider,
+                    "source_language_confidence": option_source_metadata.source_language_confidence,
                     "updated_at": func.now(),
                 },
             )

@@ -6,7 +6,10 @@ import {
     contentTranslationWorkTable,
     conversationContentTable,
     conversationContentTranslationTable,
+    conversationLanguageSettingTable,
     conversationTable,
+    conversationTranslationSettingTable,
+    conversationTranslationTargetLanguageTable,
     opinionContentTable,
     opinionContentTranslationTable,
     opinionTable,
@@ -19,8 +22,10 @@ import {
 } from "@/shared-backend/schema.js";
 import {
     CONTENT_TRANSLATION_QUEUE_PRIORITIES,
+    type ContentTranslationQueuePriority,
     enqueueContentTranslationWork,
 } from "@/shared-backend/contentTranslationQueue.js";
+import { shouldSkipTranslation } from "@/shared-backend/translate.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
 import type {
     ContentTranslationSubject,
@@ -35,7 +40,7 @@ import {
     hasCompleteSurveyQuestionTranslation,
     shouldQueueTranslationWork,
 } from "./contentTranslationContent.js";
-import type { ContentTranslationInclude } from "./contentTranslationContent.js";
+import type { ContentTranslationRequestMode } from "./contentTranslationContent.js";
 
 interface RequestContentTranslationParams {
     db: PostgresDatabase;
@@ -43,10 +48,19 @@ interface RequestContentTranslationParams {
     queueScript: Script;
     subject: ContentTranslationSubject;
     targetLanguageCode: SupportedDisplayLanguageCodes;
-    include: ContentTranslationInclude;
+    requestMode: ContentTranslationRequestMode;
     now: Date;
     log: Pick<BaseLogger, "info" | "error">;
     beforeQueueTranslationWork: () => Promise<void>;
+}
+
+interface ScheduleEagerContentTranslationParams {
+    db: PostgresDatabase;
+    valkey: Valkey | undefined;
+    queueScript: Script;
+    conversationSlugId: string;
+    now: Date;
+    log: Pick<BaseLogger, "info" | "error">;
 }
 
 interface ConversationContentSource {
@@ -109,11 +123,13 @@ async function ensureTranslationWork({
     db,
     input,
     now,
+    priority,
 }: {
     db: PostgresDatabase;
     input: TranslationWorkInput;
     now: Date;
-}): Promise<number> {
+    priority: ContentTranslationQueuePriority;
+}): Promise<{ workId: number; shouldQueue: boolean }> {
     const sourceWhere =
         input.sourceKind === "conversation"
             ? eq(contentTranslationWorkTable.conversationContentId, input.sourceContentId)
@@ -153,7 +169,7 @@ async function ensureTranslationWork({
     if (existing !== undefined) {
         const nextPriorityRank = Math.min(
             existing.priorityRank,
-            CONTENT_TRANSLATION_QUEUE_PRIORITIES.userInteractive,
+            priority,
         );
         await db
             .update(contentTranslationWorkTable)
@@ -170,7 +186,10 @@ async function ensureTranslationWork({
                 updatedAt: now,
             })
             .where(eq(contentTranslationWorkTable.id, existing.id));
-        return existing.id;
+        return {
+            workId: existing.id,
+            shouldQueue: existing.status !== "completed",
+        };
     }
 
     const insertValues = {
@@ -190,7 +209,7 @@ async function ensureTranslationWork({
                 : null,
         displayLanguageCode: input.targetLanguageCode,
         status: "pending" as const,
-        priorityRank: CONTENT_TRANSLATION_QUEUE_PRIORITIES.userInteractive,
+        priorityRank: priority,
         requestedAt: now,
         createdAt: now,
         updatedAt: now,
@@ -204,7 +223,7 @@ async function ensureTranslationWork({
     if (inserted === undefined) {
         throw new Error("Failed to create content translation work row");
     }
-    return inserted.id;
+    return { workId: inserted.id, shouldQueue: true };
 }
 
 async function queueTranslationWork({
@@ -213,20 +232,58 @@ async function queueTranslationWork({
     workId,
     now,
     log,
+    priority,
 }: {
     valkey: Valkey | undefined;
     queueScript: Script;
     workId: number;
     now: Date;
     log: Pick<BaseLogger, "info" | "error">;
+    priority: ContentTranslationQueuePriority;
 }): Promise<void> {
     await enqueueContentTranslationWork({
         valkey,
         script: queueScript,
         workId,
-        priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.userInteractive,
+        priority,
         enqueuedAtMs: now.getTime(),
         log,
+    });
+}
+
+async function queueMissingTranslationWork({
+    db,
+    valkey,
+    queueScript,
+    input,
+    now,
+    log,
+    priority,
+}: {
+    db: PostgresDatabase;
+    valkey: Valkey | undefined;
+    queueScript: Script;
+    input: TranslationWorkInput;
+    now: Date;
+    log: Pick<BaseLogger, "info" | "error">;
+    priority: ContentTranslationQueuePriority;
+}): Promise<void> {
+    const ensuredWork = await ensureTranslationWork({
+        db,
+        input,
+        now,
+        priority,
+    });
+    if (!ensuredWork.shouldQueue) {
+        return;
+    }
+    await queueTranslationWork({
+        valkey,
+        queueScript,
+        workId: ensuredWork.workId,
+        now,
+        log,
+        priority,
     });
 }
 
@@ -480,16 +537,371 @@ async function hasSurveyQuestionTranslation({
     });
 }
 
+async function fetchConfiguredTargetLanguageCodes({
+    db,
+    conversationSlugId,
+}: {
+    db: PostgresDatabase;
+    conversationSlugId: string;
+}): Promise<SupportedDisplayLanguageCodes[]> {
+    const rows = await db
+        .select({
+            mode: conversationLanguageSettingTable.mode,
+            languageCode: conversationLanguageSettingTable.languageCode,
+            detectedLanguageCode:
+                conversationLanguageSettingTable.detectedLanguageCode,
+            additionalLanguageCode:
+                conversationTranslationTargetLanguageTable.languageCode,
+        })
+        .from(conversationTable)
+        .innerJoin(
+            conversationTranslationSettingTable,
+            eq(
+                conversationTranslationSettingTable.conversationId,
+                conversationTable.id,
+            ),
+        )
+        .leftJoin(
+            conversationLanguageSettingTable,
+            eq(
+                conversationLanguageSettingTable.conversationId,
+                conversationTable.id,
+            ),
+        )
+        .leftJoin(
+            conversationTranslationTargetLanguageTable,
+            eq(
+                conversationTranslationTargetLanguageTable.translationSettingId,
+                conversationTranslationSettingTable.id,
+            ),
+        )
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(
+                    conversationTranslationSettingTable.dynamicTranslationEnabled,
+                    true,
+                ),
+            ),
+        )
+        .orderBy(asc(conversationTranslationTargetLanguageTable.id));
+
+    const targetLanguageCodes: SupportedDisplayLanguageCodes[] = [];
+    const seenTargetLanguageCodes = new Set<SupportedDisplayLanguageCodes>();
+    for (const row of rows) {
+        const mainLanguageCode =
+            row.mode === "manual"
+                ? row.languageCode
+                : row.mode === "auto"
+                  ? row.detectedLanguageCode
+                  : null;
+        if (
+            mainLanguageCode !== null &&
+            !seenTargetLanguageCodes.has(mainLanguageCode)
+        ) {
+            targetLanguageCodes.push(mainLanguageCode);
+            seenTargetLanguageCodes.add(mainLanguageCode);
+        }
+        if (
+            row.additionalLanguageCode !== null &&
+            !seenTargetLanguageCodes.has(row.additionalLanguageCode)
+        ) {
+            targetLanguageCodes.push(row.additionalLanguageCode);
+            seenTargetLanguageCodes.add(row.additionalLanguageCode);
+        }
+    }
+    return targetLanguageCodes;
+}
+
+async function fetchSeedOpinionSources({
+    db,
+    conversationId,
+    conversationSlugId,
+}: {
+    db: PostgresDatabase;
+    conversationId: number;
+    conversationSlugId: string;
+}): Promise<OpinionContentSource[]> {
+    return await db
+        .select({
+            conversationId: opinionTable.conversationId,
+            conversationSlugId: conversationTable.slugId,
+            opinionSlugId: opinionTable.slugId,
+            contentId: opinionContentTable.id,
+            content: opinionContentTable.content,
+            sourceLanguageCode: opinionContentTable.sourceLanguageCode,
+        })
+        .from(opinionTable)
+        .innerJoin(
+            conversationTable,
+            eq(conversationTable.id, opinionTable.conversationId),
+        )
+        .innerJoin(
+            opinionContentTable,
+            eq(opinionContentTable.id, opinionTable.currentContentId),
+        )
+        .where(
+            and(
+                eq(opinionTable.conversationId, conversationId),
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(opinionTable.isSeed, true),
+                isNotNull(opinionTable.currentContentId),
+            ),
+        )
+        .orderBy(asc(opinionTable.id));
+}
+
+async function fetchCurrentSurveyQuestionSources({
+    db,
+    conversationId,
+    conversationSlugId,
+}: {
+    db: PostgresDatabase;
+    conversationId: number;
+    conversationSlugId: string;
+}): Promise<SurveyQuestionContentSource[]> {
+    const rows = await db
+        .select({
+            conversationId: surveyQuestionTable.conversationId,
+            conversationSlugId: conversationTable.slugId,
+            questionSlugId: surveyQuestionTable.slugId,
+            questionId: surveyQuestionTable.id,
+            contentId: surveyQuestionContentTable.id,
+            questionText: surveyQuestionContentTable.questionText,
+            sourceLanguageCode: surveyQuestionContentTable.sourceLanguageCode,
+            optionSlugId: surveyQuestionOptionTable.slugId,
+            optionContentId: surveyQuestionOptionContentTable.id,
+            optionText: surveyQuestionOptionContentTable.optionText,
+        })
+        .from(surveyQuestionTable)
+        .innerJoin(
+            conversationTable,
+            eq(conversationTable.id, surveyQuestionTable.conversationId),
+        )
+        .innerJoin(
+            surveyQuestionContentTable,
+            eq(surveyQuestionContentTable.id, surveyQuestionTable.currentContentId),
+        )
+        .leftJoin(
+            surveyQuestionOptionTable,
+            eq(
+                surveyQuestionOptionTable.surveyQuestionId,
+                surveyQuestionTable.id,
+            ),
+        )
+        .leftJoin(
+            surveyQuestionOptionContentTable,
+            eq(
+                surveyQuestionOptionContentTable.id,
+                surveyQuestionOptionTable.currentContentId,
+            ),
+        )
+        .where(
+            and(
+                eq(surveyQuestionTable.conversationId, conversationId),
+                eq(conversationTable.slugId, conversationSlugId),
+                isNotNull(surveyQuestionTable.currentContentId),
+            ),
+        )
+        .orderBy(
+            asc(surveyQuestionTable.displayOrder),
+            asc(surveyQuestionOptionTable.displayOrder),
+        );
+
+    const sources = new Map<number, SurveyQuestionContentSource>();
+    for (const row of rows) {
+        const existing = sources.get(row.questionId);
+        const source = existing ?? {
+            conversationId: row.conversationId,
+            conversationSlugId: row.conversationSlugId,
+            questionSlugId: row.questionSlugId,
+            questionId: row.questionId,
+            contentId: row.contentId,
+            questionText: row.questionText,
+            sourceLanguageCode: row.sourceLanguageCode,
+            options: [],
+        };
+        if (
+            row.optionSlugId !== null &&
+            row.optionContentId !== null &&
+            row.optionText !== null
+        ) {
+            source.options.push({
+                optionSlugId: row.optionSlugId,
+                contentId: row.optionContentId,
+                optionText: row.optionText,
+            });
+        }
+        if (existing === undefined) {
+            sources.set(row.questionId, source);
+        }
+    }
+    return [...sources.values()];
+}
+
+async function ensureAndQueueEagerTranslationWork({
+    db,
+    valkey,
+    queueScript,
+    input,
+    now,
+    log,
+}: {
+    db: PostgresDatabase;
+    valkey: Valkey | undefined;
+    queueScript: Script;
+    input: TranslationWorkInput;
+    now: Date;
+    log: Pick<BaseLogger, "info" | "error">;
+}): Promise<void> {
+    await queueMissingTranslationWork({
+        db,
+        valkey,
+        queueScript,
+        input,
+        now,
+        log,
+        priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.eagerVisible,
+    });
+}
+
+export async function scheduleEagerContentTranslationForConversation({
+    db,
+    valkey,
+    queueScript,
+    conversationSlugId,
+    now,
+    log,
+}: ScheduleEagerContentTranslationParams): Promise<void> {
+    const targetLanguageCodes = await fetchConfiguredTargetLanguageCodes({
+        db,
+        conversationSlugId,
+    });
+    if (targetLanguageCodes.length === 0) {
+        return;
+    }
+
+    const conversationSource = await fetchConversationSource({
+        db,
+        conversationSlugId,
+    });
+    if (conversationSource === undefined) {
+        return;
+    }
+    const surveySources = await fetchCurrentSurveyQuestionSources({
+        db,
+        conversationId: conversationSource.conversationId,
+        conversationSlugId,
+    });
+    const seedOpinionSources = await fetchSeedOpinionSources({
+        db,
+        conversationId: conversationSource.conversationId,
+        conversationSlugId,
+    });
+
+    for (const targetLanguageCode of targetLanguageCodes) {
+        if (
+            conversationSource.sourceLanguageCode !== null &&
+            !shouldSkipTranslation({
+                sourceLanguageCode: conversationSource.sourceLanguageCode,
+                targetLanguageCode,
+            }) &&
+            !(await hasConversationTranslation({
+                db,
+                conversationContentId: conversationSource.contentId,
+                targetLanguageCode,
+            }))
+        ) {
+            await ensureAndQueueEagerTranslationWork({
+                db,
+                valkey,
+                queueScript,
+                input: {
+                    conversationId: conversationSource.conversationId,
+                    sourceKind: "conversation",
+                    sourceContentId: conversationSource.contentId,
+                    targetLanguageCode,
+                },
+                now,
+                log,
+            });
+        }
+
+        for (const source of surveySources) {
+            if (
+                source.sourceLanguageCode === null ||
+                shouldSkipTranslation({
+                    sourceLanguageCode: source.sourceLanguageCode,
+                    targetLanguageCode,
+                }) ||
+                (await hasSurveyQuestionTranslation({
+                    db,
+                    source,
+                    targetLanguageCode,
+                }))
+            ) {
+                continue;
+            }
+            await ensureAndQueueEagerTranslationWork({
+                db,
+                valkey,
+                queueScript,
+                input: {
+                    conversationId: source.conversationId,
+                    sourceKind: "survey_question",
+                    surveyQuestionContentId: source.contentId,
+                    surveyQuestionOptionContentIds: source.options.map(
+                        (option) => option.contentId,
+                    ),
+                    targetLanguageCode,
+                },
+                now,
+                log,
+            });
+        }
+
+        for (const source of seedOpinionSources) {
+            if (
+                source.sourceLanguageCode === null ||
+                shouldSkipTranslation({
+                    sourceLanguageCode: source.sourceLanguageCode,
+                    targetLanguageCode,
+                }) ||
+                (await hasOpinionTranslation({
+                    db,
+                    opinionContentId: source.contentId,
+                    targetLanguageCode,
+                }))
+            ) {
+                continue;
+            }
+            await ensureAndQueueEagerTranslationWork({
+                db,
+                valkey,
+                queueScript,
+                input: {
+                    conversationId: source.conversationId,
+                    sourceKind: "opinion",
+                    sourceContentId: source.contentId,
+                    targetLanguageCode,
+                },
+                now,
+                log,
+            });
+        }
+    }
+}
+
 async function buildSurveyQuestionResponse({
     db,
     source,
     targetLanguageCode,
-    include,
+    requestMode,
 }: {
     db: PostgresDatabase;
     source: SurveyQuestionContentSource;
     targetLanguageCode: SupportedDisplayLanguageCodes;
-    include: ContentTranslationInclude;
+    requestMode: ContentTranslationRequestMode;
 }): Promise<{
     subject: Extract<ContentTranslationSubject, { kind: "survey_question" }>;
     content: LocalizedSurveyQuestionContent;
@@ -498,6 +910,14 @@ async function buildSurveyQuestionResponse({
         .select({
             translatedQuestionText:
                 surveyQuestionContentTranslationTable.translatedQuestionText,
+            sourceLanguageCode:
+                surveyQuestionContentTranslationTable.sourceLanguageCode,
+            sourceRawLanguageCode:
+                surveyQuestionContentTranslationTable.sourceRawLanguageCode,
+            sourceLanguageProvider:
+                surveyQuestionContentTranslationTable.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                surveyQuestionContentTranslationTable.sourceLanguageConfidence,
         })
         .from(surveyQuestionContentTranslationTable)
         .where(
@@ -551,10 +971,17 @@ async function buildSurveyQuestionResponse({
                 ? undefined
                 : {
                       translatedQuestionText: questionTranslation.translatedQuestionText,
+                      sourceLanguageCode: questionTranslation.sourceLanguageCode,
+                      sourceRawLanguageCode:
+                          questionTranslation.sourceRawLanguageCode,
+                      sourceLanguageProvider:
+                          questionTranslation.sourceLanguageProvider,
+                      sourceLanguageConfidence:
+                          questionTranslation.sourceLanguageConfidence,
                       translatedOptionsByContentId,
                   },
         targetLanguageCode,
-        include,
+        requestMode,
     });
 }
 
@@ -562,12 +989,12 @@ async function buildConversationResponse({
     db,
     source,
     targetLanguageCode,
-    include,
+    requestMode,
 }: {
     db: PostgresDatabase;
     source: ConversationContentSource;
     targetLanguageCode: SupportedDisplayLanguageCodes;
-    include: ContentTranslationInclude;
+    requestMode: ContentTranslationRequestMode;
 }): Promise<{
     subject: Extract<ContentTranslationSubject, { kind: "conversation" }>;
     content: LocalizedConversationContent;
@@ -576,6 +1003,13 @@ async function buildConversationResponse({
         .select({
             translatedTitle: conversationContentTranslationTable.translatedTitle,
             translatedBody: conversationContentTranslationTable.translatedBody,
+            sourceLanguageCode: conversationContentTranslationTable.sourceLanguageCode,
+            sourceRawLanguageCode:
+                conversationContentTranslationTable.sourceRawLanguageCode,
+            sourceLanguageProvider:
+                conversationContentTranslationTable.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                conversationContentTranslationTable.sourceLanguageConfidence,
         })
         .from(conversationContentTranslationTable)
         .where(
@@ -594,7 +1028,7 @@ async function buildConversationResponse({
     const translation = translationRows.at(0);
     const original = { title: source.title, body: source.body ?? undefined };
 
-    if (translation !== undefined && include === "translation") {
+    if (translation !== undefined) {
         return {
             subject: {
                 kind: "conversation",
@@ -607,34 +1041,7 @@ async function buildConversationResponse({
                 translation: {
                     ...buildTranslationMetadata({
                         targetLanguageCode,
-                        sourceLanguageCode: source.sourceLanguageCode,
-                        status: "completed",
-                    }),
-                },
-                variants: {
-                    translated: {
-                        title: translation.translatedTitle,
-                        body: translation.translatedBody ?? undefined,
-                    },
-                },
-            },
-        };
-    }
-
-    if (translation !== undefined && include === "both") {
-        return {
-            subject: {
-                kind: "conversation",
-                conversationSlugId: source.conversationSlugId,
-            },
-            content: {
-                kind: "translatable",
-                sourceVersion: `conversation_content:${String(source.contentId)}`,
-                initialMode: "translated",
-                translation: {
-                    ...buildTranslationMetadata({
-                        targetLanguageCode,
-                        sourceLanguageCode: source.sourceLanguageCode,
+                        sourceMetadata: translation,
                         status: "completed",
                     }),
                 },
@@ -661,25 +1068,15 @@ async function buildConversationResponse({
             translation: {
                 ...buildTranslationMetadata({
                     targetLanguageCode,
-                    sourceLanguageCode: source.sourceLanguageCode,
+                    sourceMetadata: translation,
                     status:
-                        translation === undefined && include === "original"
+                        requestMode === "read_existing"
                             ? "not_requested"
-                            : translation === undefined
-                              ? "pending"
-                              : "completed",
+                            : "pending",
                 }),
             },
             variants: {
                 original,
-                ...(translation === undefined
-                    ? {}
-                    : {
-                          translated: {
-                              title: translation.translatedTitle,
-                              body: translation.translatedBody ?? undefined,
-                          },
-                      }),
             },
         },
     };
@@ -689,18 +1086,26 @@ async function buildOpinionResponse({
     db,
     source,
     targetLanguageCode,
-    include,
+    requestMode,
 }: {
     db: PostgresDatabase;
     source: OpinionContentSource;
     targetLanguageCode: SupportedDisplayLanguageCodes;
-    include: ContentTranslationInclude;
+    requestMode: ContentTranslationRequestMode;
 }): Promise<{
     subject: Extract<ContentTranslationSubject, { kind: "opinion" }>;
     content: LocalizedOpinionContent;
 }> {
     const translationRows = await db
-        .select({ translatedContent: opinionContentTranslationTable.translatedContent })
+        .select({
+            translatedContent: opinionContentTranslationTable.translatedContent,
+            sourceLanguageCode: opinionContentTranslationTable.sourceLanguageCode,
+            sourceRawLanguageCode: opinionContentTranslationTable.sourceRawLanguageCode,
+            sourceLanguageProvider:
+                opinionContentTranslationTable.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                opinionContentTranslationTable.sourceLanguageConfidence,
+        })
         .from(opinionContentTranslationTable)
         .where(
             and(
@@ -715,7 +1120,7 @@ async function buildOpinionResponse({
     const translation = translationRows.at(0);
     const original = { content: source.content };
 
-    if (translation !== undefined && include === "translation") {
+    if (translation !== undefined) {
         return {
             subject: {
                 kind: "opinion",
@@ -729,32 +1134,7 @@ async function buildOpinionResponse({
                 translation: {
                     ...buildTranslationMetadata({
                         targetLanguageCode,
-                        sourceLanguageCode: source.sourceLanguageCode,
-                        status: "completed",
-                    }),
-                },
-                variants: {
-                    translated: { content: translation.translatedContent },
-                },
-            },
-        };
-    }
-
-    if (translation !== undefined && include === "both") {
-        return {
-            subject: {
-                kind: "opinion",
-                conversationSlugId: source.conversationSlugId,
-                opinionSlugId: source.opinionSlugId,
-            },
-            content: {
-                kind: "translatable",
-                sourceVersion: `opinion_content:${String(source.contentId)}`,
-                initialMode: "translated",
-                translation: {
-                    ...buildTranslationMetadata({
-                        targetLanguageCode,
-                        sourceLanguageCode: source.sourceLanguageCode,
+                        sourceMetadata: translation,
                         status: "completed",
                     }),
                 },
@@ -779,24 +1159,15 @@ async function buildOpinionResponse({
             translation: {
                 ...buildTranslationMetadata({
                     targetLanguageCode,
-                    sourceLanguageCode: source.sourceLanguageCode,
+                    sourceMetadata: translation,
                     status:
-                        translation === undefined && include === "original"
+                        requestMode === "read_existing"
                             ? "not_requested"
-                            : translation === undefined
-                              ? "pending"
-                              : "completed",
+                            : "pending",
                 }),
             },
             variants: {
                 original,
-                ...(translation === undefined
-                    ? {}
-                    : {
-                          translated: {
-                              content: translation.translatedContent,
-                          },
-                      }),
             },
         },
     };
@@ -808,7 +1179,7 @@ export async function requestContentTranslation({
     queueScript,
     subject,
     targetLanguageCode,
-    include,
+    requestMode,
     now,
     log,
     beforeQueueTranslationWork,
@@ -827,10 +1198,19 @@ export async function requestContentTranslation({
             source,
             targetLanguageCode,
         });
-        if (shouldQueueTranslationWork({ include, translationExists })) {
+        const skipTranslation = shouldSkipTranslation({
+            sourceLanguageCode: source.sourceLanguageCode ?? undefined,
+            targetLanguageCode,
+        });
+        if (
+            shouldQueueTranslationWork({ requestMode, translationExists }) &&
+            !skipTranslation
+        ) {
             await beforeQueueTranslationWork();
-            const workId = await ensureTranslationWork({
+            await queueMissingTranslationWork({
                 db,
+                valkey,
+                queueScript,
                 input: {
                     conversationId: source.conversationId,
                     sourceKind: "survey_question",
@@ -841,14 +1221,15 @@ export async function requestContentTranslation({
                     targetLanguageCode,
                 },
                 now,
+                log,
+                priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.userInteractive,
             });
-            await queueTranslationWork({ valkey, queueScript, workId, now, log });
         }
         return await buildSurveyQuestionResponse({
             db,
             source,
             targetLanguageCode,
-            include,
+            requestMode,
         });
     }
 
@@ -865,10 +1246,19 @@ export async function requestContentTranslation({
             conversationContentId: source.contentId,
             targetLanguageCode,
         });
-        if (shouldQueueTranslationWork({ include, translationExists })) {
+        const skipTranslation = shouldSkipTranslation({
+            sourceLanguageCode: source.sourceLanguageCode ?? undefined,
+            targetLanguageCode,
+        });
+        if (
+            shouldQueueTranslationWork({ requestMode, translationExists }) &&
+            !skipTranslation
+        ) {
             await beforeQueueTranslationWork();
-            const workId = await ensureTranslationWork({
+            await queueMissingTranslationWork({
                 db,
+                valkey,
+                queueScript,
                 input: {
                     conversationId: source.conversationId,
                     sourceKind: "conversation",
@@ -876,14 +1266,15 @@ export async function requestContentTranslation({
                     targetLanguageCode,
                 },
                 now,
+                log,
+                priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.userInteractive,
             });
-            await queueTranslationWork({ valkey, queueScript, workId, now, log });
         }
         return await buildConversationResponse({
             db,
             source,
             targetLanguageCode,
-            include,
+            requestMode,
         });
     }
 
@@ -900,10 +1291,19 @@ export async function requestContentTranslation({
         opinionContentId: source.contentId,
         targetLanguageCode,
     });
-    if (shouldQueueTranslationWork({ include, translationExists })) {
+    const skipTranslation = shouldSkipTranslation({
+        sourceLanguageCode: source.sourceLanguageCode ?? undefined,
+        targetLanguageCode,
+    });
+    if (
+        shouldQueueTranslationWork({ requestMode, translationExists }) &&
+        !skipTranslation
+    ) {
         await beforeQueueTranslationWork();
-        const workId = await ensureTranslationWork({
+        await queueMissingTranslationWork({
             db,
+            valkey,
+            queueScript,
             input: {
                 conversationId: source.conversationId,
                 sourceKind: "opinion",
@@ -911,13 +1311,14 @@ export async function requestContentTranslation({
                 targetLanguageCode,
             },
             now,
+            log,
+            priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.userInteractive,
         });
-        await queueTranslationWork({ valkey, queueScript, workId, now, log });
     }
     return await buildOpinionResponse({
         db,
         source,
         targetLanguageCode,
-        include,
+        requestMode,
     });
 }

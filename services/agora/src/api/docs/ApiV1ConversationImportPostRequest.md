@@ -6,7 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **polisUrl** | **string** |  | [default to undefined]
-**postAsOrganization** | **string** |  | [optional] [default to undefined]
+**postAsOrganization** | **string** |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
 **languageSetting** | [**ApiV1ConversationImportPostRequestLanguageSetting**](ApiV1ConversationImportPostRequestLanguageSetting.md) |  | [optional] [default to undefined]

@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Protocol, TypeGuard
+from typing import TYPE_CHECKING, Literal, Protocol, TypeGuard
 
 from google.api_core.client_options import ClientOptions
 from google.cloud import translate_v3
@@ -43,6 +43,13 @@ class ContentTranslationProviderError(RuntimeError):
     pass
 
 
+@dataclass(frozen=True)
+class ContentTranslationResult:
+    translated_text: str
+    source_raw_language_code: str | None
+    source_language_provider: Literal["google_translate"] | None
+
+
 class ServiceAccountJson(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -55,6 +62,9 @@ class ServiceAccountJson(BaseModel):
 class TranslationText(Protocol):
     @property
     def translated_text(self) -> str: ...
+
+    @property
+    def detected_language_code(self) -> str: ...
 
 
 class TranslateTextResponse(Protocol):
@@ -102,7 +112,7 @@ class GoogleTranslationService:
         source_language_code: str | None,
         target_language_code: str,
         mime_type: str,
-    ) -> list[str]:
+    ) -> list[ContentTranslationResult]:
         return translate_texts(
             service=self,
             texts=texts,
@@ -120,8 +130,7 @@ class ContentTranslationService(Protocol):
         source_language_code: str | None,
         target_language_code: str,
         mime_type: str,
-    ) -> list[str]: ...
-
+    ) -> list[ContentTranslationResult]: ...
 
 
 def initialize_google_translation_service(
@@ -174,14 +183,28 @@ def translate_texts(
     source_language_code: str | None,
     target_language_code: str,
     mime_type: str,
-) -> list[str]:
+) -> list[ContentTranslationResult]:
     if _should_skip_translation(
         source_language_code=source_language_code,
         target_language_code=target_language_code,
     ):
-        return texts
+        return [
+            ContentTranslationResult(
+                translated_text=text,
+                source_raw_language_code=source_language_code,
+                source_language_provider=None,
+            )
+            for text in texts
+        ]
 
-    translated_texts = list(texts)
+    translated_results = [
+        ContentTranslationResult(
+            translated_text=text,
+            source_raw_language_code=None,
+            source_language_provider=None,
+        )
+        for text in texts
+    ]
     request_items = [
         _TranslationRequestItem(index=index, text=text)
         for index, text in enumerate(texts)
@@ -195,9 +218,9 @@ def translate_texts(
             target_language_code=target_language_code,
             mime_type=mime_type,
         )
-        for item, translated_text in zip(chunk.items, chunk_translations, strict=True):
-            translated_texts[item.index] = translated_text
-    return translated_texts
+        for item, result in zip(chunk.items, chunk_translations, strict=True):
+            translated_results[item.index] = result
+    return translated_results
 
 
 @dataclass(frozen=True)
@@ -231,7 +254,7 @@ def _translate_text_chunk(
     source_language_code: str | None,
     target_language_code: str,
     mime_type: str,
-) -> list[str]:
+) -> list[ContentTranslationResult]:
     response = service.client.translate_text(
         parent=f"projects/{service.config.project_id}/locations/{service.config.location}",
         contents=texts,
@@ -246,14 +269,23 @@ def _translate_text_chunk(
         retry=None,
         timeout=service.config.request_timeout_seconds,
     )
-    translated_texts = [translation.translated_text for translation in response.translations]
-    if len(translated_texts) != len(texts):
+    translated_results = [
+        ContentTranslationResult(
+            translated_text=translation.translated_text,
+            source_raw_language_code=translation.detected_language_code or None,
+            source_language_provider="google_translate"
+            if translation.detected_language_code
+            else None,
+        )
+        for translation in response.translations
+    ]
+    if len(translated_results) != len(texts):
         msg = (
             f"Translation failed: expected {len(texts)} translated text(s), "
-            f"got {len(translated_texts)}"
+            f"got {len(translated_results)}"
         )
         raise ContentTranslationProviderError(msg)
-    return translated_texts
+    return translated_results
 
 
 def _translation_request_chunks(

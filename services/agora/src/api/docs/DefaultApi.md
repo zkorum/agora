@@ -4528,7 +4528,7 @@ const { status, data } = await apiInstance.apiV1UserLanguagePreferencesGetPost(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1UserLanguagePreferencesUpdatePost**
-> apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest)
+> ApiV1ConversationClosePost200ResponseOneOf apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest)
 
 
 ### Example
@@ -4559,7 +4559,7 @@ const { status, data } = await apiInstance.apiV1UserLanguagePreferencesUpdatePos
 
 ### Return type
 
-void (empty response body)
+**ApiV1ConversationClosePost200ResponseOneOf**
 
 ### Authorization
 
@@ -4568,7 +4568,7 @@ void (empty response body)
 ### HTTP request headers
 
  - **Content-Type**: application/json
- - **Accept**: Not defined
+ - **Accept**: application/json
 
 
 ### HTTP response details

@@ -59,7 +59,10 @@ export const zodParticipationMode = z.enum([
 ]);
 export const zodConversationType = z.enum(["polis", "maxdiff"]);
 export const zodConversationLanguageSettingMode = z.enum(["auto", "manual"]);
-export const zodLanguageDetectionProvider = z.enum(["lingua", "google"]);
+export const zodLanguageDetectionProvider = z.enum([
+    "lingua",
+    "google_translate",
+]);
 export const zodConversationLanguageSettingInput = z.discriminatedUnion(
     "mode",
     [
@@ -276,6 +279,7 @@ export const zodContentTranslationSubject = z.discriminatedUnion("kind", [
 const zodLocalizedContentTranslationMetadata = z
     .object({
         targetLanguageCode: ZodSupportedDisplayLanguageCodes,
+        sourceLanguageCode: ZodNormalizedLanguageCodes.nullable().optional(),
         sourceLanguageLabel: z.string().min(1).optional(),
         status: zodLocalizedContentTranslationStatus,
     })
@@ -1701,6 +1705,9 @@ export type LocalizedContentDisplayMode = z.infer<
 >;
 export type LocalizedContentTranslationStatus = z.infer<
     typeof zodLocalizedContentTranslationStatus
+>;
+export type LanguageDetectionProvider = z.infer<
+    typeof zodLanguageDetectionProvider
 >;
 export type ContentTranslationSubject = z.infer<
     typeof zodContentTranslationSubject

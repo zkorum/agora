@@ -45,7 +45,13 @@ from import_worker.generated_shared_types import (
 from import_worker.html import html_to_counted_text, process_user_generated_html
 from import_worker.ids import generate_random_slug_id, generate_uuid
 from import_worker.import_models import ImportPolisResults
-from import_worker.language_detection import detect_source_language
+from import_worker.language_detection import (
+    ADDITIONAL_LANGUAGE_HINT_WEIGHT,
+    AUTO_MAIN_LANGUAGE_HINT_WEIGHT,
+    MANUAL_MAIN_LANGUAGE_HINT_WEIGHT,
+    SourceLanguageHint,
+    detect_source_language,
+)
 from import_worker.polis_url import extract_polis_id_from_url
 
 if TYPE_CHECKING:
@@ -138,6 +144,14 @@ class ConversationIds:
     conversation_slug_id: str
     conversation_id: int
     conversation_content_id: int
+    conversation_source_language_code: str | None
+    content_language_hints: list[SourceLanguageHint]
+
+
+@dataclass(frozen=True)
+class SeedOpinionContentSource:
+    content_id: int
+    source_language_code: str | None
 
 
 @dataclass(frozen=True)
@@ -157,7 +171,7 @@ class ParticipantData:
 class OpinionInsertData:
     opinion_id_per_statement_id: dict[int, int]
     opinion_content_id_per_opinion_id: dict[int, int]
-    seed_opinion_content_ids: list[int]
+    seed_opinion_content_sources: list[SeedOpinionContentSource]
 
 
 @dataclass(frozen=True)
@@ -287,7 +301,59 @@ def _create_conversation(
     )
     body = process_user_generated_html(body, enable_links=True, mode="input")
     body_plain_text = html_to_counted_text(body)
-    language_metadata = detect_source_language(f"{title}\n{body_plain_text}")
+    language_setting = request.form_data.language_setting
+    language_setting_mode = (
+        ConversationLanguageSettingMode.manual
+        if language_setting.mode == "manual"
+        else ConversationLanguageSettingMode.auto
+    )
+    manual_language_code = (
+        language_setting.language_code.value if language_setting.mode == "manual" else None
+    )
+    block_language_hints = (
+        [
+            SourceLanguageHint(
+                language_code=manual_language_code,
+                weight=MANUAL_MAIN_LANGUAGE_HINT_WEIGHT,
+            ),
+        ]
+        if manual_language_code is not None
+        else []
+    )
+    detected_language_metadata = detect_source_language(
+        f"{title}\n{body_plain_text}",
+        language_hints=block_language_hints,
+    )
+    content_source_language_code = detected_language_metadata.language_code
+    content_source_language_confidence = detected_language_metadata.confidence
+    main_language_code = (
+        manual_language_code
+        if language_setting.mode == "manual"
+        else detected_language_metadata.language_code
+    )
+    content_language_hints: list[SourceLanguageHint] = []
+    seen_hint_language_codes: set[str] = set()
+    if main_language_code is not None:
+        content_language_hints.append(
+            SourceLanguageHint(
+                language_code=main_language_code,
+                weight=MANUAL_MAIN_LANGUAGE_HINT_WEIGHT
+                if language_setting.mode == "manual"
+                else AUTO_MAIN_LANGUAGE_HINT_WEIGHT,
+            ),
+        )
+        seen_hint_language_codes.add(main_language_code)
+    for language_code in request.form_data.multilingual_setting.additional_language_codes:
+        additional_language_code = language_code.value
+        if additional_language_code in seen_hint_language_codes:
+            continue
+        content_language_hints.append(
+            SourceLanguageHint(
+                language_code=additional_language_code,
+                weight=ADDITIONAL_LANGUAGE_HINT_WEIGHT,
+            ),
+        )
+        seen_hint_language_codes.add(additional_language_code)
     conversation_slug_id = generate_random_slug_id()
     import_url = request.polis_url if request.type == "url" else None
 
@@ -329,8 +395,8 @@ def _create_conversation(
             title=title,
             body=body,
             body_plain_text=body_plain_text,
-            source_language_code=language_metadata.language_code,
-            source_language_confidence=language_metadata.confidence,
+            source_language_code=content_source_language_code,
+            source_language_confidence=content_source_language_confidence,
         )
         .returning(ConversationContent.id),
     ).first()
@@ -343,25 +409,14 @@ def _create_conversation(
         .where(Conversation.id == conversation_id)
         .values(current_content_id=conversation_content_id),
     )
-    language_setting = request.form_data.language_setting
-    language_setting_mode = (
-        ConversationLanguageSettingMode.manual
-        if language_setting.mode == "manual"
-        else ConversationLanguageSettingMode.auto
-    )
-    manual_language_code = (
-        language_setting.language_code.value
-        if language_setting.mode == "manual"
-        else None
-    )
     session.execute(
         sqlalchemy_insert(ConversationLanguageSetting).values(
             conversation_id=conversation_id,
             mode=language_setting_mode,
             language_code=manual_language_code,
-            detected_language_code=language_metadata.language_code,
-            detected_raw_language_code=language_metadata.language_code,
-            detection_confidence=language_metadata.confidence,
+            detected_language_code=detected_language_metadata.language_code,
+            detected_raw_language_code=detected_language_metadata.language_code,
+            detection_confidence=detected_language_metadata.confidence,
             detected_from_corpus_hash=None,
             created_at=now,
             updated_at=now,
@@ -399,6 +454,8 @@ def _create_conversation(
         conversation_slug_id=conversation_slug_id,
         conversation_id=conversation_id,
         conversation_content_id=conversation_content_id,
+        conversation_source_language_code=content_source_language_code,
+        content_language_hints=content_language_hints,
     )
 
 
@@ -524,6 +581,7 @@ def _insert_opinions(
     }
 
     content_values: list[dict[str, Any]] = []
+    source_language_code_per_statement_id: dict[int, str | None] = {}
     for comment in imported.comments_data:
         content = process_user_generated_html(
             _truncate_with_ellipsis(
@@ -535,15 +593,21 @@ def _insert_opinions(
             mode="output",
         )
         content_plain_text = html_to_counted_text(content)
-        language_metadata = detect_source_language(content_plain_text)
+        language_metadata = detect_source_language(
+            content_plain_text,
+            language_hints=conversation_ids.content_language_hints,
+        )
+        source_language_code = language_metadata.language_code
+        source_language_confidence = language_metadata.confidence
+        source_language_code_per_statement_id[comment.statement_id] = source_language_code
         content_values.append(
             {
                 "opinion_id": opinion_id_per_statement_id[comment.statement_id],
                 "conversation_content_id": conversation_ids.conversation_content_id,
                 "content": content,
                 "content_plain_text": content_plain_text,
-                "source_language_code": language_metadata.language_code,
-                "source_language_confidence": language_metadata.confidence,
+                "source_language_code": source_language_code,
+                "source_language_confidence": source_language_confidence,
             },
         )
     raw_inserted_content_rows: object = (
@@ -585,14 +649,25 @@ def _insert_opinions(
     if moderated_values:
         session.execute(sqlalchemy_insert(OpinionModeration), moderated_values)
     session.commit()
+    seed_opinion_content_sources: list[SeedOpinionContentSource] = []
+    for comment in imported.comments_data:
+        if not comment.is_seed:
+            continue
+        opinion_id = opinion_id_per_statement_id[comment.statement_id]
+        opinion_content_id = opinion_content_id_per_opinion_id[opinion_id]
+        seed_opinion_content_sources.append(
+            SeedOpinionContentSource(
+                content_id=opinion_content_id,
+                source_language_code=source_language_code_per_statement_id[
+                    comment.statement_id
+                ],
+            ),
+        )
+
     return OpinionInsertData(
         opinion_id_per_statement_id=opinion_id_per_statement_id,
         opinion_content_id_per_opinion_id=opinion_content_id_per_opinion_id,
-        seed_opinion_content_ids=[
-            opinion_content_id_per_opinion_id[opinion_id_per_statement_id[comment.statement_id]]
-            for comment in imported.comments_data
-            if comment.is_seed
-        ],
+        seed_opinion_content_sources=seed_opinion_content_sources,
     )
 
 
@@ -680,12 +755,26 @@ def _create_content_translation_work(
     conversation_ids: ConversationIds,
     opinions: OpinionInsertData,
 ) -> ContentTranslationQueueSchedule | None:
-    target_language_rows = session.execute(
-        select(ConversationTranslationTargetLanguage.language_code)
+    target_rows = session.execute(
+        select(
+            ConversationLanguageSetting.mode,
+            ConversationLanguageSetting.language_code,
+            ConversationLanguageSetting.detected_language_code,
+            ConversationTranslationTargetLanguage.language_code.label(
+                "target_language_code",
+            ),
+        )
+        .select_from(ConversationTranslationSetting)
         .join(
-            ConversationTranslationSetting,
-            ConversationTranslationSetting.id
-            == ConversationTranslationTargetLanguage.translation_setting_id,
+            ConversationLanguageSetting,
+            ConversationLanguageSetting.conversation_id
+            == ConversationTranslationSetting.conversation_id,
+        )
+        .join(
+            ConversationTranslationTargetLanguage,
+            ConversationTranslationTargetLanguage.translation_setting_id
+            == ConversationTranslationSetting.id,
+            isouter=True,
         )
         .where(
             and_(
@@ -696,36 +785,42 @@ def _create_content_translation_work(
         )
         .order_by(ConversationTranslationTargetLanguage.id.asc()),
     ).all()
-    target_language_codes = [row.language_code for row in target_language_rows]
+    target_language_codes: list[DisplayLanguageCode] = []
+    seen_target_language_codes: set[DisplayLanguageCode] = set()
+    for row in target_rows:
+        main_language_code = (
+            row.language_code
+            if row.mode == ConversationLanguageSettingMode.manual
+            else row.detected_language_code
+        )
+        if (
+            main_language_code is not None
+            and main_language_code not in seen_target_language_codes
+        ):
+            target_language_codes.append(main_language_code)
+            seen_target_language_codes.add(main_language_code)
+        if (
+            row.target_language_code is not None
+            and row.target_language_code not in seen_target_language_codes
+        ):
+            target_language_codes.append(row.target_language_code)
+            seen_target_language_codes.add(row.target_language_code)
     if not target_language_codes:
         return None
 
     now = now_zero_ms()
     work_values: list[dict[str, object]] = []
     for language_code in target_language_codes:
-        work_values.append(
-            {
-                "conversation_id": conversation_ids.conversation_id,
-                "source_kind": ContentTranslationSourceKind.conversation,
-                "conversation_content_id": conversation_ids.conversation_content_id,
-                "opinion_content_id": None,
-                "survey_question_content_id": None,
-                "survey_question_option_content_ids": None,
-                "display_language_code": language_code,
-                "status": ContentTranslationWorkStatus.pending,
-                "priority_rank": 1,
-                "requested_at": now,
-                "created_at": now,
-                "updated_at": now,
-            },
-        )
-        for opinion_content_id in opinions.seed_opinion_content_ids:
+        if (
+            conversation_ids.conversation_source_language_code is not None
+            and language_code != conversation_ids.conversation_source_language_code
+        ):
             work_values.append(
                 {
                     "conversation_id": conversation_ids.conversation_id,
-                    "source_kind": ContentTranslationSourceKind.opinion,
-                    "conversation_content_id": None,
-                    "opinion_content_id": opinion_content_id,
+                    "source_kind": ContentTranslationSourceKind.conversation,
+                    "conversation_content_id": conversation_ids.conversation_content_id,
+                    "opinion_content_id": None,
                     "survey_question_content_id": None,
                     "survey_question_option_content_ids": None,
                     "display_language_code": language_code,
@@ -736,6 +831,32 @@ def _create_content_translation_work(
                     "updated_at": now,
                 },
             )
+        for seed_opinion_source in opinions.seed_opinion_content_sources:
+            if seed_opinion_source.source_language_code is None:
+                continue
+            if (
+                language_code == seed_opinion_source.source_language_code
+            ):
+                continue
+            work_values.append(
+                {
+                    "conversation_id": conversation_ids.conversation_id,
+                    "source_kind": ContentTranslationSourceKind.opinion,
+                    "conversation_content_id": None,
+                    "opinion_content_id": seed_opinion_source.content_id,
+                    "survey_question_content_id": None,
+                    "survey_question_option_content_ids": None,
+                    "display_language_code": language_code,
+                    "status": ContentTranslationWorkStatus.pending,
+                    "priority_rank": 1,
+                    "requested_at": now,
+                    "created_at": now,
+                    "updated_at": now,
+                },
+            )
+
+    if not work_values:
+        return None
 
     work_rows = session.execute(
         sqlalchemy_insert(ContentTranslationWork)

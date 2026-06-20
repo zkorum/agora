@@ -10,7 +10,7 @@ import {
   useBackendContentTranslationApi,
 } from "./contentTranslation";
 
-export type ContentTranslationInclude = "original" | "translation" | "both";
+export type ContentTranslationRequestMode = "read_existing" | "queue_if_missing";
 
 export function getContentTranslationQueryKey({
   subject,
@@ -25,12 +25,12 @@ export function getContentTranslationQueryKey({
 export function useContentTranslationQuery({
   subject,
   targetLanguageCode,
-  include,
+  requestMode,
   enabled = true,
 }: {
   subject: MaybeRefOrGetter<ContentTranslationSubject>;
   targetLanguageCode: MaybeRefOrGetter<SupportedDisplayLanguageCodes>;
-  include: MaybeRefOrGetter<ContentTranslationInclude>;
+  requestMode: MaybeRefOrGetter<ContentTranslationRequestMode>;
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { requestContentTranslation } = useBackendContentTranslationApi();
@@ -47,7 +47,7 @@ export function useContentTranslationQuery({
       const response = await requestContentTranslation({
         subject: toValue(subject),
         targetLanguageCode: toValue(targetLanguageCode),
-        include: toValue(include),
+        requestMode: toValue(requestMode),
       });
       if (response.success) {
         void updateAuthState({ partialLoginStatus: { isKnown: true } });

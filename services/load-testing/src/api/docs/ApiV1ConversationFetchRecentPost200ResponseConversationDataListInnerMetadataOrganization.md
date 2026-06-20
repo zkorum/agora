@@ -6,6 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **name** | **string** |  | [default to undefined]
+**slug** | **string** |  | [default to undefined]
 **imageUrl** | **string** |  | [optional] [default to undefined]
 **websiteUrl** | **string** |  | [optional] [default to undefined]
 **description** | **string** |  | [default to undefined]
@@ -17,6 +18,7 @@ import { ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMet
 
 const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization = {
     name,
+    slug,
     imageUrl,
     websiteUrl,
     description,

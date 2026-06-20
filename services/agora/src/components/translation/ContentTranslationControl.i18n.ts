@@ -1,9 +1,10 @@
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface ContentTranslationControlTranslations {
-  translatedFrom: string;
+  translatedAutomatically: string;
   translating: string;
   showOriginal: string;
+  showOriginalLanguage: string;
   showTranslation: string;
 }
 
@@ -12,69 +13,80 @@ export const contentTranslationControlTranslations: Record<
   ContentTranslationControlTranslations
 > = {
   en: {
-    translatedFrom: "Translated from {language}",
+    translatedAutomatically: "Translated automatically",
     translating: "Translating...",
     showOriginal: "Show original",
+    showOriginalLanguage: "Show original ({language})",
     showTranslation: "Show translation",
   },
   ar: {
-    translatedFrom: "مترجم من {language}",
+    translatedAutomatically: "تُرجم تلقائيًا",
     translating: "جارٍ الترجمة...",
     showOriginal: "عرض الأصل",
+    showOriginalLanguage: "عرض الأصل ({language})",
     showTranslation: "عرض الترجمة",
   },
   es: {
-    translatedFrom: "Traducido del {language}",
+    translatedAutomatically: "Traducido automáticamente",
     translating: "Traduciendo...",
     showOriginal: "Mostrar original",
+    showOriginalLanguage: "Mostrar original ({language})",
     showTranslation: "Mostrar traducción",
   },
   fa: {
-    translatedFrom: "ترجمه‌شده از {language}",
+    translatedAutomatically: "ترجمه‌شده خودکار",
     translating: "در حال ترجمه...",
     showOriginal: "نمایش متن اصلی",
+    showOriginalLanguage: "نمایش متن اصلی ({language})",
     showTranslation: "نمایش ترجمه",
   },
   fr: {
-    translatedFrom: "Traduit depuis {language}",
+    translatedAutomatically: "Traduit automatiquement",
     translating: "Traduction en cours...",
     showOriginal: "Afficher l'original",
+    showOriginalLanguage: "Afficher l'original ({language})",
     showTranslation: "Afficher la traduction",
   },
   he: {
-    translatedFrom: "תורגם מ-{language}",
+    translatedAutomatically: "תורגם אוטומטית",
     translating: "מתרגם...",
     showOriginal: "הציגו מקור",
+    showOriginalLanguage: "הציגו מקור ({language})",
     showTranslation: "הציגו תרגום",
   },
   ja: {
-    translatedFrom: "{language}から翻訳",
+    translatedAutomatically: "自動翻訳",
     translating: "翻訳中...",
     showOriginal: "原文を表示",
+    showOriginalLanguage: "原文を表示（{language}）",
     showTranslation: "翻訳を表示",
   },
   ky: {
-    translatedFrom: "{language} тилинен которулган",
+    translatedAutomatically: "Автоматтык котормо",
     translating: "Которулууда...",
     showOriginal: "Түп нусканы көрсөтүү",
+    showOriginalLanguage: "Түп нусканы көрсөтүү ({language})",
     showTranslation: "Котормону көрсөтүү",
   },
   ru: {
-    translatedFrom: "Переведено с {language}",
+    translatedAutomatically: "Переведено автоматически",
     translating: "Переводится...",
     showOriginal: "Показать оригинал",
+    showOriginalLanguage: "Показать оригинал ({language})",
     showTranslation: "Показать перевод",
   },
   "zh-Hans": {
-    translatedFrom: "翻译自{language}",
+    translatedAutomatically: "自动翻译",
     translating: "正在翻译...",
     showOriginal: "显示原文",
+    showOriginalLanguage: "显示原文（{language}）",
     showTranslation: "显示翻译",
   },
   "zh-Hant": {
-    translatedFrom: "翻譯自{language}",
+    translatedAutomatically: "自動翻譯",
     translating: "正在翻譯...",
     showOriginal: "顯示原文",
+    showOriginalLanguage: "顯示原文（{language}）",
     showTranslation: "顯示翻譯",
   },
 };

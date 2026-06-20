@@ -15,7 +15,7 @@
       :disabled="translationStatus === 'pending' || translationStatus === 'running'"
       @click="handleToggleClick"
     >
-      {{ mode === "translated" ? t("showOriginal") : t("showTranslation") }}
+      {{ toggleLabel }}
     </button>
   </div>
 </template>
@@ -43,10 +43,17 @@ const { t } = useComponentI18n<ContentTranslationControlTranslations>(
 );
 
 const translatedLabel = computed(() => {
-  if (sourceLanguageLabel === undefined) {
-    return undefined;
+  return t("translatedAutomatically");
+});
+
+const toggleLabel = computed(() => {
+  if (mode.value !== "translated") {
+    return t("showTranslation");
   }
-  return t("translatedFrom", { language: sourceLanguageLabel });
+  if (sourceLanguageLabel === undefined) {
+    return t("showOriginal");
+  }
+  return t("showOriginalLanguage", { language: sourceLanguageLabel });
 });
 
 function toggleMode(): void {

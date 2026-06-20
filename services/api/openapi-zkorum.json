@@ -1171,9 +1171,104 @@
                                                                             "ru"
                                                                         ]
                                                                     },
+                                                                    "detectedSourceLanguageCode": {
+                                                                        "nullable": true,
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "en",
+                                                                            "es",
+                                                                            "fr",
+                                                                            "en-GB",
+                                                                            "ar",
+                                                                            "bn",
+                                                                            "eu",
+                                                                            "bg",
+                                                                            "ca",
+                                                                            "hr",
+                                                                            "cs",
+                                                                            "da",
+                                                                            "nl",
+                                                                            "fil",
+                                                                            "fi",
+                                                                            "gl",
+                                                                            "de",
+                                                                            "el",
+                                                                            "gu",
+                                                                            "he",
+                                                                            "hi",
+                                                                            "hu",
+                                                                            "id",
+                                                                            "ga",
+                                                                            "it",
+                                                                            "ja",
+                                                                            "kn",
+                                                                            "ko",
+                                                                            "ky",
+                                                                            "ms",
+                                                                            "mr",
+                                                                            "no",
+                                                                            "fa",
+                                                                            "pl",
+                                                                            "pt",
+                                                                            "ro",
+                                                                            "ru",
+                                                                            "sr",
+                                                                            "sk",
+                                                                            "sv",
+                                                                            "ta",
+                                                                            "th",
+                                                                            "tr",
+                                                                            "uk",
+                                                                            "ur",
+                                                                            "vi",
+                                                                            "zh-Hans",
+                                                                            "zh-Hant",
+                                                                            "af",
+                                                                            "sq",
+                                                                            "hy",
+                                                                            "az",
+                                                                            "be",
+                                                                            "nb",
+                                                                            "bs",
+                                                                            "eo",
+                                                                            "et",
+                                                                            "lg",
+                                                                            "ka",
+                                                                            "is",
+                                                                            "kk",
+                                                                            "la",
+                                                                            "lv",
+                                                                            "lt",
+                                                                            "mk",
+                                                                            "mi",
+                                                                            "mn",
+                                                                            "nn",
+                                                                            "pa",
+                                                                            "sn",
+                                                                            "sl",
+                                                                            "so",
+                                                                            "st",
+                                                                            "sw",
+                                                                            "te",
+                                                                            "ts",
+                                                                            "tn",
+                                                                            "cy",
+                                                                            "xh",
+                                                                            "yo",
+                                                                            "zu"
+                                                                        ]
+                                                                    },
                                                                     "detectedRawLanguageCode": {
                                                                         "nullable": true,
                                                                         "type": "string"
+                                                                    },
+                                                                    "detectedRawLanguageProvider": {
+                                                                        "nullable": true,
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "lingua",
+                                                                            "google_translate"
+                                                                        ]
                                                                     },
                                                                     "detectionConfidence": {
                                                                         "nullable": true,
@@ -1184,7 +1279,9 @@
                                                                     "mode",
                                                                     "languageCode",
                                                                     "detectedLanguageCode",
+                                                                    "detectedSourceLanguageCode",
                                                                     "detectedRawLanguageCode",
+                                                                    "detectedRawLanguageProvider",
                                                                     "detectionConfidence"
                                                                 ],
                                                                 "additionalProperties": false
@@ -1234,6 +1331,11 @@
                                                                     "name": {
                                                                         "type": "string"
                                                                     },
+                                                                    "slug": {
+                                                                        "type": "string",
+                                                                        "maxLength": 65,
+                                                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                                    },
                                                                     "imageUrl": {
                                                                         "type": "string"
                                                                     },
@@ -1247,6 +1349,7 @@
                                                                 },
                                                                 "required": [
                                                                     "name",
+                                                                    "slug",
                                                                     "description"
                                                                 ],
                                                                 "additionalProperties": false
@@ -1996,6 +2099,11 @@
                                                     "name": {
                                                         "type": "string"
                                                     },
+                                                    "slug": {
+                                                        "type": "string",
+                                                        "maxLength": 65,
+                                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                    },
                                                     "imageUrl": {
                                                         "type": "string"
                                                     },
@@ -2009,6 +2117,7 @@
                                                 },
                                                 "required": [
                                                     "name",
+                                                    "slug",
                                                     "description"
                                                 ],
                                                 "additionalProperties": false
@@ -2051,7 +2160,9 @@
                                 "type": "object",
                                 "properties": {
                                     "postAsOrganization": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                                     },
                                     "feature": {
                                         "type": "string",
@@ -2064,6 +2175,7 @@
                                     }
                                 },
                                 "required": [
+                                    "postAsOrganization",
                                     "feature"
                                 ],
                                 "additionalProperties": false
@@ -2262,9 +2374,104 @@
                                                                     "ru"
                                                                 ]
                                                             },
+                                                            "detectedSourceLanguageCode": {
+                                                                "nullable": true,
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "en",
+                                                                    "es",
+                                                                    "fr",
+                                                                    "en-GB",
+                                                                    "ar",
+                                                                    "bn",
+                                                                    "eu",
+                                                                    "bg",
+                                                                    "ca",
+                                                                    "hr",
+                                                                    "cs",
+                                                                    "da",
+                                                                    "nl",
+                                                                    "fil",
+                                                                    "fi",
+                                                                    "gl",
+                                                                    "de",
+                                                                    "el",
+                                                                    "gu",
+                                                                    "he",
+                                                                    "hi",
+                                                                    "hu",
+                                                                    "id",
+                                                                    "ga",
+                                                                    "it",
+                                                                    "ja",
+                                                                    "kn",
+                                                                    "ko",
+                                                                    "ky",
+                                                                    "ms",
+                                                                    "mr",
+                                                                    "no",
+                                                                    "fa",
+                                                                    "pl",
+                                                                    "pt",
+                                                                    "ro",
+                                                                    "ru",
+                                                                    "sr",
+                                                                    "sk",
+                                                                    "sv",
+                                                                    "ta",
+                                                                    "th",
+                                                                    "tr",
+                                                                    "uk",
+                                                                    "ur",
+                                                                    "vi",
+                                                                    "zh-Hans",
+                                                                    "zh-Hant",
+                                                                    "af",
+                                                                    "sq",
+                                                                    "hy",
+                                                                    "az",
+                                                                    "be",
+                                                                    "nb",
+                                                                    "bs",
+                                                                    "eo",
+                                                                    "et",
+                                                                    "lg",
+                                                                    "ka",
+                                                                    "is",
+                                                                    "kk",
+                                                                    "la",
+                                                                    "lv",
+                                                                    "lt",
+                                                                    "mk",
+                                                                    "mi",
+                                                                    "mn",
+                                                                    "nn",
+                                                                    "pa",
+                                                                    "sn",
+                                                                    "sl",
+                                                                    "so",
+                                                                    "st",
+                                                                    "sw",
+                                                                    "te",
+                                                                    "ts",
+                                                                    "tn",
+                                                                    "cy",
+                                                                    "xh",
+                                                                    "yo",
+                                                                    "zu"
+                                                                ]
+                                                            },
                                                             "detectedRawLanguageCode": {
                                                                 "nullable": true,
                                                                 "type": "string"
+                                                            },
+                                                            "detectedRawLanguageProvider": {
+                                                                "nullable": true,
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "lingua",
+                                                                    "google_translate"
+                                                                ]
                                                             },
                                                             "detectionConfidence": {
                                                                 "nullable": true,
@@ -2275,7 +2482,9 @@
                                                             "mode",
                                                             "languageCode",
                                                             "detectedLanguageCode",
+                                                            "detectedSourceLanguageCode",
                                                             "detectedRawLanguageCode",
+                                                            "detectedRawLanguageProvider",
                                                             "detectionConfidence"
                                                         ],
                                                         "additionalProperties": false
@@ -2325,6 +2534,11 @@
                                                             "name": {
                                                                 "type": "string"
                                                             },
+                                                            "slug": {
+                                                                "type": "string",
+                                                                "maxLength": 65,
+                                                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                            },
                                                             "imageUrl": {
                                                                 "type": "string"
                                                             },
@@ -2338,6 +2552,7 @@
                                                         },
                                                         "required": [
                                                             "name",
+                                                            "slug",
                                                             "description"
                                                         ],
                                                         "additionalProperties": false
@@ -2757,9 +2972,104 @@
                                                                             "ru"
                                                                         ]
                                                                     },
+                                                                    "detectedSourceLanguageCode": {
+                                                                        "nullable": true,
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "en",
+                                                                            "es",
+                                                                            "fr",
+                                                                            "en-GB",
+                                                                            "ar",
+                                                                            "bn",
+                                                                            "eu",
+                                                                            "bg",
+                                                                            "ca",
+                                                                            "hr",
+                                                                            "cs",
+                                                                            "da",
+                                                                            "nl",
+                                                                            "fil",
+                                                                            "fi",
+                                                                            "gl",
+                                                                            "de",
+                                                                            "el",
+                                                                            "gu",
+                                                                            "he",
+                                                                            "hi",
+                                                                            "hu",
+                                                                            "id",
+                                                                            "ga",
+                                                                            "it",
+                                                                            "ja",
+                                                                            "kn",
+                                                                            "ko",
+                                                                            "ky",
+                                                                            "ms",
+                                                                            "mr",
+                                                                            "no",
+                                                                            "fa",
+                                                                            "pl",
+                                                                            "pt",
+                                                                            "ro",
+                                                                            "ru",
+                                                                            "sr",
+                                                                            "sk",
+                                                                            "sv",
+                                                                            "ta",
+                                                                            "th",
+                                                                            "tr",
+                                                                            "uk",
+                                                                            "ur",
+                                                                            "vi",
+                                                                            "zh-Hans",
+                                                                            "zh-Hant",
+                                                                            "af",
+                                                                            "sq",
+                                                                            "hy",
+                                                                            "az",
+                                                                            "be",
+                                                                            "nb",
+                                                                            "bs",
+                                                                            "eo",
+                                                                            "et",
+                                                                            "lg",
+                                                                            "ka",
+                                                                            "is",
+                                                                            "kk",
+                                                                            "la",
+                                                                            "lv",
+                                                                            "lt",
+                                                                            "mk",
+                                                                            "mi",
+                                                                            "mn",
+                                                                            "nn",
+                                                                            "pa",
+                                                                            "sn",
+                                                                            "sl",
+                                                                            "so",
+                                                                            "st",
+                                                                            "sw",
+                                                                            "te",
+                                                                            "ts",
+                                                                            "tn",
+                                                                            "cy",
+                                                                            "xh",
+                                                                            "yo",
+                                                                            "zu"
+                                                                        ]
+                                                                    },
                                                                     "detectedRawLanguageCode": {
                                                                         "nullable": true,
                                                                         "type": "string"
+                                                                    },
+                                                                    "detectedRawLanguageProvider": {
+                                                                        "nullable": true,
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "lingua",
+                                                                            "google_translate"
+                                                                        ]
                                                                     },
                                                                     "detectionConfidence": {
                                                                         "nullable": true,
@@ -2770,7 +3080,9 @@
                                                                     "mode",
                                                                     "languageCode",
                                                                     "detectedLanguageCode",
+                                                                    "detectedSourceLanguageCode",
                                                                     "detectedRawLanguageCode",
+                                                                    "detectedRawLanguageProvider",
                                                                     "detectionConfidence"
                                                                 ],
                                                                 "additionalProperties": false
@@ -2820,6 +3132,11 @@
                                                                     "name": {
                                                                         "type": "string"
                                                                     },
+                                                                    "slug": {
+                                                                        "type": "string",
+                                                                        "maxLength": 65,
+                                                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                                    },
                                                                     "imageUrl": {
                                                                         "type": "string"
                                                                     },
@@ -2833,6 +3150,7 @@
                                                                 },
                                                                 "required": [
                                                                     "name",
+                                                                    "slug",
                                                                     "description"
                                                                 ],
                                                                 "additionalProperties": false
@@ -6997,7 +7315,9 @@
                                         "type": "string"
                                     },
                                     "postAsOrganization": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                                     },
                                     "isIndexed": {
                                         "type": "boolean"
@@ -7404,6 +7724,7 @@
                                 "required": [
                                     "conversationTitle",
                                     "conversationBodyPlainText",
+                                    "postAsOrganization",
                                     "isIndexed",
                                     "participationMode",
                                     "conversationType",
@@ -7487,7 +7808,9 @@
                                         "format": "uri"
                                     },
                                     "postAsOrganization": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                                     },
                                     "isIndexed": {
                                         "type": "boolean"
@@ -7612,6 +7935,7 @@
                                 },
                                 "required": [
                                     "polisUrl",
+                                    "postAsOrganization",
                                     "isIndexed",
                                     "participationMode"
                                 ],
@@ -8102,9 +8426,104 @@
                                                                         "ru"
                                                                     ]
                                                                 },
+                                                                "detectedSourceLanguageCode": {
+                                                                    "nullable": true,
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "en",
+                                                                        "es",
+                                                                        "fr",
+                                                                        "en-GB",
+                                                                        "ar",
+                                                                        "bn",
+                                                                        "eu",
+                                                                        "bg",
+                                                                        "ca",
+                                                                        "hr",
+                                                                        "cs",
+                                                                        "da",
+                                                                        "nl",
+                                                                        "fil",
+                                                                        "fi",
+                                                                        "gl",
+                                                                        "de",
+                                                                        "el",
+                                                                        "gu",
+                                                                        "he",
+                                                                        "hi",
+                                                                        "hu",
+                                                                        "id",
+                                                                        "ga",
+                                                                        "it",
+                                                                        "ja",
+                                                                        "kn",
+                                                                        "ko",
+                                                                        "ky",
+                                                                        "ms",
+                                                                        "mr",
+                                                                        "no",
+                                                                        "fa",
+                                                                        "pl",
+                                                                        "pt",
+                                                                        "ro",
+                                                                        "ru",
+                                                                        "sr",
+                                                                        "sk",
+                                                                        "sv",
+                                                                        "ta",
+                                                                        "th",
+                                                                        "tr",
+                                                                        "uk",
+                                                                        "ur",
+                                                                        "vi",
+                                                                        "zh-Hans",
+                                                                        "zh-Hant",
+                                                                        "af",
+                                                                        "sq",
+                                                                        "hy",
+                                                                        "az",
+                                                                        "be",
+                                                                        "nb",
+                                                                        "bs",
+                                                                        "eo",
+                                                                        "et",
+                                                                        "lg",
+                                                                        "ka",
+                                                                        "is",
+                                                                        "kk",
+                                                                        "la",
+                                                                        "lv",
+                                                                        "lt",
+                                                                        "mk",
+                                                                        "mi",
+                                                                        "mn",
+                                                                        "nn",
+                                                                        "pa",
+                                                                        "sn",
+                                                                        "sl",
+                                                                        "so",
+                                                                        "st",
+                                                                        "sw",
+                                                                        "te",
+                                                                        "ts",
+                                                                        "tn",
+                                                                        "cy",
+                                                                        "xh",
+                                                                        "yo",
+                                                                        "zu"
+                                                                    ]
+                                                                },
                                                                 "detectedRawLanguageCode": {
                                                                     "nullable": true,
                                                                     "type": "string"
+                                                                },
+                                                                "detectedRawLanguageProvider": {
+                                                                    "nullable": true,
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "lingua",
+                                                                        "google_translate"
+                                                                    ]
                                                                 },
                                                                 "detectionConfidence": {
                                                                     "nullable": true,
@@ -8115,7 +8534,9 @@
                                                                 "mode",
                                                                 "languageCode",
                                                                 "detectedLanguageCode",
+                                                                "detectedSourceLanguageCode",
                                                                 "detectedRawLanguageCode",
+                                                                "detectedRawLanguageProvider",
                                                                 "detectionConfidence"
                                                             ],
                                                             "additionalProperties": false
@@ -8165,6 +8586,11 @@
                                                                 "name": {
                                                                     "type": "string"
                                                                 },
+                                                                "slug": {
+                                                                    "type": "string",
+                                                                    "maxLength": 65,
+                                                                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                                },
                                                                 "imageUrl": {
                                                                     "type": "string"
                                                                 },
@@ -8178,6 +8604,7 @@
                                                             },
                                                             "required": [
                                                                 "name",
+                                                                "slug",
                                                                 "description"
                                                             ],
                                                             "additionalProperties": false
@@ -8526,9 +8953,104 @@
                                                                 "ru"
                                                             ]
                                                         },
+                                                        "detectedSourceLanguageCode": {
+                                                            "nullable": true,
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "en",
+                                                                "es",
+                                                                "fr",
+                                                                "en-GB",
+                                                                "ar",
+                                                                "bn",
+                                                                "eu",
+                                                                "bg",
+                                                                "ca",
+                                                                "hr",
+                                                                "cs",
+                                                                "da",
+                                                                "nl",
+                                                                "fil",
+                                                                "fi",
+                                                                "gl",
+                                                                "de",
+                                                                "el",
+                                                                "gu",
+                                                                "he",
+                                                                "hi",
+                                                                "hu",
+                                                                "id",
+                                                                "ga",
+                                                                "it",
+                                                                "ja",
+                                                                "kn",
+                                                                "ko",
+                                                                "ky",
+                                                                "ms",
+                                                                "mr",
+                                                                "no",
+                                                                "fa",
+                                                                "pl",
+                                                                "pt",
+                                                                "ro",
+                                                                "ru",
+                                                                "sr",
+                                                                "sk",
+                                                                "sv",
+                                                                "ta",
+                                                                "th",
+                                                                "tr",
+                                                                "uk",
+                                                                "ur",
+                                                                "vi",
+                                                                "zh-Hans",
+                                                                "zh-Hant",
+                                                                "af",
+                                                                "sq",
+                                                                "hy",
+                                                                "az",
+                                                                "be",
+                                                                "nb",
+                                                                "bs",
+                                                                "eo",
+                                                                "et",
+                                                                "lg",
+                                                                "ka",
+                                                                "is",
+                                                                "kk",
+                                                                "la",
+                                                                "lv",
+                                                                "lt",
+                                                                "mk",
+                                                                "mi",
+                                                                "mn",
+                                                                "nn",
+                                                                "pa",
+                                                                "sn",
+                                                                "sl",
+                                                                "so",
+                                                                "st",
+                                                                "sw",
+                                                                "te",
+                                                                "ts",
+                                                                "tn",
+                                                                "cy",
+                                                                "xh",
+                                                                "yo",
+                                                                "zu"
+                                                            ]
+                                                        },
                                                         "detectedRawLanguageCode": {
                                                             "nullable": true,
                                                             "type": "string"
+                                                        },
+                                                        "detectedRawLanguageProvider": {
+                                                            "nullable": true,
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "lingua",
+                                                                "google_translate"
+                                                            ]
                                                         },
                                                         "detectionConfidence": {
                                                             "nullable": true,
@@ -8539,7 +9061,9 @@
                                                         "mode",
                                                         "languageCode",
                                                         "detectedLanguageCode",
+                                                        "detectedSourceLanguageCode",
                                                         "detectedRawLanguageCode",
+                                                        "detectedRawLanguageProvider",
                                                         "detectionConfidence"
                                                     ],
                                                     "additionalProperties": false
@@ -11475,7 +11999,9 @@
                                                 "pattern": "^[a-z0-9_]*$"
                                             },
                                             "organizationName": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "maxLength": 65,
+                                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                                             }
                                         },
                                         "additionalProperties": false
@@ -11620,7 +12146,9 @@
                                         "pattern": "^[a-z0-9_]*$"
                                     },
                                     "organizationName": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                                     }
                                 },
                                 "required": [
@@ -11653,7 +12181,9 @@
                                         "pattern": "^[a-z0-9_]*$"
                                     },
                                     "organizationName": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                                     }
                                 },
                                 "required": [
@@ -11710,6 +12240,11 @@
                                                     "name": {
                                                         "type": "string"
                                                     },
+                                                    "slug": {
+                                                        "type": "string",
+                                                        "maxLength": 65,
+                                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                    },
                                                     "imageUrl": {
                                                         "type": "string"
                                                     },
@@ -11723,6 +12258,7 @@
                                                 },
                                                 "required": [
                                                     "name",
+                                                    "slug",
                                                     "description"
                                                 ],
                                                 "additionalProperties": false
@@ -11758,6 +12294,11 @@
                                                     "name": {
                                                         "type": "string"
                                                     },
+                                                    "slug": {
+                                                        "type": "string",
+                                                        "maxLength": 65,
+                                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                    },
                                                     "imageUrl": {
                                                         "type": "string"
                                                     },
@@ -11771,6 +12312,7 @@
                                                 },
                                                 "required": [
                                                     "name",
+                                                    "slug",
                                                     "description"
                                                 ],
                                                 "additionalProperties": false
@@ -11800,6 +12342,11 @@
                                     "organizationName": {
                                         "type": "string"
                                     },
+                                    "organizationSlug": {
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                    },
                                     "imagePath": {
                                         "type": "string"
                                     },
@@ -11816,6 +12363,7 @@
                                 },
                                 "required": [
                                     "organizationName",
+                                    "organizationSlug",
                                     "imagePath",
                                     "isFullImagePath",
                                     "description"
@@ -11842,7 +12390,9 @@
                                 "type": "object",
                                 "properties": {
                                     "organizationName": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                                     }
                                 },
                                 "required": [
@@ -13046,7 +13596,26 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Default Response"
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -13150,19 +13719,18 @@
                                             "ru"
                                         ]
                                     },
-                                    "include": {
+                                    "requestMode": {
                                         "type": "string",
                                         "enum": [
-                                            "original",
-                                            "translation",
-                                            "both"
+                                            "read_existing",
+                                            "queue_if_missing"
                                         ]
                                     }
                                 },
                                 "required": [
                                     "subject",
                                     "targetLanguageCode",
-                                    "include"
+                                    "requestMode"
                                 ],
                                 "additionalProperties": false
                             }
@@ -13300,6 +13868,93 @@
                                                                                 "ru"
                                                                             ]
                                                                         },
+                                                                        "sourceLanguageCode": {
+                                                                            "nullable": true,
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "en",
+                                                                                "es",
+                                                                                "fr",
+                                                                                "en-GB",
+                                                                                "ar",
+                                                                                "bn",
+                                                                                "eu",
+                                                                                "bg",
+                                                                                "ca",
+                                                                                "hr",
+                                                                                "cs",
+                                                                                "da",
+                                                                                "nl",
+                                                                                "fil",
+                                                                                "fi",
+                                                                                "gl",
+                                                                                "de",
+                                                                                "el",
+                                                                                "gu",
+                                                                                "he",
+                                                                                "hi",
+                                                                                "hu",
+                                                                                "id",
+                                                                                "ga",
+                                                                                "it",
+                                                                                "ja",
+                                                                                "kn",
+                                                                                "ko",
+                                                                                "ky",
+                                                                                "ms",
+                                                                                "mr",
+                                                                                "no",
+                                                                                "fa",
+                                                                                "pl",
+                                                                                "pt",
+                                                                                "ro",
+                                                                                "ru",
+                                                                                "sr",
+                                                                                "sk",
+                                                                                "sv",
+                                                                                "ta",
+                                                                                "th",
+                                                                                "tr",
+                                                                                "uk",
+                                                                                "ur",
+                                                                                "vi",
+                                                                                "zh-Hans",
+                                                                                "zh-Hant",
+                                                                                "af",
+                                                                                "sq",
+                                                                                "hy",
+                                                                                "az",
+                                                                                "be",
+                                                                                "nb",
+                                                                                "bs",
+                                                                                "eo",
+                                                                                "et",
+                                                                                "lg",
+                                                                                "ka",
+                                                                                "is",
+                                                                                "kk",
+                                                                                "la",
+                                                                                "lv",
+                                                                                "lt",
+                                                                                "mk",
+                                                                                "mi",
+                                                                                "mn",
+                                                                                "nn",
+                                                                                "pa",
+                                                                                "sn",
+                                                                                "sl",
+                                                                                "so",
+                                                                                "st",
+                                                                                "sw",
+                                                                                "te",
+                                                                                "ts",
+                                                                                "tn",
+                                                                                "cy",
+                                                                                "xh",
+                                                                                "yo",
+                                                                                "zu"
+                                                                            ]
+                                                                        },
                                                                         "sourceLanguageLabel": {
                                                                             "type": "string",
                                                                             "minLength": 1
@@ -13412,6 +14067,93 @@
                                                                                 "he",
                                                                                 "ky",
                                                                                 "ru"
+                                                                            ]
+                                                                        },
+                                                                        "sourceLanguageCode": {
+                                                                            "nullable": true,
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "en",
+                                                                                "es",
+                                                                                "fr",
+                                                                                "en-GB",
+                                                                                "ar",
+                                                                                "bn",
+                                                                                "eu",
+                                                                                "bg",
+                                                                                "ca",
+                                                                                "hr",
+                                                                                "cs",
+                                                                                "da",
+                                                                                "nl",
+                                                                                "fil",
+                                                                                "fi",
+                                                                                "gl",
+                                                                                "de",
+                                                                                "el",
+                                                                                "gu",
+                                                                                "he",
+                                                                                "hi",
+                                                                                "hu",
+                                                                                "id",
+                                                                                "ga",
+                                                                                "it",
+                                                                                "ja",
+                                                                                "kn",
+                                                                                "ko",
+                                                                                "ky",
+                                                                                "ms",
+                                                                                "mr",
+                                                                                "no",
+                                                                                "fa",
+                                                                                "pl",
+                                                                                "pt",
+                                                                                "ro",
+                                                                                "ru",
+                                                                                "sr",
+                                                                                "sk",
+                                                                                "sv",
+                                                                                "ta",
+                                                                                "th",
+                                                                                "tr",
+                                                                                "uk",
+                                                                                "ur",
+                                                                                "vi",
+                                                                                "zh-Hans",
+                                                                                "zh-Hant",
+                                                                                "af",
+                                                                                "sq",
+                                                                                "hy",
+                                                                                "az",
+                                                                                "be",
+                                                                                "nb",
+                                                                                "bs",
+                                                                                "eo",
+                                                                                "et",
+                                                                                "lg",
+                                                                                "ka",
+                                                                                "is",
+                                                                                "kk",
+                                                                                "la",
+                                                                                "lv",
+                                                                                "lt",
+                                                                                "mk",
+                                                                                "mi",
+                                                                                "mn",
+                                                                                "nn",
+                                                                                "pa",
+                                                                                "sn",
+                                                                                "sl",
+                                                                                "so",
+                                                                                "st",
+                                                                                "sw",
+                                                                                "te",
+                                                                                "ts",
+                                                                                "tn",
+                                                                                "cy",
+                                                                                "xh",
+                                                                                "yo",
+                                                                                "zu"
                                                                             ]
                                                                         },
                                                                         "sourceLanguageLabel": {
@@ -13621,6 +14363,93 @@
                                                                                 "ru"
                                                                             ]
                                                                         },
+                                                                        "sourceLanguageCode": {
+                                                                            "nullable": true,
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "en",
+                                                                                "es",
+                                                                                "fr",
+                                                                                "en-GB",
+                                                                                "ar",
+                                                                                "bn",
+                                                                                "eu",
+                                                                                "bg",
+                                                                                "ca",
+                                                                                "hr",
+                                                                                "cs",
+                                                                                "da",
+                                                                                "nl",
+                                                                                "fil",
+                                                                                "fi",
+                                                                                "gl",
+                                                                                "de",
+                                                                                "el",
+                                                                                "gu",
+                                                                                "he",
+                                                                                "hi",
+                                                                                "hu",
+                                                                                "id",
+                                                                                "ga",
+                                                                                "it",
+                                                                                "ja",
+                                                                                "kn",
+                                                                                "ko",
+                                                                                "ky",
+                                                                                "ms",
+                                                                                "mr",
+                                                                                "no",
+                                                                                "fa",
+                                                                                "pl",
+                                                                                "pt",
+                                                                                "ro",
+                                                                                "ru",
+                                                                                "sr",
+                                                                                "sk",
+                                                                                "sv",
+                                                                                "ta",
+                                                                                "th",
+                                                                                "tr",
+                                                                                "uk",
+                                                                                "ur",
+                                                                                "vi",
+                                                                                "zh-Hans",
+                                                                                "zh-Hant",
+                                                                                "af",
+                                                                                "sq",
+                                                                                "hy",
+                                                                                "az",
+                                                                                "be",
+                                                                                "nb",
+                                                                                "bs",
+                                                                                "eo",
+                                                                                "et",
+                                                                                "lg",
+                                                                                "ka",
+                                                                                "is",
+                                                                                "kk",
+                                                                                "la",
+                                                                                "lv",
+                                                                                "lt",
+                                                                                "mk",
+                                                                                "mi",
+                                                                                "mn",
+                                                                                "nn",
+                                                                                "pa",
+                                                                                "sn",
+                                                                                "sl",
+                                                                                "so",
+                                                                                "st",
+                                                                                "sw",
+                                                                                "te",
+                                                                                "ts",
+                                                                                "tn",
+                                                                                "cy",
+                                                                                "xh",
+                                                                                "yo",
+                                                                                "zu"
+                                                                            ]
+                                                                        },
                                                                         "sourceLanguageLabel": {
                                                                             "type": "string",
                                                                             "minLength": 1
@@ -13725,6 +14554,93 @@
                                                                                 "he",
                                                                                 "ky",
                                                                                 "ru"
+                                                                            ]
+                                                                        },
+                                                                        "sourceLanguageCode": {
+                                                                            "nullable": true,
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "en",
+                                                                                "es",
+                                                                                "fr",
+                                                                                "en-GB",
+                                                                                "ar",
+                                                                                "bn",
+                                                                                "eu",
+                                                                                "bg",
+                                                                                "ca",
+                                                                                "hr",
+                                                                                "cs",
+                                                                                "da",
+                                                                                "nl",
+                                                                                "fil",
+                                                                                "fi",
+                                                                                "gl",
+                                                                                "de",
+                                                                                "el",
+                                                                                "gu",
+                                                                                "he",
+                                                                                "hi",
+                                                                                "hu",
+                                                                                "id",
+                                                                                "ga",
+                                                                                "it",
+                                                                                "ja",
+                                                                                "kn",
+                                                                                "ko",
+                                                                                "ky",
+                                                                                "ms",
+                                                                                "mr",
+                                                                                "no",
+                                                                                "fa",
+                                                                                "pl",
+                                                                                "pt",
+                                                                                "ro",
+                                                                                "ru",
+                                                                                "sr",
+                                                                                "sk",
+                                                                                "sv",
+                                                                                "ta",
+                                                                                "th",
+                                                                                "tr",
+                                                                                "uk",
+                                                                                "ur",
+                                                                                "vi",
+                                                                                "zh-Hans",
+                                                                                "zh-Hant",
+                                                                                "af",
+                                                                                "sq",
+                                                                                "hy",
+                                                                                "az",
+                                                                                "be",
+                                                                                "nb",
+                                                                                "bs",
+                                                                                "eo",
+                                                                                "et",
+                                                                                "lg",
+                                                                                "ka",
+                                                                                "is",
+                                                                                "kk",
+                                                                                "la",
+                                                                                "lv",
+                                                                                "lt",
+                                                                                "mk",
+                                                                                "mi",
+                                                                                "mn",
+                                                                                "nn",
+                                                                                "pa",
+                                                                                "sn",
+                                                                                "sl",
+                                                                                "so",
+                                                                                "st",
+                                                                                "sw",
+                                                                                "te",
+                                                                                "ts",
+                                                                                "tn",
+                                                                                "cy",
+                                                                                "xh",
+                                                                                "yo",
+                                                                                "zu"
                                                                             ]
                                                                         },
                                                                         "sourceLanguageLabel": {
@@ -13949,6 +14865,93 @@
                                                                                 "ru"
                                                                             ]
                                                                         },
+                                                                        "sourceLanguageCode": {
+                                                                            "nullable": true,
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "en",
+                                                                                "es",
+                                                                                "fr",
+                                                                                "en-GB",
+                                                                                "ar",
+                                                                                "bn",
+                                                                                "eu",
+                                                                                "bg",
+                                                                                "ca",
+                                                                                "hr",
+                                                                                "cs",
+                                                                                "da",
+                                                                                "nl",
+                                                                                "fil",
+                                                                                "fi",
+                                                                                "gl",
+                                                                                "de",
+                                                                                "el",
+                                                                                "gu",
+                                                                                "he",
+                                                                                "hi",
+                                                                                "hu",
+                                                                                "id",
+                                                                                "ga",
+                                                                                "it",
+                                                                                "ja",
+                                                                                "kn",
+                                                                                "ko",
+                                                                                "ky",
+                                                                                "ms",
+                                                                                "mr",
+                                                                                "no",
+                                                                                "fa",
+                                                                                "pl",
+                                                                                "pt",
+                                                                                "ro",
+                                                                                "ru",
+                                                                                "sr",
+                                                                                "sk",
+                                                                                "sv",
+                                                                                "ta",
+                                                                                "th",
+                                                                                "tr",
+                                                                                "uk",
+                                                                                "ur",
+                                                                                "vi",
+                                                                                "zh-Hans",
+                                                                                "zh-Hant",
+                                                                                "af",
+                                                                                "sq",
+                                                                                "hy",
+                                                                                "az",
+                                                                                "be",
+                                                                                "nb",
+                                                                                "bs",
+                                                                                "eo",
+                                                                                "et",
+                                                                                "lg",
+                                                                                "ka",
+                                                                                "is",
+                                                                                "kk",
+                                                                                "la",
+                                                                                "lv",
+                                                                                "lt",
+                                                                                "mk",
+                                                                                "mi",
+                                                                                "mn",
+                                                                                "nn",
+                                                                                "pa",
+                                                                                "sn",
+                                                                                "sl",
+                                                                                "so",
+                                                                                "st",
+                                                                                "sw",
+                                                                                "te",
+                                                                                "ts",
+                                                                                "tn",
+                                                                                "cy",
+                                                                                "xh",
+                                                                                "yo",
+                                                                                "zu"
+                                                                            ]
+                                                                        },
                                                                         "sourceLanguageLabel": {
                                                                             "type": "string",
                                                                             "minLength": 1
@@ -14099,6 +15102,93 @@
                                                                                 "he",
                                                                                 "ky",
                                                                                 "ru"
+                                                                            ]
+                                                                        },
+                                                                        "sourceLanguageCode": {
+                                                                            "nullable": true,
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "en",
+                                                                                "es",
+                                                                                "fr",
+                                                                                "en-GB",
+                                                                                "ar",
+                                                                                "bn",
+                                                                                "eu",
+                                                                                "bg",
+                                                                                "ca",
+                                                                                "hr",
+                                                                                "cs",
+                                                                                "da",
+                                                                                "nl",
+                                                                                "fil",
+                                                                                "fi",
+                                                                                "gl",
+                                                                                "de",
+                                                                                "el",
+                                                                                "gu",
+                                                                                "he",
+                                                                                "hi",
+                                                                                "hu",
+                                                                                "id",
+                                                                                "ga",
+                                                                                "it",
+                                                                                "ja",
+                                                                                "kn",
+                                                                                "ko",
+                                                                                "ky",
+                                                                                "ms",
+                                                                                "mr",
+                                                                                "no",
+                                                                                "fa",
+                                                                                "pl",
+                                                                                "pt",
+                                                                                "ro",
+                                                                                "ru",
+                                                                                "sr",
+                                                                                "sk",
+                                                                                "sv",
+                                                                                "ta",
+                                                                                "th",
+                                                                                "tr",
+                                                                                "uk",
+                                                                                "ur",
+                                                                                "vi",
+                                                                                "zh-Hans",
+                                                                                "zh-Hant",
+                                                                                "af",
+                                                                                "sq",
+                                                                                "hy",
+                                                                                "az",
+                                                                                "be",
+                                                                                "nb",
+                                                                                "bs",
+                                                                                "eo",
+                                                                                "et",
+                                                                                "lg",
+                                                                                "ka",
+                                                                                "is",
+                                                                                "kk",
+                                                                                "la",
+                                                                                "lv",
+                                                                                "lt",
+                                                                                "mk",
+                                                                                "mi",
+                                                                                "mn",
+                                                                                "nn",
+                                                                                "pa",
+                                                                                "sn",
+                                                                                "sl",
+                                                                                "so",
+                                                                                "st",
+                                                                                "sw",
+                                                                                "te",
+                                                                                "ts",
+                                                                                "tn",
+                                                                                "cy",
+                                                                                "xh",
+                                                                                "yo",
+                                                                                "zu"
                                                                             ]
                                                                         },
                                                                         "sourceLanguageLabel": {

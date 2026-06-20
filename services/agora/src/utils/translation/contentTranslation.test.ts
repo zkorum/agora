@@ -4,7 +4,11 @@ import type {
 } from "src/shared/languages";
 import { describe, expect, it } from "vitest";
 
-import { resolveContentTranslationState } from "./contentTranslation";
+import {
+  getLanguageDisplayName,
+  getSupportedContentTranslationTargetLanguageCodes,
+  resolveContentTranslationState,
+} from "./contentTranslation";
 
 function resolveState({
   dynamicTranslationEnabled = true,
@@ -126,5 +130,81 @@ describe("resolveContentTranslationState", () => {
       initialMode: "translated",
       sourceLanguageLabel: undefined,
     });
+  });
+});
+
+describe("getLanguageDisplayName", () => {
+  it("localizes language names in the viewer display language", () => {
+    expect(
+      getLanguageDisplayName({ languageCode: "en", displayLanguage: "fr" })
+    ).toBe("anglais");
+  });
+
+  it("returns undefined when no language code is known", () => {
+    expect(
+      getLanguageDisplayName({ languageCode: null, displayLanguage: "fr" })
+    ).toBeUndefined();
+  });
+});
+
+describe("getSupportedContentTranslationTargetLanguageCodes", () => {
+  it("uses a manual primary language as the main target", () => {
+    expect(
+      getSupportedContentTranslationTargetLanguageCodes({
+        languageSetting: {
+          mode: "manual",
+          languageCode: "fr",
+          detectedLanguageCode: "ja",
+          detectedSourceLanguageCode: "ja",
+          detectedRawLanguageCode: "ja",
+          detectedRawLanguageProvider: "lingua",
+          detectionConfidence: 0.98,
+        },
+        multilingualSetting: {
+          dynamicTranslationEnabled: true,
+          additionalLanguageCodes: ["en"],
+        },
+      })
+    ).toEqual(["fr", "en"]);
+  });
+
+  it("uses a detected auto language as the main target", () => {
+    expect(
+      getSupportedContentTranslationTargetLanguageCodes({
+        languageSetting: {
+          mode: "auto",
+          languageCode: null,
+          detectedLanguageCode: "ja",
+          detectedSourceLanguageCode: "ja",
+          detectedRawLanguageCode: "ja",
+          detectedRawLanguageProvider: "lingua",
+          detectionConfidence: 0.98,
+        },
+        multilingualSetting: {
+          dynamicTranslationEnabled: true,
+          additionalLanguageCodes: ["en"],
+        },
+      })
+    ).toEqual(["ja", "en"]);
+  });
+
+  it("ignores an unknown auto main language", () => {
+    expect(
+      getSupportedContentTranslationTargetLanguageCodes({
+        languageSetting: {
+          mode: "auto",
+          languageCode: null,
+          detectedLanguageCode: null,
+          detectedSourceLanguageCode: null,
+          detectedRawLanguageCode: null,
+          detectedRawLanguageProvider: null,
+          detectionConfidence: null,
+        },
+        multilingualSetting: {
+          dynamicTranslationEnabled: true,
+          additionalLanguageCodes: ["en"],
+        },
+      })
+    ).toEqual(["en"]);
   });
 });

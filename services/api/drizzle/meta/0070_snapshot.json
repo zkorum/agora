@@ -1,5 +1,5 @@
 {
-  "id": "4fa494d3-e140-4734-9816-cc6072cf45a0",
+  "id": "bbd5db55-2f41-4cb6-a2f2-c48574827d4c",
   "prevId": "e7ec5c0a-95ba-40db-a5f1-02aa2195cae9",
   "version": "7",
   "dialect": "postgresql",
@@ -1518,6 +1518,31 @@
           "primaryKey": false,
           "notNull": false
         },
+        "source_language_code": {
+          "name": "source_language_code",
+          "type": "language_code",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_raw_language_code": {
+          "name": "source_raw_language_code",
+          "type": "varchar(35)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_provider": {
+          "name": "source_language_provider",
+          "type": "language_detection_provider",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_confidence": {
+          "name": "source_language_confidence",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (0)",
@@ -1561,7 +1586,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "conversation_content_translation_source_metadata_check": {
+          "name": "conversation_content_translation_source_metadata_check",
+          "value": "((\"conversation_content_translation\".\"source_language_provider\" IS NULL AND \"conversation_content_translation\".\"source_raw_language_code\" IS NULL) OR (\"conversation_content_translation\".\"source_language_provider\" IS NOT NULL AND \"conversation_content_translation\".\"source_raw_language_code\" IS NOT NULL))"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.conversation_export_artifact": {
@@ -6221,6 +6251,31 @@
           "primaryKey": false,
           "notNull": true
         },
+        "source_language_code": {
+          "name": "source_language_code",
+          "type": "language_code",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_raw_language_code": {
+          "name": "source_raw_language_code",
+          "type": "varchar(35)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_provider": {
+          "name": "source_language_provider",
+          "type": "language_detection_provider",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_confidence": {
+          "name": "source_language_confidence",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (0)",
@@ -6264,7 +6319,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "opinion_content_translation_source_metadata_check": {
+          "name": "opinion_content_translation_source_metadata_check",
+          "value": "((\"opinion_content_translation\".\"source_language_provider\" IS NULL AND \"opinion_content_translation\".\"source_raw_language_code\" IS NULL) OR (\"opinion_content_translation\".\"source_language_provider\" IS NOT NULL AND \"opinion_content_translation\".\"source_raw_language_code\" IS NOT NULL))"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.opinion_group_candidate_assessment": {
@@ -6429,6 +6489,28 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "og_candidate_desc_locale_request_translation_updated_idx": {
+          "name": "og_candidate_desc_locale_request_translation_updated_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"opinion_group_candidate_description_locale_request\".\"locale\" <> 'en'",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -9276,6 +9358,27 @@
         }
       },
       "indexes": {
+        "premium_feature_entitlement_user_idx": {
+          "name": "premium_feature_entitlement_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "feature",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "premium_feature_entitlement_org_idx": {
           "name": "premium_feature_entitlement_org_idx",
           "columns": [
@@ -9355,7 +9458,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "premium_feature_entitlement_single_subject_check": {
+          "name": "premium_feature_entitlement_single_subject_check",
+          "value": "((\"premium_feature_entitlement\".\"user_id\" is not null AND \"premium_feature_entitlement\".\"organization_id\" is null) OR (\"premium_feature_entitlement\".\"user_id\" is null AND \"premium_feature_entitlement\".\"organization_id\" is not null))"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.project_organization_ownership": {
@@ -11058,6 +11166,31 @@
           "primaryKey": false,
           "notNull": true
         },
+        "source_language_code": {
+          "name": "source_language_code",
+          "type": "language_code",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_raw_language_code": {
+          "name": "source_raw_language_code",
+          "type": "varchar(35)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_provider": {
+          "name": "source_language_provider",
+          "type": "language_detection_provider",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_confidence": {
+          "name": "source_language_confidence",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (0)",
@@ -11101,7 +11234,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "survey_question_content_translation_source_metadata_check": {
+          "name": "survey_question_content_translation_source_metadata_check",
+          "value": "((\"survey_question_content_translation\".\"source_language_provider\" IS NULL AND \"survey_question_content_translation\".\"source_raw_language_code\" IS NULL) OR (\"survey_question_content_translation\".\"source_language_provider\" IS NOT NULL AND \"survey_question_content_translation\".\"source_raw_language_code\" IS NOT NULL))"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.survey_question_option_content": {
@@ -11218,6 +11356,31 @@
           "primaryKey": false,
           "notNull": true
         },
+        "source_language_code": {
+          "name": "source_language_code",
+          "type": "language_code",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_raw_language_code": {
+          "name": "source_raw_language_code",
+          "type": "varchar(35)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_provider": {
+          "name": "source_language_provider",
+          "type": "language_detection_provider",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_confidence": {
+          "name": "source_language_confidence",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (0)",
@@ -11261,7 +11424,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "survey_question_option_content_translation_source_metadata_check": {
+          "name": "survey_question_option_content_translation_source_metadata_check",
+          "value": "((\"survey_question_option_content_translation\".\"source_language_provider\" IS NULL AND \"survey_question_option_content_translation\".\"source_raw_language_code\" IS NULL) OR (\"survey_question_option_content_translation\".\"source_language_provider\" IS NOT NULL AND \"survey_question_option_content_translation\".\"source_raw_language_code\" IS NOT NULL))"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.survey_question_option": {
@@ -13058,7 +13226,7 @@
       "schema": "public",
       "values": [
         "lingua",
-        "google"
+        "google_translate"
       ]
     },
     "public.maxdiff_lifecycle_status": {

@@ -29,6 +29,7 @@ export interface ApiV1AdministratorOrganizationAddUserOrganizationMappingPostReq
 }
 export interface ApiV1AdministratorOrganizationCreateOrganizationPostRequest {
     'organizationName': string;
+    'organizationSlug': string;
     'imagePath': string;
     'isFullImagePath': boolean;
     'websiteUrl'?: string;
@@ -1028,6 +1029,7 @@ export type ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1Initi
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1Translation {
     'targetLanguageCode': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationTargetLanguageCodeEnum;
+    'sourceLanguageCode'?: ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationSourceLanguageCodeEnum | null;
     'sourceLanguageLabel'?: string;
     'status': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationStatusEnum;
 }
@@ -1047,6 +1049,91 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1Tran
 } as const;
 
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationTargetLanguageCodeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationTargetLanguageCodeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationTargetLanguageCodeEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationSourceLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    EnGb: 'en-GB',
+    Ar: 'ar',
+    Bn: 'bn',
+    Eu: 'eu',
+    Bg: 'bg',
+    Ca: 'ca',
+    Hr: 'hr',
+    Cs: 'cs',
+    Da: 'da',
+    Nl: 'nl',
+    Fil: 'fil',
+    Fi: 'fi',
+    Gl: 'gl',
+    De: 'de',
+    El: 'el',
+    Gu: 'gu',
+    He: 'he',
+    Hi: 'hi',
+    Hu: 'hu',
+    Id: 'id',
+    Ga: 'ga',
+    It: 'it',
+    Ja: 'ja',
+    Kn: 'kn',
+    Ko: 'ko',
+    Ky: 'ky',
+    Ms: 'ms',
+    Mr: 'mr',
+    No: 'no',
+    Fa: 'fa',
+    Pl: 'pl',
+    Pt: 'pt',
+    Ro: 'ro',
+    Ru: 'ru',
+    Sr: 'sr',
+    Sk: 'sk',
+    Sv: 'sv',
+    Ta: 'ta',
+    Th: 'th',
+    Tr: 'tr',
+    Uk: 'uk',
+    Ur: 'ur',
+    Vi: 'vi',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Af: 'af',
+    Sq: 'sq',
+    Hy: 'hy',
+    Az: 'az',
+    Be: 'be',
+    Nb: 'nb',
+    Bs: 'bs',
+    Eo: 'eo',
+    Et: 'et',
+    Lg: 'lg',
+    Ka: 'ka',
+    Is: 'is',
+    Kk: 'kk',
+    La: 'la',
+    Lv: 'lv',
+    Lt: 'lt',
+    Mk: 'mk',
+    Mi: 'mi',
+    Mn: 'mn',
+    Nn: 'nn',
+    Pa: 'pa',
+    Sn: 'sn',
+    Sl: 'sl',
+    So: 'so',
+    St: 'st',
+    Sw: 'sw',
+    Te: 'te',
+    Ts: 'ts',
+    Tn: 'tn',
+    Cy: 'cy',
+    Xh: 'xh',
+    Yo: 'yo',
+    Zu: 'zu',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationSourceLanguageCodeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationSourceLanguageCodeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationSourceLanguageCodeEnum];
 export const ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationStatusEnum = {
     NotRequested: 'not_requested',
     Pending: 'pending',
@@ -1082,6 +1169,7 @@ export type ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Initi
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Translation {
     'targetLanguageCode': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationTargetLanguageCodeEnum;
+    'sourceLanguageCode'?: ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationSourceLanguageCodeEnum | null;
     'sourceLanguageLabel'?: string;
     'status': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationStatusEnum;
 }
@@ -1101,6 +1189,91 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Tran
 } as const;
 
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationTargetLanguageCodeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationTargetLanguageCodeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationTargetLanguageCodeEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationSourceLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    EnGb: 'en-GB',
+    Ar: 'ar',
+    Bn: 'bn',
+    Eu: 'eu',
+    Bg: 'bg',
+    Ca: 'ca',
+    Hr: 'hr',
+    Cs: 'cs',
+    Da: 'da',
+    Nl: 'nl',
+    Fil: 'fil',
+    Fi: 'fi',
+    Gl: 'gl',
+    De: 'de',
+    El: 'el',
+    Gu: 'gu',
+    He: 'he',
+    Hi: 'hi',
+    Hu: 'hu',
+    Id: 'id',
+    Ga: 'ga',
+    It: 'it',
+    Ja: 'ja',
+    Kn: 'kn',
+    Ko: 'ko',
+    Ky: 'ky',
+    Ms: 'ms',
+    Mr: 'mr',
+    No: 'no',
+    Fa: 'fa',
+    Pl: 'pl',
+    Pt: 'pt',
+    Ro: 'ro',
+    Ru: 'ru',
+    Sr: 'sr',
+    Sk: 'sk',
+    Sv: 'sv',
+    Ta: 'ta',
+    Th: 'th',
+    Tr: 'tr',
+    Uk: 'uk',
+    Ur: 'ur',
+    Vi: 'vi',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Af: 'af',
+    Sq: 'sq',
+    Hy: 'hy',
+    Az: 'az',
+    Be: 'be',
+    Nb: 'nb',
+    Bs: 'bs',
+    Eo: 'eo',
+    Et: 'et',
+    Lg: 'lg',
+    Ka: 'ka',
+    Is: 'is',
+    Kk: 'kk',
+    La: 'la',
+    Lv: 'lv',
+    Lt: 'lt',
+    Mk: 'mk',
+    Mi: 'mi',
+    Mn: 'mn',
+    Nn: 'nn',
+    Pa: 'pa',
+    Sn: 'sn',
+    Sl: 'sl',
+    So: 'so',
+    St: 'st',
+    Sw: 'sw',
+    Te: 'te',
+    Ts: 'ts',
+    Tn: 'tn',
+    Cy: 'cy',
+    Xh: 'xh',
+    Yo: 'yo',
+    Zu: 'zu',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationSourceLanguageCodeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationSourceLanguageCodeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationSourceLanguageCodeEnum];
 export const ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationStatusEnum = {
     Completed: 'completed',
 } as const;
@@ -1117,7 +1290,7 @@ export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOfV
 export interface ApiV1ContentTranslationRequestPostRequest {
     'subject': ApiV1ContentTranslationRequestPostRequestSubject;
     'targetLanguageCode': ApiV1ContentTranslationRequestPostRequestTargetLanguageCodeEnum;
-    'include': ApiV1ContentTranslationRequestPostRequestIncludeEnum;
+    'requestMode': ApiV1ContentTranslationRequestPostRequestRequestModeEnum;
 }
 
 export const ApiV1ContentTranslationRequestPostRequestTargetLanguageCodeEnum = {
@@ -1135,13 +1308,12 @@ export const ApiV1ContentTranslationRequestPostRequestTargetLanguageCodeEnum = {
 } as const;
 
 export type ApiV1ContentTranslationRequestPostRequestTargetLanguageCodeEnum = typeof ApiV1ContentTranslationRequestPostRequestTargetLanguageCodeEnum[keyof typeof ApiV1ContentTranslationRequestPostRequestTargetLanguageCodeEnum];
-export const ApiV1ContentTranslationRequestPostRequestIncludeEnum = {
-    Original: 'original',
-    Translation: 'translation',
-    Both: 'both',
+export const ApiV1ContentTranslationRequestPostRequestRequestModeEnum = {
+    ReadExisting: 'read_existing',
+    QueueIfMissing: 'queue_if_missing',
 } as const;
 
-export type ApiV1ContentTranslationRequestPostRequestIncludeEnum = typeof ApiV1ContentTranslationRequestPostRequestIncludeEnum[keyof typeof ApiV1ContentTranslationRequestPostRequestIncludeEnum];
+export type ApiV1ContentTranslationRequestPostRequestRequestModeEnum = typeof ApiV1ContentTranslationRequestPostRequestRequestModeEnum[keyof typeof ApiV1ContentTranslationRequestPostRequestRequestModeEnum];
 
 /**
  * @type ApiV1ContentTranslationRequestPostRequestSubject
@@ -1228,7 +1400,7 @@ export interface ApiV1ConversationCreatePostRequest {
     'conversationTitle': string;
     'conversationBody'?: string;
     'conversationBodyPlainText': string;
-    'postAsOrganization'?: string;
+    'postAsOrganization': string;
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationCreatePostRequestParticipationModeEnum;
     'conversationType': ApiV1ConversationCreatePostRequestConversationTypeEnum;
@@ -1799,7 +1971,9 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
     'mode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingModeEnum;
     'languageCode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingLanguageCodeEnum | null;
     'detectedLanguageCode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedLanguageCodeEnum | null;
+    'detectedSourceLanguageCode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedSourceLanguageCodeEnum | null;
     'detectedRawLanguageCode': string | null;
+    'detectedRawLanguageProvider': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedRawLanguageProviderEnum | null;
     'detectionConfidence': number | null;
 }
 
@@ -1839,6 +2013,97 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedLanguageCodeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedSourceLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    EnGb: 'en-GB',
+    Ar: 'ar',
+    Bn: 'bn',
+    Eu: 'eu',
+    Bg: 'bg',
+    Ca: 'ca',
+    Hr: 'hr',
+    Cs: 'cs',
+    Da: 'da',
+    Nl: 'nl',
+    Fil: 'fil',
+    Fi: 'fi',
+    Gl: 'gl',
+    De: 'de',
+    El: 'el',
+    Gu: 'gu',
+    He: 'he',
+    Hi: 'hi',
+    Hu: 'hu',
+    Id: 'id',
+    Ga: 'ga',
+    It: 'it',
+    Ja: 'ja',
+    Kn: 'kn',
+    Ko: 'ko',
+    Ky: 'ky',
+    Ms: 'ms',
+    Mr: 'mr',
+    No: 'no',
+    Fa: 'fa',
+    Pl: 'pl',
+    Pt: 'pt',
+    Ro: 'ro',
+    Ru: 'ru',
+    Sr: 'sr',
+    Sk: 'sk',
+    Sv: 'sv',
+    Ta: 'ta',
+    Th: 'th',
+    Tr: 'tr',
+    Uk: 'uk',
+    Ur: 'ur',
+    Vi: 'vi',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Af: 'af',
+    Sq: 'sq',
+    Hy: 'hy',
+    Az: 'az',
+    Be: 'be',
+    Nb: 'nb',
+    Bs: 'bs',
+    Eo: 'eo',
+    Et: 'et',
+    Lg: 'lg',
+    Ka: 'ka',
+    Is: 'is',
+    Kk: 'kk',
+    La: 'la',
+    Lv: 'lv',
+    Lt: 'lt',
+    Mk: 'mk',
+    Mi: 'mi',
+    Mn: 'mn',
+    Nn: 'nn',
+    Pa: 'pa',
+    Sn: 'sn',
+    Sl: 'sl',
+    So: 'so',
+    St: 'st',
+    Sw: 'sw',
+    Te: 'te',
+    Ts: 'ts',
+    Tn: 'tn',
+    Cy: 'cy',
+    Xh: 'xh',
+    Yo: 'yo',
+    Zu: 'zu',
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedSourceLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedSourceLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedSourceLanguageCodeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedRawLanguageProviderEnum = {
+    Lingua: 'lingua',
+    GoogleTranslate: 'google_translate',
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedRawLanguageProviderEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedRawLanguageProviderEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedRawLanguageProviderEnum];
 
 /**
  * @type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration
@@ -1908,7 +2173,7 @@ export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner
 
 export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization {
     'name': string;
-    'slug'?: string;
+    'slug': string;
     'imageUrl'?: string;
     'websiteUrl'?: string;
     'description': string;
@@ -2114,7 +2379,7 @@ export interface ApiV1ConversationImportPost200Response {
 }
 export interface ApiV1ConversationImportPostRequest {
     'polisUrl': string;
-    'postAsOrganization'?: string;
+    'postAsOrganization': string;
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationImportPostRequestParticipationModeEnum;
     'languageSetting'?: ApiV1ConversationImportPostRequestLanguageSetting;
@@ -3408,7 +3673,7 @@ export interface ApiV1PremiumFeatureAccessCheckPost200Response {
     'hasAccess': boolean;
 }
 export interface ApiV1PremiumFeatureAccessCheckPostRequest {
-    'postAsOrganization'?: string;
+    'postAsOrganization': string;
     'feature': ApiV1PremiumFeatureAccessCheckPostRequestFeatureEnum;
 }
 
@@ -7327,6 +7592,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -8623,7 +8889,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest: ApiV1UserLanguagePreferencesUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest: ApiV1UserLanguagePreferencesUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationClosePost200ResponseOneOf>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserLanguagePreferencesUpdatePost']?.[localVarOperationServerIndex]?.url;
@@ -9501,7 +9767,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest: ApiV1UserLanguagePreferencesUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+        apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest: ApiV1UserLanguagePreferencesUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationClosePost200ResponseOneOf> {
             return localVarFp.apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest, options).then((request) => request(axios, basePath));
         },
         /**

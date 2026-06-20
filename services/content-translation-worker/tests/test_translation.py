@@ -7,6 +7,7 @@ import pytest
 
 from content_translation_worker.translation import (
     ContentTranslationProviderError,
+    ContentTranslationResult,
     GoogleTranslationConfig,
     GoogleTranslationService,
     translate_texts,
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
 @dataclass(frozen=True)
 class FakeTranslation:
     translated_text: str
+    detected_language_code: str = "en"
 
 
 @dataclass(frozen=True)
@@ -78,7 +80,13 @@ def test_translate_texts_skips_same_language() -> None:
         mime_type="text/plain",
     )
 
-    assert result == ["Hello"]
+    assert result == [
+        ContentTranslationResult(
+            translated_text="Hello",
+            source_raw_language_code="en-US",
+            source_language_provider=None,
+        )
+    ]
     assert client.calls == []
 
 
@@ -94,7 +102,23 @@ def test_translate_texts_preserves_empty_texts_and_normalizes_target_language() 
         mime_type="text/plain",
     )
 
-    assert result == ["translated:Hello", "", "translated:World"]
+    assert result == [
+        ContentTranslationResult(
+            translated_text="translated:Hello",
+            source_raw_language_code="en",
+            source_language_provider="google_translate",
+        ),
+        ContentTranslationResult(
+            translated_text="",
+            source_raw_language_code=None,
+            source_language_provider=None,
+        ),
+        ContentTranslationResult(
+            translated_text="translated:World",
+            source_raw_language_code="en",
+            source_language_provider="google_translate",
+        ),
+    ]
     assert client.calls == [
         CapturedCall(
             contents=["Hello", "World"],
@@ -120,7 +144,13 @@ def test_translate_texts_lets_google_auto_detect_source_language() -> None:
         mime_type="text/plain",
     )
 
-    assert result == ["translated:Guten Tag"]
+    assert result == [
+        ContentTranslationResult(
+            translated_text="translated:Guten Tag",
+            source_raw_language_code="en",
+            source_language_provider="google_translate",
+        )
+    ]
     assert client.calls == [
         CapturedCall(
             contents=["Guten Tag"],

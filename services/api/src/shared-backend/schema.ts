@@ -605,7 +605,7 @@ export const conversationLanguageSettingModeEnum = pgEnum(
 );
 export const languageDetectionProviderEnum = pgEnum(
     "language_detection_provider",
-    ["lingua", "google"],
+    ["lingua", "google_translate"],
 );
 export const displayLanguageCodeEnum = pgEnum(
     "display_language_code",
@@ -1929,6 +1929,14 @@ export const conversationContentTranslationTable = pgTable(
             length: MAX_LENGTH_TITLE,
         }).notNull(),
         translatedBody: text("translated_body"),
+        sourceLanguageCode: languageCodeEnum("source_language_code"),
+        sourceRawLanguageCode: varchar("source_raw_language_code", {
+            length: 35,
+        }),
+        sourceLanguageProvider: languageDetectionProviderEnum(
+            "source_language_provider",
+        ),
+        sourceLanguageConfidence: real("source_language_confidence"),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1943,6 +1951,10 @@ export const conversationContentTranslationTable = pgTable(
             .notNull(),
     },
     (table) => [
+        check(
+            "conversation_content_translation_source_metadata_check",
+            sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
+        ),
         unique("conversation_content_translation_unique").on(
             table.conversationContentId,
             table.displayLanguageCode,
@@ -1983,6 +1995,14 @@ export const surveyQuestionContentTranslationTable = pgTable(
         displayLanguageCode:
             displayLanguageCodeEnum("display_language_code").notNull(),
         translatedQuestionText: text("translated_question_text").notNull(),
+        sourceLanguageCode: languageCodeEnum("source_language_code"),
+        sourceRawLanguageCode: varchar("source_raw_language_code", {
+            length: 35,
+        }),
+        sourceLanguageProvider: languageDetectionProviderEnum(
+            "source_language_provider",
+        ),
+        sourceLanguageConfidence: real("source_language_confidence"),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1997,6 +2017,10 @@ export const surveyQuestionContentTranslationTable = pgTable(
             .notNull(),
     },
     (table) => [
+        check(
+            "survey_question_content_translation_source_metadata_check",
+            sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
+        ),
         unique("survey_question_content_translation_unique").on(
             table.surveyQuestionContentId,
             table.displayLanguageCode,
@@ -2078,6 +2102,14 @@ export const surveyQuestionOptionContentTranslationTable = pgTable(
         displayLanguageCode:
             displayLanguageCodeEnum("display_language_code").notNull(),
         translatedOptionText: text("translated_option_text").notNull(),
+        sourceLanguageCode: languageCodeEnum("source_language_code"),
+        sourceRawLanguageCode: varchar("source_raw_language_code", {
+            length: 35,
+        }),
+        sourceLanguageProvider: languageDetectionProviderEnum(
+            "source_language_provider",
+        ),
+        sourceLanguageConfidence: real("source_language_confidence"),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -2092,6 +2124,10 @@ export const surveyQuestionOptionContentTranslationTable = pgTable(
             .notNull(),
     },
     (table) => [
+        check(
+            "survey_question_option_content_translation_source_metadata_check",
+            sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
+        ),
         unique("survey_question_option_content_translation_unique").on(
             table.surveyQuestionOptionContentId,
             table.displayLanguageCode,
@@ -2344,6 +2380,14 @@ export const opinionContentTranslationTable = pgTable(
         displayLanguageCode:
             displayLanguageCodeEnum("display_language_code").notNull(),
         translatedContent: text("translated_content").notNull(),
+        sourceLanguageCode: languageCodeEnum("source_language_code"),
+        sourceRawLanguageCode: varchar("source_raw_language_code", {
+            length: 35,
+        }),
+        sourceLanguageProvider: languageDetectionProviderEnum(
+            "source_language_provider",
+        ),
+        sourceLanguageConfidence: real("source_language_confidence"),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -2358,6 +2402,10 @@ export const opinionContentTranslationTable = pgTable(
             .notNull(),
     },
     (table) => [
+        check(
+            "opinion_content_translation_source_metadata_check",
+            sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
+        ),
         unique("opinion_content_translation_unique").on(
             table.opinionContentId,
             table.displayLanguageCode,

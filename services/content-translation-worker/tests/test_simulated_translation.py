@@ -8,6 +8,7 @@ from content_translation_worker.simulated_translation import (
     SimulatedTranslationService,
     simulate_translation,
 )
+from content_translation_worker.translation import ContentTranslationResult
 from content_translation_worker.translation_model import SimulatedTranslationMode
 
 
@@ -37,8 +38,16 @@ def test_simulated_success_service_translates_all_texts() -> None:
     )
 
     assert result == [
-        "[simulated auto->fr text/plain] Hello",
-        "[simulated auto->fr text/plain] World",
+        ContentTranslationResult(
+            translated_text="[simulated auto->fr text/plain] Hello",
+            source_raw_language_code=None,
+            source_language_provider=None,
+        ),
+        ContentTranslationResult(
+            translated_text="[simulated auto->fr text/plain] World",
+            source_raw_language_code=None,
+            source_language_provider=None,
+        ),
     ]
 
 
@@ -61,7 +70,13 @@ def test_simulated_retry_then_success() -> None:
         source_language_code="en",
         target_language_code="fr",
         mime_type="text/plain",
-    ) == ["[simulated en->fr text/plain] Hello"]
+    ) == [
+        ContentTranslationResult(
+            translated_text="[simulated en->fr text/plain] Hello",
+            source_raw_language_code="en",
+            source_language_provider="google_translate",
+        )
+    ]
 
 
 def test_simulated_non_retryable_failure() -> None:

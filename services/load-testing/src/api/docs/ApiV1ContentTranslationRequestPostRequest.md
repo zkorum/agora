@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **subject** | [**ApiV1ContentTranslationRequestPostRequestSubject**](ApiV1ContentTranslationRequestPostRequestSubject.md) |  | [default to undefined]
 **targetLanguageCode** | **string** |  | [default to undefined]
-**include** | **string** |  | [default to undefined]
+**requestMode** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -17,7 +17,7 @@ import { ApiV1ContentTranslationRequestPostRequest } from './api';
 const instance: ApiV1ContentTranslationRequestPostRequest = {
     subject,
     targetLanguageCode,
-    include,
+    requestMode,
 };
 ```
 
