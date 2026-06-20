@@ -40,7 +40,7 @@
         {{ commentItem.isSeed ? "This is a seed comment." : "" }}
       </div>
 
-      <CommentItem
+      <TranslatedCommentItem
         :comment-item="commentItem"
         :post-slug-id="postSlugId"
         :conversation-author-username="conversationAuthorUsername"
@@ -51,6 +51,8 @@
         :survey-gate="props.surveyGate"
         :on-view-analysis="props.onViewAnalysis"
         :is-voting-disabled="props.isVotingDisabled"
+        :dynamic-translation-enabled="props.dynamicTranslationEnabled"
+        :supported-target-language-codes="props.supportedTargetLanguageCodes"
         @deleted="deletedComment(commentItem.opinionSlugId)"
         @muted-comment="mutedComment()"
       />
@@ -65,6 +67,7 @@ import {
   localizedDateTimeFormatOptions,
   useLocalizedDateTimeFormatter,
 } from "src/composables/ui/useLocalizedDateTime";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
   EventSlug,
   OpinionItem,
@@ -73,7 +76,7 @@ import type {
 } from "src/shared/types/zod";
 import { computed, nextTick } from "vue";
 
-import CommentItem from "./item/CommentItem.vue";
+import TranslatedCommentItem from "./item/TranslatedCommentItem.vue";
 
 const props = defineProps<{
   commentItemList: OpinionItem[];
@@ -87,6 +90,8 @@ const props = defineProps<{
   surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
+  dynamicTranslationEnabled: boolean;
+  supportedTargetLanguageCodes: SupportedDisplayLanguageCodes[];
 }>();
 
 const emit = defineEmits<{

@@ -6,14 +6,12 @@ WITH normalized AS (
     SELECT
         organization.id,
         organization.name AS display_name,
-        lower(
-            trim(
-                both '-' from regexp_replace(
-                    regexp_replace(organization.name, '[^[:alnum:]]+', '-', 'g'),
-                    '-+',
-                    '-',
-                    'g'
-                )
+        trim(
+            both '-' from regexp_replace(
+                regexp_replace(lower(organization.name), '[^a-z0-9]+', '-', 'g'),
+                '-+',
+                '-',
+                'g'
             )
         ) AS raw_slug
     FROM organization
@@ -23,25 +21,29 @@ WITH normalized AS (
         normalized.id,
         normalized.display_name,
         CASE
-            WHEN normalized.raw_slug = '' THEN 'org-' || normalized.id::text
-            ELSE left(normalized.raw_slug, 65)
+            WHEN normalized.raw_slug = '' THEN 'org'
+            ELSE normalized.raw_slug
         END AS base_slug
     FROM normalized
+), reserved_personal_slugs AS (
+    SELECT 'user-' || replace("user".id::text, '-', '') AS slug
+    FROM "user"
 ), slugged AS (
     SELECT
         slug_candidates.id,
         slug_candidates.display_name,
         CASE
-            WHEN row_number() OVER (
-                PARTITION BY slug_candidates.base_slug
-                ORDER BY slug_candidates.id
-            ) = 1 THEN slug_candidates.base_slug
-            ELSE left(slug_candidates.base_slug, 58) || '-' || row_number() OVER (
-                PARTITION BY slug_candidates.base_slug
-                ORDER BY slug_candidates.id
-            )::text
+            WHEN count(*) OVER (PARTITION BY slug_candidates.base_slug) = 1
+             AND reserved_personal_slugs.slug IS NULL
+                THEN trim(both '-' from left(slug_candidates.base_slug, 65))
+            ELSE trim(both '-' from left(
+                slug_candidates.base_slug,
+                63 - length(slug_candidates.id::text)
+            )) || '--' || slug_candidates.id::text
         END AS slug
     FROM slug_candidates
+    LEFT JOIN reserved_personal_slugs
+      ON reserved_personal_slugs.slug = slug_candidates.base_slug
 )
 UPDATE organization
 SET
@@ -63,16 +65,42 @@ INSERT INTO organization (
     updated_at
 )
 SELECT
-    'user-' || replace("user".id::text, '-', '') AS name,
+    generated_name.name AS name,
     'user-' || replace("user".id::text, '-', '') AS slug,
     "user".first_name AS display_name,
     'unlisted'::directory_visibility AS directory_visibility,
     "user".id AS auto_provisioned_for_user_id,
-    '' AS image_path,
+    NULL AS image_path,
     false AS is_full_image_path,
     now() AS created_at,
     now() AS updated_at
 FROM "user"
+CROSS JOIN LATERAL (
+    SELECT 'user-' || replace("user".id::text, '-', '') AS base_name
+) AS personal_name
+CROSS JOIN LATERAL (
+    SELECT candidate.name
+    FROM generate_series(
+        0,
+        (SELECT count(*)::integer + 10 FROM organization)
+    ) AS suffix(value)
+    CROSS JOIN LATERAL (
+        SELECT CASE
+            WHEN suffix.value = 0 THEN personal_name.base_name
+            ELSE trim(both '-' from left(
+                personal_name.base_name,
+                64 - length(suffix.value::text)
+            )) || '-' || suffix.value::text
+        END AS name
+    ) AS candidate
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM organization existing
+        WHERE existing.name = candidate.name
+    )
+    ORDER BY suffix.value
+    LIMIT 1
+) AS generated_name
 WHERE NOT EXISTS (
     SELECT 1
     FROM organization existing

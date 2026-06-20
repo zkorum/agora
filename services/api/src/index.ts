@@ -20,6 +20,7 @@ import fastifyRateLimit from "@fastify/rate-limit";
 import fastifySensible from "@fastify/sensible";
 import fastifySSE from "@fastify/sse";
 import fastifySwagger from "@fastify/swagger";
+import { Script } from "@valkey/valkey-glide";
 import * as ucans from "@ucans/ucans";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import {
@@ -34,6 +35,7 @@ import {
     type ZodTypeProvider,
 } from "fastify-type-provider-zod";
 import fs from "fs";
+import type { z } from "zod";
 import { config, log, server } from "./app.js";
 import * as authService from "@/service/auth.js";
 import * as authUtilService from "@/service/authUtil.js";
@@ -50,6 +52,7 @@ import { checkFeatureAccess } from "@/shared-app-api/featureAccess.js";
 import { zodCsvFiles } from "@/service/csvImport.js";
 import * as conversationExportService from "@/service/conversationExport/index.js";
 import * as conversationImportService from "@/service/conversationImport/index.js";
+import * as contentTranslationService from "@/service/contentTranslation.js";
 import { fetchAnalysisCheckpointsByConversationSlugId } from "@/service/conversationViewSnapshot.js";
 import { createExportWorker } from "@/service/conversationExport/core.js";
 import type { ValkeyRef } from "@/service/valkeyRef.js";
@@ -141,16 +144,23 @@ import {
 import twilio from "twilio";
 import { initializeValkey } from "./shared-backend/valkey.js";
 import { createVoteBuffer } from "./service/voteBuffer.js";
+import {
+    consumeContentTranslationUserRateLimit,
+    CONTENT_TRANSLATION_USER_RATE_LIMIT_SCRIPT,
+    ENQUEUE_CONTENT_TRANSLATION_WORK_SCRIPT,
+} from "./shared-backend/contentTranslationQueue.js";
 import { createImportBuffer } from "./service/importBuffer.js";
 import { createImportWorkerEventBridge } from "./service/importWorkerEventBridge.js";
 import {
     createRealtimeEventOutboxBridge,
     fetchConversationAnalysisUpdatedEventForLatestViewSnapshot,
     fetchConversationRealtimeEventsAfterId,
+    fetchRealtimeTopicEventsAfterId,
 } from "./service/realtimeEventOutbox.js";
 import { createUcanReplayGuard } from "./service/ucanReplayGuard.js";
 import {
-    parseRealtimeSubscribedConversationSlugId,
+    parseRealtimeSubscriptionRequest,
+    type RealtimeSubscriptionRequest,
     RealtimeSSEManager,
 } from "./service/realtimeSSE.js";
 import {
@@ -161,7 +171,10 @@ import {
     getOrganizationsByUsername,
     removeUserOrganizationMapping,
 } from "./service/administrator/organization.js";
-import type { DeviceIsKnownTrueLoginStatus } from "./shared/types/zod.js";
+import type {
+    ConversationMultilingualSetting,
+    DeviceIsKnownTrueLoginStatus,
+} from "./shared/types/zod.js";
 import type { DeviceLoginStatusInternal } from "./service/authUtil.js";
 import {
     getAllTopics,
@@ -180,16 +193,26 @@ import {
 import { createDb } from "./shared-backend/db.js";
 import {
     conversationTable,
+    conversationLanguageSettingTable,
+    conversationTranslationSettingTable,
+    conversationTranslationTargetLanguageTable,
     deviceTable,
     organizationTable,
     projectOrganizationOwnershipTable,
 } from "./shared-backend/schema.js";
 import { and, eq, isNull } from "drizzle-orm";
+
+type ContentTranslationResponse = z.infer<typeof Dto.contentTranslationResponse>;
 import {
     initializeGoogleCloudCredentials,
     type GoogleCloudCredentials,
 } from "./shared-backend/googleCloudAuth.js";
 import { nowZeroMs } from "./shared/util.js";
+import {
+    backfillConversationContentMetadata,
+    logActiveConversationBodyLimits,
+    logConversationBodyLimitCompatibility,
+} from "./service/conversationTextMaintenance.js";
 
 server.register(fastifySensible);
 server.register(fastifyAuth);
@@ -279,6 +302,8 @@ const githubWebhookRateLimitConfig = {
     timeWindow: 60 * 1000,
     groupId: "maxdiff-github-webhook",
 };
+const CONTENT_TRANSLATION_USER_RATE_LIMIT_MAX = 20;
+const CONTENT_TRANSLATION_USER_RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
 let twilioClient: twilio.Twilio | undefined;
 if (mustSendActualSms) {
@@ -382,6 +407,8 @@ server.setErrorHandler((error: FastifyError, _request, reply) => {
 // await node.waitForPeers([Protocols.LightPush]);
 
 const db = await createDb(config, log);
+logActiveConversationBodyLimits();
+void logConversationBodyLimitCompatibility({ db });
 
 function assertMaxdiffGitHubAllowed({
     userId,
@@ -465,6 +492,75 @@ async function assertMaxdiffGitHubAllowedForConversation({
     });
 }
 
+async function getContentTranslationAvailabilityForConversation({
+    conversationSlugId,
+    targetLanguageCode,
+}: {
+    conversationSlugId: string;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+}): Promise<{
+    isAllowed: boolean;
+    multilingualSetting: ConversationMultilingualSetting;
+}> {
+    const rows = await db
+        .select({
+            languageCode: conversationLanguageSettingTable.languageCode,
+            detectedLanguageCode:
+                conversationLanguageSettingTable.detectedLanguageCode,
+            dynamicTranslationEnabled:
+                conversationTranslationSettingTable.dynamicTranslationEnabled,
+            targetLanguageCode:
+                conversationTranslationTargetLanguageTable.languageCode,
+        })
+        .from(conversationTable)
+        .leftJoin(
+            conversationLanguageSettingTable,
+            eq(
+                conversationLanguageSettingTable.conversationId,
+                conversationTable.id,
+            ),
+        )
+        .leftJoin(
+            conversationTranslationSettingTable,
+            eq(
+                conversationTranslationSettingTable.conversationId,
+                conversationTable.id,
+            ),
+        )
+        .leftJoin(
+            conversationTranslationTargetLanguageTable,
+            eq(
+                conversationTranslationTargetLanguageTable.translationSettingId,
+                conversationTranslationSettingTable.id,
+            ),
+        )
+        .where(eq(conversationTable.slugId, conversationSlugId));
+
+    const firstRow = rows.at(0);
+    if (firstRow === undefined) {
+        throw server.httpErrors.notFound(
+            "Content translation subject not found",
+        );
+    }
+    const multilingualSetting: ConversationMultilingualSetting = {
+        dynamicTranslationEnabled: firstRow.dynamicTranslationEnabled ?? false,
+        additionalLanguageCodes: rows.flatMap((row) =>
+            row.targetLanguageCode === null ? [] : [row.targetLanguageCode],
+        ),
+    };
+    const configuredTargetLanguageCodes = new Set<SupportedDisplayLanguageCodes>([
+        ...(firstRow.languageCode === null ? [] : [firstRow.languageCode]),
+        ...(firstRow.detectedLanguageCode === null
+            ? []
+            : [firstRow.detectedLanguageCode]),
+        ...multilingualSetting.additionalLanguageCodes,
+    ]);
+    const translationAllowed =
+        multilingualSetting.dynamicTranslationEnabled &&
+        configuredTargetLanguageCodes.has(targetLanguageCode);
+    return { isAllowed: translationAllowed, multilingualSetting };
+}
+
 // Validate S3 configuration if export feature is enabled
 if (config.EXPORT_CONVOS_ENABLED) {
     if (
@@ -518,6 +614,7 @@ if (
         "[API] Google Cloud Translation not configured - translations disabled",
     );
 }
+void backfillConversationContentMetadata({ db, googleCloudCredentials });
 
 // Initialize Valkey (optional - for vote buffer persistence and UCAN replay protection)
 const queueValkeyRef: ValkeyRef = {
@@ -527,6 +624,12 @@ const queueValkeyRef: ValkeyRef = {
         type: "Queue",
     }),
 };
+const contentTranslationQueueScript = new Script(
+    ENQUEUE_CONTENT_TRANSLATION_WORK_SCRIPT,
+);
+const contentTranslationUserRateLimitScript = new Script(
+    CONTENT_TRANSLATION_USER_RATE_LIMIT_SCRIPT,
+);
 
 let queueValkeyReconnectInterval: NodeJS.Timeout | undefined;
 let queueValkeyReconnectInProgress = false;
@@ -1028,14 +1131,14 @@ async function sendLatestSubscribedConversationAnalysisEvent({
     }
 }
 
-async function replaySubscribedConversationEvents({
+async function replaySubscribedRealtimeEvents({
     reply,
-    conversationSlugId,
+    subscription,
 }: {
     reply: FastifyReply;
-    conversationSlugId: string | undefined;
+    subscription: RealtimeSubscriptionRequest;
 }): Promise<void> {
-    if (conversationSlugId === undefined || reply.sse.lastEventId === null) {
+    if (reply.sse.lastEventId === null) {
         return;
     }
 
@@ -1048,11 +1151,9 @@ async function replaySubscribedConversationEvents({
         let nextLastEventId = lastEventId;
         let replayedEventCount = 0;
         while (replayedEventCount < REALTIME_REPLAY_MAX_EVENTS) {
-            const events = await fetchConversationRealtimeEventsAfterId({
-                db,
-                conversationSlugId,
+            const events = await fetchSubscribedRealtimeEventsAfterId({
+                subscription,
                 lastEventId: nextLastEventId,
-                limit: REALTIME_REPLAY_BATCH_LIMIT,
             });
             if (events.length === 0) {
                 return;
@@ -1075,14 +1176,48 @@ async function replaySubscribedConversationEvents({
         }
 
         log.warn(
-            `[RealtimeSSE] Replay event cap reached conversationSlugId=${conversationSlugId} lastEventId=${String(lastEventId)} maxEvents=${String(REALTIME_REPLAY_MAX_EVENTS)}`,
+            `[RealtimeSSE] Replay event cap reached topics=${subscription.topics.join(",")} lastEventId=${String(lastEventId)} maxEvents=${String(REALTIME_REPLAY_MAX_EVENTS)}`,
         );
     } catch (error) {
         log.error(
             error,
-            `[RealtimeSSE] Failed to replay events conversationSlugId=${conversationSlugId} lastEventId=${String(lastEventId)}`,
+            `[RealtimeSSE] Failed to replay events topics=${subscription.topics.join(",")} lastEventId=${String(lastEventId)}`,
         );
     }
+}
+
+async function fetchSubscribedRealtimeEventsAfterId({
+    subscription,
+    lastEventId,
+}: {
+    subscription: RealtimeSubscriptionRequest;
+    lastEventId: number;
+}): ReturnType<typeof fetchRealtimeTopicEventsAfterId> {
+    const [conversationEvents, topicEvents] = await Promise.all([
+        subscription.conversationSlugId === undefined
+            ? []
+            : fetchConversationRealtimeEventsAfterId({
+                  db,
+                  conversationSlugId: subscription.conversationSlugId,
+                  lastEventId,
+                  limit: REALTIME_REPLAY_BATCH_LIMIT,
+              }),
+        fetchRealtimeTopicEventsAfterId({
+            db,
+            topics: subscription.topics,
+            lastEventId,
+            limit: REALTIME_REPLAY_BATCH_LIMIT,
+        }),
+    ]);
+
+    const eventsById = new Map<number, (typeof topicEvents)[number]>();
+    for (const event of [...conversationEvents, ...topicEvents]) {
+        eventsById.set(event.id, event);
+    }
+
+    return Array.from(eventsById.values())
+        .sort((first, second) => first.id - second.id)
+        .slice(0, REALTIME_REPLAY_BATCH_LIMIT);
 }
 
 // always return userId !== undefined
@@ -2250,11 +2385,13 @@ server.after(() => {
             const newOpinionResponse = await postNewOpinion({
                 db: db,
                 commentBody: request.body.opinionBody,
+                opinionPlainText: request.body.opinionPlainText,
                 conversationSlugId: request.body.conversationSlugId,
                 didWrite: didWrite,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now: now,
                 isSeed: false,
+                googleCloudCredentials,
                 voteBuffer: voteBuffer,
                 realtimeSSEManager: realtimeSSEManager,
             });
@@ -2580,6 +2717,7 @@ server.after(() => {
                     hasSurvey,
                     preferredOpinionGroupCount:
                         request.body.preferredOpinionGroupCount,
+                    multilingualSetting: request.body.multilingualSetting,
                 });
 
             if (request.body.externalSourceConfig != null) {
@@ -2611,6 +2749,8 @@ server.after(() => {
                 db: db,
                 conversationTitle: request.body.conversationTitle,
                 conversationBody: request.body.conversationBody ?? null,
+                conversationBodyPlainText:
+                    request.body.conversationBodyPlainText,
                 authorId: deviceStatus.userId,
                 didWrite: didWrite,
                 postAsOrganization: request.body.postAsOrganization,
@@ -2625,12 +2765,32 @@ server.after(() => {
                     request.body.preferredOpinionGroupCount,
                 externalSourceConfig: request.body.externalSourceConfig ?? null,
                 surveyConfig: request.body.surveyConfig ?? null,
+                languageSetting: request.body.languageSetting,
+                multilingualSetting: request.body.multilingualSetting,
                 googleCloudCredentials,
             });
 
             if (!createResult.success) {
                 reply.send(createResult);
                 return;
+            }
+
+            try {
+                await contentTranslationService.scheduleEagerContentTranslationForConversation(
+                    {
+                        db,
+                        valkey: queueValkeyRef.current,
+                        queueScript: contentTranslationQueueScript,
+                        conversationSlugId: createResult.conversationSlugId,
+                        now: nowZeroMs(),
+                        log,
+                    },
+                );
+            } catch (error: unknown) {
+                log.error(
+                    error,
+                    `[ContentTranslation] Failed to schedule eager work for conversationSlugId=${createResult.conversationSlugId}`,
+                );
             }
 
             // Broadcast to all connected clients (except the creator) that a new conversation exists
@@ -2708,6 +2868,7 @@ server.after(() => {
                     hasSurvey: false,
                     preferredOpinionGroupCount:
                         request.body.preferredOpinionGroupCount,
+                    multilingualSetting: request.body.multilingualSetting,
                 });
             if (premiumFeatures.length > 0) {
                 await premiumEntitlementService.requirePremiumAccess({
@@ -2735,6 +2896,8 @@ server.after(() => {
                     aiLabelingEnabled: request.body.aiLabelingEnabled,
                     preferredOpinionGroupCount:
                         request.body.preferredOpinionGroupCount,
+                    languageSetting: request.body.languageSetting,
+                    multilingualSetting: request.body.multilingualSetting,
                 },
                 didWrite,
                 importBuffer,
@@ -2884,6 +3047,7 @@ server.after(() => {
                     hasSurvey: false,
                     preferredOpinionGroupCount:
                         parsedFields.preferredOpinionGroupCount,
+                    multilingualSetting: parsedFields.multilingualSetting,
                 });
             if (premiumFeatures.length > 0) {
                 await premiumEntitlementService.requirePremiumAccess({
@@ -2912,6 +3076,8 @@ server.after(() => {
                         aiLabelingEnabled: parsedFields.aiLabelingEnabled,
                         preferredOpinionGroupCount:
                             parsedFields.preferredOpinionGroupCount,
+                        languageSetting: parsedFields.languageSetting,
+                        multilingualSetting: parsedFields.multilingualSetting,
                     },
                     didWrite,
                     importBuffer,
@@ -3075,31 +3241,12 @@ server.after(() => {
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
-            const parsedHeaderDisplayLanguage =
-                ZodSupportedDisplayLanguageCodes.safeParse(
-                    request.headers["accept-language"],
-                );
-            const headerDisplayLanguage: SupportedDisplayLanguageCodes =
-                parsedHeaderDisplayLanguage.success
-                    ? parsedHeaderDisplayLanguage.data
-                    : "en";
-            const displayLanguage = deviceStatus.isKnown
-                ? await getLanguagePreferences({
-                      db,
-                      userId: deviceStatus.userId,
-                      request: {
-                          currentDisplayLanguage: headerDisplayLanguage,
-                      },
-                  }).then((prefs) => prefs.displayLanguage)
-                : headerDisplayLanguage;
             return await surveyService.fetchSurveyForm({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
                 participantId: deviceStatus.isKnown
                     ? deviceStatus.userId
                     : undefined,
-                displayLanguage,
-                googleCloudCredentials,
             });
         },
     });
@@ -3193,8 +3340,8 @@ server.after(() => {
                 userId: deviceStatus.userId,
                 surveyConfig: request.body.surveyConfig,
                 now: nowZeroMs(),
-                valkey: queueValkeyRef.current,
                 googleCloudCredentials,
+                valkey: queueValkeyRef.current,
             });
         },
     });
@@ -3691,6 +3838,7 @@ server.after(() => {
             await createOrganization({
                 db: db,
                 organizationName: request.body.organizationName,
+                organizationSlug: request.body.organizationSlug,
                 imagePath: request.body.imagePath,
                 isFullImagePath: request.body.isFullImagePath,
                 websiteUrl: request.body.websiteUrl,
@@ -3973,10 +4121,9 @@ server.after(() => {
         url: `/api/${apiVersion}/realtime/stream`,
         sse: true, // Enable SSE mode - provides reply.sse.* methods
         handler: async (request, reply) => {
-            let subscribedConversationSlugId: string | undefined;
+            let subscription: RealtimeSubscriptionRequest;
             try {
-                subscribedConversationSlugId =
-                    parseRealtimeSubscribedConversationSlugId(request.query);
+                subscription = parseRealtimeSubscriptionRequest(request.query);
             } catch (error) {
                 log.warn(error, "Invalid realtime stream query");
                 return reply.code(400).send("Invalid realtime stream query");
@@ -3995,15 +4142,15 @@ server.after(() => {
                     realtimeSSEManager.connect({
                         userId: authResult.deviceStatus.userId,
                         reply,
-                        subscribedConversationSlugId,
+                        subscribedTopics: subscription.topics,
                     });
-                    await replaySubscribedConversationEvents({
+                    await replaySubscribedRealtimeEvents({
                         reply,
-                        conversationSlugId: subscribedConversationSlugId,
+                        subscription,
                     });
                     await sendLatestSubscribedConversationAnalysisEvent({
                         reply,
-                        conversationSlugId: subscribedConversationSlugId,
+                        conversationSlugId: subscription.conversationSlugId,
                     });
 
                     await new Promise<void>((resolve) => {
@@ -4023,15 +4170,15 @@ server.after(() => {
                     reply.sse.keepAlive();
                     realtimeSSEManager.connectAnonymous({
                         reply,
-                        subscribedConversationSlugId,
+                        subscribedTopics: subscription.topics,
                     });
-                    await replaySubscribedConversationEvents({
+                    await replaySubscribedRealtimeEvents({
                         reply,
-                        conversationSlugId: subscribedConversationSlugId,
+                        subscription,
                     });
                     await sendLatestSubscribedConversationAnalysisEvent({
                         reply,
-                        conversationSlugId: subscribedConversationSlugId,
+                        conversationSlugId: subscription.conversationSlugId,
                     });
 
                     await new Promise<void>((resolve) => {
@@ -4094,6 +4241,9 @@ server.after(() => {
         url: `/api/${apiVersion}/user/language-preferences/update`,
         schema: {
             body: Dto.updateLanguagePreferencesRequest,
+            response: {
+                200: Dto.updateLanguagePreferencesResponse,
+            },
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
@@ -4108,6 +4258,158 @@ server.after(() => {
                 userId: deviceStatus.userId,
                 preferences: request.body,
             });
+            return { success: true as const };
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/content-translation/request`,
+        schema: {
+            body: Dto.contentTranslationRequest,
+            response: {
+                200: Dto.contentTranslationResponse,
+            },
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUcan(request);
+            const now = nowZeroMs();
+            const userAgent = request.headers["user-agent"] ?? "Unknown device";
+            const deviceStatus = await authUtilService.getDeviceStatus({
+                db,
+                didWrite,
+                now,
+            });
+            const requesterUserId = deviceStatus.isKnown
+                ? deviceStatus.userId
+                : (
+                      await authService.createGuestUser({
+                          db,
+                          didWrite,
+                          now,
+                          userAgent,
+                      })
+                  ).userId;
+
+            log.info(
+                {
+                    subject: request.body.subject,
+                    targetLanguageCode: request.body.targetLanguageCode,
+                    requestMode: request.body.requestMode,
+                    requesterUserId,
+                    createdGuestUser: !deviceStatus.isKnown,
+                },
+                "[ContentTranslation] Request received",
+            );
+
+            const queueValkey = queueValkeyRef.current;
+
+            const availability =
+                await getContentTranslationAvailabilityForConversation({
+                    conversationSlugId: request.body.subject.conversationSlugId,
+                    targetLanguageCode: request.body.targetLanguageCode,
+                });
+            log.info(
+                {
+                    conversationSlugId: request.body.subject.conversationSlugId,
+                    targetLanguageCode: request.body.targetLanguageCode,
+                    isAllowed: availability.isAllowed,
+                    multilingualSetting: availability.multilingualSetting,
+                },
+                "[ContentTranslation] Availability checked",
+            );
+            if (!availability.isAllowed) {
+                const productFailureResponse = {
+                    success: false,
+                    reason: "content_translation_not_enabled",
+                    multilingualSetting: availability.multilingualSetting,
+                } satisfies ContentTranslationResponse;
+                return productFailureResponse;
+            }
+
+            const response =
+                await contentTranslationService.requestContentTranslation({
+                    db,
+                    valkey: queueValkey,
+                    queueScript: contentTranslationQueueScript,
+                    subject: request.body.subject,
+                    targetLanguageCode: request.body.targetLanguageCode,
+                    requestMode: request.body.requestMode,
+                    now,
+                    log,
+                    beforeQueueTranslationWork: async () => {
+                        if (queueValkey === undefined) {
+                            throw server.httpErrors.serviceUnavailable(
+                                "Content translation rate limiter is unavailable",
+                            );
+                        }
+                        let rateLimit: Awaited<
+                            ReturnType<
+                                typeof consumeContentTranslationUserRateLimit
+                            >
+                        >;
+                        try {
+                            rateLimit =
+                                await consumeContentTranslationUserRateLimit({
+                                    valkey: queueValkey,
+                                    script: contentTranslationUserRateLimitScript,
+                                    userId: requesterUserId,
+                                    maxRequests:
+                                        CONTENT_TRANSLATION_USER_RATE_LIMIT_MAX,
+                                    windowMs:
+                                        CONTENT_TRANSLATION_USER_RATE_LIMIT_WINDOW_MS,
+                                });
+                        } catch (error) {
+                            log.error(
+                                error,
+                                "[ContentTranslation] User rate limiter failed",
+                            );
+                            throw server.httpErrors.serviceUnavailable(
+                                "Content translation rate limiter is unavailable",
+                            );
+                        }
+                        if (!rateLimit.isAllowed) {
+                            log.info(
+                                {
+                                    requesterUserId,
+                                    retryAfterMs: rateLimit.retryAfterMs,
+                                    subject: request.body.subject,
+                                    targetLanguageCode:
+                                        request.body.targetLanguageCode,
+                                },
+                                "[ContentTranslation] User rate limit exceeded",
+                            );
+                            throw server.httpErrors.createError(
+                                429,
+                                `Content translation rate limit exceeded. Retry after ${String(Math.ceil(rateLimit.retryAfterMs / 1000))}s`,
+                            );
+                        }
+                    },
+                });
+            if (response === undefined) {
+                throw server.httpErrors.notFound(
+                    "Content translation subject not found",
+                );
+            }
+            const productSuccessResponse = {
+                ...response,
+                success: true,
+            } satisfies ContentTranslationResponse;
+            log.info(
+                {
+                    subject: request.body.subject,
+                    targetLanguageCode: request.body.targetLanguageCode,
+                    requestMode: request.body.requestMode,
+                    contentKind: response.content.kind,
+                    translationStatus:
+                        response.content.kind === "translatable"
+                            ? response.content.translation.status
+                            : undefined,
+                    initialMode: response.content.initialMode,
+                },
+                "[ContentTranslation] Request completed",
+            );
+            return productSuccessResponse;
         },
     });
 
@@ -4308,6 +4610,9 @@ const shutdown = async (signal: string) => {
 
         // Stop UCAN replay guard cleanup interval
         ucanReplayGuard.shutdown();
+
+        contentTranslationQueueScript.release();
+        contentTranslationUserRateLimitScript.release();
 
         // Stop popular conversation periodic check
         clearInterval(popularConversationCheckInterval);

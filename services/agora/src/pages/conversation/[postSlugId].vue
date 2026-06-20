@@ -33,7 +33,7 @@
       <div v-else-if="hasConversationData">
         <ZKHoverEffect :enable-hover="false">
           <div class="container standardStyle">
-            <PostContent
+            <TranslatedPostContent
               :extended-post-data="loadedConversationData"
               :compact-mode="false"
               @open-moderation-history="openModerationHistory()"
@@ -165,7 +165,7 @@ import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue"
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import CommentComposer from "src/components/post/comments/CommentComposer.vue";
 import CommentSortingSelector from "src/components/post/comments/group/CommentSortingSelector.vue";
-import PostContent from "src/components/post/display/PostContent.vue";
+import TranslatedPostContent from "src/components/post/display/TranslatedPostContent.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";

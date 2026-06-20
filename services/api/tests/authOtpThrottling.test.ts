@@ -14,6 +14,8 @@ import {
 } from "vitest";
 import { GenericContainer, type StartedTestContainer } from "testcontainers";
 
+import { readDbFixtureSql } from "./dbFixture.js";
+
 process.env.NODE_ENV = "test";
 process.env.CORS_ORIGIN_LIST = "http://localhost:9000";
 process.env.PEPPERS = Buffer.from("0123456789abcdef0123456789abcdef").toString(
@@ -68,123 +70,7 @@ describe("OTP destination throttling", () => {
         });
         db = drizzle(sqlClient);
 
-        await sqlClient.unsafe(`
-            CREATE TABLE "user" (
-                "id" uuid PRIMARY KEY NOT NULL,
-                "polis_participant_id" integer GENERATED ALWAYS AS IDENTITY,
-                "username" varchar(20) NOT NULL UNIQUE,
-                "is_site_moderator" boolean DEFAULT false NOT NULL,
-                "is_site_org_admin" boolean DEFAULT false NOT NULL,
-                "is_imported" boolean DEFAULT false NOT NULL,
-                "is_deleted" boolean DEFAULT false NOT NULL,
-                "deleted_at" timestamp,
-                "active_conversation_count" integer DEFAULT 0 NOT NULL,
-                "total_conversation_count" integer DEFAULT 0 NOT NULL,
-                "total_opinion_count" integer DEFAULT 0 NOT NULL,
-                "created_at" timestamp DEFAULT now() NOT NULL,
-                "updated_at" timestamp DEFAULT now() NOT NULL
-            );
-
-            CREATE TABLE "device" (
-                "did_write" varchar(1000) PRIMARY KEY NOT NULL,
-                "user_id" uuid NOT NULL,
-                "user_agent" text NOT NULL,
-                "session_expiry" timestamp NOT NULL,
-                "created_at" timestamp DEFAULT now() NOT NULL,
-                "updated_at" timestamp DEFAULT now() NOT NULL
-            );
-
-            CREATE TABLE "email" (
-                "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                "email" varchar(254) NOT NULL CHECK ("email" = lower(btrim("email"))),
-                "type" text NOT NULL,
-                "user_id" uuid NOT NULL,
-                "is_deleted" boolean DEFAULT false NOT NULL,
-                "email_reachability" text,
-                "created_at" timestamp DEFAULT now() NOT NULL,
-                "updated_at" timestamp DEFAULT now() NOT NULL
-            );
-
-            CREATE TABLE "phone" (
-                "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                "user_id" uuid NOT NULL,
-                "last_two_digits" smallint NOT NULL,
-                "countryCallingCode" varchar(10) NOT NULL,
-                "phone_country_code" text,
-                "phone_hash" text NOT NULL,
-                "pepper_version" integer DEFAULT 0 NOT NULL,
-                "is_deleted" boolean DEFAULT false NOT NULL,
-                "created_at" timestamp DEFAULT now() NOT NULL,
-                "updated_at" timestamp DEFAULT now() NOT NULL
-            );
-
-            CREATE TABLE "zk_passport" (
-                "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                "user_id" uuid NOT NULL,
-                "citizenship" text,
-                "sex" text,
-                "is_deleted" boolean DEFAULT false NOT NULL
-            );
-
-            CREATE TABLE "user_display_language" (
-                "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                "user_id" uuid NOT NULL,
-                "language_code" varchar(35) NOT NULL,
-                "is_deleted" boolean DEFAULT false NOT NULL,
-                "created_at" timestamp DEFAULT now() NOT NULL
-            );
-
-            CREATE TABLE "auth_attempt_email" (
-                "did_write" varchar(1000) PRIMARY KEY NOT NULL,
-                "type" text NOT NULL,
-                "email" varchar(254) NOT NULL CHECK ("email" = lower(btrim("email"))),
-                "user_id" uuid NOT NULL,
-                "user_agent" text NOT NULL,
-                "code" integer NOT NULL,
-                "email_reachability" text,
-                "code_expiry" timestamp NOT NULL,
-                "guess_attempt_amount" integer DEFAULT 0 NOT NULL,
-                "last_otp_sent_at" timestamp NOT NULL,
-                "created_at" timestamp DEFAULT now() NOT NULL,
-                "updated_at" timestamp DEFAULT now() NOT NULL
-            );
-
-            CREATE TABLE "auth_attempt_phone" (
-                "did_write" varchar(1000) PRIMARY KEY NOT NULL,
-                "type" text NOT NULL,
-                "last_two_digits" smallint NOT NULL,
-                "countryCallingCode" varchar(10) NOT NULL,
-                "phone_country_code" text,
-                "phone_hash" text NOT NULL,
-                "pepper_version" integer DEFAULT 0 NOT NULL,
-                "user_id" uuid NOT NULL,
-                "user_agent" text NOT NULL,
-                "code" integer NOT NULL,
-                "code_expiry" timestamp NOT NULL,
-                "guess_attempt_amount" integer DEFAULT 0 NOT NULL,
-                "last_otp_sent_at" timestamp NOT NULL,
-                "created_at" timestamp DEFAULT now() NOT NULL,
-                "updated_at" timestamp DEFAULT now() NOT NULL
-            );
-
-            CREATE TABLE "otp_email_destination_state" (
-                "email" varchar(254) PRIMARY KEY NOT NULL CHECK ("email" = lower(btrim("email"))),
-                "last_otp_sent_at" timestamp NOT NULL,
-                "consecutive_failed_verify_attempts" integer DEFAULT 0 NOT NULL,
-                "backoff_until" timestamp,
-                "created_at" timestamp DEFAULT now() NOT NULL,
-                "updated_at" timestamp DEFAULT now() NOT NULL
-            );
-
-            CREATE TABLE "otp_phone_destination_state" (
-                "phone_hash" text PRIMARY KEY NOT NULL,
-                "last_otp_sent_at" timestamp NOT NULL,
-                "consecutive_failed_verify_attempts" integer DEFAULT 0 NOT NULL,
-                "backoff_until" timestamp,
-                "created_at" timestamp DEFAULT now() NOT NULL,
-                "updated_at" timestamp DEFAULT now() NOT NULL
-            );
-        `);
+        await sqlClient.unsafe(readDbFixtureSql("auth-otp.sql"));
     }, 120000);
 
     afterAll(async () => {

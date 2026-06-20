@@ -9,6 +9,8 @@ Name | Type | Description | Notes
 **conversationSlugId** | **string** |  | [default to undefined]
 **conversationTitle** | **string** |  | [default to undefined]
 **conversationBody** | **string** |  | [optional] [default to undefined]
+**languageSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSetting.md) |  | [default to undefined]
+**multilingualSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting.md) |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
@@ -32,6 +34,8 @@ const instance: ApiV1ConversationGetForEditPost200Response = {
     conversationSlugId,
     conversationTitle,
     conversationBody,
+    languageSetting,
+    multilingualSetting,
     isIndexed,
     participationMode,
     requiresEventTicket,

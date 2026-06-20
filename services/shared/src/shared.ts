@@ -4,8 +4,9 @@ export const MAX_LENGTH_OPTION = 30;
 export const MAX_LENGTH_TITLE = 140; // 140 is LinkedIn question limit
 export const MAX_LENGTH_BODY = 1000;
 export const MAX_LENGTH_BODY_HTML = 3000; // Reserve extra space for HTML tags
-export const MAX_LENGTH_CONVERSATION_BODY = 10000;
-export const MAX_LENGTH_CONVERSATION_BODY_HTML = 60000;
+export const MAX_LENGTH_CONVERSATION_BODY = 5000;
+export const MAX_LENGTH_CONVERSATION_BODY_HTML = 30000;
+export const LEGACY_MAX_LENGTH_CONVERSATION_BODY_HTML_OUTPUT = 60000;
 export const MAX_LENGTH_OPINION = 280;
 export const MAX_LENGTH_OPINION_HTML = 840; // Reserve extra space for HTML tags
 export const MAX_LENGTH_OPINION_HTML_OUTPUT = 3000; // Old value for database retro-compatibility of existing data
@@ -18,6 +19,9 @@ export const MIN_LENGTH_USERNAME = 2;
 export const MAX_LENGTH_USER_REPORT_EXPLANATION = 260;
 
 export const PEPPER_VERSION = 0;
+
+export const MAX_CONVERSATION_LANGUAGE_DETECTION_BODY_CHARS = 1000;
+export const MIN_CONVERSATION_LANGUAGE_DETECTION_CHARS = 2;
 
 export function toUnionUndefined<T>(value: T | null): T | undefined {
     if (value === null) {

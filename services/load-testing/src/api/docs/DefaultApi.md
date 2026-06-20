@@ -25,6 +25,7 @@ All URIs are relative to *http://localhost*
 |[**apiV1AuthTicketVerifyPost**](#apiv1authticketverifypost) | **POST** /api/v1/auth/ticket/verify | |
 |[**apiV1AuthZkpGenerateVerificationLinkPost**](#apiv1authzkpgenerateverificationlinkpost) | **POST** /api/v1/auth/zkp/generate-verification-link | |
 |[**apiV1AuthZkpVerifyUserStatusAndAuthenticatePost**](#apiv1authzkpverifyuserstatusandauthenticatepost) | **POST** /api/v1/auth/zkp/verify-user-status-and-authenticate | |
+|[**apiV1ContentTranslationRequestPost**](#apiv1contenttranslationrequestpost) | **POST** /api/v1/content-translation/request | |
 |[**apiV1ConversationClosePost**](#apiv1conversationclosepost) | **POST** /api/v1/conversation/close | |
 |[**apiV1ConversationCreatePost**](#apiv1conversationcreatepost) | **POST** /api/v1/conversation/create | |
 |[**apiV1ConversationDeletePost**](#apiv1conversationdeletepost) | **POST** /api/v1/conversation/delete | |
@@ -1120,6 +1121,57 @@ This endpoint does not have any parameters.
 ### HTTP request headers
 
  - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1ContentTranslationRequestPost**
+> ApiV1ContentTranslationRequestPost200Response apiV1ContentTranslationRequestPost(apiV1ContentTranslationRequestPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ContentTranslationRequestPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ContentTranslationRequestPostRequest: ApiV1ContentTranslationRequestPostRequest; //
+
+const { status, data } = await apiInstance.apiV1ContentTranslationRequestPost(
+    apiV1ContentTranslationRequestPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ContentTranslationRequestPostRequest** | **ApiV1ContentTranslationRequestPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1ContentTranslationRequestPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
  - **Accept**: application/json
 
 
@@ -4476,7 +4528,7 @@ const { status, data } = await apiInstance.apiV1UserLanguagePreferencesGetPost(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1UserLanguagePreferencesUpdatePost**
-> apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest)
+> ApiV1ConversationClosePost200ResponseOneOf apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest)
 
 
 ### Example
@@ -4507,7 +4559,7 @@ const { status, data } = await apiInstance.apiV1UserLanguagePreferencesUpdatePos
 
 ### Return type
 
-void (empty response body)
+**ApiV1ConversationClosePost200ResponseOneOf**
 
 ### Authorization
 
@@ -4516,7 +4568,7 @@ void (empty response body)
 ### HTTP request headers
 
  - **Content-Type**: application/json
- - **Accept**: Not defined
+ - **Accept**: application/json
 
 
 ### HTTP response details

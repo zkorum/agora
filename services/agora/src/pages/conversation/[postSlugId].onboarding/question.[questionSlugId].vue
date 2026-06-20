@@ -41,7 +41,7 @@
         <template #body>
           <div class="survey-card">
             <div class="survey-card__prompt-row">
-              <div class="survey-card__prompt">{{ question.questionText }}</div>
+              <div class="survey-card__prompt">{{ displayedQuestionText }}</div>
 
               <q-chip
                 v-if="question.isStale"
@@ -65,6 +65,14 @@
                 :label="t('optionalLabel')"
               />
             </div>
+
+            <ContentTranslationControl
+              v-if="surveyQuestionTranslationPreview !== undefined"
+              v-model="surveyQuestionTranslationMode"
+              :source-language-label="surveyQuestionTranslationPreview.sourceLanguageLabel"
+              :translation-status="surveyQuestionTranslationPreview.translationStatus"
+              class="survey-card__translation-control"
+            />
 
             <div
               v-if="questionDescription || showPublicAggregateSuppressionNotice"
@@ -113,6 +121,7 @@
               <Editor
                 v-else
                 v-model="textValueHtml"
+                v-model:plain-text="textValuePlain"
                 :placeholder="t('writeAnswerPlaceholder')"
                 min-height="8rem"
                 :show-toolbar="true"
@@ -144,6 +153,7 @@ import ConversationSurveyOnboardingHero from "src/components/onboarding/backgrou
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import SurveyChoiceInput from "src/components/survey/SurveyChoiceInput.vue";
+import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKDigitsInput from "src/components/ui-library/ZKDigitsInput.vue";
@@ -180,6 +190,11 @@ import {
   getConversationSurveySummaryPath,
 } from "src/utils/survey/navigation";
 import { surveyTemplateTextTranslations } from "src/utils/survey/templates.i18n";
+import {
+  type ContentTranslationDisplayMode,
+  getSupportedContentTranslationTargetLanguageCodes,
+} from "src/utils/translation/contentTranslation";
+import { useSurveyQuestionContentTranslationPreview } from "src/utils/translation/useContentTranslationPreview";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -238,6 +253,43 @@ const question = computed<SurveyQuestionFormItem | undefined>(() => {
   return surveyForm.value?.questions[questionIndex.value];
 });
 
+const surveyQuestionTranslationSubject = computed(() => ({
+  kind: "survey_question" as const,
+  conversationSlugId: conversationSlugId.value,
+  questionSlugId: routeQuestionSlugId.value,
+}));
+const supportedTargetLanguageCodes = computed(() => {
+  if (conversationData.value === undefined) {
+    return [];
+  }
+
+  return getSupportedContentTranslationTargetLanguageCodes({
+    languageSetting: conversationData.value.metadata.languageSetting,
+    multilingualSetting: conversationData.value.metadata.multilingualSetting,
+  });
+});
+
+const {
+  preview: surveyQuestionTranslationPreview,
+  setMode: setSurveyQuestionTranslationMode,
+} = useSurveyQuestionContentTranslationPreview({
+  subject: surveyQuestionTranslationSubject,
+  dynamicTranslationEnabled: computed(
+    () =>
+      question.value !== undefined &&
+      conversationData.value?.metadata.multilingualSetting.dynamicTranslationEnabled === true
+  ),
+  sourceLanguageCode: undefined,
+  supportedTargetLanguageCodes,
+});
+
+const surveyQuestionTranslationMode = computed<ContentTranslationDisplayMode>({
+  get: () => surveyQuestionTranslationPreview.value?.mode ?? "original",
+  set: (mode) => {
+    void setSurveyQuestionTranslationMode(mode);
+  },
+});
+
 const isSurveyOptional = computed(() => {
   return surveyForm.value?.surveyGate.isOptional === true;
 });
@@ -265,6 +317,7 @@ const nextQuestionSlugId = computed(() => {
 const selectedSingleOptionSlugId = ref<string | null>(null);
 const selectedMultiOptionSlugIds = ref<string[]>([]);
 const textValueHtml = ref("");
+const textValuePlain = ref("");
 
 watch(
   question,
@@ -313,7 +366,7 @@ const choiceOptions = computed<Array<{ label: string; value: string }>>(() => {
     return [];
   }
 
-  return currentQuestion.options.flatMap((option) => {
+  return displayedQuestionOptions.value.flatMap((option) => {
     if (option.optionSlugId === undefined) {
       return [];
     }
@@ -325,6 +378,43 @@ const choiceOptions = computed<Array<{ label: string; value: string }>>(() => {
       },
     ];
   });
+});
+
+const displayedQuestionText = computed(() => {
+  const currentQuestion = question.value;
+  if (currentQuestion === undefined) {
+    return "";
+  }
+  const preview = surveyQuestionTranslationPreview.value;
+  if (
+    preview?.mode === "translated" &&
+    preview.translationStatus === "completed" &&
+    preview.translatedQuestionText.length > 0
+  ) {
+    return preview.translatedQuestionText;
+  }
+  return currentQuestion.questionText;
+});
+
+const displayedQuestionOptions = computed(() => {
+  const currentQuestion = question.value;
+  if (currentQuestion === undefined || currentQuestion.questionType !== "choice") {
+    return [];
+  }
+  const preview = surveyQuestionTranslationPreview.value;
+  if (preview?.mode !== "translated" || preview.translationStatus !== "completed") {
+    return currentQuestion.options;
+  }
+  const translatedOptionsBySlugId = new Map(
+    preview.translatedOptions.map((option) => [option.optionSlugId, option.optionText])
+  );
+  return currentQuestion.options.map((option) => ({
+    ...option,
+    optionText:
+      option.optionSlugId === undefined
+        ? option.optionText
+        : (translatedOptionsBySlugId.get(option.optionSlugId) ?? option.optionText),
+  }));
 });
 
 const isIntegerQuestion = computed(() => {

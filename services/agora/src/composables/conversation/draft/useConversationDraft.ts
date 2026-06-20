@@ -13,6 +13,8 @@ import {
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
 import type {
+  ConversationLanguageSettingInput,
+  ConversationMultilingualSetting,
   ConversationType,
   EventSlug,
   ExternalSourceConfig,
@@ -36,7 +38,11 @@ import type {
   ValidationResult,
   ValidationState,
 } from "./conversationDraft.types";
-import { createEmptyDraft } from "./conversationDraft.utils";
+import {
+  areConversationLanguageSettingsEqual,
+  areConversationMultilingualSettingsEqual,
+  createEmptyDraft,
+} from "./conversationDraft.utils";
 import { useConversationDraftTranslations } from "./useConversationDraft.i18n";
 
 // ============================================================================
@@ -47,6 +53,9 @@ export interface UseConversationDraftReturn {
   // State (always refs - single source of truth)
   title: Ref<string>;
   content: Ref<string>;
+  contentPlainText: Ref<string>;
+  languageSetting: Ref<ConversationLanguageSettingInput>;
+  multilingualSetting: Ref<ConversationMultilingualSetting>;
   seedOpinions: Ref<string[]>;
   conversationType: Ref<ConversationType>;
   isPrivate: Ref<boolean>;
@@ -119,6 +128,13 @@ export function useConversationDraft(
   // All state as refs (single source of truth)
   const title = ref(initialDraft.title);
   const content = ref(initialDraft.content);
+  const contentPlainText = ref(initialDraft.contentPlainText);
+  const languageSetting = ref<ConversationLanguageSettingInput>(
+    initialDraft.languageSetting
+  );
+  const multilingualSetting = ref<ConversationMultilingualSetting>(
+    initialDraft.multilingualSetting
+  );
   const seedOpinions = ref<string[]>([...initialDraft.seedOpinions]);
   const conversationType = ref<ConversationType>(initialDraft.conversationType);
   const isPrivate = ref(initialDraft.isPrivate);
@@ -154,6 +170,9 @@ export function useConversationDraft(
     const draftSnapshot = computed(() => ({
       title: title.value,
       content: content.value,
+      contentPlainText: contentPlainText.value,
+      languageSetting: languageSetting.value,
+      multilingualSetting: multilingualSetting.value,
       seedOpinions: [...seedOpinions.value],
       conversationType: conversationType.value,
       isPrivate: isPrivate.value,
@@ -173,6 +192,10 @@ export function useConversationDraft(
       (newSnapshot) => {
         store.conversationDraft.title = newSnapshot.title;
         store.conversationDraft.content = newSnapshot.content;
+        store.conversationDraft.contentPlainText = newSnapshot.contentPlainText;
+        store.conversationDraft.languageSetting = newSnapshot.languageSetting;
+        store.conversationDraft.multilingualSetting =
+          newSnapshot.multilingualSetting;
         store.conversationDraft.seedOpinions = newSnapshot.seedOpinions;
         store.conversationDraft.conversationType = newSnapshot.conversationType;
         store.conversationDraft.isPrivate = newSnapshot.isPrivate;
@@ -402,7 +425,20 @@ export function useConversationDraft(
 
     // Check basic content changes
     const hasContentChanges =
-      title.value !== emptyDraft.title || content.value !== emptyDraft.content;
+      title.value !== emptyDraft.title ||
+      content.value !== emptyDraft.content ||
+      contentPlainText.value !== emptyDraft.contentPlainText;
+
+    const hasLanguageSettingChanges =
+      !areConversationLanguageSettingsEqual({
+        left: languageSetting.value,
+        right: emptyDraft.languageSetting,
+      });
+    const hasMultilingualSettingChanges =
+      !areConversationMultilingualSettingsEqual({
+        left: multilingualSetting.value,
+        right: emptyDraft.multilingualSetting,
+      });
 
     // Check seed opinions changes
     const hasSeedOpinionsChanges =
@@ -446,6 +482,8 @@ export function useConversationDraft(
 
     return (
       hasContentChanges ||
+      hasLanguageSettingChanges ||
+      hasMultilingualSettingChanges ||
       hasSeedOpinionsChanges ||
       hasConversationTypeChanges ||
       hasPostAsChanges ||
@@ -473,6 +511,9 @@ export function useConversationDraft(
 
     title.value = emptyDraft.title;
     content.value = emptyDraft.content;
+    contentPlainText.value = emptyDraft.contentPlainText;
+    languageSetting.value = emptyDraft.languageSetting;
+    multilingualSetting.value = emptyDraft.multilingualSetting;
     seedOpinions.value = [];
     conversationType.value = emptyDraft.conversationType;
     isPrivate.value = emptyDraft.isPrivate;
@@ -498,6 +539,9 @@ export function useConversationDraft(
   function initializeFromData(data: ConversationFormState): void {
     title.value = data.title;
     content.value = data.content;
+    contentPlainText.value = data.contentPlainText;
+    languageSetting.value = data.languageSetting;
+    multilingualSetting.value = data.multilingualSetting;
     isPrivate.value = data.isPrivate;
     participationMode.value = data.participationMode;
     requiresEventTicket.value = data.requiresEventTicket;
@@ -514,6 +558,9 @@ export function useConversationDraft(
     return {
       title: title.value,
       content: content.value,
+      contentPlainText: contentPlainText.value,
+      languageSetting: languageSetting.value,
+      multilingualSetting: multilingualSetting.value,
       isPrivate: isPrivate.value,
       participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
@@ -546,6 +593,9 @@ export function useConversationDraft(
     // State
     title,
     content,
+    contentPlainText,
+    languageSetting,
+    multilingualSetting,
     seedOpinions,
     conversationType,
     isPrivate,

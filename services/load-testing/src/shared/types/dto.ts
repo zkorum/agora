@@ -7,6 +7,7 @@ import {
     zodAnalysisOpinionItem,
     zodConversationTitle,
     zodConversationBodyInput,
+    zodConversationBodyPlainTextInput,
     zodConversationBodyOutput,
     zodOpinionContentInput,
     zodVotingOption,
@@ -29,6 +30,7 @@ import {
     zodPolisKey,
     zodAnalysisView,
     zodOrganization,
+    zodOrganizationSlug,
     zodTopicObject,
     zodFeedSortAlgorithm,
     zodLinkType,
@@ -46,6 +48,9 @@ import {
     zodRichTextValidationFailureReason,
     zodMaxdiffComparison,
     zodConversationType,
+    zodConversationLanguageSettingInput,
+    zodConversationLanguageSettingOutput,
+    zodConversationMultilingualSetting,
     zodConversationViewSnapshotCheckpointReason,
     zodMaxdiffLifecycleStatus,
     zodExternalSourceConfig,
@@ -61,6 +66,10 @@ import {
     zodPremiumFeature,
     zodUserId,
     zodPreferredOpinionGroupCount,
+    zodContentTranslationSubject,
+    zodLocalizedConversationContent,
+    zodLocalizedOpinionContent,
+    zodLocalizedSurveyQuestionContent,
 } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
@@ -78,6 +87,7 @@ const zodConversationEditPermissions = z
         canChangeEventTicket: z.boolean(),
         canRemoveEventTicket: z.boolean(),
         canUseAnalysisVariantsPreference: z.boolean(),
+        canUseDynamicTranslation: z.boolean(),
         restrictedPremiumFeatures: z.array(zodPremiumFeature),
         premiumEditAccessEndsAt: zodDateTimeFlexible.optional(),
     })
@@ -133,6 +143,67 @@ const zodAnalysisFrameOpinionListKind = z.enum([
     "agreements",
     "disagreements",
     "divisive",
+]);
+
+const zodContentTranslationConversationResponse = z
+    .object({
+        success: z.literal(true),
+        subject: z
+            .object({
+                kind: z.literal("conversation"),
+                conversationSlugId: zodSlugId,
+            })
+            .strict(),
+        content: zodLocalizedConversationContent,
+    })
+    .strict();
+
+const zodContentTranslationOpinionResponse = z
+    .object({
+        success: z.literal(true),
+        subject: z
+            .object({
+                kind: z.literal("opinion"),
+                conversationSlugId: zodSlugId,
+                opinionSlugId: zodSlugId,
+            })
+            .strict(),
+        content: zodLocalizedOpinionContent,
+    })
+    .strict();
+
+const zodContentTranslationSurveyQuestionResponse = z
+    .object({
+        success: z.literal(true),
+        subject: z
+            .object({
+                kind: z.literal("survey_question"),
+                conversationSlugId: zodSlugId,
+                questionSlugId: zodSlugId,
+            })
+            .strict(),
+        content: zodLocalizedSurveyQuestionContent,
+    })
+    .strict();
+
+const zodContentTranslationResponse = z.union([
+    zodContentTranslationConversationResponse,
+    zodContentTranslationOpinionResponse,
+    zodContentTranslationSurveyQuestionResponse,
+    z
+        .object({
+            success: z.literal(false),
+            reason: z.literal("content_translation_not_enabled"),
+            multilingualSetting: zodConversationMultilingualSetting,
+        })
+        .strict(),
+    z
+        .object({
+            success: z.literal(false),
+            reason: z.literal("participation_blocked"),
+            blockedReason: zodParticipationBlockedReason,
+        })
+        .strict(),
 ]);
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
@@ -375,10 +446,16 @@ export class Dto {
         .object({
             conversationTitle: zodConversationTitle,
             conversationBody: zodConversationBodyInput,
-            postAsOrganization: z.string().optional(),
+            conversationBodyPlainText: zodConversationBodyPlainTextInput,
+            postAsOrganization: z.preprocess(
+                (val) => (val === "" || val === undefined ? undefined : val),
+                zodOrganizationSlug.optional(),
+            ),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
             conversationType: zodConversationType,
+            languageSetting: zodConversationLanguageSettingInput,
+            multilingualSetting: zodConversationMultilingualSetting,
             seedOpinionList: z.array(zodOpinionContentInput).max(50),
             requiresEventTicket: zodEventSlug.optional(),
             aiLabelingEnabled: z.boolean().default(true),
@@ -405,9 +482,19 @@ export class Dto {
     static importConversationRequest = z
         .object({
             polisUrl: zodPolisUrl,
-            postAsOrganization: z.string().optional(),
+            postAsOrganization: z.preprocess(
+                (val) => (val === "" || val === undefined ? undefined : val),
+                zodOrganizationSlug.optional(),
+            ),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
+            languageSetting: zodConversationLanguageSettingInput.default({
+                mode: "auto",
+            }),
+            multilingualSetting: zodConversationMultilingualSetting.default({
+                additionalLanguageCodes: [],
+                dynamicTranslationEnabled: false,
+            }),
             requiresEventTicket: zodEventSlug.optional(),
             aiLabelingEnabled: z.boolean().default(true),
             preferredOpinionGroupCount:
@@ -421,7 +508,10 @@ export class Dto {
         .strict();
     static importCsvConversationRequest = z
         .object({
-            postAsOrganization: z.string().optional(),
+            postAsOrganization: z.preprocess(
+                (val) => (val === "" || val === undefined ? undefined : val),
+                zodOrganizationSlug.optional(),
+            ),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
         })
@@ -430,7 +520,7 @@ export class Dto {
         .object({
             postAsOrganization: z.preprocess(
                 (val) => (val === "" || val === undefined ? undefined : val),
-                z.string().optional(),
+                zodOrganizationSlug.optional(),
             ),
             isIndexed: z.preprocess(
                 (val) => val === "true" || val === true,
@@ -443,6 +533,32 @@ export class Dto {
                 if (val === "false" || val === false) return "guest";
                 return val; // Already a valid participation mode string
             }, zodParticipationMode),
+            languageSetting: z.preprocess((val) => {
+                if (val === "" || val === undefined || val === null) {
+                    return { mode: "auto" };
+                }
+                if (typeof val === "string") {
+                    const parsed: unknown = JSON.parse(val);
+                    return parsed;
+                }
+                return val;
+            }, zodConversationLanguageSettingInput.default({ mode: "auto" })),
+            multilingualSetting: z.preprocess((val) => {
+                if (val === "" || val === undefined || val === null) {
+                    return {
+                        additionalLanguageCodes: [],
+                        dynamicTranslationEnabled: false,
+                    };
+                }
+                if (typeof val === "string") {
+                    const parsed: unknown = JSON.parse(val);
+                    return parsed;
+                }
+                return val;
+            }, zodConversationMultilingualSetting.default({
+                additionalLanguageCodes: [],
+                dynamicTranslationEnabled: false,
+            })),
             requiresEventTicket: z.preprocess(
                 (val) => (val === "" || val === undefined ? undefined : val),
                 zodEventSlug.optional(),
@@ -589,6 +705,8 @@ export class Dto {
                 conversationSlugId: zodSlugId,
                 conversationTitle: zodConversationTitle,
                 conversationBody: zodConversationBodyOutput,
+                languageSetting: zodConversationLanguageSettingOutput,
+                multilingualSetting: zodConversationMultilingualSetting,
                 isIndexed: z.boolean(),
                 participationMode: zodParticipationMode,
                 requiresEventTicket: zodEventSlug.optional(),
@@ -614,8 +732,11 @@ export class Dto {
             conversationSlugId: zodSlugId,
             conversationTitle: zodConversationTitle,
             conversationBody: zodConversationBodyInput,
+            conversationBodyPlainText: zodConversationBodyPlainTextInput,
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
+            languageSetting: zodConversationLanguageSettingInput,
+            multilingualSetting: zodConversationMultilingualSetting,
             requiresEventTicket: zodEventSlug.optional(),
             aiLabelingEnabled: z.boolean().optional(),
             preferredOpinionGroupCount:
@@ -648,7 +769,10 @@ export class Dto {
 
     static checkPremiumFeatureAccessRequest = z
         .object({
-            postAsOrganization: z.string().optional(),
+            postAsOrganization: z.preprocess(
+                (val) => (val === "" || val === undefined ? undefined : val),
+                zodOrganizationSlug.optional(),
+            ),
             feature: zodGrantablePremiumFeature,
         })
         .strict();
@@ -657,6 +781,14 @@ export class Dto {
             hasAccess: z.boolean(),
         })
         .strict();
+    static contentTranslationRequest = z
+        .object({
+            subject: zodContentTranslationSubject,
+            targetLanguageCode: ZodSupportedDisplayLanguageCodes,
+            requestMode: z.enum(["read_existing", "queue_if_missing"]),
+        })
+        .strict();
+    static contentTranslationResponse = zodContentTranslationResponse;
     static surveyFormFetchRequest = z
         .object({
             conversationSlugId: zodSlugId,
@@ -774,6 +906,7 @@ export class Dto {
         .object({
             conversationSlugId: z.string(),
             opinionBody: zodOpinionContentInput,
+            opinionPlainText: z.string(),
         })
         .strict();
     static createOpinionResponse = z.discriminatedUnion("success", [
@@ -1022,15 +1155,16 @@ export class Dto {
     static createOrganizationRequest = z
         .object({
             organizationName: z.string(),
+            organizationSlug: zodOrganizationSlug,
             imagePath: z.string(),
             isFullImagePath: z.boolean(),
-            websiteUrl: z.url(),
+            websiteUrl: z.url().optional(),
             description: z.string(),
         })
         .strict();
     static deleteOrganizationRequest = z
         .object({
-            organizationName: z.string(),
+            organizationName: zodOrganizationSlug,
         })
         .strict();
     static getOrganizationsByUsernameRequest = z
@@ -1051,19 +1185,19 @@ export class Dto {
     static addUserOrganizationMappingRequest = z
         .object({
             username: zodUsername,
-            organizationName: z.string(),
+            organizationName: zodOrganizationSlug,
         })
         .strict();
     static removeUserOrganizationMappingRequest = z
         .object({
             username: zodUsername,
-            organizationName: z.string(),
+            organizationName: zodOrganizationSlug,
         })
         .strict();
     static premiumFeatureEntitlementSubjectRequest = z
         .object({
             username: zodUsername.optional(),
-            organizationName: z.string().optional(),
+            organizationName: zodOrganizationSlug.optional(),
         })
         .strict()
         .refine(
@@ -1240,6 +1374,12 @@ export class Dto {
                 .min(1)
                 .optional(),
             displayLanguage: ZodSupportedDisplayLanguageCodes.optional(),
+        })
+        .strict();
+
+    static updateLanguagePreferencesResponse = z
+        .object({
+            success: z.literal(true),
         })
         .strict();
 
@@ -1535,6 +1675,7 @@ export type CheckPremiumFeatureAccessResponse = z.infer<
     typeof Dto.checkPremiumFeatureAccessResponse
 >;
 export type CreateCommentResponse = z.infer<typeof Dto.createOpinionResponse>;
+export type CreateOpinionRequest = z.infer<typeof Dto.createOpinionRequest>;
 export type FetchUserVotesForPostSlugIdsResponse = z.infer<
     typeof Dto.getUserVotesByConversationsResponse
 >;

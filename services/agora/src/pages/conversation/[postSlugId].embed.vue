@@ -5,6 +5,7 @@
         <PostContent
           :extended-post-data="loadedConversationData"
           :compact-mode="false"
+          :content-translation="undefined"
           @open-moderation-history="openModerationHistory()"
           @verified="(payload) => handleTicketVerified(payload)"
         />

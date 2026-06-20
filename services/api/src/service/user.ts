@@ -123,6 +123,7 @@ export async function getUserComments({
                 createdAt: opinionTable.createdAt,
                 updatedAt: opinionTable.updatedAt,
                 comment: opinionContentTable.content,
+                sourceLanguageCode: opinionContentTable.sourceLanguageCode,
                 username: userTable.username,
                 postId: conversationTable.id,
                 postSlugId: conversationTable.slugId,
@@ -191,6 +192,7 @@ export async function getUserComments({
 
             const commentItem: OpinionItem = {
                 opinion: opinionResponse.comment,
+                sourceLanguageCode: opinionResponse.sourceLanguageCode,
                 opinionSlugId: opinionResponse.commentSlugId,
                 createdAt: opinionResponse.createdAt,
                 updatedAt: opinionResponse.updatedAt,

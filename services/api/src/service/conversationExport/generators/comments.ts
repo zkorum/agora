@@ -32,6 +32,7 @@ export const commentHeaders = [
 interface CommentExportOpinion {
     authorId: string;
     content: string;
+    contentPlainText: string | null;
     createdAt: Date;
     numAgrees: number;
     numDisagrees: number;
@@ -97,7 +98,8 @@ export function buildCommentRows({
                       : opinion.moderationAction === "move"
                         ? -1 // moved (also treated as banned)
                         : 1, // approved (fallback, though no explicit "approve" action exists)
-            comment_text: stripHtmlForCsv(opinion.content),
+            comment_text:
+                opinion.contentPlainText ?? stripHtmlForCsv(opinion.content),
         };
     });
 }
@@ -145,6 +147,7 @@ export const commentsGenerator: CsvGenerator = {
                 opinionId: opinionTable.id,
                 authorId: opinionTable.authorId,
                 content: opinionContentTable.content,
+                contentPlainText: opinionContentTable.contentPlainText,
                 createdAt: opinionTable.createdAt,
                 moderationId: opinionModerationTable.id,
                 moderationAction: opinionModerationTable.moderationAction,

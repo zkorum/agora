@@ -11,6 +11,7 @@
     :user-identity="userIdentity"
     :show-verified-text="showVerifiedText"
     :organization-image-url="organizationImageUrl"
+    :show-avatar-fallback="true"
   />
 </template>
 

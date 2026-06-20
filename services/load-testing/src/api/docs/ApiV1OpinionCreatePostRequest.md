@@ -7,6 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **conversationSlugId** | **string** |  | [default to undefined]
 **opinionBody** | **string** |  | [default to undefined]
+**opinionPlainText** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -16,6 +17,7 @@ import { ApiV1OpinionCreatePostRequest } from './api';
 const instance: ApiV1OpinionCreatePostRequest = {
     conversationSlugId,
     opinionBody,
+    opinionPlainText,
 };
 ```
 

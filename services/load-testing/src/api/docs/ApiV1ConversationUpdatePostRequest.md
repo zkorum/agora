@@ -8,8 +8,11 @@ Name | Type | Description | Notes
 **conversationSlugId** | **string** |  | [default to undefined]
 **conversationTitle** | **string** |  | [default to undefined]
 **conversationBody** | **string** |  | [optional] [default to undefined]
+**conversationBodyPlainText** | **string** |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
+**languageSetting** | [**ApiV1ConversationCreatePostRequestLanguageSetting**](ApiV1ConversationCreatePostRequestLanguageSetting.md) |  | [default to undefined]
+**multilingualSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting.md) |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
 **aiLabelingEnabled** | **boolean** |  | [optional] [default to undefined]
 **preferredOpinionGroupCount** | **number** |  | [optional] [default to undefined]
@@ -24,8 +27,11 @@ const instance: ApiV1ConversationUpdatePostRequest = {
     conversationSlugId,
     conversationTitle,
     conversationBody,
+    conversationBodyPlainText,
     isIndexed,
     participationMode,
+    languageSetting,
+    multilingualSetting,
     requiresEventTicket,
     aiLabelingEnabled,
     preferredOpinionGroupCount,

@@ -1,4 +1,4 @@
-# WARNING: GENERATED FROM shared-backend/src/schema.ts
+# WARNING: GENERATED FROM services/api/src/shared-backend/schema.ts
 # DO NOT MODIFY -- Re-generate with: make sync
 # Service: import-worker
 
@@ -9,7 +9,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, DateTime, Integer, String, Text, Uuid
+from sqlalchemy import ARRAY, JSON, Boolean, DateTime, Float, Integer, String, Text, Uuid
 from sqlalchemy import Enum as SaEnum
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -31,6 +31,33 @@ class AnalysisWorkErrorKindEnum(StrEnum):
     unknown_error = "unknown_error"
 
 
+class ContentTranslationSourceKind(StrEnum):
+    conversation = "conversation"
+    opinion = "opinion"
+    survey_question = "survey_question"
+
+
+class DisplayLanguageCode(StrEnum):
+    en = "en"
+    es = "es"
+    fr = "fr"
+    zh_hant = "zh-Hant"
+    zh_hans = "zh-Hans"
+    ja = "ja"
+    ar = "ar"
+    fa = "fa"
+    he = "he"
+    ky = "ky"
+    ru = "ru"
+
+
+class ContentTranslationWorkStatus(StrEnum):
+    pending = "pending"
+    running = "running"
+    completed = "completed"
+    failed = "failed"
+
+
 class ImportStatusEnum(StrEnum):
     processing = "processing"
     completed = "completed"
@@ -42,6 +69,100 @@ class ImportFailureReasonEnum(StrEnum):
     timeout = "timeout"
     server_restart = "server_restart"
     invalid_data_format = "invalid_data_format"
+
+
+class ConversationLanguageSettingMode(StrEnum):
+    auto = "auto"
+    manual = "manual"
+
+
+class LanguageCode(StrEnum):
+    en = "en"
+    es = "es"
+    fr = "fr"
+    en_gb = "en-GB"
+    ar = "ar"
+    bn = "bn"
+    eu = "eu"
+    bg = "bg"
+    ca = "ca"
+    hr = "hr"
+    cs = "cs"
+    da = "da"
+    nl = "nl"
+    fil = "fil"
+    fi = "fi"
+    gl = "gl"
+    de = "de"
+    el = "el"
+    gu = "gu"
+    he = "he"
+    hi = "hi"
+    hu = "hu"
+    id = "id"
+    ga = "ga"
+    it = "it"
+    ja = "ja"
+    kn = "kn"
+    ko = "ko"
+    ky = "ky"
+    ms = "ms"
+    mr = "mr"
+    no = "no"
+    fa = "fa"
+    pl = "pl"
+    pt = "pt"
+    ro = "ro"
+    ru = "ru"
+    sr = "sr"
+    sk = "sk"
+    sv = "sv"
+    ta = "ta"
+    th = "th"
+    tr = "tr"
+    uk = "uk"
+    ur = "ur"
+    vi = "vi"
+    zh_hans = "zh-Hans"
+    zh_hant = "zh-Hant"
+    af = "af"
+    sq = "sq"
+    hy = "hy"
+    az = "az"
+    be = "be"
+    nb = "nb"
+    bs = "bs"
+    eo = "eo"
+    et = "et"
+    lg = "lg"
+    ka = "ka"
+    is_ = "is"
+    kk = "kk"
+    la = "la"
+    lv = "lv"
+    lt = "lt"
+    mk = "mk"
+    mi = "mi"
+    mn = "mn"
+    nn = "nn"
+    pa = "pa"
+    sn = "sn"
+    sl = "sl"
+    so = "so"
+    st = "st"
+    sw = "sw"
+    te = "te"
+    ts = "ts"
+    tn = "tn"
+    cy = "cy"
+    xh = "xh"
+    yo = "yo"
+    zu = "zu"
+
+
+class LanguageDetectionProvider(StrEnum):
+    lingua = "lingua"
+    google_translate = "google_translate"
 
 
 class ParticipationMode(StrEnum):
@@ -139,12 +260,67 @@ class AnalysisWorkState(Base):
     lease_token: Mapped[str | None] = mapped_column(String(100), nullable=True)
     lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     last_error_kind: Mapped[AnalysisWorkErrorKindEnum | None] = mapped_column(
-        SaEnum(AnalysisWorkErrorKindEnum, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            AnalysisWorkErrorKindEnum,
+            name="analysis_work_error_kind_enum",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
         nullable=True,
     )
     last_error_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
     last_error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     last_error_stack_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class ContentTranslationWork(Base):
+    __tablename__ = "content_translation_work"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    source_kind: Mapped[ContentTranslationSourceKind] = mapped_column(
+        SaEnum(
+            ContentTranslationSourceKind,
+            name="content_translation_source_kind",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    conversation_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    opinion_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    survey_question_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    survey_question_option_content_ids: Mapped[list[int] | None] = mapped_column(
+        ARRAY(Integer),
+        nullable=True,
+    )
+    display_language_code: Mapped[DisplayLanguageCode] = mapped_column(
+        SaEnum(
+            DisplayLanguageCode,
+            name="display_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    status: Mapped[ContentTranslationWorkStatus] = mapped_column(
+        SaEnum(
+            ContentTranslationWorkStatus,
+            name="content_translation_work_status",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    priority_rank: Mapped[int] = mapped_column(Integer, server_default="2")
+    attempt_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    lease_owner: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    lease_token: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_error_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    last_error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    requested_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    failed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
@@ -156,6 +332,9 @@ class ConversationContent(Base):
     conversation_id: Mapped[int] = mapped_column(Integer)
     title: Mapped[str] = mapped_column(String(140))
     body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    body_plain_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
@@ -167,13 +346,74 @@ class ConversationImport(Base):
     conversation_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     user_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
     status: Mapped[ImportStatusEnum] = mapped_column(
-        SaEnum(ImportStatusEnum, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            ImportStatusEnum,
+            name="import_status_enum",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     failure_reason: Mapped[ImportFailureReasonEnum | None] = mapped_column(
-        SaEnum(ImportFailureReasonEnum, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            ImportFailureReasonEnum,
+            name="import_failure_reason_enum",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
         nullable=True,
     )
     csv_file_metadata: Mapped[Any | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class ConversationLanguageSetting(Base):
+    __tablename__ = "conversation_language_setting"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    mode: Mapped[ConversationLanguageSettingMode] = mapped_column(
+        SaEnum(
+            ConversationLanguageSettingMode,
+            name="conversation_language_setting_mode",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    language_code: Mapped[DisplayLanguageCode | None] = mapped_column(
+        SaEnum(
+            DisplayLanguageCode,
+            name="display_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    detected_language_code: Mapped[DisplayLanguageCode | None] = mapped_column(
+        SaEnum(
+            DisplayLanguageCode,
+            name="display_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    detected_source_language_code: Mapped[LanguageCode | None] = mapped_column(
+        SaEnum(LanguageCode, name="language_code", values_callable=_enum_values, native_enum=True),
+        nullable=True,
+    )
+    detected_raw_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    detected_raw_language_provider: Mapped[LanguageDetectionProvider | None] = mapped_column(
+        SaEnum(
+            LanguageDetectionProvider,
+            name="language_detection_provider",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    detection_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    detected_from_corpus_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
@@ -188,16 +428,26 @@ class Conversation(Base):
     current_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_indexed: Mapped[bool] = mapped_column(Boolean, server_default="true")
     participation_mode: Mapped[ParticipationMode] = mapped_column(
-        SaEnum(ParticipationMode, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            ParticipationMode,
+            name="participation_mode",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     conversation_type: Mapped[ConversationType] = mapped_column(
-        SaEnum(ConversationType, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            ConversationType,
+            name="conversation_type",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     is_importing: Mapped[bool] = mapped_column(Boolean, server_default="false")
     is_closed: Mapped[bool] = mapped_column(Boolean, server_default="false")
     is_edited: Mapped[bool] = mapped_column(Boolean, server_default="false")
     requires_event_ticket: Mapped[EventSlug | None] = mapped_column(
-        SaEnum(EventSlug, values_callable=_enum_values, native_enum=False),
+        SaEnum(EventSlug, name="event_slug", values_callable=_enum_values, native_enum=True),
         nullable=True,
     )
     ai_labeling_enabled: Mapped[bool] = mapped_column(Boolean, server_default="true")
@@ -209,7 +459,7 @@ class Conversation(Base):
     import_created_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     import_author: Mapped[str | None] = mapped_column(Text, nullable=True)
     import_method: Mapped[ImportMethod | None] = mapped_column(
-        SaEnum(ImportMethod, values_callable=_enum_values, native_enum=False),
+        SaEnum(ImportMethod, name="import_method", values_callable=_enum_values, native_enum=True),
         nullable=True,
     )
     external_source_config: Mapped[Any | None] = mapped_column(
@@ -219,6 +469,32 @@ class Conversation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
     last_reacted_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class ConversationTranslationSetting(Base):
+    __tablename__ = "conversation_translation_setting"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class ConversationTranslationTargetLanguage(Base):
+    __tablename__ = "conversation_translation_target_language"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    translation_setting_id: Mapped[int] = mapped_column(Integer)
+    language_code: Mapped[DisplayLanguageCode] = mapped_column(
+        SaEnum(
+            DisplayLanguageCode,
+            name="display_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
 class ConversationViewSnapshot(Base):
@@ -231,7 +507,12 @@ class ConversationViewSnapshot(Base):
     survey_aggregate_snapshot_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     conversation_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     view_reason: Mapped[ConversationViewSnapshotReasonEnum] = mapped_column(
-        SaEnum(ConversationViewSnapshotReasonEnum, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            ConversationViewSnapshotReasonEnum,
+            name="conversation_view_snapshot_reason_enum",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     preferred_opinion_group_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_closed: Mapped[bool] = mapped_column(Boolean)
@@ -265,7 +546,12 @@ class Notification(Base):
     user_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
     is_read: Mapped[bool] = mapped_column(Boolean, server_default="false")
     notification_type: Mapped[NotificationTypeEnum] = mapped_column(
-        SaEnum(NotificationTypeEnum, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            NotificationTypeEnum,
+            name="notification_type_enum",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
@@ -277,6 +563,9 @@ class OpinionContent(Base):
     opinion_id: Mapped[int] = mapped_column(Integer)
     conversation_content_id: Mapped[int] = mapped_column(Integer)
     content: Mapped[str] = mapped_column(String(3000))
+    content_plain_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
@@ -288,13 +577,28 @@ class OpinionGroupSpec(Base):
     key: Mapped[str] = mapped_column(String(100))
     version: Mapped[int] = mapped_column(Integer)
     reducer: Mapped[OpinionGroupReducerEnum] = mapped_column(
-        SaEnum(OpinionGroupReducerEnum, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            OpinionGroupReducerEnum,
+            name="opinion_group_reducer_enum",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     clusterer: Mapped[OpinionGroupClustererEnum] = mapped_column(
-        SaEnum(OpinionGroupClustererEnum, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            OpinionGroupClustererEnum,
+            name="opinion_group_clusterer_enum",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     selection_policy: Mapped[OpinionGroupSelectionPolicyEnum] = mapped_column(
-        SaEnum(OpinionGroupSelectionPolicyEnum, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            OpinionGroupSelectionPolicyEnum,
+            name="opinion_group_selection_policy_enum",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     min_clusterable_participants: Mapped[int] = mapped_column(Integer)
     min_votes_per_participant: Mapped[int] = mapped_column(Integer)
@@ -309,10 +613,20 @@ class OpinionModeration(Base):
     opinion_id: Mapped[int] = mapped_column(Integer)
     author_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
     moderation_action: Mapped[OpinionModerationAction] = mapped_column(
-        SaEnum(OpinionModerationAction, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            OpinionModerationAction,
+            name="opinion_moderation_action",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     moderation_reason: Mapped[ModerationReasonEnum] = mapped_column(
-        SaEnum(ModerationReasonEnum, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            ModerationReasonEnum,
+            name="moderation_reason_enum",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     moderation_explanation: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
@@ -343,10 +657,15 @@ class Organization(Base):
     slug: Mapped[str] = mapped_column(String(65))
     display_name: Mapped[str] = mapped_column(String(65))
     directory_visibility: Mapped[DirectoryVisibility] = mapped_column(
-        SaEnum(DirectoryVisibility, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            DirectoryVisibility,
+            name="directory_visibility",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     auto_provisioned_for_user_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
-    image_path: Mapped[str] = mapped_column(Text)
+    image_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_full_image_path: Mapped[bool] = mapped_column(Boolean)
     website_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     description: Mapped[str | None] = mapped_column(String(280), nullable=True)
@@ -370,7 +689,12 @@ class Project(Base):
     slug: Mapped[str] = mapped_column(String(65))
     display_name: Mapped[str] = mapped_column(String(65))
     directory_visibility: Mapped[DirectoryVisibility] = mapped_column(
-        SaEnum(DirectoryVisibility, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            DirectoryVisibility,
+            name="directory_visibility",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     auto_provisioned_for_organization_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
@@ -403,7 +727,7 @@ class VoteContent(Base):
     vote_id: Mapped[int] = mapped_column(Integer)
     opinion_content_id: Mapped[int] = mapped_column(Integer)
     vote: Mapped[VoteEnumAll] = mapped_column(
-        SaEnum(VoteEnumAll, values_callable=_enum_values, native_enum=False),
+        SaEnum(VoteEnumAll, name="vote_enum_all", values_callable=_enum_values, native_enum=True),
     )
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
@@ -418,4 +742,3 @@ class Vote(Base):
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
-

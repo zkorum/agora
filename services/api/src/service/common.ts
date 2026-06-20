@@ -8,6 +8,7 @@ import {
     organizationTable,
     maxdiffItemTable,
     projectOrganizationOwnershipTable,
+    conversationLanguageSettingTable,
 } from "@/shared-backend/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type {
@@ -41,6 +42,14 @@ import { imagePathToUrl } from "@/utils/organizationLogic.js";
 import { getConversationEngagementScore } from "./recommendationSystem.js";
 import { log } from "@/app.js";
 import { alias } from "drizzle-orm/pg-core";
+import {
+    conversationLanguageSettingToOutput,
+    normalizeConversationLanguageSettingRow,
+} from "./conversationLanguage.js";
+import {
+    DEFAULT_CONVERSATION_MULTILINGUAL_SETTING,
+    getConversationMultilingualSettingsByConversationId,
+} from "./conversationMultilingual.js";
 
 export function useCommonUser() {
     interface GetUserIdFromUsernameProps {
@@ -247,6 +256,7 @@ export function useCommonPost() {
                 lastReactedAt: conversationTable.lastReactedAt,
                 authorName: personalOrganizationUserTable.username,
                 organizationName: organizationTable.displayName,
+                organizationSlug: organizationTable.slug,
                 organizationImagePath: organizationTable.imagePath,
                 organizationWebsiteUrl: organizationTable.websiteUrl,
                 organizationIsFullImagePath: organizationTable.isFullImagePath,
@@ -261,6 +271,20 @@ export function useCommonPost() {
                 isEdited: conversationTable.isEdited,
                 requiresEventTicket: conversationTable.requiresEventTicket,
                 externalSourceConfig: conversationTable.externalSourceConfig,
+                languageSettingMode: conversationLanguageSettingTable.mode,
+                languageCode: conversationLanguageSettingTable.languageCode,
+                detectedLanguageCode:
+                    conversationLanguageSettingTable.detectedLanguageCode,
+                detectedSourceLanguageCode:
+                    conversationLanguageSettingTable.detectedSourceLanguageCode,
+                detectedRawLanguageCode:
+                    conversationLanguageSettingTable.detectedRawLanguageCode,
+                detectedRawLanguageProvider:
+                    conversationLanguageSettingTable.detectedRawLanguageProvider,
+                detectionConfidence:
+                    conversationLanguageSettingTable.detectionConfidence,
+                detectedFromCorpusHash:
+                    conversationLanguageSettingTable.detectedFromCorpusHash,
                 // import metadata
                 importUrl: conversationTable.importUrl,
                 importConversationUrl: conversationTable.importConversationUrl,
@@ -312,6 +336,13 @@ export function useCommonPost() {
                     conversationTable.id,
                 ),
             )
+            .leftJoin(
+                conversationLanguageSettingTable,
+                eq(
+                    conversationLanguageSettingTable.conversationId,
+                    conversationTable.id,
+                ),
+            )
             // whereClause = and(whereClause, lt(postTable.createdAt, lastCreatedAt));
             .where(
                 and(
@@ -334,6 +365,13 @@ export function useCommonPost() {
 
         const latestViewSnapshotCountsByConversationId =
             await fetchLatestConversationViewSnapshotCountsByConversationId({
+                db,
+                conversationIds: postItems.map(
+                    (postItem) => postItem.conversationId,
+                ),
+            });
+        const multilingualSettingsByConversationId =
+            await getConversationMultilingualSettingsByConversationId({
                 db,
                 conversationIds: postItems.map(
                     (postItem) => postItem.conversationId,
@@ -415,26 +453,61 @@ export function useCommonPost() {
                 isIndexed: postItem.isIndexed,
                 aiLabelingEnabled: postItem.aiLabelingEnabled,
                 preferredOpinionGroupCount: postItem.preferredOpinionGroupCount,
+                languageSetting: conversationLanguageSettingToOutput({
+                    setting: normalizeConversationLanguageSettingRow(
+                        postItem.languageSettingMode === null
+                            ? undefined
+                            : {
+                                  mode: postItem.languageSettingMode,
+                                  languageCode: postItem.languageCode,
+                                  detectedLanguageCode:
+                                      postItem.detectedLanguageCode,
+                                  detectedSourceLanguageCode:
+                                      postItem.detectedSourceLanguageCode,
+                                  detectedRawLanguageCode:
+                                      postItem.detectedRawLanguageCode,
+                                  detectedRawLanguageProvider:
+                                      postItem.detectedRawLanguageProvider,
+                                  detectionConfidence:
+                                      postItem.detectionConfidence,
+                                  detectedFromCorpusHash:
+                                      postItem.detectedFromCorpusHash,
+                              },
+                        ),
+                }),
+                multilingualSetting:
+                    multilingualSettingsByConversationId.get(
+                        postItem.conversationId,
+                    ) ?? DEFAULT_CONVERSATION_MULTILINGUAL_SETTING,
                 participationMode: postItem.participationMode,
                 conversationType: postItem.conversationType,
                 isClosed: postItem.isClosed,
                 isEdited: postItem.isEdited,
                 requiresEventTicket: postItem.requiresEventTicket ?? undefined,
                 organization:
-                    postItem.authorName === null &&
-                    postItem.organizationDescription !== null &&
-                    postItem.organizationWebsiteUrl !== null
-                        ? {
-                              name: postItem.organizationName,
-                              description: postItem.organizationDescription,
-                              websiteUrl: postItem.organizationWebsiteUrl,
-                              imageUrl: imagePathToUrl({
+                    postItem.authorName === null
+                        ? (() => {
+                              const imageUrl = imagePathToUrl({
                                   imagePath: postItem.organizationImagePath,
                                   isFullImagePath:
                                       postItem.organizationIsFullImagePath,
                                   baseImageServiceUrl,
-                              }),
-                          }
+                              });
+
+                              return {
+                                  name: postItem.organizationName,
+                                  slug: postItem.organizationSlug,
+                                  description:
+                                      postItem.organizationDescription ?? "",
+                                  ...(postItem.organizationWebsiteUrl === null
+                                      ? {}
+                                      : {
+                                            websiteUrl:
+                                                postItem.organizationWebsiteUrl,
+                                        }),
+                                  ...(imageUrl === undefined ? {} : { imageUrl }),
+                              };
+                          })()
                         : undefined,
                 externalSourceConfig: (() => {
                     const parsed = zodExternalSourceConfig.safeParse(

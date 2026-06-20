@@ -10,14 +10,17 @@ import {
 import { eq } from "drizzle-orm";
 import { log } from "@/app.js";
 import { httpErrors } from "@fastify/sensible";
-import { toUnionUndefined, validateRichTextInput } from "@/shared/shared.js";
+import {
+    htmlToCountedText,
+    toUnionUndefined,
+    validateRichTextInput,
+} from "@/shared/shared.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import {
     getActiveSurveyConfigRecord,
     getSurveyConfigForConversation,
     setSurveyConfigForConversation,
-    warmSurveyTranslationsForConversation,
 } from "@/service/survey.js";
 import type {
     GetConversationForEditResponse,
@@ -31,10 +34,27 @@ import {
     getPremiumFeaturesInConversation,
     getRestrictedPremiumFeatures,
 } from "@/service/premiumEntitlement.js";
-import {
-    createConversationViewSnapshotsFromCurrentState,
-} from "@/service/conversationViewSnapshot.js";
+import { createConversationViewSnapshotsFromCurrentState } from "@/service/conversationViewSnapshot.js";
 import { queueConversationSettingsUpdatedEvent } from "@/service/realtimeEventOutbox.js";
+import {
+    buildConversationLanguageDetectionCorpus,
+    buildGoogleConversationLanguageDetectionCorpus,
+    conversationLanguageSettingToOutput,
+    getConversationLanguageSetting,
+    resolveConversationLanguageSetting,
+    upsertConversationLanguageSetting,
+} from "@/service/conversationLanguage.js";
+import {
+    getConversationMultilingualSetting,
+    normalizeConversationMultilingualSetting,
+    upsertConversationMultilingualSetting,
+} from "@/service/conversationMultilingual.js";
+import {
+    buildContentBlockLanguageDetectionCorpus,
+    buildSurveyLanguageDetectionCorpus,
+    getBlockLanguageHints,
+    resolveContentLanguageMetadata,
+} from "./contentLanguageMetadata.js";
 
 interface GetConversationForEditProps {
     db: PostgresDatabase;
@@ -62,7 +82,8 @@ export async function getConversationForEdit({
             preferredOpinionGroupCount:
                 conversationTable.preferredOpinionGroupCount,
             postAsOrganizationName: organizationTable.displayName,
-            autoProvisionedForUserId: organizationTable.autoProvisionedForUserId,
+            autoProvisionedForUserId:
+                organizationTable.autoProvisionedForUserId,
             createdAt: conversationTable.createdAt,
             updatedAt: conversationTable.updatedAt,
             moderationAction: conversationModerationTable.moderationAction,
@@ -118,15 +139,23 @@ export async function getConversationForEdit({
         db,
         conversationId: conversation.conversationId,
     });
+    const languageSetting = await getConversationLanguageSetting({
+        db,
+        conversationId: conversation.conversationId,
+    });
+    const multilingualSetting = await getConversationMultilingualSetting({
+        db,
+        conversationId: conversation.conversationId,
+    });
 
     const editPermissions = await buildConversationEditPermissions({
         db,
-            conversation: {
-                conversationId: conversation.conversationId,
-                projectId: conversation.projectId,
-                userId,
-                requiresEventTicket: conversation.requiresEventTicket,
-            },
+        conversation: {
+            conversationId: conversation.conversationId,
+            projectId: conversation.projectId,
+            userId,
+            requiresEventTicket: conversation.requiresEventTicket,
+        },
         hasSurvey: surveyConfig !== undefined,
         now: new Date(),
     });
@@ -136,6 +165,10 @@ export async function getConversationForEdit({
         conversationSlugId: conversation.conversationSlugId,
         conversationTitle: conversation.conversationTitle,
         conversationBody: toUnionUndefined(conversation.conversationBody),
+        languageSetting: conversationLanguageSettingToOutput({
+            setting: languageSetting,
+        }),
+        multilingualSetting,
         isIndexed: conversation.isIndexed,
         participationMode: conversation.participationMode,
         requiresEventTicket: toUnionUndefined(conversation.requiresEventTicket),
@@ -176,8 +209,11 @@ export async function updateConversation({
         conversationSlugId,
         conversationTitle,
         conversationBody,
+        conversationBodyPlainText,
         isIndexed,
         participationMode,
+        languageSetting,
+        multilingualSetting,
         requiresEventTicket,
         aiLabelingEnabled,
         preferredOpinionGroupCount,
@@ -186,6 +222,7 @@ export async function updateConversation({
 
     // Sanitize HTML body if provided (backend security layer)
     let sanitizedBody = conversationBody;
+    let bodyPlainText = "";
     if (sanitizedBody != null) {
         try {
             sanitizedBody = processUserGeneratedHtml(
@@ -211,11 +248,17 @@ export async function updateConversation({
             return validationResult;
         }
 
-        sanitizedBody = processUserGeneratedHtml(
-            sanitizedBody,
-            true,
-            "input",
-        );
+        sanitizedBody = processUserGeneratedHtml(sanitizedBody, true, "input");
+        bodyPlainText = htmlToCountedText(sanitizedBody);
+        if (bodyPlainText !== conversationBodyPlainText) {
+            log.info(
+                {
+                    frontendPlainTextChars: conversationBodyPlainText.length,
+                    serverPlainTextChars: bodyPlainText.length,
+                },
+                "[ConversationPlainText] Frontend/backend plain text mismatch on update",
+            );
+        }
     }
 
     const result = await db.transaction(async (tx) => {
@@ -300,8 +343,74 @@ export async function updateConversation({
         }
 
         const conversationId = conversation.conversationId;
+        const effectiveSurveyConfig =
+            surveyConfig === undefined
+                ? ((await getSurveyConfigForConversation({
+                      db: tx,
+                      conversationId,
+                  })) ?? null)
+                : surveyConfig;
+        const surveyLanguageDetectionCorpus = buildSurveyLanguageDetectionCorpus({
+            surveyConfig: effectiveSurveyConfig,
+        });
+        const blockLanguageHints = getBlockLanguageHints({ languageSetting });
+        const currentLanguageSetting = await getConversationLanguageSetting({
+            db: tx,
+            conversationId,
+        });
+        const resolvedLanguageSetting =
+            await resolveConversationLanguageSetting({
+                request: languageSetting,
+                existing: currentLanguageSetting,
+                conversationTitle,
+                bodyPlainText,
+                supplementalPlainText: surveyLanguageDetectionCorpus,
+                googleCloudCredentials,
+                languageHints: blockLanguageHints,
+            });
         const subject = getPremiumEntitlementSubjectForConversation({
             conversation: { projectId: conversation.projectId, userId },
+        });
+        const restrictedDynamicTranslationFeatures =
+            await getRestrictedPremiumFeatures({
+                db: tx,
+                subject,
+                features: ["dynamic_translation"],
+                mode: "creation",
+                now,
+            });
+        const normalizedMultilingualSetting =
+            normalizeConversationMultilingualSetting({
+                languageSetting,
+                multilingualSetting,
+                canUseDynamicTranslation:
+                    restrictedDynamicTranslationFeatures.length === 0,
+            });
+        if (
+            restrictedDynamicTranslationFeatures.length > 0 &&
+            (multilingualSetting.dynamicTranslationEnabled ||
+                multilingualSetting.additionalLanguageCodes.length > 0)
+        ) {
+            return {
+                success: false,
+                reason: "premium_access_required",
+            } as const;
+        }
+        const sourceLanguageMetadata = await resolveContentLanguageMetadata({
+            text: buildContentBlockLanguageDetectionCorpus({
+                conversationCorpus: buildConversationLanguageDetectionCorpus({
+                    conversationTitle,
+                    bodyPlainText,
+                }),
+                surveyConfig: effectiveSurveyConfig,
+            }),
+            googleText: buildGoogleConversationLanguageDetectionCorpus({
+                conversationTitle,
+                bodyPlainText,
+                supplementalPlainText: surveyLanguageDetectionCorpus,
+            }),
+            googleCloudCredentials,
+            languageHints: blockLanguageHints,
         });
         const currentBody = toUnionUndefined(conversation.currentBody);
         const contentChanged =
@@ -418,6 +527,11 @@ export async function updateConversation({
                     conversationId: conversationId,
                     title: conversationTitle,
                     body: sanitizedBody,
+                    bodyPlainText,
+                    sourceLanguageCode:
+                        sourceLanguageMetadata.sourceLanguageCode,
+                    sourceLanguageConfidence:
+                        sourceLanguageMetadata.sourceLanguageConfidence,
                 })
                 .returning({
                     conversationContentId: conversationContentTable.id,
@@ -459,12 +573,27 @@ export async function updateConversation({
             .set(conversationUpdateValues)
             .where(eq(conversationTable.id, conversationId));
 
+        await upsertConversationLanguageSetting({
+            db: tx,
+            conversationId,
+            setting: resolvedLanguageSetting,
+            now,
+        });
+        await upsertConversationMultilingualSetting({
+            db: tx,
+            conversationId,
+            setting: normalizedMultilingualSetting,
+            now,
+        });
+
         if (surveyConfig !== undefined) {
             await setSurveyConfigForConversation({
                 db: tx,
                 conversationId,
                 surveyConfig: surveyConfig ?? null,
                 now,
+                googleCloudCredentials,
+                sourceLanguageMetadata,
             });
         }
 
@@ -499,19 +628,6 @@ export async function updateConversation({
             db,
             conversationSlugId: result.conversationSlugId,
             settings: result.conversationSettings,
-        });
-    }
-
-    if (result.success && surveyConfig !== undefined && surveyConfig !== null) {
-        void warmSurveyTranslationsForConversation({
-            db,
-            conversationId: result.conversationId,
-            googleCloudCredentials,
-        }).catch((error: unknown) => {
-            log.warn(
-                error,
-                `[Survey Translation] Async warm-up failed after updating conversation ${conversationSlugId}`,
-            );
         });
     }
 

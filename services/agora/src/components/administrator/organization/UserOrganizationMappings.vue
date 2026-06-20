@@ -19,7 +19,7 @@
         {{ t("noOrganizationsMessage") }}
       </div>
 
-      <div v-for="organization in organizationList" :key="organization.name">
+      <div v-for="organization in organizationList" :key="organization.slug ?? organization.name">
         <div>
           {{ organization.name }}
         </div>
@@ -27,7 +27,7 @@
         <ZKButton
           button-type="largeButton"
           :label="t('removeUserOrganizationMappingButton')"
-          @click="deleteOrganizationButtonClicked(organization.name)"
+          @click="deleteOrganizationButtonClicked(organization.slug ?? organization.name)"
         />
       </div>
     </div>

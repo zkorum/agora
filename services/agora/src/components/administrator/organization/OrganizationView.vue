@@ -35,7 +35,7 @@ import {
 } from "./OrganizationView.i18n";
 
 const props = defineProps<{
-  organizationName: string;
+  organizationSlug: string;
 }>();
 
 const { t } = useComponentI18n<OrganizationViewTranslations>(
@@ -48,11 +48,11 @@ const { deleteOrganization, addUserOrganizationMapping } =
   useBackendAdministratorOrganizationApi();
 
 async function deleteOrganizationButtonClicked() {
-  await deleteOrganization(props.organizationName);
+  await deleteOrganization(props.organizationSlug);
 }
 
 async function addUserToOrganizationClicked() {
-  await addUserOrganizationMapping(username.value, props.organizationName);
+  await addUserOrganizationMapping(username.value, props.organizationSlug);
 }
 </script>
 

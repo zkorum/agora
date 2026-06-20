@@ -6,7 +6,7 @@
       hover-variant="medium"
     >
       <div class="container standardStyle">
-        <PostContent
+        <TranslatedPostContent
           :extended-post-data="conversationData"
           :compact-mode="compactMode"
           @open-moderation-history="openModerationHistory()"
@@ -78,6 +78,10 @@
           :survey-gate="conversationData.interaction.surveyGate"
           :on-view-analysis="viewAnalysisTab"
           :is-voting-disabled="isVotingDisabled"
+          :dynamic-translation-enabled="
+            conversationData.metadata.multilingualSetting.dynamicTranslationEnabled
+          "
+          :supported-target-language-codes="supportedTargetLanguageCodes"
           :preloaded-queries="{
             commentsDiscoverQuery,
             commentsNewQuery,
@@ -125,6 +129,7 @@ import {
   getScrollTop,
   scrollTo,
 } from "src/utils/html/scroll";
+import { getSupportedContentTranslationTargetLanguageCodes } from "src/utils/translation/contentTranslation";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
@@ -133,7 +138,7 @@ import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import AnalysisPage from "./analysis/AnalysisPage.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
 import CommentSection from "./comments/CommentSection.vue";
-import PostContent from "./display/PostContent.vue";
+import TranslatedPostContent from "./display/TranslatedPostContent.vue";
 import PostActionBar from "./interactionBar/PostActionBar.vue";
 
 const props = defineProps<{
@@ -149,6 +154,13 @@ const emit = defineEmits<{
 
 const currentTab = ref<"comment" | "analysis">("comment");
 const route = useRoute();
+
+const supportedTargetLanguageCodes = computed(() =>
+  getSupportedContentTranslationTargetLanguageCodes({
+    languageSetting: props.conversationData.metadata.languageSetting,
+    multilingualSetting: props.conversationData.metadata.multilingualSetting,
+  })
+);
 
 const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
 const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();

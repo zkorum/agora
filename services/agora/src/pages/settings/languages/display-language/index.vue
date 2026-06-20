@@ -7,7 +7,7 @@
     <div class="container">
       <div class="settings-section">
         <div class="settings-background">
-          <MenuItem
+            <MenuItem
             v-for="(language, index) in availableDisplayLanguages"
             :key="language.code"
             :label="language.name"
@@ -22,7 +22,7 @@
                     ? 'bottom'
                     : 'none'
             "
-            @click="selectDisplayLanguage(language.code)"
+            @click="void selectDisplayLanguage(language.code)"
           >
             <template #right-icon>
               <ZKIcon
@@ -57,7 +57,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
 import { getDisplayLanguages } from "src/utils/language";
 import type { ComputedRef } from "vue";
-import { computed, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
 
 import {
   type DisplayLanguageSettingsTranslations,
@@ -78,21 +78,30 @@ const authStore = useAuthenticationStore();
 
 const availableDisplayLanguages: ComputedRef<DisplayLanguageMetadata[]> =
   computed(() => getDisplayLanguages());
+const pendingDisplayLanguage = ref<SupportedDisplayLanguageCodes | undefined>();
 
-function selectDisplayLanguage(
+async function selectDisplayLanguage(
   languageCode: SupportedDisplayLanguageCodes
-): void {
-  if (languageCode === displayLanguage.value) {
+): Promise<void> {
+  if (
+    languageCode === displayLanguage.value ||
+    pendingDisplayLanguage.value !== undefined
+  ) {
     return; // Already selected
   }
 
-  void changeDisplayLanguage({ newLanguage: languageCode });
+  pendingDisplayLanguage.value = languageCode;
+  try {
+    await changeDisplayLanguage({ newLanguage: languageCode });
+  } finally {
+    pendingDisplayLanguage.value = undefined;
+  }
 }
 
 // Load user's language preferences on page mount
 onMounted(() => {
   // If authenticated, sync with backend in background (non-blocking)
-  if (authStore.isLoggedIn) {
+  if (authStore.isGuestOrLoggedIn) {
     void loadLanguagePreferencesFromBackend();
   }
 });

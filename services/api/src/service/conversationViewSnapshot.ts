@@ -325,6 +325,7 @@ export async function createConversationViewSnapshotsFromCurrentState({
     lifecycleCheckpointReason,
     emitRealtimeEvent = false,
     emitCommentStatsRealtimeEvent = false,
+    changedOpinionIds = [],
 }: {
     db: PostgresJsDatabase;
     conversationId: number;
@@ -332,6 +333,7 @@ export async function createConversationViewSnapshotsFromCurrentState({
     lifecycleCheckpointReason?: LifecycleCheckpointReason;
     emitRealtimeEvent?: boolean;
     emitCommentStatsRealtimeEvent?: boolean;
+    changedOpinionIds?: number[];
 }): Promise<number> {
     const conversationRows = await db
         .select({
@@ -531,6 +533,7 @@ export async function createConversationViewSnapshotsFromCurrentState({
         await queueConversationCommentStatsUpdatedEventsForViewSnapshots({
             db,
             conversationViewSnapshotIds: insertedRows.map((row) => row.id),
+            changedOpinionIds,
         });
     }
 

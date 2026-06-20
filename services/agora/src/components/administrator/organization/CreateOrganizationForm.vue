@@ -8,6 +8,14 @@
       data-1p-ignore
     />
     <!-- @vue-expect-error Quasar q-input types modelValue as string | number | null -->
+    <q-input
+      v-model="organizationSlug"
+      :label="t('slugLabel')"
+      autocomplete="off"
+      data-1p-ignore
+      @update:model-value="hasEditedOrganizationSlug = true"
+    />
+    <!-- @vue-expect-error Quasar q-input types modelValue as string | number | null -->
     <q-input v-model="description" :label="t('descriptionLabel')" />
     <!-- @vue-expect-error Quasar q-input types modelValue as string | number | null -->
     <q-input v-model="imagePath" :label="t('imagePathLabel')" />
@@ -26,8 +34,12 @@
 <script setup lang="ts">
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  createRandomOrganizationSlugFallback,
+  slugifyOrganizationDisplayName,
+} from "src/shared-app-api/organizationSlug";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 
 import {
   type CreateOrganizationFormTranslations,
@@ -43,7 +55,17 @@ const { createOrganization } = useBackendAdministratorOrganizationApi();
 const description = ref("");
 const imagePath = ref("");
 const organizationName = ref("");
+const organizationSlug = ref("");
+const hasEditedOrganizationSlug = ref(false);
+const fallbackOrganizationSlug = ref(createRandomOrganizationSlugFallback());
 const websiteUrl = ref("");
+
+watch(organizationName, (name) => {
+  if (!hasEditedOrganizationSlug.value) {
+    organizationSlug.value =
+      slugifyOrganizationDisplayName(name) ?? fallbackOrganizationSlug.value;
+  }
+});
 
 function isHttpsUrl(url: string): boolean {
   try {
@@ -61,6 +83,7 @@ async function setOrganization() {
     imagePath.value,
     isHttpsUrl(imagePath.value),
     organizationName.value,
+    organizationSlug.value,
     websiteUrl.value
   );
 }

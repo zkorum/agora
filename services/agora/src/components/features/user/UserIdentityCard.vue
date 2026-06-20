@@ -2,7 +2,7 @@
   <div class="metadata">
     <div>
       <UserAvatar
-        v-if="organizationImageUrl == ''"
+        v-if="showAvatarFallback && organizationImageUrl == ''"
         :user-identity="userIdentity"
         :size="36"
       />
@@ -83,6 +83,7 @@ const props = defineProps<{
   isEdited: boolean;
   showVerifiedText: boolean;
   organizationImageUrl: string;
+  showAvatarFallback: boolean;
   participationMode?: ParticipationMode;
 }>();
 

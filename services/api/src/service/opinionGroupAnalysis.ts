@@ -589,7 +589,7 @@ export async function getDescriptionTextsByGroupId({
 }: {
     db: PostgresJsDatabase;
     groups: GroupDescriptionRefs[];
-    displayLanguage: string;
+    displayLanguage: SupportedDisplayLanguageCodes;
     includeSystemDescriptions?: boolean;
 }): Promise<Map<number, DescriptionText>> {
     const descriptionIds = getDefinedIds(
@@ -1196,6 +1196,7 @@ export async function getSelectedOpinionGroupMembershipsByParticipantId({
     if (participantIds.length === 0) {
         return new Map();
     }
+    const requestedLocale = getSupportedDisplayLanguage(displayLanguage);
 
     const selectedCandidate = await getSelectedOpinionGroupCandidate({
         db,
@@ -1240,7 +1241,7 @@ export async function getSelectedOpinionGroupMembershipsByParticipantId({
             systemDescriptionId: row.systemDescriptionId,
             adminDescriptionId: row.adminDescriptionId,
         })),
-        displayLanguage,
+        displayLanguage: requestedLocale,
         includeSystemDescriptions: selectedCandidate.useSystemDescriptions,
     });
 

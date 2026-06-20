@@ -1,4 +1,3 @@
-/** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 /**
  * Centralized Valkey queue key definitions
  *
@@ -48,6 +47,14 @@ export const VALKEY_QUEUE_KEYS = {
      * Pattern: Sorted set of conversationId strings. Score = enqueue timestamp in milliseconds.
      */
     ANALYSIS_DIRTY: "analysis:dirty",
+
+    /**
+     * Content translation dirty set: individual translation work rows.
+     * Used by: API (ZADD via Lua), content-translation-worker (ZPOPMIN)
+     * Pattern: Sorted set of content_translation_work.id strings.
+     * Score = priorityRank * large constant + enqueue timestamp in milliseconds.
+     */
+    CONTENT_TRANSLATION_DIRTY: "content-translation:dirty",
 
     /**
      * UCAN replay protection - key prefix for used UCAN hashes

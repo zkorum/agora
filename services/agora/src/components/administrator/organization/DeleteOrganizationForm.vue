@@ -3,12 +3,12 @@
     <div v-if="organizationList.length == 0">
       {{ t("noOrganizationsMessage") }}
     </div>
-    <div v-for="organization in organizationList" :key="organization.name">
+    <div v-for="organization in organizationList" :key="organization.slug ?? organization.name">
       <div>
         {{ organization.name }}
       </div>
 
-      <OrganizationView :organization-name="organization.name" />
+      <OrganizationView :organization-slug="organization.slug ?? organization.name" />
     </div>
   </div>
 </template>

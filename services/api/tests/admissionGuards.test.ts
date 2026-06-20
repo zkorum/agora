@@ -4,6 +4,8 @@ import postgres from "postgres";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { GenericContainer, type StartedTestContainer } from "testcontainers";
 
+import { readDbFixtureSql } from "./dbFixture.js";
+
 process.env.NODE_ENV = "test";
 process.env.CORS_ORIGIN_LIST = "http://localhost:9000";
 process.env.PEPPERS = Buffer.from("0123456789abcdef0123456789abcdef").toString(
@@ -53,74 +55,7 @@ describe("Admission guards", () => {
         });
         db = drizzle(sqlClient);
 
-        await sqlClient.unsafe(`
-            CREATE TABLE "conversation_import" (
-                "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                "slug_id" varchar(8) NOT NULL UNIQUE,
-                "conversation_id" integer,
-                "user_id" uuid NOT NULL,
-                "status" text NOT NULL,
-                "failure_reason" text,
-                "csv_file_metadata" jsonb,
-                "created_at" timestamp NOT NULL,
-                "updated_at" timestamp NOT NULL
-            );
-            CREATE INDEX "conversation_import_status_idx" ON "conversation_import" ("status");
-            CREATE INDEX "conversation_import_created_idx" ON "conversation_import" ("created_at");
-            CREATE INDEX "conversation_import_user_idx" ON "conversation_import" ("user_id");
-            CREATE INDEX "conversation_import_conversation_idx" ON "conversation_import" ("conversation_id");
-            CREATE UNIQUE INDEX "conversation_import_active_user_unique"
-                ON "conversation_import" ("user_id")
-                WHERE status = 'processing';
-
-            CREATE TABLE "conversation_export_generation" (
-                "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                "slug_id" varchar(8) NOT NULL UNIQUE,
-                "conversation_id" integer NOT NULL,
-                "status" text NOT NULL DEFAULT 'collecting',
-                "collecting_ends_at" timestamp NOT NULL,
-                "attempts" integer NOT NULL DEFAULT 0,
-                "next_attempt_at" timestamp,
-                "started_at" timestamp,
-                "heartbeat_at" timestamp,
-                "completed_at" timestamp,
-                "failed_at" timestamp,
-                "failure_reason" text,
-                "created_at" timestamp NOT NULL DEFAULT now(),
-                "updated_at" timestamp NOT NULL DEFAULT now()
-            );
-            CREATE UNIQUE INDEX "conversation_export_generation_collecting_unique"
-                ON "conversation_export_generation" ("conversation_id")
-                WHERE status = 'collecting';
-            CREATE UNIQUE INDEX "conversation_export_generation_processing_unique"
-                ON "conversation_export_generation" ("conversation_id")
-                WHERE status = 'processing';
-
-            CREATE TABLE "conversation_export_request" (
-                "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                "slug_id" varchar(8) NOT NULL UNIQUE,
-                "conversation_id" integer NOT NULL,
-                "generation_id" integer NOT NULL,
-                "user_id" uuid NOT NULL,
-                "status" text NOT NULL DEFAULT 'processing',
-                "failure_reason" text,
-                "cancellation_reason" text,
-                "expires_at" timestamp NOT NULL,
-                "deleted_at" timestamp,
-                "started_notified_at" timestamp,
-                "completed_notified_at" timestamp,
-                "failed_notified_at" timestamp,
-                "created_at" timestamp NOT NULL DEFAULT now(),
-                "updated_at" timestamp NOT NULL DEFAULT now()
-            );
-            CREATE INDEX "conversation_export_request_conversation_idx" ON "conversation_export_request" ("conversation_id");
-            CREATE INDEX "conversation_export_request_generation_idx" ON "conversation_export_request" ("generation_id");
-            CREATE INDEX "conversation_export_request_created_idx" ON "conversation_export_request" ("created_at");
-            CREATE INDEX "conversation_export_request_user_idx" ON "conversation_export_request" ("user_id");
-            CREATE UNIQUE INDEX "conversation_export_request_active_unique"
-                ON "conversation_export_request" ("conversation_id", "user_id")
-                WHERE status = 'processing' AND deleted_at IS NULL;
-        `);
+        await sqlClient.unsafe(readDbFixtureSql("admission-guards.sql"));
     }, 120000);
 
     afterAll(async () => {
@@ -235,6 +170,11 @@ describe("Admission guards", () => {
                     isIndexed: true,
                     aiLabelingEnabled: true,
                     preferredOpinionGroupCount: null,
+                    languageSetting: { mode: "auto" },
+                    multilingualSetting: {
+                        additionalLanguageCodes: [],
+                        dynamicTranslationEnabled: false,
+                    },
                 },
                 didWrite: "did:test:queue",
                 importBuffer,

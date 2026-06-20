@@ -26,11 +26,6 @@ from agora_analysis_worker_shared.logging_utils import (
     log_database_error,
 )
 from agora_analysis_worker_shared.postgres_engine import create_ready_postgres_engine
-from agora_analysis_worker_shared.schema_readiness import (
-    StartupSchemaRetryState,
-    handle_startup_schema_retry,
-    mark_startup_schema_ready,
-)
 from agora_analysis_worker_shared.simulation_providers import (
     build_simulation_runtime,
     log_simulation_startup,
@@ -137,7 +132,6 @@ def main() -> None:
     monotonic_start = time.monotonic()
     last_recover = monotonic_start - settings.running_recovery_interval_seconds
     last_no_claim_warning = monotonic_start - NO_CLAIM_LOG_INTERVAL_SECONDS
-    schema_retry_state = StartupSchemaRetryState()
 
     while _running:
         monotonic_now = time.monotonic()
@@ -157,17 +151,7 @@ def main() -> None:
                         LOG_PREFIX,
                         len(recovered_ids),
                     )
-            except Exception as error:
-                retry_decision = handle_startup_schema_retry(
-                    state=schema_retry_state,
-                    error=error,
-                    logger=log,
-                    log_prefix=LOG_PREFIX,
-                )
-                schema_retry_state = retry_decision.state
-                if retry_decision.should_retry:
-                    time.sleep(settings.worker_poll_idle_sleep_seconds)
-                    continue
+            except Exception:
                 log.exception("%s Running-work recovery failed", LOG_PREFIX)
             last_recover = monotonic_now
 
@@ -185,17 +169,7 @@ def main() -> None:
                     LOG_PREFIX,
                     len(materialized_ids),
                 )
-        except Exception as error:
-            retry_decision = handle_startup_schema_retry(
-                state=schema_retry_state,
-                error=error,
-                logger=log,
-                log_prefix=LOG_PREFIX,
-            )
-            schema_retry_state = retry_decision.state
-            if retry_decision.should_retry:
-                time.sleep(settings.worker_poll_idle_sleep_seconds)
-                continue
+        except Exception:
             log.exception("%s Translation request materialization failed", LOG_PREFIX)
 
         try:
@@ -211,21 +185,10 @@ def main() -> None:
             claimable_ids = sorted({*claimable_ids, *materialized_ids})[
                 : settings.db_claim_batch_size
             ]
-        except Exception as error:
-            retry_decision = handle_startup_schema_retry(
-                state=schema_retry_state,
-                error=error,
-                logger=log,
-                log_prefix=LOG_PREFIX,
-            )
-            schema_retry_state = retry_decision.state
-            if retry_decision.should_retry:
-                time.sleep(settings.worker_poll_idle_sleep_seconds)
-                continue
+        except Exception:
             log.exception("%s Claimable translation scan failed", LOG_PREFIX)
             time.sleep(settings.worker_poll_idle_sleep_seconds)
             continue
-        schema_retry_state = mark_startup_schema_ready(state=schema_retry_state)
         if not claimable_ids:
             time.sleep(settings.worker_poll_idle_sleep_seconds)
             continue

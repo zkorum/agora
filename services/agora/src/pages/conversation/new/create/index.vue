@@ -33,6 +33,8 @@
         v-model:external-source-config="externalSourceConfig"
         v-model:title="title"
         v-model:content="content"
+        v-model:language-setting="languageSetting"
+        v-model:multilingual-setting="multilingualSetting"
         v-model:ai-labeling-enabled="aiLabelingEnabled"
         v-model:preferred-opinion-group-count="preferredOpinionGroupCount"
       />
@@ -90,6 +92,7 @@
 
           <Editor
             v-model="title"
+            v-model:plain-text="titlePlainText"
             :placeholder="t('titlePlaceholder')"
             :show-toolbar="false"
             :single-line="true"
@@ -125,6 +128,7 @@
           <div class="editor-style">
             <Editor
               v-model="content"
+              v-model:plain-text="contentPlainText"
               :placeholder="t('bodyPlaceholder')"
               min-height="5rem"
               :show-toolbar="true"
@@ -215,6 +219,9 @@ const isNavigatingAway = ref(false);
 const {
   title,
   content,
+  contentPlainText,
+  languageSetting,
+  multilingualSetting,
   conversationType,
   isPrivate,
   participationMode,
@@ -237,6 +244,7 @@ const {
 const isSubmitButtonLoading = ref(false);
 const isTitleOverLimit = ref(false);
 const isBodyOverLimit = ref(false);
+const titlePlainText = ref("");
 
 const isTitleEmpty = computed(
   () =>

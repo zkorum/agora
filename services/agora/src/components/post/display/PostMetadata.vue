@@ -13,6 +13,7 @@
           "
           :show-verified-text="false"
           :organization-image-url="props.organizationUrl"
+          :show-avatar-fallback="props.organizationName == ''"
           :participation-mode="props.participationMode"
         />
       </div>

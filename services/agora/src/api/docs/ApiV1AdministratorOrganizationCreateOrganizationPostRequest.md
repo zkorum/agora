@@ -6,9 +6,10 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **organizationName** | **string** |  | [default to undefined]
+**organizationSlug** | **string** |  | [default to undefined]
 **imagePath** | **string** |  | [default to undefined]
 **isFullImagePath** | **boolean** |  | [default to undefined]
-**websiteUrl** | **string** |  | [default to undefined]
+**websiteUrl** | **string** |  | [optional] [default to undefined]
 **description** | **string** |  | [default to undefined]
 
 ## Example
@@ -18,6 +19,7 @@ import { ApiV1AdministratorOrganizationCreateOrganizationPostRequest } from './a
 
 const instance: ApiV1AdministratorOrganizationCreateOrganizationPostRequest = {
     organizationName,
+    organizationSlug,
     imagePath,
     isFullImagePath,
     websiteUrl,

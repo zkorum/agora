@@ -13,15 +13,47 @@ import type {
 } from "@/shared/types/dto.js";
 import type { OrganizationProperties } from "@/shared/types/zod.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
+import { ensureOrganizationMembershipBaselineCapabilities } from "../projectAccess.js";
 
-function slugifyOrganizationName(name: string): string {
-    const slug = name
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .slice(0, 65);
-    return slug === "" ? "organization" : slug;
+function buildOrganizationProperties({
+    name,
+    slug,
+    description,
+    imagePath,
+    isFullImagePath,
+    websiteUrl,
+    baseImageServiceUrl,
+}: {
+    name: string;
+    slug: string;
+    description: string | null;
+    imagePath: string | null;
+    isFullImagePath: boolean;
+    websiteUrl: string | null;
+    baseImageServiceUrl: string;
+}): OrganizationProperties {
+    const imageUrl = imagePathToUrl({
+        imagePath,
+        isFullImagePath,
+        baseImageServiceUrl,
+    });
+
+    return {
+        name,
+        slug,
+        description: description ?? "",
+        ...(imageUrl === undefined ? {} : { imageUrl }),
+        ...(websiteUrl === null ? {} : { websiteUrl }),
+    };
+}
+
+function isUniqueViolation(error: unknown): boolean {
+    return (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "23505"
+    );
 }
 
 interface GetAllOrganizationsProps {
@@ -38,24 +70,25 @@ export async function getAllOrganizations({
     const organizationTableResponse = await db
         .select({
             name: organizationTable.displayName,
+            slug: organizationTable.slug,
             description: organizationTable.description,
             imagePath: organizationTable.imagePath,
             isFullImagePath: organizationTable.isFullImagePath,
             websiteUrl: organizationTable.websiteUrl,
         })
-        .from(organizationTable);
+        .from(organizationTable)
+        .where(eq(organizationTable.directoryVisibility, "listed"));
     organizationTableResponse.forEach((response) => {
         if (response.name) {
-            organizationList.push({
+            organizationList.push(buildOrganizationProperties({
                 name: response.name,
-                description: response.description ?? "",
-                imageUrl: imagePathToUrl({
-                    imagePath: response.imagePath,
-                    isFullImagePath: response.isFullImagePath,
-                    baseImageServiceUrl,
-                }),
-                websiteUrl: response.websiteUrl ?? "",
-            });
+                slug: response.slug,
+                description: response.description,
+                imagePath: response.imagePath,
+                isFullImagePath: response.isFullImagePath,
+                websiteUrl: response.websiteUrl,
+                baseImageServiceUrl,
+            }));
         }
     });
 
@@ -149,6 +182,7 @@ export async function getOrganizationMembershipsByUserId({
         .select({
             organizationId: organizationTable.id,
             name: organizationTable.displayName,
+            slug: organizationTable.slug,
             description: organizationTable.description,
             imagePath: organizationTable.imagePath,
             isFullImagePath: organizationTable.isFullImagePath,
@@ -162,20 +196,24 @@ export async function getOrganizationMembershipsByUserId({
                 organizationMembershipTable.organizationId,
             ),
         )
-        .where(eq(organizationMembershipTable.userId, userId));
+        .where(
+            and(
+                eq(organizationMembershipTable.userId, userId),
+                eq(organizationTable.directoryVisibility, "listed"),
+            ),
+        );
 
     return organizationTableResponse.map((response) => ({
         organizationId: response.organizationId,
-        organization: {
+        organization: buildOrganizationProperties({
             name: response.name,
-            description: response.description ?? "",
-            imageUrl: imagePathToUrl({
-                imagePath: response.imagePath,
-                isFullImagePath: response.isFullImagePath,
-                baseImageServiceUrl,
-            }),
-            websiteUrl: response.websiteUrl ?? "",
-        },
+            slug: response.slug,
+            description: response.description,
+            imagePath: response.imagePath,
+            isFullImagePath: response.isFullImagePath,
+            websiteUrl: response.websiteUrl,
+            baseImageServiceUrl,
+        }),
     }));
 }
 
@@ -256,9 +294,10 @@ export async function addUserOrganizationMapping({
         if (organizationId == undefined) {
             throw httpErrors.notFound("Failed to locate organization ID");
         } else {
-            await db.insert(organizationMembershipTable).values({
+            await ensureOrganizationMembershipBaselineCapabilities({
+                db,
                 userId: targetUserId,
-                organizationId: organizationId,
+                organizationId,
             });
         }
     } catch (err: unknown) {
@@ -272,15 +311,17 @@ export async function addUserOrganizationMapping({
 interface CreateOrganizationProps {
     db: PostgresJsDatabase;
     organizationName: string;
-    imagePath: string;
+    organizationSlug: string;
+    imagePath: string | undefined;
     isFullImagePath: boolean;
-    websiteUrl: string;
+    websiteUrl: string | undefined;
     description: string;
 }
 
 export async function createOrganization({
     db,
     organizationName,
+    organizationSlug,
     imagePath,
     isFullImagePath,
     websiteUrl,
@@ -289,15 +330,22 @@ export async function createOrganization({
     try {
         // Create a new organization entry
         await db.insert(organizationTable).values({
-            slug: slugifyOrganizationName(organizationName),
+            slug: organizationSlug,
             displayName: organizationName,
             directoryVisibility: "listed",
-            imagePath: imagePath,
+            imagePath:
+                imagePath === undefined || imagePath.trim() === ""
+                    ? null
+                    : imagePath,
             isFullImagePath: isFullImagePath,
-            websiteUrl: websiteUrl,
+            websiteUrl: websiteUrl ?? null,
             description: description,
         });
     } catch (err: unknown) {
+        if (isUniqueViolation(err)) {
+            throw httpErrors.conflict("Organization slug already exists");
+        }
+
         log.error(err);
         throw httpErrors.internalServerError(
             "Database error while setting user organization profile",

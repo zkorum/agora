@@ -153,6 +153,7 @@ const emit = defineEmits<{
 }>();
 const $q = useQuasar();
 const modelText = defineModel<string>({ required: true });
+const modelPlainText = defineModel<string>("plainText", { required: true });
 
 // Internal character count tracking
 const internalCharacterCount = ref(0);
@@ -279,9 +280,11 @@ const editor = useEditor({
     },
   },
   onCreate: ({ editor }) => {
+    modelPlainText.value = editor.getText();
     emitCharacterCount(computeCharacterCount(editor));
   },
   onUpdate: ({ editor }) => {
+    modelPlainText.value = editor.getText();
     if (props.singleLine) {
       modelText.value = editor.getText();
     } else {
@@ -331,6 +334,7 @@ watch(
       // Only update if the content is actually different
       if (newValue !== currentContent) {
         editor.value.commands.setContent(newValue);
+        modelPlainText.value = editor.value.getText();
         // Recalculate character count after external content change (e.g. draft load)
         emitCharacterCount(computeCharacterCount(editor.value));
       }

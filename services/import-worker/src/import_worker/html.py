@@ -119,3 +119,24 @@ def process_user_generated_html(
     if enable_links:
         return _linkify_html_content(normalized)
     return normalized
+
+
+def html_to_counted_text(value: str) -> str:
+    text_with_newlines = re.sub(r"</p>", "\n", value, flags=re.IGNORECASE)
+    text_with_newlines = re.sub(
+        r"<br\s*/?>",
+        "\n",
+        text_with_newlines,
+        flags=re.IGNORECASE,
+    )
+    text_with_newlines = re.sub(r"<p>", "", text_with_newlines, flags=re.IGNORECASE)
+
+    plain_text = text_with_newlines
+    while True:
+        stripped = re.sub(r"<[^>]*>", "", plain_text)
+        if stripped == plain_text:
+            break
+        plain_text = stripped
+
+    plain_text = re.sub(r"<[^>]*$", "", plain_text)
+    return re.sub(r"\n$", "", plain_text)

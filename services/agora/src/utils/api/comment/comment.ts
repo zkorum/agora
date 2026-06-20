@@ -1,6 +1,5 @@
 import { storeToRefs } from "pinia";
 import type {
-  ApiV1OpinionCreatePostRequest,
   ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest,
   ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest,
   ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest,
@@ -19,6 +18,7 @@ import type {
   AnalysisFrameOpinionListKind,
   AnalysisFreshnessRequest,
   CreateCommentResponse,
+  CreateOpinionRequest,
   FetchAnalysisCheckpointsResponse,
   FetchCommentStatsResponse,
 } from "src/shared/types/dto";
@@ -174,10 +174,12 @@ export function useBackendCommentApi() {
 
   async function createNewComment(
     commentBody: string,
+    opinionPlainText: string,
     postSlugId: string
   ): Promise<CreateNewCommentResult> {
-    const params: ApiV1OpinionCreatePostRequest = {
+    const params: CreateOpinionRequest = {
       opinionBody: commentBody,
+      opinionPlainText,
       conversationSlugId: postSlugId,
     };
 

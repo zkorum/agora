@@ -1,0 +1,19 @@
+{
+    "admission-guards": [
+        "conversation_import",
+        "conversation_export_generation",
+        "conversation_export_request"
+    ],
+    "auth-otp": [
+        "user",
+        "device",
+        "email",
+        "phone",
+        "zk_passport",
+        "user_display_language",
+        "auth_attempt_email",
+        "auth_attempt_phone",
+        "otp_email_destination_state",
+        "otp_phone_destination_state"
+    ]
+}

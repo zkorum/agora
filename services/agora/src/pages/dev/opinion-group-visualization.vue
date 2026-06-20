@@ -1700,6 +1700,7 @@ function generateMockOpinion({
     opinion: `Mock #${String(index + 1).padStart(3, "0")}: ${
       mockStatements[index % mockStatements.length]
     }`,
+    sourceLanguageCode: null,
     numParticipants: baseNumParticipants * participantScaleMultiplier.value,
     numAgrees: baseNumAgrees * participantScaleMultiplier.value,
     numDisagrees: baseNumDisagrees * participantScaleMultiplier.value,

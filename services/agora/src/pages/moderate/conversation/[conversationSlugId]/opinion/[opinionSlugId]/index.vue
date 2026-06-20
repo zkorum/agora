@@ -119,6 +119,7 @@ loadRouteParams();
 
 const opinionItem = ref<OpinionItem>({
   opinion: "",
+  sourceLanguageCode: null,
   opinionSlugId: "",
   createdAt: new Date(),
   numParticipants: 0,

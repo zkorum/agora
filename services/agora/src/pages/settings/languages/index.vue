@@ -15,14 +15,14 @@
       <ListSection :settings-item-list="displayLanguageSettings" />
 
       <!-- Additional languages section -->
-      <div v-if="authStore.isLoggedIn" class="section-header">
+      <div v-if="authStore.isGuestOrLoggedIn" class="section-header">
         <p class="section-title">{{ t("additionalLanguagesTitle") }}</p>
         <p class="section-description">
           {{ t("additionalLanguagesDescription") }}
         </p>
       </div>
       <ListSection
-        v-if="authStore.isLoggedIn"
+        v-if="authStore.isGuestOrLoggedIn"
         :settings-item-list="additionalLanguageSettings"
       />
     </div>

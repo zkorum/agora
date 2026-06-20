@@ -2,6 +2,7 @@ all: dev
 
 LOG_RUNNER := node scripts/dev-log-runner.mjs
 LOAD_TEST_CONVERSATIONS := $(or $(CONVERSATION_SLUG_IDS),$(conversations))
+CONTENT_TRANSLATION_WORKER_DEV_SCENARIO ?= simulated-success
 
 PYTHON_TYPECHECK_PATTERNS := \
 	services/shared-analysis-worker/src/**/*.py \
@@ -9,6 +10,7 @@ PYTHON_TYPECHECK_PATTERNS := \
 	services/math-updater/src/**/*.py \
 	services/ai-description-retry-worker/src/**/*.py \
 	services/description-translation-retry-worker/src/**/*.py \
+	services/content-translation-worker/src/**/*.py \
 	services/import-worker/src/**/*.py \
 	services/import-worker/tests/**/*.py \
 	services/scoring-worker/src/**/*.py \
@@ -27,22 +29,13 @@ generate:
 		-g typescript-axios \
 		-o /local/services/load-testing/src/api
 
-sync: sync-all sync-app-api sync-ts-backend sync-python-artifacts
+sync: sync-all sync-app-api sync-python-artifacts sync-api-test-db-fixtures
 
 sync-all:
 	cd services/shared && pnpm run sync
 
 sync-app-api:
 	cd services/shared-app-api && pnpm run sync
-
-# TypeScript backend consumers of shared-backend/src. This is intentionally an
-# explicit TS boundary (currently API and future TS agents such as the deletion
-# agent), not a generic Python worker sync.
-sync-ts-backend:
-	cd services/shared-backend && pnpm run sync
-
-# Backward-compatible alias for existing scripts/docs.
-sync-backend: sync-ts-backend
 
 dev-sync:
 	$(LOG_RUNNER) --service shared -- $(MAKE) dev-sync-raw
@@ -56,42 +49,48 @@ dev-sync-app-api:
 dev-sync-app-api-raw:
 	watchman-make -p 'services/shared-app-api/src/**/*.ts' -t sync-app-api
 
-dev-sync-ts-backend:
-	$(LOG_RUNNER) --service shared-backend -- $(MAKE) dev-sync-ts-backend-raw
-
-dev-sync-ts-backend-raw:
-	watchman-make -p 'services/shared-backend/src/**/*.ts' -t sync-ts-backend
-
-# Backward-compatible alias for existing scripts/docs.
-dev-sync-backend: dev-sync-ts-backend
-
 sync-python-artifacts: sync-python-models sync-python-shared-types sync-import-worker-contracts
 
-sync-python-models: sync-ts-backend
+sync-python-models:
 	cd services/api && npx drizzle-kit export > /tmp/agora-schema.sql
-	cd services/shared-backend && npx tsx scripts/sync-schema-cli.ts \
+	cd services/api && npx tsx scripts/sync-schema-cli.ts \
 		--service scoring-worker \
-		--schema-ts src/schema.ts \
+		--schema-ts src/shared-backend/schema.ts \
 		--sql /tmp/agora-schema.sql \
 		--output ../scoring-worker/src/scoring_worker/generated_models.py
-	cd services/shared-backend && npx tsx scripts/sync-schema-cli.ts \
+	cd services/api && npx tsx scripts/sync-schema-cli.ts \
 		--service shared-analysis-worker \
-		--schema-ts src/schema.ts \
+		--schema-ts src/shared-backend/schema.ts \
 		--sql /tmp/agora-schema.sql \
 		--output ../shared-analysis-worker/src/agora_analysis_worker_shared/generated_models.py
-	cd services/shared-backend && npx tsx scripts/sync-schema-cli.ts \
+	cd services/api && npx tsx scripts/sync-schema-cli.ts \
 		--service import-worker \
-		--schema-ts src/schema.ts \
+		--schema-ts src/shared-backend/schema.ts \
 		--sql /tmp/agora-schema.sql \
 		--output ../import-worker/src/import_worker/generated_models.py
+	cd services/api && npx tsx scripts/sync-schema-cli.ts \
+		--service content-translation-worker \
+		--schema-ts src/shared-backend/schema.ts \
+		--sql /tmp/agora-schema.sql \
+		--output ../content-translation-worker/src/content_translation_worker/generated_models.py
+
+sync-api-test-db-fixtures:
+	cd services/api && npx drizzle-kit export > /tmp/agora-schema.sql
+	cd services/api && npx tsx scripts/sync-api-test-schema-fixtures-cli.ts \
+		--sql /tmp/agora-schema.sql \
+		--config tests/fixtures/db/schema-fixtures.json \
+		--output-dir tests/fixtures/db
 
 sync-python-shared-types:
-	cd services/shared-backend && npx tsx scripts/sync-python-shared-cli.ts \
+	cd services/api && npx tsx scripts/sync-python-shared-cli.ts \
 		--shared-src ../shared/src \
 		--output ../shared-analysis-worker/src/agora_analysis_worker_shared/generated_shared_types.py
-	cd services/shared-backend && npx tsx scripts/sync-python-shared-cli.ts \
+	cd services/api && npx tsx scripts/sync-python-shared-cli.ts \
 		--shared-src ../shared/src \
 		--output ../import-worker/src/import_worker/generated_shared_types.py
+	cd services/api && npx tsx scripts/sync-python-shared-cli.ts \
+		--shared-src ../shared/src \
+		--output ../content-translation-worker/src/content_translation_worker/generated_shared_types.py
 
 sync-import-worker-contracts:
 	cd services/api && npx tsx scripts/export-import-worker-contract-schema.ts /tmp/agora-import-worker-contract.schema.json
@@ -122,6 +121,7 @@ typecheck-python:
 	cd services/math-updater && uv run --extra dev basedpyright
 	cd services/ai-description-retry-worker && uv run --extra dev basedpyright
 	cd services/description-translation-retry-worker && uv run --extra dev basedpyright
+	cd services/content-translation-worker && uv run --extra dev basedpyright
 	cd services/import-worker && uv run --extra dev basedpyright
 	cd services/scoring-worker && uv run --extra dev basedpyright
 
@@ -200,6 +200,18 @@ dev-description-translation-retry-worker-scenario-raw:
 	scripts/run-worker-scenario.sh description-translation-retry-worker "$(SCENARIO)"
 
 dev-description-translation-worker: dev-description-translation-retry-worker
+
+dev-content-translation-worker:
+	$(LOG_RUNNER) --service content-translation-worker -- $(MAKE) dev-content-translation-worker-scenario-raw SCENARIO="$(CONTENT_TRANSLATION_WORKER_DEV_SCENARIO)"
+
+dev-content-translation-worker-raw:
+	cd services/content-translation-worker && PYTHONUNBUFFERED=1 uv run python -m content_translation_worker.worker
+
+dev-content-translation-worker-scenario:
+	$(LOG_RUNNER) --service content-translation-worker -- $(MAKE) dev-content-translation-worker-scenario-raw
+
+dev-content-translation-worker-scenario-raw:
+	scripts/run-worker-scenario.sh content-translation-worker "$(or $(SCENARIO),$(CONTENT_TRANSLATION_WORKER_DEV_SCENARIO))"
 
 dev-import-worker:
 	$(LOG_RUNNER) --service import-worker -- $(MAKE) dev-import-worker-raw

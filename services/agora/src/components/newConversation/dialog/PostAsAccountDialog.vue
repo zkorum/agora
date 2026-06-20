@@ -25,17 +25,18 @@
       <!-- Organization account option selection should be keyboard accessible for users with motor disabilities -->
       <div
         v-for="organization in profileData.organizationList"
-        :key="organization.name"
+        :key="getOrganizationIdentifier(organization)"
         class="account-option"
         :class="{
           'account-option--selected': isAccountSelected(
             true,
-            organization.name
+            getOrganizationIdentifier(organization)
           ),
         }"
-        @click="setPostAs(true, organization.name)"
+        @click="setPostAs(true, getOrganizationIdentifier(organization))"
       >
         <DynamicProfileImage
+          v-if="organization.imageUrl !== undefined"
           :user-identity="organization.name"
           :size="32"
           :organization-image-url="organization.imageUrl"
@@ -52,6 +53,7 @@ import { storeToRefs } from "pinia";
 import DynamicProfileImage from "src/components/account/DynamicProfileImage.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import type { PostAsSettings } from "src/composables/conversation/draft";
+import type { OrganizationProperties } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import { computed } from "vue";
 
@@ -74,6 +76,10 @@ const showDialog = computed({
   get: () => props.modelValue,
   set: (value: boolean) => emit("update:modelValue", value),
 });
+
+function getOrganizationIdentifier(organization: OrganizationProperties): string {
+  return organization.slug ?? organization.name;
+}
 
 function setPostAs(isOrganization: boolean, name: string): void {
   if (isOrganization) {

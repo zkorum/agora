@@ -1,11 +1,11 @@
 import type {
   ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest,
-  ApiV1AdministratorOrganizationCreateOrganizationPostRequest,
   ApiV1AdministratorOrganizationDeleteOrganizationPostRequest,
   ApiV1UserUsernameUpdatePostRequest,
 } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { Dto } from "src/shared/types/dto";
 import type { OrganizationProperties } from "src/shared/types/zod";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
@@ -177,28 +177,23 @@ export function useBackendAdministratorOrganizationApi() {
     imagePath: string,
     isFullImagePath: boolean,
     organizationName: string,
+    organizationSlug: string,
     websiteUrl: string
   ) {
     try {
-      const params: ApiV1AdministratorOrganizationCreateOrganizationPostRequest =
-        {
-          description: description,
-          imagePath: imagePath,
-          isFullImagePath: isFullImagePath,
-          organizationName: organizationName,
-          websiteUrl: websiteUrl,
-        };
+      const params = Dto.createOrganizationRequest.parse({
+        description: description,
+        imagePath: imagePath,
+        isFullImagePath: isFullImagePath,
+        organizationName: organizationName,
+        organizationSlug: organizationSlug,
+        ...(websiteUrl.trim() === "" ? {} : { websiteUrl: websiteUrl.trim() }),
+      });
 
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationCreateOrganizationPost(
-          params
-        );
+      const url = "/api/v1/administrator/organization/create-organization";
+      const options = { method: "POST" };
       const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1AdministratorOrganizationCreateOrganizationPost(params, {
+      const response = await api.post(url, params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },

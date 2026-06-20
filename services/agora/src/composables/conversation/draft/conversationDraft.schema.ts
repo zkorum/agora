@@ -8,6 +8,8 @@
 
 import { MAX_LENGTH_CONVERSATION_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
 import {
+  zodConversationLanguageSettingInput,
+  zodConversationMultilingualSetting,
   zodConversationType,
   zodEventSlug,
   zodExternalSourceConfig,
@@ -120,6 +122,14 @@ export const zodSerializableConversationDraft = z.preprocess(
     // Basic content
     title: z.string().max(MAX_LENGTH_TITLE),
     content: z.string(), // Body length validation happens in validateHtmlStringCharacterCount
+    contentPlainText: z.string().default(""),
+    languageSetting: zodConversationLanguageSettingInput.default({
+      mode: "auto",
+    }),
+    multilingualSetting: zodConversationMultilingualSetting.default({
+      additionalLanguageCodes: [],
+      dynamicTranslationEnabled: false,
+    }),
     seedOpinions: z.array(z.string()),
 
     // Conversation type

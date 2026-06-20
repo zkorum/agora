@@ -12,6 +12,8 @@ import type {
     GetActiveImportResponse,
 } from "@/shared/types/dto.js";
 import type {
+    ConversationLanguageSettingInput,
+    ConversationMultilingualSetting,
     EventSlug,
     ParticipationMode,
     PreferredOpinionGroupCount,
@@ -34,6 +36,8 @@ interface RequestConversationImportParams {
         requiresEventTicket?: EventSlug;
         aiLabelingEnabled: boolean;
         preferredOpinionGroupCount: PreferredOpinionGroupCount;
+        languageSetting: ConversationLanguageSettingInput;
+        multilingualSetting: ConversationMultilingualSetting;
     };
     didWrite: string;
     importBuffer: ImportBuffer;
@@ -167,6 +171,8 @@ interface RequestUrlImportParams {
         requiresEventTicket?: EventSlug;
         aiLabelingEnabled: boolean;
         preferredOpinionGroupCount: PreferredOpinionGroupCount;
+        languageSetting: ConversationLanguageSettingInput;
+        multilingualSetting: ConversationMultilingualSetting;
     };
     didWrite: string;
     importBuffer: ImportBuffer;

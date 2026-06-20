@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import Engine, create_engine, select
+from sqlalchemy import Engine, create_engine, delete, select
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
@@ -12,6 +12,8 @@ from agora_analysis_worker_shared.ai_description_work import (
     CandidateLocaleRequestRow,
     ClaimedDescriptionTranslationWorkItem,
     ClaimedLineageDescriptionWorkItem,
+    EagerAdditionalTranslationLocaleRow,
+    EagerDescriptionCandidateRow,
     LineageDescriptionWorkDemand,
     RequiredLineageDescriptionRow,
     TranslationWorkDemand,
@@ -19,6 +21,7 @@ from agora_analysis_worker_shared.ai_description_work import (
     claim_first_pass_ai_description_locale_work_items_batch,
     complete_non_processable_ai_description_work_batch,
     description_translation_work_claim_batches,
+    eager_translation_target_locales_by_candidate,
     extend_ai_description_locale_work_leases,
     fetch_claimable_ai_description_work_conversation_ids,
     finalize_first_pass_ai_description_work_batch,
@@ -32,6 +35,7 @@ from agora_analysis_worker_shared.ai_description_work import (
     recover_expired_ai_description_work,
     retry_ai_description_locale_work_item,
     translation_work_demands_for_candidate_requests,
+    translation_work_demands_for_eager_candidates,
 )
 from agora_analysis_worker_shared.bedrock_label_summary import (
     LabelSummary,
@@ -62,11 +66,16 @@ from agora_analysis_worker_shared.generated_models import (
     AnalysisWorkState,
     Base,
     Conversation,
+    ConversationLanguageSetting,
+    ConversationLanguageSettingMode,
+    ConversationTranslationSetting,
+    ConversationTranslationTargetLanguage,
     ConversationType,
     ConversationViewSnapshot,
     ConversationViewSnapshotCheckpointReason,
     ConversationViewSnapshotCheckpointReasonEnum,
     ConversationViewSnapshotReasonEnum,
+    DisplayLanguageCode,
     OpinionGroup,
     OpinionGroupCandidate,
     OpinionGroupCandidateAssessment,
@@ -78,6 +87,9 @@ from agora_analysis_worker_shared.generated_models import (
     OpinionGroupLineageDescriptionWork,
     OpinionGroupVariant,
     ParticipationMode,
+    PremiumFeature,
+    PremiumFeatureEntitlement,
+    ProjectOrganizationOwnership,
     RealtimeEventOutbox,
     VoteEnumSimple,
 )
@@ -311,6 +323,27 @@ def _translation_claim(
     )
 
 
+def _insert_manual_conversation_language_setting(
+    session: Session,
+    *,
+    language_code: str = "fr",
+) -> None:
+    session.add(
+        ConversationLanguageSetting(
+            id=301,
+            conversation_id=10,
+            mode=ConversationLanguageSettingMode.manual,
+            language_code=language_code,
+            detected_language_code=None,
+            detected_raw_language_code=None,
+            detection_confidence=None,
+            detected_from_corpus_hash=None,
+            created_at=NOW,
+            updated_at=NOW,
+        )
+    )
+
+
 def test_label_summary_partial_retry_stops_after_timeout() -> None:
     calls: list[list[str]] = []
 
@@ -376,7 +409,8 @@ def _insert_attempted_eager_translation_work(session: Session) -> None:
     }
     next_id = 10_000
     for locale in SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES:
-        existing_work = existing_work_by_locale.get(locale)
+        locale_code = DisplayLanguageCode(locale)
+        existing_work = existing_work_by_locale.get(locale_code)
         if existing_work is not None:
             existing_work.attempt_count = 1
             continue
@@ -385,7 +419,7 @@ def _insert_attempted_eager_translation_work(session: Session) -> None:
                 id=next_id,
                 description_id=501,
                 conversation_id=10,
-                locale=locale,
+                locale=locale_code,
                 attempt_count=1,
                 lease_owner=None,
                 lease_token=None,
@@ -503,6 +537,77 @@ def test_translation_work_demands_are_unique_per_description_locale() -> None:
         ),
         TranslationWorkDemand(
             description_id=30,
+            conversation_id=10,
+            locale="fr",
+        ),
+    ]
+
+
+def test_eager_translation_targets_merge_primary_and_entitled_additional() -> None:
+    candidates = [
+        EagerDescriptionCandidateRow(
+            conversation_id=10,
+            candidate_id=100,
+            language_code="fr",
+        )
+    ]
+    additional_locale_rows = [
+        EagerAdditionalTranslationLocaleRow(
+            conversation_id=10,
+            language_code="fr",
+            dynamic_translation_entitled=True,
+        ),
+        EagerAdditionalTranslationLocaleRow(
+            conversation_id=10,
+            language_code="es",
+            dynamic_translation_entitled=True,
+        ),
+        EagerAdditionalTranslationLocaleRow(
+            conversation_id=10,
+            language_code="ja",
+            dynamic_translation_entitled=False,
+        ),
+    ]
+
+    target_locales_by_candidate_id = eager_translation_target_locales_by_candidate(
+        candidates=candidates,
+        additional_locale_rows=additional_locale_rows,
+        supported_target_language_codes={"es", "fr", "ja"},
+    )
+    demands = translation_work_demands_for_eager_candidates(
+        candidates=candidates,
+        lineage_rows_by_candidate_id={
+            100: [
+                RequiredLineageDescriptionRow(
+                    lineage_id=1,
+                    candidate_id=100,
+                    system_description_id=1001,
+                ),
+                RequiredLineageDescriptionRow(
+                    lineage_id=2,
+                    candidate_id=100,
+                    system_description_id=1002,
+                ),
+            ]
+        },
+        target_locales_by_candidate_id=target_locales_by_candidate_id,
+        translated_description_ids_by_locale={"es": {1002}},
+    )
+
+    assert target_locales_by_candidate_id == {100: ("es", "fr")}
+    assert demands == [
+        TranslationWorkDemand(
+            description_id=1001,
+            conversation_id=10,
+            locale="es",
+        ),
+        TranslationWorkDemand(
+            description_id=1001,
+            conversation_id=10,
+            locale="fr",
+        ),
+        TranslationWorkDemand(
+            description_id=1002,
             conversation_id=10,
             locale="fr",
         ),
@@ -777,12 +882,16 @@ def test_non_processable_ai_cleanup_fallbacks_statuses_without_activation() -> N
     assert translation_work.lease_token is None
 
 
-def test_pending_translation_blocks_snapshot_activation() -> None:
+def test_first_pass_ignores_lazy_pending_translation_request() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
         conversation = session.execute(select(Conversation)).scalar_one()
         conversation.current_content_id = 40
+        translation_work = session.execute(
+            select(OpinionGroupDescriptionTranslationWork)
+        ).scalar_one()
+        translation_work.attempt_count = 0
         session.commit()
 
     result = finalize_first_pass_ai_description_work_batch(
@@ -795,6 +904,34 @@ def test_pending_translation_blocks_snapshot_activation() -> None:
     with Session(engine) as session:
         view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
 
+    assert result.activated_view_snapshot_ids == [20]
+    assert view_snapshot.activated_at is not None
+
+
+def test_pending_eager_translation_blocks_snapshot_activation() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        _insert_manual_conversation_language_setting(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        translation_work = session.execute(
+            select(OpinionGroupDescriptionTranslationWork)
+        ).scalar_one()
+        translation_work.attempt_count = 0
+        session.commit()
+
+    result = finalize_first_pass_ai_description_work_batch(
+        engine,
+        conversation_ids=[10],
+        conversation_view_snapshot_ids=[20],
+        translation_enabled=True,
+    )
+
+    with Session(engine) as session:
+        view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
+
+    assert result.fallback_status_count == 1
     assert result.activated_view_snapshot_ids == []
     assert view_snapshot.activated_at is None
 
@@ -1057,6 +1194,7 @@ def test_first_pass_claiming_allows_one_immediate_translation_retry() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
+        _insert_manual_conversation_language_setting(session)
         conversation = session.execute(select(Conversation)).scalar_one()
         conversation.current_content_id = 40
         translation_work = session.execute(
@@ -1082,10 +1220,84 @@ def test_first_pass_claiming_allows_one_immediate_translation_retry() -> None:
     assert claims[0].attempt_count == 2
 
 
+def test_first_pass_claiming_materializes_entitled_additional_translation() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        session.execute(
+            delete(OpinionGroupDescriptionTranslationWork).where(
+                OpinionGroupDescriptionTranslationWork.id == 202,
+            )
+        )
+        session.add_all(
+            [
+                OpinionGroupDescription(
+                    id=501,
+                    locale="en",
+                    label="Group one",
+                    summary="Summary one",
+                    created_at=NOW,
+                ),
+                ProjectOrganizationOwnership(
+                    id=301,
+                    project_id=1,
+                    organization_id=1001,
+                    created_at=NOW,
+                ),
+                PremiumFeatureEntitlement(
+                    id=302,
+                    organization_id=1001,
+                    feature=PremiumFeature.dynamic_translation,
+                    starts_at=NOW - timedelta(days=1),
+                    expires_at=None,
+                    revoked_at=None,
+                    admin_note=None,
+                    created_by_user_id=None,
+                    updated_by_user_id=None,
+                    created_at=NOW,
+                    updated_at=NOW,
+                ),
+                ConversationTranslationSetting(
+                    id=303,
+                    conversation_id=10,
+                    dynamic_translation_enabled=True,
+                    created_at=NOW,
+                    updated_at=NOW,
+                ),
+                ConversationTranslationTargetLanguage(
+                    id=304,
+                    translation_setting_id=303,
+                    language_code="es",
+                    created_at=NOW,
+                ),
+            ]
+        )
+        session.commit()
+
+    claims = claim_first_pass_ai_description_locale_work_items_batch(
+        engine,
+        worker_id="math-updater:test",
+        conversation_ids=[10],
+        conversation_view_snapshot_ids=[20],
+        lease_ttl_seconds=120,
+        limit=10,
+        ai_description_epoch=1,
+        translation_enabled=True,
+        claim_lineage_descriptions=False,
+    )
+
+    assert len(claims) == 1
+    assert isinstance(claims[0], ClaimedDescriptionTranslationWorkItem)
+    assert claims[0].locale == "es"
+
+
 def test_first_pass_finalization_blocks_pending_translation() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
+        _insert_manual_conversation_language_setting(session)
         translation_work = session.execute(
             select(OpinionGroupDescriptionTranslationWork)
         ).scalar_one()
@@ -1111,6 +1323,7 @@ def test_first_pass_finalization_blocks_pending_translation_after_generation_adv
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
+        _insert_manual_conversation_language_setting(session)
         conversation = session.execute(select(Conversation)).scalar_one()
         conversation.analysis_data_generation = 2
         translation_work = session.execute(
@@ -1299,7 +1512,7 @@ def test_activation_does_not_publish_content_count_snapshots() -> None:
     assert snapshots[1].activated_at is None
 
 
-def test_newer_content_snapshot_does_not_stale_first_pass_translation() -> None:
+def test_newer_content_snapshot_does_not_stale_requested_translation() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
@@ -1341,8 +1554,9 @@ def test_newer_content_snapshot_does_not_stale_first_pass_translation() -> None:
         claim_lineage_descriptions=False,
     )
 
-    assert len(claims) == len(SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES)
+    assert len(claims) == 1
     assert all(isinstance(claim, ClaimedDescriptionTranslationWorkItem) for claim in claims)
+    assert claims[0].locale == "fr"
 
 
 def test_translation_fallback_allows_first_pass_activation() -> None:

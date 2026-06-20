@@ -33,7 +33,7 @@ Environment variables use the `IMPORT_WORKER_` prefix.
 
 The worker uses generated Python artifacts:
 
-- `generated_models.py` from `services/shared-backend/src/schema.ts`.
+- `generated_models.py` from `services/api/src/shared-backend/schema.ts`.
 - `generated_shared_types.py` from `services/shared/src` constants.
 - `generated_import_contracts.py` from API Zod import queue contracts.
 

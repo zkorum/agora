@@ -31,6 +31,7 @@ import { isNetworkOffline } from "./composables/useNetworkStatus";
 import { useRealtimeSSE } from "./composables/useRealtimeSSE";
 import { useZupassVerification } from "./composables/zupass/useZupassVerification";
 import PersistentLayout from "./layouts/PersistentLayout.vue";
+import { useLanguageStore } from "./stores/language";
 import { useBackendAuthApi } from "./utils/api/auth";
 import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
 import { getSingleRouteParam } from "./utils/router/params";
@@ -41,6 +42,7 @@ const { t } = useComponentI18n<AppTranslations>(appTranslations);
 const keepAliveRoutes = ["HomePage", "NotificationPage", "UserProfilePage"];
 
 const authenticationStore = useBackendAuthApi();
+const languageStore = useLanguageStore();
 
 useHtmlNodeCssPatch();
 
@@ -61,11 +63,23 @@ const realtimeConversationSlugId = computed(() => {
 
   return getSingleRouteParam(route.params.postSlugId) || undefined;
 });
+const realtimeTopics = computed(() => {
+  if (realtimeConversationSlugId.value === undefined) {
+    return [];
+  }
+
+  return [
+    `translation:conversation:${realtimeConversationSlugId.value}:target:${languageStore.displayLanguage}`,
+  ];
+});
 
 // Initialize SSE for real-time events after auth initialization.
 // Authenticated users get personal notifications + global events; anonymous
 // users get the public stream and conversation subscriptions when applicable.
-useRealtimeSSE({ subscribedConversationSlugId: realtimeConversationSlugId });
+useRealtimeSSE({
+  subscribedConversationSlugId: realtimeConversationSlugId,
+  subscribedTopics: realtimeTopics,
+});
 const nonDrawerRoutePatterns = [
   "/onboarding/",
   "/verify/",

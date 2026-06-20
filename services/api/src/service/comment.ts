@@ -83,7 +83,7 @@ import type {
 } from "@/utils/dataStructure.js";
 import { nowZeroMs } from "@/shared/util.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
-import { validateRichTextInput } from "@/shared/shared.js";
+import { htmlToCountedText, validateRichTextInput } from "@/shared/shared.js";
 import {
     getOpinionGroupAnalysisSelection,
     getSelectedOpinionGroupCandidate,
@@ -94,6 +94,12 @@ import {
     type SupportedDisplayLanguageCodes,
     ZodSupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
+import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
+import {
+    getContentLanguageHintsForConversation,
+    resolveContentLanguageMetadata,
+} from "./contentLanguageMetadata.js";
+import type { LanguageDetectionHintInput } from "./languageDetection.js";
 
 interface PrimaryReplicaDb extends PostgresJsDatabase {
     $primary: PostgresJsDatabase;
@@ -406,6 +412,7 @@ export async function fetchOpinionsByPostId({
             createdAt: opinionTable.createdAt,
             updatedAt: opinionTable.updatedAt,
             comment: opinionContentTable.content,
+            sourceLanguageCode: opinionContentTable.sourceLanguageCode,
             authorId: opinionTable.authorId,
             numAgrees: countAnalysisSnapshotOpinionTable.numAgrees,
             numDisagrees: countAnalysisSnapshotOpinionTable.numDisagrees,
@@ -488,6 +495,7 @@ export async function fetchOpinionsByPostId({
 
         const item: OpinionItem = {
             opinion: opinionResponse.comment,
+            sourceLanguageCode: opinionResponse.sourceLanguageCode,
             opinionSlugId: opinionResponse.commentSlugId,
             createdAt: opinionResponse.createdAt,
             numParticipants: latestCountSnapshot.participantCount,
@@ -558,13 +566,17 @@ export async function fetchCommentStatsByConversationSlugId({
                 conversationViewSnapshotTable.totalParticipantCount,
             moderatedOpinionCount:
                 conversationViewSnapshotTable.moderatedOpinionCount,
-            hiddenOpinionCount: conversationViewSnapshotTable.hiddenOpinionCount,
+            hiddenOpinionCount:
+                conversationViewSnapshotTable.hiddenOpinionCount,
             isClosed: conversationViewSnapshotTable.isClosed,
         })
         .from(conversationViewSnapshotTable)
         .innerJoin(
             conversationTable,
-            eq(conversationTable.id, conversationViewSnapshotTable.conversationId),
+            eq(
+                conversationTable.id,
+                conversationViewSnapshotTable.conversationId,
+            ),
         )
         .where(eq(conversationTable.slugId, conversationSlugId))
         .orderBy(
@@ -603,6 +615,7 @@ export async function fetchOpinionsByOpinionSlugIdList({
                 createdAt: opinionTable.createdAt,
                 updatedAt: opinionTable.updatedAt,
                 comment: opinionContentTable.content,
+                sourceLanguageCode: opinionContentTable.sourceLanguageCode,
                 username: userTable.username,
                 isSeed: opinionTable.isSeed,
                 moderationAction: opinionModerationTable.moderationAction,
@@ -651,6 +664,7 @@ export async function fetchOpinionsByOpinionSlugIdList({
 
             opinionItemList.push({
                 opinion: commentResponse.comment,
+                sourceLanguageCode: commentResponse.sourceLanguageCode,
                 opinionSlugId: commentResponse.commentSlugId,
                 createdAt: commentResponse.createdAt,
                 updatedAt: commentResponse.updatedAt,
@@ -698,6 +712,7 @@ interface SnapshotAnalysisOpinionRow {
     createdAt: Date;
     updatedAt: Date;
     opinion: string;
+    sourceLanguageCode: string | null;
     authorId: string;
     username: string;
     isSeed: boolean;
@@ -817,6 +832,7 @@ function getSnapshotAnalysisOpinionSelectFields() {
         createdAt: opinionTable.createdAt,
         updatedAt: opinionTable.updatedAt,
         opinion: opinionContentTable.content,
+        sourceLanguageCode: opinionContentTable.sourceLanguageCode,
         authorId: opinionTable.authorId,
         username: userTable.username,
         isSeed: opinionTable.isSeed,
@@ -841,7 +857,9 @@ function getAnalysisOpinionModerationFilter({
 }: {
     includeModeratedOpinions: boolean;
 }): SQL | undefined {
-    return includeModeratedOpinions ? undefined : isNull(opinionModerationTable.id);
+    return includeModeratedOpinions
+        ? undefined
+        : isNull(opinionModerationTable.id);
 }
 
 function getAnalysisOpinionMuteFilter({
@@ -959,7 +977,9 @@ async function fetchAnalysisOpinionRowsByIds({
                     opinionGroupCandidateOpinionMetricsTable.analysisSnapshotOpinionId,
                     uniqueAnalysisSnapshotOpinionIds,
                 ),
-                getAnalysisOpinionModerationFilter({ includeModeratedOpinions }),
+                getAnalysisOpinionModerationFilter({
+                    includeModeratedOpinions,
+                }),
                 getAnalysisOpinionMuteFilter({ personalizationUserId }),
                 eq(userTable.isDeleted, false),
             ),
@@ -1025,12 +1045,18 @@ async function fetchAnalysisOpinionRowsForList({
                     candidateId,
                 ),
                 eq(analysisSnapshotOpinionTable.analysisSnapshotId, snapshotId),
-                getAnalysisOpinionModerationFilter({ includeModeratedOpinions }),
+                getAnalysisOpinionModerationFilter({
+                    includeModeratedOpinions,
+                }),
                 getAnalysisOpinionMuteFilter({ personalizationUserId }),
                 eq(userTable.isDeleted, false),
             ),
         )
-        .orderBy(desc(scoreSql), desc(opinionTable.createdAt), desc(opinionTable.id))
+        .orderBy(
+            desc(scoreSql),
+            desc(opinionTable.createdAt),
+            desc(opinionTable.id),
+        )
         .limit(ANALYSIS_OPINION_LIMIT);
 }
 
@@ -1182,6 +1208,7 @@ async function buildAnalysisOpinionsByIdFromRows({
                     ? "[moderated]"
                     : row.opinion,
             opinionSlugId: row.opinionSlugId,
+            sourceLanguageCode: row.sourceLanguageCode,
             createdAt: row.createdAt,
             numParticipants: conversationParticipantCount,
             numDisagrees: row.numDisagrees,
@@ -1239,7 +1266,9 @@ async function fetchRepresentativeOpinionRows({
                     opinionGroupOpinionStatsTable.groupId,
                     groups.map((group) => group.id),
                 ),
-                isNotNull(opinionGroupOpinionStatsTable.representativeAgreementType),
+                isNotNull(
+                    opinionGroupOpinionStatsTable.representativeAgreementType,
+                ),
                 isNotNull(
                     opinionGroupOpinionStatsTable.representativeProbabilityAgreement,
                 ),
@@ -1247,7 +1276,9 @@ async function fetchRepresentativeOpinionRows({
         )
         .orderBy(
             asc(opinionGroupTable.key),
-            desc(opinionGroupOpinionStatsTable.representativeProbabilityAgreement),
+            desc(
+                opinionGroupOpinionStatsTable.representativeProbabilityAgreement,
+            ),
         );
 
     const representativeRows: RepresentativeOpinionRow[] = [];
@@ -1259,7 +1290,8 @@ async function fetchRepresentativeOpinionRows({
             groupId: row.groupId,
             analysisSnapshotOpinionId: row.analysisSnapshotOpinionId,
             opinionId: row.opinionId,
-            representativeProbabilityAgreement: row.representativeProbabilityAgreement,
+            representativeProbabilityAgreement:
+                row.representativeProbabilityAgreement,
         });
     }
 
@@ -1336,7 +1368,8 @@ async function fetchSelectedOpinionGroupCandidateById({
             candidateId: opinionGroupCandidateTable.id,
             groupCount: opinionGroupVariantTable.groupCount,
             aiLabelingEnabled: conversationTable.aiLabelingEnabled,
-            checkpointReasonId: conversationViewSnapshotCheckpointReasonTable.id,
+            checkpointReasonId:
+                conversationViewSnapshotCheckpointReasonTable.id,
         })
         .from(conversationTable)
         .innerJoin(
@@ -1434,7 +1467,9 @@ async function fetchSelectedOpinionGroupCandidateById({
     };
 }
 
-function createAnalysisFrameKey(candidate: AnalysisFrameKeySource): AnalysisFrameKey {
+function createAnalysisFrameKey(
+    candidate: AnalysisFrameKeySource,
+): AnalysisFrameKey {
     return {
         conversationViewSnapshotId: candidate.viewSnapshotId,
         analysisSnapshotId: candidate.snapshotId,
@@ -1562,7 +1597,8 @@ async function ensureAiDescriptionRequestForAnalysisFrameManifest({
     await ensureAiDescriptionLocaleRequestForConversationViewSnapshot({
         db,
         conversationSlugId,
-        conversationViewSnapshotId: manifest.frameKey.conversationViewSnapshotId,
+        conversationViewSnapshotId:
+            manifest.frameKey.conversationViewSnapshotId,
         candidateId: manifest.frameKey.candidateId,
         requestedLocale,
     });
@@ -1586,14 +1622,16 @@ export async function fetchAnalysisFrameManifestByConversationSlugId({
     freshnessOptions: AnalysisFreshnessOptions | null;
 }): Promise<AnalysisFrameManifest> {
     const requestedLocale = getSupportedDisplayLanguage(displayLanguage);
-    const manifest = await fetchAnalysisFrameManifestByConversationSlugIdFromDb({
-        db,
-        conversationSlugId,
-        personalizationUserId,
-        displayLanguage,
-        analysisView,
-        checkpointViewSnapshotId,
-    });
+    const manifest = await fetchAnalysisFrameManifestByConversationSlugIdFromDb(
+        {
+            db,
+            conversationSlugId,
+            personalizationUserId,
+            displayLanguage,
+            analysisView,
+            checkpointViewSnapshotId,
+        },
+    );
 
     await ensureAiDescriptionRequestForAnalysisFrameManifest({
         db: getPrimaryDb(db),
@@ -1613,14 +1651,15 @@ export async function fetchAnalysisFrameManifestByConversationSlugId({
         `[Analysis] Falling back to primary for frame manifest conversationSlugId=${conversationSlugId} ` +
             `minimumSnapshotId=${String(freshnessOptions?.minimumConversationViewSnapshotId)}`,
     );
-    const primaryManifest = await fetchAnalysisFrameManifestByConversationSlugIdFromDb({
-        db: getPrimaryDb(db),
-        conversationSlugId,
-        personalizationUserId,
-        displayLanguage,
-        analysisView,
-        checkpointViewSnapshotId,
-    });
+    const primaryManifest =
+        await fetchAnalysisFrameManifestByConversationSlugIdFromDb({
+            db: getPrimaryDb(db),
+            conversationSlugId,
+            personalizationUserId,
+            displayLanguage,
+            analysisView,
+            checkpointViewSnapshotId,
+        });
     await ensureAiDescriptionRequestForAnalysisFrameManifest({
         db: getPrimaryDb(db),
         conversationSlugId,
@@ -1801,7 +1840,10 @@ async function fetchAnalysisFrameGroupsByFrameKeyFromDb({
         personalizationUserId,
     });
     const includeModeratedOpinions = selectedCandidate.isCheckpointFrame;
-    const representativeRows = await fetchRepresentativeOpinionRows({ db, groups });
+    const representativeRows = await fetchRepresentativeOpinionRows({
+        db,
+        groups,
+    });
     const opinionRows = await fetchAnalysisOpinionRowsByIds({
         db,
         candidateId: selectedCandidate.candidateId,
@@ -1926,7 +1968,8 @@ async function fetchTranslatedGroupLabels({
 
     const translationRows = await db
         .select({
-            descriptionId: opinionGroupDescriptionTranslationTable.descriptionId,
+            descriptionId:
+                opinionGroupDescriptionTranslationTable.descriptionId,
             label: opinionGroupDescriptionTranslationTable.label,
             summary: opinionGroupDescriptionTranslationTable.summary,
         })
@@ -1937,7 +1980,10 @@ async function fetchTranslatedGroupLabels({
                     opinionGroupDescriptionTranslationTable.descriptionId,
                     descriptionIds,
                 ),
-                eq(opinionGroupDescriptionTranslationTable.locale, requestedLocale),
+                eq(
+                    opinionGroupDescriptionTranslationTable.locale,
+                    requestedLocale,
+                ),
             ),
         );
     return buildCompleteGroupLabels({
@@ -2259,11 +2305,14 @@ interface PostNewOpinionProps {
     db: PostgresJsDatabase;
     tx?: PostgresJsDatabase;
     commentBody: string;
+    opinionPlainText: string;
     conversationSlugId: string;
     didWrite: string;
     userAgent: string;
     now: Date;
     isSeed: boolean;
+    googleCloudCredentials?: GoogleCloudCredentials;
+    languageHints?: readonly LanguageDetectionHintInput[];
     voteBuffer?: VoteBuffer;
     realtimeSSEManager?: RealtimeSSEManager;
     conversationMetadata?: {
@@ -2282,11 +2331,14 @@ export async function postNewOpinion({
     db,
     tx,
     commentBody,
+    opinionPlainText,
     conversationSlugId,
     didWrite,
     userAgent,
     now,
     isSeed,
+    googleCloudCredentials,
+    languageHints,
     voteBuffer,
     realtimeSSEManager,
     conversationMetadata,
@@ -2317,7 +2369,16 @@ export async function postNewOpinion({
     }
 
     commentBody = processUserGeneratedHtml(commentBody, true, "input");
-
+    const contentPlainText = htmlToCountedText(commentBody);
+    if (contentPlainText !== opinionPlainText) {
+        log.info(
+            {
+                frontendPlainTextChars: opinionPlainText.length,
+                serverPlainTextChars: contentPlainText.length,
+            },
+            "[OpinionPlainText] Frontend/backend plain text mismatch",
+        );
+    }
     const participationContext:
         | ParticipationContext
         | Extract<CreateCommentResponse, { success: false }> =
@@ -2355,6 +2416,18 @@ export async function postNewOpinion({
         return participationContext;
     }
 
+    const resolvedLanguageHints =
+        languageHints ??
+        (await getContentLanguageHintsForConversation({
+            db,
+            conversationId: participationContext.conversationId,
+        }));
+    const languageMetadata = await resolveContentLanguageMetadata({
+        text: contentPlainText,
+        googleCloudCredentials,
+        languageHints: resolvedLanguageHints,
+    });
+
     const opinionSlugId = generateRandomSlugId();
 
     const persistNewOpinion = async (
@@ -2388,6 +2461,10 @@ export async function postNewOpinion({
                 conversationContentId:
                     participationContext.conversationContentId,
                 content: commentBody,
+                contentPlainText,
+                sourceLanguageCode: languageMetadata.sourceLanguageCode,
+                sourceLanguageConfidence:
+                    languageMetadata.sourceLanguageConfidence,
             })
             .returning({ commentContentTableId: opinionContentTable.id });
 
@@ -2428,6 +2505,7 @@ export async function postNewOpinion({
 
         const opinionItem: OpinionItem = {
             opinion: commentBody,
+            sourceLanguageCode: languageMetadata.sourceLanguageCode,
             opinionSlugId,
             createdAt: insertCommentResponse[0].createdAt,
             updatedAt: insertCommentResponse[0].updatedAt,
@@ -2737,10 +2815,12 @@ export async function bulkInsertOpinionsFromExternalPolisConvo({
                         true,
                         "output",
                     );
+                    const contentPlainText = htmlToCountedText(commentBody);
                     return {
                         opinionId: opinionId,
                         conversationContentId: conversationContentId,
                         content: commentBody,
+                        contentPlainText,
                     };
                 } catch (error) {
                     if (error instanceof Error) {

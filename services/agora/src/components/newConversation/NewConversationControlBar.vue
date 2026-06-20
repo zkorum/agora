@@ -1,6 +1,7 @@
 <template>
   <div class="control-bar">
     <DynamicProfileImage
+      v-if="showPostAsImage"
       :user-identity="postAsDisplayName"
       :size="35"
       :organization-image-url="selectedOrganizationImageUrl"
@@ -61,6 +62,15 @@
     :can-use-analysis-variants-preference="canUseAnalysisVariantsPreference"
   />
 
+  <ConversationLanguageSettingDialog
+    v-model:show-dialog="showLanguageSettingDialog"
+    v-model:language-setting="languageSetting"
+    v-model:multilingual-setting="multilingualSetting"
+    :can-edit-primary-language="props.canEditConversationContent"
+    :can-use-dynamic-translation="canUseDynamicTranslation"
+    :detected-language-code="props.detectedLanguageCode"
+  />
+
   <LoginRequirementDialog
     v-model:show-dialog="showLoginRequirementDialog"
     v-model:participation-mode="participationMode"
@@ -81,6 +91,7 @@ import DynamicProfileImage from "src/components/account/DynamicProfileImage.vue"
 import ConversationControlButton from "src/components/newConversation/ConversationControlButton.vue";
 import AiLabelingOptionsDialog from "src/components/newConversation/dialog/AiLabelingOptionsDialog.vue";
 import AnalysisPreferenceDialog from "src/components/newConversation/dialog/AnalysisPreferenceDialog.vue";
+import ConversationLanguageSettingDialog from "src/components/newConversation/dialog/ConversationLanguageSettingDialog.vue";
 import EventTicketRequirementDialog from "src/components/newConversation/dialog/EventTicketRequirementDialog.vue";
 import LoginRequirementDialog from "src/components/newConversation/dialog/LoginRequirementDialog.vue";
 import ModeChangeConfirmationDialog from "src/components/newConversation/dialog/ModeChangeConfirmationDialog.vue";
@@ -92,10 +103,19 @@ import {
   type PostAsSettings,
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  type DisplayLanguageMetadata,
+  type LanguageMetadata,
+  type SupportedDisplayLanguageCodes,
+  SupportedSpokenLanguageMetadataList,
+} from "src/shared/languages";
 import type {
+  ConversationLanguageSettingInput,
+  ConversationMultilingualSetting,
   ConversationType,
   EventSlug,
   ExternalSourceConfig,
+  OrganizationProperties,
   ParticipationMode,
   PreferredOpinionGroupCount,
 } from "src/shared/types/zod";
@@ -136,6 +156,9 @@ interface Props {
   canChangeEventTicket?: boolean;
   canRemoveEventTicket?: boolean;
   canUseAnalysisVariantsPreference?: boolean;
+  canUseDynamicTranslation?: boolean;
+  canEditConversationContent?: boolean;
+  detectedLanguageCode?: SupportedDisplayLanguageCodes | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -143,6 +166,9 @@ const props = withDefaults(defineProps<Props>(), {
   canChangeEventTicket: true,
   canRemoveEventTicket: true,
   canUseAnalysisVariantsPreference: false,
+  canUseDynamicTranslation: false,
+  canEditConversationContent: true,
+  detectedLanguageCode: null,
 });
 
 const { t } = useComponentI18n<NewConversationControlBarTranslations>(
@@ -167,11 +193,11 @@ const conversationType = defineModel<ConversationType>("conversationType", {
 });
 const importSettings = defineModel<ConversationImportSettings>(
   "importSettings",
-  { required: true },
+  { required: true }
 );
 const externalSourceConfig = defineModel<ExternalSourceConfig | null>(
   "externalSourceConfig",
-  { required: true },
+  { required: true }
 );
 const aiLabelingEnabled = defineModel<boolean>("aiLabelingEnabled", {
   required: true,
@@ -180,27 +206,47 @@ const preferredOpinionGroupCount = defineModel<PreferredOpinionGroupCount>(
   "preferredOpinionGroupCount",
   { required: true }
 );
+const languageSetting = defineModel<ConversationLanguageSettingInput>(
+  "languageSetting",
+  { required: true }
+);
+const multilingualSetting = defineModel<ConversationMultilingualSetting>(
+  "multilingualSetting",
+  { required: true }
+);
 
 // For checking if there's content that would be cleared (parent needs to provide these)
 const title = defineModel<string>("title", { required: true });
 const content = defineModel<string>("content", { required: true });
 
+function getOrganizationIdentifier(organization: OrganizationProperties): string {
+  return organization.slug ?? organization.name;
+}
+
+const selectedOrganization = computed(() => {
+  if (!postAs.value.postAsOrganization) {
+    return undefined;
+  }
+
+  return profileData.value.organizationList.find(
+    (org) => getOrganizationIdentifier(org) === postAs.value.organizationName
+  );
+});
+
 const postAsDisplayName = computed(() => {
-  if (postAs.value.postAsOrganization) {
-    return postAs.value.organizationName;
-  } else {
+  if (!postAs.value.postAsOrganization) {
     return profileData.value.userName;
   }
+
+  return selectedOrganization.value?.name ?? postAs.value.organizationName;
 });
 
 const selectedOrganizationImageUrl = computed(() => {
-  if (postAs.value.postAsOrganization) {
-    const selectedOrg = profileData.value.organizationList.find(
-      (org) => org.name === postAs.value.organizationName
-    );
-    return selectedOrg?.imageUrl || "";
-  }
-  return "";
+  return selectedOrganization.value?.imageUrl ?? "";
+});
+
+const showPostAsImage = computed(() => {
+  return !postAs.value.postAsOrganization || selectedOrganizationImageUrl.value !== "";
 });
 
 const showPostAsDialogVisible = ref(false);
@@ -208,6 +254,7 @@ const showPostTypeDialog = ref(false);
 const showVisibilityDialog = ref(false);
 const showAiLabelingDialog = ref(false);
 const showAnalysisPreferenceDialog = ref(false);
+const showLanguageSettingDialog = ref(false);
 const showLoginRequirementDialog = ref(false);
 const showEventTicketRequirementDialog = ref(false);
 
@@ -316,6 +363,10 @@ const toggleAnalysisPreference = (): void => {
   showAnalysisPreferenceDialog.value = true;
 };
 
+const toggleLanguageSetting = (): void => {
+  showLanguageSettingDialog.value = true;
+};
+
 const toggleLoginRequirement = (): void => {
   showLoginRequirementDialog.value = true;
 };
@@ -365,6 +416,7 @@ const isMaxDiffGitHubAllowed = computed(() => {
 const { checkPremiumFeatureAccess } = usePremiumFeatureApi();
 const createModeCanUseAnalysisVariantsPreference = ref(false);
 const createModeCanAddEventTicket = ref<boolean | null>(null);
+const createModeCanUseDynamicTranslation = ref(false);
 let createModePremiumAccessRequestId = 0;
 
 const canUseAnalysisVariantsPreference = computed(() => {
@@ -377,6 +429,12 @@ const canAddEventTicket = computed(() => {
   return props.isEditMode
     ? props.canAddEventTicket
     : createModeCanAddEventTicket.value === true;
+});
+
+const canUseDynamicTranslation = computed(() => {
+  return props.isEditMode
+    ? props.canUseDynamicTranslation
+    : createModeCanUseDynamicTranslation.value;
 });
 
 const canChangeEventTicket = computed(() => {
@@ -407,6 +465,7 @@ watch(
     if (!isLoggedIn.value) {
       createModeCanAddEventTicket.value = false;
       createModeCanUseAnalysisVariantsPreference.value = false;
+      createModeCanUseDynamicTranslation.value = false;
       return;
     }
 
@@ -416,13 +475,21 @@ watch(
       const postAsOrganization = postAs.value.postAsOrganization
         ? postAs.value.organizationName
         : undefined;
-      const [eventTicketAccess, analysisVariantsAccess] = await Promise.all([
+      const [
+        eventTicketAccess,
+        analysisVariantsAccess,
+        dynamicTranslationAccess,
+      ] = await Promise.all([
         checkPremiumFeatureAccess({
           feature: "event_ticket",
           postAsOrganization,
         }),
         checkPremiumFeatureAccess({
           feature: "analysis_variants",
+          postAsOrganization,
+        }),
+        checkPremiumFeatureAccess({
+          feature: "dynamic_translation",
           postAsOrganization,
         }),
       ]);
@@ -434,6 +501,8 @@ watch(
       createModeCanAddEventTicket.value = eventTicketAccess.hasAccess;
       createModeCanUseAnalysisVariantsPreference.value =
         analysisVariantsAccess.hasAccess;
+      createModeCanUseDynamicTranslation.value =
+        dynamicTranslationAccess.hasAccess;
     } catch {
       if (requestId !== createModePremiumAccessRequestId) {
         return;
@@ -441,6 +510,7 @@ watch(
 
       createModeCanAddEventTicket.value = false;
       createModeCanUseAnalysisVariantsPreference.value = false;
+      createModeCanUseDynamicTranslation.value = false;
     }
   },
   { immediate: true }
@@ -462,6 +532,17 @@ watch(canUseAnalysisVariantsPreference, (canUsePreference) => {
   if (!canUsePreference) {
     preferredOpinionGroupCount.value = null;
   }
+});
+
+watch(canUseDynamicTranslation, (canUseTranslation) => {
+  if (canUseTranslation) {
+    return;
+  }
+
+  multilingualSetting.value = {
+    dynamicTranslationEnabled: false,
+    additionalLanguageCodes: [],
+  };
 });
 
 const canOpenEventTicketRequirementDialog = computed(() => {
@@ -491,10 +572,50 @@ const getEventTicketLabel = (): string => {
   }
 };
 
+function isDisplayLanguageMetadata(
+  language: LanguageMetadata
+): language is DisplayLanguageMetadata {
+  return language.displaySupported;
+}
+
+function getDisplayLanguageName(
+  languageCode: SupportedDisplayLanguageCodes
+): string {
+  return (
+    SupportedSpokenLanguageMetadataList.filter(isDisplayLanguageMetadata).find(
+      (language) => language.code === languageCode
+    )?.englishName ?? languageCode
+  );
+}
+
 const analysisPreferenceLabel = computed(() => {
   return preferredOpinionGroupCount.value === null
     ? t("recommendedDefault")
     : t("groupsLabel", { count: String(preferredOpinionGroupCount.value) });
+});
+
+const languageSettingLabel = computed(() => {
+  const primaryLanguage =
+    languageSetting.value.mode === "auto"
+      ? t("languagePrimaryAuto")
+      : getDisplayLanguageName(languageSetting.value.languageCode);
+  const additionalLanguageCount =
+    multilingualSetting.value.additionalLanguageCodes.length;
+  const additionalLanguageSuffix =
+    additionalLanguageCount === 0
+      ? ""
+      : ` +${additionalLanguageCount.toString()}`;
+  const translateSuffix =
+    canUseDynamicTranslation.value &&
+    multilingualSetting.value.dynamicTranslationEnabled
+      ? t("languageTranslateSuffix")
+      : "";
+
+  return t("languagesLabel", {
+    primaryLanguage,
+    additionalLanguageSuffix,
+    translateSuffix,
+  });
 });
 
 const controlButtons = computed((): ControlButton[] => [
@@ -551,6 +672,16 @@ const controlButtons = computed((): ControlButton[] => [
       : "pi pi-chevron-down",
     isVisible: conversationType.value === "polis",
     clickHandler: toggleAnalysisPreference,
+    clickable: true,
+  },
+  {
+    id: "language-setting",
+    label: languageSettingLabel.value,
+    icon: showLanguageSettingDialog.value
+      ? "pi pi-chevron-up"
+      : "pi pi-chevron-down",
+    isVisible: props.isEditMode || importSettings.value.importType === null,
+    clickHandler: toggleLanguageSetting,
     clickable: true,
   },
   {

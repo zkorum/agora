@@ -1,4 +1,4 @@
-# WARNING: GENERATED FROM shared-backend/src/schema.ts
+# WARNING: GENERATED FROM services/api/src/shared-backend/schema.ts
 # DO NOT MODIFY -- Re-generate with: make sync
 # Service: scoring-worker
 
@@ -76,16 +76,26 @@ class Conversation(Base):
     current_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_indexed: Mapped[bool] = mapped_column(Boolean, server_default="true")
     participation_mode: Mapped[ParticipationMode] = mapped_column(
-        SaEnum(ParticipationMode, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            ParticipationMode,
+            name="participation_mode",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     conversation_type: Mapped[ConversationType] = mapped_column(
-        SaEnum(ConversationType, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            ConversationType,
+            name="conversation_type",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     is_importing: Mapped[bool] = mapped_column(Boolean, server_default="false")
     is_closed: Mapped[bool] = mapped_column(Boolean, server_default="false")
     is_edited: Mapped[bool] = mapped_column(Boolean, server_default="false")
     requires_event_ticket: Mapped[EventSlug | None] = mapped_column(
-        SaEnum(EventSlug, values_callable=_enum_values, native_enum=False),
+        SaEnum(EventSlug, name="event_slug", values_callable=_enum_values, native_enum=True),
         nullable=True,
     )
     ai_labeling_enabled: Mapped[bool] = mapped_column(Boolean, server_default="true")
@@ -97,7 +107,7 @@ class Conversation(Base):
     import_created_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     import_author: Mapped[str | None] = mapped_column(Text, nullable=True)
     import_method: Mapped[ImportMethod | None] = mapped_column(
-        SaEnum(ImportMethod, values_callable=_enum_values, native_enum=False),
+        SaEnum(ImportMethod, name="import_method", values_callable=_enum_values, native_enum=True),
         nullable=True,
     )
     external_source_config: Mapped[Any | None] = mapped_column(
@@ -131,7 +141,12 @@ class MaxdiffItem(Base):
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_seed: Mapped[bool] = mapped_column(Boolean, server_default="false")
     lifecycle_status: Mapped[MaxdiffLifecycleStatus] = mapped_column(
-        SaEnum(MaxdiffLifecycleStatus, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            MaxdiffLifecycleStatus,
+            name="maxdiff_lifecycle_status",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     snapshot_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     snapshot_rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -180,7 +195,12 @@ class Project(Base):
     slug: Mapped[str] = mapped_column(String(65))
     display_name: Mapped[str] = mapped_column(String(65))
     directory_visibility: Mapped[DirectoryVisibility] = mapped_column(
-        SaEnum(DirectoryVisibility, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            DirectoryVisibility,
+            name="directory_visibility",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     auto_provisioned_for_organization_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
@@ -301,10 +321,20 @@ class SurveyQuestion(Base):
     survey_config_id: Mapped[int] = mapped_column(Integer)
     conversation_id: Mapped[int] = mapped_column(Integer)
     question_type: Mapped[SurveyQuestionType] = mapped_column(
-        SaEnum(SurveyQuestionType, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            SurveyQuestionType,
+            name="survey_question_type",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     choice_display: Mapped[SurveyChoiceDisplay] = mapped_column(
-        SaEnum(SurveyChoiceDisplay, values_callable=_enum_values, native_enum=False),
+        SaEnum(
+            SurveyChoiceDisplay,
+            name="survey_choice_display",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
     )
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     current_semantic_version: Mapped[int] = mapped_column(Integer, server_default="1")
@@ -347,4 +377,3 @@ class User(Base):
     total_opinion_count: Mapped[int] = mapped_column(Integer, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
-

@@ -1,6 +1,93 @@
 /** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 import { z } from "zod";
 
+// Normalized source-language codes we intentionally recognize from detectors.
+// Raw provider outputs may be broader and should stay as strings at boundaries.
+export const ZodNormalizedLanguageCodes = z.enum([
+    "en",
+    "es",
+    "fr",
+    "en-GB",
+    "ar",
+    "bn",
+    "eu",
+    "bg",
+    "ca",
+    "hr",
+    "cs",
+    "da",
+    "nl",
+    "fil",
+    "fi",
+    "gl",
+    "de",
+    "el",
+    "gu",
+    "he",
+    "hi",
+    "hu",
+    "id",
+    "ga",
+    "it",
+    "ja",
+    "kn",
+    "ko",
+    "ky",
+    "ms",
+    "mr",
+    "no",
+    "fa",
+    "pl",
+    "pt",
+    "ro",
+    "ru",
+    "sr",
+    "sk",
+    "sv",
+    "ta",
+    "th",
+    "tr",
+    "uk",
+    "ur",
+    "vi",
+    "zh-Hans",
+    "zh-Hant",
+    "af",
+    "sq",
+    "hy",
+    "az",
+    "be",
+    "nb",
+    "bs",
+    "eo",
+    "et",
+    "lg",
+    "ka",
+    "is",
+    "kk",
+    "la",
+    "lv",
+    "lt",
+    "mk",
+    "mi",
+    "mn",
+    "nn",
+    "pa",
+    "sn",
+    "sl",
+    "so",
+    "st",
+    "sw",
+    "te",
+    "ts",
+    "tn",
+    "cy",
+    "xh",
+    "yo",
+    "zu",
+]);
+export type NormalizedLanguageCodes = z.infer<typeof ZodNormalizedLanguageCodes>;
+
 // Master enum containing all language codes used in the metadata list
 export const ZodAllLanguageCodes = z.enum([
     "en",
@@ -51,7 +138,6 @@ export const ZodAllLanguageCodes = z.enum([
     "vi",
     "zh-Hans",
     "zh-Hant",
-    "ja",
 ]);
 export type AllLanguageCodes = z.infer<typeof ZodAllLanguageCodes>;
 
@@ -410,6 +496,78 @@ export function parseDisplayLanguage(
 
     // Else default to English
     return "en";
+}
+
+export function parseSupportedDisplayLanguageOrUndefined(
+    code: string,
+): SupportedDisplayLanguageCodes | undefined {
+    const trimmedCode = code.trim();
+    if (trimmedCode.length === 0) return undefined;
+
+    const exactMatch = ZodSupportedDisplayLanguageCodes.safeParse(trimmedCode);
+    if (exactMatch.success) return exactMatch.data;
+
+    let normalizedCode = trimmedCode;
+    try {
+        normalizedCode = Intl.getCanonicalLocales(trimmedCode)[0] ?? trimmedCode;
+    } catch {
+        normalizedCode = trimmedCode;
+    }
+
+    const normalizedExactMatch =
+        ZodSupportedDisplayLanguageCodes.safeParse(normalizedCode);
+    if (normalizedExactMatch.success) return normalizedExactMatch.data;
+
+    if (
+        normalizedCode === "zh-HK" ||
+        normalizedCode === "zh-TW" ||
+        normalizedCode === "zh-MO"
+    ) {
+        return "zh-Hant";
+    }
+    if (normalizedCode.startsWith("zh")) return "zh-Hans";
+
+    const primary = normalizedCode.split("-")[0];
+    const primaryMatch = ZodSupportedDisplayLanguageCodes.safeParse(primary);
+    if (primaryMatch.success) return primaryMatch.data;
+
+    return undefined;
+}
+
+export function parseNormalizedLanguageOrUndefined(
+    code: string,
+): NormalizedLanguageCodes | undefined {
+    const trimmedCode = code.trim();
+    if (trimmedCode.length === 0) return undefined;
+
+    const exactMatch = ZodNormalizedLanguageCodes.safeParse(trimmedCode);
+    if (exactMatch.success) return exactMatch.data;
+
+    let normalizedCode = trimmedCode;
+    try {
+        normalizedCode = Intl.getCanonicalLocales(trimmedCode)[0] ?? trimmedCode;
+    } catch {
+        normalizedCode = trimmedCode;
+    }
+
+    const normalizedExactMatch =
+        ZodNormalizedLanguageCodes.safeParse(normalizedCode);
+    if (normalizedExactMatch.success) return normalizedExactMatch.data;
+
+    if (
+        normalizedCode === "zh-HK" ||
+        normalizedCode === "zh-TW" ||
+        normalizedCode === "zh-MO"
+    ) {
+        return "zh-Hant";
+    }
+    if (normalizedCode.startsWith("zh")) return "zh-Hans";
+
+    const primary = normalizedCode.split("-")[0];
+    const primaryMatch = ZodNormalizedLanguageCodes.safeParse(primary);
+    if (primaryMatch.success) return primaryMatch.data;
+
+    return undefined;
 }
 
 export function parseSpokenLanguage(

@@ -11,6 +11,11 @@ export interface NewConversationControlBarTranslations {
   aiOff: string;
   recommendedDefault: string;
   groupsLabel: string;
+  languageAuto: string;
+  languageManual: string;
+  languagesLabel: string;
+  languagePrimaryAuto: string;
+  languageTranslateSuffix: string;
   requiresAccount: string;
   requiresLogin: string;
   requiresEmailVerification: string;
@@ -38,6 +43,12 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM off",
     recommendedDefault: "Auto",
     groupsLabel: "{count} groups",
+    languageAuto: "Language: Auto",
+    languageManual: "Language: {languageCode}",
+    languagesLabel:
+      "Languages: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
+    languagePrimaryAuto: "Auto",
+    languageTranslateSuffix: " · Translate",
     requiresAccount: "Requires account",
     requiresLogin: "Requires strong verification",
     requiresEmailVerification: "Requires email verification",
@@ -60,6 +71,12 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM معطّل",
     recommendedDefault: "Auto",
     groupsLabel: "{count} مجموعات",
+    languageAuto: "اللغة: تلقائي",
+    languageManual: "اللغة: {languageCode}",
+    languagesLabel:
+      "اللغات: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
+    languagePrimaryAuto: "تلقائي",
+    languageTranslateSuffix: " · ترجمة",
     requiresAccount: "يتطلب حسابًا",
     requiresLogin: "يتطلب تحققًا قويًا",
     requiresEmailVerification: "يتطلب التحقق من البريد الإلكتروني",
@@ -82,6 +99,12 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM desactivado",
     recommendedDefault: "Auto",
     groupsLabel: "{count} grupos",
+    languageAuto: "Idioma: Auto",
+    languageManual: "Idioma: {languageCode}",
+    languagesLabel:
+      "Idiomas: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
+    languagePrimaryAuto: "Auto",
+    languageTranslateSuffix: " · Traducir",
     requiresAccount: "Requiere cuenta",
     requiresLogin: "Requiere verificación fuerte",
     requiresEmailVerification: "Requiere verificación por correo electrónico",
@@ -104,6 +127,12 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM غیرفعال",
     recommendedDefault: "Auto",
     groupsLabel: "{count} گروه",
+    languageAuto: "زبان: خودکار",
+    languageManual: "زبان: {languageCode}",
+    languagesLabel:
+      "زبان‌ها: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
+    languagePrimaryAuto: "خودکار",
+    languageTranslateSuffix: " · ترجمه",
     requiresAccount: "نیاز به حساب کاربری",
     requiresLogin: "نیاز به تأیید هویت قوی",
     requiresEmailVerification: "نیاز به تأیید ایمیل",
@@ -126,6 +155,12 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM désactivé",
     recommendedDefault: "Auto",
     groupsLabel: "{count} groupes",
+    languageAuto: "Langue : auto",
+    languageManual: "Langue : {languageCode}",
+    languagesLabel:
+      "Langues : {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
+    languagePrimaryAuto: "Auto",
+    languageTranslateSuffix: " · Traduire",
     requiresAccount: "Compte requis",
     requiresLogin: "Vérification renforcée requise",
     requiresEmailVerification: "Vérification par email requise",
@@ -148,6 +183,12 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM 关闭",
     recommendedDefault: "Auto",
     groupsLabel: "{count} 个组",
+    languageAuto: "语言：自动",
+    languageManual: "语言：{languageCode}",
+    languagesLabel:
+      "语言：{primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
+    languagePrimaryAuto: "自动",
+    languageTranslateSuffix: " · 翻译",
     requiresAccount: "需要账户",
     requiresLogin: "需要强验证",
     requiresEmailVerification: "需要邮箱验证",
@@ -170,6 +211,12 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM 關閉",
     recommendedDefault: "Auto",
     groupsLabel: "{count} 個群組",
+    languageAuto: "語言：自動",
+    languageManual: "語言：{languageCode}",
+    languagesLabel:
+      "語言：{primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
+    languagePrimaryAuto: "自動",
+    languageTranslateSuffix: " · 翻譯",
     requiresAccount: "需要帳戶",
     requiresLogin: "需要強驗證",
     requiresEmailVerification: "需要電郵驗證",
@@ -192,6 +239,12 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM כבוי",
     recommendedDefault: "Auto",
     groupsLabel: "{count} קבוצות",
+    languageAuto: "שפה: אוטומטי",
+    languageManual: "שפה: {languageCode}",
+    languagesLabel:
+      "שפות: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
+    languagePrimaryAuto: "אוטומטי",
+    languageTranslateSuffix: " · תרגום",
     requiresAccount: "נדרש חשבון",
     requiresLogin: "נדרש אימות חזק",
     requiresEmailVerification: "נדרש אימות דוא\"ל",
@@ -214,6 +267,12 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM オフ",
     recommendedDefault: "Auto",
     groupsLabel: "{count} グループ",
+    languageAuto: "言語: 自動",
+    languageManual: "言語: {languageCode}",
+    languagesLabel:
+      "言語: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
+    languagePrimaryAuto: "自動",
+    languageTranslateSuffix: " · 翻訳",
     requiresAccount: "アカウントが必要",
     requiresLogin: "強力な認証が必要",
     requiresEmailVerification: "メール認証が必要",
@@ -236,6 +295,12 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM өчүрүлгөн",
     recommendedDefault: "Auto",
     groupsLabel: "{count} groups",
+    languageAuto: "Тил: автоматтык",
+    languageManual: "Тил: {languageCode}",
+    languagesLabel:
+      "Тилдер: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
+    languagePrimaryAuto: "Авто",
+    languageTranslateSuffix: " · Которуу",
     requiresAccount: "Аккаунт талап кылынат",
     requiresLogin: "Күчтүү текшерүү талап кылынат",
     requiresEmailVerification: "Электрондук почта текшерүүсү талап кылынат",
@@ -258,6 +323,12 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM выключена",
     recommendedDefault: "Auto",
     groupsLabel: "{count} групп",
+    languageAuto: "Язык: авто",
+    languageManual: "Язык: {languageCode}",
+    languagesLabel:
+      "Языки: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
+    languagePrimaryAuto: "Авто",
+    languageTranslateSuffix: " · Перевод",
     requiresAccount: "Требуется аккаунт",
     requiresLogin: "Требуется усиленная проверка",
     requiresEmailVerification: "Требуется подтверждение электронной почты",

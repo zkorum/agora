@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**postAsOrganization** | **string** |  | [optional] [default to undefined]
+**postAsOrganization** | **string** |  | [default to undefined]
 **feature** | **string** |  | [default to undefined]
 
 ## Example

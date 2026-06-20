@@ -21,6 +21,8 @@ import type {
 } from "src/shared/types/dto";
 import { Dto } from "src/shared/types/dto";
 import type {
+  ConversationLanguageSettingInput,
+  ConversationMultilingualSetting,
   ConversationType,
   EventSlug,
   ExtendedConversation,
@@ -181,6 +183,9 @@ export function useBackendPostApi() {
   interface CreateNewPostProps {
     postTitle: string;
     postBody: string | undefined;
+    postBodyPlainText: string;
+    languageSetting: ConversationLanguageSettingInput;
+    multilingualSetting: ConversationMultilingualSetting;
     postAsOrganizationName: string;
     isIndexed: boolean;
     participationMode: ParticipationMode;
@@ -321,6 +326,9 @@ export function useBackendPostApi() {
   async function createNewPost({
     postTitle,
     postBody,
+    postBodyPlainText,
+    languageSetting,
+    multilingualSetting,
     postAsOrganizationName,
     isIndexed,
     participationMode,
@@ -336,6 +344,9 @@ export function useBackendPostApi() {
       const params = Dto.createNewConversationRequest.parse({
         conversationTitle: postTitle,
         conversationBody: postBody,
+        conversationBodyPlainText: postBodyPlainText,
+        languageSetting,
+        multilingualSetting,
         isIndexed: isIndexed,
         participationMode: participationMode,
         conversationType: conversationType,

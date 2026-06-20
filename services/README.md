@@ -35,15 +35,6 @@ Shared between **frontend and API** only
 
 **Usage:** `make sync-app-api` or `make dev-sync-app-api`
 
-### services/shared-backend
-Shared directly between TypeScript backend services. Python workers consume generated artifacts instead of synced TypeScript source.
-
-**Contents:** Database schema, DB utilities, server-side config
-
-**Syncs to:** api
-
-**Usage:** `make sync-ts-backend` or `make dev-sync-ts-backend`
-
 ### services/shared-analysis-worker
 Shared Python package consumed by analysis and description Python workers.
 
@@ -51,7 +42,7 @@ Shared Python package consumed by analysis and description Python workers.
 
 **Used by:** math-updater, ai-description-retry-worker, description-translation-retry-worker
 
-**Usage:** edit source Python code directly in `services/shared-analysis-worker/src/`; regenerate `generated_*.py` with `make sync-python-artifacts` after relevant `services/shared` or `services/shared-backend` changes
+**Usage:** edit source Python code directly in `services/shared-analysis-worker/src/`; regenerate `generated_*.py` with `make sync-python-artifacts` after relevant `services/shared` or API schema/type changes
 
 ## Development Workflow
 
@@ -59,7 +50,7 @@ Shared Python package consumed by analysis and description Python workers.
 
 1. **After modifying `services/shared/src/`:** Run `make sync`
 2. **After modifying `services/shared-app-api/src/`:** Run `make sync-app-api`
-3. **After modifying `services/shared-backend/src/`:** Run `make sync-ts-backend` and `make sync-python-artifacts` if Python generated models are affected
+3. **After modifying `services/api/src/shared-backend/schema.ts`:** Run `make sync-python-artifacts` if Python generated models are affected
 4. **After modifying shared-analysis-worker Python logic:** Edit `services/shared-analysis-worker/src/` directly, then run the affected worker checks
 
 ### Watch Mode
@@ -67,7 +58,6 @@ Shared Python package consumed by analysis and description Python workers.
 For automatic syncing during development:
 - `make dev-sync` - Watch universal shared
 - `make dev-sync-app-api` - Watch app-api shared
-- `make dev-sync-ts-backend` - Watch TypeScript backend shared
 
 ### Important Notes
 
@@ -87,10 +77,7 @@ services/shared-app-api (Frontend + API)
     ├──> services/agora/src/shared-app-api/
     └──> services/api/src/shared-app-api/
 
-services/shared-backend (Backend Services)
-    └──> services/api/src/shared-backend/
-
-services/shared-backend + services/shared generated artifacts
+services/api/src/shared-backend/schema.ts + services/shared generated artifacts
     ├──> services/import-worker/src/import_worker/generated_*.py
     ├──> services/shared-analysis-worker/src/agora_analysis_worker_shared/generated_*.py
     └──> services/scoring-worker/src/scoring_worker/generated_models.py

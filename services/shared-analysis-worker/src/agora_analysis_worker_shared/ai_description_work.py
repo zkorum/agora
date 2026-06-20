@@ -5,6 +5,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import and_, false, func, or_, select, true, tuple_, update
@@ -39,10 +40,14 @@ from agora_analysis_worker_shared.generated_models import (
     AnalysisSnapshotResult,
     Conversation,
     ConversationContent,
+    ConversationLanguageSetting,
+    ConversationTranslationSetting,
+    ConversationTranslationTargetLanguage,
     ConversationType,
     ConversationViewSnapshot,
     ConversationViewSnapshotCheckpointReason,
     ConversationViewSnapshotReasonEnum,
+    DisplayLanguageCode,
     OpinionContent,
     OpinionGroup,
     OpinionGroupCandidate,
@@ -55,6 +60,9 @@ from agora_analysis_worker_shared.generated_models import (
     OpinionGroupLineageDescriptionWork,
     OpinionGroupOpinionStats,
     OpinionGroupVariant,
+    PremiumFeature,
+    PremiumFeatureEntitlement,
+    ProjectOrganizationOwnership,
     RealtimeEventOutbox,
 )
 from agora_analysis_worker_shared.generated_shared_types import (
@@ -66,6 +74,14 @@ log = logging.getLogger(__name__)
 POSTGRES_INSERT_BIND_PARAM_LIMIT = 60_000
 DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE = 4
 FIRST_PASS_MAX_EXISTING_ATTEMPT_COUNT = 1
+SUPPORTED_EAGER_TRANSLATION_TARGET_LANGUAGE_CODES = set(
+    SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES
+)
+
+
+class _AiDescriptionClaimScope(StrEnum):
+    retry = "retry"
+    first_pass = "first_pass"
 
 
 def _max_rows_per_insert(*, column_count: int) -> int:
@@ -243,6 +259,14 @@ class CandidateLocaleRequestRow:
 class EagerDescriptionCandidateRow:
     conversation_id: int
     candidate_id: int
+    language_code: str | None
+
+
+@dataclass(frozen=True)
+class EagerAdditionalTranslationLocaleRow:
+    conversation_id: int
+    language_code: str
+    dynamic_translation_entitled: bool
 
 
 @dataclass(frozen=True)
@@ -253,6 +277,7 @@ class EagerCandidateOptionRow:
     group_count: int
     preferred_group_count: int | None
     selection_score: float
+    language_code: str | None
 
 
 @dataclass(frozen=True)
@@ -274,6 +299,12 @@ class TranslationWorkDemand:
     description_id: int
     conversation_id: int
     locale: str
+
+
+@dataclass(frozen=True)
+class _TranslationWorkCandidateRelevance:
+    eager_condition: ColumnElement[bool]
+    explicit_locale_request_condition: ColumnElement[bool]
 
 
 @dataclass(frozen=True)
@@ -946,9 +977,13 @@ def _fetch_candidate_locale_request_rows(
 
     locale_filter: ColumnElement[bool]
     if locale is not None:
-        locale_filter = OpinionGroupCandidateDescriptionLocaleRequest.locale == locale
+        locale_filter = (
+            OpinionGroupCandidateDescriptionLocaleRequest.locale == locale
+        )
     elif non_english_only:
-        locale_filter = OpinionGroupCandidateDescriptionLocaleRequest.locale != "en"
+        locale_filter = (
+            OpinionGroupCandidateDescriptionLocaleRequest.locale != DisplayLanguageCode.en
+        )
     else:
         locale_filter = true()
 
@@ -1066,7 +1101,8 @@ def _first_pass_pending_work_counts(
     translation_count = 0
     if include_translations:
         translation_count = session.execute(
-            select(func.count(OpinionGroupDescriptionTranslationWork.id)).where(
+            select(func.count(OpinionGroupDescriptionTranslationWork.id))
+            .where(
                 and_(
                     OpinionGroupDescriptionTranslationWork.conversation_id.in_(
                         sorted(set(conversation_ids))
@@ -1083,7 +1119,7 @@ def _first_pass_pending_work_counts(
                         )
                     )
                     .exists(),
-                    _translation_work_relevant_candidate_filter(
+                    _eager_translation_work_relevant_candidate_filter(
                         conversation_view_snapshot_ids=conversation_view_snapshot_ids,
                         require_unactivated_view_snapshot=True,
                     ),
@@ -1661,14 +1697,58 @@ def lineage_description_work_demands_for_eager_candidates(
     return list(demands_by_lineage_id.values())
 
 
+def eager_translation_target_locales_by_candidate(
+    *,
+    candidates: Sequence[EagerDescriptionCandidateRow],
+    additional_locale_rows: Sequence[EagerAdditionalTranslationLocaleRow],
+    supported_target_language_codes: set[str] | None = None,
+) -> dict[int, tuple[str, ...]]:
+    supported_codes = (
+        supported_target_language_codes
+        if supported_target_language_codes is not None
+        else SUPPORTED_EAGER_TRANSLATION_TARGET_LANGUAGE_CODES
+    )
+    additional_locales_by_conversation_id: dict[int, set[str]] = {}
+    for row in additional_locale_rows:
+        if not row.dynamic_translation_entitled:
+            continue
+        if row.language_code not in supported_codes:
+            continue
+        additional_locales_by_conversation_id.setdefault(row.conversation_id, set()).add(
+            row.language_code
+        )
+
+    target_locales_by_candidate_id: dict[int, tuple[str, ...]] = {}
+    for candidate in candidates:
+        target_locales: set[str] = set()
+        if (
+            candidate.language_code is not None
+            and candidate.language_code in supported_codes
+        ):
+            target_locales.add(candidate.language_code)
+        target_locales.update(
+            additional_locales_by_conversation_id.get(candidate.conversation_id, set())
+        )
+        if target_locales:
+            target_locales_by_candidate_id[candidate.candidate_id] = tuple(
+                sorted(target_locales)
+            )
+
+    return target_locales_by_candidate_id
+
+
 def translation_work_demands_for_eager_candidates(
     *,
     candidates: Sequence[EagerDescriptionCandidateRow],
     lineage_rows_by_candidate_id: Mapping[int, Sequence[RequiredLineageDescriptionRow]],
+    target_locales_by_candidate_id: Mapping[int, Sequence[str]],
     translated_description_ids_by_locale: Mapping[str, set[int]],
 ) -> list[TranslationWorkDemand]:
     demands_by_description_locale: dict[tuple[int, str], TranslationWorkDemand] = {}
     for candidate in candidates:
+        target_locales = target_locales_by_candidate_id.get(candidate.candidate_id, ())
+        if not target_locales:
+            continue
         lineage_rows = lineage_rows_by_candidate_id.get(candidate.candidate_id, ())
         if not lineage_rows or any(row.system_description_id is None for row in lineage_rows):
             continue
@@ -1677,16 +1757,18 @@ def translation_work_demands_for_eager_candidates(
             for row in lineage_rows
             if row.system_description_id is not None
         }
-        for locale in SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES:
-            translated_description_ids = translated_description_ids_by_locale.get(locale, set())
+        for target_locale in target_locales:
+            translated_description_ids = translated_description_ids_by_locale.get(
+                target_locale, set()
+            )
             for description_id in sorted(description_ids - translated_description_ids):
-                key = (description_id, locale)
+                key = (description_id, target_locale)
                 if key in demands_by_description_locale:
                     continue
                 demands_by_description_locale[key] = TranslationWorkDemand(
                     description_id=description_id,
                     conversation_id=candidate.conversation_id,
-                    locale=locale,
+                    locale=target_locale,
                 )
     return list(demands_by_description_locale.values())
 
@@ -1936,27 +2018,25 @@ def _select_eager_candidates(
             key=lambda row: (row.selection_score, row.group_count),
             reverse=True,
         )[0]
-        candidates_by_id[auto_row.candidate_id] = EagerDescriptionCandidateRow(
-            conversation_id=auto_row.conversation_id,
-            candidate_id=auto_row.candidate_id,
+        preferred_group_count = view_snapshot_rows[0].preferred_group_count
+        selected_row = (
+            next(
+                (
+                    row
+                    for row in view_snapshot_rows
+                    if row.group_count == preferred_group_count
+                ),
+                None,
+            )
+            if preferred_group_count is not None
+            else auto_row
         )
-
-        preferred_group_count = auto_row.preferred_group_count
-        if preferred_group_count is None:
+        if selected_row is None:
             continue
-        facilitator_row = next(
-            (
-                row
-                for row in view_snapshot_rows
-                if row.group_count == preferred_group_count
-            ),
-            None,
-        )
-        if facilitator_row is None:
-            continue
-        candidates_by_id[facilitator_row.candidate_id] = EagerDescriptionCandidateRow(
-            conversation_id=facilitator_row.conversation_id,
-            candidate_id=facilitator_row.candidate_id,
+        candidates_by_id[selected_row.candidate_id] = EagerDescriptionCandidateRow(
+            conversation_id=selected_row.conversation_id,
+            candidate_id=selected_row.candidate_id,
+            language_code=selected_row.language_code,
         )
 
     return list(candidates_by_id.values())
@@ -1988,6 +2068,7 @@ def _fetch_eager_description_candidates(
             OpinionGroupCandidate.id.label("candidate_id"),
             OpinionGroupVariant.group_count,
             Conversation.preferred_opinion_group_count,
+            ConversationLanguageSetting.language_code,
             OpinionGroupCandidateAssessment.selection_score,
         )
         .join(
@@ -2003,6 +2084,10 @@ def _fetch_eager_description_candidates(
             OpinionGroupCandidateAssessment.candidate_id == OpinionGroupCandidate.id,
         )
         .join(Conversation, Conversation.id == AnalysisSnapshotResult.conversation_id)
+        .outerjoin(
+            ConversationLanguageSetting,
+            ConversationLanguageSetting.conversation_id == Conversation.id,
+        )
         .join(
             ConversationViewSnapshot,
             and_(
@@ -2052,10 +2137,81 @@ def _fetch_eager_description_candidates(
                 group_count=row.group_count,
                 preferred_group_count=row.preferred_opinion_group_count,
                 selection_score=row.selection_score,
+                language_code=row.language_code,
             )
             for row in rows
             if row.selection_score is not None
         ]
+    )
+
+
+def _fetch_eager_additional_translation_locale_rows(
+    session: Session,
+    *,
+    conversation_ids: list[int],
+) -> list[EagerAdditionalTranslationLocaleRow]:
+    if not conversation_ids:
+        return []
+
+    rows = session.execute(
+        select(
+            ConversationTranslationSetting.conversation_id,
+            ConversationTranslationTargetLanguage.language_code,
+            _active_dynamic_translation_entitlement_exists().label(
+                "dynamic_translation_entitled"
+            ),
+        )
+        .select_from(ConversationTranslationTargetLanguage)
+        .join(
+            ConversationTranslationSetting,
+            ConversationTranslationSetting.id
+            == ConversationTranslationTargetLanguage.translation_setting_id,
+        )
+        .join(Conversation, Conversation.id == ConversationTranslationSetting.conversation_id)
+        .where(
+            and_(
+                ConversationTranslationSetting.conversation_id.in_(
+                    sorted(set(conversation_ids))
+                ),
+                ConversationTranslationTargetLanguage.language_code.in_(
+                    sorted(SUPPORTED_EAGER_TRANSLATION_TARGET_LANGUAGE_CODES)
+                ),
+            )
+        )
+    ).all()
+
+    return [
+        EagerAdditionalTranslationLocaleRow(
+            conversation_id=row.conversation_id,
+            language_code=row.language_code,
+            dynamic_translation_entitled=row.dynamic_translation_entitled,
+        )
+        for row in rows
+    ]
+
+
+def _active_dynamic_translation_entitlement_exists() -> ColumnElement[bool]:
+    now = func.now()
+    return (
+        select(PremiumFeatureEntitlement.id)
+        .join(
+            ProjectOrganizationOwnership,
+            PremiumFeatureEntitlement.organization_id
+            == ProjectOrganizationOwnership.organization_id,
+        )
+        .where(
+            and_(
+                ProjectOrganizationOwnership.project_id == Conversation.project_id,
+                PremiumFeatureEntitlement.feature == PremiumFeature.dynamic_translation,
+                PremiumFeatureEntitlement.starts_at <= now,
+                PremiumFeatureEntitlement.revoked_at.is_(None),
+                or_(
+                    PremiumFeatureEntitlement.expires_at.is_(None),
+                    PremiumFeatureEntitlement.expires_at > now,
+                ),
+            )
+        )
+        .exists()
     )
 
 
@@ -2109,6 +2265,14 @@ def _materialize_eager_translation_work(
         session,
         candidate_ids=[candidate.candidate_id for candidate in candidates],
     )
+    additional_locale_rows = _fetch_eager_additional_translation_locale_rows(
+        session,
+        conversation_ids=[candidate.conversation_id for candidate in candidates],
+    )
+    target_locales_by_candidate_id = eager_translation_target_locales_by_candidate(
+        candidates=candidates,
+        additional_locale_rows=additional_locale_rows,
+    )
     description_ids = sorted(
         {
             row.system_description_id
@@ -2139,6 +2303,7 @@ def _materialize_eager_translation_work(
     demands = translation_work_demands_for_eager_candidates(
         candidates=candidates,
         lineage_rows_by_candidate_id=lineage_rows_by_candidate_id,
+        target_locales_by_candidate_id=target_locales_by_candidate_id,
         translated_description_ids_by_locale=translated_description_ids_by_locale,
     )
     _insert_or_reactivate_translation_work(session, demands=demands)
@@ -2264,18 +2429,131 @@ def _lineage_work_view_snapshot_filter(
     )
 
 
-def _translation_work_relevant_candidate_filter(
+def _translation_work_candidate_relevance_conditions(
     conversation_view_snapshot_ids: list[int] | None,
     *,
     require_activated_view_snapshot: bool = False,
     require_unactivated_view_snapshot: bool = False,
     snapshot_scope: str = "latest_or_checkpoint",
+) -> _TranslationWorkCandidateRelevance:
+    auto_candidate = aliased(OpinionGroupCandidate)
+    auto_variant = aliased(OpinionGroupVariant)
+    auto_assessment = aliased(OpinionGroupCandidateAssessment)
+    explicit_locale_request_exists = (
+        select(OpinionGroupCandidateDescriptionLocaleRequest.id)
+        .where(
+            and_(
+                OpinionGroupCandidateDescriptionLocaleRequest.candidate_id
+                == OpinionGroupCandidate.id,
+                OpinionGroupCandidateDescriptionLocaleRequest.locale
+                == OpinionGroupDescriptionTranslationWork.locale,
+            )
+        )
+        .exists()
+    )
+    higher_priority_auto_candidate_exists = (
+        select(auto_candidate.id)
+        .join(auto_variant, auto_variant.id == auto_candidate.opinion_group_variant_id)
+        .join(auto_assessment, auto_assessment.candidate_id == auto_candidate.id)
+        .where(
+            and_(
+                auto_candidate.snapshot_result_id == OpinionGroupCandidate.snapshot_result_id,
+                auto_candidate.outcome == AnalysisResultOutcomeEnum.success,
+                auto_assessment.hidden_reason.is_(None),
+                auto_assessment.selection_score.is_not(None),
+                or_(
+                    auto_assessment.selection_score
+                    > OpinionGroupCandidateAssessment.selection_score,
+                    and_(
+                        auto_assessment.selection_score
+                        == OpinionGroupCandidateAssessment.selection_score,
+                        auto_variant.group_count > OpinionGroupVariant.group_count,
+                    ),
+                ),
+            )
+        )
+        .exists()
+    )
+    effective_preferred_candidate = or_(
+        and_(
+            Conversation.preferred_opinion_group_count.is_not(None),
+            OpinionGroupVariant.group_count == Conversation.preferred_opinion_group_count,
+        ),
+        and_(
+            Conversation.preferred_opinion_group_count.is_(None),
+            ~higher_priority_auto_candidate_exists,
+        ),
+    )
+
+    eager_detected_language_candidate = and_(
+        effective_preferred_candidate,
+        ConversationLanguageSetting.language_code.in_(
+            sorted(SUPPORTED_EAGER_TRANSLATION_TARGET_LANGUAGE_CODES)
+        ),
+        OpinionGroupDescriptionTranslationWork.locale
+        == ConversationLanguageSetting.language_code,
+    )
+    eager_additional_language_candidate = and_(
+        effective_preferred_candidate,
+        OpinionGroupDescriptionTranslationWork.locale.in_(
+            sorted(SUPPORTED_EAGER_TRANSLATION_TARGET_LANGUAGE_CODES)
+        ),
+        _active_dynamic_translation_entitlement_exists(),
+        select(ConversationTranslationTargetLanguage.id)
+        .join(
+            ConversationTranslationSetting,
+            ConversationTranslationSetting.id
+            == ConversationTranslationTargetLanguage.translation_setting_id,
+        )
+        .where(
+            and_(
+                ConversationTranslationSetting.conversation_id == Conversation.id,
+                ConversationTranslationTargetLanguage.language_code
+                == OpinionGroupDescriptionTranslationWork.locale,
+            )
+        )
+        .exists(),
+    )
+    eager_snapshot_filter = _latest_or_checkpoint_view_snapshot_filter(
+        conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+        require_activated_view_snapshot=require_activated_view_snapshot,
+        require_unactivated_view_snapshot=require_unactivated_view_snapshot,
+        scope="latest",
+    )
+    explicit_request_snapshot_filter = _latest_or_checkpoint_view_snapshot_filter(
+        conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+        require_activated_view_snapshot=require_activated_view_snapshot,
+        require_unactivated_view_snapshot=require_unactivated_view_snapshot,
+        scope=snapshot_scope,
+    )
+    return _TranslationWorkCandidateRelevance(
+        eager_condition=and_(
+            or_(
+                eager_detected_language_candidate,
+                eager_additional_language_candidate,
+            ),
+            eager_snapshot_filter,
+        ),
+        explicit_locale_request_condition=and_(
+            explicit_locale_request_exists,
+            explicit_request_snapshot_filter,
+        ),
+    )
+
+
+def _translation_work_relevant_candidate_exists_filter(
+    relevant_candidate_conditions: Sequence[ColumnElement[bool]],
 ) -> ColumnElement[bool]:
     return (
         select(OpinionGroupCandidate.id)
         .join(
             AnalysisSnapshotResult,
             AnalysisSnapshotResult.id == OpinionGroupCandidate.snapshot_result_id,
+        )
+        .join(Conversation, Conversation.id == AnalysisSnapshotResult.conversation_id)
+        .outerjoin(
+            ConversationLanguageSetting,
+            ConversationLanguageSetting.conversation_id == Conversation.id,
         )
         .join(
             ConversationViewSnapshot,
@@ -2288,6 +2566,10 @@ def _translation_work_relevant_candidate_filter(
                 == AnalysisSnapshotResult.opinion_group_spec_id,
             ),
         )
+        .join(
+            OpinionGroupVariant,
+            OpinionGroupVariant.id == OpinionGroupCandidate.opinion_group_variant_id,
+        )
         .join(OpinionGroup, OpinionGroup.candidate_id == OpinionGroupCandidate.id)
         .join(OpinionGroupLineage, OpinionGroupLineage.id == OpinionGroup.lineage_id)
         .outerjoin(
@@ -2298,41 +2580,61 @@ def _translation_work_relevant_candidate_filter(
             and_(
                 AnalysisSnapshotResult.conversation_id
                 == OpinionGroupDescriptionTranslationWork.conversation_id,
+                Conversation.ai_labeling_enabled.is_(True),
                 AnalysisSnapshotResult.outcome == AnalysisResultOutcomeEnum.success,
                 OpinionGroupCandidate.outcome == AnalysisResultOutcomeEnum.success,
                 OpinionGroupCandidateAssessment.hidden_reason.is_(None),
                 OpinionGroupLineage.system_description_id
                 == OpinionGroupDescriptionTranslationWork.description_id,
-                _latest_or_checkpoint_view_snapshot_filter(
-                    conversation_view_snapshot_ids=conversation_view_snapshot_ids,
-                    require_activated_view_snapshot=require_activated_view_snapshot,
-                    require_unactivated_view_snapshot=require_unactivated_view_snapshot,
-                    scope=snapshot_scope,
-                ),
+                or_(*relevant_candidate_conditions),
             )
         )
         .exists()
     )
 
 
-def _translation_work_view_snapshot_filter(
+def _eager_translation_work_relevant_candidate_filter(
+    conversation_view_snapshot_ids: list[int] | None,
+    *,
+    require_activated_view_snapshot: bool = False,
+    require_unactivated_view_snapshot: bool = False,
+) -> ColumnElement[bool]:
+    relevance = _translation_work_candidate_relevance_conditions(
+        conversation_view_snapshot_ids,
+        require_activated_view_snapshot=require_activated_view_snapshot,
+        require_unactivated_view_snapshot=require_unactivated_view_snapshot,
+        snapshot_scope="latest",
+    )
+    return _translation_work_relevant_candidate_exists_filter(
+        [relevance.eager_condition]
+    )
+
+
+def _translation_work_relevant_candidate_filter(
     conversation_view_snapshot_ids: list[int] | None,
     *,
     require_activated_view_snapshot: bool = False,
     require_unactivated_view_snapshot: bool = False,
     snapshot_scope: str = "latest_or_checkpoint",
 ) -> ColumnElement[bool]:
-    return _translation_work_relevant_candidate_filter(
+    relevance = _translation_work_candidate_relevance_conditions(
         conversation_view_snapshot_ids,
         require_activated_view_snapshot=require_activated_view_snapshot,
         require_unactivated_view_snapshot=require_unactivated_view_snapshot,
         snapshot_scope=snapshot_scope,
+    )
+    return _translation_work_relevant_candidate_exists_filter(
+        [
+            relevance.eager_condition,
+            relevance.explicit_locale_request_condition,
+        ]
     )
 
 
 def _claim_ai_description_locale_work_items_batch(
     engine: Engine,
     *,
+    claim_scope: _AiDescriptionClaimScope,
     worker_id: str,
     conversation_ids: list[int],
     conversation_view_snapshot_ids: list[int] | None = None,
@@ -2343,8 +2645,6 @@ def _claim_ai_description_locale_work_items_batch(
     claim_lineage_descriptions: bool = True,
     claim_translations: bool = True,
     require_activated_view_snapshot: bool = False,
-    require_pending_status: bool = False,
-    require_due: bool,
     max_existing_attempt_count: int | None = None,
 ) -> list[ClaimedAiDescriptionLocaleWorkItem]:
     if (
@@ -2353,7 +2653,6 @@ def _claim_ai_description_locale_work_items_batch(
         or (not claim_lineage_descriptions and not claim_translations)
     ):
         return []
-    del require_pending_status, require_due
 
     unique_conversation_ids = list(dict.fromkeys(conversation_ids))
     require_unactivated_view_snapshot = (
@@ -2374,6 +2673,11 @@ def _claim_ai_description_locale_work_items_batch(
     should_prioritize_latest = (
         conversation_view_snapshot_ids is None and require_activated_view_snapshot
     )
+    translation_work_view_snapshot_filter = (
+        _eager_translation_work_relevant_candidate_filter
+        if claim_scope == _AiDescriptionClaimScope.first_pass
+        else _translation_work_relevant_candidate_filter
+    )
     lineage_order_by: list[_OrderByExpression] = [
         OpinionGroupLineageDescriptionWork.updated_at.asc(),
         OpinionGroupLineageDescriptionWork.id,
@@ -2393,10 +2697,9 @@ def _claim_ai_description_locale_work_items_batch(
         )
         translation_order_by.insert(
             0,
-            _translation_work_relevant_candidate_filter(
+            translation_work_view_snapshot_filter(
                 conversation_view_snapshot_ids=None,
                 require_activated_view_snapshot=True,
-                snapshot_scope="latest",
             ).desc(),
         )
 
@@ -2409,12 +2712,13 @@ def _claim_ai_description_locale_work_items_batch(
                 require_activated_view_snapshot=require_activated_view_snapshot,
                 require_unactivated_view_snapshot=require_unactivated_view_snapshot,
             )
-            _materialize_lineage_description_work_for_candidate_locale_requests(
-                session,
-                conversation_ids=unique_conversation_ids,
-                conversation_view_snapshot_ids=conversation_view_snapshot_ids,
-                require_activated_view_snapshot=require_activated_view_snapshot,
-            )
+            if claim_scope == _AiDescriptionClaimScope.retry:
+                _materialize_lineage_description_work_for_candidate_locale_requests(
+                    session,
+                    conversation_ids=unique_conversation_ids,
+                    conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+                    require_activated_view_snapshot=require_activated_view_snapshot,
+                )
         if translation_enabled and claim_translations:
             _materialize_eager_translation_work(
                 session,
@@ -2423,12 +2727,13 @@ def _claim_ai_description_locale_work_items_batch(
                 require_activated_view_snapshot=require_activated_view_snapshot,
                 require_unactivated_view_snapshot=require_unactivated_view_snapshot,
             )
-            _materialize_translation_work_for_candidate_locale_requests(
-                session,
-                conversation_ids=unique_conversation_ids,
-                conversation_view_snapshot_ids=conversation_view_snapshot_ids,
-                require_activated_view_snapshot=require_activated_view_snapshot,
-            )
+            if claim_scope == _AiDescriptionClaimScope.retry:
+                _materialize_translation_work_for_candidate_locale_requests(
+                    session,
+                    conversation_ids=unique_conversation_ids,
+                    conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+                    require_activated_view_snapshot=require_activated_view_snapshot,
+                )
 
         eager_candidates = _fetch_eager_description_candidates(
             session,
@@ -2627,7 +2932,7 @@ def _claim_ai_description_locale_work_items_batch(
                         _processable_conversation_condition(),
                         OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
                         translation_attempt_filter,
-                        _translation_work_view_snapshot_filter(
+                        translation_work_view_snapshot_filter(
                             conversation_view_snapshot_ids,
                             require_activated_view_snapshot=require_activated_view_snapshot,
                             require_unactivated_view_snapshot=require_unactivated_view_snapshot,
@@ -2675,7 +2980,7 @@ def _claim_ai_description_locale_work_items_batch(
                                 == claimable_translation_row.id,
                                 OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
                                 translation_attempt_filter,
-                                _translation_work_view_snapshot_filter(
+                                translation_work_view_snapshot_filter(
                                     conversation_view_snapshot_ids,
                                     require_activated_view_snapshot=require_activated_view_snapshot,
                                     require_unactivated_view_snapshot=(
@@ -2742,10 +3047,10 @@ def claim_ai_description_locale_work_items_batch(
     claim_lineage_descriptions: bool = True,
     claim_translations: bool = True,
     require_activated_view_snapshot: bool = False,
-    require_pending_status: bool = False,
 ) -> list[ClaimedAiDescriptionLocaleWorkItem]:
     return _claim_ai_description_locale_work_items_batch(
         engine,
+        claim_scope=_AiDescriptionClaimScope.retry,
         worker_id=worker_id,
         conversation_ids=conversation_ids,
         conversation_view_snapshot_ids=conversation_view_snapshot_ids,
@@ -2756,8 +3061,6 @@ def claim_ai_description_locale_work_items_batch(
         claim_lineage_descriptions=claim_lineage_descriptions,
         claim_translations=claim_translations,
         require_activated_view_snapshot=require_activated_view_snapshot,
-        require_pending_status=require_pending_status,
-        require_due=True,
         max_existing_attempt_count=None,
     )
 
@@ -2774,11 +3077,10 @@ def claim_first_pass_ai_description_locale_work_items_batch(
     translation_enabled: bool,
     claim_lineage_descriptions: bool = True,
     claim_translations: bool = True,
-    require_pending_status: bool = False,
 ) -> list[ClaimedAiDescriptionLocaleWorkItem]:
-    del require_pending_status
     return _claim_ai_description_locale_work_items_batch(
         engine,
+        claim_scope=_AiDescriptionClaimScope.first_pass,
         worker_id=worker_id,
         conversation_ids=conversation_ids,
         conversation_view_snapshot_ids=conversation_view_snapshot_ids,
@@ -2788,8 +3090,6 @@ def claim_first_pass_ai_description_locale_work_items_batch(
         translation_enabled=translation_enabled,
         claim_lineage_descriptions=claim_lineage_descriptions,
         claim_translations=claim_translations,
-        require_pending_status=False,
-        require_due=False,
         max_existing_attempt_count=FIRST_PASS_MAX_EXISTING_ATTEMPT_COUNT,
     )
 
@@ -3076,11 +3376,12 @@ def process_ai_description_locale_work_item(
         return schedule
 
 
-def process_lineage_description_work_items_batch(
+def _process_lineage_description_work_items_batch(
     engine: Engine,
     *,
     claims: list[ClaimedLineageDescriptionWorkItem],
     generate_descriptions: DescriptionGenerator,
+    claim_scope: _AiDescriptionClaimScope,
     require_activated_view_snapshot: bool = False,
 ) -> LineageDescriptionBatchProcessResult:
     if not claims:
@@ -3212,11 +3513,12 @@ def process_lineage_description_work_items_batch(
                 conversation_ids=affected_conversation_ids,
                 require_activated_view_snapshot=require_activated_view_snapshot,
             )
-            _materialize_translation_work_for_candidate_locale_requests(
-                session,
-                conversation_ids=affected_conversation_ids,
-                require_activated_view_snapshot=require_activated_view_snapshot,
-            )
+            if claim_scope == _AiDescriptionClaimScope.retry:
+                _materialize_translation_work_for_candidate_locale_requests(
+                    session,
+                    conversation_ids=affected_conversation_ids,
+                    require_activated_view_snapshot=require_activated_view_snapshot,
+                )
             schedule_by_conversation_id = {
                 conversation_id: _get_conversation_work_result(
                     session,
@@ -3243,6 +3545,36 @@ def process_lineage_description_work_items_batch(
         schedules=schedules,
         generated_lineage_ids=sorted(generated_lineage_ids),
         missing_lineage_ids=missing_lineage_ids,
+    )
+
+
+def process_lineage_description_work_items_batch(
+    engine: Engine,
+    *,
+    claims: list[ClaimedLineageDescriptionWorkItem],
+    generate_descriptions: DescriptionGenerator,
+    require_activated_view_snapshot: bool = False,
+) -> LineageDescriptionBatchProcessResult:
+    return _process_lineage_description_work_items_batch(
+        engine,
+        claims=claims,
+        generate_descriptions=generate_descriptions,
+        claim_scope=_AiDescriptionClaimScope.retry,
+        require_activated_view_snapshot=require_activated_view_snapshot,
+    )
+
+
+def process_first_pass_lineage_description_work_items_batch(
+    engine: Engine,
+    *,
+    claims: list[ClaimedLineageDescriptionWorkItem],
+    generate_descriptions: DescriptionGenerator,
+) -> LineageDescriptionBatchProcessResult:
+    return _process_lineage_description_work_items_batch(
+        engine,
+        claims=claims,
+        generate_descriptions=generate_descriptions,
+        claim_scope=_AiDescriptionClaimScope.first_pass,
     )
 
 

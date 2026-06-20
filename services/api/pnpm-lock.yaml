@@ -91,6 +91,9 @@ importers:
       '@valkey/valkey-glide':
         specifier: ^2.3.1
         version: 2.3.1
+      '@zkorum/lingua-wasm':
+        specifier: 1.8.0
+        version: 1.8.0
       axios:
         specifier: ^1.16.0
         version: 1.16.0
@@ -1726,6 +1729,9 @@ packages:
 
   '@zk-kit/utils@1.4.1':
     resolution: {integrity: sha512-IoXzy3ElfkvRfC/s6uk3eFQO8uxkCdAOVxKlJlaEjM7pgckX5AK46Q+7n5yMQD/v/o6OL0mMtet065o5EpUocA==}
+
+  '@zkorum/lingua-wasm@1.8.0':
+    resolution: {integrity: sha512-lm3U4aRiz8mKqaechoYb+Icws5i153XBxcFecVnpsozUcKWjqv9N294CjhBioNyyK7EYH4HwthhB8vm0Ia9FMQ==}
 
   abort-controller@3.0.0:
     resolution: {integrity: sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==}
@@ -6328,6 +6334,8 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+
+  '@zkorum/lingua-wasm@1.8.0': {}
 
   abort-controller@3.0.0:
     dependencies:

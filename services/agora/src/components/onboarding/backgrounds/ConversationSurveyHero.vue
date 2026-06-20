@@ -1,7 +1,7 @@
 <template>
   <div class="hero">
     <div class="hero__content">
-      <div class="hero__avatar">
+      <div v-if="showOwnerImage" class="hero__avatar">
         <DynamicProfileImage
           :user-identity="ownerIdentity"
           :organization-image-url="organizationImageUrl || undefined"
@@ -19,6 +19,15 @@
       />
 
       <div class="hero__title">{{ conversationTitle }}</div>
+
+      <ContentTranslationControl
+        v-if="contentTranslation?.isAvailable === true"
+        :model-value="contentTranslation.mode"
+        :source-language-label="contentTranslation.sourceLanguageLabel"
+        :translation-status="contentTranslation.translationStatus"
+        class="hero__translation-control"
+        @update:model-value="emit('update:contentTranslationMode', $event)"
+      />
     </div>
   </div>
 </template>
@@ -26,17 +35,36 @@
 <script setup lang="ts">
 import DynamicProfileImage from "src/components/account/DynamicProfileImage.vue";
 import UserMetadata from "src/components/features/user/UserMetadata.vue";
+import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
+import type { LocalizedContentTranslationStatus } from "src/shared/types/zod";
+import type { ContentTranslationDisplayMode } from "src/utils/translation/contentTranslation";
 import { computed } from "vue";
+
+interface HeroContentTranslationPreview {
+  isAvailable: boolean;
+  mode: ContentTranslationDisplayMode;
+  sourceLanguageLabel: string | undefined;
+  translationStatus: LocalizedContentTranslationStatus;
+}
 
 const props = defineProps<{
   conversationTitle: string;
   authorUsername: string;
   organizationName: string;
   organizationImageUrl: string;
+  contentTranslation: HeroContentTranslationPreview | undefined;
+}>();
+
+const emit = defineEmits<{
+  "update:contentTranslationMode": [mode: ContentTranslationDisplayMode];
 }>();
 
 const ownerIdentity = computed(() => {
   return props.organizationName || props.authorUsername;
+});
+
+const showOwnerImage = computed(() => {
+  return props.organizationName.length === 0 || props.organizationImageUrl.length > 0;
 });
 
 </script>
@@ -86,6 +114,10 @@ const ownerIdentity = computed(() => {
   color: $ink-darkest;
   overflow-wrap: anywhere;
   text-wrap: balance;
+}
+
+.hero__translation-control {
+  justify-content: center;
 }
 
 @media (max-width: 600px) {

@@ -24,6 +24,48 @@ class PreferredOpinionGroupCount(RootModel[int]):
     root: int = Field(..., ge=2, le=6)
 
 
+class LanguageSetting(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        validate_by_name=True,
+    )
+    mode: Literal["auto"]
+
+
+class LanguageCode(StrEnum):
+    en = "en"
+    es = "es"
+    fr = "fr"
+    zh_hant = "zh-Hant"
+    zh_hans = "zh-Hans"
+    ja = "ja"
+    ar = "ar"
+    fa = "fa"
+    he = "he"
+    ky = "ky"
+    ru = "ru"
+
+
+class LanguageSetting1(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        validate_by_name=True,
+    )
+    mode: Literal["manual"]
+    language_code: LanguageCode = Field(..., alias="languageCode")
+
+
+class MultilingualSetting(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        validate_by_name=True,
+    )
+    additional_language_codes: list[LanguageCode] = Field(
+        ..., alias="additionalLanguageCodes", max_length=2
+    )
+    dynamic_translation_enabled: bool = Field(..., alias="dynamicTranslationEnabled")
+
+
 class ImportFormData(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
@@ -35,6 +77,14 @@ class ImportFormData(BaseModel):
     ai_labeling_enabled: bool = Field(True, alias="aiLabelingEnabled")
     preferred_opinion_group_count: PreferredOpinionGroupCount | None = Field(
         None, alias="preferredOpinionGroupCount"
+    )
+    language_setting: LanguageSetting | LanguageSetting1 = Field(
+        {"mode": "auto"}, alias="languageSetting", validate_default=True
+    )
+    multilingual_setting: MultilingualSetting = Field(
+        {"additionalLanguageCodes": [], "dynamicTranslationEnabled": False},
+        alias="multilingualSetting",
+        validate_default=True,
     )
 
 
