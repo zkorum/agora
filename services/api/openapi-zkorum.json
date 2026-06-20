@@ -15366,42 +15366,6 @@
                                                 "multilingualSetting"
                                             ],
                                             "additionalProperties": false
-                                        },
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "success": {
-                                                    "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
-                                                },
-                                                "reason": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "participation_blocked"
-                                                    ]
-                                                },
-                                                "blockedReason": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "conversation_locked",
-                                                        "conversation_closed",
-                                                        "event_ticket_required",
-                                                        "account_required",
-                                                        "strong_verification_required",
-                                                        "email_verification_required",
-                                                        "survey_required",
-                                                        "survey_outdated"
-                                                    ]
-                                                }
-                                            },
-                                            "required": [
-                                                "success",
-                                                "reason",
-                                                "blockedReason"
-                                            ],
-                                            "additionalProperties": false
                                         }
                                     ]
                                 }

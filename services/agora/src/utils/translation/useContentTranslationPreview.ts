@@ -7,7 +7,6 @@ import type { SSEContentTranslationUpdatedData } from "src/shared/types/sse";
 import type {
   ContentTranslationSubject,
   LocalizedContentTranslationStatus,
-  ParticipationBlockedReason,
 } from "src/shared/types/zod";
 import {
   zodConversationContentVariant,
@@ -15,8 +14,8 @@ import {
   zodSurveyQuestionContentVariant,
 } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
-import { useContentTranslationQuery } from "src/utils/api/contentTranslation/useContentTranslationQueries";
 import type { ContentTranslationRequestMode } from "src/utils/api/contentTranslation/useContentTranslationQueries";
+import { useContentTranslationQuery } from "src/utils/api/contentTranslation/useContentTranslationQueries";
 import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
 import { useNotify } from "src/utils/ui/notify";
 import type { MaybeRefOrGetter } from "vue";
@@ -34,14 +33,6 @@ import {
 } from "./useContentTranslationPreview.i18n";
 
 const TRANSLATION_WAIT_TIMEOUT_MS = 30_000;
-
-type HandleParticipationBlocked = ({
-  reason,
-}: {
-  reason: ParticipationBlockedReason;
-}) => Promise<void>;
-
-type ShouldRequestTranslation = () => Promise<boolean>;
 
 function isRateLimitError(error: unknown): boolean {
   return isAxiosError(error) && error.response?.status === 429;
@@ -113,15 +104,11 @@ function useContentTranslationController({
   dynamicTranslationEnabled,
   sourceLanguageCode,
   supportedTargetLanguageCodes,
-  shouldRequestTranslation,
-  onParticipationBlocked,
 }: {
   subject: MaybeRefOrGetter<ContentTranslationSubject>;
   dynamicTranslationEnabled: MaybeRefOrGetter<boolean>;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
   supportedTargetLanguageCodes: MaybeRefOrGetter<SupportedDisplayLanguageCodes[]>;
-  shouldRequestTranslation?: ShouldRequestTranslation;
-  onParticipationBlocked?: HandleParticipationBlocked;
 }): ContentTranslationController & {
   query: ReturnType<typeof useContentTranslationQuery>;
 } {
@@ -220,14 +207,6 @@ function useContentTranslationController({
 
   async function setMode(nextMode: ContentTranslationDisplayMode): Promise<void> {
     if (nextMode === "translated") {
-      const canRequestTranslation =
-        shouldRequestTranslation === undefined
-          ? true
-          : await shouldRequestTranslation();
-      if (!canRequestTranslation) {
-        resetToOriginal();
-        return;
-      }
       modePreference.value = "translated";
       if (
         translationStatus.value !== "completed" ||
@@ -274,22 +253,6 @@ function useContentTranslationController({
     });
     resetToOriginal();
     showNotifyMessage(t("translationNotEnabled"));
-  }
-
-  async function applyParticipationBlockedResponse(): Promise<void> {
-    const response = query.data.value;
-    if (
-      response?.success !== false ||
-      response.reason !== "participation_blocked"
-    ) {
-      return;
-    }
-    resetToOriginal();
-    if (onParticipationBlocked === undefined) {
-      showNotifyMessage(t("translationFailed"));
-      return;
-    }
-    await onParticipationBlocked({ reason: response.blockedReason });
   }
 
   function showQueryFailureToast(): void {
@@ -356,7 +319,8 @@ function useContentTranslationController({
           applyTranslationNotEnabledResponse();
           return;
         }
-        void applyParticipationBlockedResponse();
+        resetToOriginal();
+        showNotifyMessage(t("translationFailed"));
       }
     }
   );
@@ -381,8 +345,6 @@ export function useConversationContentTranslationPreview({
   dynamicTranslationEnabled,
   sourceLanguageCode,
   supportedTargetLanguageCodes,
-  shouldRequestTranslation,
-  onParticipationBlocked,
 }: {
   subject: MaybeRefOrGetter<
     Extract<ContentTranslationSubject, { kind: "conversation" }>
@@ -390,16 +352,12 @@ export function useConversationContentTranslationPreview({
   dynamicTranslationEnabled: MaybeRefOrGetter<boolean>;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
   supportedTargetLanguageCodes: MaybeRefOrGetter<SupportedDisplayLanguageCodes[]>;
-  shouldRequestTranslation?: ShouldRequestTranslation;
-  onParticipationBlocked?: HandleParticipationBlocked;
 }) {
   const controller = useContentTranslationController({
     subject,
     dynamicTranslationEnabled,
     sourceLanguageCode,
     supportedTargetLanguageCodes,
-    shouldRequestTranslation,
-    onParticipationBlocked,
   });
 
   const preview = computed<ConversationContentTranslationPreview | undefined>(
@@ -442,8 +400,6 @@ export function useOpinionContentTranslationPreview({
   dynamicTranslationEnabled,
   sourceLanguageCode,
   supportedTargetLanguageCodes,
-  shouldRequestTranslation,
-  onParticipationBlocked,
 }: {
   subject: MaybeRefOrGetter<
     Extract<ContentTranslationSubject, { kind: "opinion" }>
@@ -451,16 +407,12 @@ export function useOpinionContentTranslationPreview({
   dynamicTranslationEnabled: MaybeRefOrGetter<boolean>;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
   supportedTargetLanguageCodes: MaybeRefOrGetter<SupportedDisplayLanguageCodes[]>;
-  shouldRequestTranslation?: ShouldRequestTranslation;
-  onParticipationBlocked?: HandleParticipationBlocked;
 }) {
   const controller = useContentTranslationController({
     subject,
     dynamicTranslationEnabled,
     sourceLanguageCode,
     supportedTargetLanguageCodes,
-    shouldRequestTranslation,
-    onParticipationBlocked,
   });
 
   const preview = computed<OpinionContentTranslationPreview | undefined>(() => {
@@ -498,8 +450,6 @@ export function useSurveyQuestionContentTranslationPreview({
   dynamicTranslationEnabled,
   sourceLanguageCode,
   supportedTargetLanguageCodes,
-  shouldRequestTranslation,
-  onParticipationBlocked,
 }: {
   subject: MaybeRefOrGetter<
     Extract<ContentTranslationSubject, { kind: "survey_question" }>
@@ -507,16 +457,12 @@ export function useSurveyQuestionContentTranslationPreview({
   dynamicTranslationEnabled: MaybeRefOrGetter<boolean>;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
   supportedTargetLanguageCodes: MaybeRefOrGetter<SupportedDisplayLanguageCodes[]>;
-  shouldRequestTranslation?: ShouldRequestTranslation;
-  onParticipationBlocked?: HandleParticipationBlocked;
 }) {
   const controller = useContentTranslationController({
     subject,
     dynamicTranslationEnabled,
     sourceLanguageCode,
     supportedTargetLanguageCodes,
-    shouldRequestTranslation,
-    onParticipationBlocked,
   });
 
   const preview = computed<SurveyQuestionContentTranslationPreview | undefined>(

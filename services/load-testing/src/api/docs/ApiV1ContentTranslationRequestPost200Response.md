@@ -10,7 +10,6 @@ Name | Type | Description | Notes
 **content** | [**ApiV1ContentTranslationRequestPost200ResponseAnyOf2Content**](ApiV1ContentTranslationRequestPost200ResponseAnyOf2Content.md) |  | [default to undefined]
 **reason** | **string** |  | [default to undefined]
 **multilingualSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting.md) |  | [default to undefined]
-**blockedReason** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -23,7 +22,6 @@ const instance: ApiV1ContentTranslationRequestPost200Response = {
     content,
     reason,
     multilingualSetting,
-    blockedReason,
 };
 ```
 

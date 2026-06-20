@@ -211,6 +211,18 @@ def main() -> int:
 
             log.info("[Worker] Processing %d translation work item(s)", len(claims))
             for claim in claims:
+                log.info(
+                    "[Worker] Processing translation work_id=%d source_kind=%s "
+                    "target_language=%s conversation_content_id=%s opinion_content_id=%s "
+                    "survey_question_content_id=%s survey_option_content_ids=%s",
+                    claim.id,
+                    claim.source_kind.value,
+                    claim.display_language_code.value,
+                    claim.conversation_content_id,
+                    claim.opinion_content_id,
+                    claim.survey_question_content_id,
+                    claim.survey_question_option_content_ids,
+                )
                 with Session(primary_engine) as session, session.begin():
                     result = process_claimed_work(
                         session,
@@ -218,8 +230,11 @@ def main() -> int:
                         translation_service=translation_service,
                     )
                 log.info(
-                    "[Worker] Processed work_id=%d status=%s",
+                    "[Worker] Processed translation work_id=%d source_kind=%s "
+                    "target_language=%s status=%s",
                     result.work_id,
+                    claim.source_kind.value,
+                    claim.display_language_code.value,
                     result.status,
                 )
     finally:

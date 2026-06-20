@@ -4274,22 +4274,33 @@ server.after(() => {
         handler: async (request) => {
             const { didWrite } = await verifyUcan(request);
             const now = nowZeroMs();
-
-            const participationCheck = await checkConversationParticipation({
+            const userAgent = request.headers["user-agent"] ?? "Unknown device";
+            const deviceStatus = await authUtilService.getDeviceStatus({
                 db,
-                conversationSlugId: request.body.subject.conversationSlugId,
                 didWrite,
-                userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now,
             });
-            if (!participationCheck.success) {
-                const productFailureResponse = {
-                    success: false,
-                    reason: "participation_blocked",
-                    blockedReason: participationCheck.reason,
-                } satisfies ContentTranslationResponse;
-                return productFailureResponse;
-            }
+            const requesterUserId = deviceStatus.isKnown
+                ? deviceStatus.userId
+                : (
+                      await authService.createGuestUser({
+                          db,
+                          didWrite,
+                          now,
+                          userAgent,
+                      })
+                  ).userId;
+
+            log.info(
+                {
+                    subject: request.body.subject,
+                    targetLanguageCode: request.body.targetLanguageCode,
+                    requestMode: request.body.requestMode,
+                    requesterUserId,
+                    createdGuestUser: !deviceStatus.isKnown,
+                },
+                "[ContentTranslation] Request received",
+            );
 
             const queueValkey = queueValkeyRef.current;
 
@@ -4298,6 +4309,15 @@ server.after(() => {
                     conversationSlugId: request.body.subject.conversationSlugId,
                     targetLanguageCode: request.body.targetLanguageCode,
                 });
+            log.info(
+                {
+                    conversationSlugId: request.body.subject.conversationSlugId,
+                    targetLanguageCode: request.body.targetLanguageCode,
+                    isAllowed: availability.isAllowed,
+                    multilingualSetting: availability.multilingualSetting,
+                },
+                "[ContentTranslation] Availability checked",
+            );
             if (!availability.isAllowed) {
                 const productFailureResponse = {
                     success: false,
@@ -4333,7 +4353,7 @@ server.after(() => {
                                 await consumeContentTranslationUserRateLimit({
                                     valkey: queueValkey,
                                     script: contentTranslationUserRateLimitScript,
-                                    userId: participationCheck.participantId,
+                                    userId: requesterUserId,
                                     maxRequests:
                                         CONTENT_TRANSLATION_USER_RATE_LIMIT_MAX,
                                     windowMs:
@@ -4349,6 +4369,16 @@ server.after(() => {
                             );
                         }
                         if (!rateLimit.isAllowed) {
+                            log.info(
+                                {
+                                    requesterUserId,
+                                    retryAfterMs: rateLimit.retryAfterMs,
+                                    subject: request.body.subject,
+                                    targetLanguageCode:
+                                        request.body.targetLanguageCode,
+                                },
+                                "[ContentTranslation] User rate limit exceeded",
+                            );
                             throw server.httpErrors.createError(
                                 429,
                                 `Content translation rate limit exceeded. Retry after ${String(Math.ceil(rateLimit.retryAfterMs / 1000))}s`,
@@ -4365,6 +4395,20 @@ server.after(() => {
                 ...response,
                 success: true,
             } satisfies ContentTranslationResponse;
+            log.info(
+                {
+                    subject: request.body.subject,
+                    targetLanguageCode: request.body.targetLanguageCode,
+                    requestMode: request.body.requestMode,
+                    contentKind: response.content.kind,
+                    translationStatus:
+                        response.content.kind === "translatable"
+                            ? response.content.translation.status
+                            : undefined,
+                    initialMode: response.content.initialMode,
+                },
+                "[ContentTranslation] Request completed",
+            );
             return productSuccessResponse;
         },
     });

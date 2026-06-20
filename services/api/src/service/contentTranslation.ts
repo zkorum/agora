@@ -124,11 +124,13 @@ async function ensureTranslationWork({
     input,
     now,
     priority,
+    log,
 }: {
     db: PostgresDatabase;
     input: TranslationWorkInput;
     now: Date;
     priority: ContentTranslationQueuePriority;
+    log: Pick<BaseLogger, "info">;
 }): Promise<{ workId: number; shouldQueue: boolean }> {
     const sourceWhere =
         input.sourceKind === "conversation"
@@ -186,6 +188,18 @@ async function ensureTranslationWork({
                 updatedAt: now,
             })
             .where(eq(contentTranslationWorkTable.id, existing.id));
+        log.info(
+            {
+                workId: existing.id,
+                sourceKind: input.sourceKind,
+                targetLanguageCode: input.targetLanguageCode,
+                previousStatus: existing.status,
+                previousPriorityRank: existing.priorityRank,
+                nextPriorityRank,
+                shouldQueue: existing.status !== "completed",
+            },
+            "[ContentTranslation] Reused translation work row",
+        );
         return {
             workId: existing.id,
             shouldQueue: existing.status !== "completed",
@@ -223,6 +237,15 @@ async function ensureTranslationWork({
     if (inserted === undefined) {
         throw new Error("Failed to create content translation work row");
     }
+    log.info(
+        {
+            workId: inserted.id,
+            sourceKind: input.sourceKind,
+            targetLanguageCode: input.targetLanguageCode,
+            priorityRank: priority,
+        },
+        "[ContentTranslation] Created translation work row",
+    );
     return { workId: inserted.id, shouldQueue: true };
 }
 
@@ -273,8 +296,17 @@ async function queueMissingTranslationWork({
         input,
         now,
         priority,
+        log,
     });
     if (!ensuredWork.shouldQueue) {
+        log.info(
+            {
+                workId: ensuredWork.workId,
+                sourceKind: input.sourceKind,
+                targetLanguageCode: input.targetLanguageCode,
+            },
+            "[ContentTranslation] Translation work already completed",
+        );
         return;
     }
     await queueTranslationWork({
@@ -285,6 +317,15 @@ async function queueMissingTranslationWork({
         log,
         priority,
     });
+    log.info(
+        {
+            workId: ensuredWork.workId,
+            sourceKind: input.sourceKind,
+            targetLanguageCode: input.targetLanguageCode,
+            priorityRank: priority,
+        },
+        "[ContentTranslation] Queued translation work",
+    );
 }
 
 async function fetchConversationSource({

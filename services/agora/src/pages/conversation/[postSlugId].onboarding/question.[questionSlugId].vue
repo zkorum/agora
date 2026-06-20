@@ -159,7 +159,6 @@ import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKDigitsInput from "src/components/ui-library/ZKDigitsInput.vue";
 import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
-import { useParticipationGate } from "src/composables/conversation/useParticipationGate";
 import { useSurveyNavigation } from "src/composables/conversation/useSurveyNavigation";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
@@ -270,17 +269,6 @@ const supportedTargetLanguageCodes = computed(() => {
   });
 });
 
-const participationGate = useParticipationGate({
-  conversationSlugId,
-  participationMode: computed(
-    () => conversationData.value?.metadata.participationMode ?? "guest"
-  ),
-  requiresEventTicket: computed(
-    () => conversationData.value?.metadata.requiresEventTicket
-  ),
-  surveyGate: computed(() => conversationData.value?.interaction.surveyGate),
-});
-
 const {
   preview: surveyQuestionTranslationPreview,
   setMode: setSurveyQuestionTranslationMode,
@@ -293,16 +281,6 @@ const {
   ),
   sourceLanguageCode: undefined,
   supportedTargetLanguageCodes,
-  shouldRequestTranslation: async () => {
-    if (await participationGate.shouldOpenParticipationModal()) {
-      await participationGate.openParticipationOnboarding();
-      return false;
-    }
-    return true;
-  },
-  onParticipationBlocked: async ({ reason }) => {
-    await participationGate.handleBlockedReason({ reason });
-  },
 });
 
 const surveyQuestionTranslationMode = computed<ContentTranslationDisplayMode>({
