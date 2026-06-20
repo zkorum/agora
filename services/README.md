@@ -5,15 +5,17 @@ This directory contains all Agora services and shared code packages.
 ## Services
 
 - **agora/** - Frontend Vue.js application
+- **app/** - Public SvelteKit landing page
 - **api/** - Main Fastify backend API
 - **import-worker/** - Python worker for conversation imports
 - **math-updater/** - Python worker for opinion-group analysis
 - **ai-description-retry-worker/** - Python worker for AI label/summary retry and backlog work
 - **description-translation-retry-worker/** - Python worker for label/summary translation retry and backlog work
+- **content-translation-worker/** - Python worker for dynamic user-content translation work
 - **shared-analysis-worker/** - Shared Python package for analysis and description worker code and generated artifacts
 - **scoring-worker/** - Python worker for MaxDiff rankings
+- **x-analyzer/** - X/Twitter reply and quote-tweet analyzer
 - **llm/** - LLM service for AI-generated summaries
-- **images/** - Image processing service
 
 ## Shared Code Packages
 
@@ -79,6 +81,7 @@ services/shared-app-api (Frontend + API)
 
 services/api/src/shared-backend/schema.ts + services/shared generated artifacts
     ├──> services/import-worker/src/import_worker/generated_*.py
+    ├──> services/content-translation-worker/src/content_translation_worker/generated_*.py
     ├──> services/shared-analysis-worker/src/agora_analysis_worker_shared/generated_*.py
     └──> services/scoring-worker/src/scoring_worker/generated_models.py
 

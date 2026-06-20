@@ -117,7 +117,7 @@ make image-buildx TAG=2.0.4
 make image-push TAG=2.0.4
 ```
 
-Retry workers are built and deployed as separate services/images.
+Retry workers are built and deployed as separate services with their own Docker images.
 
 ## Related Services
 
