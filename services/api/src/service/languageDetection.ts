@@ -1,8 +1,10 @@
 import type { DetectedLanguageResult } from "@/shared-backend/translate.js";
 import { log } from "@/app.js";
+import { OpenCC } from "opencc";
 import {
-    parseNormalizedLanguageOrUndefined,
+    parseDetectedSourceLanguageOrUndefined,
     ZodSupportedDisplayLanguageCodes,
+    type DetectedSourceLanguageCode,
     type NormalizedLanguageCodes,
     type SupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
@@ -24,10 +26,8 @@ const LETTER_REGEX = /\p{Letter}/u;
 const MEANINGFUL_CYRILLIC_LETTER_COUNT = 12;
 const MEANINGFUL_CYRILLIC_LETTER_RATIO = 0.4;
 
-const TRADITIONAL_CHINESE_HINTS =
-    "學國臺體後發為與會個們來時說對過還開關問題點網實廣東車書長門風電見聽買賣這裡區歲數應變雙無處氣雲";
-const SIMPLIFIED_CHINESE_HINTS =
-    "学国台体后发为与会个们来时说对过还开关问题点网实广东车书长门风电见听买卖这里区岁数应变双无处气云";
+let simplifiedToTraditionalConverter: OpenCC | undefined;
+let traditionalToSimplifiedConverter: OpenCC | undefined;
 
 const LINGUA_LANGUAGE_TO_DISPLAY_CODE: ReadonlyMap<
     string,
@@ -161,7 +161,7 @@ export type LanguageDetectionProvider = "lingua" | "google_translate";
 
 export interface LanguageDetectionResult {
     languageCode: SupportedDisplayLanguageCodes | null;
-    sourceLanguageCode: NormalizedLanguageCodes | null;
+    sourceLanguageCode: DetectedSourceLanguageCode | null;
     rawLanguageCode: string;
     provider: LanguageDetectionProvider;
     confidence: number | null;
@@ -228,25 +228,50 @@ export function inferChineseScriptLanguage({
 }: {
     text: string;
 }): SupportedDisplayLanguageCodes | undefined {
-    let traditionalHints = 0;
-    let simplifiedHints = 0;
+    try {
+        simplifiedToTraditionalConverter ??= new OpenCC("s2t.json");
+        traditionalToSimplifiedConverter ??= new OpenCC("t2s.json");
+        const traditionalText = simplifiedToTraditionalConverter.convertSync(text);
+        const simplifiedText = traditionalToSimplifiedConverter.convertSync(text);
+        const simplifiedChangeCount = countCodepointChanges({
+            before: text,
+            after: traditionalText,
+        });
+        const traditionalChangeCount = countCodepointChanges({
+            before: text,
+            after: simplifiedText,
+        });
 
-    for (const character of text) {
-        if (TRADITIONAL_CHINESE_HINTS.includes(character)) {
-            traditionalHints += 1;
+        if (traditionalChangeCount > simplifiedChangeCount) {
+            return "zh-Hant";
         }
-        if (SIMPLIFIED_CHINESE_HINTS.includes(character)) {
-            simplifiedHints += 1;
+        if (simplifiedChangeCount > traditionalChangeCount) {
+            return "zh-Hans";
         }
+        return undefined;
+    } catch (error) {
+        log.warn(error, "[Language Detection] OpenCC Chinese script inference failed");
+        return undefined;
     }
+}
 
-    if (traditionalHints > simplifiedHints) {
-        return "zh-Hant";
+function countCodepointChanges({
+    before,
+    after,
+}: {
+    before: string;
+    after: string;
+}): number {
+    const beforeCodepoints = Array.from(before);
+    const afterCodepoints = Array.from(after);
+    const length = Math.max(beforeCodepoints.length, afterCodepoints.length);
+    let changeCount = 0;
+    for (let index = 0; index < length; index += 1) {
+        if (beforeCodepoints[index] !== afterCodepoints[index]) {
+            changeCount += 1;
+        }
     }
-    if (simplifiedHints > traditionalHints) {
-        return "zh-Hans";
-    }
-    return undefined;
+    return changeCount;
 }
 
 function canonicalizeLanguageCode({
@@ -305,31 +330,50 @@ function normalizeChineseLanguageCode({
         return "zh-Hans";
     }
 
-    return inferChineseScriptLanguage({ text }) ?? null;
+    return inferChineseScriptLanguage({ text }) ?? "zh-Hans";
 }
 
 function normalizeBcp47SourceLanguageCode({
     rawLanguageCode,
 }: {
     rawLanguageCode: string;
-}): NormalizedLanguageCodes | null {
+}): DetectedSourceLanguageCode | null {
     const trimmedLanguageCode = rawLanguageCode.trim();
     if (trimmedLanguageCode.length === 0) {
         return null;
     }
 
-    try {
-        const canonicalLanguageCode = Intl.getCanonicalLocales(trimmedLanguageCode)[0];
-        return parseNormalizedLanguageOrUndefined(canonicalLanguageCode) ?? null;
-    } catch {
-        if (/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(trimmedLanguageCode)) {
-            return (
-                parseNormalizedLanguageOrUndefined(trimmedLanguageCode.toLowerCase()) ??
-                null
-            );
+    return parseDetectedSourceLanguageOrUndefined(trimmedLanguageCode) ?? null;
+}
+
+function normalizeSourceLanguageCodeFromProvider({
+    provider,
+    rawLanguageCode,
+    text,
+}: {
+    provider: LanguageDetectionProvider;
+    rawLanguageCode: string;
+    text: string;
+}): DetectedSourceLanguageCode | null {
+    if (provider === "lingua") {
+        if (rawLanguageCode === "Chinese" || rawLanguageCode.startsWith("zh")) {
+            return normalizeChineseLanguageCode({ rawLanguageCode, text });
         }
-        return null;
+
+        const linguaSourceCode = LINGUA_LANGUAGE_TO_SOURCE_CODE.get(rawLanguageCode);
+        if (linguaSourceCode !== undefined) {
+            return linguaSourceCode;
+        }
     }
+
+    if (rawLanguageCode === "Chinese" || rawLanguageCode.startsWith("zh")) {
+        return normalizeChineseLanguageCode({ rawLanguageCode, text });
+    }
+
+    const canonicalLanguageCode = canonicalizeLanguageCode({ rawLanguageCode });
+    return normalizeBcp47SourceLanguageCode({
+        rawLanguageCode: canonicalLanguageCode,
+    });
 }
 
 function normalizeDetectedLanguageCode({
@@ -353,24 +397,18 @@ function normalizeDetectedLanguageCode({
 }
 
 function normalizeDetectedSourceLanguageCode({
+    provider,
     rawLanguageCode,
     text,
 }: {
+    provider: LanguageDetectionProvider;
     rawLanguageCode: string;
     text: string;
-}): NormalizedLanguageCodes | null {
-    if (rawLanguageCode === "Chinese" || rawLanguageCode.startsWith("zh")) {
-        return normalizeChineseLanguageCode({ rawLanguageCode, text });
-    }
-
-    const linguaSourceCode = LINGUA_LANGUAGE_TO_SOURCE_CODE.get(rawLanguageCode);
-    if (linguaSourceCode !== undefined) {
-        return linguaSourceCode;
-    }
-
-    const canonicalLanguageCode = canonicalizeLanguageCode({ rawLanguageCode });
-    return normalizeBcp47SourceLanguageCode({
-        rawLanguageCode: canonicalLanguageCode,
+}): DetectedSourceLanguageCode | null {
+    return normalizeSourceLanguageCodeFromProvider({
+        provider,
+        rawLanguageCode,
+        text,
     });
 }
 
@@ -501,12 +539,15 @@ function shouldWarnUnnormalizedLanguage({
     sourceLanguageCode,
 }: {
     rawLanguageCode: string;
-    sourceLanguageCode: NormalizedLanguageCodes | null;
+    sourceLanguageCode: DetectedSourceLanguageCode | null;
 }): boolean {
     if (sourceLanguageCode !== null) {
         return false;
     }
-    return rawLanguageCode !== "Chinese" && !rawLanguageCode.startsWith("zh");
+    if (rawLanguageCode === "Chinese" || rawLanguageCode.startsWith("zh")) {
+        return false;
+    }
+    return !/^[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]{2,8})*$/.test(rawLanguageCode);
 }
 
 function warnUnnormalizedLanguage({
@@ -533,6 +574,7 @@ function normalizeLocalDetection({
 }): LanguageDetectionResult {
     const sourceLanguageCode = localDetectionHasEnoughConfidence({ detection })
         ? normalizeDetectedSourceLanguageCode({
+              provider: "lingua",
               rawLanguageCode: detection.rawLanguageCode,
               text,
           })
@@ -575,6 +617,7 @@ function normalizeGoogleDetection({
     const sourceLanguageCode =
         detection.confidence >= GOOGLE_MINIMUM_LANGUAGE_CONFIDENCE
             ? normalizeDetectedSourceLanguageCode({
+                  provider: "google_translate",
                   rawLanguageCode: detection.languageCode,
                   text,
               })

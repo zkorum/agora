@@ -6,6 +6,7 @@ describe("resolveContentLanguageMetadata", () => {
         const metadata = await resolveContentLanguageMetadata({
             text: "2323",
             googleCloudCredentials: undefined,
+            useGoogleLanguageDetection: false,
             localLanguageDetector: {
                 detect: () => Promise.resolve(undefined),
                 computeLanguageConfidence: () => Promise.resolve(0.2),
@@ -14,6 +15,8 @@ describe("resolveContentLanguageMetadata", () => {
 
         expect(metadata).toEqual({
             sourceLanguageCode: null,
+            sourceRawLanguageCode: null,
+            sourceLanguageProvider: null,
             sourceLanguageConfidence: null,
         });
     });
@@ -22,6 +25,7 @@ describe("resolveContentLanguageMetadata", () => {
         const metadata = await resolveContentLanguageMetadata({
             text: "bonjour tout le monde",
             googleCloudCredentials: undefined,
+            useGoogleLanguageDetection: false,
             languageHints: ["en", "es"],
             localLanguageDetector: {
                 detect: () => Promise.resolve({
@@ -33,6 +37,8 @@ describe("resolveContentLanguageMetadata", () => {
 
         expect(metadata).toEqual({
             sourceLanguageCode: "fr",
+            sourceRawLanguageCode: "fr",
+            sourceLanguageProvider: "lingua",
             sourceLanguageConfidence: 0.99,
         });
     });
@@ -41,6 +47,7 @@ describe("resolveContentLanguageMetadata", () => {
         const metadata = await resolveContentLanguageMetadata({
             text: "short civic text",
             googleCloudCredentials: undefined,
+            useGoogleLanguageDetection: false,
             languageHints: ["en", "es"],
             localLanguageDetector: {
                 detect: () => Promise.resolve(undefined),
@@ -51,6 +58,8 @@ describe("resolveContentLanguageMetadata", () => {
 
         expect(metadata).toEqual({
             sourceLanguageCode: "en",
+            sourceRawLanguageCode: "English",
+            sourceLanguageProvider: "lingua",
             sourceLanguageConfidence: 0.6,
         });
     });

@@ -14,6 +14,15 @@ IMPORT_WORKER_ENV_KEYS = (
     "IMPORT_WORKER_MAX_CONCURRENCY",
     "IMPORT_WORKER_STALE_THRESHOLD_MS",
     "IMPORT_WORKER_STALE_CLEANUP_EVERY_N_FLUSHES",
+    "IMPORT_WORKER_GOOGLE_CLOUD_PROJECT_ID",
+    "IMPORT_WORKER_GOOGLE_CLOUD_TRANSLATION_ENDPOINT",
+    "IMPORT_WORKER_GOOGLE_CLOUD_TRANSLATION_LOCATION",
+    "IMPORT_WORKER_GOOGLE_CLOUD_TRANSLATION_TIMEOUT_SECONDS",
+    "IMPORT_WORKER_GOOGLE_APPLICATION_CREDENTIALS",
+    "GOOGLE_CLOUD_PROJECT_ID",
+    "GOOGLE_CLOUD_TRANSLATION_ENDPOINT",
+    "GOOGLE_CLOUD_TRANSLATION_LOCATION",
+    "GOOGLE_APPLICATION_CREDENTIALS",
 )
 
 
@@ -113,3 +122,41 @@ def test_settings_reject_zero_batch_size(
             monkeypatch=monkeypatch,
             tmp_path=tmp_path,
         )
+
+
+def test_google_language_detection_settings_are_optional(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    settings = build_settings(
+        {"connection_string": "postgresql://primary.example/agora"},
+        monkeypatch=monkeypatch,
+        tmp_path=tmp_path,
+    )
+
+    assert settings.google_application_credentials_path is None
+    assert settings.google_cloud_project_id is None
+    assert settings.google_cloud_translation_location == "us-central1"
+    assert settings.google_cloud_translation_endpoint == "translate.googleapis.com"
+
+
+def test_google_language_detection_settings_accept_google_env_aliases(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    for key in IMPORT_WORKER_ENV_KEYS:
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("GOOGLE_APPLICATION_CREDENTIALS", "/secrets/google.json")
+    monkeypatch.setenv("GOOGLE_CLOUD_PROJECT_ID", "google-project")
+    monkeypatch.setenv("GOOGLE_CLOUD_TRANSLATION_LOCATION", "europe-west1")
+    monkeypatch.setenv("GOOGLE_CLOUD_TRANSLATION_ENDPOINT", "translate-eu.googleapis.com")
+
+    settings = Settings.model_validate(
+        {"connection_string": "postgresql://primary.example/agora"},
+    )
+
+    assert settings.google_application_credentials_path == "/secrets/google.json"
+    assert settings.google_cloud_project_id == "google-project"
+    assert settings.google_cloud_translation_location == "europe-west1"
+    assert settings.google_cloud_translation_endpoint == "translate-eu.googleapis.com"

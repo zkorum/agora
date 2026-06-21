@@ -189,7 +189,6 @@ export function conversationLanguageSettingToOutput({
         detectedLanguageCode: resolvedSetting.detectedLanguageCode,
         detectedSourceLanguageCode: resolvedSetting.detectedSourceLanguageCode,
         detectedRawLanguageCode: resolvedSetting.detectedRawLanguageCode,
-        detectedRawLanguageProvider: resolvedSetting.detectedRawLanguageProvider,
         detectionConfidence: resolvedSetting.detectionConfidence,
     };
 }

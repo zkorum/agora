@@ -10,7 +10,6 @@ Name | Type | Description | Notes
 **detectedLanguageCode** | **string** |  | [default to undefined]
 **detectedSourceLanguageCode** | **string** |  | [default to undefined]
 **detectedRawLanguageCode** | **string** |  | [default to undefined]
-**detectedRawLanguageProvider** | **string** |  | [default to undefined]
 **detectionConfidence** | **number** |  | [default to undefined]
 
 ## Example
@@ -24,7 +23,6 @@ const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListI
     detectedLanguageCode,
     detectedSourceLanguageCode,
     detectedRawLanguageCode,
-    detectedRawLanguageProvider,
     detectionConfidence,
 };
 ```

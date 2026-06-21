@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Conversation import worker"
 requires-python = ">=3.13"
 dependencies = [
+    "google-cloud-translate>=3.20",
     "lingua-language-detector>=2.1",
+    "opencc>=1.1",
     "psycopg[binary]>=3.2",
     "pydantic>=2.12",
     "pydantic-settings>=2.0",

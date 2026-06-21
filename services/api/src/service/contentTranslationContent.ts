@@ -1,5 +1,6 @@
 import type {
     ContentTranslationSubject,
+    ContentTranslationSourceLanguage,
     LanguageDetectionProvider,
     LocalizedContentTranslationStatus,
     LocalizedSurveyQuestionContent,
@@ -7,6 +8,7 @@ import type {
 import type {
     NormalizedLanguageCodes,
     SupportedDisplayLanguageCodes,
+    SupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
 
 export type ContentTranslationRequestMode = "read_existing" | "queue_if_missing";
@@ -16,11 +18,18 @@ export interface SurveyQuestionLocalizedContentSource {
     questionSlugId: string;
     contentId: number;
     questionText: string;
-    sourceLanguageCode: string | null;
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    sourceLanguageProvider: LanguageDetectionProvider | null;
+    sourceLanguageConfidence: number | null;
     options: {
         optionSlugId: string;
         contentId: number;
         optionText: string;
+        sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+        sourceRawLanguageCode: string | null;
+        sourceLanguageProvider: LanguageDetectionProvider | null;
+        sourceLanguageConfidence: number | null;
     }[];
 }
 
@@ -92,6 +101,35 @@ export function getSourceLanguageLabel(
     }
 }
 
+export function buildContentTranslationSourceLanguage({
+    sourceMetadata,
+}: {
+    sourceMetadata: TranslationSourceMetadata | undefined;
+}): ContentTranslationSourceLanguage {
+    if (sourceMetadata?.sourceLanguageCode !== undefined) {
+        const sourceLanguageCode = sourceMetadata.sourceLanguageCode;
+        if (sourceLanguageCode !== null) {
+            return {
+                kind: "recognized",
+                languageCode: sourceLanguageCode,
+                label: getSourceLanguageLabel(sourceLanguageCode) ?? sourceLanguageCode,
+            };
+        }
+    }
+
+    const rawLanguageCode = sourceMetadata?.sourceRawLanguageCode;
+    if (rawLanguageCode !== undefined && rawLanguageCode !== null) {
+        const label = getSourceLanguageLabel(rawLanguageCode);
+        return {
+            kind: "raw",
+            rawLanguageCode,
+            ...(label === undefined ? {} : { label }),
+        };
+    }
+
+    return { kind: "unknown" };
+}
+
 export function buildTranslationMetadata<
     TStatus extends LocalizedContentTranslationStatus,
 >({
@@ -105,10 +143,12 @@ export function buildTranslationMetadata<
 }) {
     const sourceLanguageCode = sourceMetadata?.sourceLanguageCode ?? null;
     const sourceLanguageLabel = getSourceLanguageLabel(sourceLanguageCode);
+    const sourceLanguage = buildContentTranslationSourceLanguage({ sourceMetadata });
     return {
         targetLanguageCode,
         sourceLanguageCode,
         ...(sourceLanguageLabel === undefined ? {} : { sourceLanguageLabel }),
+        sourceLanguage,
         status,
     };
 }
@@ -189,10 +229,10 @@ export function buildLocalizedSurveyQuestionContent({
             initialMode: "original",
             translation: {
                 ...buildTranslationMetadata({
-                    targetLanguageCode,
-                    sourceMetadata: translation,
-                    status:
-                        requestMode === "read_existing" ? "not_requested" : "pending",
+                        targetLanguageCode,
+                        sourceMetadata: translation ?? source,
+                        status:
+                            requestMode === "read_existing" ? "not_requested" : "pending",
                 }),
             },
             variants: {

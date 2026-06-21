@@ -8,6 +8,7 @@ Name | Type | Description | Notes
 **targetLanguageCode** | **string** |  | [default to undefined]
 **sourceLanguageCode** | **string** |  | [optional] [default to undefined]
 **sourceLanguageLabel** | **string** |  | [optional] [default to undefined]
+**sourceLanguage** | [**ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationSourceLanguage**](ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationSourceLanguage.md) |  | [default to undefined]
 **status** | **string** |  | [default to undefined]
 
 ## Example
@@ -19,6 +20,7 @@ const instance: ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2T
     targetLanguageCode,
     sourceLanguageCode,
     sourceLanguageLabel,
+    sourceLanguage,
     status,
 };
 ```

@@ -32,6 +32,8 @@ from agora_analysis_worker_shared.description_input import (
 from agora_analysis_worker_shared.description_translation import (
     DescriptionForTranslation,
     TranslationRepresentativeOpinion,
+    description_translation_output_locales,
+    description_translation_provider_targets,
 )
 from agora_analysis_worker_shared.generated_models import (
     AnalysisResultOutcomeEnum,
@@ -226,7 +228,9 @@ def description_translation_work_claim_batches(
     batches: list[list[ClaimedDescriptionTranslationWorkItem]] = []
     claims_by_context: dict[str, list[ClaimedDescriptionTranslationWorkItem]] = {}
     for claim in claims:
-        claims_by_context.setdefault(claim.locale, []).append(claim)
+        provider_targets = description_translation_provider_targets([claim.locale])
+        provider_target = provider_targets[0]
+        claims_by_context.setdefault(provider_target, []).append(claim)
 
     for context_claims in claims_by_context.values():
         batches.extend(
@@ -3644,14 +3648,16 @@ def process_description_translation_work_items_batch(
             translated_description_ids=[],
         )
 
-    locale = claims[0].locale
-    if any(claim.locale != locale for claim in claims):
-        msg = "translation batches must contain exactly one locale"
+    provider_targets = description_translation_provider_targets(
+        [claim.locale for claim in claims]
+    )
+    if len(provider_targets) != 1:
+        msg = "translation batches must contain exactly one provider target"
         raise ValueError(msg)
+    provider_target_locale = provider_targets[0]
 
     started_at = time.perf_counter()
     schedules: list[AiDescriptionWorkResult] = []
-    claim_by_description_id: dict[int, ClaimedDescriptionTranslationWorkItem] = {}
     descriptions: list[DescriptionForTranslation] = []
     processable_claims: list[ClaimedDescriptionTranslationWorkItem] = []
 
@@ -3695,25 +3701,37 @@ def process_description_translation_work_items_batch(
             description_request = descriptions_by_id.get(claim.description_id)
             if description_request is None:
                 continue
-            claim_by_description_id[claim.description_id] = claim
             descriptions.append(description_request)
+        descriptions = list(
+            {
+                description.description_id: description for description in descriptions
+            }.values()
+        )
         session.commit()
 
     provider_started_at = time.perf_counter()
-    translations = translate_descriptions(descriptions, [locale]) if descriptions else []
+    translations = (
+        translate_descriptions(descriptions, [provider_target_locale]) if descriptions else []
+    )
     provider_ms = (time.perf_counter() - provider_started_at) * 1000
-    translation_by_description_id = _translation_by_description_id_for_batch(
+    expected_description_ids = {description.description_id for description in descriptions}
+    translation_by_description_locale = _translation_by_description_locale_for_batch(
         translations=translations,
-        expected_description_ids=set(claim_by_description_id),
-        locale=locale,
+        expected_description_ids=expected_description_ids,
+        provider_target_locale=provider_target_locale,
     )
     missing_description_ids = sorted(
-        set(claim_by_description_id) - set(translation_by_description_id)
+        {
+            claim.description_id
+            for claim in processable_claims
+            if (claim.description_id, claim.locale) not in translation_by_description_locale
+            and claim.description_id in expected_description_ids
+        }
     )
 
     with Session(engine) as session:
         completed_claims: list[ClaimedDescriptionTranslationWorkItem] = []
-        provider_requested_description_ids = set(claim_by_description_id)
+        provider_requested_description_ids = expected_description_ids
         for claim in processable_claims:
             if not _ai_description_claim_is_active(session, claim=claim):
                 log.info(
@@ -3743,14 +3761,14 @@ def process_description_translation_work_items_batch(
                 continue
             if (
                 claim.description_id not in provider_requested_description_ids
-                or claim.description_id in translation_by_description_id
+                or (claim.description_id, claim.locale) in translation_by_description_locale
             ):
                 completed_claims.append(claim)
 
         active_description_ids = {
             claim.description_id
             for claim in completed_claims
-            if claim.description_id in translation_by_description_id
+            if (claim.description_id, claim.locale) in translation_by_description_locale
         }
         translation_values = [
             {
@@ -3759,7 +3777,7 @@ def process_description_translation_work_items_batch(
                 "label": translation.label,
                 "summary": translation.summary,
             }
-            for description_id, translation in translation_by_description_id.items()
+            for (description_id, _locale), translation in translation_by_description_locale.items()
             if description_id in active_description_ids
         ]
         if translation_values:
@@ -3787,10 +3805,10 @@ def process_description_translation_work_items_batch(
         session.commit()
 
     log.info(
-        "[AiDescriptionWorkDB] Completed translation work batch count=%d locale=%s "
+        "[AiDescriptionWorkDB] Completed translation work batch count=%d providerLocale=%s "
         "providerMs=%.1f totalMs=%.1f translated=%d conversationSlugIds=%s",
         len(completed_claims),
-        locale,
+        provider_target_locale,
         provider_ms,
         (time.perf_counter() - started_at) * 1000,
         len(active_description_ids),
@@ -4436,32 +4454,37 @@ def _insert_description_translations(
     session.execute(statement)
 
 
-def _translation_by_description_id_for_batch(
+def _translation_by_description_locale_for_batch(
     *,
     translations: list[DescriptionTranslation],
     expected_description_ids: set[int],
-    locale: str,
-) -> dict[int, DescriptionTranslation]:
+    provider_target_locale: str,
+) -> dict[tuple[int, str], DescriptionTranslation]:
     if not expected_description_ids:
         if translations:
             msg = "translation output mismatch for empty batch"
             raise DescriptionOutputError(msg)
         return {}
 
-    translation_by_description_id: dict[int, DescriptionTranslation] = {}
+    expected_locales = set(description_translation_output_locales(provider_target_locale))
+    translation_by_description_locale: dict[tuple[int, str], DescriptionTranslation] = {}
     for translation in translations:
-        if translation.locale != locale:
-            msg = f"translation output mismatch for locale {locale}"
+        if translation.locale not in expected_locales:
+            msg = f"translation output mismatch for provider locale {provider_target_locale}"
             raise DescriptionOutputError(msg)
         if translation.description_id not in expected_description_ids:
             msg = f"unexpected translation output for description {translation.description_id}"
             raise DescriptionOutputError(msg)
-        if translation.description_id in translation_by_description_id:
-            msg = f"duplicate translation output for description {translation.description_id}"
+        key = (translation.description_id, translation.locale)
+        if key in translation_by_description_locale:
+            msg = (
+                f"duplicate translation output for description {translation.description_id} "
+                f"locale {translation.locale}"
+            )
             raise DescriptionOutputError(msg)
-        translation_by_description_id[translation.description_id] = translation
+        translation_by_description_locale[key] = translation
 
-    return translation_by_description_id
+    return translation_by_description_locale
 
 
 def _fetch_descriptions_for_translation_work_batch(
@@ -4472,25 +4495,35 @@ def _fetch_descriptions_for_translation_work_batch(
     if not claims:
         return {}
 
-    locale = claims[0].locale
-    if any(claim.locale != locale for claim in claims):
-        msg = "translation hydration batches must contain exactly one locale"
+    provider_targets = description_translation_provider_targets(
+        [claim.locale for claim in claims]
+    )
+    if len(provider_targets) != 1:
+        msg = "translation hydration batches must contain exactly one provider target"
         raise ValueError(msg)
 
     description_ids = sorted({claim.description_id for claim in claims})
+    requested_keys = sorted({(claim.description_id, claim.locale) for claim in claims})
     existing_translation_rows = session.execute(
-        select(OpinionGroupDescriptionTranslation.description_id).where(
-            and_(
-                OpinionGroupDescriptionTranslation.description_id.in_(description_ids),
-                OpinionGroupDescriptionTranslation.locale == locale,
-            )
+        select(
+            OpinionGroupDescriptionTranslation.description_id,
+            OpinionGroupDescriptionTranslation.locale,
+        ).where(
+            tuple_(
+                OpinionGroupDescriptionTranslation.description_id,
+                OpinionGroupDescriptionTranslation.locale,
+            ).in_(requested_keys)
         )
     ).all()
-    translated_description_ids = {row.description_id for row in existing_translation_rows}
+    translated_description_locale_keys = {
+        (row.description_id, row.locale) for row in existing_translation_rows
+    }
     pending_description_ids = [
-        description_id
-        for description_id in description_ids
-        if description_id not in translated_description_ids
+        description_id for description_id in description_ids if any(
+            (description_id, claim.locale) not in translated_description_locale_keys
+            for claim in claims
+            if claim.description_id == description_id
+        )
     ]
     if not pending_description_ids:
         return {}

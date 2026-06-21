@@ -25,15 +25,22 @@ import {
     type ContentTranslationQueuePriority,
     enqueueContentTranslationWork,
 } from "@/shared-backend/contentTranslationQueue.js";
-import { shouldSkipTranslation } from "@/shared-backend/translate.js";
+import {
+    shouldSkipTranslation,
+    translationSourceMatchesCurrentSource,
+} from "@/shared-backend/translate.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
 import type {
+    LanguageDetectionProvider,
     ContentTranslationSubject,
     LocalizedConversationContent,
     LocalizedOpinionContent,
     LocalizedSurveyQuestionContent,
 } from "@/shared/types/zod.js";
-import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
+import type {
+    SupportedDisplayLanguageCodes,
+    SupportedSpokenLanguageCodes,
+} from "@/shared/languages.js";
 import {
     buildLocalizedSurveyQuestionContent,
     buildTranslationMetadata,
@@ -69,7 +76,10 @@ interface ConversationContentSource {
     contentId: number;
     title: string;
     body: string | null;
-    sourceLanguageCode: string | null;
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    sourceLanguageProvider: LanguageDetectionProvider | null;
+    sourceLanguageConfidence: number | null;
 }
 
 interface OpinionContentSource {
@@ -78,13 +88,20 @@ interface OpinionContentSource {
     opinionSlugId: string;
     contentId: number;
     content: string;
-    sourceLanguageCode: string | null;
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    sourceLanguageProvider: LanguageDetectionProvider | null;
+    sourceLanguageConfidence: number | null;
 }
 
 interface SurveyQuestionOptionContentSource {
     optionSlugId: string;
     contentId: number;
     optionText: string;
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    sourceLanguageProvider: LanguageDetectionProvider | null;
+    sourceLanguageConfidence: number | null;
 }
 
 interface SurveyQuestionContentSource {
@@ -94,7 +111,10 @@ interface SurveyQuestionContentSource {
     questionId: number;
     contentId: number;
     questionText: string;
-    sourceLanguageCode: string | null;
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    sourceLanguageProvider: LanguageDetectionProvider | null;
+    sourceLanguageConfidence: number | null;
     options: SurveyQuestionOptionContentSource[];
 }
 
@@ -343,6 +363,10 @@ async function fetchConversationSource({
             title: conversationContentTable.title,
             body: conversationContentTable.body,
             sourceLanguageCode: conversationContentTable.sourceLanguageCode,
+            sourceRawLanguageCode: conversationContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider: conversationContentTable.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                conversationContentTable.sourceLanguageConfidence,
         })
         .from(conversationTable)
         .innerJoin(
@@ -376,6 +400,9 @@ async function fetchOpinionSource({
             contentId: opinionContentTable.id,
             content: opinionContentTable.content,
             sourceLanguageCode: opinionContentTable.sourceLanguageCode,
+            sourceRawLanguageCode: opinionContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider: opinionContentTable.sourceLanguageProvider,
+            sourceLanguageConfidence: opinionContentTable.sourceLanguageConfidence,
         })
         .from(opinionTable)
         .innerJoin(
@@ -415,6 +442,10 @@ async function fetchSurveyQuestionSource({
             contentId: surveyQuestionContentTable.id,
             questionText: surveyQuestionContentTable.questionText,
             sourceLanguageCode: surveyQuestionContentTable.sourceLanguageCode,
+            sourceRawLanguageCode: surveyQuestionContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider: surveyQuestionContentTable.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                surveyQuestionContentTable.sourceLanguageConfidence,
         })
         .from(surveyQuestionTable)
         .innerJoin(
@@ -443,6 +474,14 @@ async function fetchSurveyQuestionSource({
             optionSlugId: surveyQuestionOptionTable.slugId,
             contentId: surveyQuestionOptionContentTable.id,
             optionText: surveyQuestionOptionContentTable.optionText,
+            sourceLanguageCode:
+                surveyQuestionOptionContentTable.sourceLanguageCode,
+            sourceRawLanguageCode:
+                surveyQuestionOptionContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider:
+                surveyQuestionOptionContentTable.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                surveyQuestionOptionContentTable.sourceLanguageConfidence,
         })
         .from(surveyQuestionOptionTable)
         .innerJoin(
@@ -465,21 +504,24 @@ async function fetchSurveyQuestionSource({
 
 async function hasConversationTranslation({
     db,
-    conversationContentId,
+    source,
     targetLanguageCode,
 }: {
     db: PostgresDatabase;
-    conversationContentId: number;
+    source: ConversationContentSource;
     targetLanguageCode: SupportedDisplayLanguageCodes;
 }): Promise<boolean> {
     const rows = await db
-        .select({ id: conversationContentTranslationTable.id })
+        .select({
+            sourceLanguageCode:
+                conversationContentTranslationTable.sourceLanguageCode,
+        })
         .from(conversationContentTranslationTable)
         .where(
             and(
                 eq(
                     conversationContentTranslationTable.conversationContentId,
-                    conversationContentId,
+                    source.contentId,
                 ),
                 eq(
                     conversationContentTranslationTable.displayLanguageCode,
@@ -488,24 +530,31 @@ async function hasConversationTranslation({
             ),
         )
         .limit(1);
-    return rows.length > 0;
+    const row = rows.at(0);
+    return (
+        row !== undefined &&
+        translationSourceMatchesCurrentSource({
+            translationSourceLanguageCode: row.sourceLanguageCode,
+            currentSourceLanguageCode: source.sourceLanguageCode,
+        })
+    );
 }
 
 async function hasOpinionTranslation({
     db,
-    opinionContentId,
+    source,
     targetLanguageCode,
 }: {
     db: PostgresDatabase;
-    opinionContentId: number;
+    source: OpinionContentSource;
     targetLanguageCode: SupportedDisplayLanguageCodes;
 }): Promise<boolean> {
     const rows = await db
-        .select({ id: opinionContentTranslationTable.id })
+        .select({ sourceLanguageCode: opinionContentTranslationTable.sourceLanguageCode })
         .from(opinionContentTranslationTable)
         .where(
             and(
-                eq(opinionContentTranslationTable.opinionContentId, opinionContentId),
+                eq(opinionContentTranslationTable.opinionContentId, source.contentId),
                 eq(
                     opinionContentTranslationTable.displayLanguageCode,
                     targetLanguageCode,
@@ -513,7 +562,14 @@ async function hasOpinionTranslation({
             ),
         )
         .limit(1);
-    return rows.length > 0;
+    const row = rows.at(0);
+    return (
+        row !== undefined &&
+        translationSourceMatchesCurrentSource({
+            translationSourceLanguageCode: row.sourceLanguageCode,
+            currentSourceLanguageCode: source.sourceLanguageCode,
+        })
+    );
 }
 
 async function hasSurveyQuestionTranslation({
@@ -526,7 +582,10 @@ async function hasSurveyQuestionTranslation({
     targetLanguageCode: SupportedDisplayLanguageCodes;
 }): Promise<boolean> {
     const questionRows = await db
-        .select({ id: surveyQuestionContentTranslationTable.id })
+        .select({
+            sourceLanguageCode:
+                surveyQuestionContentTranslationTable.sourceLanguageCode,
+        })
         .from(surveyQuestionContentTranslationTable)
         .where(
             and(
@@ -541,7 +600,14 @@ async function hasSurveyQuestionTranslation({
             ),
         )
         .limit(1);
-    if (questionRows.length === 0) {
+    const questionRow = questionRows.at(0);
+    if (
+        questionRow === undefined ||
+        !translationSourceMatchesCurrentSource({
+            translationSourceLanguageCode: questionRow.sourceLanguageCode,
+            currentSourceLanguageCode: source.sourceLanguageCode,
+        })
+    ) {
         return false;
     }
 
@@ -554,6 +620,8 @@ async function hasSurveyQuestionTranslation({
         .select({
             surveyQuestionOptionContentId:
                 surveyQuestionOptionContentTranslationTable.surveyQuestionOptionContentId,
+            sourceLanguageCode:
+                surveyQuestionOptionContentTranslationTable.sourceLanguageCode,
         })
         .from(surveyQuestionOptionContentTranslationTable)
         .where(
@@ -568,14 +636,66 @@ async function hasSurveyQuestionTranslation({
                 ),
             ),
         );
+    const sourceLanguageByTranslatedOptionContentId = new Map(
+        translatedOptionRows.map((row) => [
+            row.surveyQuestionOptionContentId,
+            row.sourceLanguageCode,
+        ]),
+    );
     const translatedOptionContentIds = new Set(
-        translatedOptionRows.map((row) => row.surveyQuestionOptionContentId),
+        source.options
+            .filter((option) => {
+                const sourceLanguageCode =
+                    sourceLanguageByTranslatedOptionContentId.get(option.contentId);
+                return (
+                    sourceLanguageCode !== undefined &&
+                    translationSourceMatchesCurrentSource({
+                        translationSourceLanguageCode: sourceLanguageCode,
+                        currentSourceLanguageCode: option.sourceLanguageCode,
+                    })
+                );
+            })
+            .map((option) => option.contentId),
     );
     return hasCompleteSurveyQuestionTranslation({
         questionTranslationExists: true,
         optionContentIds,
         translatedOptionContentIds,
     });
+}
+
+function shouldTranslateContent({
+    sourceLanguageCode,
+    targetLanguageCode,
+}: {
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+}): boolean {
+    return !shouldSkipTranslation({
+        sourceLanguageCode: sourceLanguageCode ?? undefined,
+        targetLanguageCode,
+    });
+}
+
+function shouldTranslateSurveyQuestionSource({
+    source,
+    targetLanguageCode,
+}: {
+    source: SurveyQuestionContentSource;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+}): boolean {
+    return (
+        shouldTranslateContent({
+            sourceLanguageCode: source.sourceLanguageCode,
+            targetLanguageCode,
+        }) ||
+        source.options.some((option) =>
+            shouldTranslateContent({
+                sourceLanguageCode: option.sourceLanguageCode,
+                targetLanguageCode,
+            }),
+        )
+    );
 }
 
 async function fetchConfiguredTargetLanguageCodes({
@@ -671,6 +791,9 @@ async function fetchSeedOpinionSources({
             contentId: opinionContentTable.id,
             content: opinionContentTable.content,
             sourceLanguageCode: opinionContentTable.sourceLanguageCode,
+            sourceRawLanguageCode: opinionContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider: opinionContentTable.sourceLanguageProvider,
+            sourceLanguageConfidence: opinionContentTable.sourceLanguageConfidence,
         })
         .from(opinionTable)
         .innerJoin(
@@ -710,9 +833,21 @@ async function fetchCurrentSurveyQuestionSources({
             contentId: surveyQuestionContentTable.id,
             questionText: surveyQuestionContentTable.questionText,
             sourceLanguageCode: surveyQuestionContentTable.sourceLanguageCode,
+            sourceRawLanguageCode: surveyQuestionContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider: surveyQuestionContentTable.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                surveyQuestionContentTable.sourceLanguageConfidence,
             optionSlugId: surveyQuestionOptionTable.slugId,
             optionContentId: surveyQuestionOptionContentTable.id,
             optionText: surveyQuestionOptionContentTable.optionText,
+            optionSourceLanguageCode:
+                surveyQuestionOptionContentTable.sourceLanguageCode,
+            optionSourceRawLanguageCode:
+                surveyQuestionOptionContentTable.sourceRawLanguageCode,
+            optionSourceLanguageProvider:
+                surveyQuestionOptionContentTable.sourceLanguageProvider,
+            optionSourceLanguageConfidence:
+                surveyQuestionOptionContentTable.sourceLanguageConfidence,
         })
         .from(surveyQuestionTable)
         .innerJoin(
@@ -760,6 +895,9 @@ async function fetchCurrentSurveyQuestionSources({
             contentId: row.contentId,
             questionText: row.questionText,
             sourceLanguageCode: row.sourceLanguageCode,
+            sourceRawLanguageCode: row.sourceRawLanguageCode,
+            sourceLanguageProvider: row.sourceLanguageProvider,
+            sourceLanguageConfidence: row.sourceLanguageConfidence,
             options: [],
         };
         if (
@@ -771,6 +909,10 @@ async function fetchCurrentSurveyQuestionSources({
                 optionSlugId: row.optionSlugId,
                 contentId: row.optionContentId,
                 optionText: row.optionText,
+                sourceLanguageCode: row.optionSourceLanguageCode,
+                sourceRawLanguageCode: row.optionSourceRawLanguageCode,
+                sourceLanguageProvider: row.optionSourceLanguageProvider,
+                sourceLanguageConfidence: row.optionSourceLanguageConfidence,
             });
         }
         if (existing === undefined) {
@@ -842,14 +984,13 @@ export async function scheduleEagerContentTranslationForConversation({
 
     for (const targetLanguageCode of targetLanguageCodes) {
         if (
-            conversationSource.sourceLanguageCode !== null &&
-            !shouldSkipTranslation({
+            shouldTranslateContent({
                 sourceLanguageCode: conversationSource.sourceLanguageCode,
                 targetLanguageCode,
             }) &&
             !(await hasConversationTranslation({
                 db,
-                conversationContentId: conversationSource.contentId,
+                source: conversationSource,
                 targetLanguageCode,
             }))
         ) {
@@ -870,9 +1011,8 @@ export async function scheduleEagerContentTranslationForConversation({
 
         for (const source of surveySources) {
             if (
-                source.sourceLanguageCode === null ||
-                shouldSkipTranslation({
-                    sourceLanguageCode: source.sourceLanguageCode,
+                !shouldTranslateSurveyQuestionSource({
+                    source,
                     targetLanguageCode,
                 }) ||
                 (await hasSurveyQuestionTranslation({
@@ -903,14 +1043,13 @@ export async function scheduleEagerContentTranslationForConversation({
 
         for (const source of seedOpinionSources) {
             if (
-                source.sourceLanguageCode === null ||
-                shouldSkipTranslation({
+                !shouldTranslateContent({
                     sourceLanguageCode: source.sourceLanguageCode,
                     targetLanguageCode,
                 }) ||
                 (await hasOpinionTranslation({
                     db,
-                    opinionContentId: source.contentId,
+                    source,
                     targetLanguageCode,
                 }))
             ) {
@@ -975,6 +1114,14 @@ async function buildSurveyQuestionResponse({
         )
         .limit(1);
     const questionTranslation = questionTranslationRows.at(0);
+    const freshQuestionTranslation =
+        questionTranslation !== undefined &&
+        translationSourceMatchesCurrentSource({
+            translationSourceLanguageCode: questionTranslation.sourceLanguageCode,
+            currentSourceLanguageCode: source.sourceLanguageCode,
+        })
+            ? questionTranslation
+            : undefined;
     const optionContentIds = source.options.map((option) => option.contentId);
     const optionTranslationRows =
         optionContentIds.length === 0
@@ -985,6 +1132,8 @@ async function buildSurveyQuestionResponse({
                           surveyQuestionOptionContentTranslationTable.surveyQuestionOptionContentId,
                       translatedOptionText:
                           surveyQuestionOptionContentTranslationTable.translatedOptionText,
+                      sourceLanguageCode:
+                          surveyQuestionOptionContentTranslationTable.sourceLanguageCode,
                   })
                   .from(surveyQuestionOptionContentTranslationTable)
                   .where(
@@ -999,26 +1148,43 @@ async function buildSurveyQuestionResponse({
                           ),
                       ),
                   );
+    const sourceLanguageByOptionContentId = new Map(
+        source.options.map((option) => [option.contentId, option.sourceLanguageCode]),
+    );
     const translatedOptionsByContentId = new Map(
-        optionTranslationRows.map((row) => [
-            row.surveyQuestionOptionContentId,
-            row.translatedOptionText,
-        ]),
+        optionTranslationRows
+            .filter((row) => {
+                const currentSourceLanguageCode = sourceLanguageByOptionContentId.get(
+                    row.surveyQuestionOptionContentId,
+                );
+                return (
+                    currentSourceLanguageCode !== undefined &&
+                    translationSourceMatchesCurrentSource({
+                        translationSourceLanguageCode: row.sourceLanguageCode,
+                        currentSourceLanguageCode,
+                    })
+                );
+            })
+            .map((row) => [
+                row.surveyQuestionOptionContentId,
+                row.translatedOptionText,
+            ]),
     );
     return buildLocalizedSurveyQuestionContent({
         source,
         translation:
-            questionTranslation === undefined
+            freshQuestionTranslation === undefined
                 ? undefined
                 : {
-                      translatedQuestionText: questionTranslation.translatedQuestionText,
-                      sourceLanguageCode: questionTranslation.sourceLanguageCode,
+                      translatedQuestionText:
+                          freshQuestionTranslation.translatedQuestionText,
+                      sourceLanguageCode: freshQuestionTranslation.sourceLanguageCode,
                       sourceRawLanguageCode:
-                          questionTranslation.sourceRawLanguageCode,
+                          freshQuestionTranslation.sourceRawLanguageCode,
                       sourceLanguageProvider:
-                          questionTranslation.sourceLanguageProvider,
+                          freshQuestionTranslation.sourceLanguageProvider,
                       sourceLanguageConfidence:
-                          questionTranslation.sourceLanguageConfidence,
+                          freshQuestionTranslation.sourceLanguageConfidence,
                       translatedOptionsByContentId,
                   },
         targetLanguageCode,
@@ -1067,9 +1233,17 @@ async function buildConversationResponse({
         )
         .limit(1);
     const translation = translationRows.at(0);
+    const freshTranslation =
+        translation !== undefined &&
+        translationSourceMatchesCurrentSource({
+            translationSourceLanguageCode: translation.sourceLanguageCode,
+            currentSourceLanguageCode: source.sourceLanguageCode,
+        })
+            ? translation
+            : undefined;
     const original = { title: source.title, body: source.body ?? undefined };
 
-    if (translation !== undefined) {
+    if (freshTranslation !== undefined) {
         return {
             subject: {
                 kind: "conversation",
@@ -1082,15 +1256,15 @@ async function buildConversationResponse({
                 translation: {
                     ...buildTranslationMetadata({
                         targetLanguageCode,
-                        sourceMetadata: translation,
+                        sourceMetadata: freshTranslation,
                         status: "completed",
                     }),
                 },
                 variants: {
                     original,
                     translated: {
-                        title: translation.translatedTitle,
-                        body: translation.translatedBody ?? undefined,
+                        title: freshTranslation.translatedTitle,
+                        body: freshTranslation.translatedBody ?? undefined,
                     },
                 },
             },
@@ -1109,7 +1283,7 @@ async function buildConversationResponse({
             translation: {
                 ...buildTranslationMetadata({
                     targetLanguageCode,
-                    sourceMetadata: translation,
+                    sourceMetadata: source,
                     status:
                         requestMode === "read_existing"
                             ? "not_requested"
@@ -1159,9 +1333,17 @@ async function buildOpinionResponse({
         )
         .limit(1);
     const translation = translationRows.at(0);
+    const freshTranslation =
+        translation !== undefined &&
+        translationSourceMatchesCurrentSource({
+            translationSourceLanguageCode: translation.sourceLanguageCode,
+            currentSourceLanguageCode: source.sourceLanguageCode,
+        })
+            ? translation
+            : undefined;
     const original = { content: source.content };
 
-    if (translation !== undefined) {
+    if (freshTranslation !== undefined) {
         return {
             subject: {
                 kind: "opinion",
@@ -1175,13 +1357,13 @@ async function buildOpinionResponse({
                 translation: {
                     ...buildTranslationMetadata({
                         targetLanguageCode,
-                        sourceMetadata: translation,
+                        sourceMetadata: freshTranslation,
                         status: "completed",
                     }),
                 },
                 variants: {
                     original,
-                    translated: { content: translation.translatedContent },
+                    translated: { content: freshTranslation.translatedContent },
                 },
             },
         };
@@ -1200,7 +1382,7 @@ async function buildOpinionResponse({
             translation: {
                 ...buildTranslationMetadata({
                     targetLanguageCode,
-                    sourceMetadata: translation,
+                    sourceMetadata: source,
                     status:
                         requestMode === "read_existing"
                             ? "not_requested"
@@ -1239,8 +1421,8 @@ export async function requestContentTranslation({
             source,
             targetLanguageCode,
         });
-        const skipTranslation = shouldSkipTranslation({
-            sourceLanguageCode: source.sourceLanguageCode ?? undefined,
+        const skipTranslation = !shouldTranslateSurveyQuestionSource({
+            source,
             targetLanguageCode,
         });
         if (
@@ -1284,11 +1466,11 @@ export async function requestContentTranslation({
         }
         const translationExists = await hasConversationTranslation({
             db,
-            conversationContentId: source.contentId,
+            source,
             targetLanguageCode,
         });
-        const skipTranslation = shouldSkipTranslation({
-            sourceLanguageCode: source.sourceLanguageCode ?? undefined,
+        const skipTranslation = !shouldTranslateContent({
+            sourceLanguageCode: source.sourceLanguageCode,
             targetLanguageCode,
         });
         if (
@@ -1329,11 +1511,11 @@ export async function requestContentTranslation({
     }
     const translationExists = await hasOpinionTranslation({
         db,
-        opinionContentId: source.contentId,
+        source,
         targetLanguageCode,
     });
-    const skipTranslation = shouldSkipTranslation({
-        sourceLanguageCode: source.sourceLanguageCode ?? undefined,
+    const skipTranslation = !shouldTranslateContent({
+        sourceLanguageCode: source.sourceLanguageCode,
         targetLanguageCode,
     });
     if (

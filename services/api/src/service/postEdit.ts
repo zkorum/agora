@@ -42,6 +42,7 @@ import {
     conversationLanguageSettingToOutput,
     getConversationLanguageSetting,
     resolveConversationLanguageSetting,
+    type StoredConversationLanguageSetting,
     upsertConversationLanguageSetting,
 } from "@/service/conversationLanguage.js";
 import {
@@ -52,9 +53,15 @@ import {
 import {
     buildContentBlockLanguageDetectionCorpus,
     buildSurveyLanguageDetectionCorpus,
+    contentLanguageMetadataUpdateValues,
     getBlockLanguageHints,
+    getContentItemLanguageHints,
+    refreshCurrentConversationOwnedContentLanguageMetadata,
+    type ContentLanguageMetadata,
     resolveContentLanguageMetadata,
 } from "./contentLanguageMetadata.js";
+import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
+import type { ConversationMultilingualSetting } from "@/shared/types/zod.js";
 
 interface GetConversationForEditProps {
     db: PostgresDatabase;
@@ -197,6 +204,110 @@ interface UpdateConversationProps {
     data: Omit<UpdateConversationRequest, "conversationSlugId"> & {
         conversationSlugId: string;
     };
+}
+
+interface ContentDetectionHintState {
+    mode: StoredConversationLanguageSetting["mode"];
+    mainLanguageCode: SupportedDisplayLanguageCodes | null;
+    manualLanguageCode: SupportedDisplayLanguageCodes | null;
+    additionalLanguageCodes: SupportedDisplayLanguageCodes[];
+}
+
+function contentDetectionHintState({
+    languageSetting,
+    additionalLanguageCodes,
+}: {
+    languageSetting: StoredConversationLanguageSetting | undefined;
+    additionalLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+}): ContentDetectionHintState {
+    const sortedAdditionalLanguageCodes = [...additionalLanguageCodes].sort();
+    if (languageSetting === undefined) {
+        return {
+            mode: "auto" as const,
+            mainLanguageCode: null,
+            manualLanguageCode: null,
+            additionalLanguageCodes: sortedAdditionalLanguageCodes,
+        };
+    }
+    return {
+        mode: languageSetting.mode,
+        mainLanguageCode:
+            languageSetting.mode === "manual"
+                ? languageSetting.languageCode
+                : languageSetting.detectedLanguageCode,
+        manualLanguageCode:
+            languageSetting.mode === "manual" ? languageSetting.languageCode : null,
+        additionalLanguageCodes: sortedAdditionalLanguageCodes,
+    };
+}
+
+function contentDetectionHintStateMatches({
+    previous,
+    next,
+}: {
+    previous: ContentDetectionHintState;
+    next: ContentDetectionHintState;
+}): boolean {
+    return (
+        previous.mode === next.mode &&
+        previous.mainLanguageCode === next.mainLanguageCode &&
+        previous.manualLanguageCode === next.manualLanguageCode &&
+        previous.additionalLanguageCodes.length ===
+            next.additionalLanguageCodes.length &&
+        previous.additionalLanguageCodes.every(
+            (languageCode, index) =>
+                languageCode === next.additionalLanguageCodes[index],
+        )
+    );
+}
+
+function contentDetectionHintsChanged({
+    previousLanguageSetting,
+    nextLanguageSetting,
+    previousAdditionalLanguageCodes,
+    nextAdditionalLanguageCodes,
+}: {
+    previousLanguageSetting: StoredConversationLanguageSetting | undefined;
+    nextLanguageSetting: StoredConversationLanguageSetting;
+    previousAdditionalLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+    nextAdditionalLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+}): boolean {
+    return !contentDetectionHintStateMatches({
+        previous: contentDetectionHintState({
+            languageSetting: previousLanguageSetting,
+            additionalLanguageCodes: previousAdditionalLanguageCodes,
+        }),
+        next: contentDetectionHintState({
+            languageSetting: nextLanguageSetting,
+            additionalLanguageCodes: nextAdditionalLanguageCodes,
+        }),
+    });
+}
+
+function shouldRefreshCurrentContentLanguageMetadata({
+    previousLanguageSetting,
+    nextLanguageSetting,
+    previousMultilingualSetting,
+    nextMultilingualSetting,
+}: {
+    previousLanguageSetting: StoredConversationLanguageSetting | undefined;
+    nextLanguageSetting: StoredConversationLanguageSetting;
+    previousMultilingualSetting: ConversationMultilingualSetting;
+    nextMultilingualSetting: ConversationMultilingualSetting;
+}): boolean {
+    if (!nextMultilingualSetting.dynamicTranslationEnabled) {
+        return false;
+    }
+    if (!previousMultilingualSetting.dynamicTranslationEnabled) {
+        return true;
+    }
+    return contentDetectionHintsChanged({
+        previousLanguageSetting,
+        nextLanguageSetting,
+        previousAdditionalLanguageCodes:
+            previousMultilingualSetting.additionalLanguageCodes,
+        nextAdditionalLanguageCodes: nextMultilingualSetting.additionalLanguageCodes,
+    });
 }
 
 export async function updateConversation({
@@ -358,6 +469,10 @@ export async function updateConversation({
             db: tx,
             conversationId,
         });
+        const currentMultilingualSetting = await getConversationMultilingualSetting({
+            db: tx,
+            conversationId,
+        });
         const resolvedLanguageSetting =
             await resolveConversationLanguageSetting({
                 request: languageSetting,
@@ -386,6 +501,18 @@ export async function updateConversation({
                 canUseDynamicTranslation:
                     restrictedDynamicTranslationFeatures.length === 0,
             });
+        const contentItemLanguageHints = getContentItemLanguageHints({
+            languageSetting: resolvedLanguageSetting,
+            additionalLanguageCodes:
+                normalizedMultilingualSetting.additionalLanguageCodes,
+        });
+        const shouldRefreshContentSourceLanguageMetadata =
+            shouldRefreshCurrentContentLanguageMetadata({
+                previousLanguageSetting: currentLanguageSetting,
+                nextLanguageSetting: resolvedLanguageSetting,
+                previousMultilingualSetting: currentMultilingualSetting,
+                nextMultilingualSetting: normalizedMultilingualSetting,
+            });
         if (
             restrictedDynamicTranslationFeatures.length > 0 &&
             (multilingualSetting.dynamicTranslationEnabled ||
@@ -396,26 +523,34 @@ export async function updateConversation({
                 reason: "premium_access_required",
             } as const;
         }
-        const sourceLanguageMetadata = await resolveContentLanguageMetadata({
-            text: buildContentBlockLanguageDetectionCorpus({
-                conversationCorpus: buildConversationLanguageDetectionCorpus({
-                    conversationTitle,
-                    bodyPlainText,
-                }),
-                surveyConfig: effectiveSurveyConfig,
-            }),
-            googleText: buildGoogleConversationLanguageDetectionCorpus({
-                conversationTitle,
-                bodyPlainText,
-                supplementalPlainText: surveyLanguageDetectionCorpus,
-            }),
-            googleCloudCredentials,
-            languageHints: blockLanguageHints,
-        });
         const currentBody = toUnionUndefined(conversation.currentBody);
         const contentChanged =
             conversation.currentTitle !== conversationTitle ||
             currentBody !== sanitizedBody;
+        let blockSourceLanguageMetadataPromise:
+            | Promise<ContentLanguageMetadata>
+            | undefined;
+        const getBlockSourceLanguageMetadata = (): Promise<ContentLanguageMetadata> => {
+            blockSourceLanguageMetadataPromise ??= resolveContentLanguageMetadata({
+                text: buildContentBlockLanguageDetectionCorpus({
+                    conversationCorpus: buildConversationLanguageDetectionCorpus({
+                        conversationTitle,
+                        bodyPlainText,
+                    }),
+                    surveyConfig: effectiveSurveyConfig,
+                }),
+                googleText: buildGoogleConversationLanguageDetectionCorpus({
+                    conversationTitle,
+                    bodyPlainText,
+                    supplementalPlainText: surveyLanguageDetectionCorpus,
+                }),
+                googleCloudCredentials,
+                useGoogleLanguageDetection:
+                    normalizedMultilingualSetting.dynamicTranslationEnabled,
+                languageHints: contentItemLanguageHints,
+            });
+            return blockSourceLanguageMetadataPromise;
+        };
 
         if (contentChanged) {
             const premiumFeatures = await getPremiumFeaturesInConversation({
@@ -521,6 +656,8 @@ export async function updateConversation({
         // Create new conversation content
         let newContentId: number | undefined;
         if (contentChanged) {
+            const sourceLanguageMetadata =
+                await getBlockSourceLanguageMetadata();
             const newContentResult = await tx
                 .insert(conversationContentTable)
                 .values({
@@ -528,10 +665,9 @@ export async function updateConversation({
                     title: conversationTitle,
                     body: sanitizedBody,
                     bodyPlainText,
-                    sourceLanguageCode:
-                        sourceLanguageMetadata.sourceLanguageCode,
-                    sourceLanguageConfidence:
-                        sourceLanguageMetadata.sourceLanguageConfidence,
+                    ...contentLanguageMetadataUpdateValues(
+                        sourceLanguageMetadata,
+                    ),
                 })
                 .returning({
                     conversationContentId: conversationContentTable.id,
@@ -587,13 +723,30 @@ export async function updateConversation({
         });
 
         if (surveyConfig !== undefined) {
+            const sourceLanguageMetadata =
+                await getBlockSourceLanguageMetadata();
             await setSurveyConfigForConversation({
                 db: tx,
                 conversationId,
                 surveyConfig: surveyConfig ?? null,
                 now,
                 googleCloudCredentials,
+                useGoogleLanguageDetection:
+                    normalizedMultilingualSetting.dynamicTranslationEnabled,
                 sourceLanguageMetadata,
+            });
+        }
+
+        if (shouldRefreshContentSourceLanguageMetadata) {
+            await refreshCurrentConversationOwnedContentLanguageMetadata({
+                db: tx,
+                conversationId,
+                languageSetting: resolvedLanguageSetting,
+                additionalLanguageCodes:
+                    normalizedMultilingualSetting.additionalLanguageCodes,
+                googleCloudCredentials,
+                useGoogleLanguageDetection:
+                    normalizedMultilingualSetting.dynamicTranslationEnabled,
             });
         }
 

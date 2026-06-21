@@ -452,7 +452,7 @@ describe("Google normalization assumptions", () => {
         }
     });
 
-    it("keeps unknown Google outputs raw without creating a normalized source code", async () => {
+    it("keeps broad non-display Google outputs as normalized source languages", async () => {
         const outcome = await detectLanguageWithFallback({
             text: "Aloha kakou. Pehea kakou e malama ai i ka aina a me na kai o ko kakou kulanakauhale?",
             localDetector: { detect: () => Promise.resolve(undefined) },
@@ -465,7 +465,7 @@ describe("Google normalization assumptions", () => {
         expect(outcome).toStrictEqual({
             result: {
                 languageCode: null,
-                sourceLanguageCode: null,
+                sourceLanguageCode: "haw",
                 rawLanguageCode: "haw",
                 provider: "google_translate",
                 confidence: 0.91,
@@ -543,7 +543,7 @@ describe("detectLanguageWithFallback", () => {
         });
     });
 
-    it("returns unknown for ambiguous Chinese script", async () => {
+    it("falls back to Simplified for confirmed Chinese with ambiguous script", async () => {
         const outcome = await detectLanguageWithFallback({
             text: "公共交通",
             localDetector: createLocalDetector({
@@ -554,8 +554,8 @@ describe("detectLanguageWithFallback", () => {
 
         expect(outcome).toStrictEqual({
             result: {
-                languageCode: null,
-                sourceLanguageCode: null,
+                languageCode: "zh-Hans",
+                sourceLanguageCode: "zh-Hans",
                 rawLanguageCode: "Chinese",
                 provider: "lingua",
                 confidence: 1,
@@ -604,7 +604,7 @@ describe("detectLanguageWithFallback", () => {
         expect(outcome).toStrictEqual({
             result: {
                 languageCode: null,
-                sourceLanguageCode: null,
+                sourceLanguageCode: "haw",
                 rawLanguageCode: "haw",
                 provider: "google_translate",
                 confidence: 0.91,

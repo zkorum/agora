@@ -14,16 +14,7 @@ export function parseStringLiteralZodEnum({
     source: string;
     exportName: string;
 }): string[] {
-    const enumPattern = new RegExp(
-        `export\\s+const\\s+${exportName}\\s*=\\s*z\\.enum\\(\\s*\\[([\\s\\S]*?)\\]\\s*\\)`,
-        "m",
-    );
-    const enumMatch = enumPattern.exec(source);
-    if (enumMatch === null) {
-        throw new Error(`Could not find ${exportName} z.enum([...])`);
-    }
-
-    const enumBody = enumMatch[1];
+    const enumBody = findStringLiteralZodEnumBody({ source, exportName });
     const values: string[] = [];
     for (const stringMatch of enumBody.matchAll(STRING_LITERAL_PATTERN)) {
         const parsed: unknown = JSON.parse(`"${stringMatch[1]}"`);
@@ -38,6 +29,36 @@ export function parseStringLiteralZodEnum({
     }
 
     return values;
+}
+
+function findStringLiteralZodEnumBody({
+    source,
+    exportName,
+}: {
+    source: string;
+    exportName: string;
+}): string {
+    const directEnumPattern = new RegExp(
+        `export\\s+const\\s+${exportName}\\s*=\\s*z\\.enum\\(\\s*\\[([\\s\\S]*?)\\]\\s*\\)`,
+        "m",
+    );
+    const directEnumMatch = directEnumPattern.exec(source);
+    if (directEnumMatch !== null) {
+        return directEnumMatch[1];
+    }
+
+    const extractedEnumPattern = new RegExp(
+        `export\\s+const\\s+${exportName}\\s*=\\s*[A-Za-z_$][\\w$]*\\.extract\\(\\s*\\[([\\s\\S]*?)\\]\\s*\\)`,
+        "m",
+    );
+    const extractedEnumMatch = extractedEnumPattern.exec(source);
+    if (extractedEnumMatch !== null) {
+        return extractedEnumMatch[1];
+    }
+
+    throw new Error(
+        `Could not find ${exportName} z.enum([...]) or enum.extract([...])`,
+    );
 }
 
 export function parseDisplayLanguageCodes(source: string): string[] {

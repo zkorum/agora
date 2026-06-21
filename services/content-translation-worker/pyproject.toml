@@ -6,6 +6,7 @@ requires-python = ">=3.13"
 dependencies = [
     "bleach>=6.2",
     "google-cloud-translate>=3.20",
+    "opencc>=1.1",
     "psycopg[binary]>=3.2",
     "pydantic>=2.12",
     "pydantic-settings>=2.0",

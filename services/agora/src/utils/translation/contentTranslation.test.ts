@@ -157,7 +157,6 @@ describe("getSupportedContentTranslationTargetLanguageCodes", () => {
           detectedLanguageCode: "ja",
           detectedSourceLanguageCode: "ja",
           detectedRawLanguageCode: "ja",
-          detectedRawLanguageProvider: "lingua",
           detectionConfidence: 0.98,
         },
         multilingualSetting: {
@@ -177,7 +176,6 @@ describe("getSupportedContentTranslationTargetLanguageCodes", () => {
           detectedLanguageCode: "ja",
           detectedSourceLanguageCode: "ja",
           detectedRawLanguageCode: "ja",
-          detectedRawLanguageProvider: "lingua",
           detectionConfidence: 0.98,
         },
         multilingualSetting: {
@@ -197,7 +195,6 @@ describe("getSupportedContentTranslationTargetLanguageCodes", () => {
           detectedLanguageCode: null,
           detectedSourceLanguageCode: null,
           detectedRawLanguageCode: null,
-          detectedRawLanguageProvider: null,
           detectionConfidence: null,
         },
         multilingualSetting: {

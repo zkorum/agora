@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -20,6 +21,7 @@ from agora_analysis_worker_shared.description_translation import (
     TranslationRepresentativeOpinion,
     build_bedrock_translation_converse_payload,
     generate_description_translations,
+    generate_description_translations_with_bedrock,
     parse_bedrock_translation_text,
     parse_description_translation_output,
     parse_service_account_json,
@@ -69,6 +71,16 @@ class FakeTranslationClient:
                 for content in contents
             ]
         )
+
+
+@dataclass
+class FakeBedrockTranslationClient:
+    responses: list[object]
+    calls: list[dict[str, object]] = field(default_factory=list)
+
+    def converse(self, **kwargs: object) -> object:
+        self.calls.append(kwargs)
+        return self.responses.pop(0)
 
 
 @dataclass(frozen=True)
@@ -125,15 +137,13 @@ def test_generate_description_translations_maps_display_language_codes() -> None
     assert [(translation.locale, translation.label) for translation in translations] == [
         ("es", "es:Transitists"),
         ("zh-Hant", "zh-TW:Transitists"),
-        ("zh-Hans", "zh-CN:Transitists"),
+        ("zh-Hans", "zh-TW:Transitists"),
     ]
     assert [request.target_language_code for request in client.requests] == [
         "es",
         "es",
         "zh-TW",
         "zh-TW",
-        "zh-CN",
-        "zh-CN",
     ]
     assert client.requests[0].model.endswith("/models/general/nmt")
     assert client.requests[1].model.endswith("/models/general/translation-llm")
@@ -203,6 +213,89 @@ def test_generate_description_translations_batches_google_contents() -> None:
         ["Transitists", "Skeptics"],
         ["Supports transit.", "Questions cost."],
     ]
+
+
+def test_generate_description_translations_deduplicates_chinese_targets() -> None:
+    client = FakeTranslationClient()
+    service = GoogleTranslationService(
+        client=client,
+        config=GoogleTranslationConfig(
+            project_id="project",
+            location="us-central1",
+            request_timeout_seconds=5.0,
+        ),
+    )
+
+    translations = generate_description_translations(
+        service=service,
+        descriptions=[
+            DescriptionForTranslation(
+                description_id=10,
+                label="Transitists",
+                summary="Supports transit.",
+            )
+        ],
+        target_language_codes=["zh-Hans"],
+    )
+
+    assert [(translation.locale, translation.label) for translation in translations] == [
+        ("zh-Hant", "zh-TW:Transitists"),
+        ("zh-Hans", "zh-TW:Transitists"),
+    ]
+    assert [request.target_language_code for request in client.requests] == [
+        "zh-TW",
+        "zh-TW",
+    ]
+
+
+def test_generate_bedrock_description_translations_deduplicates_chinese_targets() -> None:
+    client = FakeBedrockTranslationClient(
+        responses=[
+            {
+                "output": {
+                    "message": {
+                        "content": [
+                            {
+                                "text": '{"translations":[{"descriptionId":10,'
+                                '"locale":"zh-Hant","reasoning":"ok",'
+                                '"label":"繁體標籤","summary":"繁體摘要"}]}'
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    )
+
+    translations = generate_description_translations_with_bedrock(
+        config=BedrockTranslationConfig(
+            region="us-east-1",
+            model_id="model",
+            temperature=0.1,
+            top_p=0.9,
+            max_tokens=1024,
+            prompt="Translate",
+            connect_timeout_seconds=2.0,
+            read_timeout_seconds=12.0,
+        ),
+        descriptions=[
+            DescriptionForTranslation(
+                description_id=10,
+                label="Transitists",
+                summary="Supports transit.",
+            )
+        ],
+        target_language_codes=["zh-Hant", "zh-Hans"],
+        client=client,
+    )
+
+    assert [(translation.locale, translation.label) for translation in translations] == [
+        ("zh-Hant", "繁體標籤"),
+        ("zh-Hans", "繁体标签"),
+    ]
+    assert len(client.calls) == 1
+    request_json = json.dumps(client.calls[0], ensure_ascii=False)
+    assert '\\"targetLocale\\":\\"zh-Hant\\"' in request_json
 
 
 def test_parse_description_translation_output_requires_reasoning_and_expected_ids() -> None:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from importlib import import_module
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Protocol, TypeGuard
 
@@ -91,6 +92,10 @@ class GoogleCredentialsFactory(Protocol):
     def from_service_account_info(self, info: dict[str, object]) -> Credentials: ...
 
 
+class OpenCcConverter(Protocol):
+    def convert(self, text: str) -> str: ...
+
+
 @dataclass(frozen=True)
 class GoogleTranslationConfig:
     project_id: str
@@ -131,6 +136,10 @@ class ContentTranslationService(Protocol):
         target_language_code: str,
         mime_type: str,
     ) -> list[ContentTranslationResult]: ...
+
+
+_simplified_to_traditional_converter: OpenCcConverter | None = None
+_traditional_to_simplified_converter: OpenCcConverter | None = None
 
 
 def initialize_google_translation_service(
@@ -191,6 +200,23 @@ def translate_texts(
         return [
             ContentTranslationResult(
                 translated_text=text,
+                source_raw_language_code=source_language_code,
+                source_language_provider=None,
+            )
+            for text in texts
+        ]
+
+    if _should_use_opencc_translation(
+        source_language_code=source_language_code,
+        target_language_code=target_language_code,
+    ):
+        return [
+            ContentTranslationResult(
+                translated_text=translate_chinese_script_with_opencc(
+                    text=text,
+                    source_language_code=source_language_code,
+                    target_language_code=target_language_code,
+                ),
                 source_raw_language_code=source_language_code,
                 source_language_provider=None,
             )
@@ -259,7 +285,9 @@ def _translate_text_chunk(
         parent=f"projects/{service.config.project_id}/locations/{service.config.location}",
         contents=texts,
         mime_type=mime_type,
-        source_language_code=None,
+        source_language_code=_normalize_source_language_code_for_google(source_language_code)
+        if source_language_code is not None
+        else None,
         target_language_code=_normalize_target_language_code_for_google(target_language_code),
         model=build_google_translation_model_path(
             project_id=service.config.project_id,
@@ -324,6 +352,73 @@ def _normalize_source_language_code_for_google(language_code: str) -> str:
     if language_code in {"zh-Hant", "zh-TW"}:
         return "zh-TW"
     return language_code
+
+
+def _is_chinese_script_language_code(language_code: str | None) -> bool:
+    return language_code in {"zh-Hans", "zh-CN", "zh-Hant", "zh-TW"}
+
+
+def _should_use_opencc_translation(
+    *,
+    source_language_code: str | None,
+    target_language_code: str,
+) -> bool:
+    return _is_chinese_script_language_code(
+        source_language_code
+    ) and _is_chinese_script_language_code(target_language_code)
+
+
+def translate_chinese_script_with_opencc(
+    *,
+    text: str,
+    source_language_code: str | None,
+    target_language_code: str,
+) -> str:
+    if source_language_code in {"zh-Hans", "zh-CN"} and target_language_code in {
+        "zh-Hant",
+        "zh-TW",
+    }:
+        return _get_opencc_converter(
+            converter_name="simplified_to_traditional",
+            config="s2tw",
+        ).convert(text)
+    if source_language_code in {"zh-Hant", "zh-TW"} and target_language_code in {
+        "zh-Hans",
+        "zh-CN",
+    }:
+        return _get_opencc_converter(
+            converter_name="traditional_to_simplified",
+            config="tw2s",
+        ).convert(text)
+    return text
+
+
+def _get_opencc_converter(*, converter_name: str, config: str) -> OpenCcConverter:
+    global _simplified_to_traditional_converter, _traditional_to_simplified_converter
+
+    if converter_name == "simplified_to_traditional":
+        if _simplified_to_traditional_converter is None:
+            _simplified_to_traditional_converter = _create_opencc_converter(config=config)
+        return _simplified_to_traditional_converter
+    if converter_name == "traditional_to_simplified":
+        if _traditional_to_simplified_converter is None:
+            _traditional_to_simplified_converter = _create_opencc_converter(config=config)
+        return _traditional_to_simplified_converter
+    msg = f"Unknown OpenCC converter {converter_name}"
+    raise ValueError(msg)
+
+
+def _create_opencc_converter(*, config: str) -> OpenCcConverter:
+    opencc = import_module("opencc")
+    converter: object = opencc.OpenCC(config)
+    if not _is_opencc_converter(converter):
+        msg = "OpenCC converter does not expose convert()"
+        raise ContentTranslationProviderError(msg)
+    return converter
+
+
+def _is_opencc_converter(value: object) -> TypeGuard[OpenCcConverter]:
+    return callable(getattr(value, "convert", None))
 
 
 def _normalize_target_language_code_for_google(language_code: str) -> str:

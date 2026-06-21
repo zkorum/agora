@@ -4,17 +4,37 @@ import {
     buildSurveyQuestionSourceVersion,
     hasCompleteSurveyQuestionTranslation,
     shouldQueueTranslationWork,
+    type SurveyQuestionLocalizedContentSource,
 } from "../src/service/contentTranslationContent.js";
 
-const surveyQuestionSource = {
+const surveyQuestionSource: SurveyQuestionLocalizedContentSource = {
     conversationSlugId: "conv1234",
     questionSlugId: "ques1234",
     contentId: 10,
     questionText: "What should we build next?",
     sourceLanguageCode: "en",
+    sourceRawLanguageCode: "en",
+    sourceLanguageProvider: "lingua",
+    sourceLanguageConfidence: 0.99,
     options: [
-        { optionSlugId: "opt00001", contentId: 21, optionText: "Parks" },
-        { optionSlugId: "opt00002", contentId: 22, optionText: "Libraries" },
+        {
+            optionSlugId: "opt00001",
+            contentId: 21,
+            optionText: "Parks",
+            sourceLanguageCode: "en",
+            sourceRawLanguageCode: "en",
+            sourceLanguageProvider: "lingua",
+            sourceLanguageConfidence: 0.99,
+        },
+        {
+            optionSlugId: "opt00002",
+            contentId: 22,
+            optionText: "Libraries",
+            sourceLanguageCode: "en",
+            sourceRawLanguageCode: "en",
+            sourceLanguageProvider: "lingua",
+            sourceLanguageConfidence: 0.99,
+        },
     ],
 };
 
@@ -102,6 +122,11 @@ describe("content translation pure content helpers", () => {
                     targetLanguageCode: "fr",
                     sourceLanguageCode: "en",
                     sourceLanguageLabel: "English",
+                    sourceLanguage: {
+                        kind: "recognized",
+                        languageCode: "en",
+                        label: "English",
+                    },
                     status: "pending",
                 },
                 variants: {

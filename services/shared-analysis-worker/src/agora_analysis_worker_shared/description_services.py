@@ -12,6 +12,8 @@ from agora_analysis_worker_shared.bedrock_label_summary import (
 from agora_analysis_worker_shared.description_translation import (
     BedrockTranslationConfig,
     DescriptionTranslationError,
+    description_translation_output_locales,
+    description_translation_provider_targets,
     generate_description_translations,
     generate_description_translations_with_bedrock,
     initialize_google_translation_service,
@@ -306,11 +308,15 @@ def fill_missing_translations_with_google(
         (translation.description_id, translation.locale) for translation in translations
     }
     missing_translations: list[DescriptionTranslation] = []
-    for target_language_code in target_language_codes:
+    for target_language_code in description_translation_provider_targets(target_language_codes):
+        output_locales = description_translation_output_locales(target_language_code)
         missing_descriptions = [
             description
             for description in descriptions
-            if (description.description_id, target_language_code) not in translation_keys
+            if any(
+                (description.description_id, output_locale) not in translation_keys
+                for output_locale in output_locales
+            )
         ]
         if not missing_descriptions:
             continue
@@ -365,11 +371,15 @@ def _missing_translation_requests(
         (translation.description_id, translation.locale) for translation in translations
     }
     requests: list[tuple[str, list[DescriptionForTranslation]]] = []
-    for target_language_code in target_language_codes:
+    for target_language_code in description_translation_provider_targets(target_language_codes):
+        output_locales = description_translation_output_locales(target_language_code)
         missing_descriptions = [
             description
             for description in descriptions
-            if (description.description_id, target_language_code) not in translation_keys
+            if any(
+                (description.description_id, output_locale) not in translation_keys
+                for output_locale in output_locales
+            )
         ]
         if missing_descriptions:
             requests.append((target_language_code, missing_descriptions))
