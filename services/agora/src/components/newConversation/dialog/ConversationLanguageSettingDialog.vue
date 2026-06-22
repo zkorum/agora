@@ -359,14 +359,11 @@ function getIntlLanguageLabel(languageCode: string): string | undefined {
     if (canonicalLanguageCode === undefined) {
       return undefined;
     }
-    const displayName = new Intl.DisplayNames(["en"], { type: "language" }).of(
-      canonicalLanguageCode
-    );
-    if (
-      displayName === undefined ||
-      displayName === canonicalLanguageCode ||
-      displayName.toLocaleLowerCase() === "unknown language"
-    ) {
+    const displayName = new Intl.DisplayNames(["en"], {
+      type: "language",
+      fallback: "none",
+    }).of(canonicalLanguageCode);
+    if (displayName === undefined) {
       return undefined;
     }
     return displayName;
