@@ -154,6 +154,7 @@ CREATE TABLE "realtime_event_outbox_topic" (
 );
 --> statement-breakpoint
 ALTER TABLE "organization" DROP CONSTRAINT "organization_website_url_unique";--> statement-breakpoint
+DROP INDEX "og_candidate_desc_locale_request_translation_updated_idx";--> statement-breakpoint
 ALTER TABLE "conversation" ALTER COLUMN "author_id" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "opinion_group_candidate_description_locale_request" ALTER COLUMN "locale" SET DATA TYPE "display_language_code" USING "locale"::"display_language_code";--> statement-breakpoint
 ALTER TABLE "opinion_group_description" ALTER COLUMN "locale" SET DATA TYPE "display_language_code" USING "locale"::"display_language_code";--> statement-breakpoint
@@ -217,6 +218,7 @@ CREATE UNIQUE INDEX "content_translation_work_survey_question_unique" ON "conten
 CREATE INDEX "content_translation_work_claim_idx" ON "content_translation_work" USING btree ("priority_rank","updated_at","id") WHERE "content_translation_work"."status" = 'pending';--> statement-breakpoint
 CREATE INDEX "content_translation_work_lease_expiry_idx" ON "content_translation_work" USING btree ("lease_expires_at","id") WHERE "content_translation_work"."status" = 'running';--> statement-breakpoint
 CREATE INDEX "organization_membership_organization_idx" ON "organization_membership" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "og_candidate_desc_locale_request_translation_updated_idx" ON "opinion_group_candidate_description_locale_request" USING btree ("updated_at","id") WHERE "opinion_group_candidate_description_locale_request"."locale" <> 'en';--> statement-breakpoint
 CREATE INDEX "project_organization_ownership_organization_idx" ON "project_organization_ownership" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "realtime_event_outbox_topic_replay_idx" ON "realtime_event_outbox_topic" USING btree ("topic","event_id");--> statement-breakpoint
 ALTER TABLE "conversation" ADD CONSTRAINT "conversation_project_id_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."project"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

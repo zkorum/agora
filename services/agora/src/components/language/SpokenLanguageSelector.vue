@@ -119,17 +119,14 @@ import SettingsSearchInput from "src/components/settings/SettingsSearchInput.vue
 import MenuItem from "src/components/ui-library/MenuItem.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type {
-  LanguageMetadata,
-  SupportedSpokenLanguageCodes,
-} from "src/shared/languages";
+import type { SupportedSpokenLanguageCodes } from "src/shared/languages";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
 import {
-  getLanguageByCode,
   getSpokenLanguages,
   searchLanguages,
   sortLanguagesByEnglishName,
+  type SpokenLanguageMetadata,
 } from "src/utils/language";
 import { useNotify } from "src/utils/ui/notify";
 import type { ComputedRef } from "vue";
@@ -166,20 +163,20 @@ const searchQuery = ref("");
 const isSaving = ref(false);
 
 // Get all available spoken languages, sorted by English name
-const allSpokenLanguages: ComputedRef<LanguageMetadata[]> = computed(() =>
+const allSpokenLanguages: ComputedRef<SpokenLanguageMetadata[]> = computed(() =>
   sortLanguagesByEnglishName({ langs: getSpokenLanguages() })
 );
 
 // Get currently selected languages with metadata
-const selectedLanguages: ComputedRef<LanguageMetadata[]> = computed(() => {
+const selectedLanguages: ComputedRef<SpokenLanguageMetadata[]> = computed(() => {
   return spokenLanguages.value
-    .map((code) => getLanguageByCode(code))
-    .filter((lang): lang is LanguageMetadata => lang !== undefined)
+    .map((code) => allSpokenLanguages.value.find((lang) => lang.code === code))
+    .filter((lang): lang is SpokenLanguageMetadata => lang !== undefined)
     .sort((a, b) => a.englishName.localeCompare(b.englishName));
 });
 
 // Get available languages (not yet selected)
-const availableLanguages: ComputedRef<LanguageMetadata[]> = computed(() => {
+const availableLanguages: ComputedRef<SpokenLanguageMetadata[]> = computed(() => {
   const selectedCodes = new Set(spokenLanguages.value);
   return allSpokenLanguages.value.filter(
     (lang) => !selectedCodes.has(lang.code)
@@ -187,7 +184,7 @@ const availableLanguages: ComputedRef<LanguageMetadata[]> = computed(() => {
 });
 
 // Filter available languages based on search query
-const filteredAvailableLanguages: ComputedRef<LanguageMetadata[]> = computed(
+const filteredAvailableLanguages: ComputedRef<SpokenLanguageMetadata[]> = computed(
   () => {
     if (!searchQuery.value.trim()) {
       return availableLanguages.value;
