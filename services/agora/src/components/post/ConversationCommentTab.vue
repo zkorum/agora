@@ -186,12 +186,12 @@ watch(
 );
 
 async function submittedComment(data: SubmittedCommentData): Promise<void> {
-  if (opinionSectionRef.value) {
-    opinionSectionRef.value.highlightOpinion(data.opinionItem);
-  }
-
   await markCommentsAsStale(props.conversationData.metadata.conversationSlugId);
   markAnalysisAsStale(props.conversationData.metadata.conversationSlugId);
+
+  if (opinionSectionRef.value) {
+    await opinionSectionRef.value.refreshAndHighlightOpinion(data.opinionSlugId);
+  }
 
   // Handle deferred cache refresh if auth state changed (new guest user)
   if (data.needsCacheRefresh) {

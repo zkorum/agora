@@ -1,4 +1,5 @@
-import type { SurveyFormFetchResponse, SurveyStatusCheckResponse } from "src/shared/types/dto";
+import type { SurveyStatusCheckResponse } from "src/shared/types/dto";
+import type { SurveyFormData } from "src/utils/api/survey/useSurveyQueries";
 import { describe, expect, it } from "vitest";
 
 import { resolveVerifyRouteDecision } from "./verifyRouteLogic";
@@ -99,7 +100,8 @@ describe("resolveVerifyRouteDecision", () => {
   });
 
   it("exits through the intention-aware path when the survey flow resolves to the conversation", () => {
-    const surveyForm: SurveyFormFetchResponse = {
+    const surveyForm: SurveyFormData = {
+      success: true,
       currentRevision: 1,
       questions: [],
       surveyGate: {
@@ -136,7 +138,8 @@ describe("resolveVerifyRouteDecision", () => {
   });
 
   it("routes auth-gated conversations before checking ticket or survey completion", () => {
-    const surveyForm: SurveyFormFetchResponse = {
+    const surveyForm: SurveyFormData = {
+      success: true,
       currentRevision: 1,
       questions: [],
       surveyGate: {

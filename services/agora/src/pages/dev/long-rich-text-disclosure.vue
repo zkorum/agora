@@ -118,7 +118,7 @@
               :survey-gate="undefined"
               :on-view-analysis="noop"
               :is-voting-disabled="true"
-              :content-translation="statementTranslationPreview(statement.opinion)"
+              :content-translation="statementTranslationPreview(statement)"
               @update:content-translation-mode="statementTranslationMode = $event"
             />
           </div>
@@ -168,6 +168,7 @@ import { usePageLayout } from "src/composables/layout/usePageLayout";
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
 import type { CastVoteResponse } from "src/shared/types/dto";
 import type {
+  DisplayedOpinionItem,
   ExtendedConversation,
   OpinionItem,
   VotingAction,
@@ -204,6 +205,9 @@ type TranslationScenario =
   | "same-display"
   | "spoken-not-display"
   | "pending"
+  | "dto-original"
+  | "dto-translated"
+  | "dto-pending"
   | "not-spoken"
   | "unknown";
 
@@ -254,6 +258,9 @@ const translationScenarioOptions: Array<SelectOption<TranslationScenario>> = [
   { label: "Source matches display language", value: "same-display" },
   { label: "Source is spoken by viewer", value: "spoken-not-display" },
   { label: "Translation pending", value: "pending" },
+  { label: "DTO original with translate", value: "dto-original" },
+  { label: "DTO translated with original", value: "dto-translated" },
+  { label: "DTO pending", value: "dto-pending" },
   { label: "Source is not spoken by viewer", value: "not-spoken" },
   { label: "Unknown source language", value: "unknown" },
 ];
@@ -458,17 +465,44 @@ const translationInputs = computed(() => {
 });
 
 const translationState = computed(() =>
-  translationScenario.value === "pending"
-    ? {
+  {
+    if (translationScenario.value === "pending") {
+      return {
         isAvailable: true,
         initialMode: "original" as const,
         sourceLanguageLabel: "Japanese",
         translationStatus: "pending" as const,
-      }
-    : resolveContentTranslationState({
-        ...translationInputs.value,
-        hasTranslatedContent: true,
-      })
+      };
+    }
+    if (translationScenario.value === "dto-original") {
+      return {
+        isAvailable: true,
+        initialMode: "original" as const,
+        sourceLanguageLabel: "Japanese",
+        translationStatus: "completed" as const,
+      };
+    }
+    if (translationScenario.value === "dto-translated") {
+      return {
+        isAvailable: true,
+        initialMode: "translated" as const,
+        sourceLanguageLabel: "Japanese",
+        translationStatus: "completed" as const,
+      };
+    }
+    if (translationScenario.value === "dto-pending") {
+      return {
+        isAvailable: true,
+        initialMode: "original" as const,
+        sourceLanguageLabel: "Japanese",
+        translationStatus: "pending" as const,
+      };
+    }
+    return resolveContentTranslationState({
+      ...translationInputs.value,
+      hasTranslatedContent: true,
+    });
+  }
 );
 
 watch(
@@ -490,6 +524,7 @@ const translatedConversationBody = computed(() => {
 
 const conversationTranslationPreview = computed(() => ({
   isAvailable: translationState.value.isAvailable,
+  isLoadingInitialTranslation: false,
   mode: conversationTranslationMode.value,
   sourceLanguageLabel: translationState.value.sourceLanguageLabel,
   translationStatus: translationState.value.translationStatus,
@@ -497,16 +532,92 @@ const conversationTranslationPreview = computed(() => ({
   translatedBody: translatedConversationBody.value,
 }));
 
-function statementTranslationPreview(originalOpinion: string) {
+function getStatementContentId(statement: OpinionItem): string {
+  if (statement.opinionSlugId === shortStatement.opinionSlugId) {
+    return "00000000-0000-4000-8000-000000000001";
+  }
+  if (statement.opinionSlugId === singleEmptyLineStatement.opinionSlugId) {
+    return "00000000-0000-4000-8000-000000000002";
+  }
+  if (statement.opinionSlugId === multipleEmptyLinesStatement.opinionSlugId) {
+    return "00000000-0000-4000-8000-000000000003";
+  }
+  return "00000000-0000-4000-8000-000000000004";
+}
+
+function getTranslatedStatementOpinion(statement: OpinionItem): string {
+  return statement.opinion.length < 120
+    ? "<p>Ugh, I'm so nervous.</p>"
+    : paragraphs({ prefix: "Translated statement", count: 8 });
+}
+
+function getStatementDisplayContent(
+  statement: OpinionItem
+): DisplayedOpinionItem["displayContent"] {
+  const contentId = getStatementContentId(statement);
+  if (!translationState.value.isAvailable) {
+    return {
+      contentId,
+      status: "available",
+      mode: "original",
+      content: { content: statement.opinion },
+      translationControl: null,
+    };
+  }
+
+  if (translationState.value.translationStatus === "pending") {
+    return {
+      contentId,
+      status: "pending",
+      translationControl: {
+        status: "pending",
+        sourceLanguageLabel: translationState.value.sourceLanguageLabel,
+        alternateMode: "translated",
+        canRequestAlternate: true,
+      },
+    };
+  }
+
+  const mode = translationState.value.initialMode;
   return {
-    isAvailable: translationState.value.isAvailable,
+    contentId,
+    status: "available",
+    mode,
+    content: {
+      content:
+        mode === "translated"
+          ? getTranslatedStatementOpinion(statement)
+          : statement.opinion,
+    },
+    translationControl: {
+      status: "completed",
+      sourceLanguageLabel: translationState.value.sourceLanguageLabel,
+      alternateMode: mode === "translated" ? "original" : "translated",
+      canRequestAlternate: true,
+    },
+  };
+}
+
+function toDisplayedStatement(statement: OpinionItem): DisplayedOpinionItem {
+  return {
+    ...statement,
+    displayContent: getStatementDisplayContent(statement),
+  };
+}
+
+function statementTranslationPreview(statement: DisplayedOpinionItem) {
+  const { displayContent } = statement;
+  const translationControl = displayContent.translationControl;
+  return {
+    isAvailable: translationControl !== null,
+    isLoadingInitialTranslation: false,
     mode: statementTranslationMode.value,
-    sourceLanguageLabel: translationState.value.sourceLanguageLabel,
-    translationStatus: translationState.value.translationStatus,
+    sourceLanguageLabel: translationControl?.sourceLanguageLabel,
+    translationStatus: translationControl?.status ?? "not_requested",
     translatedOpinion:
-      originalOpinion.length < 120
-        ? "<p>Ugh, I'm so nervous.</p>"
-        : paragraphs({ prefix: "Translated statement", count: 8 }),
+      displayContent.status === "available" && displayContent.mode === "translated"
+        ? displayContent.content.content
+        : getTranslatedStatementOpinion(statement),
   };
 }
 
@@ -524,16 +635,21 @@ const displayedSurveyOptions = computed(() =>
     : ["強く賛成", "まだわからない", "強く反対"]
 );
 
-const displayedStatements = computed(() => {
-  if (statementMode.value === "short") return [shortStatement];
+const displayedStatements = computed((): DisplayedOpinionItem[] => {
+  if (statementMode.value === "short") return [toDisplayedStatement(shortStatement)];
   if (statementMode.value === "single-empty-line") {
-    return [singleEmptyLineStatement];
+    return [toDisplayedStatement(singleEmptyLineStatement)];
   }
   if (statementMode.value === "multiple-empty-lines") {
-    return [multipleEmptyLinesStatement];
+    return [toDisplayedStatement(multipleEmptyLinesStatement)];
   }
-  if (statementMode.value === "long") return [longStatement];
-  return [shortStatement, singleEmptyLineStatement, multipleEmptyLinesStatement, longStatement];
+  if (statementMode.value === "long") return [toDisplayedStatement(longStatement)];
+  return [
+    shortStatement,
+    singleEmptyLineStatement,
+    multipleEmptyLinesStatement,
+    longStatement,
+  ].map(toDisplayedStatement);
 });
 
 const votingUtilities: OpinionVotingUtilities = {

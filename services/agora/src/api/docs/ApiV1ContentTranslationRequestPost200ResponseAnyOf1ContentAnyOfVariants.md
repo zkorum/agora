@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**original** | [**ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOfVariantsOriginal**](ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOfVariantsOriginal.md) |  | [default to undefined]
+**original** | [**ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfContent**](ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfContent.md) |  | [default to undefined]
 
 ## Example
 

@@ -5,8 +5,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**original** | [**ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOfVariantsOriginal**](ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOfVariantsOriginal.md) |  | [default to undefined]
-**translated** | [**ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOfVariantsOriginal**](ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOfVariantsOriginal.md) |  | [optional] [default to undefined]
+**original** | [**ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfContent**](ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfContent.md) |  | [default to undefined]
+**translated** | [**ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1Content**](ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1Content.md) |  | [optional] [default to undefined]
 
 ## Example
 

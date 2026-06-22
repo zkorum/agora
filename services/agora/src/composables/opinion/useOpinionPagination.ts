@@ -1,16 +1,16 @@
 import { useComputedPagination } from "src/composables/ui/useComputedPagination";
-import type { OpinionItem } from "src/shared/types/zod";
+import type { DisplayedOpinionItem } from "src/shared/types/zod";
 import { type ComputedRef,type Ref, watch } from "vue";
 
 export interface UseOpinionPaginationParams {
-  currentOpinionData: ComputedRef<OpinionItem[]>;
+  currentOpinionData: ComputedRef<DisplayedOpinionItem[]>;
   currentFilter: Ref<string>;
   isComponentMounted: Ref<boolean>;
-  targetOpinion: Ref<OpinionItem | null>;
+  targetOpinion: Ref<DisplayedOpinionItem | null>;
 }
 
 export interface UseOpinionPaginationReturn {
-  visibleOpinions: ComputedRef<OpinionItem[]>;
+  visibleOpinions: ComputedRef<DisplayedOpinionItem[]>;
   hasMore: ComputedRef<boolean>;
   loadMore: () => void;
   resetPagination: () => void;

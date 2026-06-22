@@ -1,5 +1,6 @@
 import type { ApiV1ContentTranslationRequestPostRequest } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
+import type { ConversationContentFetchRequest } from "src/shared/types/dto";
 import { Dto } from "src/shared/types/dto";
 import type { z } from "zod";
 
@@ -9,6 +10,9 @@ import { useCommonApi } from "../common";
 export type RequestContentTranslationParams = ApiV1ContentTranslationRequestPostRequest;
 export type ContentTranslationResponse = z.infer<
   typeof Dto.contentTranslationResponse
+>;
+export type ConversationContentFetchResponse = z.infer<
+  typeof Dto.conversationContentFetchResponse
 >;
 
 export function useBackendContentTranslationApi() {
@@ -35,5 +39,21 @@ export function useBackendContentTranslationApi() {
     return Dto.contentTranslationResponse.parse(response.data);
   }
 
-  return { requestContentTranslation };
+  async function fetchConversationContent(
+    params: ConversationContentFetchRequest
+  ): Promise<ConversationContentFetchResponse> {
+    const parsedParams = Dto.conversationContentFetchRequest.parse(params);
+    const url = "/api/v1/conversation/content/fetch";
+    const options = { method: "POST" };
+    const encodedUcan = await buildEncodedUcan(url, options);
+    const response = await api.post(
+      url,
+      parsedParams,
+      createRawAxiosRequestConfig({ encodedUcan })
+    );
+
+    return Dto.conversationContentFetchResponse.parse(response.data);
+  }
+
+  return { requestContentTranslation, fetchConversationContent };
 }

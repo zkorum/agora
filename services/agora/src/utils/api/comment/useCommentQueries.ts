@@ -19,7 +19,12 @@ import type {
   AnalysisFreshnessRequest,
   FetchCommentStatsResponse,
 } from "src/shared/types/dto";
-import type { AnalysisView, OpinionItem, PolisKey } from "src/shared/types/zod";
+import type {
+  AnalysisView,
+  DisplayedOpinionItem,
+  OpinionItem,
+  PolisKey,
+} from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
 import { useUserStore } from "src/stores/user";
 import {
@@ -59,13 +64,16 @@ export function useCommentsQuery({
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { fetchCommentsForPost } = useBackendCommentApi();
+  const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
 
-  return useQuery({
+  return useQuery<DisplayedOpinionItem[], Error>({
     queryKey: [
       "comments",
       computed(() => toValue(conversationSlugId)),
       filter,
       clusterKey,
+      computed(() => displayLanguage.value),
+      computed(() => [...spokenLanguages.value].sort()),
     ],
     queryFn: () =>
       fetchCommentsForPost(toValue(conversationSlugId), filter, clusterKey),
@@ -89,9 +97,15 @@ export function useHiddenCommentsQuery({
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { fetchHiddenCommentsForPost } = useBackendCommentApi();
+  const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
 
-  return useQuery({
-    queryKey: ["hiddenComments", computed(() => toValue(conversationSlugId))],
+  return useQuery<DisplayedOpinionItem[], Error>({
+    queryKey: [
+      "hiddenComments",
+      computed(() => toValue(conversationSlugId)),
+      computed(() => displayLanguage.value),
+      computed(() => [...spokenLanguages.value].sort()),
+    ],
     queryFn: () => fetchHiddenCommentsForPost(toValue(conversationSlugId)),
     enabled: computed(
       () => toValue(enabled) && toValue(conversationSlugId) !== ""

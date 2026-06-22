@@ -23,7 +23,12 @@ import type {
   FetchCommentStatsResponse,
 } from "src/shared/types/dto";
 import { Dto } from "src/shared/types/dto";
-import type { AnalysisView, OpinionItem, PolisKey } from "src/shared/types/zod";
+import type {
+  AnalysisView,
+  DisplayedOpinionItem,
+  OpinionItem,
+  PolisKey,
+} from "src/shared/types/zod";
 import { zodOpinionItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 
@@ -80,9 +85,31 @@ export function useBackendCommentApi() {
     return result.data;
   }
 
+  function parseFetchOpinionsResponse(data: unknown): DisplayedOpinionItem[] {
+    const result = Dto.fetchOpinionsResponse.safeParse(data);
+
+    if (!result.success) {
+      console.error("Failed to parse displayed opinion data with zod:", result.error);
+      return [];
+    }
+
+    return result.data;
+  }
+
+  function parseFetchHiddenOpinionsResponse(data: unknown): DisplayedOpinionItem[] {
+    const result = Dto.fetchHiddenOpinionsResponse.safeParse(data);
+
+    if (!result.success) {
+      console.error("Failed to parse hidden opinion data with zod:", result.error);
+      return [];
+    }
+
+    return result.data;
+  }
+
   async function fetchHiddenCommentsForPost(
     postSlugId: string
-  ): Promise<OpinionItem[]> {
+  ): Promise<DisplayedOpinionItem[]> {
     const params: ApiV1OpinionFetchHiddenByConversationPostRequest = {
       conversationSlugId: postSlugId,
     };
@@ -105,7 +132,7 @@ export function useBackendCommentApi() {
       })
     );
 
-    return createLocalCommentObject(response.data);
+    return parseFetchHiddenOpinionsResponse(response.data);
   }
 
   async function fetchCommentStatsForPost(
@@ -131,7 +158,7 @@ export function useBackendCommentApi() {
     postSlugId: string,
     filter: CommentTabFilters,
     clusterKey: PolisKey | undefined
-  ): Promise<OpinionItem[]> {
+  ): Promise<DisplayedOpinionItem[]> {
     const params: ApiV1OpinionFetchByConversationPostRequest = {
       conversationSlugId: postSlugId,
       filter: filter,
@@ -157,7 +184,7 @@ export function useBackendCommentApi() {
         })
       );
 
-      return createLocalCommentObject(response.data);
+      return parseFetchOpinionsResponse(response.data);
     } else {
       const response = await DefaultApiFactory(
         undefined,
@@ -168,7 +195,7 @@ export function useBackendCommentApi() {
         createRawAxiosRequestConfig({ timeoutProfile: "extended" })
       );
 
-      return createLocalCommentObject(response.data);
+      return parseFetchOpinionsResponse(response.data);
     }
   }
 
@@ -236,7 +263,7 @@ export function useBackendCommentApi() {
 
   async function fetchOpinionsBySlugIdList(
     opinionSlugIdList: string[]
-  ): Promise<OpinionItem[]> {
+  ): Promise<DisplayedOpinionItem[]> {
     const params: ApiV1OpinionFetchBySlugIdListPostRequest = {
       opinionSlugIdList: opinionSlugIdList,
     };
@@ -250,12 +277,7 @@ export function useBackendCommentApi() {
       createRawAxiosRequestConfig({})
     );
 
-    const opinionItemList: OpinionItem[] = [];
-    for (const item of response.data) {
-      opinionItemList.push(createLocalCommentObject([item])[0]);
-    }
-
-    return opinionItemList;
+    return Dto.getOpinionBySlugIdListResponse.parse(response.data);
   }
 
   async function fetchAnalysisFrameManifest(params: {

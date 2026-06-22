@@ -15,13 +15,14 @@ Name | Type | Description | Notes
 **_options** | [**Array&lt;ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner&gt;**](ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner.md) |  | [default to undefined]
 **questionType** | **string** |  | [default to undefined]
 **constraints** | [**ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1Constraints**](ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1Constraints.md) |  | [default to undefined]
-**currentAnswer** | [**ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswer**](ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswer.md) |  | [optional] [default to undefined]
+**currentAnswer** | [**ApiV1SurveyFormFetchPost200ResponseQuestionsInnerAllOfOneOfCurrentAnswer**](ApiV1SurveyFormFetchPost200ResponseQuestionsInnerAllOfOneOfCurrentAnswer.md) |  | [optional] [default to undefined]
 **isPassed** | **boolean** |  | [default to undefined]
 **isMissingRequired** | **boolean** |  | [default to undefined]
 **isStale** | **boolean** |  | [default to undefined]
 **isCurrentAnswerValid** | **boolean** |  | [default to undefined]
 **currentSemanticVersion** | **number** |  | [default to undefined]
 **answeredQuestionSemanticVersion** | **number** |  | [optional] [default to undefined]
+**displayContent** | [**ApiV1SurveyFormFetchPost200ResponseQuestionsInnerAllOfDisplayContent**](ApiV1SurveyFormFetchPost200ResponseQuestionsInnerAllOfDisplayContent.md) |  | [default to undefined]
 
 ## Example
 
@@ -46,6 +47,7 @@ const instance: ApiV1SurveyFormFetchPost200ResponseQuestionsInner = {
     isCurrentAnswerValid,
     currentSemanticVersion,
     answeredQuestionSemanticVersion,
+    displayContent,
 };
 ```
 

@@ -78,6 +78,18 @@ def test_generate_simulated_description_translations_returns_matching_locale() -
     assert translations[0].locale == "fr"
 
 
+def test_generate_simulated_description_translations_returns_chinese_siblings() -> None:
+    translations = generate_simulated_description_translations(
+        [DescriptionForTranslation(description_id=123, label="Sim Group 0", summary="Summary")],
+        ["zh-Hant"],
+    )
+
+    assert {(translation.description_id, translation.locale) for translation in translations} == {
+        (123, "zh-Hant"),
+        (123, "zh-Hans"),
+    }
+
+
 def test_retryable_error_then_success_uses_attempt_threshold() -> None:
     runtime = SimulationRuntime(
         ai_description_mode="retryable_error_then_success",

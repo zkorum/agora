@@ -5,7 +5,6 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type { SSEContentTranslationUpdatedData } from "src/shared/types/sse";
 import type {
-  ContentTranslationSourceLanguage,
   ContentTranslationSubject,
   LocalizedContentTranslationStatus,
 } from "src/shared/types/zod";
@@ -24,6 +23,7 @@ import { computed, onScopeDispose, ref, toValue, watch } from "vue";
 
 import {
   type ContentTranslationDisplayMode,
+  getContentTranslationSourceLanguageLabel,
   getLanguageDisplayName,
   resolveContentTranslationState,
 } from "./contentTranslation";
@@ -66,29 +66,9 @@ function isSameContentTranslationSubject({
   return false;
 }
 
-function getTranslationSourceLanguageLabel({
-  sourceLanguage,
-  fallbackLanguageCode,
-  displayLanguage,
-}: {
-  sourceLanguage: ContentTranslationSourceLanguage | undefined;
-  fallbackLanguageCode: string | null | undefined;
-  displayLanguage: SupportedDisplayLanguageCodes;
-}): string | undefined {
-  if (sourceLanguage?.kind === "recognized") {
-    return sourceLanguage.label;
-  }
-  if (sourceLanguage?.kind === "raw") {
-    return sourceLanguage.label ?? sourceLanguage.rawLanguageCode;
-  }
-  return getLanguageDisplayName({
-    languageCode: fallbackLanguageCode,
-    displayLanguage,
-  });
-}
-
 export interface ConversationContentTranslationPreview {
   isAvailable: boolean;
+  isLoadingInitialTranslation: boolean;
   mode: ContentTranslationDisplayMode;
   sourceLanguageLabel: string | undefined;
   translationStatus: LocalizedContentTranslationStatus;
@@ -98,6 +78,7 @@ export interface ConversationContentTranslationPreview {
 
 export interface OpinionContentTranslationPreview {
   isAvailable: boolean;
+  isLoadingInitialTranslation: boolean;
   mode: ContentTranslationDisplayMode;
   sourceLanguageLabel: string | undefined;
   translationStatus: LocalizedContentTranslationStatus;
@@ -106,6 +87,7 @@ export interface OpinionContentTranslationPreview {
 
 export interface SurveyQuestionContentTranslationPreview {
   isAvailable: boolean;
+  isLoadingInitialTranslation: boolean;
   mode: ContentTranslationDisplayMode;
   sourceLanguageLabel: string | undefined;
   translationStatus: LocalizedContentTranslationStatus;
@@ -118,6 +100,7 @@ interface ContentTranslationController {
   sourceLanguageLabel: Readonly<{ value: string | undefined }>;
   translationStatus: Readonly<{ value: LocalizedContentTranslationStatus }>;
   isAvailable: Readonly<{ value: boolean }>;
+  isLoadingInitialTranslation: Readonly<{ value: boolean }>;
   setMode: (mode: ContentTranslationDisplayMode) => Promise<void>;
 }
 
@@ -166,6 +149,14 @@ function useContentTranslationController({
     enabled: computed(() => resolvedState.value.isAvailable),
   });
 
+  const isLoadingInitialTranslation = computed(() => {
+    return (
+      modePreference.value === undefined &&
+      resolvedState.value.initialMode === "translated" &&
+      query.isPending.value
+    );
+  });
+
   const translatedVariant = computed(() => {
     const response = query.data.value;
     const content = response?.success === true ? response.content : undefined;
@@ -184,6 +175,9 @@ function useContentTranslationController({
       content.variants.translated !== undefined
     ) {
       return "completed";
+    }
+    if (isLoadingInitialTranslation.value) {
+      return "pending";
     }
     if (!hasRequestedTranslation.value) {
       return "not_requested";
@@ -216,9 +210,10 @@ function useContentTranslationController({
     const response = query.data.value;
     const content = response?.success === true ? response.content : undefined;
     if (content?.kind === "translatable") {
-      return getTranslationSourceLanguageLabel({
+      return getContentTranslationSourceLanguageLabel({
         sourceLanguage: content.translation.sourceLanguage,
         fallbackLanguageCode: content.translation.sourceLanguageCode,
+        fallbackLabel: content.translation.sourceLanguageLabel,
         displayLanguage: displayLanguage.value,
       });
     }
@@ -358,6 +353,7 @@ function useContentTranslationController({
     sourceLanguageLabel,
     translationStatus,
     isAvailable: computed(() => resolvedState.value.isAvailable),
+    isLoadingInitialTranslation,
     setMode,
     query,
   };
@@ -399,6 +395,7 @@ export function useConversationContentTranslationPreview({
         zodConversationContentVariant.safeParse(rawTranslatedVariant);
       return {
         isAvailable: true,
+        isLoadingInitialTranslation: controller.isLoadingInitialTranslation.value,
         mode: controller.mode.value,
         sourceLanguageLabel: controller.sourceLanguageLabel.value,
         translationStatus: controller.translationStatus.value,
@@ -453,6 +450,7 @@ export function useOpinionContentTranslationPreview({
       zodOpinionContentVariant.safeParse(rawTranslatedVariant);
     return {
       isAvailable: true,
+      isLoadingInitialTranslation: controller.isLoadingInitialTranslation.value,
       mode: controller.mode.value,
       sourceLanguageLabel: controller.sourceLanguageLabel.value,
       translationStatus: controller.translationStatus.value,
@@ -504,6 +502,7 @@ export function useSurveyQuestionContentTranslationPreview({
         zodSurveyQuestionContentVariant.safeParse(rawTranslatedVariant);
       return {
         isAvailable: true,
+        isLoadingInitialTranslation: controller.isLoadingInitialTranslation.value,
         mode: controller.mode.value,
         sourceLanguageLabel: controller.sourceLanguageLabel.value,
         translationStatus: controller.translationStatus.value,

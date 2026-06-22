@@ -1,5 +1,5 @@
 import type { UseQueryReturnType } from "@tanstack/vue-query";
-import type { OpinionItem } from "src/shared/types/zod";
+import type { DisplayedOpinionItem } from "src/shared/types/zod";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { computed, type ComputedRef, type Ref, ref, watch } from "vue";
 import { useRoute } from "vue-router";
@@ -7,26 +7,26 @@ import { z } from "zod";
 
 export interface UseOpinionFilteringParams {
   preloadedQueries: {
-    commentsDiscoverQuery: UseQueryReturnType<OpinionItem[], Error>;
-    commentsNewQuery: UseQueryReturnType<OpinionItem[], Error>;
-    commentsModeratedQuery: UseQueryReturnType<OpinionItem[], Error>;
-    hiddenCommentsQuery: UseQueryReturnType<OpinionItem[], Error>;
-    commentsMyVotesQuery: UseQueryReturnType<OpinionItem[], Error>;
+    commentsDiscoverQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;
+    commentsNewQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;
+    commentsModeratedQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;
+    hiddenCommentsQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;
+    commentsMyVotesQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;
   };
 }
 
 export interface UseOpinionFilteringReturn {
   currentFilter: Ref<CommentFilterOptions>;
-  activeQuery: ComputedRef<UseQueryReturnType<OpinionItem[], Error>>;
-  opinionsNew: ComputedRef<OpinionItem[]>;
-  opinionsDiscover: ComputedRef<OpinionItem[]>;
-  opinionsModerated: ComputedRef<OpinionItem[]>;
-  opinionsHidden: ComputedRef<OpinionItem[]>;
-  opinionsMyVotes: ComputedRef<OpinionItem[]>;
-  currentOpinionData: ComputedRef<OpinionItem[]>;
+  activeQuery: ComputedRef<UseQueryReturnType<DisplayedOpinionItem[], Error>>;
+  opinionsNew: ComputedRef<DisplayedOpinionItem[]>;
+  opinionsDiscover: ComputedRef<DisplayedOpinionItem[]>;
+  opinionsModerated: ComputedRef<DisplayedOpinionItem[]>;
+  opinionsHidden: ComputedRef<DisplayedOpinionItem[]>;
+  opinionsMyVotes: ComputedRef<DisplayedOpinionItem[]>;
+  currentOpinionData: ComputedRef<DisplayedOpinionItem[]>;
   customIsEmpty: ComputedRef<boolean>;
   handleUserFilterChange: (filterValue: CommentFilterOptions) => void;
-  getOpinionDataForFilter: (filter: CommentFilterOptions) => OpinionItem[];
+  getOpinionDataForFilter: (filter: CommentFilterOptions) => DisplayedOpinionItem[];
   handleRetryLoadComments: () => void;
 }
 
@@ -66,23 +66,23 @@ export function useOpinionFiltering({
 
   // Computed data from TanStack Query
   const opinionsNew = computed(
-    (): OpinionItem[] => commentsNewQuery.data.value ?? []
+    (): DisplayedOpinionItem[] => commentsNewQuery.data.value ?? []
   );
   const opinionsDiscover = computed(
-    (): OpinionItem[] => commentsDiscoverQuery.data.value ?? []
+    (): DisplayedOpinionItem[] => commentsDiscoverQuery.data.value ?? []
   );
   const opinionsModerated = computed(
-    (): OpinionItem[] => commentsModeratedQuery.data.value ?? []
+    (): DisplayedOpinionItem[] => commentsModeratedQuery.data.value ?? []
   );
   const opinionsHidden = computed(
-    (): OpinionItem[] => hiddenCommentsQuery.data.value ?? []
+    (): DisplayedOpinionItem[] => hiddenCommentsQuery.data.value ?? []
   );
   const opinionsMyVotes = computed(
-    (): OpinionItem[] => commentsMyVotesQuery.data.value ?? []
+    (): DisplayedOpinionItem[] => commentsMyVotesQuery.data.value ?? []
   );
 
   // Computed data source based on current filter
-  const currentOpinionData = computed((): OpinionItem[] =>
+  const currentOpinionData = computed((): DisplayedOpinionItem[] =>
     getOpinionDataForFilter(currentFilter.value)
   );
 
@@ -97,7 +97,7 @@ export function useOpinionFiltering({
 
   function getOpinionDataForFilter(
     filter: CommentFilterOptions
-  ): OpinionItem[] {
+  ): DisplayedOpinionItem[] {
     switch (filter) {
       case "new":
         return opinionsNew.value;
@@ -144,7 +144,7 @@ export function useOpinionFiltering({
   // Helper function to get query object for a given filter
   function getQueryForFilter(
     filter: CommentFilterOptions
-  ): UseQueryReturnType<OpinionItem[], Error> {
+  ): UseQueryReturnType<DisplayedOpinionItem[], Error> {
     switch (filter) {
       case "discover":
         return commentsDiscoverQuery;

@@ -155,12 +155,13 @@ CREATE TABLE "realtime_event_outbox_topic" (
 );
 --> statement-breakpoint
 ALTER TABLE "organization" DROP CONSTRAINT "organization_website_url_unique";--> statement-breakpoint
-DROP INDEX "og_candidate_desc_locale_request_translation_updated_idx";--> statement-breakpoint
 ALTER TABLE "conversation" ALTER COLUMN "author_id" DROP NOT NULL;--> statement-breakpoint
+DROP INDEX IF EXISTS "og_candidate_desc_locale_request_translation_updated_idx";--> statement-breakpoint
 ALTER TABLE "opinion_group_candidate_description_locale_request" ALTER COLUMN "locale" SET DATA TYPE "display_language_code" USING "locale"::"display_language_code";--> statement-breakpoint
 ALTER TABLE "opinion_group_description" ALTER COLUMN "locale" SET DATA TYPE "display_language_code" USING "locale"::"display_language_code";--> statement-breakpoint
 ALTER TABLE "opinion_group_description_translation" ALTER COLUMN "locale" SET DATA TYPE "display_language_code" USING "locale"::"display_language_code";--> statement-breakpoint
 ALTER TABLE "opinion_group_description_translation_work" ALTER COLUMN "locale" SET DATA TYPE "display_language_code" USING "locale"::"display_language_code";--> statement-breakpoint
+CREATE INDEX "og_candidate_desc_locale_request_translation_updated_idx" ON "opinion_group_candidate_description_locale_request" USING btree ("updated_at","id") WHERE "opinion_group_candidate_description_locale_request"."locale" <> 'en';--> statement-breakpoint
 ALTER TABLE "organization" ALTER COLUMN "name" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "organization" ALTER COLUMN "image_path" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "survey_question_content" ALTER COLUMN "source_language_code" SET DATA TYPE "spoken_language_code" USING "source_language_code"::"spoken_language_code";--> statement-breakpoint
@@ -169,12 +170,14 @@ ALTER TABLE "survey_question_option_content" ALTER COLUMN "source_language_code"
 ALTER TABLE "survey_question_option_content_translation" ALTER COLUMN "display_language_code" SET DATA TYPE "display_language_code" USING "display_language_code"::"display_language_code";--> statement-breakpoint
 ALTER TABLE "user_display_language" ALTER COLUMN "language_code" SET DATA TYPE "display_language_code" USING "language_code"::"display_language_code";--> statement-breakpoint
 ALTER TABLE "user_spoken_languages" ALTER COLUMN "language_code" SET DATA TYPE "spoken_language_code" USING "language_code"::"spoken_language_code";--> statement-breakpoint
+ALTER TABLE "conversation_content" ADD COLUMN "public_id" uuid DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
 ALTER TABLE "conversation_content" ADD COLUMN "body_plain_text" text;--> statement-breakpoint
 ALTER TABLE "conversation_content" ADD COLUMN "source_language_code" "spoken_language_code";--> statement-breakpoint
 ALTER TABLE "conversation_content" ADD COLUMN "source_raw_language_code" varchar(35);--> statement-breakpoint
 ALTER TABLE "conversation_content" ADD COLUMN "source_language_provider" "language_detection_provider";--> statement-breakpoint
 ALTER TABLE "conversation_content" ADD COLUMN "source_language_confidence" real;--> statement-breakpoint
 ALTER TABLE "conversation" ADD COLUMN "project_id" integer;--> statement-breakpoint
+ALTER TABLE "opinion_content" ADD COLUMN "public_id" uuid DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
 ALTER TABLE "opinion_content" ADD COLUMN "content_plain_text" text;--> statement-breakpoint
 ALTER TABLE "opinion_content" ADD COLUMN "source_language_code" "spoken_language_code";--> statement-breakpoint
 ALTER TABLE "opinion_content" ADD COLUMN "source_raw_language_code" varchar(35);--> statement-breakpoint
@@ -184,12 +187,14 @@ ALTER TABLE "organization" ADD COLUMN "slug" varchar(65);--> statement-breakpoin
 ALTER TABLE "organization" ADD COLUMN "display_name" varchar(65);--> statement-breakpoint
 ALTER TABLE "organization" ADD COLUMN "directory_visibility" "directory_visibility";--> statement-breakpoint
 ALTER TABLE "organization" ADD COLUMN "auto_provisioned_for_user_id" uuid;--> statement-breakpoint
+ALTER TABLE "survey_question_content" ADD COLUMN "public_id" uuid DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
 ALTER TABLE "survey_question_content" ADD COLUMN "source_raw_language_code" varchar(35);--> statement-breakpoint
 ALTER TABLE "survey_question_content" ADD COLUMN "source_language_provider" "language_detection_provider";--> statement-breakpoint
 ALTER TABLE "survey_question_content_translation" ADD COLUMN "source_language_code" "spoken_language_code";--> statement-breakpoint
 ALTER TABLE "survey_question_content_translation" ADD COLUMN "source_raw_language_code" varchar(35);--> statement-breakpoint
 ALTER TABLE "survey_question_content_translation" ADD COLUMN "source_language_provider" "language_detection_provider";--> statement-breakpoint
 ALTER TABLE "survey_question_content_translation" ADD COLUMN "source_language_confidence" real;--> statement-breakpoint
+ALTER TABLE "survey_question_option_content" ADD COLUMN "public_id" uuid DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
 ALTER TABLE "survey_question_option_content" ADD COLUMN "source_raw_language_code" varchar(35);--> statement-breakpoint
 ALTER TABLE "survey_question_option_content" ADD COLUMN "source_language_provider" "language_detection_provider";--> statement-breakpoint
 ALTER TABLE "survey_question_option_content_translation" ADD COLUMN "source_language_code" "spoken_language_code";--> statement-breakpoint
@@ -220,7 +225,6 @@ CREATE UNIQUE INDEX "content_translation_work_survey_question_unique" ON "conten
 CREATE INDEX "content_translation_work_claim_idx" ON "content_translation_work" USING btree ("priority_rank","updated_at","id") WHERE "content_translation_work"."status" = 'pending';--> statement-breakpoint
 CREATE INDEX "content_translation_work_lease_expiry_idx" ON "content_translation_work" USING btree ("lease_expires_at","id") WHERE "content_translation_work"."status" = 'running';--> statement-breakpoint
 CREATE INDEX "organization_membership_organization_idx" ON "organization_membership" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "og_candidate_desc_locale_request_translation_updated_idx" ON "opinion_group_candidate_description_locale_request" USING btree ("updated_at","id") WHERE "opinion_group_candidate_description_locale_request"."locale" <> 'en';--> statement-breakpoint
 CREATE INDEX "project_organization_ownership_organization_idx" ON "project_organization_ownership" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "realtime_event_outbox_topic_replay_idx" ON "realtime_event_outbox_topic" USING btree ("topic","event_id");--> statement-breakpoint
 ALTER TABLE "conversation" ADD CONSTRAINT "conversation_project_id_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."project"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -229,8 +233,12 @@ CREATE INDEX "conversation_project_id_idx" ON "conversation" USING btree ("proje
 CREATE INDEX "conversation_project_timeline_idx" ON "conversation" USING btree ("project_id","is_importing","created_at" DESC,"id" DESC) WHERE "conversation"."current_content_id" is not null;--> statement-breakpoint
 CREATE UNIQUE INDEX "user_display_language_active_user_unique" ON "user_display_language" USING btree ("user_id") WHERE "user_display_language"."is_deleted" = false;--> statement-breakpoint
 CREATE INDEX "user_idx_organization" ON "user_organization_mapping" USING btree ("user_id");--> statement-breakpoint
+ALTER TABLE "conversation_content" ADD CONSTRAINT "conversation_content_public_id_unique" UNIQUE("public_id");--> statement-breakpoint
+ALTER TABLE "opinion_content" ADD CONSTRAINT "opinion_content_public_id_unique" UNIQUE("public_id");--> statement-breakpoint
 ALTER TABLE "organization" ADD CONSTRAINT "organization_slug_unique" UNIQUE("slug");--> statement-breakpoint
 ALTER TABLE "organization" ADD CONSTRAINT "organization_auto_provisioned_for_user_id_unique" UNIQUE("auto_provisioned_for_user_id");--> statement-breakpoint
+ALTER TABLE "survey_question_content" ADD CONSTRAINT "survey_question_content_public_id_unique" UNIQUE("public_id");--> statement-breakpoint
+ALTER TABLE "survey_question_option_content" ADD CONSTRAINT "survey_question_option_content_public_id_unique" UNIQUE("public_id");--> statement-breakpoint
 ALTER TABLE "conversation_content" ADD CONSTRAINT "conversation_content_source_metadata_check" CHECK ((("conversation_content"."source_language_provider" IS NULL AND "conversation_content"."source_raw_language_code" IS NULL) OR ("conversation_content"."source_language_provider" IS NOT NULL AND "conversation_content"."source_raw_language_code" IS NOT NULL)));--> statement-breakpoint
 ALTER TABLE "opinion_content" ADD CONSTRAINT "opinion_content_source_metadata_check" CHECK ((("opinion_content"."source_language_provider" IS NULL AND "opinion_content"."source_raw_language_code" IS NULL) OR ("opinion_content"."source_language_provider" IS NOT NULL AND "opinion_content"."source_raw_language_code" IS NOT NULL)));--> statement-breakpoint
 ALTER TABLE "survey_question_content" ADD CONSTRAINT "survey_question_content_source_metadata_check" CHECK ((("survey_question_content"."source_language_provider" IS NULL AND "survey_question_content"."source_raw_language_code" IS NULL) OR ("survey_question_content"."source_language_provider" IS NOT NULL AND "survey_question_content"."source_raw_language_code" IS NOT NULL)));--> statement-breakpoint

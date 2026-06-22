@@ -1,5 +1,6 @@
-import type { SurveyFormFetchResponse, SurveyStatusCheckResponse } from "src/shared/types/dto";
+import type { SurveyStatusCheckResponse } from "src/shared/types/dto";
 import type { ParticipationMode } from "src/shared/types/zod";
+import type { SurveyFormData } from "src/utils/api/survey/useSurveyQueries";
 import {
   getConversationPath,
   getConversationSurveyCompletePath,
@@ -66,7 +67,7 @@ export function resolveVerifyRouteDecision({
   conversationSlugId: string;
   conversation: VerifyRouteConversationState | undefined;
   surveyStatus: SurveyStatusCheckResponse | undefined;
-  surveyForm: SurveyFormFetchResponse | undefined;
+  surveyForm: SurveyFormData | undefined;
   requirementState: VerifyRouteRequirementState;
 }): VerifyRouteDecision {
   if (!exactVerifyRoute || isInitialLoading) {

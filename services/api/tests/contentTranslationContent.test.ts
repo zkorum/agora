@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
     buildLocalizedSurveyQuestionContent,
-    buildSurveyQuestionSourceVersion,
     hasCompleteSurveyQuestionTranslation,
     shouldQueueTranslationWork,
     type SurveyQuestionLocalizedContentSource,
@@ -11,6 +10,7 @@ const surveyQuestionSource: SurveyQuestionLocalizedContentSource = {
     conversationSlugId: "conv1234",
     questionSlugId: "ques1234",
     contentId: 10,
+    publicId: "00000000-0000-4000-8000-000000000010",
     questionText: "What should we build next?",
     sourceLanguageCode: "en",
     sourceRawLanguageCode: "en",
@@ -20,6 +20,7 @@ const surveyQuestionSource: SurveyQuestionLocalizedContentSource = {
         {
             optionSlugId: "opt00001",
             contentId: 21,
+            publicId: "00000000-0000-4000-8000-000000000021",
             optionText: "Parks",
             sourceLanguageCode: "en",
             sourceRawLanguageCode: "en",
@@ -29,6 +30,7 @@ const surveyQuestionSource: SurveyQuestionLocalizedContentSource = {
         {
             optionSlugId: "opt00002",
             contentId: 22,
+            publicId: "00000000-0000-4000-8000-000000000022",
             optionText: "Libraries",
             sourceLanguageCode: "en",
             sourceRawLanguageCode: "en",
@@ -84,15 +86,6 @@ describe("content translation pure content helpers", () => {
         ).toBe(true);
     });
 
-    it("builds survey source versions from question and ordered option content ids", () => {
-        expect(
-            buildSurveyQuestionSourceVersion({
-                surveyQuestionContentId: 10,
-                optionContentIds: [21, 22],
-            }),
-        ).toBe("survey_question_content:10:option_content:21,22");
-    });
-
     it("returns pending original content when any survey option translation is missing", () => {
         const result = buildLocalizedSurveyQuestionContent({
             source: surveyQuestionSource,
@@ -116,7 +109,7 @@ describe("content translation pure content helpers", () => {
             },
             content: {
                 kind: "translatable",
-                sourceVersion: "survey_question_content:10:option_content:21,22",
+                sourceVersion: "00000000-0000-4000-8000-000000000010",
                 initialMode: "original",
                 translation: {
                     targetLanguageCode: "fr",

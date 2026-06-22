@@ -116,7 +116,6 @@ CREATE TABLE "user" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"polis_participant_id" serial NOT NULL,
 	"username" varchar(20) NOT NULL,
-	"first_name" varchar(65),
 	"is_site_moderator" boolean DEFAULT false NOT NULL,
 	"is_site_org_admin" boolean DEFAULT false NOT NULL,
 	"is_imported" boolean DEFAULT false NOT NULL,

@@ -426,6 +426,7 @@ class SurveyQuestionContent(Base):
     __tablename__ = "survey_question_content"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
     survey_question_id: Mapped[int] = mapped_column(Integer)
     question_text: Mapped[str] = mapped_column(String(500))
     constraints: Mapped[Any] = mapped_column(JSON(none_as_null=True))
@@ -456,6 +457,7 @@ class SurveyQuestionOptionContent(Base):
     __tablename__ = "survey_question_option_content"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
     survey_question_option_id: Mapped[int] = mapped_column(Integer)
     option_text: Mapped[str] = mapped_column(String(200))
     source_language_code: Mapped[SpokenLanguageCode | None] = mapped_column(

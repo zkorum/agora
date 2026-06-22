@@ -5,6 +5,8 @@ import type {
 import { describe, expect, it } from "vitest";
 
 import {
+  getContentTranslationSourceLanguageLabel,
+  getConversationLanguageSettingSourceLanguageCode,
   getLanguageDisplayName,
   getSupportedContentTranslationTargetLanguageCodes,
   resolveContentTranslationState,
@@ -144,6 +146,78 @@ describe("getLanguageDisplayName", () => {
     expect(
       getLanguageDisplayName({ languageCode: null, displayLanguage: "fr" })
     ).toBeUndefined();
+  });
+});
+
+describe("getContentTranslationSourceLanguageLabel", () => {
+  it("localizes recognized source languages instead of using backend labels", () => {
+    expect(
+      getContentTranslationSourceLanguageLabel({
+        sourceLanguage: {
+          kind: "recognized",
+          languageCode: "fr",
+          label: "French",
+        },
+        fallbackLanguageCode: undefined,
+        displayLanguage: "es",
+      })
+    ).toBe("francés");
+  });
+
+  it("localizes fallback source language codes before using fallback labels", () => {
+    expect(
+      getContentTranslationSourceLanguageLabel({
+        sourceLanguage: undefined,
+        fallbackLanguageCode: "fr",
+        fallbackLabel: "French",
+        displayLanguage: "es",
+      })
+    ).toBe("francés");
+  });
+
+  it("falls back to backend labels when only a label is available", () => {
+    expect(
+      getContentTranslationSourceLanguageLabel({
+        sourceLanguage: undefined,
+        fallbackLanguageCode: undefined,
+        fallbackLabel: "French",
+        displayLanguage: "es",
+      })
+    ).toBe("French");
+  });
+});
+
+describe("getConversationLanguageSettingSourceLanguageCode", () => {
+  it("uses the detected source language when available", () => {
+    expect(
+      getConversationLanguageSettingSourceLanguageCode({
+        languageSetting: {
+          mode: "auto",
+          languageCode: "es",
+          detectedLanguageCode: "es",
+          detectedSourceLanguageCode: "fr",
+          detectedRawLanguageCode: "fr",
+          detectionConfidence: 0.98,
+          autoDetectionStatus: "detected",
+        },
+      })
+    ).toBe("fr");
+  });
+
+  it("falls back to the manual conversation language", () => {
+    expect(
+      getConversationLanguageSettingSourceLanguageCode({
+        languageSetting: {
+          mode: "manual",
+          languageCode: "fr",
+          detectedLanguageCode: null,
+          detectedSourceLanguageCode: null,
+          detectedRawLanguageCode: null,
+          detectionConfidence: null,
+          autoDetectionStatus: "not_attempted",
+        },
+      })
+    ).toBe("fr");
   });
 });
 

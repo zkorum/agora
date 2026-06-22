@@ -17,6 +17,7 @@ export interface SurveyQuestionLocalizedContentSource {
     conversationSlugId: string;
     questionSlugId: string;
     contentId: number;
+    publicId: string;
     questionText: string;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
     sourceRawLanguageCode: string | null;
@@ -25,6 +26,7 @@ export interface SurveyQuestionLocalizedContentSource {
     options: {
         optionSlugId: string;
         contentId: number;
+        publicId: string;
         optionText: string;
         sourceLanguageCode: SupportedSpokenLanguageCodes | null;
         sourceRawLanguageCode: string | null;
@@ -74,16 +76,6 @@ export function hasCompleteSurveyQuestionTranslation({
             translatedOptionContentIds.has(contentId),
         )
     );
-}
-
-export function buildSurveyQuestionSourceVersion({
-    surveyQuestionContentId,
-    optionContentIds,
-}: {
-    surveyQuestionContentId: number;
-    optionContentIds: readonly number[];
-}): string {
-    return `survey_question_content:${String(surveyQuestionContentId)}:option_content:${optionContentIds.map((contentId) => String(contentId)).join(",")}`;
 }
 
 export function getSourceLanguageLabel(
@@ -197,10 +189,7 @@ export function buildLocalizedSurveyQuestionContent({
         conversationSlugId: source.conversationSlugId,
         questionSlugId: source.questionSlugId,
     };
-    const sourceVersion = buildSurveyQuestionSourceVersion({
-        surveyQuestionContentId: source.contentId,
-        optionContentIds: source.options.map((option) => option.contentId),
-    });
+    const sourceVersion = source.publicId;
 
     if (translated !== undefined) {
         return {
@@ -212,7 +201,7 @@ export function buildLocalizedSurveyQuestionContent({
                 translation: {
                     ...buildTranslationMetadata({
                         targetLanguageCode,
-                        sourceMetadata: translation,
+                        sourceMetadata: source,
                         status: "completed",
                     }),
                 },

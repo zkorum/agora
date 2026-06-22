@@ -1,7 +1,5 @@
-import type {
-  SurveyFormFetchResponse,
-  SurveyStatusCheckResponse,
-} from "src/shared/types/dto";
+import type { SurveyStatusCheckResponse } from "src/shared/types/dto";
+import type { SurveyFormData } from "src/utils/api/survey/useSurveyQueries";
 
 export function shouldFetchSurveyForm({
   surveyStatus,
@@ -16,8 +14,8 @@ export function resolveSurveyForm({
   surveyForm,
 }: {
   surveyStatus: SurveyStatusCheckResponse | undefined;
-  surveyForm: SurveyFormFetchResponse | undefined;
-}): SurveyFormFetchResponse | undefined {
+  surveyForm: SurveyFormData | undefined;
+}): SurveyFormData | undefined {
   if (!shouldFetchSurveyForm({ surveyStatus })) {
     return undefined;
   }

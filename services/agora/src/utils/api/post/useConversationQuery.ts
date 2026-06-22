@@ -4,8 +4,14 @@ import {
   useQueryClient,
 } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
+import type { ConversationContentFetchResponse } from "src/shared/types/dto";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useLanguageStore } from "src/stores/language";
+import {
+  getConversationContentQueryKey,
+  getConversationDisplayContentQueryKey,
+} from "src/utils/api/contentTranslation/useContentTranslationQueries";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
 import { useBackendPostApi } from "./post";
@@ -87,25 +93,46 @@ export function useConversationQuery({
   conversationSlugId: MaybeRefOrGetter<string>;
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
-  const { fetchPostBySlugId } = useBackendPostApi();
+  const { fetchConversationBySlugIdWithDisplayContent } = useBackendPostApi();
   const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
+  const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
   const queryClient = useQueryClient();
 
   return useQuery({
     queryKey: ["conversation", computed(() => toValue(conversationSlugId))],
     queryFn: async () => {
       const slugId = toValue(conversationSlugId);
-      const fetchedConversation = await fetchPostBySlugId(
-        slugId,
-        isGuestOrLoggedIn.value
-      );
+      const fetchedConversation = await fetchConversationBySlugIdWithDisplayContent({
+        postSlugId: slugId,
+        loadPersonalizedData: isGuestOrLoggedIn.value,
+      });
       const cachedConversation = queryClient.getQueryData<ExtendedConversation>([
         "conversation",
         slugId,
       ]);
+      queryClient.setQueryData<ConversationContentFetchResponse>(
+        getConversationDisplayContentQueryKey({
+          conversationSlugId: slugId,
+          targetLanguageCode: displayLanguage.value,
+          spokenLanguages: spokenLanguages.value,
+        }),
+        fetchedConversation.displayContent
+      );
+      if (fetchedConversation.displayContent.status === "available") {
+        queryClient.setQueryData<ConversationContentFetchResponse>(
+          getConversationContentQueryKey({
+            conversationSlugId: slugId,
+            contentId: fetchedConversation.displayContent.contentId,
+            mode: fetchedConversation.displayContent.mode,
+            targetLanguageCode: displayLanguage.value,
+            spokenLanguages: spokenLanguages.value,
+          }),
+          fetchedConversation.displayContent
+        );
+      }
 
       return preserveNewerSnapshotMetadata({
-        fetchedConversation,
+        fetchedConversation: fetchedConversation.conversationData,
         cachedConversation,
       });
     },

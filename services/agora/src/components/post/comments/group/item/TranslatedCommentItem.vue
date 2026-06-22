@@ -18,21 +18,28 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
   EventSlug,
-  OpinionItem,
+  DisplayedOpinionItem,
   ParticipationMode,
   SurveyGateSummary,
 } from "src/shared/types/zod";
-import { useOpinionContentTranslationPreview } from "src/utils/translation/useContentTranslationPreview";
-import { computed } from "vue";
+import { useLanguageStore } from "src/stores/language";
+import type { ContentTranslationDisplayMode } from "src/utils/translation/contentTranslation";
+import { getContentTranslationSourceLanguageLabel } from "src/utils/translation/contentTranslation";
+import {
+  type OpinionContentTranslationPreview,
+  useOpinionContentTranslationPreview,
+} from "src/utils/translation/useContentTranslationPreview";
+import { computed, ref } from "vue";
 
 import CommentItem from "./CommentItem.vue";
 
 const props = defineProps<{
-  commentItem: OpinionItem;
+  commentItem: DisplayedOpinionItem;
   postSlugId: string;
   conversationAuthorUsername: string;
   conversationOrganizationName: string;
@@ -56,12 +63,64 @@ const translationSubject = computed(() => ({
   conversationSlugId: props.postSlugId,
   opinionSlugId: props.commentItem.opinionSlugId,
 }));
+const { displayLanguage } = storeToRefs(useLanguageStore());
+const hasRequestedTranslation = ref(false);
 
-const { preview: translationPreview, setMode: setTranslationMode } =
+const { preview: requestedTranslationPreview, setMode: setRequestedTranslationMode } =
   useOpinionContentTranslationPreview({
     subject: translationSubject,
-    dynamicTranslationEnabled: computed(() => props.dynamicTranslationEnabled),
+    dynamicTranslationEnabled: computed(
+      () => props.dynamicTranslationEnabled && hasRequestedTranslation.value
+    ),
     sourceLanguageCode: computed(() => props.commentItem.sourceLanguageCode),
     supportedTargetLanguageCodes: computed(() => props.supportedTargetLanguageCodes),
   });
+
+const initialTranslationPreview = computed<
+  OpinionContentTranslationPreview | undefined
+>(() => {
+  const displayContent = props.commentItem.displayContent;
+  if (displayContent === undefined) {
+    return undefined;
+  }
+  const translationControl = displayContent.translationControl;
+  if (translationControl === null) {
+    return undefined;
+  }
+  const sourceLanguageLabel = getContentTranslationSourceLanguageLabel({
+    sourceLanguage: undefined,
+    fallbackLanguageCode: props.commentItem.sourceLanguageCode,
+    fallbackLabel: translationControl.sourceLanguageLabel,
+    displayLanguage: displayLanguage.value,
+  });
+
+  if (displayContent.status === "available" && displayContent.mode === "translated") {
+    return {
+      isAvailable: true,
+      isLoadingInitialTranslation: false,
+      mode: "translated",
+      sourceLanguageLabel,
+      translationStatus: translationControl.status,
+      translatedOpinion: displayContent.content.content,
+    };
+  }
+
+  return {
+    isAvailable: true,
+    isLoadingInitialTranslation: false,
+    mode: "original",
+    sourceLanguageLabel,
+    translationStatus: translationControl.status,
+    translatedOpinion: "",
+  };
+});
+
+const translationPreview = computed(
+  () => requestedTranslationPreview.value ?? initialTranslationPreview.value
+);
+
+function setTranslationMode(mode: ContentTranslationDisplayMode): void {
+  hasRequestedTranslation.value = true;
+  void setRequestedTranslationMode(mode);
+}
 </script>

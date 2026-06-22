@@ -67,10 +67,10 @@
             </div>
 
             <ContentTranslationControl
-              v-if="surveyQuestionTranslationPreview !== undefined"
+              v-if="displayedSurveyQuestionTranslationPreview !== undefined"
               v-model="surveyQuestionTranslationMode"
-              :source-language-label="surveyQuestionTranslationPreview.sourceLanguageLabel"
-              :translation-status="surveyQuestionTranslationPreview.translationStatus"
+              :source-language-label="displayedSurveyQuestionTranslationPreview.sourceLanguageLabel"
+              :translation-status="displayedSurveyQuestionTranslationPreview.translationStatus"
               class="survey-card__translation-control"
             />
 
@@ -148,6 +148,7 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import Editor from "src/components/editor/Editor.vue";
 import ConversationSurveyOnboardingHero from "src/components/onboarding/backgrounds/ConversationSurveyOnboardingHero.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
@@ -162,13 +163,13 @@ import { useConversationSurveyState } from "src/composables/conversation/useConv
 import { useSurveyNavigation } from "src/composables/conversation/useSurveyNavigation";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
-import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
-import type {
-  ParticipationBlockedReason,
-  SurveyQuestionFormItem,
-} from "src/shared/types/zod";
+import type { ParticipationBlockedReason } from "src/shared/types/zod";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
-import { useSurveyAnswerSaveMutation } from "src/utils/api/survey/useSurveyQueries";
+import { useLanguageStore } from "src/stores/language";
+import {
+  type SurveyFormData,
+  useSurveyAnswerSaveMutation,
+} from "src/utils/api/survey/useSurveyQueries";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import { getSingleRouteParam } from "src/utils/router/params";
 import {
@@ -192,9 +193,14 @@ import {
 import { surveyTemplateTextTranslations } from "src/utils/survey/templates.i18n";
 import {
   type ContentTranslationDisplayMode,
+  getContentTranslationSourceLanguageLabel,
+  getConversationLanguageSettingSourceLanguageCode,
   getSupportedContentTranslationTargetLanguageCodes,
 } from "src/utils/translation/contentTranslation";
-import { useSurveyQuestionContentTranslationPreview } from "src/utils/translation/useContentTranslationPreview";
+import {
+  type SurveyQuestionContentTranslationPreview,
+  useSurveyQuestionContentTranslationPreview,
+} from "src/utils/translation/useContentTranslationPreview";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -204,6 +210,8 @@ import {
   conversationSurveyQuestionTranslations,
 } from "./question.[questionSlugId].i18n";
 
+type SurveyFormQuestion = SurveyFormData["questions"][number];
+
 const router = useRouter();
 const route = useRoute();
 const { safeNavigateBack } = useGoBackButtonHandler();
@@ -212,7 +220,8 @@ const { exitToConversation } = useConversationOnboardingExit();
 const { navigateToNextSurveyStep, navigateToSurveyRoot } =
   useSurveyNavigation();
 const conversationOnboardingStore = useConversationOnboardingStore();
-const { t, locale } = useComponentI18n<ConversationSurveyQuestionTranslations>(
+const { displayLanguage } = storeToRefs(useLanguageStore());
+const { t } = useComponentI18n<ConversationSurveyQuestionTranslations>(
   conversationSurveyQuestionTranslations
 );
 
@@ -245,7 +254,7 @@ const questionIndex = computed(() => {
   );
 });
 
-const question = computed<SurveyQuestionFormItem | undefined>(() => {
+const question = computed<SurveyFormQuestion | undefined>(() => {
   if (questionIndex.value < 0) {
     return undefined;
   }
@@ -268,6 +277,15 @@ const supportedTargetLanguageCodes = computed(() => {
     multilingualSetting: conversationData.value.metadata.multilingualSetting,
   });
 });
+const conversationSourceLanguageCode = computed(() => {
+  const languageSetting = conversationData.value?.metadata.languageSetting;
+  if (languageSetting === undefined) {
+    return undefined;
+  }
+
+  return getConversationLanguageSettingSourceLanguageCode({ languageSetting });
+});
+const hasRequestedSurveyQuestionTranslation = ref(false);
 
 const {
   preview: surveyQuestionTranslationPreview,
@@ -276,16 +294,65 @@ const {
   subject: surveyQuestionTranslationSubject,
   dynamicTranslationEnabled: computed(
     () =>
+      hasRequestedSurveyQuestionTranslation.value &&
       question.value !== undefined &&
       conversationData.value?.metadata.multilingualSetting.dynamicTranslationEnabled === true
   ),
-  sourceLanguageCode: undefined,
+  sourceLanguageCode: conversationSourceLanguageCode,
   supportedTargetLanguageCodes,
 });
 
+const backendSurveyQuestionTranslationPreview = computed<
+  SurveyQuestionContentTranslationPreview | undefined
+>(() => {
+  const displayContent = question.value?.displayContent;
+  if (displayContent === undefined) {
+    return undefined;
+  }
+  const translationControl = displayContent?.translationControl;
+  if (translationControl === undefined || translationControl === null) {
+    return undefined;
+  }
+  const sourceLanguageLabel = getContentTranslationSourceLanguageLabel({
+    sourceLanguage: undefined,
+    fallbackLanguageCode: conversationSourceLanguageCode.value,
+    fallbackLabel: translationControl.sourceLanguageLabel,
+    displayLanguage: displayLanguage.value,
+  });
+
+  if (displayContent.status !== "available" || displayContent.mode !== "translated") {
+    return {
+      isAvailable: true,
+      isLoadingInitialTranslation: false,
+      mode: "original" as const,
+      sourceLanguageLabel,
+      translationStatus: translationControl.status,
+      translatedQuestionText: "",
+      translatedOptions: [],
+    };
+  }
+
+  return {
+    isAvailable: true,
+    isLoadingInitialTranslation: false,
+    mode: "translated" as const,
+    sourceLanguageLabel,
+    translationStatus: translationControl.status,
+    translatedQuestionText: displayContent.content.questionText,
+    translatedOptions: displayContent.content.options,
+  };
+});
+
+const displayedSurveyQuestionTranslationPreview = computed(
+  () =>
+    surveyQuestionTranslationPreview.value ??
+    backendSurveyQuestionTranslationPreview.value
+);
+
 const surveyQuestionTranslationMode = computed<ContentTranslationDisplayMode>({
-  get: () => surveyQuestionTranslationPreview.value?.mode ?? "original",
+  get: () => displayedSurveyQuestionTranslationPreview.value?.mode ?? "original",
   set: (mode) => {
+    hasRequestedSurveyQuestionTranslation.value = true;
     void setSurveyQuestionTranslationMode(mode);
   },
 });
@@ -385,13 +452,23 @@ const displayedQuestionText = computed(() => {
   if (currentQuestion === undefined) {
     return "";
   }
-  const preview = surveyQuestionTranslationPreview.value;
+  const preview = displayedSurveyQuestionTranslationPreview.value;
+  if (preview?.isLoadingInitialTranslation === true) {
+    return "";
+  }
   if (
     preview?.mode === "translated" &&
     preview.translationStatus === "completed" &&
     preview.translatedQuestionText.length > 0
   ) {
     return preview.translatedQuestionText;
+  }
+  if (
+    preview?.mode !== "original" &&
+    currentQuestion.displayContent.status === "available" &&
+    currentQuestion.displayContent.mode === "translated"
+  ) {
+    return currentQuestion.displayContent.content.questionText;
   }
   return currentQuestion.questionText;
 });
@@ -401,8 +478,30 @@ const displayedQuestionOptions = computed(() => {
   if (currentQuestion === undefined || currentQuestion.questionType !== "choice") {
     return [];
   }
-  const preview = surveyQuestionTranslationPreview.value;
+  const preview = displayedSurveyQuestionTranslationPreview.value;
+  if (preview?.isLoadingInitialTranslation === true) {
+    return [];
+  }
   if (preview?.mode !== "translated" || preview.translationStatus !== "completed") {
+    if (
+      preview?.mode !== "original" &&
+      currentQuestion.displayContent.status === "available" &&
+      currentQuestion.displayContent.mode === "translated"
+    ) {
+      const displayOptionsBySlugId = new Map(
+        currentQuestion.displayContent.content.options.map((option) => [
+          option.optionSlugId,
+          option.optionText,
+        ])
+      );
+      return currentQuestion.options.map((option) => ({
+        ...option,
+        optionText:
+          option.optionSlugId === undefined
+            ? option.optionText
+            : (displayOptionsBySlugId.get(option.optionSlugId) ?? option.optionText),
+      }));
+    }
     return currentQuestion.options;
   }
   const translatedOptionsBySlugId = new Map(
@@ -427,7 +526,7 @@ const isIntegerQuestion = computed(() => {
 });
 
 const templateTexts = computed(() => {
-  const currentLocale = locale.value as SupportedDisplayLanguageCodes;
+  const currentLocale = displayLanguage.value;
   return (
     surveyTemplateTextTranslations[currentLocale] ??
     surveyTemplateTextTranslations.en

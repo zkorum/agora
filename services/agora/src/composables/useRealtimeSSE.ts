@@ -23,6 +23,10 @@ import { useBackendAuthApi } from "src/utils/api/auth";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { fetchAnalysisDataWithCache } from "src/utils/api/comment/useCommentQueries";
 import { useCommonApi } from "src/utils/api/common";
+import {
+  getConversationContentQueryPrefix,
+  getConversationDisplayContentQueryPrefix,
+} from "src/utils/api/contentTranslation/useContentTranslationQueries";
 import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { processEnv } from "src/utils/processEnv";
@@ -865,6 +869,10 @@ export function useRealtimeSSE({
             refetchType: "none",
           });
           void queryClient.invalidateQueries({
+            queryKey: ["hiddenComments", data.conversationSlugId],
+            refetchType: "none",
+          });
+          void queryClient.invalidateQueries({
             queryKey: ["commentStats", data.conversationSlugId],
             refetchType: "active",
           });
@@ -1065,6 +1073,31 @@ export function useRealtimeSSE({
       queryKey: ["contentTranslation", data.subject, data.targetLanguageCode],
       refetchType: "active",
     });
+    if (data.subject.kind === "conversation") {
+      void queryClient.invalidateQueries({
+        queryKey: ["conversation", data.subject.conversationSlugId],
+        refetchType: "active",
+      });
+      void queryClient.invalidateQueries({
+        queryKey: getConversationContentQueryPrefix({
+          conversationSlugId: data.subject.conversationSlugId,
+        }),
+        refetchType: "active",
+      });
+      void queryClient.invalidateQueries({
+        queryKey: getConversationDisplayContentQueryPrefix({
+          conversationSlugId: data.subject.conversationSlugId,
+        }),
+        refetchType: "active",
+      });
+      return;
+    }
+    if (data.subject.kind === "survey_question") {
+      void queryClient.invalidateQueries({
+        queryKey: ["survey-form", data.subject.conversationSlugId],
+        refetchType: "active",
+      });
+    }
   }
 
   function updateConversationCountsFromAnalysisEvent(

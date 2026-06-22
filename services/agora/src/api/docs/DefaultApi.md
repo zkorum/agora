@@ -27,6 +27,7 @@ All URIs are relative to *http://localhost*
 |[**apiV1AuthZkpVerifyUserStatusAndAuthenticatePost**](#apiv1authzkpverifyuserstatusandauthenticatepost) | **POST** /api/v1/auth/zkp/verify-user-status-and-authenticate | |
 |[**apiV1ContentTranslationRequestPost**](#apiv1contenttranslationrequestpost) | **POST** /api/v1/content-translation/request | |
 |[**apiV1ConversationClosePost**](#apiv1conversationclosepost) | **POST** /api/v1/conversation/close | |
+|[**apiV1ConversationContentFetchPost**](#apiv1conversationcontentfetchpost) | **POST** /api/v1/conversation/content/fetch | |
 |[**apiV1ConversationCreatePost**](#apiv1conversationcreatepost) | **POST** /api/v1/conversation/create | |
 |[**apiV1ConversationDeletePost**](#apiv1conversationdeletepost) | **POST** /api/v1/conversation/delete | |
 |[**apiV1ConversationExportDeletePost**](#apiv1conversationexportdeletepost) | **POST** /api/v1/conversation/export/delete | |
@@ -1215,6 +1216,57 @@ const { status, data } = await apiInstance.apiV1ConversationClosePost(
 ### Return type
 
 **ApiV1ConversationClosePost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1ConversationContentFetchPost**
+> ApiV1ConversationGetPost200ResponseDisplayContent apiV1ConversationContentFetchPost(apiV1ConversationContentFetchPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ConversationContentFetchPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ConversationContentFetchPostRequest: ApiV1ConversationContentFetchPostRequest; //
+
+const { status, data } = await apiInstance.apiV1ConversationContentFetchPost(
+    apiV1ConversationContentFetchPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ConversationContentFetchPostRequest** | **ApiV1ConversationContentFetchPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1ConversationGetPost200ResponseDisplayContent**
 
 ### Authorization
 
@@ -3285,7 +3337,7 @@ const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisFrameOpinion
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1OpinionFetchByConversationPost**
-> Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem> apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest)
+> Array<ApiV1OpinionFetchByConversationPost200ResponseInner> apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest)
 
 
 ### Example
@@ -3316,7 +3368,7 @@ const { status, data } = await apiInstance.apiV1OpinionFetchByConversationPost(
 
 ### Return type
 
-**Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>**
+**Array<ApiV1OpinionFetchByConversationPost200ResponseInner>**
 
 ### Authorization
 
@@ -3336,7 +3388,7 @@ const { status, data } = await apiInstance.apiV1OpinionFetchByConversationPost(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1OpinionFetchBySlugIdListPost**
-> Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem> apiV1OpinionFetchBySlugIdListPost(apiV1OpinionFetchBySlugIdListPostRequest)
+> Array<ApiV1OpinionFetchByConversationPost200ResponseInner> apiV1OpinionFetchBySlugIdListPost(apiV1OpinionFetchBySlugIdListPostRequest)
 
 
 ### Example
@@ -3367,7 +3419,7 @@ const { status, data } = await apiInstance.apiV1OpinionFetchBySlugIdListPost(
 
 ### Return type
 
-**Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>**
+**Array<ApiV1OpinionFetchByConversationPost200ResponseInner>**
 
 ### Authorization
 
@@ -3438,7 +3490,7 @@ const { status, data } = await apiInstance.apiV1OpinionFetchCommentStatsByConver
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1OpinionFetchHiddenByConversationPost**
-> Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem> apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest)
+> Array<ApiV1OpinionFetchByConversationPost200ResponseInner> apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest)
 
 
 ### Example
@@ -3469,7 +3521,7 @@ const { status, data } = await apiInstance.apiV1OpinionFetchHiddenByConversation
 
 ### Return type
 
-**Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>**
+**Array<ApiV1OpinionFetchByConversationPost200ResponseInner>**
 
 ### Authorization
 

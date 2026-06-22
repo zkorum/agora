@@ -311,9 +311,28 @@ const zodCompletedLocalizedContentTranslationMetadata =
     zodLocalizedContentTranslationMetadata.extend({
         status: z.literal("completed"),
     });
+export const zodDisplayedContentTranslationControl = z
+    .object({
+        status: zodLocalizedContentTranslationStatus,
+        sourceLanguageLabel: z.string().min(1).optional(),
+        alternateMode: zodLocalizedContentDisplayMode,
+        canRequestAlternate: z.boolean(),
+    })
+    .strict();
+const zodDisplayedContentUnavailable = z
+    .object({
+        contentId: z.uuid(),
+        status: z.enum(["not_requested", "pending", "running", "failed"]),
+        translationControl: zodDisplayedContentTranslationControl.nullable(),
+    })
+    .strict();
 
-export function createZodLocalizedContent<TContent extends z.ZodType>(
+export function createZodLocalizedContent<
+    TContent extends z.ZodType,
+    TTranslatedContent extends z.ZodType,
+>(
     contentSchema: TContent,
+    translatedContentSchema: TTranslatedContent,
 ) {
     return z.union([
         z
@@ -337,7 +356,7 @@ export function createZodLocalizedContent<TContent extends z.ZodType>(
                 variants: z
                     .object({
                         original: contentSchema,
-                        translated: contentSchema.optional(),
+                        translated: translatedContentSchema.optional(),
                     })
                     .strict(),
             })
@@ -351,11 +370,41 @@ export function createZodLocalizedContent<TContent extends z.ZodType>(
                 variants: z
                     .object({
                         original: contentSchema.optional(),
-                        translated: contentSchema,
+                        translated: translatedContentSchema,
                     })
                     .strict(),
             })
             .strict(),
+    ]);
+}
+
+export function createZodDisplayedContent<
+    TContent extends z.ZodType,
+    TTranslatedContent extends z.ZodType,
+>(
+    contentSchema: TContent,
+    translatedContentSchema: TTranslatedContent,
+) {
+    return z.union([
+        z
+            .object({
+                contentId: z.uuid(),
+                status: z.literal("available"),
+                mode: z.literal("original"),
+                content: contentSchema,
+                translationControl: zodDisplayedContentTranslationControl.nullable(),
+            })
+            .strict(),
+        z
+            .object({
+                contentId: z.uuid(),
+                status: z.literal("available"),
+                mode: z.literal("translated"),
+                content: translatedContentSchema,
+                translationControl: zodDisplayedContentTranslationControl.nullable(),
+            })
+            .strict(),
+        zodDisplayedContentUnavailable,
     ]);
 }
 
@@ -365,8 +414,19 @@ export const zodConversationContentVariant = z
         body: zodConversationBodyOutput,
     })
     .strict();
+const zodTranslatedConversationContentVariant = z
+    .object({
+        title: z.string(),
+        body: z.string().optional(),
+    })
+    .strict();
 export const zodLocalizedConversationContent = createZodLocalizedContent(
     zodConversationContentVariant,
+    zodTranslatedConversationContentVariant,
+);
+export const zodConversationDisplayedContent = createZodDisplayedContent(
+    zodConversationContentVariant,
+    zodTranslatedConversationContentVariant,
 );
 export const zodConversationDataWithResult = z
     .object({
@@ -708,8 +768,26 @@ export const zodSurveyQuestionContentVariant = z
         ),
     })
     .strict();
+const zodTranslatedSurveyQuestionContentVariant = z
+    .object({
+        questionText: z.string(),
+        options: z.array(
+            z
+                .object({
+                    optionSlugId: zodSlugId,
+                    optionText: z.string(),
+                })
+                .strict(),
+        ),
+    })
+    .strict();
 export const zodLocalizedSurveyQuestionContent = createZodLocalizedContent(
     zodSurveyQuestionContentVariant,
+    zodTranslatedSurveyQuestionContentVariant,
+);
+export const zodSurveyQuestionDisplayedContent = createZodDisplayedContent(
+    zodSurveyQuestionContentVariant,
+    zodTranslatedSurveyQuestionContentVariant,
 );
 
 const zodSurveyQuestionBase = z
@@ -1112,8 +1190,18 @@ export const zodOpinionContentVariant = z
         content: zodOpinionContentOutput,
     })
     .strict();
+const zodTranslatedOpinionContentVariant = z
+    .object({
+        content: z.string(),
+    })
+    .strict();
 export const zodLocalizedOpinionContent = createZodLocalizedContent(
     zodOpinionContentVariant,
+    zodTranslatedOpinionContentVariant,
+);
+export const zodOpinionDisplayedContent = createZodDisplayedContent(
+    zodOpinionContentVariant,
+    zodTranslatedOpinionContentVariant,
 );
 export const zodAgreementType = z.enum(["agree", "disagree"]);
 export const zodVotingOption = z.enum(["agree", "disagree", "pass"]);
@@ -1142,6 +1230,9 @@ export const zodOpinionItem = z
         isSeed: z.boolean(),
     })
     .strict();
+export const zodDisplayedOpinionItem = zodOpinionItem.extend({
+    displayContent: zodOpinionDisplayedContent,
+});
 export const zodAnalysisOpinionItem = zodOpinionItem.extend({
     clustersStats: z.array(zodClusterStats),
     groupAwareConsensusAgree: z.number().nonnegative(),
@@ -1753,6 +1844,7 @@ export type LocalizedOpinionContent = z.infer<
     typeof zodLocalizedOpinionContent
 >;
 export type OpinionItem = z.infer<typeof zodOpinionItem>;
+export type DisplayedOpinionItem = z.infer<typeof zodDisplayedOpinionItem>;
 export type AnalysisOpinionItem = z.infer<typeof zodAnalysisOpinionItem>;
 export type OpinionItemPerSlugId = z.infer<typeof zodOpinionItemPerSlugId>;
 export type AnalysisOpinionItemPerSlugId = z.infer<

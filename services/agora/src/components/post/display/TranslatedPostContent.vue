@@ -12,8 +12,7 @@
 
 <script setup lang="ts">
 import type { ExtendedConversation } from "src/shared/types/zod";
-import { getSupportedContentTranslationTargetLanguageCodes } from "src/utils/translation/contentTranslation";
-import { useConversationContentTranslationPreview } from "src/utils/translation/useContentTranslationPreview";
+import { useConversationDisplayContent } from "src/utils/translation/useConversationDisplayContent";
 import { computed } from "vue";
 
 import PostContent from "./PostContent.vue";
@@ -29,33 +28,8 @@ const emit = defineEmits<{
   verified: [payload: { userIdChanged: boolean; needsCacheRefresh: boolean }];
 }>();
 
-const translationSubject = computed(() => ({
-  kind: "conversation" as const,
-  conversationSlugId: props.extendedPostData.metadata.conversationSlugId,
-}));
-
-const sourceLanguageCode = computed(
-  () =>
-    props.extendedPostData.metadata.languageSetting.languageCode ??
-    props.extendedPostData.metadata.languageSetting.detectedLanguageCode ??
-    props.extendedPostData.metadata.languageSetting.detectedRawLanguageCode
-);
-const supportedTargetLanguageCodes = computed(() =>
-  getSupportedContentTranslationTargetLanguageCodes({
-    languageSetting: props.extendedPostData.metadata.languageSetting,
-    multilingualSetting: props.extendedPostData.metadata.multilingualSetting,
-  })
-);
-
-const { preview: translationPreview, setMode: setTranslationMode } =
-  useConversationContentTranslationPreview({
-    subject: translationSubject,
-    dynamicTranslationEnabled: computed(
-      () =>
-        props.extendedPostData.metadata.multilingualSetting
-          .dynamicTranslationEnabled
-    ),
-    sourceLanguageCode,
-    supportedTargetLanguageCodes,
-  });
+const extendedConversation = computed(() => props.extendedPostData);
+const { translationPreview, setTranslationMode } = useConversationDisplayContent({
+  extendedConversation,
+});
 </script>

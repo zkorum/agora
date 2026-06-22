@@ -6,7 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **original** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload.md) |  | [optional] [default to undefined]
-**translated** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload.md) |  | [default to undefined]
+**translated** | [**ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1Content**](ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1Content.md) |  | [default to undefined]
 
 ## Example
 
