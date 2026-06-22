@@ -3,12 +3,14 @@ import {
     zodExtendedConversationData,
     zodSlugId,
     zodOpinionItem,
+    zodDisplayedOpinionItem,
     zodAnalysisOpinionItem,
     zodConversationTitle,
     zodConversationBodyInput,
     zodConversationBodyPlainTextInput,
     zodConversationBodyOutput,
     zodOpinionContentInput,
+    zodOpinionContentOutput,
     zodVotingOption,
     zodVotingAction,
     zodUsername,
@@ -69,6 +71,9 @@ import {
     zodLocalizedConversationContent,
     zodLocalizedOpinionContent,
     zodLocalizedSurveyQuestionContent,
+    zodLocalizedContentDisplayMode,
+    zodConversationDisplayedContent,
+    zodSurveyQuestionDisplayedContent,
 } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
@@ -205,6 +210,12 @@ const zodContentTranslationResponse = z.union([
         .strict(),
 ]);
 
+const zodConversationContentMode = zodLocalizedContentDisplayMode;
+const zodConversationContentRequestMode = z.enum([
+    "read_existing",
+    "queue_if_missing",
+]);
+
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Dto {
     static fetchFeedRequest = z
@@ -234,7 +245,7 @@ export class Dto {
             clusterKey: zodPolisKey.optional(),
         })
         .strict();
-    static fetchOpinionsResponse = z.array(zodOpinionItem);
+    static fetchOpinionsResponse = z.array(zodDisplayedOpinionItem);
     static fetchCommentStatsRequest = z
         .object({
             conversationSlugId: zodSlugId,
@@ -440,7 +451,7 @@ export class Dto {
             createdAt: z.iso.datetime().optional(),
         })
         .strict();
-    static fetchHiddenOpinionsResponse = z.array(zodOpinionItem);
+    static fetchHiddenOpinionsResponse = z.array(zodDisplayedOpinionItem);
     static createNewConversationRequest = z
         .object({
             conversationTitle: zodConversationTitle,
@@ -690,6 +701,7 @@ export class Dto {
     static getConversationResponse = z
         .object({
             conversationData: zodExtendedConversationData,
+            displayContent: zodConversationDisplayedContent,
         })
         .strict();
     static getConversationForEditRequest = z
@@ -788,18 +800,44 @@ export class Dto {
         })
         .strict();
     static contentTranslationResponse = zodContentTranslationResponse;
+    static conversationContentFetchRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+            contentId: z.uuid(),
+            mode: zodConversationContentMode,
+            requestMode: zodConversationContentRequestMode,
+        })
+        .strict();
+    static conversationContentFetchResponse = zodConversationDisplayedContent;
     static surveyFormFetchRequest = z
         .object({
             conversationSlugId: zodSlugId,
         })
         .strict();
-    static surveyFormFetchResponse = z
-        .object({
-            currentRevision: z.number().int().positive(),
-            questions: z.array(zodSurveyQuestionFormItem),
-            surveyGate: zodSurveyGateSummary,
-        })
-        .strict();
+    static surveyFormFetchResponse = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+                currentRevision: z.number().int().positive(),
+                questions: z.array(
+                    zodSurveyQuestionFormItem.and(
+                        z
+                            .object({
+                                displayContent: zodSurveyQuestionDisplayedContent,
+                            })
+                            .strict(),
+                    ),
+                ),
+                surveyGate: zodSurveyGateSummary,
+            })
+            .strict(),
+        z
+            .object({
+                success: z.literal(false),
+                reason: z.literal("content_not_found"),
+            })
+            .strict(),
+    ]);
     static surveyStatusCheckRequest = z
         .object({
             conversationSlugId: zodSlugId,
@@ -1099,7 +1137,7 @@ export class Dto {
             opinionSlugIdList: z.array(zodSlugId),
         })
         .strict();
-    static getOpinionBySlugIdListResponse = z.array(zodOpinionItem);
+    static getOpinionBySlugIdListResponse = z.array(zodDisplayedOpinionItem);
     static getOpinionModerationStatusRequest = z
         .object({
             opinionSlugId: zodSlugId,
@@ -1238,7 +1276,16 @@ export class Dto {
             expiresAt: z.iso.datetime().optional(),
             adminNote: z.string().max(1000).optional(),
         })
-        .strict();
+        .strict()
+        .refine(
+            ({ startsAt, expiresAt }) =>
+                expiresAt === undefined ||
+                new Date(expiresAt) > new Date(startsAt),
+            {
+                message: "expiresAt must be after startsAt",
+                path: ["expiresAt"],
+            },
+        );
     static updatePremiumFeatureEntitlementRequest = z
         .object({
             entitlementId: z.number().int().positive(),
@@ -1247,7 +1294,16 @@ export class Dto {
             revokedAt: z.iso.datetime().nullable().optional(),
             adminNote: z.string().max(1000).optional(),
         })
-        .strict();
+        .strict()
+        .refine(
+            ({ startsAt, expiresAt }) =>
+                expiresAt === undefined ||
+                new Date(expiresAt) > new Date(startsAt),
+            {
+                message: "expiresAt must be after startsAt",
+                path: ["expiresAt"],
+            },
+        );
     static revokePremiumFeatureEntitlementRequest = z
         .object({
             entitlementId: z.number().int().positive(),
@@ -1672,6 +1728,12 @@ export type CheckPremiumFeatureAccessRequest = z.infer<
 >;
 export type CheckPremiumFeatureAccessResponse = z.infer<
     typeof Dto.checkPremiumFeatureAccessResponse
+>;
+export type ConversationContentFetchRequest = z.infer<
+    typeof Dto.conversationContentFetchRequest
+>;
+export type ConversationContentFetchResponse = z.infer<
+    typeof Dto.conversationContentFetchResponse
 >;
 export type CreateCommentResponse = z.infer<typeof Dto.createOpinionResponse>;
 export type CreateOpinionRequest = z.infer<typeof Dto.createOpinionRequest>;

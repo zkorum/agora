@@ -69,6 +69,7 @@ import {
 } from "src/composables/ui/useLocalizedDateTime";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
+  DisplayedOpinionItem,
   EventSlug,
   OpinionItem,
   ParticipationMode,
@@ -79,11 +80,11 @@ import { computed, nextTick } from "vue";
 import TranslatedCommentItem from "./item/TranslatedCommentItem.vue";
 
 const props = defineProps<{
-  commentItemList: OpinionItem[];
+  commentItemList: DisplayedOpinionItem[];
   postSlugId: string;
   conversationAuthorUsername: string;
   conversationOrganizationName: string;
-  highlightedOpinion?: OpinionItem | null;
+  highlightedOpinion?: DisplayedOpinionItem | null;
   votingUtilities: OpinionVotingUtilities;
   participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
@@ -106,8 +107,8 @@ const formatDateForScreenReader = useLocalizedDateTimeFormatter({
   options: localizedDateTimeFormatOptions.dateTime,
 });
 
-const finalCommentList = computed((): OpinionItem[] => {
-  const result: OpinionItem[] = [];
+const finalCommentList = computed((): DisplayedOpinionItem[] => {
+  const result: DisplayedOpinionItem[] = [];
 
   // Add highlighted opinion first if it exists
   if (props.highlightedOpinion) {

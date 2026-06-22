@@ -1,5 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import type { SurveyStatusCheckResponse } from "src/shared/types/dto";
+import type {
+  SurveyFormFetchResponse,
+  SurveyStatusCheckResponse,
+} from "src/shared/types/dto";
 import {
   type AnalysisView,
   type SurveyAnswerSubmission,
@@ -7,10 +10,13 @@ import {
   type SurveyGateSummary,
 } from "src/shared/types/zod";
 import { useBackendAuthApi } from "src/utils/api/auth";
+import { useNotify } from "src/utils/ui/notify";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
 import { updateConversationQueryCache } from "../post/useConversationQuery";
 import { useBackendSurveyApi } from "./survey";
+
+export type SurveyFormData = Extract<SurveyFormFetchResponse, { success: true }>;
 
 function updateSurveyGateViewerCaches({
   queryClient,
@@ -126,14 +132,21 @@ export function useSurveyFormQuery({
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { fetchSurveyForm } = useBackendSurveyApi();
+  const { showNotifyMessage } = useNotify();
 
   return useQuery({
     queryKey: ["survey-form", computed(() => toValue(conversationSlugId))],
-    queryFn: async () => {
+    queryFn: async (): Promise<SurveyFormData> => {
       const response = await fetchSurveyForm({
         conversationSlugId: toValue(conversationSlugId),
       });
       if (response.status !== "success") {
+        throw new Error("Failed to load survey form");
+      }
+      if (!response.data.success) {
+        if (response.data.reason === "content_not_found") {
+          showNotifyMessage("Original content not found");
+        }
         throw new Error("Failed to load survey form");
       }
       return response.data;

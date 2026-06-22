@@ -93,6 +93,7 @@ import PostMetadata from "./PostMetadata.vue";
 
 interface PostContentTranslationPreview {
   isAvailable: boolean;
+  isLoadingInitialTranslation: boolean;
   mode: ContentTranslationDisplayMode;
   sourceLanguageLabel: string | undefined;
   translationStatus: LocalizedContentTranslationStatus;
@@ -114,6 +115,9 @@ const emit = defineEmits<{
 }>();
 
 const displayedTitle = computed(() => {
+  if (props.contentTranslation?.isLoadingInitialTranslation === true) {
+    return "";
+  }
   if (props.contentTranslation?.mode === "translated") {
     return props.contentTranslation.translatedTitle;
   }
@@ -121,6 +125,9 @@ const displayedTitle = computed(() => {
 });
 
 const displayedBody = computed(() => {
+  if (props.contentTranslation?.isLoadingInitialTranslation === true) {
+    return undefined;
+  }
   if (props.contentTranslation?.mode === "translated") {
     return props.contentTranslation.translatedBody;
   }

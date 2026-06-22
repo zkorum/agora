@@ -1,4 +1,8 @@
-import { Dto, type GetConversationResponse } from "@/shared/types/dto.js";
+import {
+    Dto,
+    type GetConversationResponse,
+    type SurveyFormFetchResponse,
+} from "@/shared/types/dto.js";
 import {
     authenticateRequestBody,
     verifyOtpReqBody,
@@ -53,6 +57,7 @@ import { zodCsvFiles } from "@/service/csvImport.js";
 import * as conversationExportService from "@/service/conversationExport/index.js";
 import * as conversationImportService from "@/service/conversationImport/index.js";
 import * as contentTranslationService from "@/service/contentTranslation.js";
+import * as conversationContentService from "@/service/conversationContent.js";
 import { fetchAnalysisCheckpointsByConversationSlugId } from "@/service/conversationViewSnapshot.js";
 import { createExportWorker } from "@/service/conversationExport/core.js";
 import type { ValkeyRef } from "@/service/valkeyRef.js";
@@ -2410,6 +2415,24 @@ server.after(() => {
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const languagePreferences = deviceStatus.isLoggedIn
+                ? await getLanguagePreferences({
+                      db,
+                      userId: deviceStatus.userId,
+                      request: {
+                          currentDisplayLanguage: headerDisplayLanguage,
+                      },
+                  })
+                : {
+                      displayLanguage: headerDisplayLanguage,
+                      spokenLanguages: [headerDisplayLanguage],
+                  };
+            const availability =
+                await getContentTranslationAvailabilityForConversation({
+                    conversationSlugId: request.body.conversationSlugId,
+                    targetLanguageCode: languagePreferences.displayLanguage,
+                });
             const opinionItemsPerSlugId = await fetchOpinionsByPostSlugId({
                 db: db,
                 postSlugId: request.body.conversationSlugId,
@@ -2418,6 +2441,11 @@ server.after(() => {
                     ? deviceStatus.userId
                     : undefined,
                 limit: 3000,
+                displayContentPreferences: {
+                    displayLanguage: languagePreferences.displayLanguage,
+                    spokenLanguages: languagePreferences.spokenLanguages,
+                    translationAllowed: availability.isAllowed,
+                },
             });
             return Array.from(opinionItemsPerSlugId.values());
         },
@@ -2571,9 +2599,27 @@ server.after(() => {
             },
         },
         handler: async (request) => {
+            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const languagePreferences = deviceStatus.isLoggedIn
+                ? await getLanguagePreferences({
+                      db,
+                      userId: deviceStatus.userId,
+                      request: {
+                          currentDisplayLanguage: headerDisplayLanguage,
+                      },
+                  })
+                : {
+                      displayLanguage: headerDisplayLanguage,
+                      spokenLanguages: [headerDisplayLanguage],
+                  };
             return await fetchOpinionsByOpinionSlugIdList({
                 db: db,
                 opinionSlugIdList: request.body.opinionSlugIdList,
+                displayContentViewerPreferences: {
+                    displayLanguage: languagePreferences.displayLanguage,
+                    spokenLanguages: languagePreferences.spokenLanguages,
+                },
             });
         },
     });
@@ -2608,11 +2654,29 @@ server.after(() => {
                     "User is not a site moderator",
                 );
             }
+            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const languagePreferences = await getLanguagePreferences({
+                db,
+                userId: deviceStatus.userId,
+                request: {
+                    currentDisplayLanguage: headerDisplayLanguage,
+                },
+            });
+            const availability =
+                await getContentTranslationAvailabilityForConversation({
+                    conversationSlugId: request.body.conversationSlugId,
+                    targetLanguageCode: languagePreferences.displayLanguage,
+                });
             const opinionItemsPerSlugId = await fetchOpinionsByPostSlugId({
                 db: db,
                 postSlugId: request.body.conversationSlugId,
                 filterTarget: "hidden",
                 limit: 3000,
+                displayContentPreferences: {
+                    displayLanguage: languagePreferences.displayLanguage,
+                    spokenLanguages: languagePreferences.spokenLanguages,
+                    translationAllowed: availability.isAllowed,
+                },
             });
             return Array.from(opinionItemsPerSlugId.values());
         },
@@ -3153,6 +3217,19 @@ server.after(() => {
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const languagePreferences = deviceStatus.isLoggedIn
+                ? await getLanguagePreferences({
+                      db,
+                      userId: deviceStatus.userId,
+                      request: {
+                          currentDisplayLanguage: headerDisplayLanguage,
+                      },
+                  })
+                : {
+                      displayLanguage: headerDisplayLanguage,
+                      spokenLanguages: [headerDisplayLanguage],
+                  };
             const postItem = await postService.fetchPostBySlugId({
                 db: db,
                 conversationSlugId: request.body.conversationSlugId,
@@ -3161,9 +3238,36 @@ server.after(() => {
                     : undefined,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
             });
+            const availability =
+                await getContentTranslationAvailabilityForConversation({
+                    conversationSlugId: request.body.conversationSlugId,
+                    targetLanguageCode: languagePreferences.displayLanguage,
+                });
+            const localizedContent =
+                await contentTranslationService.requestConversationContentTranslation({
+                    db,
+                    valkey: queueValkeyRef.current,
+                    queueScript: contentTranslationQueueScript,
+                    conversationSlugId: request.body.conversationSlugId,
+                    targetLanguageCode: languagePreferences.displayLanguage,
+                    requestMode: "read_existing",
+                    now: nowZeroMs(),
+                    log,
+                    beforeQueueTranslationWork: async () => undefined,
+                });
+            if (localizedContent === undefined) {
+                throw server.httpErrors.notFound("Conversation content not found");
+            }
 
             const response: GetConversationResponse = {
                 conversationData: postItem,
+                displayContent:
+                    conversationContentService.toInitialConversationDisplayContent({
+                        content: localizedContent.content,
+                        translationAllowed: availability.isAllowed,
+                        displayLanguage: languagePreferences.displayLanguage,
+                        spokenLanguages: languagePreferences.spokenLanguages,
+                    }),
             };
             return response;
         },
@@ -3227,6 +3331,26 @@ server.after(() => {
                 data: request.body,
             });
 
+            if (updateResult.success) {
+                try {
+                    await contentTranslationService.scheduleEagerContentTranslationForConversation(
+                        {
+                            db,
+                            valkey: queueValkeyRef.current,
+                            queueScript: contentTranslationQueueScript,
+                            conversationSlugId: request.body.conversationSlugId,
+                            now: nowZeroMs(),
+                            log,
+                        },
+                    );
+                } catch (error: unknown) {
+                    log.error(
+                        error,
+                        `[ContentTranslation] Failed to schedule eager work for conversationSlugId=${request.body.conversationSlugId}`,
+                    );
+                }
+            }
+
             reply.send(updateResult);
         },
     });
@@ -3241,13 +3365,97 @@ server.after(() => {
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
-            return await surveyService.fetchSurveyForm({
+            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const languagePreferences = deviceStatus.isLoggedIn
+                ? await getLanguagePreferences({
+                      db,
+                      userId: deviceStatus.userId,
+                      request: {
+                          currentDisplayLanguage: headerDisplayLanguage,
+                      },
+                  })
+                : {
+                      displayLanguage: headerDisplayLanguage,
+                      spokenLanguages: [headerDisplayLanguage],
+                  };
+            const surveyForm = await surveyService.fetchSurveyForm({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
                 participantId: deviceStatus.isKnown
                     ? deviceStatus.userId
                     : undefined,
             });
+            const availability =
+                await getContentTranslationAvailabilityForConversation({
+                    conversationSlugId: request.body.conversationSlugId,
+                    targetLanguageCode: languagePreferences.displayLanguage,
+                });
+            const questions = await Promise.all(
+                surveyForm.questions.map(async (question) => {
+                    const localizedContent =
+                        question.questionSlugId === undefined
+                            ? undefined
+                            : await contentTranslationService.requestSurveyQuestionContentTranslation(
+                                  {
+                                      db,
+                                      valkey: queueValkeyRef.current,
+                                      queueScript: contentTranslationQueueScript,
+                                      conversationSlugId:
+                                          request.body.conversationSlugId,
+                                      questionSlugId: question.questionSlugId,
+                                      targetLanguageCode:
+                                          languagePreferences.displayLanguage,
+                                      requestMode: "read_existing",
+                                      now: nowZeroMs(),
+                                      log,
+                                      beforeQueueTranslationWork: async () =>
+                                          undefined,
+                                  },
+                              );
+                    if (localizedContent === undefined) {
+                        return {
+                            ...question,
+                            displayContent: undefined,
+                        };
+                    }
+
+                    return {
+                        ...question,
+                        displayContent:
+                            conversationContentService.toSurveyQuestionDisplayContent(
+                                {
+                                    content: localizedContent.content,
+                                    translationAllowed: availability.isAllowed,
+                                    displayLanguage: languagePreferences.displayLanguage,
+                                    spokenLanguages: languagePreferences.spokenLanguages,
+                                },
+                            ),
+                    };
+                }),
+            );
+            const responseQuestions: Extract<
+                SurveyFormFetchResponse,
+                { success: true }
+            >["questions"] = [];
+            for (const question of questions) {
+                const { displayContent } = question;
+                if (displayContent === undefined) {
+                    return {
+                        success: false as const,
+                        reason: "content_not_found" as const,
+                    };
+                }
+                responseQuestions.push({
+                    ...question,
+                    displayContent,
+                });
+            }
+            const response: SurveyFormFetchResponse = {
+                success: true,
+                ...surveyForm,
+                questions: responseQuestions,
+            };
+            return response;
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({
@@ -4259,6 +4467,132 @@ server.after(() => {
                 preferences: request.body,
             });
             return { success: true as const };
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/content/fetch`,
+        schema: {
+            body: Dto.conversationContentFetchRequest,
+            response: {
+                200: Dto.conversationContentFetchResponse,
+            },
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUcan(request);
+            const now = nowZeroMs();
+            const userAgent = request.headers["user-agent"] ?? "Unknown device";
+            const deviceStatus = await authUtilService.getDeviceStatus({
+                db,
+                didWrite,
+                now,
+            });
+            const requesterUserId = deviceStatus.isKnown
+                ? deviceStatus.userId
+                : (
+                      await authService.createGuestUser({
+                          db,
+                          didWrite,
+                          now,
+                          userAgent,
+                      })
+                  ).userId;
+            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const languagePreferences = deviceStatus.isLoggedIn
+                ? await getLanguagePreferences({
+                      db,
+                      userId: deviceStatus.userId,
+                      request: {
+                          currentDisplayLanguage: headerDisplayLanguage,
+                      },
+                  })
+                : {
+                      displayLanguage: headerDisplayLanguage,
+                      spokenLanguages: [headerDisplayLanguage],
+                  };
+
+            const availability =
+                await getContentTranslationAvailabilityForConversation({
+                    conversationSlugId: request.body.conversationSlugId,
+                    targetLanguageCode: languagePreferences.displayLanguage,
+                });
+            const queueValkey = queueValkeyRef.current;
+            const content =
+                await contentTranslationService.requestConversationContentTranslation({
+                    db,
+                    valkey: queueValkey,
+                    queueScript: contentTranslationQueueScript,
+                    conversationSlugId: request.body.conversationSlugId,
+                    contentId: request.body.contentId,
+                    targetLanguageCode: languagePreferences.displayLanguage,
+                    requestMode:
+                        request.body.mode === "translated" && availability.isAllowed
+                            ? request.body.requestMode
+                            : "read_existing",
+                    now,
+                    log,
+                    beforeQueueTranslationWork: async () => {
+                        if (queueValkey === undefined) {
+                            throw server.httpErrors.serviceUnavailable(
+                                "Content translation rate limiter is unavailable",
+                            );
+                        }
+                        let rateLimit: Awaited<
+                            ReturnType<
+                                typeof consumeContentTranslationUserRateLimit
+                            >
+                        >;
+                        try {
+                            rateLimit =
+                                await consumeContentTranslationUserRateLimit({
+                                    valkey: queueValkey,
+                                    script: contentTranslationUserRateLimitScript,
+                                    userId: requesterUserId,
+                                    maxRequests:
+                                        CONTENT_TRANSLATION_USER_RATE_LIMIT_MAX,
+                                    windowMs:
+                                        CONTENT_TRANSLATION_USER_RATE_LIMIT_WINDOW_MS,
+                                });
+                        } catch (error) {
+                            log.error(
+                                error,
+                                "[ConversationContent] User rate limiter failed",
+                            );
+                            throw server.httpErrors.serviceUnavailable(
+                                "Content translation rate limiter is unavailable",
+                            );
+                        }
+                        if (!rateLimit.isAllowed) {
+                            log.info(
+                                {
+                                    requesterUserId,
+                                    retryAfterMs: rateLimit.retryAfterMs,
+                                    conversationSlugId:
+                                        request.body.conversationSlugId,
+                                    targetLanguageCode:
+                                        languagePreferences.displayLanguage,
+                                },
+                                "[ConversationContent] User rate limit exceeded",
+                            );
+                            throw server.httpErrors.createError(
+                                429,
+                                `Content translation rate limit exceeded. Retry after ${String(Math.ceil(rateLimit.retryAfterMs / 1000))}s`,
+                            );
+                        }
+                    },
+                });
+            if (content === undefined) {
+                throw server.httpErrors.notFound("Conversation content not found");
+            }
+
+            return conversationContentService.toConversationContentFetchResponse({
+                content: content.content,
+                mode: request.body.mode,
+                translationAllowed: availability.isAllowed,
+                displayLanguage: languagePreferences.displayLanguage,
+                spokenLanguages: languagePreferences.spokenLanguages,
+            });
         },
     });
 

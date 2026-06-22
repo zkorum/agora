@@ -1,6 +1,6 @@
 {
-  "id": "5eb9526e-ee19-4cba-acd8-3d81d5be6782",
-  "prevId": "c890041b-650e-4aed-84e3-092dd631a887",
+  "id": "48c23fbe-e506-4e3b-ad75-d94285674c76",
+  "prevId": "c9a03d39-7728-4439-ba23-a49050693f75",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1407,6 +1407,13 @@
             "cycle": false
           }
         },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
         "conversation_id": {
           "name": "conversation_id",
           "type": "integer",
@@ -1481,7 +1488,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "conversation_content_public_id_unique": {
+          "name": "conversation_content_public_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "public_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "conversation_content_source_metadata_check": {
@@ -6057,6 +6072,13 @@
             "cycle": false
           }
         },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
         "opinion_id": {
           "name": "opinion_id",
           "type": "integer",
@@ -6144,7 +6166,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "opinion_content_public_id_unique": {
+          "name": "opinion_content_public_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "public_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "opinion_content_source_metadata_check": {
@@ -10951,6 +10981,13 @@
             "cycle": false
           }
         },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
         "survey_question_id": {
           "name": "survey_question_id",
           "type": "integer",
@@ -11019,7 +11056,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "survey_question_content_public_id_unique": {
+          "name": "survey_question_content_public_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "public_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "survey_question_content_source_metadata_check": {
@@ -11165,6 +11210,13 @@
             "cycle": false
           }
         },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
         "survey_question_option_id": {
           "name": "survey_question_option_id",
           "type": "integer",
@@ -11227,7 +11279,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "survey_question_option_content_public_id_unique": {
+          "name": "survey_question_option_content_public_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "public_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "survey_question_option_content_source_metadata_check": {

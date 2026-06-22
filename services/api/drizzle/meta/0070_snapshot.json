@@ -1,5 +1,5 @@
 {
-  "id": "c890041b-650e-4aed-84e3-092dd631a887",
+  "id": "c9a03d39-7728-4439-ba23-a49050693f75",
   "prevId": "e7ec5c0a-95ba-40db-a5f1-02aa2195cae9",
   "version": "7",
   "dialect": "postgresql",
@@ -1407,6 +1407,13 @@
             "cycle": false
           }
         },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
         "conversation_id": {
           "name": "conversation_id",
           "type": "integer",
@@ -1481,7 +1488,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "conversation_content_public_id_unique": {
+          "name": "conversation_content_public_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "public_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "conversation_content_source_metadata_check": {
@@ -3230,21 +3245,6 @@
           "method": "btree",
           "with": {}
         },
-        "conversation_project_id_idx": {
-          "name": "conversation_project_id_idx",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "conversation_author_timeline_idx": {
           "name": "conversation_author_timeline_idx",
           "columns": [
@@ -3308,6 +3308,21 @@
           ],
           "isUnique": false,
           "where": "\"conversation\".\"current_content_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conversation_project_id_idx": {
+          "name": "conversation_project_id_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -6162,6 +6177,13 @@
             "cycle": false
           }
         },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
         "opinion_id": {
           "name": "opinion_id",
           "type": "integer",
@@ -6249,7 +6271,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "opinion_content_public_id_unique": {
+          "name": "opinion_content_public_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "public_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "opinion_content_source_metadata_check": {
@@ -9334,15 +9364,15 @@
             "cycle": false
           }
         },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "user_id": {
           "name": "user_id",
           "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -9405,27 +9435,6 @@
         }
       },
       "indexes": {
-        "premium_feature_entitlement_org_idx": {
-          "name": "premium_feature_entitlement_org_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "feature",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "premium_feature_entitlement_user_idx": {
           "name": "premium_feature_entitlement_user_idx",
           "columns": [
@@ -9446,15 +9455,36 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "premium_feature_entitlement_org_idx": {
+          "name": "premium_feature_entitlement_org_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "feature",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
-        "premium_feature_entitlement_organization_id_organization_id_fk": {
-          "name": "premium_feature_entitlement_organization_id_organization_id_fk",
+        "premium_feature_entitlement_user_id_user_id_fk": {
+          "name": "premium_feature_entitlement_user_id_user_id_fk",
           "tableFrom": "premium_feature_entitlement",
-          "tableTo": "organization",
+          "tableTo": "user",
           "columnsFrom": [
-            "organization_id"
+            "user_id"
           ],
           "columnsTo": [
             "id"
@@ -9462,12 +9492,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "premium_feature_entitlement_user_id_user_id_fk": {
-          "name": "premium_feature_entitlement_user_id_user_id_fk",
+        "premium_feature_entitlement_organization_id_organization_id_fk": {
+          "name": "premium_feature_entitlement_organization_id_organization_id_fk",
           "tableFrom": "premium_feature_entitlement",
-          "tableTo": "user",
+          "tableTo": "organization",
           "columnsFrom": [
-            "user_id"
+            "organization_id"
           ],
           "columnsTo": [
             "id"
@@ -11114,6 +11144,13 @@
             "cycle": false
           }
         },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
         "survey_question_id": {
           "name": "survey_question_id",
           "type": "integer",
@@ -11182,7 +11219,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "survey_question_content_public_id_unique": {
+          "name": "survey_question_content_public_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "public_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "survey_question_content_source_metadata_check": {
@@ -11328,6 +11373,13 @@
             "cycle": false
           }
         },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
         "survey_question_option_id": {
           "name": "survey_question_option_id",
           "type": "integer",
@@ -11390,7 +11442,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "survey_question_option_content_public_id_unique": {
+          "name": "survey_question_option_content_public_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "public_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "survey_question_option_content_source_metadata_check": {

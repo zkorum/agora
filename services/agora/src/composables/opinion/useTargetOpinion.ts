@@ -1,6 +1,6 @@
 import { useRouteQuery } from "@vueuse/router";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { OpinionItem } from "src/shared/types/zod";
+import type { DisplayedOpinionItem, OpinionItem } from "src/shared/types/zod";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { useNotify } from "src/utils/ui/notify";
 import { type Ref, ref } from "vue";
@@ -12,10 +12,10 @@ import {
 } from "./useTargetOpinion.i18n";
 
 export interface UseTargetOpinionReturn {
-  targetOpinion: Ref<OpinionItem | null>;
+  targetOpinion: Ref<DisplayedOpinionItem | null>;
   setupHighlightFromRoute: () => Promise<void>;
   fetchTargetOpinion: (opinionSlugId: string) => Promise<void>;
-  highlightOpinion: (opinion: OpinionItem) => void;
+  highlightOpinion: (opinion: DisplayedOpinionItem) => void;
   refreshAndHighlightOpinion: (opinionSlugId: string) => Promise<void>;
   clearRouteQueryParameters: () => Promise<void>;
 }
@@ -31,7 +31,7 @@ export function useTargetOpinion({
 }: UseTargetOpinionParams = {}): UseTargetOpinionReturn {
   const router = useRouter();
   const route = useRoute();
-  const targetOpinion = ref<OpinionItem | null>(null);
+  const targetOpinion = ref<DisplayedOpinionItem | null>(null);
   const { showNotifyMessage } = useNotify();
 
   const { t } = useComponentI18n<UseTargetOpinionTranslations>(
@@ -93,7 +93,7 @@ export function useTargetOpinion({
     }
   }
 
-  function highlightOpinion(opinion: OpinionItem): void {
+  function highlightOpinion(opinion: DisplayedOpinionItem): void {
     targetOpinion.value = opinion;
     scrollToOpinion(opinion.opinionSlugId);
   }

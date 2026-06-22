@@ -1601,6 +1601,7 @@ export const conversationContentTable = pgTable(
     "conversation_content",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        publicId: uuid("public_id").defaultRandom().notNull().unique(),
         conversationId: integer("conversation_id")
             .references(() => conversationTable.id)
             .notNull(),
@@ -1943,9 +1944,7 @@ export const conversationContentTranslationTable = pgTable(
             .references(() => conversationContentTable.id),
         displayLanguageCode:
             displayLanguageCodeEnum("display_language_code").notNull(),
-        translatedTitle: varchar("translated_title", {
-            length: MAX_LENGTH_TITLE,
-        }).notNull(),
+        translatedTitle: text("translated_title").notNull(),
         translatedBody: text("translated_body"),
         sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
         sourceRawLanguageCode: varchar("source_raw_language_code", {
@@ -1985,6 +1984,7 @@ export const surveyQuestionContentTable = pgTable(
     "survey_question_content",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        publicId: uuid("public_id").defaultRandom().notNull().unique(),
         surveyQuestionId: integer("survey_question_id")
             .notNull()
             .references(() => surveyQuestionTable.id),
@@ -2101,6 +2101,7 @@ export const surveyQuestionOptionContentTable = pgTable(
     "survey_question_option_content",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        publicId: uuid("public_id").defaultRandom().notNull().unique(),
         surveyQuestionOptionId: integer("survey_question_option_id")
             .notNull()
             .references(() => surveyQuestionOptionTable.id),
@@ -2394,6 +2395,7 @@ export const opinionContentTable = pgTable(
     "opinion_content",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        publicId: uuid("public_id").defaultRandom().notNull().unique(),
         opinionId: integer("opinion_id")
             .references(() => opinionTable.id)
             .notNull(), // used to delete all opinionContent when deleting an opinion

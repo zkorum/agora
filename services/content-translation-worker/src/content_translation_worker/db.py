@@ -457,12 +457,13 @@ def process_claimed_work(
                 _mark_completed(session, claim=claim)
                 return ProcessWorkResult(work_id=claim.id, status="completed")
             try:
-                _translate_conversation_source(
-                    session,
-                    claim=claim,
-                    source=source,
-                    translation_service=translation_service,
-                )
+                with session.begin_nested():
+                    _translate_conversation_source(
+                        session,
+                        claim=claim,
+                        source=source,
+                        translation_service=translation_service,
+                    )
             except ContentTranslationProviderError as error:
                 _mark_failed(
                     session,
@@ -520,12 +521,13 @@ def process_claimed_work(
                 _mark_completed(session, claim=claim)
                 return ProcessWorkResult(work_id=claim.id, status="completed")
             try:
-                _translate_survey_question_source(
-                    session,
-                    claim=claim,
-                    source=source,
-                    translation_service=translation_service,
-                )
+                with session.begin_nested():
+                    _translate_survey_question_source(
+                        session,
+                        claim=claim,
+                        source=source,
+                        translation_service=translation_service,
+                    )
             except ContentTranslationProviderError as error:
                 _mark_failed(
                     session,
@@ -574,12 +576,13 @@ def process_claimed_work(
             _mark_completed(session, claim=claim)
             return ProcessWorkResult(work_id=claim.id, status="completed")
         try:
-            _translate_opinion_source(
-                session,
-                claim=claim,
-                source=source,
-                translation_service=translation_service,
-            )
+            with session.begin_nested():
+                _translate_opinion_source(
+                    session,
+                    claim=claim,
+                    source=source,
+                    translation_service=translation_service,
+                )
         except ContentTranslationProviderError as error:
             _mark_failed(
                 session,

@@ -661,20 +661,6 @@ watch(
   { deep: true }
 );
 
-watch(
-  () => props.canUseDynamicTranslation,
-  (canUseDynamicTranslation) => {
-    if (canUseDynamicTranslation) {
-      return;
-    }
-
-    multilingualSetting.value = {
-      dynamicTranslationEnabled: false,
-      additionalLanguageCodes: [],
-    };
-  },
-  { immediate: true }
-);
 </script>
 
 <style scoped lang="scss">

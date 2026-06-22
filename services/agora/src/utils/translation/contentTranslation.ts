@@ -4,6 +4,7 @@ import {
   SupportedSpokenLanguageMetadataList,
 } from "src/shared/languages";
 import type {
+  ContentTranslationSourceLanguage,
   ConversationLanguageSettingOutput,
   ConversationMultilingualSetting,
   LocalizedContentTranslationStatus,
@@ -70,6 +71,51 @@ export function getLanguageDisplayName({
     );
     return language?.englishName ?? languageCode;
   }
+}
+
+export function getConversationLanguageSettingSourceLanguageCode({
+  languageSetting,
+}: {
+  languageSetting: ConversationLanguageSettingOutput;
+}): string | null {
+  return languageSetting.detectedSourceLanguageCode ?? languageSetting.languageCode;
+}
+
+export function getContentTranslationSourceLanguageLabel({
+  sourceLanguage,
+  fallbackLanguageCode,
+  fallbackLabel,
+  displayLanguage,
+}: {
+  sourceLanguage: ContentTranslationSourceLanguage | undefined;
+  fallbackLanguageCode: string | null | undefined;
+  fallbackLabel?: string;
+  displayLanguage: SupportedDisplayLanguageCodes;
+}): string | undefined {
+  if (sourceLanguage?.kind === "recognized") {
+    return getLanguageDisplayName({
+      languageCode: sourceLanguage.languageCode,
+      displayLanguage,
+    });
+  }
+
+  if (sourceLanguage?.kind === "raw") {
+    return (
+      getLanguageDisplayName({
+        languageCode: sourceLanguage.rawLanguageCode,
+        displayLanguage,
+      }) ??
+      sourceLanguage.label ??
+      sourceLanguage.rawLanguageCode
+    );
+  }
+
+  return (
+    getLanguageDisplayName({
+      languageCode: fallbackLanguageCode,
+      displayLanguage,
+    }) ?? fallbackLabel
+  );
 }
 
 export function resolveContentTranslationState({

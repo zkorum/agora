@@ -425,15 +425,15 @@ const isMaxDiffGitHubAllowed = computed(() => {
 });
 
 const { checkPremiumFeatureAccess } = usePremiumFeatureApi();
-const createModeCanUseAnalysisVariantsPreference = ref(false);
+const createModeCanUseAnalysisVariantsPreference = ref<boolean | null>(null);
 const createModeCanAddEventTicket = ref<boolean | null>(null);
-const createModeCanUseDynamicTranslation = ref(false);
+const createModeCanUseDynamicTranslation = ref<boolean | null>(null);
 let createModePremiumAccessRequestId = 0;
 
 const canUseAnalysisVariantsPreference = computed(() => {
   return props.isEditMode
     ? props.canUseAnalysisVariantsPreference
-    : createModeCanUseAnalysisVariantsPreference.value;
+    : createModeCanUseAnalysisVariantsPreference.value === true;
 });
 
 const canAddEventTicket = computed(() => {
@@ -445,7 +445,19 @@ const canAddEventTicket = computed(() => {
 const canUseDynamicTranslation = computed(() => {
   return props.isEditMode
     ? props.canUseDynamicTranslation
-    : createModeCanUseDynamicTranslation.value;
+    : createModeCanUseDynamicTranslation.value === true;
+});
+
+const isAnalysisVariantsPreferenceDenied = computed(() => {
+  return props.isEditMode
+    ? !props.canUseAnalysisVariantsPreference
+    : createModeCanUseAnalysisVariantsPreference.value === false;
+});
+
+const isDynamicTranslationDenied = computed(() => {
+  return props.isEditMode
+    ? !props.canUseDynamicTranslation
+    : createModeCanUseDynamicTranslation.value === false;
 });
 
 const canChangeEventTicket = computed(() => {
@@ -475,12 +487,14 @@ watch(
 
     if (!isLoggedIn.value) {
       createModeCanAddEventTicket.value = false;
-      createModeCanUseAnalysisVariantsPreference.value = false;
-      createModeCanUseDynamicTranslation.value = false;
+      createModeCanUseAnalysisVariantsPreference.value = null;
+      createModeCanUseDynamicTranslation.value = null;
       return;
     }
 
     createModeCanAddEventTicket.value = null;
+    createModeCanUseAnalysisVariantsPreference.value = null;
+    createModeCanUseDynamicTranslation.value = null;
 
     try {
       const postAsOrganization = postAs.value.postAsOrganization
@@ -539,22 +553,20 @@ watch(
   }
 );
 
-watch(canUseAnalysisVariantsPreference, (canUsePreference) => {
-  if (!canUsePreference) {
+watch(isAnalysisVariantsPreferenceDenied, (isDenied) => {
+  if (isDenied) {
     preferredOpinionGroupCount.value = null;
   }
-});
+}, { immediate: true });
 
-watch(canUseDynamicTranslation, (canUseTranslation) => {
-  if (canUseTranslation) {
-    return;
+watch(isDynamicTranslationDenied, (isDenied) => {
+  if (isDenied) {
+    multilingualSetting.value = {
+      dynamicTranslationEnabled: false,
+      additionalLanguageCodes: [],
+    };
   }
-
-  multilingualSetting.value = {
-    dynamicTranslationEnabled: false,
-    additionalLanguageCodes: [],
-  };
-});
+}, { immediate: true });
 
 const canOpenEventTicketRequirementDialog = computed(() => {
   if (requiresEventTicket.value === undefined) {

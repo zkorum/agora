@@ -86,6 +86,7 @@ import CommentModeration from "./CommentModeration.vue";
 
 interface CommentContentTranslationPreview {
   isAvailable: boolean;
+  isLoadingInitialTranslation: boolean;
   mode: ContentTranslationDisplayMode;
   sourceLanguageLabel: string | undefined;
   translationStatus: LocalizedContentTranslationStatus;
@@ -113,6 +114,9 @@ const emit = defineEmits<{
 }>();
 
 const displayedOpinion = computed(() => {
+  if (props.contentTranslation?.isLoadingInitialTranslation === true) {
+    return "";
+  }
   if (props.contentTranslation?.mode === "translated") {
     return props.contentTranslation.translatedOpinion;
   }

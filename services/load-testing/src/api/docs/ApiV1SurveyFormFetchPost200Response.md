@@ -5,9 +5,11 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**success** | **boolean** |  | [default to undefined]
 **currentRevision** | **number** |  | [default to undefined]
-**questions** | [**Array&lt;ApiV1SurveyFormFetchPost200ResponseQuestionsInner&gt;**](ApiV1SurveyFormFetchPost200ResponseQuestionsInner.md) |  | [default to undefined]
+**questions** | [**Array&lt;ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInner&gt;**](ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInner.md) |  | [default to undefined]
 **surveyGate** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteractionSurveyGate**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteractionSurveyGate.md) |  | [default to undefined]
+**reason** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -15,9 +17,11 @@ Name | Type | Description | Notes
 import { ApiV1SurveyFormFetchPost200Response } from './api';
 
 const instance: ApiV1SurveyFormFetchPost200Response = {
+    success,
     currentRevision,
     questions,
     surveyGate,
+    reason,
 };
 ```
 

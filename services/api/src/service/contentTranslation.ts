@@ -61,6 +61,18 @@ interface RequestContentTranslationParams {
     beforeQueueTranslationWork: () => Promise<void>;
 }
 
+interface RequestConversationContentTranslationParams
+    extends Omit<RequestContentTranslationParams, "subject"> {
+    conversationSlugId: string;
+    contentId?: string;
+}
+
+interface RequestSurveyQuestionContentTranslationParams
+    extends Omit<RequestContentTranslationParams, "subject"> {
+    conversationSlugId: string;
+    questionSlugId: string;
+}
+
 interface ScheduleEagerContentTranslationParams {
     db: PostgresDatabase;
     valkey: Valkey | undefined;
@@ -74,6 +86,7 @@ interface ConversationContentSource {
     conversationId: number;
     conversationSlugId: string;
     contentId: number;
+    publicId: string;
     title: string;
     body: string | null;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
@@ -87,6 +100,7 @@ interface OpinionContentSource {
     conversationSlugId: string;
     opinionSlugId: string;
     contentId: number;
+    publicId: string;
     content: string;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
     sourceRawLanguageCode: string | null;
@@ -97,6 +111,7 @@ interface OpinionContentSource {
 interface SurveyQuestionOptionContentSource {
     optionSlugId: string;
     contentId: number;
+    publicId: string;
     optionText: string;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
     sourceRawLanguageCode: string | null;
@@ -110,6 +125,7 @@ interface SurveyQuestionContentSource {
     questionSlugId: string;
     questionId: number;
     contentId: number;
+    publicId: string;
     questionText: string;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
     sourceRawLanguageCode: string | null;
@@ -360,6 +376,7 @@ async function fetchConversationSource({
             conversationId: conversationTable.id,
             conversationSlugId: conversationTable.slugId,
             contentId: conversationContentTable.id,
+            publicId: conversationContentTable.publicId,
             title: conversationContentTable.title,
             body: conversationContentTable.body,
             sourceLanguageCode: conversationContentTable.sourceLanguageCode,
@@ -398,6 +415,7 @@ async function fetchOpinionSource({
             conversationSlugId: conversationTable.slugId,
             opinionSlugId: opinionTable.slugId,
             contentId: opinionContentTable.id,
+            publicId: opinionContentTable.publicId,
             content: opinionContentTable.content,
             sourceLanguageCode: opinionContentTable.sourceLanguageCode,
             sourceRawLanguageCode: opinionContentTable.sourceRawLanguageCode,
@@ -440,6 +458,7 @@ async function fetchSurveyQuestionSource({
             questionSlugId: surveyQuestionTable.slugId,
             questionId: surveyQuestionTable.id,
             contentId: surveyQuestionContentTable.id,
+            publicId: surveyQuestionContentTable.publicId,
             questionText: surveyQuestionContentTable.questionText,
             sourceLanguageCode: surveyQuestionContentTable.sourceLanguageCode,
             sourceRawLanguageCode: surveyQuestionContentTable.sourceRawLanguageCode,
@@ -473,6 +492,7 @@ async function fetchSurveyQuestionSource({
         .select({
             optionSlugId: surveyQuestionOptionTable.slugId,
             contentId: surveyQuestionOptionContentTable.id,
+            publicId: surveyQuestionOptionContentTable.publicId,
             optionText: surveyQuestionOptionContentTable.optionText,
             sourceLanguageCode:
                 surveyQuestionOptionContentTable.sourceLanguageCode,
@@ -789,6 +809,7 @@ async function fetchSeedOpinionSources({
             conversationSlugId: conversationTable.slugId,
             opinionSlugId: opinionTable.slugId,
             contentId: opinionContentTable.id,
+            publicId: opinionContentTable.publicId,
             content: opinionContentTable.content,
             sourceLanguageCode: opinionContentTable.sourceLanguageCode,
             sourceRawLanguageCode: opinionContentTable.sourceRawLanguageCode,
@@ -831,6 +852,7 @@ async function fetchCurrentSurveyQuestionSources({
             questionSlugId: surveyQuestionTable.slugId,
             questionId: surveyQuestionTable.id,
             contentId: surveyQuestionContentTable.id,
+            publicId: surveyQuestionContentTable.publicId,
             questionText: surveyQuestionContentTable.questionText,
             sourceLanguageCode: surveyQuestionContentTable.sourceLanguageCode,
             sourceRawLanguageCode: surveyQuestionContentTable.sourceRawLanguageCode,
@@ -839,6 +861,7 @@ async function fetchCurrentSurveyQuestionSources({
                 surveyQuestionContentTable.sourceLanguageConfidence,
             optionSlugId: surveyQuestionOptionTable.slugId,
             optionContentId: surveyQuestionOptionContentTable.id,
+            optionPublicId: surveyQuestionOptionContentTable.publicId,
             optionText: surveyQuestionOptionContentTable.optionText,
             optionSourceLanguageCode:
                 surveyQuestionOptionContentTable.sourceLanguageCode,
@@ -893,6 +916,7 @@ async function fetchCurrentSurveyQuestionSources({
             questionSlugId: row.questionSlugId,
             questionId: row.questionId,
             contentId: row.contentId,
+            publicId: row.publicId,
             questionText: row.questionText,
             sourceLanguageCode: row.sourceLanguageCode,
             sourceRawLanguageCode: row.sourceRawLanguageCode,
@@ -903,11 +927,13 @@ async function fetchCurrentSurveyQuestionSources({
         if (
             row.optionSlugId !== null &&
             row.optionContentId !== null &&
+            row.optionPublicId !== null &&
             row.optionText !== null
         ) {
             source.options.push({
                 optionSlugId: row.optionSlugId,
                 contentId: row.optionContentId,
+                publicId: row.optionPublicId,
                 optionText: row.optionText,
                 sourceLanguageCode: row.optionSourceLanguageCode,
                 sourceRawLanguageCode: row.optionSourceRawLanguageCode,
@@ -1251,12 +1277,12 @@ async function buildConversationResponse({
             },
             content: {
                 kind: "translatable",
-                sourceVersion: `conversation_content:${String(source.contentId)}`,
+                sourceVersion: source.publicId,
                 initialMode: "translated",
                 translation: {
                     ...buildTranslationMetadata({
                         targetLanguageCode,
-                        sourceMetadata: freshTranslation,
+                        sourceMetadata: source,
                         status: "completed",
                     }),
                 },
@@ -1278,7 +1304,7 @@ async function buildConversationResponse({
         },
         content: {
             kind: "translatable",
-            sourceVersion: `conversation_content:${String(source.contentId)}`,
+            sourceVersion: source.publicId,
             initialMode: "original",
             translation: {
                 ...buildTranslationMetadata({
@@ -1352,12 +1378,12 @@ async function buildOpinionResponse({
             },
             content: {
                 kind: "translatable",
-                sourceVersion: `opinion_content:${String(source.contentId)}`,
+                sourceVersion: source.publicId,
                 initialMode: "translated",
                 translation: {
                     ...buildTranslationMetadata({
                         targetLanguageCode,
-                        sourceMetadata: freshTranslation,
+                        sourceMetadata: source,
                         status: "completed",
                     }),
                 },
@@ -1377,7 +1403,7 @@ async function buildOpinionResponse({
         },
         content: {
             kind: "translatable",
-            sourceVersion: `opinion_content:${String(source.contentId)}`,
+            sourceVersion: source.publicId,
             initialMode: "original",
             translation: {
                 ...buildTranslationMetadata({
@@ -1425,8 +1451,12 @@ export async function requestContentTranslation({
             source,
             targetLanguageCode,
         });
+        const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
         if (
-            shouldQueueTranslationWork({ requestMode, translationExists }) &&
+            shouldQueueTranslationWork({
+                requestMode: effectiveRequestMode,
+                translationExists,
+            }) &&
             !skipTranslation
         ) {
             await beforeQueueTranslationWork();
@@ -1452,7 +1482,7 @@ export async function requestContentTranslation({
             db,
             source,
             targetLanguageCode,
-            requestMode,
+            requestMode: effectiveRequestMode,
         });
     }
 
@@ -1473,8 +1503,12 @@ export async function requestContentTranslation({
             sourceLanguageCode: source.sourceLanguageCode,
             targetLanguageCode,
         });
+        const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
         if (
-            shouldQueueTranslationWork({ requestMode, translationExists }) &&
+            shouldQueueTranslationWork({
+                requestMode: effectiveRequestMode,
+                translationExists,
+            }) &&
             !skipTranslation
         ) {
             await beforeQueueTranslationWork();
@@ -1497,7 +1531,7 @@ export async function requestContentTranslation({
             db,
             source,
             targetLanguageCode,
-            requestMode,
+            requestMode: effectiveRequestMode,
         });
     }
 
@@ -1518,8 +1552,12 @@ export async function requestContentTranslation({
         sourceLanguageCode: source.sourceLanguageCode,
         targetLanguageCode,
     });
+    const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
     if (
-        shouldQueueTranslationWork({ requestMode, translationExists }) &&
+        shouldQueueTranslationWork({
+            requestMode: effectiveRequestMode,
+            translationExists,
+        }) &&
         !skipTranslation
     ) {
         await beforeQueueTranslationWork();
@@ -1542,6 +1580,133 @@ export async function requestContentTranslation({
         db,
         source,
         targetLanguageCode,
-        requestMode,
+        requestMode: effectiveRequestMode,
+    });
+}
+
+export async function requestConversationContentTranslation({
+    db,
+    valkey,
+    queueScript,
+    conversationSlugId,
+    contentId,
+    targetLanguageCode,
+    requestMode,
+    now,
+    log,
+    beforeQueueTranslationWork,
+}: RequestConversationContentTranslationParams) {
+    const source = await fetchConversationSource({
+        db,
+        conversationSlugId,
+    });
+    if (source === undefined) {
+        return undefined;
+    }
+    if (contentId !== undefined && source.publicId !== contentId) {
+        return undefined;
+    }
+    const translationExists = await hasConversationTranslation({
+        db,
+        source,
+        targetLanguageCode,
+    });
+    const skipTranslation = !shouldTranslateContent({
+        sourceLanguageCode: source.sourceLanguageCode,
+        targetLanguageCode,
+    });
+    const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
+    if (
+        shouldQueueTranslationWork({
+            requestMode: effectiveRequestMode,
+            translationExists,
+        }) &&
+        !skipTranslation
+    ) {
+        await beforeQueueTranslationWork();
+        await queueMissingTranslationWork({
+            db,
+            valkey,
+            queueScript,
+            input: {
+                conversationId: source.conversationId,
+                sourceKind: "conversation",
+                sourceContentId: source.contentId,
+                targetLanguageCode,
+            },
+            now,
+            log,
+            priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.userInteractive,
+        });
+    }
+    return await buildConversationResponse({
+        db,
+        source,
+        targetLanguageCode,
+        requestMode: effectiveRequestMode,
+    });
+}
+
+export async function requestSurveyQuestionContentTranslation({
+    db,
+    valkey,
+    queueScript,
+    conversationSlugId,
+    questionSlugId,
+    targetLanguageCode,
+    requestMode,
+    now,
+    log,
+    beforeQueueTranslationWork,
+}: RequestSurveyQuestionContentTranslationParams) {
+    const source = await fetchSurveyQuestionSource({
+        db,
+        conversationSlugId,
+        questionSlugId,
+    });
+    if (source === undefined) {
+        return undefined;
+    }
+    const translationExists = await hasSurveyQuestionTranslation({
+        db,
+        source,
+        targetLanguageCode,
+    });
+    const skipTranslation = !shouldTranslateSurveyQuestionSource({
+        source,
+        targetLanguageCode,
+    });
+    const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
+    if (
+        shouldQueueTranslationWork({
+            requestMode: effectiveRequestMode,
+            translationExists,
+        }) &&
+        !skipTranslation
+    ) {
+        await beforeQueueTranslationWork();
+        await queueMissingTranslationWork({
+            db,
+            valkey,
+            queueScript,
+            input: {
+                conversationId: source.conversationId,
+                sourceKind: "survey_question",
+                surveyQuestionContentId: source.contentId,
+                surveyQuestionOptionContentIds: source.options.map(
+                    (option) => option.contentId,
+                ),
+                targetLanguageCode,
+            },
+            now,
+            log,
+            priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.userInteractive,
+        });
+    }
+    return await buildSurveyQuestionResponse({
+        db,
+        source,
+        targetLanguageCode,
+        requestMode: effectiveRequestMode,
     });
 }

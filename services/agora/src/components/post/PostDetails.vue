@@ -361,12 +361,12 @@ async function submittedComment(data: {
   authStateChanged: boolean;
   needsCacheRefresh: boolean;
 }): Promise<void> {
-  if (opinionSectionRef.value) {
-    opinionSectionRef.value.highlightOpinion(data.opinionItem);
-  }
-
   await markCommentsAsStale(props.conversationData.metadata.conversationSlugId);
   markAnalysisAsStale(props.conversationData.metadata.conversationSlugId);
+
+  if (opinionSectionRef.value) {
+    await opinionSectionRef.value.refreshAndHighlightOpinion(data.opinionSlugId);
+  }
 
   // Handle deferred cache refresh if auth state changed (new guest user)
   if (data.needsCacheRefresh) {
@@ -376,7 +376,7 @@ async function submittedComment(data: {
     // Fetch the opinion again to get updated author info with username
     // Using refreshAndHighlightOpinion instead of refreshData to force immediate refetch
     if (opinionSectionRef.value) {
-      opinionSectionRef.value.highlightOpinion(data.opinionItem);
+      await opinionSectionRef.value.refreshAndHighlightOpinion(data.opinionSlugId);
 
       // Update user store with username from the fetched opinion
       // This is necessary because loadUserProfile() may hit a read replica that doesn't yet

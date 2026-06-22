@@ -384,6 +384,7 @@ class ConversationContent(Base):
     __tablename__ = "conversation_content"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
     conversation_id: Mapped[int] = mapped_column(Integer)
     title: Mapped[str] = mapped_column(String(140))
     body: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -639,6 +640,7 @@ class OpinionContent(Base):
     __tablename__ = "opinion_content"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
     opinion_id: Mapped[int] = mapped_column(Integer)
     conversation_content_id: Mapped[int] = mapped_column(Integer)
     content: Mapped[str] = mapped_column(String(3000))

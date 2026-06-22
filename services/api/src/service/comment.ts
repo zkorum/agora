@@ -14,7 +14,11 @@ import {
     opinionGroupUserTable,
     opinionGroupVariantTable,
     opinionTable,
+    opinionContentTranslationTable,
     conversationTable,
+    conversationLanguageSettingTable,
+    conversationTranslationSettingTable,
+    conversationTranslationTargetLanguageTable,
     conversationViewSnapshotCheckpointReasonTable,
     conversationViewSnapshotTable,
     userTable,
@@ -56,6 +60,7 @@ import {
 } from "drizzle-orm";
 import type {
     AnalysisOpinionItem,
+    DisplayedOpinionItem,
     ModerationReason,
     OpinionItem,
     OpinionItemPerSlugId,
@@ -92,8 +97,13 @@ import { ensureAiDescriptionLocaleRequestForConversationViewSnapshot } from "./c
 import { alias } from "drizzle-orm/pg-core";
 import {
     type SupportedDisplayLanguageCodes,
+    type SupportedSpokenLanguageCodes,
     ZodSupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
+import type {
+    LanguageDetectionProvider,
+    LocalizedOpinionContent,
+} from "@/shared/types/zod.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import {
     contentLanguageMetadataUpdateValues,
@@ -102,6 +112,9 @@ import {
 } from "./contentLanguageMetadata.js";
 import type { LanguageDetectionHintInput } from "./languageDetection.js";
 import { getConversationMultilingualSetting } from "./conversationMultilingual.js";
+import { buildTranslationMetadata } from "./contentTranslationContent.js";
+import { translationSourceMatchesCurrentSource } from "@/shared-backend/translate.js";
+import * as conversationContentService from "./conversationContent.js";
 
 interface PrimaryReplicaDb extends PostgresJsDatabase {
     $primary: PostgresJsDatabase;
@@ -121,6 +134,38 @@ interface OpinionDisplayCounts {
     numPasses: number;
 }
 
+interface OpinionDisplayContentPreferences {
+    displayLanguage: SupportedDisplayLanguageCodes;
+    spokenLanguages: SupportedSpokenLanguageCodes[];
+    translationAllowed: boolean;
+}
+
+interface OpinionDisplayContentViewerPreferences {
+    displayLanguage: SupportedDisplayLanguageCodes;
+    spokenLanguages: SupportedSpokenLanguageCodes[];
+}
+
+interface OpinionContentRow {
+    opinionContentId: number;
+    contentPublicId: string;
+    comment: string;
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    sourceLanguageProvider: LanguageDetectionProvider | null;
+    sourceLanguageConfidence: number | null;
+}
+
+interface OpinionContentTranslationRow {
+    opinionContentId: number;
+    translatedContent: string;
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    sourceLanguageProvider: LanguageDetectionProvider | null;
+    sourceLanguageConfidence: number | null;
+}
+
+type DisplayedOpinionItemPerSlugId = Map<string, DisplayedOpinionItem>;
+
 function hasPrimaryDb(db: PostgresJsDatabase): db is PrimaryReplicaDb {
     return "$primary" in db;
 }
@@ -137,6 +182,57 @@ function getSupportedDisplayLanguage(
 ): SupportedDisplayLanguageCodes {
     const parsed = ZodSupportedDisplayLanguageCodes.safeParse(displayLanguage);
     return parsed.success ? parsed.data : "en";
+}
+
+function buildLocalizedOpinionContent({
+    source,
+    translation,
+    targetLanguageCode,
+}: {
+    source: OpinionContentRow;
+    translation: OpinionContentTranslationRow | undefined;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+}): LocalizedOpinionContent {
+    const freshTranslation =
+        translation !== undefined &&
+        translationSourceMatchesCurrentSource({
+            translationSourceLanguageCode: translation.sourceLanguageCode,
+            currentSourceLanguageCode: source.sourceLanguageCode,
+        })
+            ? translation
+            : undefined;
+    const original = { content: source.comment };
+
+    if (freshTranslation !== undefined) {
+        return {
+            kind: "translatable",
+            sourceVersion: source.contentPublicId,
+            initialMode: "translated",
+            translation: buildTranslationMetadata({
+                targetLanguageCode,
+                sourceMetadata: source,
+                status: "completed",
+            }),
+            variants: {
+                original,
+                translated: { content: freshTranslation.translatedContent },
+            },
+        };
+    }
+
+    return {
+        kind: "translatable",
+        sourceVersion: source.contentPublicId,
+        initialMode: "original",
+        translation: buildTranslationMetadata({
+            targetLanguageCode,
+            sourceMetadata: source,
+            status: "not_requested",
+        }),
+        variants: {
+            original,
+        },
+    };
 }
 
 function shouldTryPrimaryFallback({
@@ -295,6 +391,7 @@ interface FetchOpinionsProps {
     personalizationUserId?: string;
     filterTarget: "new" | "moderated" | "hidden" | "discover" | "my_votes";
     limit: number;
+    displayContentPreferences: OpinionDisplayContentPreferences;
 }
 
 interface FetchOpinionsByPostIdProps {
@@ -303,6 +400,7 @@ interface FetchOpinionsByPostIdProps {
     personalizationUserId?: string;
     filterTarget: "new" | "moderated" | "hidden" | "discover" | "my_votes";
     limit: number;
+    displayContentPreferences: OpinionDisplayContentPreferences;
 }
 
 export async function fetchOpinionsByPostId({
@@ -311,7 +409,8 @@ export async function fetchOpinionsByPostId({
     personalizationUserId,
     filterTarget,
     limit,
-}: FetchOpinionsByPostIdProps): Promise<OpinionItemPerSlugId> {
+    displayContentPreferences,
+}: FetchOpinionsByPostIdProps): Promise<DisplayedOpinionItemPerSlugId> {
     // Require authentication early for my_votes filter (prevent spam)
     if (filterTarget === "my_votes" && !personalizationUserId) {
         throw httpErrors.unauthorized(
@@ -411,10 +510,24 @@ export async function fetchOpinionsByPostId({
         .select({
             // comment payload
             commentSlugId: opinionTable.slugId,
+            opinionContentId: opinionContentTable.id,
+            contentPublicId: opinionContentTable.publicId,
             createdAt: opinionTable.createdAt,
             updatedAt: opinionTable.updatedAt,
             comment: opinionContentTable.content,
             sourceLanguageCode: opinionContentTable.sourceLanguageCode,
+            sourceRawLanguageCode: opinionContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider: opinionContentTable.sourceLanguageProvider,
+            sourceLanguageConfidence: opinionContentTable.sourceLanguageConfidence,
+            translatedContent: opinionContentTranslationTable.translatedContent,
+            translationSourceLanguageCode:
+                opinionContentTranslationTable.sourceLanguageCode,
+            translationSourceRawLanguageCode:
+                opinionContentTranslationTable.sourceRawLanguageCode,
+            translationSourceLanguageProvider:
+                opinionContentTranslationTable.sourceLanguageProvider,
+            translationSourceLanguageConfidence:
+                opinionContentTranslationTable.sourceLanguageConfidence,
             authorId: opinionTable.authorId,
             numAgrees: countAnalysisSnapshotOpinionTable.numAgrees,
             numDisagrees: countAnalysisSnapshotOpinionTable.numDisagrees,
@@ -432,6 +545,19 @@ export async function fetchOpinionsByPostId({
         .innerJoin(
             opinionContentTable,
             eq(opinionContentTable.id, opinionTable.currentContentId),
+        )
+        .leftJoin(
+            opinionContentTranslationTable,
+            and(
+                eq(
+                    opinionContentTranslationTable.opinionContentId,
+                    opinionContentTable.id,
+                ),
+                eq(
+                    opinionContentTranslationTable.displayLanguageCode,
+                    displayContentPreferences.displayLanguage,
+                ),
+            ),
         )
         .leftJoin(
             countAnalysisSnapshotOpinionTable,
@@ -485,7 +611,10 @@ export async function fetchOpinionsByPostId({
         .where(and(whereClause, eq(userTable.isDeleted, false)))
         .limit(limit); // TODO: infinite virtual scrolling instead
 
-    const opinionItemMap: OpinionItemPerSlugId = new Map<string, OpinionItem>();
+    const opinionItemMap: DisplayedOpinionItemPerSlugId = new Map<
+        string,
+        DisplayedOpinionItem
+    >();
     results.map((opinionResponse) => {
         const moderationProperties = createCommentModerationPropertyObject(
             opinionResponse.moderationAction,
@@ -495,7 +624,7 @@ export async function fetchOpinionsByPostId({
             opinionResponse.moderationUpdatedAt,
         );
 
-        const item: OpinionItem = {
+        const item: DisplayedOpinionItem = {
             opinion: opinionResponse.comment,
             sourceLanguageCode: opinionResponse.sourceLanguageCode,
             opinionSlugId: opinionResponse.commentSlugId,
@@ -508,6 +637,42 @@ export async function fetchOpinionsByPostId({
             username: opinionResponse.username,
             moderation: moderationProperties,
             isSeed: opinionResponse.isSeed,
+            displayContent: conversationContentService.toOpinionDisplayContent({
+                content: buildLocalizedOpinionContent({
+                    source: {
+                        opinionContentId: opinionResponse.opinionContentId,
+                        contentPublicId: opinionResponse.contentPublicId,
+                        comment: opinionResponse.comment,
+                        sourceLanguageCode: opinionResponse.sourceLanguageCode,
+                        sourceRawLanguageCode: opinionResponse.sourceRawLanguageCode,
+                        sourceLanguageProvider:
+                            opinionResponse.sourceLanguageProvider,
+                        sourceLanguageConfidence:
+                            opinionResponse.sourceLanguageConfidence,
+                    },
+                    translation:
+                        opinionResponse.translatedContent === null
+                            ? undefined
+                            : {
+                                  opinionContentId:
+                                      opinionResponse.opinionContentId,
+                                  translatedContent:
+                                      opinionResponse.translatedContent,
+                                  sourceLanguageCode:
+                                      opinionResponse.translationSourceLanguageCode,
+                                  sourceRawLanguageCode:
+                                      opinionResponse.translationSourceRawLanguageCode,
+                                  sourceLanguageProvider:
+                                      opinionResponse.translationSourceLanguageProvider,
+                                  sourceLanguageConfidence:
+                                      opinionResponse.translationSourceLanguageConfidence,
+                              },
+                    targetLanguageCode: displayContentPreferences.displayLanguage,
+                }),
+                translationAllowed: displayContentPreferences.translationAllowed,
+                displayLanguage: displayContentPreferences.displayLanguage,
+                spokenLanguages: displayContentPreferences.spokenLanguages,
+            }),
         };
         opinionItemMap.set(opinionResponse.commentSlugId, item);
     });
@@ -538,7 +703,8 @@ export async function fetchOpinionsByPostSlugId({
     personalizationUserId,
     filterTarget,
     limit,
-}: FetchOpinionsProps): Promise<OpinionItemPerSlugId> {
+    displayContentPreferences,
+}: FetchOpinionsProps): Promise<DisplayedOpinionItemPerSlugId> {
     const postId = await getPostIdFromPostSlugId(db, postSlugId);
     return await fetchOpinionsByPostId({
         db,
@@ -546,6 +712,7 @@ export async function fetchOpinionsByPostSlugId({
         personalizationUserId,
         filterTarget,
         limit,
+        displayContentPreferences,
     });
 }
 
@@ -600,85 +767,192 @@ export async function fetchCommentStatsByConversationSlugId({
 interface FetchOpinionsByOpinionSlugIdListProps {
     db: PostgresJsDatabase;
     opinionSlugIdList: SlugId[];
+    displayContentViewerPreferences: OpinionDisplayContentViewerPreferences;
 }
 
 export async function fetchOpinionsByOpinionSlugIdList({
     db,
     opinionSlugIdList,
+    displayContentViewerPreferences,
 }: FetchOpinionsByOpinionSlugIdListProps): Promise<GetOpinionBySlugIdListResponse> {
-    const opinionItemList: OpinionItem[] = [];
+    if (opinionSlugIdList.length === 0) {
+        return [];
+    }
 
-    for (const opinionSlugId of opinionSlugIdList) {
-        const results = await db
-            .select({
-                opinionId: opinionTable.id,
-                conversationId: opinionTable.conversationId,
-                commentSlugId: opinionTable.slugId,
-                createdAt: opinionTable.createdAt,
-                updatedAt: opinionTable.updatedAt,
-                comment: opinionContentTable.content,
-                sourceLanguageCode: opinionContentTable.sourceLanguageCode,
-                username: userTable.username,
-                isSeed: opinionTable.isSeed,
-                moderationAction: opinionModerationTable.moderationAction,
-                moderationExplanation:
-                    opinionModerationTable.moderationExplanation,
-                moderationReason: opinionModerationTable.moderationReason,
-                moderationCreatedAt: opinionModerationTable.createdAt,
-                moderationUpdatedAt: opinionModerationTable.updatedAt,
-            })
-            .from(opinionTable)
-            .innerJoin(
-                conversationTable,
-                eq(conversationTable.id, opinionTable.conversationId),
-            )
-            .innerJoin(
-                opinionContentTable,
-                eq(opinionContentTable.id, opinionTable.currentContentId),
-            )
-            .leftJoin(
-                opinionModerationTable,
-                eq(opinionModerationTable.opinionId, opinionTable.id),
-            )
-            .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
-            // TODO: join with cluster tables
-            .orderBy(desc(opinionTable.createdAt))
-            .where(
-                and(
-                    eq(opinionTable.slugId, opinionSlugId),
-                    eq(userTable.isDeleted, false),
+    const results = await db
+        .select({
+            opinionId: opinionTable.id,
+            conversationId: opinionTable.conversationId,
+            conversationLanguageCode: conversationLanguageSettingTable.languageCode,
+            conversationDetectedLanguageCode:
+                conversationLanguageSettingTable.detectedLanguageCode,
+            dynamicTranslationEnabled:
+                conversationTranslationSettingTable.dynamicTranslationEnabled,
+            configuredTargetLanguageCode:
+                conversationTranslationTargetLanguageTable.languageCode,
+            opinionContentId: opinionContentTable.id,
+            contentPublicId: opinionContentTable.publicId,
+            commentSlugId: opinionTable.slugId,
+            createdAt: opinionTable.createdAt,
+            updatedAt: opinionTable.updatedAt,
+            comment: opinionContentTable.content,
+            sourceLanguageCode: opinionContentTable.sourceLanguageCode,
+            sourceRawLanguageCode: opinionContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider: opinionContentTable.sourceLanguageProvider,
+            sourceLanguageConfidence: opinionContentTable.sourceLanguageConfidence,
+            translatedContent: opinionContentTranslationTable.translatedContent,
+            translationSourceLanguageCode:
+                opinionContentTranslationTable.sourceLanguageCode,
+            translationSourceRawLanguageCode:
+                opinionContentTranslationTable.sourceRawLanguageCode,
+            translationSourceLanguageProvider:
+                opinionContentTranslationTable.sourceLanguageProvider,
+            translationSourceLanguageConfidence:
+                opinionContentTranslationTable.sourceLanguageConfidence,
+            username: userTable.username,
+            isSeed: opinionTable.isSeed,
+            moderationAction: opinionModerationTable.moderationAction,
+            moderationExplanation: opinionModerationTable.moderationExplanation,
+            moderationReason: opinionModerationTable.moderationReason,
+            moderationCreatedAt: opinionModerationTable.createdAt,
+            moderationUpdatedAt: opinionModerationTable.updatedAt,
+        })
+        .from(opinionTable)
+        .innerJoin(
+            conversationTable,
+            eq(conversationTable.id, opinionTable.conversationId),
+        )
+        .innerJoin(
+            opinionContentTable,
+            eq(opinionContentTable.id, opinionTable.currentContentId),
+        )
+        .leftJoin(
+            conversationLanguageSettingTable,
+            eq(
+                conversationLanguageSettingTable.conversationId,
+                conversationTable.id,
+            ),
+        )
+        .leftJoin(
+            conversationTranslationSettingTable,
+            eq(
+                conversationTranslationSettingTable.conversationId,
+                conversationTable.id,
+            ),
+        )
+        .leftJoin(
+            conversationTranslationTargetLanguageTable,
+            and(
+                eq(
+                    conversationTranslationTargetLanguageTable.translationSettingId,
+                    conversationTranslationSettingTable.id,
                 ),
-            );
+                eq(
+                    conversationTranslationTargetLanguageTable.languageCode,
+                    displayContentViewerPreferences.displayLanguage,
+                ),
+            ),
+        )
+        .leftJoin(
+            opinionContentTranslationTable,
+            and(
+                eq(
+                    opinionContentTranslationTable.opinionContentId,
+                    opinionContentTable.id,
+                ),
+                eq(
+                    opinionContentTranslationTable.displayLanguageCode,
+                    displayContentViewerPreferences.displayLanguage,
+                ),
+            ),
+        )
+        .leftJoin(
+            opinionModerationTable,
+            eq(opinionModerationTable.opinionId, opinionTable.id),
+        )
+        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .orderBy(desc(opinionTable.createdAt))
+        .where(
+            and(
+                inArray(opinionTable.slugId, opinionSlugIdList),
+                eq(userTable.isDeleted, false),
+            ),
+        );
 
-        for (const commentResponse of results) {
-            const counts = await fetchOpinionDisplayCounts({
-                db,
-                conversationId: commentResponse.conversationId,
-                opinionId: commentResponse.opinionId,
-            });
-            const moderationProperties = createCommentModerationPropertyObject(
-                commentResponse.moderationAction,
-                commentResponse.moderationExplanation,
-                commentResponse.moderationReason,
-                commentResponse.moderationCreatedAt,
-                commentResponse.moderationUpdatedAt,
-            );
+    const opinionItemList: DisplayedOpinionItem[] = [];
+    for (const commentResponse of results) {
+        const counts = await fetchOpinionDisplayCounts({
+            db,
+            conversationId: commentResponse.conversationId,
+            opinionId: commentResponse.opinionId,
+        });
+        const moderationProperties = createCommentModerationPropertyObject(
+            commentResponse.moderationAction,
+            commentResponse.moderationExplanation,
+            commentResponse.moderationReason,
+            commentResponse.moderationCreatedAt,
+            commentResponse.moderationUpdatedAt,
+        );
+        const translationAllowed =
+            commentResponse.dynamicTranslationEnabled === true &&
+            (commentResponse.conversationLanguageCode ===
+                displayContentViewerPreferences.displayLanguage ||
+                commentResponse.conversationDetectedLanguageCode ===
+                    displayContentViewerPreferences.displayLanguage ||
+                commentResponse.configuredTargetLanguageCode ===
+                    displayContentViewerPreferences.displayLanguage);
 
-            opinionItemList.push({
-                opinion: commentResponse.comment,
-                sourceLanguageCode: commentResponse.sourceLanguageCode,
-                opinionSlugId: commentResponse.commentSlugId,
-                createdAt: commentResponse.createdAt,
-                updatedAt: commentResponse.updatedAt,
-                numParticipants: counts.numParticipants,
-                numDisagrees: counts.numDisagrees,
-                numAgrees: counts.numAgrees,
-                numPasses: counts.numPasses,
-                username: commentResponse.username,
-                moderation: moderationProperties,
-                isSeed: commentResponse.isSeed,
-            });
-        }
+        opinionItemList.push({
+            opinion: commentResponse.comment,
+            sourceLanguageCode: commentResponse.sourceLanguageCode,
+            opinionSlugId: commentResponse.commentSlugId,
+            createdAt: commentResponse.createdAt,
+            updatedAt: commentResponse.updatedAt,
+            numParticipants: counts.numParticipants,
+            numDisagrees: counts.numDisagrees,
+            numAgrees: counts.numAgrees,
+            numPasses: counts.numPasses,
+            username: commentResponse.username,
+            moderation: moderationProperties,
+            isSeed: commentResponse.isSeed,
+            displayContent: conversationContentService.toOpinionDisplayContent({
+                content: buildLocalizedOpinionContent({
+                    source: {
+                        opinionContentId: commentResponse.opinionContentId,
+                        contentPublicId: commentResponse.contentPublicId,
+                        comment: commentResponse.comment,
+                        sourceLanguageCode: commentResponse.sourceLanguageCode,
+                        sourceRawLanguageCode: commentResponse.sourceRawLanguageCode,
+                        sourceLanguageProvider:
+                            commentResponse.sourceLanguageProvider,
+                        sourceLanguageConfidence:
+                            commentResponse.sourceLanguageConfidence,
+                    },
+                    translation:
+                        commentResponse.translatedContent === null
+                            ? undefined
+                            : {
+                                  opinionContentId:
+                                      commentResponse.opinionContentId,
+                                  translatedContent:
+                                      commentResponse.translatedContent,
+                                  sourceLanguageCode:
+                                      commentResponse.translationSourceLanguageCode,
+                                  sourceRawLanguageCode:
+                                      commentResponse.translationSourceRawLanguageCode,
+                                  sourceLanguageProvider:
+                                      commentResponse.translationSourceLanguageProvider,
+                                  sourceLanguageConfidence:
+                                      commentResponse.translationSourceLanguageConfidence,
+                              },
+                    targetLanguageCode:
+                        displayContentViewerPreferences.displayLanguage,
+                }),
+                translationAllowed,
+                displayLanguage: displayContentViewerPreferences.displayLanguage,
+                spokenLanguages: displayContentViewerPreferences.spokenLanguages,
+            }),
+        });
     }
 
     return opinionItemList;

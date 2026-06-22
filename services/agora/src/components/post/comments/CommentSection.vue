@@ -58,8 +58,8 @@ import { useTargetOpinion } from "src/composables/opinion/useTargetOpinion";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
+  DisplayedOpinionItem,
   EventSlug,
-  OpinionItem,
   ParticipationMode,
   SurveyGateSummary,
 } from "src/shared/types/zod";
@@ -97,11 +97,11 @@ const props = defineProps<{
   dynamicTranslationEnabled: boolean;
   supportedTargetLanguageCodes: SupportedDisplayLanguageCodes[];
   preloadedQueries: {
-    commentsDiscoverQuery: UseQueryReturnType<OpinionItem[], Error>;
-    commentsNewQuery: UseQueryReturnType<OpinionItem[], Error>;
-    commentsModeratedQuery: UseQueryReturnType<OpinionItem[], Error>;
-    hiddenCommentsQuery: UseQueryReturnType<OpinionItem[], Error>;
-    commentsMyVotesQuery: UseQueryReturnType<OpinionItem[], Error>;
+    commentsDiscoverQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;
+    commentsNewQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;
+    commentsModeratedQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;
+    hiddenCommentsQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;
+    commentsMyVotesQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;
   };
 }>();
 
@@ -217,7 +217,7 @@ async function fetchCommentsPreviewForFilter({
   filter,
 }: {
   filter: CommentFilterOptions;
-}): Promise<OpinionItem[]> {
+}): Promise<DisplayedOpinionItem[]> {
   return await queryClient.fetchQuery({
     queryKey: ["commentsRefreshPreview", props.postSlugId, filter],
     queryFn: () => fetchCommentsForPost(props.postSlugId, filter, undefined),

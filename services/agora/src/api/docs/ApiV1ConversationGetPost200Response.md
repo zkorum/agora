@@ -6,6 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **conversationData** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner.md) |  | [default to undefined]
+**displayContent** | [**ApiV1ConversationGetPost200ResponseDisplayContent**](ApiV1ConversationGetPost200ResponseDisplayContent.md) |  | [default to undefined]
 
 ## Example
 
@@ -14,6 +15,7 @@ import { ApiV1ConversationGetPost200Response } from './api';
 
 const instance: ApiV1ConversationGetPost200Response = {
     conversationData,
+    displayContent,
 };
 ```
 

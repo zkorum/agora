@@ -10,6 +10,7 @@ import {
 } from "src/api";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
+  ConversationContentFetchResponse,
   CreateNewConversationResponse,
   ImportCsvConversationResponse,
 } from "src/shared/types/dto";
@@ -41,7 +42,7 @@ import {
   FILE_UPLOAD_UCAN_LIFETIME_SECONDS,
 } from "../../crypto/ucan/operation";
 import { useNotify } from "../../ui/notify";
-import { api,axiosInstance } from "../client";
+import { api, axiosInstance } from "../client";
 import type { AxiosErrorResponse, AxiosSuccessResponse } from "../common";
 import { useCommonApi } from "../common";
 import {
@@ -61,45 +62,52 @@ export function useBackendPostApi() {
 
   const router = useRouter();
 
+  interface FetchConversationBySlugIdResult {
+    conversationData: ExtendedConversation;
+    displayContent: ConversationContentFetchResponse;
+  }
+
   function createInternalPostData(
-    postElement: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner
+    postElement: unknown
   ): ExtendedConversation {
     const parseditem = composeInternalPostList([postElement])[0];
     return parseditem;
   }
 
-  async function fetchPostBySlugId(
-    postSlugId: string,
-    loadPersonalizedData: boolean
-  ): Promise<ExtendedConversation> {
+  async function fetchConversationBySlugIdWithDisplayContent({
+    postSlugId,
+    loadPersonalizedData,
+  }: {
+    postSlugId: string;
+    loadPersonalizedData: boolean;
+  }): Promise<FetchConversationBySlugIdResult> {
     try {
-      const params: ApiV1ModerationConversationWithdrawPostRequest = {
+      const params = Dto.getConversationRequest.parse({
         conversationSlugId: postSlugId,
-      };
-
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1ConversationGetPost(params);
+      });
+      const url = "/api/v1/conversation/get";
+      const options = { method: "POST" };
       if (!loadPersonalizedData) {
-        const response = await DefaultApiFactory(
-          undefined,
-          undefined,
-          api
-        ).apiV1ConversationGetPost(params, {});
+        const response = await api.post(url, params);
+        const data = Dto.getConversationResponse.parse(response.data);
 
-        return createInternalPostData(response.data.conversationData);
+        return {
+          conversationData: createInternalPostData(data.conversationData),
+          displayContent: data.displayContent,
+        };
       } else {
         const encodedUcan = await buildEncodedUcan(url, options);
-        const response = await DefaultApiFactory(
-          undefined,
-          undefined,
-          api
-        ).apiV1ConversationGetPost(params, {
+        const response = await api.post(url, params, {
           headers: {
             ...buildAuthorizationHeader(encodedUcan),
           },
         });
+        const data = Dto.getConversationResponse.parse(response.data);
 
-        return createInternalPostData(response.data.conversationData);
+        return {
+          conversationData: createInternalPostData(data.conversationData),
+          displayContent: data.displayContent,
+        };
       }
     } catch (error) {
       if (axiosInstance.isAxiosError(error) && error.status === 404) {
@@ -110,6 +118,17 @@ export function useBackendPostApi() {
       }
       throw error;
     }
+  }
+
+  async function fetchPostBySlugId(
+    postSlugId: string,
+    loadPersonalizedData: boolean
+  ): Promise<ExtendedConversation> {
+    const result = await fetchConversationBySlugIdWithDisplayContent({
+      postSlugId,
+      loadPersonalizedData,
+    });
+    return result.conversationData;
   }
 
   type FetchRecentPostSuccessResponse = AxiosSuccessResponse<FetchFeedResponse>;
@@ -209,6 +228,8 @@ export function useBackendPostApi() {
     postAsOrganizationName: string;
     isIndexed: boolean;
     participationMode: ParticipationMode;
+    languageSetting: ConversationLanguageSettingInput;
+    multilingualSetting: ConversationMultilingualSetting;
     requiresEventTicket?: EventSlug;
     aiLabelingEnabled: boolean;
     preferredOpinionGroupCount: PreferredOpinionGroupCount;
@@ -227,6 +248,8 @@ export function useBackendPostApi() {
     postAsOrganizationName: string;
     isIndexed: boolean;
     participationMode: ParticipationMode;
+    languageSetting: ConversationLanguageSettingInput;
+    multilingualSetting: ConversationMultilingualSetting;
     requiresEventTicket?: EventSlug;
     aiLabelingEnabled: boolean;
     preferredOpinionGroupCount: PreferredOpinionGroupCount;
@@ -246,6 +269,11 @@ export function useBackendPostApi() {
     formData.append("postAsOrganization", params.postAsOrganizationName);
     formData.append("isIndexed", String(params.isIndexed));
     formData.append("participationMode", params.participationMode);
+    formData.append("languageSetting", JSON.stringify(params.languageSetting));
+    formData.append(
+      "multilingualSetting",
+      JSON.stringify(params.multilingualSetting)
+    );
     formData.append("requiresEventTicket", params.requiresEventTicket || "");
     formData.append("aiLabelingEnabled", String(params.aiLabelingEnabled));
     formData.append(
@@ -287,6 +315,8 @@ export function useBackendPostApi() {
     postAsOrganizationName,
     isIndexed,
     participationMode,
+    languageSetting,
+    multilingualSetting,
     requiresEventTicket,
     aiLabelingEnabled,
     preferredOpinionGroupCount,
@@ -297,6 +327,8 @@ export function useBackendPostApi() {
         postAsOrganization: postAsOrganizationName,
         isIndexed,
         participationMode,
+        languageSetting,
+        multilingualSetting,
         requiresEventTicket,
         aiLabelingEnabled,
         preferredOpinionGroupCount,
@@ -377,7 +409,7 @@ export function useBackendPostApi() {
   }
 
   function composeInternalPostList(
-    incomingPostList: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner[]
+    incomingPostList: unknown[]
   ): ExtendedConversation[] {
     // Use zod to parse and validate - zodDateTimeFlexible handles date conversion automatically
     const conversationListResult = zodExtendedConversationData
@@ -581,6 +613,7 @@ export function useBackendPostApi() {
     createNewPost,
     fetchRecentPost,
     fetchPostBySlugId,
+    fetchConversationBySlugIdWithDisplayContent,
     createInternalPostData,
     deletePostBySlugId,
     importConversation,

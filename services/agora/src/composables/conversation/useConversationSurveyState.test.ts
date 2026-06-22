@@ -1,7 +1,5 @@
-import type {
-  SurveyFormFetchResponse,
-  SurveyStatusCheckResponse,
-} from "src/shared/types/dto";
+import type { SurveyStatusCheckResponse } from "src/shared/types/dto";
+import type { SurveyFormData } from "src/utils/api/survey/useSurveyQueries";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -60,7 +58,8 @@ describe("resolveSurveyForm", () => {
         kind: "none",
       },
     };
-    const surveyForm: SurveyFormFetchResponse = {
+    const surveyForm: SurveyFormData = {
+      success: true,
       currentRevision: 1,
       questions: [],
       surveyGate: {

@@ -15,7 +15,7 @@
                   : t('nextButton')
             "
             :loading="isSubmitButtonLoading"
-            :disabled="isSubmitButtonLoading || hasActiveImport || isTitleOverLimit || isBodyOverLimit || isTitleEmpty"
+            :disabled="isSubmitButtonLoading || hasActiveImport || isTitleOverLimit || isBodyOverLimit || isManualTitleEmpty"
             @click="onSubmit()"
           />
         </template>
@@ -246,7 +246,7 @@ const isTitleOverLimit = ref(false);
 const isBodyOverLimit = ref(false);
 const titlePlainText = ref("");
 
-const isTitleEmpty = computed(
+const isManualTitleEmpty = computed(
   () =>
     conversationDraft.value.importSettings.importType === null &&
     title.value.trim() === ""
@@ -261,7 +261,7 @@ watch(title, (newTitle) => {
 });
 
 const showTitleError = computed(
-  () => isTitleDirty.value && isTitleEmpty.value
+  () => isTitleDirty.value && isManualTitleEmpty.value
 );
 
 const router = useRouter();
@@ -418,6 +418,8 @@ async function handleImportSubmission(): Promise<void> {
         postAsOrganizationName: conversationDraft.value.postAs.organizationName,
         isIndexed: !conversationDraft.value.isPrivate,
         participationMode: conversationDraft.value.participationMode,
+        languageSetting: conversationDraft.value.languageSetting,
+        multilingualSetting: conversationDraft.value.multilingualSetting,
         requiresEventTicket: conversationDraft.value.requiresEventTicket,
         aiLabelingEnabled: conversationDraft.value.aiLabelingEnabled,
         preferredOpinionGroupCount:
@@ -447,6 +449,8 @@ async function handleImportSubmission(): Promise<void> {
       postAsOrganizationName: conversationDraft.value.postAs.organizationName,
       isIndexed: !conversationDraft.value.isPrivate,
       participationMode: conversationDraft.value.participationMode,
+      languageSetting: conversationDraft.value.languageSetting,
+      multilingualSetting: conversationDraft.value.multilingualSetting,
       requiresEventTicket: conversationDraft.value.requiresEventTicket,
       aiLabelingEnabled: conversationDraft.value.aiLabelingEnabled,
       preferredOpinionGroupCount:
