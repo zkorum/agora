@@ -9,7 +9,7 @@
           <PrimeButton
             :label="t('saveButton')"
             :loading="isSaveButtonLoading"
-            :disabled="isSaveButtonLoading || !isDataLoaded || !hasUnsavedChanges || isTitleOverLimit || isBodyOverLimit"
+            :disabled="isSaveButtonDisabled"
             @click="onSave()"
           />
         </template>
@@ -52,9 +52,9 @@
         :can-use-analysis-variants-preference="canUseAnalysisVariantsPreference"
         :can-use-dynamic-translation="canUseDynamicTranslation"
         :can-edit-conversation-content="canEditConversationContent"
-        :detected-language-code="detectedLanguageCode"
-        :detected-source-language-code="detectedSourceLanguageCode"
-        :detected-raw-language-code="detectedRawLanguageCode"
+        :detected-language-code="visibleDetectedLanguageCode"
+        :detected-source-language-code="visibleDetectedSourceLanguageCode"
+        :detected-raw-language-code="visibleDetectedRawLanguageCode"
       />
 
       <ZKCard
@@ -354,6 +354,48 @@ const {
   updateContent,
   initializeFromData,
 } = useConversationDraft({ syncToStore: false });
+
+const canShowStoredAutoDetection = computed(() => {
+  return (
+    originalState.value.languageSetting.mode === "auto" &&
+    title.value === originalState.value.title &&
+    content.value === originalState.value.content
+  );
+});
+
+const visibleDetectedLanguageCode = computed(() =>
+  canShowStoredAutoDetection.value ? detectedLanguageCode.value : undefined
+);
+const visibleDetectedSourceLanguageCode = computed(() =>
+  canShowStoredAutoDetection.value ? detectedSourceLanguageCode.value : undefined
+);
+const visibleDetectedRawLanguageCode = computed(() =>
+  canShowStoredAutoDetection.value ? detectedRawLanguageCode.value : undefined
+);
+
+const canRetryUnknownAutoDetection = computed(() => {
+  return (
+    canShowStoredAutoDetection.value &&
+    languageSetting.value.mode === "auto" &&
+    detectedLanguageCode.value === null &&
+    detectedSourceLanguageCode.value === null &&
+    detectedRawLanguageCode.value === null
+  );
+});
+
+const canSave = computed(
+  () => hasUnsavedChanges.value || canRetryUnknownAutoDetection.value
+);
+
+const isSaveButtonDisabled = computed(() => {
+  return (
+    isSaveButtonLoading.value ||
+    !isDataLoaded.value ||
+    !canSave.value ||
+    isTitleOverLimit.value ||
+    isBodyOverLimit.value
+  );
+});
 
 async function scrollToTitleInput() {
   await nextTick();

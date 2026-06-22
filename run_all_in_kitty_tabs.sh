@@ -2,7 +2,7 @@
 
 BASE_DIR=$HOME/github/nicobao/agora
 SCRIPT_NAME="$0"
-SIMULATED_WORKERS=""
+SIMULATED_WORKERS="all=simulated-success"
 
 export AGORA_LOG_RUN_ID=${AGORA_LOG_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}
 
@@ -11,6 +11,7 @@ print "Logs: $BASE_DIR/.local/logs/runs/$AGORA_LOG_RUN_ID"
 
 usage() {
   print "Usage: $SCRIPT_NAME [--simulate-workers <worker=scenario,...>]" >&2
+  print "Default: --simulate-workers all=simulated-success" >&2
   print "" >&2
   print "Scenarios:" >&2
   print "  simulated-success" >&2
