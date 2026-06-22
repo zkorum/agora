@@ -53,6 +53,8 @@
         :can-use-dynamic-translation="canUseDynamicTranslation"
         :can-edit-conversation-content="canEditConversationContent"
         :detected-language-code="detectedLanguageCode"
+        :detected-source-language-code="detectedSourceLanguageCode"
+        :detected-raw-language-code="detectedRawLanguageCode"
       />
 
       <ZKCard
@@ -194,6 +196,12 @@ type EditPermissions = Extract<
 const editPermissions = ref<EditPermissions | null>(null);
 const detectedLanguageCode = ref<
   ConversationLanguageSettingOutput["detectedLanguageCode"]
+>(null);
+const detectedSourceLanguageCode = ref<
+  ConversationLanguageSettingOutput["detectedSourceLanguageCode"]
+>(null);
+const detectedRawLanguageCode = ref<
+  ConversationLanguageSettingOutput["detectedRawLanguageCode"]
 >(null);
 
 const titleInputRef = ref<HTMLDivElement>();
@@ -521,6 +529,9 @@ onMounted(async () => {
       output: response.languageSetting,
     });
     detectedLanguageCode.value = response.languageSetting.detectedLanguageCode;
+    detectedSourceLanguageCode.value =
+      response.languageSetting.detectedSourceLanguageCode;
+    detectedRawLanguageCode.value = response.languageSetting.detectedRawLanguageCode;
 
     initializeFromData({
       title: response.conversationTitle,

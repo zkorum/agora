@@ -8,6 +8,8 @@ export interface ConversationLanguageSettingDialogTranslations {
   autoDetectTitle: string;
   autoDetectDescription: string;
   autoDetectDetectedDescription: string;
+  autoDetectUnknownDescription: string;
+  autoDetectUnsupportedDescription: string;
   manualTitle: string;
   manualOptionDescription: string;
   manualLanguageDialogTitle: string;
@@ -30,6 +32,9 @@ const englishTranslations: ConversationLanguageSettingDialogTranslations = {
   autoDetectTitle: "Auto-detect",
   autoDetectDescription: "Detect from the title and body.",
   autoDetectDetectedDescription: "Detected: {language}",
+  autoDetectUnknownDescription: "Could not detect language.",
+  autoDetectUnsupportedDescription:
+    "Detected: {language}. Not supported for translations.",
   manualTitle: "Manual language",
   manualOptionDescription: "Choose a fixed language instead.",
   manualLanguageDialogTitle: "Manual language",

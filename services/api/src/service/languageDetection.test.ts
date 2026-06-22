@@ -522,11 +522,29 @@ describe("detectLanguageWithFallback", () => {
         expect(localDetectorCalled).toBe(false);
     });
 
+    it("returns non-cacheable unknown for meaningful Cyrillic when Google is unavailable", async () => {
+        let localDetectorCalled = false;
+        const localDetector: LocalLanguageDetector = {
+            detect: () => {
+                localDetectorCalled = true;
+                return Promise.resolve({ rawLanguageCode: "Russian", confidence: 1 });
+            },
+        };
+
+        const outcome = await detectLanguageWithFallback({
+            text: "Шаарыбыздагы коомдук транспортту кантип жакшырта алабыз?",
+            localDetector,
+        });
+
+        expect(outcome).toStrictEqual({ result: undefined, cacheable: false });
+        expect(localDetectorCalled).toBe(false);
+    });
+
     it("keeps supported non-display local source languages", async () => {
         const outcome = await detectLanguageWithFallback({
-            text: "Қаладағы қоғамдық көлікті қалай жақсарта аламыз?",
+            text: "Com podem millorar el transport public de la ciutat i mantenir-lo assequible per a tothom?",
             localDetector: createLocalDetector({
-                rawLanguageCode: "Kazakh",
+                rawLanguageCode: "Catalan",
                 confidence: 1,
             }),
         });
@@ -534,8 +552,8 @@ describe("detectLanguageWithFallback", () => {
         expect(outcome).toStrictEqual({
             result: {
                 languageCode: null,
-                sourceLanguageCode: "kk",
-                rawLanguageCode: "Kazakh",
+                sourceLanguageCode: "ca",
+                rawLanguageCode: "Catalan",
                 provider: "lingua",
                 confidence: 1,
             },
@@ -633,13 +651,23 @@ describe("detectLanguageWithFallback", () => {
 
     it("real local detector detects supported non-display source languages", async () => {
         const outcome = await detectLanguageWithFallback({
-            text: "Wie koennen wir den oeffentlichen Nahverkehr in unserer Stadt verbessern und bezahlbar halten?",
+            text: "Com podem millorar el transport public de la ciutat i mantenir-lo assequible per a tothom?",
         });
 
         expect(outcome.result).toMatchObject({
             languageCode: null,
-            sourceLanguageCode: "de",
+            sourceLanguageCode: "ca",
         });
+        expect(outcome.cacheable).toBe(true);
+    });
+
+    it("real local detector keeps Haitian Creole unknown instead of a low-confidence misattribution", async () => {
+        const outcome = await detectLanguageWithFallback({
+            text: "Kijan nou ka amelyore transpo piblik nan vil la epi kenbe li abodab pou tout moun?",
+        });
+
+        expect(outcome.result?.languageCode ?? null).toBeNull();
+        expect(outcome.result?.sourceLanguageCode ?? null).toBeNull();
         expect(outcome.cacheable).toBe(true);
     });
 

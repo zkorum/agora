@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -40,6 +41,7 @@ from content_translation_worker.translation import (
 )
 
 EAGER_VISIBLE_PRIORITY_RANK = 1
+log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
@@ -438,6 +440,14 @@ def process_claimed_work(
             if source is None:
                 _mark_missing_source(session, claim=claim)
                 return ProcessWorkResult(work_id=claim.id, status="missing_source")
+            log.info(
+                "[Worker] Translation source work_id=%d source_kind=conversation "
+                "target_language=%s conversationSlugId=%s conversationContentId=%d",
+                claim.id,
+                claim.display_language_code.value,
+                source.conversation_slug_id,
+                source.content_id,
+            )
             _lock_translation_work_group(
                 session,
                 claim=claim,
@@ -490,6 +500,17 @@ def process_claimed_work(
             if source is None:
                 _mark_missing_source(session, claim=claim)
                 return ProcessWorkResult(work_id=claim.id, status="missing_source")
+            log.info(
+                "[Worker] Translation source work_id=%d source_kind=survey_question "
+                "target_language=%s conversationSlugId=%s questionSlugId=%s "
+                "surveyQuestionContentId=%d optionSlugIds=%s",
+                claim.id,
+                claim.display_language_code.value,
+                source.conversation_slug_id,
+                source.question_slug_id,
+                source.content_id,
+                [option.option_slug_id for option in source.options],
+            )
             _lock_translation_work_group(
                 session,
                 claim=claim,
@@ -534,6 +555,16 @@ def process_claimed_work(
         if source is None:
             _mark_missing_source(session, claim=claim)
             return ProcessWorkResult(work_id=claim.id, status="missing_source")
+        log.info(
+            "[Worker] Translation source work_id=%d source_kind=opinion "
+            "target_language=%s conversationSlugId=%s opinionSlugId=%s "
+            "opinionContentId=%d",
+            claim.id,
+            claim.display_language_code.value,
+            source.conversation_slug_id,
+            source.opinion_slug_id,
+            source.content_id,
+        )
         _lock_translation_work_group(
             session,
             claim=claim,

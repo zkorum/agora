@@ -131,6 +131,28 @@ def test_lingua_detection_detects_supported_non_display_language() -> None:
     assert metadata.confidence is not None
 
 
+def test_lingua_detection_detects_catalan() -> None:
+    metadata = detect_source_language_with_lingua(
+        "Com podem millorar el transport public de la ciutat i mantenir-lo "
+        "assequible per a tothom?"
+    )
+
+    assert metadata.language_code == "ca"
+    assert metadata.confidence is not None
+
+
+def test_lingua_detection_keeps_haitian_creole_unknown() -> None:
+    metadata = detect_source_language_with_lingua(
+        "Kijan nou ka amelyore transpo piblik nan vil la epi kenbe li abodab "
+        "pou tout moun?"
+    )
+
+    assert metadata.language_code is None
+    if metadata.raw_language_code is not None:
+        assert metadata.provider == "lingua"
+        assert metadata.confidence is not None
+
+
 def test_source_language_detection_falls_back_to_google_for_hawaiian() -> None:
     def google_detector(text: str) -> SourceLanguageMetadata:
         assert text.strip() != ""
@@ -159,16 +181,12 @@ def test_source_language_detection_falls_back_to_google_for_kyrgyz_cyrillic() ->
     assert metadata.confidence == 0.92
 
 
-def test_lingua_misattributes_kyrgyz_cyrillic_without_google() -> None:
+def test_lingua_detection_returns_unknown_for_kyrgyz_cyrillic() -> None:
     metadata = detect_source_language_with_lingua(
         "Шаарыбыздагы коомдук транспортту кантип жакшырта алабыз?",
     )
 
-    assert metadata.provider == "lingua"
-    assert metadata.raw_language_code == "KAZAKH"
-    assert metadata.language_code == "kk"
-    assert metadata.confidence is not None
-    assert abs(metadata.confidence - 0.8777868894099828) < 0.0000000000000001
+    assert metadata == SourceLanguageMetadata(language_code=None, confidence=None)
 
 
 def test_source_language_detection_returns_unknown_for_cyrillic_without_google() -> None:

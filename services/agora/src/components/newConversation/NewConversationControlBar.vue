@@ -69,6 +69,8 @@
     :can-edit-primary-language="props.canEditConversationContent"
     :can-use-dynamic-translation="canUseDynamicTranslation"
     :detected-language-code="props.detectedLanguageCode"
+    :detected-source-language-code="props.detectedSourceLanguageCode"
+    :detected-raw-language-code="props.detectedRawLanguageCode"
   />
 
   <LoginRequirementDialog
@@ -107,6 +109,7 @@ import {
   type DisplayLanguageMetadata,
   type LanguageMetadata,
   type SupportedDisplayLanguageCodes,
+  type SupportedSpokenLanguageCodes,
   SupportedSpokenLanguageMetadataList,
 } from "src/shared/languages";
 import type {
@@ -159,6 +162,8 @@ interface Props {
   canUseDynamicTranslation?: boolean;
   canEditConversationContent?: boolean;
   detectedLanguageCode?: SupportedDisplayLanguageCodes | null;
+  detectedSourceLanguageCode?: SupportedSpokenLanguageCodes | null;
+  detectedRawLanguageCode?: string | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -168,7 +173,9 @@ const props = withDefaults(defineProps<Props>(), {
   canUseAnalysisVariantsPreference: false,
   canUseDynamicTranslation: false,
   canEditConversationContent: true,
-  detectedLanguageCode: null,
+  detectedLanguageCode: undefined,
+  detectedSourceLanguageCode: undefined,
+  detectedRawLanguageCode: undefined,
 });
 
 const { t } = useComponentI18n<NewConversationControlBarTranslations>(

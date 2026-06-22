@@ -37,6 +37,11 @@ class SourceLanguageHint:
     weight: float
 
 
+@dataclass(frozen=True)
+class LocalLanguageDetectionPolicy:
+    allow_local_detection: bool
+
+
 class GoogleLanguageDetector(Protocol):
     def __call__(self, text: str) -> SourceLanguageMetadata: ...
 
@@ -72,6 +77,9 @@ def detect_source_language_with_lingua(text: str) -> SourceLanguageMetadata:
     if cleaned_text == "":
         return SourceLanguageMetadata(language_code=None, confidence=None)
 
+    if not local_language_detection_policy_for_text(cleaned_text).allow_local_detection:
+        return SourceLanguageMetadata(language_code=None, confidence=None)
+
     return _detect_source_language_with_lingua_cleaned(cleaned_text)
 
 
@@ -85,7 +93,8 @@ def detect_source_language(
     if cleaned_text == "":
         return SourceLanguageMetadata(language_code=None, confidence=None)
 
-    if _has_meaningful_cyrillic_text(cleaned_text):
+    local_detection_policy = local_language_detection_policy_for_text(cleaned_text)
+    if not local_detection_policy.allow_local_detection:
         if google_detector is None:
             return SourceLanguageMetadata(language_code=None, confidence=None)
         return _detect_source_language_with_google(
@@ -249,6 +258,12 @@ def _has_meaningful_cyrillic_text(text: str) -> bool:
         cyrillic_letters >= MEANINGFUL_CYRILLIC_LETTER_COUNT
         and letters > 0
         and cyrillic_letters / letters >= MEANINGFUL_CYRILLIC_LETTER_RATIO
+    )
+
+
+def local_language_detection_policy_for_text(text: str) -> LocalLanguageDetectionPolicy:
+    return LocalLanguageDetectionPolicy(
+        allow_local_detection=not _has_meaningful_cyrillic_text(text)
     )
 
 

@@ -199,6 +199,10 @@ interface GoogleLanguageDetectionAttempt {
     result: DetectedLanguageResult | undefined;
 }
 
+interface LocalLanguageDetectionPolicy {
+    allowLocalDetection: boolean;
+}
+
 let defaultLocalDetectorPromise:
     | Promise<LocalLanguageDetector | undefined>
     | undefined;
@@ -221,6 +225,16 @@ export function hasMeaningfulCyrillicText({ text }: { text: string }): boolean {
         letters > 0 &&
         cyrillicLetters / letters >= MEANINGFUL_CYRILLIC_LETTER_RATIO
     );
+}
+
+export function localLanguageDetectionPolicyForText({
+    text,
+}: {
+    text: string;
+}): LocalLanguageDetectionPolicy {
+    return {
+        allowLocalDetection: !hasMeaningfulCyrillicText({ text }),
+    };
 }
 
 export function inferChineseScriptLanguage({
@@ -787,7 +801,11 @@ export async function detectLanguageWithFallback({
     localDetector?: LocalLanguageDetector;
     googleDetector?: GoogleLanguageDetector;
 }): Promise<LanguageDetectionOutcome> {
-    if (hasMeaningfulCyrillicText({ text }) && googleDetector !== undefined) {
+    const localDetectionPolicy = localLanguageDetectionPolicyForText({ text });
+    if (!localDetectionPolicy.allowLocalDetection) {
+        if (googleDetector === undefined) {
+            return { result: undefined, cacheable: false };
+        }
         return googleAttemptToOutcome({
             attempt: await detectWithGoogle({
                 googleDetector,
