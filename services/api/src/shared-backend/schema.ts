@@ -22,7 +22,6 @@ import {
 import { isNotNull, isNull, type SQL } from "drizzle-orm";
 import { sql } from "drizzle-orm/sql";
 import {
-    ZodNormalizedLanguageCodes,
     ZodSupportedDisplayLanguageCodes,
     ZodSupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
@@ -611,10 +610,6 @@ export const displayLanguageCodeEnum = pgEnum(
     "display_language_code",
     ZodSupportedDisplayLanguageCodes.enum,
 );
-export const languageCodeEnum = pgEnum(
-    "language_code",
-    ZodNormalizedLanguageCodes.enum,
-);
 export const spokenLanguageCodeEnum = pgEnum(
     "spoken_language_code",
     ZodSupportedSpokenLanguageCodes.enum,
@@ -865,8 +860,6 @@ export const userTable = pgTable(
         username: varchar("username", { length: MAX_LENGTH_USERNAME })
             .notNull()
             .unique(),
-        firstName: varchar("first_name", { length: MAX_LENGTH_NAME_CREATOR })
-            .notNull(),
         isSiteModerator: boolean("is_site_moderator").notNull().default(false),
         isSiteOrgAdmin: boolean("is_site_org_admin").notNull().default(false),
         isImported: boolean("is_imported").notNull().default(false),
@@ -1058,40 +1051,43 @@ export const userDisplayLanguageTable = pgTable(
 );
 
 /** @service import-worker */
-export const organizationTable = pgTable("organization", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    slug: varchar("slug", { length: MAX_LENGTH_NAME_CREATOR })
-        .notNull()
-        .unique(),
-    displayName: varchar("display_name", { length: MAX_LENGTH_NAME_CREATOR })
-        .notNull(),
-    // Controls organization-facing exposure, such as directories and "post as organization" pickers.
-    // Auto-provisioned personal backing orgs start unlisted; promoting one to a real org lists it.
-    directoryVisibility: directoryVisibilityEnum("directory_visibility").notNull(),
-    // Links the default personal organization provisioned for a user. This is also historical
-    // provenance if the org is later promoted; do not use it as a visibility flag.
-    autoProvisionedForUserId: uuid("auto_provisioned_for_user_id")
-        .references(() => userTable.id)
-        .unique(),
-    imagePath: text("image_path"),
-    isFullImagePath: boolean("is_full_image_path").notNull(),
-    websiteUrl: text("website_url"),
-    description: varchar("description", {
-        length: MAX_LENGTH_DESCRIPTION_CREATOR,
-    }),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const organizationTable = pgTable(
+    "organization",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        slug: varchar("slug", { length: MAX_LENGTH_NAME_CREATOR })
+            .notNull()
+            .unique(),
+        displayName: varchar("display_name", { length: MAX_LENGTH_NAME_CREATOR })
+            .notNull(),
+        // Controls organization-facing exposure, such as directories and "post as organization" pickers.
+        // Auto-provisioned personal backing orgs start unlisted; promoting one to a real org lists it.
+        directoryVisibility: directoryVisibilityEnum("directory_visibility").notNull(),
+        // Links the default personal organization provisioned for a user. This is also historical
+        // provenance if the org is later promoted; do not use it as a visibility flag.
+        autoProvisionedForUserId: uuid("auto_provisioned_for_user_id")
+            .references(() => userTable.id)
+            .unique(),
+        imagePath: text("image_path"),
+        isFullImagePath: boolean("is_full_image_path").notNull(),
+        websiteUrl: text("website_url"),
+        description: varchar("description", {
+            length: MAX_LENGTH_DESCRIPTION_CREATOR,
+        }),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+);
 
 /** @service scoring-worker, api, math-updater, import-worker */
 export const projectTable = pgTable("project", {
@@ -1204,9 +1200,9 @@ export const premiumFeatureEntitlementTable = pgTable(
     "premium_feature_entitlement",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        organizationId: integer("organization_id").references(
-            () => organizationTable.id,
-        ).notNull(),
+        organizationId: integer("organization_id")
+            .references(() => organizationTable.id)
+            .notNull(),
         feature: premiumFeatureEnum("feature").notNull(),
         startsAt: timestamp("starts_at", {
             mode: "date",
@@ -1601,23 +1597,36 @@ export const otpEmailDestinationStateTable = pgTable(
 );
 
 /** @service shared-analysis-worker, import-worker, content-translation-worker */
-export const conversationContentTable = pgTable("conversation_content", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    conversationId: integer("conversation_id")
-        .references(() => conversationTable.id)
-        .notNull(),
-    title: varchar("title", { length: MAX_LENGTH_TITLE }).notNull(),
-    body: text("body"),
-    bodyPlainText: text("body_plain_text"),
-    sourceLanguageCode: varchar("source_language_code", { length: 35 }),
-    sourceLanguageConfidence: real("source_language_confidence"),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const conversationContentTable = pgTable(
+    "conversation_content",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        conversationId: integer("conversation_id")
+            .references(() => conversationTable.id)
+            .notNull(),
+        title: varchar("title", { length: MAX_LENGTH_TITLE }).notNull(),
+        body: text("body"),
+        bodyPlainText: text("body_plain_text"),
+        sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
+        sourceRawLanguageCode: varchar("source_raw_language_code", { length: 35 }),
+        sourceLanguageProvider: languageDetectionProviderEnum(
+            "source_language_provider",
+        ),
+        sourceLanguageConfidence: real("source_language_confidence"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        check(
+            "conversation_content_source_metadata_check",
+            sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
+        ),
+    ],
+);
 
 /** @service scoring-worker, api, shared-analysis-worker, import-worker, content-translation-worker */
 export const conversationTable = pgTable(
@@ -1725,7 +1734,9 @@ export const conversationLanguageSettingTable = pgTable(
         mode: conversationLanguageSettingModeEnum("mode").notNull(),
         languageCode: displayLanguageCodeEnum("language_code"),
         detectedLanguageCode: displayLanguageCodeEnum("detected_language_code"),
-        detectedSourceLanguageCode: languageCodeEnum("detected_source_language_code"),
+        detectedSourceLanguageCode: spokenLanguageCodeEnum(
+            "detected_source_language_code",
+        ),
         detectedRawLanguageCode: varchar("detected_raw_language_code", {
             length: 35,
         }),
@@ -1736,6 +1747,9 @@ export const conversationLanguageSettingTable = pgTable(
         detectedFromCorpusHash: varchar("detected_from_corpus_hash", {
             length: 64,
         }),
+        autoDetectionRetryable: boolean("auto_detection_retryable")
+            .notNull()
+            .default(false),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1756,6 +1770,10 @@ export const conversationLanguageSettingTable = pgTable(
         check(
             "conversation_language_setting_manual_language_check",
             sql`(${table.mode} <> 'manual') OR (${table.languageCode} IS NOT NULL)`,
+        ),
+        check(
+            "conversation_language_setting_detected_raw_provider_check",
+            sql`((${table.detectedRawLanguageProvider} IS NULL AND ${table.detectedRawLanguageCode} IS NULL) OR (${table.detectedRawLanguageProvider} IS NOT NULL AND ${table.detectedRawLanguageCode} IS NOT NULL))`,
         ),
     ],
 );
@@ -1929,7 +1947,7 @@ export const conversationContentTranslationTable = pgTable(
             length: MAX_LENGTH_TITLE,
         }).notNull(),
         translatedBody: text("translated_body"),
-        sourceLanguageCode: languageCodeEnum("source_language_code"),
+        sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
         sourceRawLanguageCode: varchar("source_raw_language_code", {
             length: 35,
         }),
@@ -1963,26 +1981,39 @@ export const conversationContentTranslationTable = pgTable(
 );
 
 /** @service scoring-worker, api, shared-analysis-worker, content-translation-worker */
-export const surveyQuestionContentTable = pgTable("survey_question_content", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    surveyQuestionId: integer("survey_question_id")
-        .notNull()
-        .references(() => surveyQuestionTable.id),
-    questionText: varchar("question_text", {
-        length: MAX_LENGTH_SURVEY_QUESTION,
-    }).notNull(),
-    constraints: jsonb("constraints").notNull(),
-    sourceLanguageCode: varchar("source_language_code", {
-        length: 35,
-    }),
-    sourceLanguageConfidence: real("source_language_confidence"),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const surveyQuestionContentTable = pgTable(
+    "survey_question_content",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        surveyQuestionId: integer("survey_question_id")
+            .notNull()
+            .references(() => surveyQuestionTable.id),
+        questionText: varchar("question_text", {
+            length: MAX_LENGTH_SURVEY_QUESTION,
+        }).notNull(),
+        constraints: jsonb("constraints").notNull(),
+        sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
+        sourceRawLanguageCode: varchar("source_raw_language_code", {
+            length: 35,
+        }),
+        sourceLanguageProvider: languageDetectionProviderEnum(
+            "source_language_provider",
+        ),
+        sourceLanguageConfidence: real("source_language_confidence"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        check(
+            "survey_question_content_source_metadata_check",
+            sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
+        ),
+    ],
+);
 
 /** @service api, content-translation-worker */
 export const surveyQuestionContentTranslationTable = pgTable(
@@ -1995,7 +2026,7 @@ export const surveyQuestionContentTranslationTable = pgTable(
         displayLanguageCode:
             displayLanguageCodeEnum("display_language_code").notNull(),
         translatedQuestionText: text("translated_question_text").notNull(),
-        sourceLanguageCode: languageCodeEnum("source_language_code"),
+        sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
         sourceRawLanguageCode: varchar("source_raw_language_code", {
             length: 35,
         }),
@@ -2076,9 +2107,13 @@ export const surveyQuestionOptionContentTable = pgTable(
         optionText: varchar("option_text", {
             length: MAX_LENGTH_SURVEY_OPTION,
         }).notNull(),
-        sourceLanguageCode: varchar("source_language_code", {
+        sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
+        sourceRawLanguageCode: varchar("source_raw_language_code", {
             length: 35,
         }),
+        sourceLanguageProvider: languageDetectionProviderEnum(
+            "source_language_provider",
+        ),
         sourceLanguageConfidence: real("source_language_confidence"),
         createdAt: timestamp("created_at", {
             mode: "date",
@@ -2087,6 +2122,12 @@ export const surveyQuestionOptionContentTable = pgTable(
             .defaultNow()
             .notNull(),
     },
+    (table) => [
+        check(
+            "survey_question_option_content_source_metadata_check",
+            sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
+        ),
+    ],
 );
 
 /** @service api, content-translation-worker */
@@ -2102,7 +2143,7 @@ export const surveyQuestionOptionContentTranslationTable = pgTable(
         displayLanguageCode:
             displayLanguageCodeEnum("display_language_code").notNull(),
         translatedOptionText: text("translated_option_text").notNull(),
-        sourceLanguageCode: languageCodeEnum("source_language_code"),
+        sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
         sourceRawLanguageCode: varchar("source_raw_language_code", {
             length: 35,
         }),
@@ -2349,25 +2390,38 @@ export const opinionTable = pgTable(
 );
 
 /** @service shared-analysis-worker, import-worker, content-translation-worker */
-export const opinionContentTable = pgTable("opinion_content", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    opinionId: integer("opinion_id")
-        .references(() => opinionTable.id)
-        .notNull(), // used to delete all opinionContent when deleting an opinion
-    conversationContentId: integer("conversation_content_id")
-        .references(() => conversationContentTable.id)
-        .notNull(), // used to cascade delete all opinionContent when deleting a conversation(content)
-    content: varchar("content", { length: MAX_LENGTH_OPINION_HTML }).notNull(),
-    contentPlainText: text("content_plain_text"),
-    sourceLanguageCode: varchar("source_language_code", { length: 35 }),
-    sourceLanguageConfidence: real("source_language_confidence"),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const opinionContentTable = pgTable(
+    "opinion_content",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        opinionId: integer("opinion_id")
+            .references(() => opinionTable.id)
+            .notNull(), // used to delete all opinionContent when deleting an opinion
+        conversationContentId: integer("conversation_content_id")
+            .references(() => conversationContentTable.id)
+            .notNull(), // used to cascade delete all opinionContent when deleting a conversation(content)
+        content: varchar("content", { length: MAX_LENGTH_OPINION_HTML }).notNull(),
+        contentPlainText: text("content_plain_text"),
+        sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
+        sourceRawLanguageCode: varchar("source_raw_language_code", { length: 35 }),
+        sourceLanguageProvider: languageDetectionProviderEnum(
+            "source_language_provider",
+        ),
+        sourceLanguageConfidence: real("source_language_confidence"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        check(
+            "opinion_content_source_metadata_check",
+            sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
+        ),
+    ],
+);
 
 /** @service api, content-translation-worker */
 export const opinionContentTranslationTable = pgTable(
@@ -2380,7 +2434,7 @@ export const opinionContentTranslationTable = pgTable(
         displayLanguageCode:
             displayLanguageCodeEnum("display_language_code").notNull(),
         translatedContent: text("translated_content").notNull(),
-        sourceLanguageCode: languageCodeEnum("source_language_code"),
+        sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
         sourceRawLanguageCode: varchar("source_raw_language_code", {
             length: 35,
         }),

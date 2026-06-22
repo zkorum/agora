@@ -9,7 +9,30 @@ import {
   parseSpokenLanguage,
   SupportedSpokenLanguageMetadataList,
   ZodSupportedDisplayLanguageCodes,
+  ZodSupportedSpokenLanguageCodes,
 } from "src/shared/languages";
+
+type ListedSpokenLanguageCode = Extract<
+  SupportedSpokenLanguageCodes,
+  LanguageMetadata["code"]
+>;
+
+export interface SpokenLanguageMetadata
+  extends Omit<LanguageMetadata, "code"> {
+  code: ListedSpokenLanguageCode;
+}
+
+interface SearchableLanguageMetadata {
+  code: string;
+  name: string;
+  englishName: string;
+}
+
+function isSpokenLanguageMetadata(
+  lang: LanguageMetadata
+): lang is SpokenLanguageMetadata {
+  return ZodSupportedSpokenLanguageCodes.safeParse(lang.code).success;
+}
 
 /**
  * Map app display language codes to concrete BCP 47 locales for Intl formatters.
@@ -55,8 +78,8 @@ export function getDisplayLanguages(): DisplayLanguageMetadata[] {
   );
 }
 
-export function getSpokenLanguages(): LanguageMetadata[] {
-  return SupportedSpokenLanguageMetadataList; // All languages can be spoken languages
+export function getSpokenLanguages(): SpokenLanguageMetadata[] {
+  return SupportedSpokenLanguageMetadataList.filter(isSpokenLanguageMetadata);
 }
 
 /**
@@ -82,24 +105,24 @@ export function parseBrowserLanguage({
 /**
  * Sort languages alphabetically by their English name
  */
-export function sortLanguagesByEnglishName({
+export function sortLanguagesByEnglishName<T extends SearchableLanguageMetadata>({
   langs,
 }: {
-  langs: LanguageMetadata[];
-}): LanguageMetadata[] {
+  langs: T[];
+}): T[] {
   return [...langs].sort((a, b) => a.englishName.localeCompare(b.englishName));
 }
 
 /**
  * Search languages by name (native or English)
  */
-export function searchLanguages({
+export function searchLanguages<T extends SearchableLanguageMetadata>({
   query,
-  langs = SupportedSpokenLanguageMetadataList,
+  langs,
 }: {
   query: string;
-  langs?: LanguageMetadata[];
-}): LanguageMetadata[] {
+  langs: T[];
+}): T[] {
   const lowerQuery = query.toLowerCase();
   return langs.filter(
     (lang) =>

@@ -13,6 +13,7 @@ from valkey import Valkey
 
 from import_worker.config import Settings
 from import_worker.database import create_primary_engine, create_session_factory
+from import_worker.google_language_detection import initialize_google_language_detection_service
 from import_worker.importer import (
     cleanup_stale_imports,
     complete_ready_imports,
@@ -36,6 +37,7 @@ if TYPE_CHECKING:
         ContentTranslationQueueSchedule,
         ImportProcessResult,
     )
+    from import_worker.language_detection import GoogleLanguageDetector
     from import_worker.queue import ImportNotificationEvent, ImportRequest, InvalidImportItem
 
 ANALYSIS_DIRTY_KEY = "analysis:dirty"
@@ -216,11 +218,16 @@ def _process_request(
     *,
     session_factory: sessionmaker[Session],
     request: ImportRequest,
+    google_detector: GoogleLanguageDetector | None,
 ) -> ProcessedImport:
     with session_factory() as session:
         try:
             LOGGER.info("Processing %s import %s", request.type, request.import_slug_id)
-            result = process_import_request(session, request=request)
+            result = process_import_request(
+                session,
+                request=request,
+                google_detector=google_detector,
+            )
             LOGGER.info("Completed %s import %s", request.type, request.import_slug_id)
             return ProcessedImport(result=result, failure_event=None)
         except Exception:
@@ -291,6 +298,19 @@ def _push_ready_import_events(
             push_import_event(vk, event=event)
 
 
+def _create_google_language_detector(settings: Settings) -> GoogleLanguageDetector | None:
+    if settings.google_application_credentials_path is None:
+        LOGGER.info("Import worker Google language detection is not configured")
+        return None
+    return initialize_google_language_detection_service(
+        google_application_credentials_path=settings.google_application_credentials_path,
+        google_cloud_project_id=settings.google_cloud_project_id,
+        google_cloud_translation_location=settings.google_cloud_translation_location,
+        google_cloud_translation_endpoint=settings.google_cloud_translation_endpoint,
+        google_cloud_translation_timeout_seconds=settings.google_cloud_translation_timeout_seconds,
+    )
+
+
 def run_worker(settings: Settings) -> None:
     global _running
 
@@ -322,6 +342,7 @@ def run_worker(settings: Settings) -> None:
 
     LOGGER.info("Import worker PostgreSQL connection verified")
     session_factory = create_session_factory(engine)
+    google_detector = _create_google_language_detector(settings)
     connected_queue = _connect_to_valkey_with_retry(url=str(settings.valkey_url))
     if connected_queue is None:
         engine.dispose()
@@ -402,6 +423,7 @@ def run_worker(settings: Settings) -> None:
                     _process_request,
                     session_factory=session_factory,
                     request=request,
+                    google_detector=google_detector,
                 )
                 for request in batch.requests
             ]

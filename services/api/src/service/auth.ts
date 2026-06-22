@@ -914,7 +914,6 @@ export async function registerWithPhoneNumber({
             });
             await tx.insert(userTable).values({
                 username,
-                firstName: username,
                 id: userId,
             });
             await tx.insert(deviceTable).values({
@@ -966,7 +965,6 @@ export async function createGuestUser({
             const username = await generateUnusedRandomUsername({ db: db });
             await tx.insert(userTable).values({
                 username,
-                firstName: username,
                 id: userId,
             });
             const insertedDevice = await tx
@@ -1031,7 +1029,6 @@ export async function registerWithZKP({
             const username = await generateUnusedRandomUsername({ db: db });
             await tx.insert(userTable).values({
                 username,
-                firstName: username,
                 id: userId,
             });
             await tx.insert(deviceTable).values({
@@ -2886,7 +2883,6 @@ async function registerWithEmail({
             });
             await tx.insert(userTable).values({
                 username,
-                firstName: username,
                 id: userId,
             });
             await tx.insert(deviceTable).values({

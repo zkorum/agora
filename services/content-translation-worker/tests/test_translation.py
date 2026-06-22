@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from content_translation_worker.db import translate_text_for_claim_target
 from content_translation_worker.translation import (
     ContentTranslationProviderError,
     ContentTranslationResult,
@@ -132,7 +133,7 @@ def test_translate_texts_preserves_empty_texts_and_normalizes_target_language() 
     ]
 
 
-def test_translate_texts_lets_google_auto_detect_source_language() -> None:
+def test_translate_texts_passes_known_source_language_to_google() -> None:
     client = FakeTranslationClient()
     service = _service(client)
 
@@ -154,8 +155,63 @@ def test_translate_texts_lets_google_auto_detect_source_language() -> None:
     assert client.calls == [
         CapturedCall(
             contents=["Guten Tag"],
-            source_language_code=None,
+            source_language_code="de",
             target_language_code="fr",
+            model=(
+                "projects/test-project/locations/global/models/"
+                "general/translation-llm"
+            ),
+        )
+    ]
+
+
+def test_translate_texts_uses_opencc_for_chinese_script_conversion() -> None:
+    client = FakeTranslationClient()
+    service = _service(client)
+
+    result = translate_texts(
+        service=service,
+        texts=["汉字"],
+        source_language_code="zh-Hans",
+        target_language_code="zh-Hant",
+        mime_type="text/plain",
+    )
+
+    assert result == [
+        ContentTranslationResult(
+            translated_text="漢字",
+            source_raw_language_code="zh-Hans",
+            source_language_provider=None,
+        )
+    ]
+    assert client.calls == []
+
+
+def test_translate_text_for_claim_target_stores_both_chinese_scripts() -> None:
+    client = FakeTranslationClient()
+    service = _service(client)
+
+    result = translate_text_for_claim_target(
+        translation_service=service,
+        text_value="Hello",
+        source_language_code="en",
+        target_language_code="zh-Hans",
+        mime_type="text/plain",
+    )
+
+    assert [item.display_language_code.value for item in result] == [
+        "zh-Hant",
+        "zh-Hans",
+    ]
+    assert [item.result.translated_text for item in result] == [
+        "translated:Hello",
+        "translated:Hello",
+    ]
+    assert client.calls == [
+        CapturedCall(
+            contents=["Hello"],
+            source_language_code="en",
+            target_language_code="zh-TW",
             model=(
                 "projects/test-project/locations/global/models/"
                 "general/translation-llm"

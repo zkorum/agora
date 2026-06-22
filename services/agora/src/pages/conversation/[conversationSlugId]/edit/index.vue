@@ -9,7 +9,7 @@
           <PrimeButton
             :label="t('saveButton')"
             :loading="isSaveButtonLoading"
-            :disabled="isSaveButtonLoading || !isDataLoaded || !hasUnsavedChanges || isTitleOverLimit || isBodyOverLimit"
+            :disabled="isSaveButtonDisabled"
             @click="onSave()"
           />
         </template>
@@ -52,7 +52,10 @@
         :can-use-analysis-variants-preference="canUseAnalysisVariantsPreference"
         :can-use-dynamic-translation="canUseDynamicTranslation"
         :can-edit-conversation-content="canEditConversationContent"
-        :detected-language-code="detectedLanguageCode"
+        :detected-language-code="visibleDetectedLanguageCode"
+        :detected-source-language-code="visibleDetectedSourceLanguageCode"
+        :detected-raw-language-code="visibleDetectedRawLanguageCode"
+        :auto-detection-status="visibleAutoDetectionStatus"
       />
 
       <ZKCard
@@ -195,6 +198,15 @@ const editPermissions = ref<EditPermissions | null>(null);
 const detectedLanguageCode = ref<
   ConversationLanguageSettingOutput["detectedLanguageCode"]
 >(null);
+const detectedSourceLanguageCode = ref<
+  ConversationLanguageSettingOutput["detectedSourceLanguageCode"]
+>(null);
+const detectedRawLanguageCode = ref<
+  ConversationLanguageSettingOutput["detectedRawLanguageCode"]
+>(null);
+const autoDetectionStatus = ref<
+  ConversationLanguageSettingOutput["autoDetectionStatus"]
+>("not_attempted");
 
 const titleInputRef = ref<HTMLDivElement>();
 
@@ -346,6 +358,49 @@ const {
   updateContent,
   initializeFromData,
 } = useConversationDraft({ syncToStore: false });
+
+const canShowStoredAutoDetection = computed(() => {
+  return (
+    originalState.value.languageSetting.mode === "auto" &&
+    title.value === originalState.value.title &&
+    content.value === originalState.value.content
+  );
+});
+
+const visibleDetectedLanguageCode = computed(() =>
+  canShowStoredAutoDetection.value ? detectedLanguageCode.value : undefined
+);
+const visibleDetectedSourceLanguageCode = computed(() =>
+  canShowStoredAutoDetection.value ? detectedSourceLanguageCode.value : undefined
+);
+const visibleDetectedRawLanguageCode = computed(() =>
+  canShowStoredAutoDetection.value ? detectedRawLanguageCode.value : undefined
+);
+const visibleAutoDetectionStatus = computed(() =>
+  canShowStoredAutoDetection.value ? autoDetectionStatus.value : undefined
+);
+
+const canRetryUnknownAutoDetection = computed(() => {
+  return (
+    canShowStoredAutoDetection.value &&
+    languageSetting.value.mode === "auto" &&
+    autoDetectionStatus.value === "retryable_unknown"
+  );
+});
+
+const canSave = computed(
+  () => hasUnsavedChanges.value || canRetryUnknownAutoDetection.value
+);
+
+const isSaveButtonDisabled = computed(() => {
+  return (
+    isSaveButtonLoading.value ||
+    !isDataLoaded.value ||
+    !canSave.value ||
+    isTitleOverLimit.value ||
+    isBodyOverLimit.value
+  );
+});
 
 async function scrollToTitleInput() {
   await nextTick();
@@ -521,6 +576,10 @@ onMounted(async () => {
       output: response.languageSetting,
     });
     detectedLanguageCode.value = response.languageSetting.detectedLanguageCode;
+    detectedSourceLanguageCode.value =
+      response.languageSetting.detectedSourceLanguageCode;
+    detectedRawLanguageCode.value = response.languageSetting.detectedRawLanguageCode;
+    autoDetectionStatus.value = response.languageSetting.autoDetectionStatus;
 
     initializeFromData({
       title: response.conversationTitle,

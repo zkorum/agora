@@ -832,7 +832,6 @@ export async function registerWithZupass({
         const username = await generateUnusedRandomUsername({ db: db });
         await tx.insert(userTable).values({
             username,
-            firstName: username,
             id: userId,
         });
         await tx.insert(deviceTable).values({

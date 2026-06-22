@@ -1,6 +1,6 @@
 {
-  "id": "d733a181-8187-42dc-8d60-78474f62b759",
-  "prevId": "bbd5db55-2f41-4cb6-a2f2-c48574827d4c",
+  "id": "5eb9526e-ee19-4cba-acd8-3d81d5be6782",
+  "prevId": "c890041b-650e-4aed-84e3-092dd631a887",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1433,7 +1433,20 @@
         },
         "source_language_code": {
           "name": "source_language_code",
+          "type": "spoken_language_code",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_raw_language_code": {
+          "name": "source_raw_language_code",
           "type": "varchar(35)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_provider": {
+          "name": "source_language_provider",
+          "type": "language_detection_provider",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         },
@@ -1470,7 +1483,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "conversation_content_source_metadata_check": {
+          "name": "conversation_content_source_metadata_check",
+          "value": "((\"conversation_content\".\"source_language_provider\" IS NULL AND \"conversation_content\".\"source_raw_language_code\" IS NULL) OR (\"conversation_content\".\"source_language_provider\" IS NOT NULL AND \"conversation_content\".\"source_raw_language_code\" IS NOT NULL))"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.conversation_content_translation": {
@@ -1520,7 +1538,7 @@
         },
         "source_language_code": {
           "name": "source_language_code",
-          "type": "language_code",
+          "type": "spoken_language_code",
           "primaryKey": false,
           "notNull": false
         },
@@ -2669,7 +2687,7 @@
         },
         "detected_source_language_code": {
           "name": "detected_source_language_code",
-          "type": "language_code",
+          "type": "spoken_language_code",
           "primaryKey": false,
           "notNull": false
         },
@@ -2697,6 +2715,13 @@
           "type": "varchar(64)",
           "primaryKey": false,
           "notNull": false
+        },
+        "auto_detection_retryable": {
+          "name": "auto_detection_retryable",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -2744,6 +2769,10 @@
         "conversation_language_setting_manual_language_check": {
           "name": "conversation_language_setting_manual_language_check",
           "value": "(\"conversation_language_setting\".\"mode\" <> 'manual') OR (\"conversation_language_setting\".\"language_code\" IS NOT NULL)"
+        },
+        "conversation_language_setting_detected_raw_provider_check": {
+          "name": "conversation_language_setting_detected_raw_provider_check",
+          "value": "((\"conversation_language_setting\".\"detected_raw_language_provider\" IS NULL AND \"conversation_language_setting\".\"detected_raw_language_code\" IS NULL) OR (\"conversation_language_setting\".\"detected_raw_language_provider\" IS NOT NULL AND \"conversation_language_setting\".\"detected_raw_language_code\" IS NOT NULL))"
         }
       },
       "isRLSEnabled": false
@@ -6054,7 +6083,20 @@
         },
         "source_language_code": {
           "name": "source_language_code",
+          "type": "spoken_language_code",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_raw_language_code": {
+          "name": "source_raw_language_code",
           "type": "varchar(35)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_provider": {
+          "name": "source_language_provider",
+          "type": "language_detection_provider",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         },
@@ -6104,7 +6146,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "opinion_content_source_metadata_check": {
+          "name": "opinion_content_source_metadata_check",
+          "value": "((\"opinion_content\".\"source_language_provider\" IS NULL AND \"opinion_content\".\"source_raw_language_code\" IS NULL) OR (\"opinion_content\".\"source_language_provider\" IS NOT NULL AND \"opinion_content\".\"source_raw_language_code\" IS NOT NULL))"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.opinion_content_translation": {
@@ -6148,7 +6195,7 @@
         },
         "source_language_code": {
           "name": "source_language_code",
-          "type": "language_code",
+          "type": "spoken_language_code",
           "primaryKey": false,
           "notNull": false
         },
@@ -10924,7 +10971,20 @@
         },
         "source_language_code": {
           "name": "source_language_code",
+          "type": "spoken_language_code",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_raw_language_code": {
+          "name": "source_raw_language_code",
           "type": "varchar(35)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_provider": {
+          "name": "source_language_provider",
+          "type": "language_detection_provider",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         },
@@ -10961,7 +11021,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "survey_question_content_source_metadata_check": {
+          "name": "survey_question_content_source_metadata_check",
+          "value": "((\"survey_question_content\".\"source_language_provider\" IS NULL AND \"survey_question_content\".\"source_raw_language_code\" IS NULL) OR (\"survey_question_content\".\"source_language_provider\" IS NOT NULL AND \"survey_question_content\".\"source_raw_language_code\" IS NOT NULL))"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.survey_question_content_translation": {
@@ -11005,7 +11070,7 @@
         },
         "source_language_code": {
           "name": "source_language_code",
-          "type": "language_code",
+          "type": "spoken_language_code",
           "primaryKey": false,
           "notNull": false
         },
@@ -11114,7 +11179,20 @@
         },
         "source_language_code": {
           "name": "source_language_code",
+          "type": "spoken_language_code",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_raw_language_code": {
+          "name": "source_raw_language_code",
           "type": "varchar(35)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language_provider": {
+          "name": "source_language_provider",
+          "type": "language_detection_provider",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         },
@@ -11151,7 +11229,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "survey_question_option_content_source_metadata_check": {
+          "name": "survey_question_option_content_source_metadata_check",
+          "value": "((\"survey_question_option_content\".\"source_language_provider\" IS NULL AND \"survey_question_option_content\".\"source_raw_language_code\" IS NULL) OR (\"survey_question_option_content\".\"source_language_provider\" IS NOT NULL AND \"survey_question_option_content\".\"source_raw_language_code\" IS NOT NULL))"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.survey_question_option_content_translation": {
@@ -11195,7 +11278,7 @@
         },
         "source_language_code": {
           "name": "source_language_code",
-          "type": "language_code",
+          "type": "spoken_language_code",
           "primaryKey": false,
           "notNull": false
         },
@@ -12125,12 +12208,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "first_name": {
-          "name": "first_name",
-          "type": "varchar(65)",
-          "primaryKey": false,
-          "notNull": true
-        },
         "is_site_moderator": {
           "name": "is_site_moderator",
           "type": "boolean",
@@ -12886,93 +12963,6 @@
         "failed"
       ]
     },
-    "public.language_code": {
-      "name": "language_code",
-      "schema": "public",
-      "values": [
-        "en",
-        "es",
-        "fr",
-        "en-GB",
-        "ar",
-        "bn",
-        "eu",
-        "bg",
-        "ca",
-        "hr",
-        "cs",
-        "da",
-        "nl",
-        "fil",
-        "fi",
-        "gl",
-        "de",
-        "el",
-        "gu",
-        "he",
-        "hi",
-        "hu",
-        "id",
-        "ga",
-        "it",
-        "ja",
-        "kn",
-        "ko",
-        "ky",
-        "ms",
-        "mr",
-        "no",
-        "fa",
-        "pl",
-        "pt",
-        "ro",
-        "ru",
-        "sr",
-        "sk",
-        "sv",
-        "ta",
-        "th",
-        "tr",
-        "uk",
-        "ur",
-        "vi",
-        "zh-Hans",
-        "zh-Hant",
-        "af",
-        "sq",
-        "hy",
-        "az",
-        "be",
-        "nb",
-        "bs",
-        "eo",
-        "et",
-        "lg",
-        "ka",
-        "is",
-        "kk",
-        "la",
-        "lv",
-        "lt",
-        "mk",
-        "mi",
-        "mn",
-        "nn",
-        "pa",
-        "sn",
-        "sl",
-        "so",
-        "st",
-        "sw",
-        "te",
-        "ts",
-        "tn",
-        "cy",
-        "xh",
-        "yo",
-        "zu"
-      ]
-    },
     "public.language_detection_provider": {
       "name": "language_detection_provider",
       "schema": "public",
@@ -13378,54 +13368,142 @@
       "name": "spoken_language_code",
       "schema": "public",
       "values": [
-        "en",
-        "es",
-        "fr",
-        "en-GB",
+        "af",
+        "ak",
+        "am",
         "ar",
-        "bn",
-        "eu",
+        "as",
+        "ay",
+        "az",
+        "be",
         "bg",
+        "bho",
+        "bm",
+        "bn",
+        "bs",
         "ca",
-        "hr",
+        "ceb",
+        "ckb",
+        "co",
         "cs",
+        "cy",
         "da",
-        "nl",
-        "fil",
-        "fi",
-        "gl",
         "de",
+        "doi",
+        "dv",
+        "ee",
         "el",
+        "en",
+        "eo",
+        "es",
+        "et",
+        "eu",
+        "fa",
+        "fi",
+        "fil",
+        "fr",
+        "fy",
+        "ga",
+        "gd",
+        "gl",
+        "gn",
+        "gom",
         "gu",
+        "ha",
+        "haw",
         "he",
         "hi",
+        "hmn",
+        "hr",
+        "ht",
         "hu",
+        "hy",
         "id",
-        "ga",
+        "ig",
+        "ilo",
+        "is",
         "it",
         "ja",
+        "jv",
+        "ka",
+        "kk",
+        "km",
         "kn",
         "ko",
+        "kri",
+        "ku",
         "ky",
-        "ms",
+        "la",
+        "lb",
+        "lg",
+        "ln",
+        "lo",
+        "lt",
+        "lus",
+        "lv",
+        "mai",
+        "mg",
+        "mi",
+        "mk",
+        "ml",
+        "mn",
+        "mni-Mtei",
         "mr",
+        "ms",
+        "mt",
+        "my",
+        "nb",
+        "ne",
+        "nl",
+        "nn",
         "no",
-        "fa",
+        "nso",
+        "ny",
+        "om",
+        "or",
+        "pa",
         "pl",
+        "ps",
         "pt",
+        "qu",
         "ro",
         "ru",
-        "sr",
+        "rw",
+        "sa",
+        "sd",
+        "si",
         "sk",
+        "sl",
+        "sm",
+        "sn",
+        "so",
+        "sq",
+        "sr",
+        "st",
+        "su",
         "sv",
+        "sw",
         "ta",
+        "te",
+        "tg",
         "th",
+        "ti",
+        "tk",
+        "tn",
         "tr",
+        "ts",
+        "tt",
+        "ug",
         "uk",
         "ur",
+        "uz",
         "vi",
+        "xh",
+        "yi",
+        "yo",
         "zh-Hans",
-        "zh-Hant"
+        "zh-Hant",
+        "zu"
       ]
     },
     "public.survey_aggregate_scope_enum": {

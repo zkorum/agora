@@ -4,6 +4,7 @@ import json
 import logging
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from importlib import import_module
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, TypeGuard
 
@@ -45,6 +46,11 @@ DISPLAY_LANGUAGE_TO_GOOGLE_CODE = {
 log = logging.getLogger(__name__)
 GOOGLE_TRANSLATE_MAX_TEXT_CODEPOINTS = 1024
 GOOGLE_TRANSLATE_MAX_REQUEST_CODEPOINTS = 25_000
+CANONICAL_CHINESE_TRANSLATION_TARGET = "zh-Hant"
+SIMPLIFIED_CHINESE_TRANSLATION_TARGET = "zh-Hans"
+CHINESE_TRANSLATION_TARGETS = frozenset(
+    {CANONICAL_CHINESE_TRANSLATION_TARGET, SIMPLIFIED_CHINESE_TRANSLATION_TARGET}
+)
 
 
 class DescriptionTranslationError(RuntimeError):
@@ -91,6 +97,13 @@ class SecretsManagerClient(Protocol):
 
 class GoogleCredentialsFactory(Protocol):
     def from_service_account_info(self, info: dict[str, object]) -> Credentials: ...
+
+
+class OpenCcConverter(Protocol):
+    def convert(self, text: str) -> str: ...
+
+
+_traditional_to_simplified_converter: OpenCcConverter | None = None
 
 
 @dataclass(frozen=True)
@@ -204,7 +217,9 @@ def generate_description_translations(
 ) -> list[DescriptionTranslation]:
     translations: list[DescriptionTranslation] = []
     description_ids = [description.description_id for description in descriptions]
-    for target_language_code in target_language_codes:
+    for target_language_code in description_translation_provider_targets(
+        target_language_codes
+    ):
         if _should_skip_translation(
             source_language_code=SOURCE_LANGUAGE,
             target_language_code=target_language_code,
@@ -240,7 +255,7 @@ def generate_description_translations(
                 strict=True,
             )
         )
-    return translations
+    return add_chinese_script_sibling_translations(translations)
 
 
 def generate_description_translations_with_bedrock(
@@ -256,7 +271,9 @@ def generate_description_translations_with_bedrock(
         read_timeout_seconds=config.read_timeout_seconds,
     )
     translations: list[DescriptionTranslation] = []
-    for target_language_code in target_language_codes:
+    for target_language_code in description_translation_provider_targets(
+        target_language_codes
+    ):
         if _should_skip_translation(
             source_language_code=SOURCE_LANGUAGE,
             target_language_code=target_language_code,
@@ -309,7 +326,53 @@ def generate_description_translations_with_bedrock(
             _description_translations_json(parsed_translations),
         )
         translations.extend(parsed_translations)
-    return translations
+    return add_chinese_script_sibling_translations(translations)
+
+
+def description_translation_provider_targets(
+    target_language_codes: Sequence[str],
+) -> list[str]:
+    targets: list[str] = []
+    seen_targets: set[str] = set()
+    for target_language_code in target_language_codes:
+        provider_target = (
+            CANONICAL_CHINESE_TRANSLATION_TARGET
+            if target_language_code in CHINESE_TRANSLATION_TARGETS
+            else target_language_code
+        )
+        if provider_target not in seen_targets:
+            targets.append(provider_target)
+            seen_targets.add(provider_target)
+    return targets
+
+
+def description_translation_output_locales(provider_target_language_code: str) -> list[str]:
+    if provider_target_language_code == CANONICAL_CHINESE_TRANSLATION_TARGET:
+        return [
+            CANONICAL_CHINESE_TRANSLATION_TARGET,
+            SIMPLIFIED_CHINESE_TRANSLATION_TARGET,
+        ]
+    return [provider_target_language_code]
+
+
+def add_chinese_script_sibling_translations(
+    translations: list[DescriptionTranslation],
+) -> list[DescriptionTranslation]:
+    translation_by_key: dict[tuple[int, str], DescriptionTranslation] = {}
+    for translation in translations:
+        translation_by_key.setdefault((translation.description_id, translation.locale), translation)
+        if translation.locale != CANONICAL_CHINESE_TRANSLATION_TARGET:
+            continue
+        translation_by_key.setdefault(
+            (translation.description_id, SIMPLIFIED_CHINESE_TRANSLATION_TARGET),
+            DescriptionTranslation(
+                description_id=translation.description_id,
+                locale=SIMPLIFIED_CHINESE_TRANSLATION_TARGET,
+                label=_traditional_to_simplified(translation.label),
+                summary=_traditional_to_simplified(translation.summary),
+            ),
+        )
+    return list(translation_by_key.values())
 
 
 def build_bedrock_translation_converse_payload(
@@ -742,6 +805,23 @@ def _normalize_target_language_code_for_google(language_code: str) -> str:
     )
 
 
+def _traditional_to_simplified(text: str) -> str:
+    return _get_traditional_to_simplified_converter().convert(text)
+
+
+def _get_traditional_to_simplified_converter() -> OpenCcConverter:
+    global _traditional_to_simplified_converter
+
+    if _traditional_to_simplified_converter is None:
+        opencc = import_module("opencc")
+        converter: object = opencc.OpenCC("tw2s")
+        if not _is_opencc_converter(converter):
+            msg = "OpenCC converter does not expose convert()"
+            raise DescriptionTranslationError(msg)
+        _traditional_to_simplified_converter = converter
+    return _traditional_to_simplified_converter
+
+
 def _language_comparison_key(language_code: str) -> str:
     normalized = _normalize_source_language_code_for_google(language_code)
     if normalized in {"zh-CN", "zh-TW"}:
@@ -771,6 +851,10 @@ def _is_secrets_manager_client(value: object) -> TypeGuard[SecretsManagerClient]
 
 def _is_google_credentials_factory(value: object) -> TypeGuard[GoogleCredentialsFactory]:
     return callable(getattr(value, "from_service_account_info", None))
+
+
+def _is_opencc_converter(value: object) -> TypeGuard[OpenCcConverter]:
+    return callable(getattr(value, "convert", None))
 
 
 def _is_string_key_mapping(value: object) -> TypeGuard[dict[str, object]]:

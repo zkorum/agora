@@ -96,10 +96,12 @@ import {
 } from "@/shared/languages.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import {
+    contentLanguageMetadataUpdateValues,
     getContentLanguageHintsForConversation,
     resolveContentLanguageMetadata,
 } from "./contentLanguageMetadata.js";
 import type { LanguageDetectionHintInput } from "./languageDetection.js";
+import { getConversationMultilingualSetting } from "./conversationMultilingual.js";
 
 interface PrimaryReplicaDb extends PostgresJsDatabase {
     $primary: PostgresJsDatabase;
@@ -2312,6 +2314,7 @@ interface PostNewOpinionProps {
     now: Date;
     isSeed: boolean;
     googleCloudCredentials?: GoogleCloudCredentials;
+    useGoogleLanguageDetection?: boolean;
     languageHints?: readonly LanguageDetectionHintInput[];
     voteBuffer?: VoteBuffer;
     realtimeSSEManager?: RealtimeSSEManager;
@@ -2338,6 +2341,7 @@ export async function postNewOpinion({
     now,
     isSeed,
     googleCloudCredentials,
+    useGoogleLanguageDetection,
     languageHints,
     voteBuffer,
     realtimeSSEManager,
@@ -2422,9 +2426,18 @@ export async function postNewOpinion({
             db,
             conversationId: participationContext.conversationId,
         }));
+    const resolvedUseGoogleLanguageDetection =
+        useGoogleLanguageDetection ??
+        (
+            await getConversationMultilingualSetting({
+                db,
+                conversationId: participationContext.conversationId,
+            })
+        ).dynamicTranslationEnabled;
     const languageMetadata = await resolveContentLanguageMetadata({
         text: contentPlainText,
         googleCloudCredentials,
+        useGoogleLanguageDetection: resolvedUseGoogleLanguageDetection,
         languageHints: resolvedLanguageHints,
     });
 
@@ -2462,9 +2475,7 @@ export async function postNewOpinion({
                     participationContext.conversationContentId,
                 content: commentBody,
                 contentPlainText,
-                sourceLanguageCode: languageMetadata.sourceLanguageCode,
-                sourceLanguageConfidence:
-                    languageMetadata.sourceLanguageConfidence,
+                ...contentLanguageMetadataUpdateValues(languageMetadata),
             })
             .returning({ commentContentTableId: opinionContentTable.id });
 

@@ -301,8 +301,8 @@ function createConversation({
         detectedLanguageCode: null,
         detectedSourceLanguageCode: null,
         detectedRawLanguageCode: null,
-        detectedRawLanguageProvider: null,
         detectionConfidence: null,
+        autoDetectionStatus: "not_attempted",
       },
       multilingualSetting: {
         additionalLanguageCodes: [],

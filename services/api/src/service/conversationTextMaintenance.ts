@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, isNull, or, sql } from "drizzle-orm";
+import { and, asc, eq, gt, isNotNull, isNull, or, sql } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { log } from "@/app.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
@@ -7,6 +7,11 @@ import {
     conversationLanguageSettingTable,
     conversationTable,
     opinionContentTable,
+    opinionTable,
+    surveyQuestionContentTable,
+    surveyQuestionOptionContentTable,
+    surveyQuestionOptionTable,
+    surveyQuestionTable,
 } from "@/shared-backend/schema.js";
 import {
     htmlToCountedText,
@@ -15,13 +20,103 @@ import {
     MAX_LENGTH_CONVERSATION_BODY_HTML,
 } from "@/shared/shared.js";
 import {
+    buildConversationLanguageDetectionCorpus,
+    buildGoogleConversationLanguageDetectionCorpus,
     normalizeConversationLanguageSettingRow,
     resolveConversationLanguageSetting,
+    type StoredConversationLanguageSetting,
     upsertConversationLanguageSetting,
 } from "./conversationLanguage.js";
+import {
+    contentLanguageMetadataUpdateValues,
+    getContentItemLanguageHints,
+    type ContentLanguageMetadata,
+    resolveContentLanguageMetadata,
+} from "./contentLanguageMetadata.js";
 
 const PLAIN_TEXT_BACKFILL_BATCH_SIZE = 500;
 const LANGUAGE_BACKFILL_BATCH_SIZE = 100;
+
+const backfillLanguageSettingSelect = {
+    settingMode: conversationLanguageSettingTable.mode,
+    languageCode: conversationLanguageSettingTable.languageCode,
+    detectedLanguageCode: conversationLanguageSettingTable.detectedLanguageCode,
+    detectedSourceLanguageCode:
+        conversationLanguageSettingTable.detectedSourceLanguageCode,
+    detectedRawLanguageCode:
+        conversationLanguageSettingTable.detectedRawLanguageCode,
+    detectedRawLanguageProvider:
+        conversationLanguageSettingTable.detectedRawLanguageProvider,
+    detectionConfidence: conversationLanguageSettingTable.detectionConfidence,
+    detectedFromCorpusHash: conversationLanguageSettingTable.detectedFromCorpusHash,
+    autoDetectionRetryable:
+        conversationLanguageSettingTable.autoDetectionRetryable,
+};
+
+interface BackfillLanguageSettingRow {
+    settingMode: "auto" | "manual" | null;
+    languageCode: string | null;
+    detectedLanguageCode: string | null;
+    detectedSourceLanguageCode: string | null;
+    detectedRawLanguageCode: string | null;
+    detectedRawLanguageProvider: StoredConversationLanguageSetting["detectedRawLanguageProvider"];
+    detectionConfidence: number | null;
+    detectedFromCorpusHash: string | null;
+    autoDetectionRetryable: boolean | null;
+}
+
+function normalizeBackfillLanguageSetting({
+    row,
+}: {
+    row: BackfillLanguageSettingRow;
+}): StoredConversationLanguageSetting | undefined {
+    return normalizeConversationLanguageSettingRow(
+        row.settingMode === null
+            ? undefined
+            : {
+                  mode: row.settingMode,
+                  languageCode: row.languageCode,
+                  detectedLanguageCode: row.detectedLanguageCode,
+                  detectedSourceLanguageCode: row.detectedSourceLanguageCode,
+                  detectedRawLanguageCode: row.detectedRawLanguageCode,
+                  detectedRawLanguageProvider: row.detectedRawLanguageProvider,
+                  detectionConfidence: row.detectionConfidence,
+                  detectedFromCorpusHash: row.detectedFromCorpusHash,
+                  autoDetectionRetryable: row.autoDetectionRetryable ?? false,
+              },
+    );
+}
+
+function getBackfillContentItemLanguageHints({
+    row,
+}: {
+    row: BackfillLanguageSettingRow;
+}) {
+    const languageSetting = normalizeBackfillLanguageSetting({ row });
+    if (languageSetting === undefined) {
+        return [];
+    }
+    return getContentItemLanguageHints({
+        languageSetting,
+        additionalLanguageCodes: [],
+    });
+}
+
+function backfillSourceLanguageUpdateValues({
+    metadata,
+}: {
+    metadata: ContentLanguageMetadata;
+}): ContentLanguageMetadata {
+    if (metadata.sourceLanguageCode !== null) {
+        return metadata;
+    }
+    return {
+        sourceLanguageCode: null,
+        sourceRawLanguageCode: metadata.sourceRawLanguageCode,
+        sourceLanguageProvider: metadata.sourceLanguageProvider,
+        sourceLanguageConfidence: 0,
+    };
+}
 
 export function logActiveConversationBodyLimits(): void {
     log.info(
@@ -177,15 +272,14 @@ async function backfillConversationLanguageSettings({
     db: PostgresDatabase;
     googleCloudCredentials: GoogleCloudCredentials | undefined;
 }): Promise<number> {
-    if (googleCloudCredentials === undefined) {
-        log.info(
-            "[ConversationLanguageBackfill] Skipped because Google Cloud Translation is not configured",
-        );
-        return 0;
-    }
-
     let totalUpdated = 0;
     let lastConversationId = 0;
+    log.info(
+        {
+            googleCloudTranslationConfigured: googleCloudCredentials !== undefined,
+        },
+        "[ConversationLanguageBackfill] Starting conversation language backfill",
+    );
 
     for (;;) {
         const rows = await db
@@ -194,21 +288,7 @@ async function backfillConversationLanguageSettings({
                 conversationContentId: conversationContentTable.id,
                 title: conversationContentTable.title,
                 bodyPlainText: conversationContentTable.bodyPlainText,
-                settingId: conversationLanguageSettingTable.id,
-                settingMode: conversationLanguageSettingTable.mode,
-                languageCode: conversationLanguageSettingTable.languageCode,
-                detectedLanguageCode:
-                    conversationLanguageSettingTable.detectedLanguageCode,
-                detectedSourceLanguageCode:
-                    conversationLanguageSettingTable.detectedSourceLanguageCode,
-                detectedRawLanguageCode:
-                    conversationLanguageSettingTable.detectedRawLanguageCode,
-                detectedRawLanguageProvider:
-                    conversationLanguageSettingTable.detectedRawLanguageProvider,
-                detectionConfidence:
-                    conversationLanguageSettingTable.detectionConfidence,
-                detectedFromCorpusHash:
-                    conversationLanguageSettingTable.detectedFromCorpusHash,
+                ...backfillLanguageSettingSelect,
             })
             .from(conversationTable)
             .innerJoin(
@@ -243,22 +323,7 @@ async function backfillConversationLanguageSettings({
 
         for (const row of rows) {
             lastConversationId = row.conversationId;
-            const existing = normalizeConversationLanguageSettingRow(
-                row.settingMode === null
-                    ? undefined
-                    : {
-                          mode: row.settingMode,
-                          languageCode: row.languageCode,
-                          detectedLanguageCode: row.detectedLanguageCode,
-                          detectedSourceLanguageCode:
-                              row.detectedSourceLanguageCode,
-                          detectedRawLanguageCode: row.detectedRawLanguageCode,
-                          detectedRawLanguageProvider:
-                              row.detectedRawLanguageProvider,
-                          detectionConfidence: row.detectionConfidence,
-                          detectedFromCorpusHash: row.detectedFromCorpusHash,
-                      },
-            );
+            const existing = normalizeBackfillLanguageSetting({ row });
             const setting = await resolveConversationLanguageSetting({
                 request: { mode: "auto" },
                 existing,
@@ -273,13 +338,6 @@ async function backfillConversationLanguageSettings({
                 setting,
                 now: new Date(),
             });
-            await db
-                .update(conversationContentTable)
-                .set({
-                    sourceLanguageCode: setting.detectedSourceLanguageCode,
-                    sourceLanguageConfidence: setting.detectionConfidence,
-                })
-                .where(eq(conversationContentTable.id, row.conversationContentId));
         }
 
         totalUpdated += rows.length;
@@ -288,6 +346,328 @@ async function backfillConversationLanguageSettings({
             "[ConversationLanguageBackfill] Backfilled conversation language batch",
         );
     }
+}
+
+async function backfillConversationContentSourceLanguages({
+    db,
+}: {
+    db: PostgresDatabase;
+}): Promise<number> {
+    let totalUpdated = 0;
+    let lastContentId = 0;
+
+    for (;;) {
+        const rows = await db
+            .select({
+                contentId: conversationContentTable.id,
+                title: conversationContentTable.title,
+                bodyPlainText: conversationContentTable.bodyPlainText,
+                ...backfillLanguageSettingSelect,
+            })
+            .from(conversationTable)
+            .innerJoin(
+                conversationContentTable,
+                eq(
+                    conversationTable.currentContentId,
+                    conversationContentTable.id,
+                ),
+            )
+            .leftJoin(
+                conversationLanguageSettingTable,
+                eq(
+                    conversationLanguageSettingTable.conversationId,
+                    conversationTable.id,
+                ),
+            )
+            .where(
+                and(
+                    gt(conversationContentTable.id, lastContentId),
+                    isNull(conversationContentTable.sourceLanguageCode),
+                    isNull(conversationContentTable.sourceLanguageConfidence),
+                ),
+            )
+            .orderBy(asc(conversationContentTable.id))
+            .limit(LANGUAGE_BACKFILL_BATCH_SIZE);
+
+        if (rows.length === 0) {
+            return totalUpdated;
+        }
+
+        for (const row of rows) {
+            lastContentId = row.contentId;
+            const bodyPlainText = row.bodyPlainText ?? "";
+            const sourceLanguageMetadata = backfillSourceLanguageUpdateValues({
+                metadata: await resolveContentLanguageMetadata({
+                    text: buildConversationLanguageDetectionCorpus({
+                        conversationTitle: row.title,
+                        bodyPlainText,
+                    }),
+                    googleText: buildGoogleConversationLanguageDetectionCorpus({
+                        conversationTitle: row.title,
+                        bodyPlainText,
+                    }),
+                    googleCloudCredentials: undefined,
+                    useGoogleLanguageDetection: false,
+                    languageHints: getBackfillContentItemLanguageHints({ row }),
+                }),
+            });
+
+            await db
+                .update(conversationContentTable)
+                .set(contentLanguageMetadataUpdateValues(sourceLanguageMetadata))
+                .where(eq(conversationContentTable.id, row.contentId));
+        }
+
+        totalUpdated += rows.length;
+        log.info(
+            { batchUpdated: rows.length, totalUpdated },
+            "[ContentLanguageBackfill] Backfilled conversation source language batch",
+        );
+    }
+}
+
+async function backfillSurveyQuestionSourceLanguages({
+    db,
+}: {
+    db: PostgresDatabase;
+}): Promise<number> {
+    let totalUpdated = 0;
+    let lastContentId = 0;
+
+    for (;;) {
+        const rows = await db
+            .select({
+                contentId: surveyQuestionContentTable.id,
+                questionText: surveyQuestionContentTable.questionText,
+                ...backfillLanguageSettingSelect,
+            })
+            .from(surveyQuestionTable)
+            .innerJoin(
+                surveyQuestionContentTable,
+                eq(
+                    surveyQuestionContentTable.id,
+                    surveyQuestionTable.currentContentId,
+                ),
+            )
+            .leftJoin(
+                conversationLanguageSettingTable,
+                eq(
+                    conversationLanguageSettingTable.conversationId,
+                    surveyQuestionTable.conversationId,
+                ),
+            )
+            .where(
+                and(
+                    gt(surveyQuestionContentTable.id, lastContentId),
+                    isNotNull(surveyQuestionTable.currentContentId),
+                    isNull(surveyQuestionContentTable.sourceLanguageCode),
+                    isNull(surveyQuestionContentTable.sourceLanguageConfidence),
+                ),
+            )
+            .orderBy(asc(surveyQuestionContentTable.id))
+            .limit(LANGUAGE_BACKFILL_BATCH_SIZE);
+
+        if (rows.length === 0) {
+            return totalUpdated;
+        }
+
+        for (const row of rows) {
+            lastContentId = row.contentId;
+            const sourceLanguageMetadata = backfillSourceLanguageUpdateValues({
+                metadata: await resolveContentLanguageMetadata({
+                    text: row.questionText,
+                    googleCloudCredentials: undefined,
+                    useGoogleLanguageDetection: false,
+                    languageHints: getBackfillContentItemLanguageHints({ row }),
+                }),
+            });
+
+            await db
+                .update(surveyQuestionContentTable)
+                .set(contentLanguageMetadataUpdateValues(sourceLanguageMetadata))
+                .where(eq(surveyQuestionContentTable.id, row.contentId));
+        }
+
+        totalUpdated += rows.length;
+        log.info(
+            { batchUpdated: rows.length, totalUpdated },
+            "[ContentLanguageBackfill] Backfilled survey question source language batch",
+        );
+    }
+}
+
+async function backfillSurveyOptionSourceLanguages({
+    db,
+}: {
+    db: PostgresDatabase;
+}): Promise<number> {
+    let totalUpdated = 0;
+    let lastContentId = 0;
+
+    for (;;) {
+        const rows = await db
+            .select({
+                contentId: surveyQuestionOptionContentTable.id,
+                optionText: surveyQuestionOptionContentTable.optionText,
+                ...backfillLanguageSettingSelect,
+            })
+            .from(surveyQuestionOptionTable)
+            .innerJoin(
+                surveyQuestionOptionContentTable,
+                eq(
+                    surveyQuestionOptionContentTable.id,
+                    surveyQuestionOptionTable.currentContentId,
+                ),
+            )
+            .innerJoin(
+                surveyQuestionTable,
+                eq(
+                    surveyQuestionTable.id,
+                    surveyQuestionOptionTable.surveyQuestionId,
+                ),
+            )
+            .leftJoin(
+                conversationLanguageSettingTable,
+                eq(
+                    conversationLanguageSettingTable.conversationId,
+                    surveyQuestionTable.conversationId,
+                ),
+            )
+            .where(
+                and(
+                    gt(surveyQuestionOptionContentTable.id, lastContentId),
+                    isNotNull(surveyQuestionOptionTable.currentContentId),
+                    isNull(surveyQuestionOptionContentTable.sourceLanguageCode),
+                    isNull(
+                        surveyQuestionOptionContentTable.sourceLanguageConfidence,
+                    ),
+                ),
+            )
+            .orderBy(asc(surveyQuestionOptionContentTable.id))
+            .limit(LANGUAGE_BACKFILL_BATCH_SIZE);
+
+        if (rows.length === 0) {
+            return totalUpdated;
+        }
+
+        for (const row of rows) {
+            lastContentId = row.contentId;
+            const sourceLanguageMetadata = backfillSourceLanguageUpdateValues({
+                metadata: await resolveContentLanguageMetadata({
+                    text: row.optionText,
+                    googleCloudCredentials: undefined,
+                    useGoogleLanguageDetection: false,
+                    languageHints: getBackfillContentItemLanguageHints({ row }),
+                }),
+            });
+
+            await db
+                .update(surveyQuestionOptionContentTable)
+                .set(contentLanguageMetadataUpdateValues(sourceLanguageMetadata))
+                .where(eq(surveyQuestionOptionContentTable.id, row.contentId));
+        }
+
+        totalUpdated += rows.length;
+        log.info(
+            { batchUpdated: rows.length, totalUpdated },
+            "[ContentLanguageBackfill] Backfilled survey option source language batch",
+        );
+    }
+}
+
+async function backfillOpinionSourceLanguages({
+    db,
+}: {
+    db: PostgresDatabase;
+}): Promise<number> {
+    let totalUpdated = 0;
+    let lastContentId = 0;
+
+    for (;;) {
+        const rows = await db
+            .select({
+                contentId: opinionContentTable.id,
+                content: opinionContentTable.content,
+                contentPlainText: opinionContentTable.contentPlainText,
+                ...backfillLanguageSettingSelect,
+            })
+            .from(opinionTable)
+            .innerJoin(
+                opinionContentTable,
+                eq(opinionContentTable.id, opinionTable.currentContentId),
+            )
+            .leftJoin(
+                conversationLanguageSettingTable,
+                eq(
+                    conversationLanguageSettingTable.conversationId,
+                    opinionTable.conversationId,
+                ),
+            )
+            .where(
+                and(
+                    gt(opinionContentTable.id, lastContentId),
+                    isNotNull(opinionTable.currentContentId),
+                    isNull(opinionContentTable.sourceLanguageCode),
+                    isNull(opinionContentTable.sourceLanguageConfidence),
+                ),
+            )
+            .orderBy(asc(opinionContentTable.id))
+            .limit(LANGUAGE_BACKFILL_BATCH_SIZE);
+
+        if (rows.length === 0) {
+            return totalUpdated;
+        }
+
+        for (const row of rows) {
+            lastContentId = row.contentId;
+            const sourceLanguageMetadata = backfillSourceLanguageUpdateValues({
+                metadata: await resolveContentLanguageMetadata({
+                    text: row.contentPlainText ?? htmlToCountedText(row.content),
+                    googleCloudCredentials: undefined,
+                    useGoogleLanguageDetection: false,
+                    languageHints: getBackfillContentItemLanguageHints({ row }),
+                }),
+            });
+
+            await db
+                .update(opinionContentTable)
+                .set(contentLanguageMetadataUpdateValues(sourceLanguageMetadata))
+                .where(eq(opinionContentTable.id, row.contentId));
+        }
+
+        totalUpdated += rows.length;
+        log.info(
+            { batchUpdated: rows.length, totalUpdated },
+            "[ContentLanguageBackfill] Backfilled opinion source language batch",
+        );
+    }
+}
+
+async function backfillContentTranslationSourceLanguages({
+    db,
+}: {
+    db: PostgresDatabase;
+}): Promise<{
+    conversationUpdated: number;
+    surveyQuestionUpdated: number;
+    surveyOptionUpdated: number;
+    opinionUpdated: number;
+}> {
+    const conversationUpdated = await backfillConversationContentSourceLanguages({
+        db,
+    });
+    const surveyQuestionUpdated = await backfillSurveyQuestionSourceLanguages({
+        db,
+    });
+    const surveyOptionUpdated = await backfillSurveyOptionSourceLanguages({ db });
+    const opinionUpdated = await backfillOpinionSourceLanguages({ db });
+
+    return {
+        conversationUpdated,
+        surveyQuestionUpdated,
+        surveyOptionUpdated,
+        opinionUpdated,
+    };
 }
 
 export async function backfillConversationContentMetadata({
@@ -304,6 +684,8 @@ export async function backfillConversationContentMetadata({
             db,
             googleCloudCredentials,
         });
+        const sourceLanguageUpdated =
+            await backfillContentTranslationSourceLanguages({ db });
         const [remainingWithoutLanguageSetting] = await db
             .select({ count: sql<number>`count(*)::int` })
             .from(conversationTable)
@@ -319,6 +701,7 @@ export async function backfillConversationContentMetadata({
         log.info(
             {
                 languageUpdated,
+                sourceLanguageUpdated,
                 remainingWithoutLanguageSetting:
                     remainingWithoutLanguageSetting.count,
             },

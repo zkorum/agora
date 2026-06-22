@@ -49,7 +49,9 @@ from import_worker.language_detection import (
     ADDITIONAL_LANGUAGE_HINT_WEIGHT,
     AUTO_MAIN_LANGUAGE_HINT_WEIGHT,
     MANUAL_MAIN_LANGUAGE_HINT_WEIGHT,
+    GoogleLanguageDetector,
     SourceLanguageHint,
+    SourceLanguageMetadata,
     detect_source_language,
 )
 from import_worker.polis_url import extract_polis_id_from_url
@@ -227,6 +229,15 @@ def _timestamp_from_polis(value: int | float | None) -> datetime | None:
     return datetime.fromtimestamp(value / 1000, UTC).replace(tzinfo=None)
 
 
+def _display_language_code_or_none(language_code: str | None) -> str | None:
+    if language_code is None:
+        return None
+    try:
+        return DisplayLanguageCode(language_code).value
+    except ValueError:
+        return None
+
+
 def _build_imported_polis_conversation(request: ImportRequest) -> tuple[ImportPolisResults, str]:
     if request.type == "csv":
         return build_import_from_csv(request.files.model_dump(by_alias=True)), "csv"
@@ -282,6 +293,7 @@ def _create_conversation(
     request: ImportRequest,
     imported: ImportPolisResults,
     polis_url_type: str,
+    google_detector: GoogleLanguageDetector | None,
 ) -> ConversationIds:
     conversation_url, report_url = _conversation_urls(
         request=request,
@@ -322,6 +334,7 @@ def _create_conversation(
     )
     detected_language_metadata = detect_source_language(
         f"{title}\n{body_plain_text}",
+        google_detector=google_detector,
         language_hints=block_language_hints,
     )
     content_source_language_code = detected_language_metadata.language_code
@@ -396,6 +409,8 @@ def _create_conversation(
             body=body,
             body_plain_text=body_plain_text,
             source_language_code=content_source_language_code,
+            source_raw_language_code=detected_language_metadata.raw_language_code,
+            source_language_provider=detected_language_metadata.provider,
             source_language_confidence=content_source_language_confidence,
         )
         .returning(ConversationContent.id),
@@ -414,8 +429,12 @@ def _create_conversation(
             conversation_id=conversation_id,
             mode=language_setting_mode,
             language_code=manual_language_code,
-            detected_language_code=detected_language_metadata.language_code,
-            detected_raw_language_code=detected_language_metadata.language_code,
+            detected_language_code=_display_language_code_or_none(
+                detected_language_metadata.language_code
+            ),
+            detected_source_language_code=detected_language_metadata.language_code,
+            detected_raw_language_code=detected_language_metadata.raw_language_code,
+            detected_raw_language_provider=detected_language_metadata.provider,
             detection_confidence=detected_language_metadata.confidence,
             detected_from_corpus_hash=None,
             created_at=now,
@@ -522,12 +541,27 @@ def _insert_imported_users(
     )
 
 
+def imported_opinion_source_language_metadata(
+    *,
+    content_plain_text: str,
+    is_seed: bool,
+    content_language_hints: list[SourceLanguageHint],
+    google_detector: GoogleLanguageDetector | None,
+) -> SourceLanguageMetadata:
+    return detect_source_language(
+        content_plain_text,
+        google_detector=google_detector if is_seed else None,
+        language_hints=content_language_hints,
+    )
+
+
 def _insert_opinions(
     session: Session,
     *,
     imported: ImportPolisResults,
     conversation_ids: ConversationIds,
     participant_data: ParticipantData,
+    google_detector: GoogleLanguageDetector | None,
 ) -> OpinionInsertData:
     vote_counts_by_statement_id: dict[int, dict[str, int]] = {}
     for vote in imported.votes_data:
@@ -581,7 +615,7 @@ def _insert_opinions(
     }
 
     content_values: list[dict[str, Any]] = []
-    source_language_code_per_statement_id: dict[int, str | None] = {}
+    source_language_code_per_opinion_id: dict[int, str | None] = {}
     for comment in imported.comments_data:
         content = process_user_generated_html(
             _truncate_with_ellipsis(
@@ -593,21 +627,26 @@ def _insert_opinions(
             mode="output",
         )
         content_plain_text = html_to_counted_text(content)
-        language_metadata = detect_source_language(
-            content_plain_text,
-            language_hints=conversation_ids.content_language_hints,
+        opinion_id = opinion_id_per_statement_id[comment.statement_id]
+        source_language_metadata = imported_opinion_source_language_metadata(
+            content_plain_text=content_plain_text,
+            is_seed=comment.is_seed or False,
+            content_language_hints=conversation_ids.content_language_hints,
+            google_detector=google_detector,
         )
-        source_language_code = language_metadata.language_code
-        source_language_confidence = language_metadata.confidence
-        source_language_code_per_statement_id[comment.statement_id] = source_language_code
+        source_language_code_per_opinion_id[opinion_id] = (
+            source_language_metadata.language_code
+        )
         content_values.append(
             {
-                "opinion_id": opinion_id_per_statement_id[comment.statement_id],
+                "opinion_id": opinion_id,
                 "conversation_content_id": conversation_ids.conversation_content_id,
                 "content": content,
                 "content_plain_text": content_plain_text,
-                "source_language_code": source_language_code,
-                "source_language_confidence": source_language_confidence,
+                "source_language_code": source_language_metadata.language_code,
+                "source_raw_language_code": source_language_metadata.raw_language_code,
+                "source_language_provider": source_language_metadata.provider,
+                "source_language_confidence": source_language_metadata.confidence,
             },
         )
     raw_inserted_content_rows: object = (
@@ -658,9 +697,7 @@ def _insert_opinions(
         seed_opinion_content_sources.append(
             SeedOpinionContentSource(
                 content_id=opinion_content_id,
-                source_language_code=source_language_code_per_statement_id[
-                    comment.statement_id
-                ],
+                source_language_code=source_language_code_per_opinion_id[opinion_id],
             ),
         )
 
@@ -812,8 +849,8 @@ def _create_content_translation_work(
     work_values: list[dict[str, object]] = []
     for language_code in target_language_codes:
         if (
-            conversation_ids.conversation_source_language_code is not None
-            and language_code != conversation_ids.conversation_source_language_code
+            conversation_ids.conversation_source_language_code is None
+            or language_code != conversation_ids.conversation_source_language_code
         ):
             work_values.append(
                 {
@@ -832,10 +869,9 @@ def _create_content_translation_work(
                 },
             )
         for seed_opinion_source in opinions.seed_opinion_content_sources:
-            if seed_opinion_source.source_language_code is None:
-                continue
             if (
-                language_code == seed_opinion_source.source_language_code
+                seed_opinion_source.source_language_code is not None
+                and language_code == seed_opinion_source.source_language_code
             ):
                 continue
             work_values.append(
@@ -1200,7 +1236,22 @@ def _get_import_user_id(session: Session, *, import_slug_id: str) -> uuid.UUID:
     return row.user_id
 
 
-def process_import_request(session: Session, *, request: ImportRequest) -> ImportProcessResult:
+def google_detector_for_import(
+    *,
+    request: ImportRequest,
+    google_detector: GoogleLanguageDetector | None,
+) -> GoogleLanguageDetector | None:
+    if request.form_data.multilingual_setting.dynamic_translation_enabled:
+        return google_detector
+    return None
+
+
+def process_import_request(
+    session: Session,
+    *,
+    request: ImportRequest,
+    google_detector: GoogleLanguageDetector | None = None,
+) -> ImportProcessResult:
     conversation_id: int | None = None
     try:
         import_user_id = _get_import_user_id(session, import_slug_id=request.import_slug_id)
@@ -1212,11 +1263,16 @@ def process_import_request(session: Session, *, request: ImportRequest) -> Impor
             )
 
         imported, polis_url_type = _build_imported_polis_conversation(request)
+        active_google_detector = google_detector_for_import(
+            request=request,
+            google_detector=google_detector,
+        )
         conversation_ids = _create_conversation(
             session,
             request=request,
             imported=imported,
             polis_url_type=polis_url_type,
+            google_detector=active_google_detector,
         )
         conversation_id = conversation_ids.conversation_id
         participant_data = _insert_imported_users(
@@ -1229,6 +1285,7 @@ def process_import_request(session: Session, *, request: ImportRequest) -> Impor
             imported=imported,
             conversation_ids=conversation_ids,
             participant_data=participant_data,
+            google_detector=active_google_detector,
         )
         _insert_votes(
             session,

@@ -62,6 +62,7 @@ import type { ConversationLanguageSettingInput } from "@/shared/types/zod.js";
 import {
     buildContentBlockLanguageDetectionCorpus,
     buildSurveyLanguageDetectionCorpus,
+    contentLanguageMetadataUpdateValues,
     getBlockLanguageHints,
     getContentItemLanguageHints,
     resolveContentLanguageMetadata,
@@ -233,7 +234,9 @@ export async function createNewPost({
             supplementalPlainText: surveyLanguageDetectionCorpus,
         }),
         googleCloudCredentials,
-        languageHints: blockLanguageHints,
+        useGoogleLanguageDetection:
+            normalizedMultilingualSetting.dynamicTranslationEnabled,
+        languageHints: contentItemLanguageHints,
     });
 
     await db.transaction(async (tx) => {
@@ -273,10 +276,9 @@ export async function createNewPost({
                 title: conversationTitle,
                 body: conversationBody,
                 bodyPlainText,
-                sourceLanguageCode:
-                    conversationSourceLanguageMetadata.sourceLanguageCode,
-                sourceLanguageConfidence:
-                    conversationSourceLanguageMetadata.sourceLanguageConfidence,
+                ...contentLanguageMetadataUpdateValues(
+                    conversationSourceLanguageMetadata,
+                ),
             })
             .returning({
                 conversationContentId: conversationContentTable.id,
@@ -343,6 +345,8 @@ export async function createNewPost({
                         now,
                         isSeed: true,
                         googleCloudCredentials,
+                        useGoogleLanguageDetection:
+                            normalizedMultilingualSetting.dynamicTranslationEnabled,
                         languageHints: contentItemLanguageHints,
                         conversationMetadata: {
                             conversationId: insertedConversationId,
@@ -372,6 +376,8 @@ export async function createNewPost({
                 surveyConfig: surveyConfig ?? null,
                 now,
                 googleCloudCredentials,
+                useGoogleLanguageDetection:
+                    normalizedMultilingualSetting.dynamicTranslationEnabled,
                 sourceLanguageMetadata: conversationSourceLanguageMetadata,
             });
         }

@@ -9,7 +9,13 @@ import {
     type LanguageDetectionResult,
     type LocalLanguageDetector,
 } from "./languageDetection.js";
-import { resolveConversationLanguageSetting } from "./conversationLanguage.js";
+import {
+    buildConversationLanguageDetectionCorpus,
+    conversationLanguageSettingToOutput,
+    hashConversationLanguageDetectionCorpus,
+    resolveConversationLanguageSetting,
+    type StoredConversationLanguageSetting,
+} from "./conversationLanguage.js";
 import {
     parseNormalizedLanguageOrUndefined,
     parseSupportedDisplayLanguageOrUndefined,
@@ -140,6 +146,49 @@ function detection({
     };
 }
 
+function matchingConversationCorpusHash({
+    conversationTitle,
+    bodyPlainText,
+}: {
+    conversationTitle: string;
+    bodyPlainText: string;
+}): string {
+    return hashConversationLanguageDetectionCorpus(
+        buildConversationLanguageDetectionCorpus({
+            conversationTitle,
+            bodyPlainText,
+        }),
+    );
+}
+
+function storedAutoConversationLanguageSetting({
+    provider,
+    detectedFromCorpusHash,
+    detectedLanguageCode = "en",
+    detectedSourceLanguageCode = "en",
+    detectedRawLanguageCode = "en",
+    autoDetectionRetryable = false,
+}: {
+    provider: StoredConversationLanguageSetting["detectedRawLanguageProvider"];
+    detectedFromCorpusHash: string | null;
+    detectedLanguageCode?: StoredConversationLanguageSetting["detectedLanguageCode"];
+    detectedSourceLanguageCode?: StoredConversationLanguageSetting["detectedSourceLanguageCode"];
+    detectedRawLanguageCode?: string | null;
+    autoDetectionRetryable?: boolean;
+}): StoredConversationLanguageSetting {
+    return {
+        mode: "auto",
+        languageCode: detectedLanguageCode,
+        detectedLanguageCode,
+        detectedSourceLanguageCode,
+        detectedRawLanguageCode,
+        detectedRawLanguageProvider: provider,
+        detectionConfidence: 1,
+        detectedFromCorpusHash,
+        autoDetectionRetryable,
+    };
+}
+
 describe("inferChineseScriptLanguage", () => {
     it("detects simplified and traditional script hints", () => {
         expect(
@@ -209,7 +258,7 @@ describe("Lingua normalization assumptions", () => {
                 }),
             });
 
-            expect(outcome.result, languageName).toStrictEqual({
+            expect(outcome, languageName).toStrictEqual({
                 languageCode:
                     parseSupportedDisplayLanguageOrUndefined(sourceLanguageCode) ?? null,
                 sourceLanguageCode,
@@ -217,7 +266,6 @@ describe("Lingua normalization assumptions", () => {
                 provider: "lingua",
                 confidence: 1,
             });
-            expect(outcome.cacheable, languageName).toBe(true);
         }
     });
 
@@ -237,13 +285,13 @@ describe("Lingua normalization assumptions", () => {
             }),
         });
 
-        expect(traditionalOutcome.result).toMatchObject({
+        expect(traditionalOutcome).toMatchObject({
             languageCode: "zh-Hant",
             sourceLanguageCode: "zh-Hant",
             rawLanguageCode: "Chinese",
             provider: "lingua",
         });
-        expect(simplifiedOutcome.result).toMatchObject({
+        expect(simplifiedOutcome).toMatchObject({
             languageCode: "zh-Hans",
             sourceLanguageCode: "zh-Hans",
             rawLanguageCode: "Chinese",
@@ -441,18 +489,17 @@ describe("Google normalization assumptions", () => {
                 }),
             });
 
-            expect(outcome.result, testCase.rawCode).toStrictEqual({
+            expect(outcome, testCase.rawCode).toStrictEqual({
                 languageCode: testCase.displayCode,
                 sourceLanguageCode: testCase.sourceCode,
                 rawLanguageCode: testCase.rawCode,
                 provider: "google_translate",
                 confidence: 1,
             });
-            expect(outcome.cacheable, testCase.rawCode).toBe(true);
         }
     });
 
-    it("keeps unknown Google outputs raw without creating a normalized source code", async () => {
+    it("keeps broad non-display Google outputs as normalized source languages", async () => {
         const outcome = await detectLanguageWithFallback({
             text: "Aloha kakou. Pehea kakou e malama ai i ka aina a me na kai o ko kakou kulanakauhale?",
             localDetector: { detect: () => Promise.resolve(undefined) },
@@ -463,14 +510,11 @@ describe("Google normalization assumptions", () => {
         });
 
         expect(outcome).toStrictEqual({
-            result: {
-                languageCode: null,
-                sourceLanguageCode: null,
-                rawLanguageCode: "haw",
-                provider: "google_translate",
-                confidence: 0.91,
-            },
-            cacheable: true,
+            languageCode: null,
+            sourceLanguageCode: "haw",
+            rawLanguageCode: "haw",
+            provider: "google_translate",
+            confidence: 0.91,
         });
     });
 });
@@ -490,18 +534,15 @@ describe("detectLanguageWithFallback", () => {
         });
 
         expect(outcome).toStrictEqual({
-            result: {
-                languageCode: "ky",
-                sourceLanguageCode: "ky",
-                rawLanguageCode: "ky",
-                provider: "google_translate",
-                confidence: 0.92,
-            },
-            cacheable: true,
+            languageCode: "ky",
+            sourceLanguageCode: "ky",
+            rawLanguageCode: "ky",
+            provider: "google_translate",
+            confidence: 0.92,
         });
     });
 
-    it("returns non-cacheable unknown when Cyrillic Google fallback fails", async () => {
+    it("returns unknown when Cyrillic Google fallback fails", async () => {
         let localDetectorCalled = false;
         const localDetector: LocalLanguageDetector = {
             detect: () => {
@@ -518,32 +559,47 @@ describe("detectLanguageWithFallback", () => {
             googleDetector,
         });
 
-        expect(outcome).toStrictEqual({ result: undefined, cacheable: false });
+        expect(outcome).toBeUndefined();
+        expect(localDetectorCalled).toBe(false);
+    });
+
+    it("returns unknown for meaningful Cyrillic when Google is unavailable", async () => {
+        let localDetectorCalled = false;
+        const localDetector: LocalLanguageDetector = {
+            detect: () => {
+                localDetectorCalled = true;
+                return Promise.resolve({ rawLanguageCode: "Russian", confidence: 1 });
+            },
+        };
+
+        const outcome = await detectLanguageWithFallback({
+            text: "Шаарыбыздагы коомдук транспортту кантип жакшырта алабыз?",
+            localDetector,
+        });
+
+        expect(outcome).toBeUndefined();
         expect(localDetectorCalled).toBe(false);
     });
 
     it("keeps supported non-display local source languages", async () => {
         const outcome = await detectLanguageWithFallback({
-            text: "Қаладағы қоғамдық көлікті қалай жақсарта аламыз?",
+            text: "Com podem millorar el transport public de la ciutat i mantenir-lo assequible per a tothom?",
             localDetector: createLocalDetector({
-                rawLanguageCode: "Kazakh",
+                rawLanguageCode: "Catalan",
                 confidence: 1,
             }),
         });
 
         expect(outcome).toStrictEqual({
-            result: {
-                languageCode: null,
-                sourceLanguageCode: "kk",
-                rawLanguageCode: "Kazakh",
-                provider: "lingua",
-                confidence: 1,
-            },
-            cacheable: true,
+            languageCode: null,
+            sourceLanguageCode: "ca",
+            rawLanguageCode: "Catalan",
+            provider: "lingua",
+            confidence: 1,
         });
     });
 
-    it("returns unknown for ambiguous Chinese script", async () => {
+    it("falls back to Simplified for confirmed Chinese with ambiguous script", async () => {
         const outcome = await detectLanguageWithFallback({
             text: "公共交通",
             localDetector: createLocalDetector({
@@ -553,14 +609,11 @@ describe("detectLanguageWithFallback", () => {
         });
 
         expect(outcome).toStrictEqual({
-            result: {
-                languageCode: null,
-                sourceLanguageCode: null,
-                rawLanguageCode: "Chinese",
-                provider: "lingua",
-                confidence: 1,
-            },
-            cacheable: true,
+            languageCode: "zh-Hans",
+            sourceLanguageCode: "zh-Hans",
+            rawLanguageCode: "Chinese",
+            provider: "lingua",
+            confidence: 1,
         });
     });
 
@@ -577,14 +630,11 @@ describe("detectLanguageWithFallback", () => {
         });
 
         expect(outcome).toStrictEqual({
-            result: {
-                languageCode: null,
-                sourceLanguageCode: null,
-                rawLanguageCode: "ky",
-                provider: "google_translate",
-                confidence: 0.3,
-            },
-            cacheable: true,
+            languageCode: null,
+            sourceLanguageCode: null,
+            rawLanguageCode: "ky",
+            provider: "google_translate",
+            confidence: 0.3,
         });
     });
 
@@ -602,15 +652,25 @@ describe("detectLanguageWithFallback", () => {
         });
 
         expect(outcome).toStrictEqual({
-            result: {
-                languageCode: null,
-                sourceLanguageCode: null,
-                rawLanguageCode: "haw",
-                provider: "google_translate",
-                confidence: 0.91,
-            },
-            cacheable: true,
+            languageCode: null,
+            sourceLanguageCode: "haw",
+            rawLanguageCode: "haw",
+            provider: "google_translate",
+            confidence: 0.91,
         });
+    });
+
+    it("returns unknown when Google fallback fails after weak local attribution", async () => {
+        const outcome = await detectLanguageWithFallback({
+            text: "Aloha kakou. Pehea kakou e malama ai i ka aina a me na kai o ko kakou kulanakauhale?",
+            localDetector: createLocalDetector({
+                rawLanguageCode: "Sotho",
+                confidence: 0.35,
+            }),
+            googleDetector: () => Promise.reject(new Error("Google unavailable")),
+        });
+
+        expect(outcome).toBeUndefined();
     });
 
     it("real local detector returns unknown for unsupported languages", async () => {
@@ -618,7 +678,7 @@ describe("detectLanguageWithFallback", () => {
             text: "jan ale li kama pona. mi wile e ni: jan li toki pona li pali pona lon ma tomo.",
         });
 
-        expect(outcome).toStrictEqual({ result: undefined, cacheable: true });
+        expect(outcome).toBeUndefined();
     });
 
     it("real local detector returns unknown instead of low-confidence misattribution", async () => {
@@ -626,21 +686,28 @@ describe("detectLanguageWithFallback", () => {
             text: "Aloha kakou. Pehea kakou e malama ai i ka aina a me na kai o ko kakou kulanakauhale?",
         });
 
-        expect(outcome.result?.languageCode ?? null).toBeNull();
-        expect(outcome.result?.sourceLanguageCode ?? null).toBeNull();
-        expect(outcome.cacheable).toBe(true);
+        expect(outcome?.languageCode ?? null).toBeNull();
+        expect(outcome?.sourceLanguageCode ?? null).toBeNull();
     });
 
     it("real local detector detects supported non-display source languages", async () => {
         const outcome = await detectLanguageWithFallback({
-            text: "Wie koennen wir den oeffentlichen Nahverkehr in unserer Stadt verbessern und bezahlbar halten?",
+            text: "Com podem millorar el transport public de la ciutat i mantenir-lo assequible per a tothom?",
         });
 
-        expect(outcome.result).toMatchObject({
+        expect(outcome).toMatchObject({
             languageCode: null,
-            sourceLanguageCode: "de",
+            sourceLanguageCode: "ca",
         });
-        expect(outcome.cacheable).toBe(true);
+    });
+
+    it("real local detector keeps Haitian Creole unknown instead of a low-confidence misattribution", async () => {
+        const outcome = await detectLanguageWithFallback({
+            text: "Kijan nou ka amelyore transpo piblik nan vil la epi kenbe li abodab pou tout moun?",
+        });
+
+        expect(outcome?.languageCode ?? null).toBeNull();
+        expect(outcome?.sourceLanguageCode ?? null).toBeNull();
     });
 
     it("real local detector detects short unaccented French statements", async () => {
@@ -648,16 +715,186 @@ describe("detectLanguageWithFallback", () => {
             text: "ceci est un message en francais",
         });
 
-        expect(outcome.result).toMatchObject({
+        expect(outcome).toMatchObject({
             languageCode: "fr",
             sourceLanguageCode: "fr",
         });
-        expect(outcome.cacheable).toBe(true);
     });
 });
 
 describe("resolveConversationLanguageSetting", () => {
-    it("does not cache detector failures", async () => {
+    it("derives retryable auto-detection output status", () => {
+        const output = conversationLanguageSettingToOutput({
+            setting: storedAutoConversationLanguageSetting({
+                provider: null,
+                detectedFromCorpusHash: null,
+                detectedLanguageCode: null,
+                detectedSourceLanguageCode: null,
+                detectedRawLanguageCode: null,
+                autoDetectionRetryable: true,
+            }),
+        });
+
+        expect(output.autoDetectionStatus).toBe("retryable_unknown");
+    });
+
+    it("derives stable auto-detection output status", () => {
+        const output = conversationLanguageSettingToOutput({
+            setting: storedAutoConversationLanguageSetting({
+                provider: null,
+                detectedFromCorpusHash: null,
+                detectedLanguageCode: null,
+                detectedSourceLanguageCode: null,
+                detectedRawLanguageCode: null,
+            }),
+        });
+
+        expect(output.autoDetectionStatus).toBe("stable_unknown");
+    });
+
+    it("derives detected auto-detection output status", () => {
+        const output = conversationLanguageSettingToOutput({
+            setting: storedAutoConversationLanguageSetting({
+                provider: "google_translate",
+                detectedFromCorpusHash: "hash",
+                detectedLanguageCode: "fr",
+                detectedSourceLanguageCode: "fr",
+                detectedRawLanguageCode: "fr",
+            }),
+        });
+
+        expect(output.autoDetectionStatus).toBe("detected");
+    });
+
+    it("derives not-attempted status for missing language settings", () => {
+        const output = conversationLanguageSettingToOutput({
+            setting: undefined,
+        });
+
+        expect(output.autoDetectionStatus).toBe("not_attempted");
+    });
+
+    it("reuses Google-backed detections for unchanged corpus", async () => {
+        const conversationTitle = "Transit";
+        const bodyPlainText = "How can we improve public transportation for everyone in our city?";
+        const corpusHash = matchingConversationCorpusHash({
+            conversationTitle,
+            bodyPlainText,
+        });
+        const googleDetector: GoogleLanguageDetector = () => {
+            throw new Error("Google detector should not be called");
+        };
+
+        const setting = await resolveConversationLanguageSetting({
+            request: { mode: "auto" },
+            existing: storedAutoConversationLanguageSetting({
+                provider: "google_translate",
+                detectedFromCorpusHash: corpusHash,
+                detectedLanguageCode: "fr",
+                detectedSourceLanguageCode: "fr",
+                detectedRawLanguageCode: "fr",
+            }),
+            conversationTitle,
+            bodyPlainText,
+            googleCloudCredentials: undefined,
+            googleLanguageDetector: googleDetector,
+        });
+
+        expect(setting).toMatchObject({
+            mode: "auto",
+            languageCode: "fr",
+            detectedLanguageCode: "fr",
+            detectedSourceLanguageCode: "fr",
+            detectedRawLanguageProvider: "google_translate",
+            detectedFromCorpusHash: corpusHash,
+            autoDetectionRetryable: false,
+        });
+    });
+
+    it("redetects Lingua-backed detections for unchanged corpus", async () => {
+        const conversationTitle = "Transit";
+        const bodyPlainText = "How can we improve public transportation for everyone in our city?";
+        const corpusHash = matchingConversationCorpusHash({
+            conversationTitle,
+            bodyPlainText,
+        });
+        let localDetectorCalls = 0;
+
+        const setting = await resolveConversationLanguageSetting({
+            request: { mode: "auto" },
+            existing: storedAutoConversationLanguageSetting({
+                provider: "lingua",
+                detectedFromCorpusHash: corpusHash,
+            }),
+            conversationTitle,
+            bodyPlainText,
+            googleCloudCredentials: undefined,
+            localLanguageDetector: {
+                detect: () => {
+                    localDetectorCalls += 1;
+                    return Promise.resolve({
+                        rawLanguageCode: "French",
+                        confidence: 1,
+                    });
+                },
+            },
+        });
+
+        expect(localDetectorCalls).toBe(1);
+        expect(setting).toMatchObject({
+            mode: "auto",
+            languageCode: "fr",
+            detectedLanguageCode: "fr",
+            detectedSourceLanguageCode: "fr",
+            detectedRawLanguageProvider: "lingua",
+            detectedFromCorpusHash: null,
+            autoDetectionRetryable: false,
+        });
+    });
+
+    it("redetects unknown-provider detections for unchanged corpus", async () => {
+        const conversationTitle = "Transit";
+        const bodyPlainText = "How can we improve public transportation for everyone in our city?";
+        const corpusHash = matchingConversationCorpusHash({
+            conversationTitle,
+            bodyPlainText,
+        });
+        let googleDetectorCalls = 0;
+
+        const setting = await resolveConversationLanguageSetting({
+            request: { mode: "auto" },
+            existing: storedAutoConversationLanguageSetting({
+                provider: null,
+                detectedFromCorpusHash: corpusHash,
+                detectedLanguageCode: null,
+                detectedSourceLanguageCode: null,
+                detectedRawLanguageCode: null,
+            }),
+            conversationTitle,
+            bodyPlainText,
+            googleCloudCredentials: undefined,
+            localLanguageDetector: {
+                detect: () => Promise.resolve(undefined),
+            },
+            googleLanguageDetector: () => {
+                googleDetectorCalls += 1;
+                return Promise.resolve({ languageCode: "es", confidence: 0.99 });
+            },
+        });
+
+        expect(googleDetectorCalls).toBe(1);
+        expect(setting).toMatchObject({
+            mode: "auto",
+            languageCode: "es",
+            detectedLanguageCode: "es",
+            detectedSourceLanguageCode: "es",
+            detectedRawLanguageProvider: "google_translate",
+            detectedFromCorpusHash: corpusHash,
+            autoDetectionRetryable: false,
+        });
+    });
+
+    it("marks detector failures as retryable unknown", async () => {
         const setting = await resolveConversationLanguageSetting({
             request: { mode: "auto" },
             existing: undefined,
@@ -680,6 +917,33 @@ describe("resolveConversationLanguageSetting", () => {
             detectedRawLanguageProvider: null,
             detectionConfidence: null,
             detectedFromCorpusHash: null,
+            autoDetectionRetryable: true,
+        });
+    });
+
+    it("marks successful empty Google detection as stable unknown", async () => {
+        const setting = await resolveConversationLanguageSetting({
+            request: { mode: "auto" },
+            existing: undefined,
+            conversationTitle: "Transit",
+            bodyPlainText: "How can we improve public transportation?",
+            googleCloudCredentials: undefined,
+            localLanguageDetector: {
+                detect: () => Promise.resolve(undefined),
+            },
+            googleLanguageDetector: () => Promise.resolve(undefined),
+        });
+
+        expect(setting).toMatchObject({
+            mode: "auto",
+            languageCode: null,
+            detectedLanguageCode: null,
+            detectedSourceLanguageCode: null,
+            detectedRawLanguageCode: null,
+            detectedRawLanguageProvider: null,
+            detectionConfidence: null,
+            detectedFromCorpusHash: null,
+            autoDetectionRetryable: false,
         });
     });
 });

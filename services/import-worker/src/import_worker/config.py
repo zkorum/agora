@@ -1,4 +1,4 @@
-from pydantic import AnyUrl, Field, TypeAdapter, field_validator
+from pydantic import AliasChoices, AnyUrl, Field, TypeAdapter, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_VALKEY_URL: AnyUrl = TypeAdapter(AnyUrl).validate_python(
@@ -17,6 +17,44 @@ class Settings(BaseSettings):
     max_concurrency: int = Field(default=2, ge=1)
     stale_threshold_ms: int = Field(default=300000, ge=1)
     stale_cleanup_every_n_flushes: int = Field(default=60, ge=1)
+
+    google_cloud_project_id: str | None = Field(
+        default=None,
+        min_length=1,
+        validation_alias=AliasChoices(
+            "google_cloud_project_id",
+            "IMPORT_WORKER_GOOGLE_CLOUD_PROJECT_ID",
+            "GOOGLE_CLOUD_PROJECT_ID",
+        ),
+    )
+    google_cloud_translation_endpoint: str = Field(
+        default="translate.googleapis.com",
+        min_length=1,
+        validation_alias=AliasChoices(
+            "google_cloud_translation_endpoint",
+            "IMPORT_WORKER_GOOGLE_CLOUD_TRANSLATION_ENDPOINT",
+            "GOOGLE_CLOUD_TRANSLATION_ENDPOINT",
+        ),
+    )
+    google_cloud_translation_location: str = Field(
+        default="us-central1",
+        min_length=1,
+        validation_alias=AliasChoices(
+            "google_cloud_translation_location",
+            "IMPORT_WORKER_GOOGLE_CLOUD_TRANSLATION_LOCATION",
+            "GOOGLE_CLOUD_TRANSLATION_LOCATION",
+        ),
+    )
+    google_cloud_translation_timeout_seconds: float = Field(default=30.0, gt=0)
+    google_application_credentials_path: str | None = Field(
+        default=None,
+        min_length=1,
+        validation_alias=AliasChoices(
+            "google_application_credentials_path",
+            "IMPORT_WORKER_GOOGLE_APPLICATION_CREDENTIALS",
+            "GOOGLE_APPLICATION_CREDENTIALS",
+        ),
+    )
 
     model_config = SettingsConfigDict(
         env_prefix="IMPORT_WORKER_",

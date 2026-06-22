@@ -8,6 +8,9 @@ export interface ConversationLanguageSettingDialogTranslations {
   autoDetectTitle: string;
   autoDetectDescription: string;
   autoDetectDetectedDescription: string;
+  autoDetectUnknownDescription: string;
+  autoDetectRetryableUnknownDescription: string;
+  autoDetectUnsupportedDescription: string;
   manualTitle: string;
   manualOptionDescription: string;
   manualLanguageDialogTitle: string;
@@ -30,6 +33,11 @@ const englishTranslations: ConversationLanguageSettingDialogTranslations = {
   autoDetectTitle: "Auto-detect",
   autoDetectDescription: "Detect from the title and body.",
   autoDetectDetectedDescription: "Detected: {language}",
+  autoDetectUnknownDescription: "Could not detect language.",
+  autoDetectRetryableUnknownDescription:
+    "Could not detect language. Saving with auto-detect will try again.",
+  autoDetectUnsupportedDescription:
+    "Detected: {language}. Not supported for translations.",
   manualTitle: "Manual language",
   manualOptionDescription: "Choose a fixed language instead.",
   manualLanguageDialogTitle: "Manual language",
@@ -55,6 +63,12 @@ export const conversationLanguageSettingDialogTranslations: Record<
     primaryLanguageTitle: "Idioma principal",
     autoDetectTitle: "Detectar automáticamente",
     autoDetectDescription: "Detectar a partir del título y el cuerpo.",
+    autoDetectDetectedDescription: "Detectado: {language}",
+    autoDetectUnknownDescription: "No se pudo detectar el idioma.",
+    autoDetectRetryableUnknownDescription:
+      "No se pudo detectar el idioma. Guardar con detección automática lo intentará de nuevo.",
+    autoDetectUnsupportedDescription:
+      "Detectado: {language}. No es compatible con las traducciones.",
     manualTitle: "Idioma manual",
     manualLanguageDialogTitle: "Idioma manual",
     additionalLanguagesTitle: "Idiomas adicionales",
@@ -69,6 +83,11 @@ export const conversationLanguageSettingDialogTranslations: Record<
     autoDetectTitle: "Détection automatique",
     autoDetectDescription: "Détecter à partir du titre et du corps.",
     autoDetectDetectedDescription: "Détecté : {language}",
+    autoDetectUnknownDescription: "Impossible de détecter la langue.",
+    autoDetectRetryableUnknownDescription:
+      "Impossible de détecter la langue. Enregistrer avec la détection automatique réessaiera.",
+    autoDetectUnsupportedDescription:
+      "Détecté : {language}. Non pris en charge pour les traductions.",
     manualTitle: "Langue manuelle",
     manualOptionDescription: "Choisir une langue fixe à la place.",
     manualLanguageDialogTitle: "Langue manuelle",
@@ -83,6 +102,11 @@ export const conversationLanguageSettingDialogTranslations: Record<
     primaryLanguageTitle: "主要語言",
     autoDetectTitle: "自動偵測",
     autoDetectDescription: "從標題和內文偵測。",
+    autoDetectDetectedDescription: "已偵測：{language}",
+    autoDetectUnknownDescription: "無法偵測語言。",
+    autoDetectRetryableUnknownDescription:
+      "無法偵測語言。使用自動偵測儲存時會再試一次。",
+    autoDetectUnsupportedDescription: "已偵測：{language}。不支援翻譯。",
     manualTitle: "手動語言",
     manualLanguageDialogTitle: "手動語言",
     additionalLanguagesTitle: "其他語言",
@@ -96,6 +120,11 @@ export const conversationLanguageSettingDialogTranslations: Record<
     primaryLanguageTitle: "主要语言",
     autoDetectTitle: "自动检测",
     autoDetectDescription: "根据标题和正文检测。",
+    autoDetectDetectedDescription: "已检测：{language}",
+    autoDetectUnknownDescription: "无法检测语言。",
+    autoDetectRetryableUnknownDescription:
+      "无法检测语言。使用自动检测保存时会再试一次。",
+    autoDetectUnsupportedDescription: "已检测：{language}。不支持翻译。",
     manualTitle: "手动语言",
     manualLanguageDialogTitle: "手动语言",
     additionalLanguagesTitle: "其他语言",
@@ -109,6 +138,12 @@ export const conversationLanguageSettingDialogTranslations: Record<
     primaryLanguageTitle: "主な言語",
     autoDetectTitle: "自動検出",
     autoDetectDescription: "タイトルと本文から検出します。",
+    autoDetectDetectedDescription: "検出：{language}",
+    autoDetectUnknownDescription: "言語を検出できませんでした。",
+    autoDetectRetryableUnknownDescription:
+      "言語を検出できませんでした。自動検出で保存すると再試行します。",
+    autoDetectUnsupportedDescription:
+      "検出：{language}。翻訳には対応していません。",
     manualTitle: "手動の言語",
     manualLanguageDialogTitle: "手動の言語",
     additionalLanguagesTitle: "追加の言語",
@@ -122,6 +157,12 @@ export const conversationLanguageSettingDialogTranslations: Record<
     primaryLanguageTitle: "اللغة الأساسية",
     autoDetectTitle: "اكتشاف تلقائي",
     autoDetectDescription: "اكتشاف من العنوان والنص.",
+    autoDetectDetectedDescription: "تم الاكتشاف: {language}",
+    autoDetectUnknownDescription: "تعذر اكتشاف اللغة.",
+    autoDetectRetryableUnknownDescription:
+      "تعذر اكتشاف اللغة. سيؤدي الحفظ مع الاكتشاف التلقائي إلى المحاولة مرة أخرى.",
+    autoDetectUnsupportedDescription:
+      "تم الاكتشاف: {language}. غير مدعوم للترجمات.",
     manualTitle: "لغة يدوية",
     manualLanguageDialogTitle: "لغة يدوية",
     additionalLanguagesTitle: "لغات إضافية",
@@ -135,6 +176,12 @@ export const conversationLanguageSettingDialogTranslations: Record<
     primaryLanguageTitle: "زبان اصلی",
     autoDetectTitle: "تشخیص خودکار",
     autoDetectDescription: "تشخیص از عنوان و متن.",
+    autoDetectDetectedDescription: "تشخیص داده شد: {language}",
+    autoDetectUnknownDescription: "زبان تشخیص داده نشد.",
+    autoDetectRetryableUnknownDescription:
+      "زبان تشخیص داده نشد. ذخیره با تشخیص خودکار دوباره تلاش می‌کند.",
+    autoDetectUnsupportedDescription:
+      "تشخیص داده شد: {language}. برای ترجمه‌ها پشتیبانی نمی‌شود.",
     manualTitle: "زبان دستی",
     manualLanguageDialogTitle: "زبان دستی",
     additionalLanguagesTitle: "زبان‌های اضافی",
@@ -148,6 +195,11 @@ export const conversationLanguageSettingDialogTranslations: Record<
     primaryLanguageTitle: "שפה ראשית",
     autoDetectTitle: "זיהוי אוטומטי",
     autoDetectDescription: "זיהוי מתוך הכותרת והגוף.",
+    autoDetectDetectedDescription: "זוהה: {language}",
+    autoDetectUnknownDescription: "לא ניתן היה לזהות את השפה.",
+    autoDetectRetryableUnknownDescription:
+      "לא ניתן היה לזהות את השפה. שמירה עם זיהוי אוטומטי תנסה שוב.",
+    autoDetectUnsupportedDescription: "זוהה: {language}. לא נתמך לתרגומים.",
     manualTitle: "שפה ידנית",
     manualLanguageDialogTitle: "שפה ידנית",
     additionalLanguagesTitle: "שפות נוספות",
@@ -161,6 +213,12 @@ export const conversationLanguageSettingDialogTranslations: Record<
     primaryLanguageTitle: "Негизги тил",
     autoDetectTitle: "Автоматтык аныктоо",
     autoDetectDescription: "Аталыштан жана тексттен аныктоо.",
+    autoDetectDetectedDescription: "Аныкталды: {language}",
+    autoDetectUnknownDescription: "Тилди аныктоо мүмкүн болгон жок.",
+    autoDetectRetryableUnknownDescription:
+      "Тилди аныктоо мүмкүн болгон жок. Автоматтык аныктоо менен сактаганда кайра аракет кылат.",
+    autoDetectUnsupportedDescription:
+      "Аныкталды: {language}. Которуулар үчүн колдоого алынбайт.",
     manualTitle: "Кол менен тил",
     manualLanguageDialogTitle: "Кол менен тил",
     additionalLanguagesTitle: "Кошумча тилдер",
@@ -174,6 +232,12 @@ export const conversationLanguageSettingDialogTranslations: Record<
     primaryLanguageTitle: "Основной язык",
     autoDetectTitle: "Автоопределение",
     autoDetectDescription: "Определять по заголовку и тексту.",
+    autoDetectDetectedDescription: "Определено: {language}",
+    autoDetectUnknownDescription: "Не удалось определить язык.",
+    autoDetectRetryableUnknownDescription:
+      "Не удалось определить язык. При сохранении с автоопределением будет выполнена повторная попытка.",
+    autoDetectUnsupportedDescription:
+      "Определено: {language}. Не поддерживается для переводов.",
     manualTitle: "Ручной язык",
     manualLanguageDialogTitle: "Ручной язык",
     additionalLanguagesTitle: "Дополнительные языки",

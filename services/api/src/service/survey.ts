@@ -87,15 +87,18 @@ import {
 import {
     buildContentBlockLanguageDetectionCorpus,
     buildSurveyLanguageDetectionCorpus,
+    contentLanguageMetadataUpdateValues,
     type ContentLanguageMetadata,
-    getPersistedBlockLanguageHints,
+    getContentItemLanguageHints,
     resolveContentLanguageMetadata,
+    UNKNOWN_CONTENT_LANGUAGE_METADATA,
 } from "./contentLanguageMetadata.js";
 import {
     buildConversationLanguageDetectionCorpus,
     buildGoogleConversationLanguageDetectionCorpus,
     getConversationLanguageSetting,
 } from "./conversationLanguage.js";
+import { getConversationMultilingualSetting } from "./conversationMultilingual.js";
 
 interface ConversationAccessContext {
     conversationId: number;
@@ -119,11 +122,13 @@ async function resolveSurveyBlockLanguageMetadata({
     conversationId,
     surveyConfig,
     googleCloudCredentials,
+    useGoogleLanguageDetection,
 }: {
     db: PostgresJsDatabase;
     conversationId: number;
     surveyConfig: SurveyConfig;
     googleCloudCredentials: GoogleCloudCredentials | undefined;
+    useGoogleLanguageDetection: boolean;
 }): Promise<ContentLanguageMetadata> {
     const conversationContentRows = await db
         .select({
@@ -139,7 +144,7 @@ async function resolveSurveyBlockLanguageMetadata({
         .limit(1);
     const conversationContent = conversationContentRows.at(0);
     if (conversationContent === undefined) {
-        return { sourceLanguageCode: null, sourceLanguageConfidence: null };
+        return UNKNOWN_CONTENT_LANGUAGE_METADATA;
     }
     const bodyPlainText = conversationContent.bodyPlainText ?? "";
     const surveyCorpus = buildSurveyLanguageDetectionCorpus({ surveyConfig });
@@ -147,7 +152,13 @@ async function resolveSurveyBlockLanguageMetadata({
         db,
         conversationId,
     });
-    const languageHints = getPersistedBlockLanguageHints({ languageSetting });
+    const languageHints =
+        languageSetting === undefined
+            ? []
+            : getContentItemLanguageHints({
+                  languageSetting,
+                  additionalLanguageCodes: [],
+              });
 
     return await resolveContentLanguageMetadata({
         text: buildContentBlockLanguageDetectionCorpus({
@@ -163,6 +174,7 @@ async function resolveSurveyBlockLanguageMetadata({
             supplementalPlainText: surveyCorpus,
         }),
         googleCloudCredentials,
+        useGoogleLanguageDetection,
         languageHints,
     });
 }
@@ -1383,9 +1395,7 @@ async function insertSurveyQuestion({
             surveyQuestionId,
             questionText: question.questionText,
             constraints: question.constraints,
-            sourceLanguageCode: sourceLanguageMetadata.sourceLanguageCode,
-            sourceLanguageConfidence:
-                sourceLanguageMetadata.sourceLanguageConfidence,
+            ...contentLanguageMetadataUpdateValues(sourceLanguageMetadata),
             createdAt: now,
         })
         .returning({ id: surveyQuestionContentTable.id });
@@ -1416,9 +1426,7 @@ async function insertSurveyQuestion({
             .values({
                 surveyQuestionOptionId,
                 optionText: option.optionText,
-                sourceLanguageCode: sourceLanguageMetadata.sourceLanguageCode,
-                sourceLanguageConfidence:
-                    sourceLanguageMetadata.sourceLanguageConfidence,
+                ...contentLanguageMetadataUpdateValues(sourceLanguageMetadata),
                 createdAt: now,
             })
             .returning({ id: surveyQuestionOptionContentTable.id });
@@ -1587,9 +1595,7 @@ async function replaceSurveyConfigById({
                     surveyQuestionId: existingQuestion.id,
                     questionText: question.questionText,
                     constraints: question.constraints,
-                    sourceLanguageCode: sourceLanguageMetadata.sourceLanguageCode,
-                    sourceLanguageConfidence:
-                        sourceLanguageMetadata.sourceLanguageConfidence,
+                    ...contentLanguageMetadataUpdateValues(sourceLanguageMetadata),
                     createdAt: now,
                 })
                 .returning({ id: surveyQuestionContentTable.id });
@@ -1652,10 +1658,7 @@ async function replaceSurveyConfigById({
                     .values({
                         surveyQuestionOptionId: insertedOption[0].id,
                         optionText: option.optionText,
-                        sourceLanguageCode:
-                            sourceLanguageMetadata.sourceLanguageCode,
-                        sourceLanguageConfidence:
-                            sourceLanguageMetadata.sourceLanguageConfidence,
+                        ...contentLanguageMetadataUpdateValues(sourceLanguageMetadata),
                         createdAt: now,
                     })
                     .returning({ id: surveyQuestionOptionContentTable.id });
@@ -1692,10 +1695,7 @@ async function replaceSurveyConfigById({
                     .values({
                         surveyQuestionOptionId: insertedOption[0].id,
                         optionText: option.optionText,
-                        sourceLanguageCode:
-                            sourceLanguageMetadata.sourceLanguageCode,
-                        sourceLanguageConfidence:
-                            sourceLanguageMetadata.sourceLanguageConfidence,
+                        ...contentLanguageMetadataUpdateValues(sourceLanguageMetadata),
                         createdAt: now,
                     })
                     .returning({ id: surveyQuestionOptionContentTable.id });
@@ -1720,10 +1720,7 @@ async function replaceSurveyConfigById({
                     .values({
                         surveyQuestionOptionId: existingOption.id,
                         optionText: option.optionText,
-                        sourceLanguageCode:
-                            sourceLanguageMetadata.sourceLanguageCode,
-                        sourceLanguageConfidence:
-                            sourceLanguageMetadata.sourceLanguageConfidence,
+                        ...contentLanguageMetadataUpdateValues(sourceLanguageMetadata),
                         createdAt: now,
                     })
                     .returning({ id: surveyQuestionOptionContentTable.id });
@@ -1812,6 +1809,7 @@ export async function setSurveyConfigForConversation({
     surveyConfig,
     now,
     googleCloudCredentials,
+    useGoogleLanguageDetection = false,
     sourceLanguageMetadata,
 }: {
     db: PostgresJsDatabase;
@@ -1819,6 +1817,7 @@ export async function setSurveyConfigForConversation({
     surveyConfig: SurveyConfig | null;
     now: Date;
     googleCloudCredentials?: GoogleCloudCredentials;
+    useGoogleLanguageDetection?: boolean;
     sourceLanguageMetadata?: ContentLanguageMetadata;
 }): Promise<SurveyConfigUpdateEffect> {
     const normalizedSurveyConfig = normalizeSurveyConfigInput({ surveyConfig });
@@ -1872,6 +1871,7 @@ export async function setSurveyConfigForConversation({
             conversationId,
             surveyConfig: normalizedSurveyConfig,
             googleCloudCredentials,
+            useGoogleLanguageDetection,
         }));
 
     if (existingSurveyConfig === undefined) {
@@ -2942,6 +2942,10 @@ export async function updateSurveyConfigByAuthor({
         mode: existingSurveyConfig === undefined ? "creation" : "edit",
         now,
     });
+    const multilingualSetting = await getConversationMultilingualSetting({
+        db,
+        conversationId: conversation.conversationId,
+    });
 
     const surveyConfigUpdateEffect = await db.transaction(async (tx) => {
         return await setSurveyConfigForConversation({
@@ -2950,6 +2954,8 @@ export async function updateSurveyConfigByAuthor({
             surveyConfig,
             now,
             googleCloudCredentials,
+            useGoogleLanguageDetection:
+                multilingualSetting.dynamicTranslationEnabled,
         });
     });
 

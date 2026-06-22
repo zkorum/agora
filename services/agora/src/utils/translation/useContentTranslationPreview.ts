@@ -5,6 +5,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type { SSEContentTranslationUpdatedData } from "src/shared/types/sse";
 import type {
+  ContentTranslationSourceLanguage,
   ContentTranslationSubject,
   LocalizedContentTranslationStatus,
 } from "src/shared/types/zod";
@@ -63,6 +64,27 @@ function isSameContentTranslationSubject({
   }
 
   return false;
+}
+
+function getTranslationSourceLanguageLabel({
+  sourceLanguage,
+  fallbackLanguageCode,
+  displayLanguage,
+}: {
+  sourceLanguage: ContentTranslationSourceLanguage | undefined;
+  fallbackLanguageCode: string | null | undefined;
+  displayLanguage: SupportedDisplayLanguageCodes;
+}): string | undefined {
+  if (sourceLanguage?.kind === "recognized") {
+    return sourceLanguage.label;
+  }
+  if (sourceLanguage?.kind === "raw") {
+    return sourceLanguage.label ?? sourceLanguage.rawLanguageCode;
+  }
+  return getLanguageDisplayName({
+    languageCode: fallbackLanguageCode,
+    displayLanguage,
+  });
 }
 
 export interface ConversationContentTranslationPreview {
@@ -194,8 +216,9 @@ function useContentTranslationController({
     const response = query.data.value;
     const content = response?.success === true ? response.content : undefined;
     if (content?.kind === "translatable") {
-      return getLanguageDisplayName({
-        languageCode: content.translation.sourceLanguageCode,
+      return getTranslationSourceLanguageLabel({
+        sourceLanguage: content.translation.sourceLanguage,
+        fallbackLanguageCode: content.translation.sourceLanguageCode,
         displayLanguage: displayLanguage.value,
       });
     }

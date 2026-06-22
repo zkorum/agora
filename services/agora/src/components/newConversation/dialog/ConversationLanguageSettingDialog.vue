@@ -200,9 +200,11 @@ import {
   type DisplayLanguageMetadata,
   type LanguageMetadata,
   type SupportedDisplayLanguageCodes,
+  type SupportedSpokenLanguageCodes,
   SupportedSpokenLanguageMetadataList,
 } from "src/shared/languages";
 import type {
+  AutoLanguageDetectionStatus,
   ConversationLanguageSettingInput,
   ConversationMultilingualSetting,
 } from "src/shared/types/zod";
@@ -237,6 +239,9 @@ const props = defineProps<{
   canEditPrimaryLanguage: boolean;
   canUseDynamicTranslation: boolean;
   detectedLanguageCode?: SupportedDisplayLanguageCodes | null;
+  detectedSourceLanguageCode?: SupportedSpokenLanguageCodes | null;
+  detectedRawLanguageCode?: string | null;
+  autoDetectionStatus?: AutoLanguageDetectionStatus;
 }>();
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
@@ -339,13 +344,113 @@ const primarySelectedValue = computed(() => languageSetting.value.mode);
 const forwardIcon = computed(() =>
   $q.lang.rtl ? "mdi-chevron-left" : "mdi-chevron-right"
 );
-const autoDetectOptionDescription = computed(() => {
-  if (props.detectedLanguageCode === undefined || props.detectedLanguageCode === null) {
-    return t("autoDetectDescription");
+type AutoDetectDescriptionState =
+  | { kind: "neutral" }
+  | { kind: "stable_unknown" }
+  | { kind: "retryable_unknown" }
+  | { kind: "detected"; languageLabel: string }
+  | { kind: "unsupported"; languageLabel: string };
+
+function getIntlLanguageLabel(languageCode: string): string | undefined {
+  const trimmedLanguageCode = languageCode.trim().replaceAll("_", "-");
+  if (trimmedLanguageCode.length === 0) {
+    return undefined;
   }
 
+  try {
+    const canonicalLanguageCode = Intl.getCanonicalLocales(trimmedLanguageCode).at(0);
+    if (canonicalLanguageCode === undefined) {
+      return undefined;
+    }
+    const displayName = new Intl.DisplayNames(["en"], {
+      type: "language",
+      fallback: "none",
+    }).of(canonicalLanguageCode);
+    if (displayName === undefined) {
+      return undefined;
+    }
+    return displayName;
+  } catch {
+    return undefined;
+  }
+}
+
+function getAutoDetectDescriptionState({
+  detectedLanguageCode,
+  detectedSourceLanguageCode,
+  detectedRawLanguageCode,
+  autoDetectionStatus,
+}: {
+  detectedLanguageCode: SupportedDisplayLanguageCodes | null | undefined;
+  detectedSourceLanguageCode: SupportedSpokenLanguageCodes | null | undefined;
+  detectedRawLanguageCode: string | null | undefined;
+  autoDetectionStatus: AutoLanguageDetectionStatus | undefined;
+}): AutoDetectDescriptionState {
+  if (
+    autoDetectionStatus === undefined ||
+    autoDetectionStatus === "not_attempted"
+  ) {
+    return { kind: "neutral" };
+  }
+
+  if (autoDetectionStatus === "retryable_unknown") {
+    return { kind: "retryable_unknown" };
+  }
+
+  if (autoDetectionStatus === "stable_unknown") {
+    return { kind: "stable_unknown" };
+  }
+
+  if (detectedLanguageCode !== null && detectedLanguageCode !== undefined) {
+    return {
+      kind: "detected",
+      languageLabel: getLanguageLabel(detectedLanguageCode),
+    };
+  }
+
+  if (detectedSourceLanguageCode !== null && detectedSourceLanguageCode !== undefined) {
+    return {
+      kind: "unsupported",
+      languageLabel: getLanguageLabel(detectedSourceLanguageCode),
+    };
+  }
+
+  if (detectedRawLanguageCode !== null && detectedRawLanguageCode !== undefined) {
+    const rawLanguageLabel = getIntlLanguageLabel(detectedRawLanguageCode);
+    if (rawLanguageLabel !== undefined) {
+      return { kind: "unsupported", languageLabel: rawLanguageLabel };
+    }
+  }
+
+  return { kind: "stable_unknown" };
+}
+
+const autoDetectDescriptionState = computed(() =>
+  getAutoDetectDescriptionState({
+    detectedLanguageCode: props.detectedLanguageCode,
+    detectedSourceLanguageCode: props.detectedSourceLanguageCode,
+    detectedRawLanguageCode: props.detectedRawLanguageCode,
+    autoDetectionStatus: props.autoDetectionStatus,
+  })
+);
+const autoDetectOptionDescription = computed(() => {
+  const state = autoDetectDescriptionState.value;
+  if (state.kind === "neutral") {
+    return t("autoDetectDescription");
+  }
+  if (state.kind === "stable_unknown") {
+    return t("autoDetectUnknownDescription");
+  }
+  if (state.kind === "retryable_unknown") {
+    return t("autoDetectRetryableUnknownDescription");
+  }
+  if (state.kind === "unsupported") {
+    return t("autoDetectUnsupportedDescription", {
+      language: state.languageLabel,
+    });
+  }
   return t("autoDetectDetectedDescription", {
-    language: getLanguageLabel(props.detectedLanguageCode),
+    language: state.languageLabel,
   });
 });
 const manualLanguageOptionDescription = computed(() =>
@@ -369,10 +474,19 @@ const primaryLanguageOptions = computed<DialogOption[]>(() => [
   },
 ]);
 
-function getLanguageLabel(languageCode: SupportedDisplayLanguageCodes): string {
+function getLanguageLabel(
+  languageCode:
+    | SupportedDisplayLanguageCodes
+    | SupportedSpokenLanguageCodes
+    | null
+    | undefined
+): string {
+  if (languageCode === null || languageCode === undefined) {
+    return "";
+  }
   return (
-    languageOptions.find((language) => language.value === languageCode)
-      ?.label ?? languageCode
+    SupportedSpokenLanguageMetadataList.find((language) => language.code === languageCode)
+      ?.englishName ?? getIntlLanguageLabel(languageCode) ?? languageCode
   );
 }
 

@@ -1,91 +1,159 @@
 /** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 import { z } from "zod";
 
-// Normalized source-language codes we intentionally recognize from detectors.
-// Raw provider outputs may be broader and should stay as strings at boundaries.
-export const ZodNormalizedLanguageCodes = z.enum([
-    "en",
-    "es",
-    "fr",
-    "en-GB",
-    "ar",
-    "bn",
-    "eu",
-    "bg",
-    "ca",
-    "hr",
-    "cs",
-    "da",
-    "nl",
-    "fil",
-    "fi",
-    "gl",
-    "de",
-    "el",
-    "gu",
-    "he",
-    "hi",
-    "hu",
-    "id",
-    "ga",
-    "it",
-    "ja",
-    "kn",
-    "ko",
-    "ky",
-    "ms",
-    "mr",
-    "no",
-    "fa",
-    "pl",
-    "pt",
-    "ro",
-    "ru",
-    "sr",
-    "sk",
-    "sv",
-    "ta",
-    "th",
-    "tr",
-    "uk",
-    "ur",
-    "vi",
-    "zh-Hans",
-    "zh-Hant",
+// Canonical product-level spoken/source languages. Regional variants are
+// normalized to these values before product decisions such as translation skip.
+const SUPPORTED_SPOKEN_LANGUAGE_CODES = [
     "af",
-    "sq",
-    "hy",
+    "ak",
+    "am",
+    "ar",
+    "as",
+    "ay",
     "az",
     "be",
-    "nb",
+    "bg",
+    "bho",
+    "bm",
+    "bn",
     "bs",
-    "eo",
-    "et",
-    "lg",
-    "ka",
-    "is",
-    "kk",
-    "la",
-    "lv",
-    "lt",
-    "mk",
-    "mi",
-    "mn",
-    "nn",
-    "pa",
-    "sn",
-    "sl",
-    "so",
-    "st",
-    "sw",
-    "te",
-    "ts",
-    "tn",
+    "ca",
+    "ceb",
+    "ckb",
+    "co",
+    "cs",
     "cy",
+    "da",
+    "de",
+    "doi",
+    "dv",
+    "ee",
+    "el",
+    "en",
+    "eo",
+    "es",
+    "et",
+    "eu",
+    "fa",
+    "fi",
+    "fil",
+    "fr",
+    "fy",
+    "ga",
+    "gd",
+    "gl",
+    "gn",
+    "gom",
+    "gu",
+    "ha",
+    "haw",
+    "he",
+    "hi",
+    "hmn",
+    "hr",
+    "ht",
+    "hu",
+    "hy",
+    "id",
+    "ig",
+    "ilo",
+    "is",
+    "it",
+    "ja",
+    "jv",
+    "ka",
+    "kk",
+    "km",
+    "kn",
+    "ko",
+    "kri",
+    "ku",
+    "ky",
+    "la",
+    "lb",
+    "lg",
+    "ln",
+    "lo",
+    "lt",
+    "lus",
+    "lv",
+    "mai",
+    "mg",
+    "mi",
+    "mk",
+    "ml",
+    "mn",
+    "mni-Mtei",
+    "mr",
+    "ms",
+    "mt",
+    "my",
+    "nb",
+    "ne",
+    "nl",
+    "nn",
+    "no",
+    "nso",
+    "ny",
+    "om",
+    "or",
+    "pa",
+    "pl",
+    "ps",
+    "pt",
+    "qu",
+    "ro",
+    "ru",
+    "rw",
+    "sa",
+    "sd",
+    "si",
+    "sk",
+    "sl",
+    "sm",
+    "sn",
+    "so",
+    "sq",
+    "sr",
+    "st",
+    "su",
+    "sv",
+    "sw",
+    "ta",
+    "te",
+    "tg",
+    "th",
+    "ti",
+    "tk",
+    "tn",
+    "tr",
+    "ts",
+    "tt",
+    "ug",
+    "uk",
+    "ur",
+    "uz",
+    "vi",
     "xh",
+    "yi",
     "yo",
+    "zh-Hans",
+    "zh-Hant",
     "zu",
-]);
+] as const;
+export const ZodSupportedSpokenLanguageCodes = z.enum(
+    SUPPORTED_SPOKEN_LANGUAGE_CODES,
+);
+export type SupportedSpokenLanguageCodes = z.infer<
+    typeof ZodSupportedSpokenLanguageCodes
+>;
+
+export const ZodDetectedSourceLanguageCode = ZodSupportedSpokenLanguageCodes;
+export type DetectedSourceLanguageCode = SupportedSpokenLanguageCodes;
+
+// Normalized source-language codes we intentionally recognize from detectors.
+// Raw provider outputs may be broader and should stay as strings at boundaries.
+export const ZodNormalizedLanguageCodes = ZodSupportedSpokenLanguageCodes;
 export type NormalizedLanguageCodes = z.infer<typeof ZodNormalizedLanguageCodes>;
 
 // Master enum containing all language codes used in the metadata list
@@ -141,24 +209,21 @@ export const ZodAllLanguageCodes = z.enum([
 ]);
 export type AllLanguageCodes = z.infer<typeof ZodAllLanguageCodes>;
 
-// All languages that can be processed for spoken language (derived from metadata list)
-export const ZodSupportedSpokenLanguageCodes = ZodAllLanguageCodes;
-export type SupportedSpokenLanguageCodes = AllLanguageCodes;
-
 // Languages that have UI translations available
-export const ZodSupportedDisplayLanguageCodes = z.enum([
-    "en",
-    "es",
-    "fr",
-    "zh-Hant",
-    "zh-Hans",
-    "ja",
-    "ar",
-    "fa",
-    "he",
-    "ky",
-    "ru",
-]);
+export const ZodSupportedDisplayLanguageCodes =
+    ZodSupportedSpokenLanguageCodes.extract([
+        "en",
+        "es",
+        "fr",
+        "zh-Hant",
+        "zh-Hans",
+        "ja",
+        "ar",
+        "fa",
+        "he",
+        "ky",
+        "ru",
+    ]);
 export type SupportedDisplayLanguageCodes = z.infer<
     typeof ZodSupportedDisplayLanguageCodes
 >;
@@ -537,10 +602,16 @@ export function parseSupportedDisplayLanguageOrUndefined(
 export function parseNormalizedLanguageOrUndefined(
     code: string,
 ): NormalizedLanguageCodes | undefined {
-    const trimmedCode = code.trim();
+    return parseSupportedSpokenLanguageOrUndefined(code);
+}
+
+export function parseSupportedSpokenLanguageOrUndefined(
+    code: string,
+): SupportedSpokenLanguageCodes | undefined {
+    const trimmedCode = code.trim().replaceAll("_", "-");
     if (trimmedCode.length === 0) return undefined;
 
-    const exactMatch = ZodNormalizedLanguageCodes.safeParse(trimmedCode);
+    const exactMatch = ZodSupportedSpokenLanguageCodes.safeParse(trimmedCode);
     if (exactMatch.success) return exactMatch.data;
 
     let normalizedCode = trimmedCode;
@@ -549,10 +620,6 @@ export function parseNormalizedLanguageOrUndefined(
     } catch {
         normalizedCode = trimmedCode;
     }
-
-    const normalizedExactMatch =
-        ZodNormalizedLanguageCodes.safeParse(normalizedCode);
-    if (normalizedExactMatch.success) return normalizedExactMatch.data;
 
     if (
         normalizedCode === "zh-HK" ||
@@ -563,37 +630,25 @@ export function parseNormalizedLanguageOrUndefined(
     }
     if (normalizedCode.startsWith("zh")) return "zh-Hans";
 
+    const normalizedExactMatch =
+        ZodSupportedSpokenLanguageCodes.safeParse(normalizedCode);
+    if (normalizedExactMatch.success) return normalizedExactMatch.data;
+
     const primary = normalizedCode.split("-")[0];
-    const primaryMatch = ZodNormalizedLanguageCodes.safeParse(primary);
+    const primaryMatch = ZodSupportedSpokenLanguageCodes.safeParse(primary);
     if (primaryMatch.success) return primaryMatch.data;
 
     return undefined;
 }
 
+export function parseDetectedSourceLanguageOrUndefined(
+    code: string,
+): DetectedSourceLanguageCode | undefined {
+    return parseSupportedSpokenLanguageOrUndefined(code);
+}
+
 export function parseSpokenLanguage(
     code: string,
 ): SupportedSpokenLanguageCodes {
-    if (!code) return "en";
-
-    // Try specific exact match first
-    const exactMatch = SupportedSpokenLanguageMetadataList.find(
-        (lang) => lang.code.toLowerCase() === code,
-    );
-    if (exactMatch !== undefined) return exactMatch.code;
-
-    // Handle fallbacks
-    if (code === "zh-HK" || code === "zh-TW" || code === "zh-MO") {
-        return "zh-Hant";
-    }
-    if (code.startsWith("zh")) return "zh-Hans";
-
-    // Try primary language match
-    const primary = code.split("-")[0];
-    const primaryMatch = SupportedSpokenLanguageMetadataList.find(
-        (lang) => lang.code.toLowerCase().split("-")[0] === primary,
-    );
-    if (primaryMatch !== undefined) return primaryMatch.code;
-
-    // Else default to English
-    return "en";
+    return parseSupportedSpokenLanguageOrUndefined(code) ?? "en";
 }

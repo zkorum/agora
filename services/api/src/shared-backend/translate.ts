@@ -145,6 +145,26 @@ export function shouldSkipTranslation({
     );
 }
 
+export function translationSourceMatchesCurrentSource({
+    translationSourceLanguageCode,
+    currentSourceLanguageCode,
+}: {
+    translationSourceLanguageCode: string | null;
+    currentSourceLanguageCode: string | null;
+}): boolean {
+    if (currentSourceLanguageCode === null) {
+        return translationSourceLanguageCode === null;
+    }
+    if (translationSourceLanguageCode === null) {
+        return false;
+    }
+
+    return (
+        getLanguageComparisonKey({ languageCode: translationSourceLanguageCode }) ===
+        getLanguageComparisonKey({ languageCode: currentSourceLanguageCode })
+    );
+}
+
 function getTranslationModelName({
     contentKind,
     text,

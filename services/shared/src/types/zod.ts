@@ -16,7 +16,7 @@ import {
 } from "../shared.js";
 import { isValidPolisUrl } from "../utils/polis.js";
 import {
-    ZodNormalizedLanguageCodes,
+    ZodDetectedSourceLanguageCode,
     ZodSupportedSpokenLanguageCodes,
     ZodSupportedDisplayLanguageCodes,
 } from "../languages.js";
@@ -62,6 +62,12 @@ export const zodLanguageDetectionProvider = z.enum([
     "lingua",
     "google_translate",
 ]);
+export const zodAutoLanguageDetectionStatus = z.enum([
+    "not_attempted",
+    "detected",
+    "retryable_unknown",
+    "stable_unknown",
+]);
 export const zodConversationLanguageSettingInput = z.discriminatedUnion(
     "mode",
     [
@@ -79,10 +85,10 @@ export const zodConversationLanguageSettingOutput = z
         mode: zodConversationLanguageSettingMode,
         languageCode: ZodSupportedDisplayLanguageCodes.nullable(),
         detectedLanguageCode: ZodSupportedDisplayLanguageCodes.nullable(),
-        detectedSourceLanguageCode: ZodNormalizedLanguageCodes.nullable(),
+        detectedSourceLanguageCode: ZodDetectedSourceLanguageCode.nullable(),
         detectedRawLanguageCode: z.string().nullable(),
-        detectedRawLanguageProvider: zodLanguageDetectionProvider.nullable(),
         detectionConfidence: z.number().nullable(),
+        autoDetectionStatus: zodAutoLanguageDetectionStatus,
     })
     .strict();
 export const zodConversationMultilingualSetting = z
@@ -275,11 +281,29 @@ export const zodContentTranslationSubject = z.discriminatedUnion("kind", [
         })
         .strict(),
 ]);
+export const zodContentTranslationSourceLanguage = z.discriminatedUnion("kind", [
+    z
+        .object({
+            kind: z.literal("recognized"),
+            languageCode: ZodSupportedSpokenLanguageCodes,
+            label: z.string().min(1),
+        })
+        .strict(),
+    z
+        .object({
+            kind: z.literal("raw"),
+            rawLanguageCode: z.string().min(1),
+            label: z.string().min(1).optional(),
+        })
+        .strict(),
+    z.object({ kind: z.literal("unknown") }).strict(),
+]);
 const zodLocalizedContentTranslationMetadata = z
     .object({
         targetLanguageCode: ZodSupportedDisplayLanguageCodes,
-        sourceLanguageCode: ZodNormalizedLanguageCodes.nullable().optional(),
+        sourceLanguageCode: ZodDetectedSourceLanguageCode.nullable().optional(),
         sourceLanguageLabel: z.string().min(1).optional(),
+        sourceLanguage: zodContentTranslationSourceLanguage,
         status: zodLocalizedContentTranslationStatus,
     })
     .strict();
@@ -1708,8 +1732,14 @@ export type LocalizedContentTranslationStatus = z.infer<
 export type LanguageDetectionProvider = z.infer<
     typeof zodLanguageDetectionProvider
 >;
+export type AutoLanguageDetectionStatus = z.infer<
+    typeof zodAutoLanguageDetectionStatus
+>;
 export type ContentTranslationSubject = z.infer<
     typeof zodContentTranslationSubject
+>;
+export type ContentTranslationSourceLanguage = z.infer<
+    typeof zodContentTranslationSourceLanguage
 >;
 export type ConversationContentVariant = z.infer<
     typeof zodConversationContentVariant
