@@ -15,7 +15,10 @@ from agora_analysis_worker_shared.bedrock_label_summary import (
     ParsedLabelSummaryOutput,
 )
 from agora_analysis_worker_shared.description_input import DescriptionInputError
-from agora_analysis_worker_shared.description_translation import DescriptionTranslation
+from agora_analysis_worker_shared.description_translation import (
+    DescriptionTranslation,
+    add_chinese_script_sibling_translations,
+)
 
 if TYPE_CHECKING:
     from agora_analysis_worker_shared.ai_description_work import ClaimedAiDescriptionLocaleWorkItem
@@ -197,6 +200,7 @@ def generate_simulated_description_translations(
         for target_language_code in target_language_codes
         for description in descriptions
     ]
+    translations = add_chinese_script_sibling_translations(translations)
     log.info(
         "%s translation outcome=success description_count=%d locale_count=%d output_count=%d",
         SIMULATION_LOG_PREFIX,

@@ -423,6 +423,7 @@ export async function createOpinion(
 
     const requestBody = {
         opinionBody: opinionText,
+        opinionPlainText: opinionText,
         conversationSlugId,
     };
 
