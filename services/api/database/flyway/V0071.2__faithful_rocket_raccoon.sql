@@ -1,0 +1,1 @@
+ALTER TABLE "conversation_content_translation" ALTER COLUMN "translated_title" SET DATA TYPE text;
