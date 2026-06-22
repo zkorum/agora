@@ -362,7 +362,11 @@ function getIntlLanguageLabel(languageCode: string): string | undefined {
     const displayName = new Intl.DisplayNames(["en"], { type: "language" }).of(
       canonicalLanguageCode
     );
-    if (displayName === undefined || displayName === canonicalLanguageCode) {
+    if (
+      displayName === undefined ||
+      displayName === canonicalLanguageCode ||
+      displayName.toLocaleLowerCase() === "unknown language"
+    ) {
       return undefined;
     }
     return displayName;
@@ -469,7 +473,7 @@ function getLanguageLabel(
   }
   return (
     SupportedSpokenLanguageMetadataList.find((language) => language.code === languageCode)
-      ?.englishName ?? languageCode
+      ?.englishName ?? getIntlLanguageLabel(languageCode) ?? languageCode
   );
 }
 
