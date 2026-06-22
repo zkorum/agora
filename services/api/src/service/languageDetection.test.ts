@@ -11,6 +11,7 @@ import {
 } from "./languageDetection.js";
 import {
     buildConversationLanguageDetectionCorpus,
+    conversationLanguageSettingToOutput,
     hashConversationLanguageDetectionCorpus,
     resolveConversationLanguageSetting,
     type StoredConversationLanguageSetting,
@@ -166,12 +167,14 @@ function storedAutoConversationLanguageSetting({
     detectedLanguageCode = "en",
     detectedSourceLanguageCode = "en",
     detectedRawLanguageCode = "en",
+    autoDetectionRetryable = false,
 }: {
     provider: StoredConversationLanguageSetting["detectedRawLanguageProvider"];
     detectedFromCorpusHash: string | null;
     detectedLanguageCode?: StoredConversationLanguageSetting["detectedLanguageCode"];
     detectedSourceLanguageCode?: StoredConversationLanguageSetting["detectedSourceLanguageCode"];
     detectedRawLanguageCode?: string | null;
+    autoDetectionRetryable?: boolean;
 }): StoredConversationLanguageSetting {
     return {
         mode: "auto",
@@ -182,6 +185,7 @@ function storedAutoConversationLanguageSetting({
         detectedRawLanguageProvider: provider,
         detectionConfidence: 1,
         detectedFromCorpusHash,
+        autoDetectionRetryable,
     };
 }
 
@@ -719,6 +723,57 @@ describe("detectLanguageWithFallback", () => {
 });
 
 describe("resolveConversationLanguageSetting", () => {
+    it("derives retryable auto-detection output status", () => {
+        const output = conversationLanguageSettingToOutput({
+            setting: storedAutoConversationLanguageSetting({
+                provider: null,
+                detectedFromCorpusHash: null,
+                detectedLanguageCode: null,
+                detectedSourceLanguageCode: null,
+                detectedRawLanguageCode: null,
+                autoDetectionRetryable: true,
+            }),
+        });
+
+        expect(output.autoDetectionStatus).toBe("retryable_unknown");
+    });
+
+    it("derives stable auto-detection output status", () => {
+        const output = conversationLanguageSettingToOutput({
+            setting: storedAutoConversationLanguageSetting({
+                provider: null,
+                detectedFromCorpusHash: null,
+                detectedLanguageCode: null,
+                detectedSourceLanguageCode: null,
+                detectedRawLanguageCode: null,
+            }),
+        });
+
+        expect(output.autoDetectionStatus).toBe("stable_unknown");
+    });
+
+    it("derives detected auto-detection output status", () => {
+        const output = conversationLanguageSettingToOutput({
+            setting: storedAutoConversationLanguageSetting({
+                provider: "google_translate",
+                detectedFromCorpusHash: "hash",
+                detectedLanguageCode: "fr",
+                detectedSourceLanguageCode: "fr",
+                detectedRawLanguageCode: "fr",
+            }),
+        });
+
+        expect(output.autoDetectionStatus).toBe("detected");
+    });
+
+    it("derives not-attempted status for missing language settings", () => {
+        const output = conversationLanguageSettingToOutput({
+            setting: undefined,
+        });
+
+        expect(output.autoDetectionStatus).toBe("not_attempted");
+    });
+
     it("reuses Google-backed detections for unchanged corpus", async () => {
         const conversationTitle = "Transit";
         const bodyPlainText = "How can we improve public transportation for everyone in our city?";
@@ -752,6 +807,7 @@ describe("resolveConversationLanguageSetting", () => {
             detectedSourceLanguageCode: "fr",
             detectedRawLanguageProvider: "google_translate",
             detectedFromCorpusHash: corpusHash,
+            autoDetectionRetryable: false,
         });
     });
 
@@ -792,6 +848,7 @@ describe("resolveConversationLanguageSetting", () => {
             detectedSourceLanguageCode: "fr",
             detectedRawLanguageProvider: "lingua",
             detectedFromCorpusHash: null,
+            autoDetectionRetryable: false,
         });
     });
 
@@ -833,10 +890,11 @@ describe("resolveConversationLanguageSetting", () => {
             detectedSourceLanguageCode: "es",
             detectedRawLanguageProvider: "google_translate",
             detectedFromCorpusHash: corpusHash,
+            autoDetectionRetryable: false,
         });
     });
 
-    it("does not cache detector failures", async () => {
+    it("marks detector failures as retryable unknown", async () => {
         const setting = await resolveConversationLanguageSetting({
             request: { mode: "auto" },
             existing: undefined,
@@ -859,6 +917,33 @@ describe("resolveConversationLanguageSetting", () => {
             detectedRawLanguageProvider: null,
             detectionConfidence: null,
             detectedFromCorpusHash: null,
+            autoDetectionRetryable: true,
+        });
+    });
+
+    it("marks successful empty Google detection as stable unknown", async () => {
+        const setting = await resolveConversationLanguageSetting({
+            request: { mode: "auto" },
+            existing: undefined,
+            conversationTitle: "Transit",
+            bodyPlainText: "How can we improve public transportation?",
+            googleCloudCredentials: undefined,
+            localLanguageDetector: {
+                detect: () => Promise.resolve(undefined),
+            },
+            googleLanguageDetector: () => Promise.resolve(undefined),
+        });
+
+        expect(setting).toMatchObject({
+            mode: "auto",
+            languageCode: null,
+            detectedLanguageCode: null,
+            detectedSourceLanguageCode: null,
+            detectedRawLanguageCode: null,
+            detectedRawLanguageProvider: null,
+            detectionConfidence: null,
+            detectedFromCorpusHash: null,
+            autoDetectionRetryable: false,
         });
     });
 });

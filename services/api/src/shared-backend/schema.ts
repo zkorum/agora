@@ -860,9 +860,6 @@ export const userTable = pgTable(
         username: varchar("username", { length: MAX_LENGTH_USERNAME })
             .notNull()
             .unique(),
-        firstName: varchar("first_name", {
-            length: MAX_LENGTH_NAME_CREATOR,
-        }).notNull(),
         isSiteModerator: boolean("is_site_moderator").notNull().default(false),
         isSiteOrgAdmin: boolean("is_site_org_admin").notNull().default(false),
         isImported: boolean("is_imported").notNull().default(false),
@@ -1750,6 +1747,9 @@ export const conversationLanguageSettingTable = pgTable(
         detectedFromCorpusHash: varchar("detected_from_corpus_hash", {
             length: 64,
         }),
+        autoDetectionRetryable: boolean("auto_detection_retryable")
+            .notNull()
+            .default(false),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,

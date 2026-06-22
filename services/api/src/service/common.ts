@@ -285,6 +285,8 @@ export function useCommonPost() {
                     conversationLanguageSettingTable.detectionConfidence,
                 detectedFromCorpusHash:
                     conversationLanguageSettingTable.detectedFromCorpusHash,
+                autoDetectionRetryable:
+                    conversationLanguageSettingTable.autoDetectionRetryable,
                 // import metadata
                 importUrl: conversationTable.importUrl,
                 importConversationUrl: conversationTable.importConversationUrl,
@@ -472,6 +474,8 @@ export function useCommonPost() {
                                       postItem.detectionConfidence,
                                   detectedFromCorpusHash:
                                       postItem.detectedFromCorpusHash,
+                                  autoDetectionRetryable:
+                                      postItem.autoDetectionRetryable ?? false,
                               },
                         ),
                 }),

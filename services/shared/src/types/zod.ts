@@ -62,6 +62,12 @@ export const zodLanguageDetectionProvider = z.enum([
     "lingua",
     "google_translate",
 ]);
+export const zodAutoLanguageDetectionStatus = z.enum([
+    "not_attempted",
+    "detected",
+    "retryable_unknown",
+    "stable_unknown",
+]);
 export const zodConversationLanguageSettingInput = z.discriminatedUnion(
     "mode",
     [
@@ -82,6 +88,7 @@ export const zodConversationLanguageSettingOutput = z
         detectedSourceLanguageCode: ZodDetectedSourceLanguageCode.nullable(),
         detectedRawLanguageCode: z.string().nullable(),
         detectionConfidence: z.number().nullable(),
+        autoDetectionStatus: zodAutoLanguageDetectionStatus,
     })
     .strict();
 export const zodConversationMultilingualSetting = z
@@ -1724,6 +1731,9 @@ export type LocalizedContentTranslationStatus = z.infer<
 >;
 export type LanguageDetectionProvider = z.infer<
     typeof zodLanguageDetectionProvider
+>;
+export type AutoLanguageDetectionStatus = z.infer<
+    typeof zodAutoLanguageDetectionStatus
 >;
 export type ContentTranslationSubject = z.infer<
     typeof zodContentTranslationSubject

@@ -204,6 +204,7 @@ import {
   SupportedSpokenLanguageMetadataList,
 } from "src/shared/languages";
 import type {
+  AutoLanguageDetectionStatus,
   ConversationLanguageSettingInput,
   ConversationMultilingualSetting,
 } from "src/shared/types/zod";
@@ -240,6 +241,7 @@ const props = defineProps<{
   detectedLanguageCode?: SupportedDisplayLanguageCodes | null;
   detectedSourceLanguageCode?: SupportedSpokenLanguageCodes | null;
   detectedRawLanguageCode?: string | null;
+  autoDetectionStatus?: AutoLanguageDetectionStatus;
 }>();
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
@@ -344,7 +346,8 @@ const forwardIcon = computed(() =>
 );
 type AutoDetectDescriptionState =
   | { kind: "neutral" }
-  | { kind: "unknown" }
+  | { kind: "stable_unknown" }
+  | { kind: "retryable_unknown" }
   | { kind: "detected"; languageLabel: string }
   | { kind: "unsupported"; languageLabel: string };
 
@@ -376,11 +379,28 @@ function getAutoDetectDescriptionState({
   detectedLanguageCode,
   detectedSourceLanguageCode,
   detectedRawLanguageCode,
+  autoDetectionStatus,
 }: {
   detectedLanguageCode: SupportedDisplayLanguageCodes | null | undefined;
   detectedSourceLanguageCode: SupportedSpokenLanguageCodes | null | undefined;
   detectedRawLanguageCode: string | null | undefined;
+  autoDetectionStatus: AutoLanguageDetectionStatus | undefined;
 }): AutoDetectDescriptionState {
+  if (
+    autoDetectionStatus === undefined ||
+    autoDetectionStatus === "not_attempted"
+  ) {
+    return { kind: "neutral" };
+  }
+
+  if (autoDetectionStatus === "retryable_unknown") {
+    return { kind: "retryable_unknown" };
+  }
+
+  if (autoDetectionStatus === "stable_unknown") {
+    return { kind: "stable_unknown" };
+  }
+
   if (detectedLanguageCode !== null && detectedLanguageCode !== undefined) {
     return {
       kind: "detected",
@@ -402,15 +422,7 @@ function getAutoDetectDescriptionState({
     }
   }
 
-  if (
-    detectedLanguageCode === undefined &&
-    detectedSourceLanguageCode === undefined &&
-    detectedRawLanguageCode === undefined
-  ) {
-    return { kind: "neutral" };
-  }
-
-  return { kind: "unknown" };
+  return { kind: "stable_unknown" };
 }
 
 const autoDetectDescriptionState = computed(() =>
@@ -418,6 +430,7 @@ const autoDetectDescriptionState = computed(() =>
     detectedLanguageCode: props.detectedLanguageCode,
     detectedSourceLanguageCode: props.detectedSourceLanguageCode,
     detectedRawLanguageCode: props.detectedRawLanguageCode,
+    autoDetectionStatus: props.autoDetectionStatus,
   })
 );
 const autoDetectOptionDescription = computed(() => {
@@ -425,8 +438,11 @@ const autoDetectOptionDescription = computed(() => {
   if (state.kind === "neutral") {
     return t("autoDetectDescription");
   }
-  if (state.kind === "unknown") {
+  if (state.kind === "stable_unknown") {
     return t("autoDetectUnknownDescription");
+  }
+  if (state.kind === "retryable_unknown") {
+    return t("autoDetectRetryableUnknownDescription");
   }
   if (state.kind === "unsupported") {
     return t("autoDetectUnsupportedDescription", {

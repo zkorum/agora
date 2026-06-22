@@ -102,7 +102,6 @@ describe("OTP destination throttling", () => {
         await db.insert(userTable).values({
             id: userId,
             username,
-            firstName: username,
         });
         await db.insert(deviceTable).values({
             didWrite,
@@ -185,7 +184,6 @@ describe("OTP destination throttling", () => {
         await db.insert(userTable).values({
             id: conflictingUserId,
             username: "conflictemailuser",
-            firstName: "conflictemailuser",
         });
         await db.insert(emailTable).values({
             email: normalizeEmail(email),
@@ -253,7 +251,6 @@ describe("OTP destination throttling", () => {
         await db.insert(userTable).values({
             id: conflictingUserId,
             username: "conflictphoneuser",
-            firstName: "conflictphoneuser",
         });
         await db.insert(phoneTable).values({
             userId: conflictingUserId,

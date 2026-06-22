@@ -16,8 +16,8 @@ ALTER TABLE "organization" ALTER COLUMN "slug" SET NOT NULL;--> statement-breakp
 ALTER TABLE "organization" ALTER COLUMN "display_name" SET NOT NULL;--> statement-breakpoint
 ALTER TABLE "organization" ALTER COLUMN "directory_visibility" SET NOT NULL;--> statement-breakpoint
 ALTER TABLE "premium_feature_entitlement" ALTER COLUMN "organization_id" SET NOT NULL;--> statement-breakpoint
-ALTER TABLE "user" ALTER COLUMN "first_name" SET NOT NULL;--> statement-breakpoint
 ALTER TABLE "conversation" DROP COLUMN "author_id";--> statement-breakpoint
 ALTER TABLE "conversation" DROP COLUMN "organization_id";--> statement-breakpoint
 ALTER TABLE "organization" DROP COLUMN "name";--> statement-breakpoint
-ALTER TABLE "premium_feature_entitlement" DROP COLUMN "user_id";
+ALTER TABLE "premium_feature_entitlement" DROP COLUMN "user_id";--> statement-breakpoint
+ALTER TABLE "user" DROP COLUMN "first_name";

@@ -69,6 +69,7 @@
         color="primary"
         no-caps
         :label="t('createButton')"
+        :disable="!canCreateEntitlement"
         :loading="isCreating"
         @click="createEntitlement"
       />
@@ -132,6 +133,7 @@ import type {
   OrganizationProperties,
   PremiumFeature,
 } from "src/shared/types/zod";
+import { zodUsername } from "src/shared/types/zod";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { useBackendAdministratorPremiumEntitlementApi } from "src/utils/api/administrator/premiumEntitlement";
 import { computed, onMounted, ref } from "vue";
@@ -201,6 +203,24 @@ const organizationOptions = computed<Array<SelectOption<string>>>(() =>
     ];
   })
 );
+
+const canCreateEntitlement = computed(() => {
+  const subjectValue =
+    subjectType.value === "user"
+      ? getInputString(username.value).trim()
+      : getInputString(organizationSlug.value).trim();
+
+  const hasValidSubject =
+    subjectType.value === "user"
+      ? zodUsername.safeParse(subjectValue).success
+      : subjectValue !== "";
+
+  return (
+    hasValidSubject &&
+    features.value.length > 0 &&
+    !Number.isNaN(new Date(getInputString(startsAt.value)).getTime())
+  );
+});
 
 onMounted(async () => {
   const [organizations] = await Promise.all([

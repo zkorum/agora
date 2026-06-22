@@ -6,7 +6,7 @@ import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js
 import { conversationLanguageSettingTable } from "@/shared-backend/schema.js";
 import { detectLanguage } from "@/shared-backend/translate.js";
 import {
-    detectLanguageWithFallback,
+    detectLanguageWithFallbackOutcome,
     type GoogleLanguageDetector,
     type LanguageDetectionHintInput,
     type LanguageDetectionProvider,
@@ -20,6 +20,7 @@ import {
     type SupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
 import type {
+    AutoLanguageDetectionStatus,
     ConversationLanguageSettingInput,
     ConversationLanguageSettingOutput,
 } from "@/shared/types/zod.js";
@@ -33,6 +34,7 @@ export interface StoredConversationLanguageSetting {
     detectedRawLanguageProvider: LanguageDetectionProvider | null;
     detectionConfidence: number | null;
     detectedFromCorpusHash: string | null;
+    autoDetectionRetryable: boolean;
 }
 
 interface ConversationLanguageSettingRow {
@@ -44,6 +46,7 @@ interface ConversationLanguageSettingRow {
     detectedRawLanguageProvider: LanguageDetectionProvider | null;
     detectionConfidence: number | null;
     detectedFromCorpusHash: string | null;
+    autoDetectionRetryable: boolean;
 }
 
 interface ResolveConversationLanguageSettingParams {
@@ -124,6 +127,7 @@ function emptyAutoLanguageSetting(): StoredConversationLanguageSetting {
         detectedRawLanguageProvider: null,
         detectionConfidence: null,
         detectedFromCorpusHash: null,
+        autoDetectionRetryable: false,
     };
 }
 
@@ -182,7 +186,28 @@ export function normalizeConversationLanguageSettingRow(
         detectedRawLanguageProvider: row.detectedRawLanguageProvider,
         detectionConfidence: row.detectionConfidence,
         detectedFromCorpusHash: row.detectedFromCorpusHash,
+        autoDetectionRetryable: row.autoDetectionRetryable,
     };
+}
+
+function autoDetectionStatusForOutput({
+    setting,
+}: {
+    setting: StoredConversationLanguageSetting | undefined;
+}): AutoLanguageDetectionStatus {
+    if (setting?.mode !== "auto") {
+        return "not_attempted";
+    }
+    if (
+        setting.detectedLanguageCode !== null ||
+        setting.detectedSourceLanguageCode !== null ||
+        setting.detectedRawLanguageCode !== null
+    ) {
+        return "detected";
+    }
+    return setting.autoDetectionRetryable
+        ? "retryable_unknown"
+        : "stable_unknown";
 }
 
 export function conversationLanguageSettingToOutput({
@@ -198,6 +223,7 @@ export function conversationLanguageSettingToOutput({
         detectedSourceLanguageCode: resolvedSetting.detectedSourceLanguageCode,
         detectedRawLanguageCode: resolvedSetting.detectedRawLanguageCode,
         detectionConfidence: resolvedSetting.detectionConfidence,
+        autoDetectionStatus: autoDetectionStatusForOutput({ setting }),
     };
 }
 
@@ -253,16 +279,21 @@ async function detectConversationLanguage({
                       });
                   });
 
-        const detectionResult = await detectLanguageWithFallback({
+        const detectionOutcome = await detectLanguageWithFallbackOutcome({
             text: corpus,
             googleText: googleCorpus,
             languageHints,
             localDetector: localLanguageDetector,
             googleDetector: resolvedGoogleLanguageDetector,
         });
-        if (detectionResult === undefined) {
-            return emptyAutoLanguageSetting();
+        if (detectionOutcome.kind !== "detected") {
+            return {
+                ...emptyAutoLanguageSetting(),
+                autoDetectionRetryable:
+                    detectionOutcome.kind === "retryable_unknown",
+            };
         }
+        const { result: detectionResult } = detectionOutcome;
 
         return {
             mode: "auto",
@@ -274,6 +305,7 @@ async function detectConversationLanguage({
             detectionConfidence: detectionResult.confidence,
             detectedFromCorpusHash:
                 detectionResult.provider === "google_translate" ? corpusHash : null,
+            autoDetectionRetryable: false,
         };
     } catch (error) {
         log.warn(error, "[ConversationLanguage] Failed to detect language");
@@ -302,6 +334,7 @@ export async function resolveConversationLanguageSetting({
             detectedRawLanguageProvider: existing?.detectedRawLanguageProvider ?? null,
             detectionConfidence: existing?.detectionConfidence ?? null,
             detectedFromCorpusHash: existing?.detectedFromCorpusHash ?? null,
+            autoDetectionRetryable: false,
         };
     }
 
@@ -365,6 +398,8 @@ export async function getConversationLanguageSetting({
                 conversationLanguageSettingTable.detectionConfidence,
             detectedFromCorpusHash:
                 conversationLanguageSettingTable.detectedFromCorpusHash,
+            autoDetectionRetryable:
+                conversationLanguageSettingTable.autoDetectionRetryable,
         })
         .from(conversationLanguageSettingTable)
         .where(
@@ -398,6 +433,7 @@ export async function upsertConversationLanguageSetting({
             detectedRawLanguageProvider: setting.detectedRawLanguageProvider,
             detectionConfidence: setting.detectionConfidence,
             detectedFromCorpusHash: setting.detectedFromCorpusHash,
+            autoDetectionRetryable: setting.autoDetectionRetryable,
             createdAt: now,
             updatedAt: now,
         })
@@ -412,6 +448,7 @@ export async function upsertConversationLanguageSetting({
                 detectedRawLanguageProvider: setting.detectedRawLanguageProvider,
                 detectionConfidence: setting.detectionConfidence,
                 detectedFromCorpusHash: setting.detectedFromCorpusHash,
+                autoDetectionRetryable: setting.autoDetectionRetryable,
                 updatedAt: now,
             },
         });

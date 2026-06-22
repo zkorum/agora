@@ -64,6 +64,7 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
         detectedSourceLanguageCode: null,
         detectedRawLanguageCode: null,
         detectionConfidence: null,
+        autoDetectionStatus: "not_attempted",
       },
       multilingualSetting: {
         additionalLanguageCodes: [],

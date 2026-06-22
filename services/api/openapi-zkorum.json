@@ -1320,6 +1320,15 @@
                                                                     "detectionConfidence": {
                                                                         "nullable": true,
                                                                         "type": "number"
+                                                                    },
+                                                                    "autoDetectionStatus": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "not_attempted",
+                                                                            "detected",
+                                                                            "retryable_unknown",
+                                                                            "stable_unknown"
+                                                                        ]
                                                                     }
                                                                 },
                                                                 "required": [
@@ -1328,7 +1337,8 @@
                                                                     "detectedLanguageCode",
                                                                     "detectedSourceLanguageCode",
                                                                     "detectedRawLanguageCode",
-                                                                    "detectionConfidence"
+                                                                    "detectionConfidence",
+                                                                    "autoDetectionStatus"
                                                                 ],
                                                                 "additionalProperties": false
                                                             },
@@ -2569,6 +2579,15 @@
                                                             "detectionConfidence": {
                                                                 "nullable": true,
                                                                 "type": "number"
+                                                            },
+                                                            "autoDetectionStatus": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "not_attempted",
+                                                                    "detected",
+                                                                    "retryable_unknown",
+                                                                    "stable_unknown"
+                                                                ]
                                                             }
                                                         },
                                                         "required": [
@@ -2577,7 +2596,8 @@
                                                             "detectedLanguageCode",
                                                             "detectedSourceLanguageCode",
                                                             "detectedRawLanguageCode",
-                                                            "detectionConfidence"
+                                                            "detectionConfidence",
+                                                            "autoDetectionStatus"
                                                         ],
                                                         "additionalProperties": false
                                                     },
@@ -3213,6 +3233,15 @@
                                                                     "detectionConfidence": {
                                                                         "nullable": true,
                                                                         "type": "number"
+                                                                    },
+                                                                    "autoDetectionStatus": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "not_attempted",
+                                                                            "detected",
+                                                                            "retryable_unknown",
+                                                                            "stable_unknown"
+                                                                        ]
                                                                     }
                                                                 },
                                                                 "required": [
@@ -3221,7 +3250,8 @@
                                                                     "detectedLanguageCode",
                                                                     "detectedSourceLanguageCode",
                                                                     "detectedRawLanguageCode",
-                                                                    "detectionConfidence"
+                                                                    "detectionConfidence",
+                                                                    "autoDetectionStatus"
                                                                 ],
                                                                 "additionalProperties": false
                                                             },
@@ -8713,6 +8743,15 @@
                                                                 "detectionConfidence": {
                                                                     "nullable": true,
                                                                     "type": "number"
+                                                                },
+                                                                "autoDetectionStatus": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "not_attempted",
+                                                                        "detected",
+                                                                        "retryable_unknown",
+                                                                        "stable_unknown"
+                                                                    ]
                                                                 }
                                                             },
                                                             "required": [
@@ -8721,7 +8760,8 @@
                                                                 "detectedLanguageCode",
                                                                 "detectedSourceLanguageCode",
                                                                 "detectedRawLanguageCode",
-                                                                "detectionConfidence"
+                                                                "detectionConfidence",
+                                                                "autoDetectionStatus"
                                                             ],
                                                             "additionalProperties": false
                                                         },
@@ -9286,6 +9326,15 @@
                                                         "detectionConfidence": {
                                                             "nullable": true,
                                                             "type": "number"
+                                                        },
+                                                        "autoDetectionStatus": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "not_attempted",
+                                                                "detected",
+                                                                "retryable_unknown",
+                                                                "stable_unknown"
+                                                            ]
                                                         }
                                                     },
                                                     "required": [
@@ -9294,7 +9343,8 @@
                                                         "detectedLanguageCode",
                                                         "detectedSourceLanguageCode",
                                                         "detectedRawLanguageCode",
-                                                        "detectionConfidence"
+                                                        "detectionConfidence",
+                                                        "autoDetectionStatus"
                                                     ],
                                                     "additionalProperties": false
                                                 },

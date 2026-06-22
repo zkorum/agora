@@ -215,9 +215,7 @@ class Conversation(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     slug_id: Mapped[str] = mapped_column(String(8))
-    author_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
-    organization_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    project_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    project_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     current_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_indexed: Mapped[bool] = mapped_column(Boolean, server_default="true")
@@ -548,7 +546,6 @@ class User(Base):
     id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True)
     polis_participant_id: Mapped[int] = mapped_column(Integer)
     username: Mapped[str] = mapped_column(String(20))
-    first_name: Mapped[str | None] = mapped_column(String(65), nullable=True)
     is_site_moderator: Mapped[bool] = mapped_column(Boolean, server_default="false")
     is_site_org_admin: Mapped[bool] = mapped_column(Boolean, server_default="false")
     is_imported: Mapped[bool] = mapped_column(Boolean, server_default="false")

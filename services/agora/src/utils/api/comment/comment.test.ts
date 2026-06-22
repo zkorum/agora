@@ -104,6 +104,7 @@ function conversationMetadata(
       detectedSourceLanguageCode: null,
       detectedRawLanguageCode: null,
       detectionConfidence: null,
+      autoDetectionStatus: "not_attempted",
     },
     multilingualSetting: {
       additionalLanguageCodes: [],

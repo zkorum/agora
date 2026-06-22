@@ -1,6 +1,6 @@
 {
-  "id": "84122383-f137-435f-a1e4-b04c927f5a69",
-  "prevId": "7303072a-c056-4cd4-b2af-e7a6c9cf3a45",
+  "id": "5eb9526e-ee19-4cba-acd8-3d81d5be6782",
+  "prevId": "c890041b-650e-4aed-84e3-092dd631a887",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2715,6 +2715,13 @@
           "type": "varchar(64)",
           "primaryKey": false,
           "notNull": false
+        },
+        "auto_detection_retryable": {
+          "name": "auto_detection_retryable",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -12198,12 +12205,6 @@
         "username": {
           "name": "username",
           "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "first_name": {
-          "name": "first_name",
-          "type": "varchar(65)",
           "primaryKey": false,
           "notNull": true
         },

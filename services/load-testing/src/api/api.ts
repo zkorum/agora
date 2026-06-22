@@ -2265,6 +2265,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
     'detectedSourceLanguageCode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedSourceLanguageCodeEnum | null;
     'detectedRawLanguageCode': string | null;
     'detectionConfidence': number | null;
+    'autoDetectionStatus': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingAutoDetectionStatusEnum;
 }
 
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingModeEnum = {
@@ -2443,6 +2444,14 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedSourceLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedSourceLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedSourceLanguageCodeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingAutoDetectionStatusEnum = {
+    NotAttempted: 'not_attempted',
+    Detected: 'detected',
+    RetryableUnknown: 'retryable_unknown',
+    StableUnknown: 'stable_unknown',
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingAutoDetectionStatusEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingAutoDetectionStatusEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingAutoDetectionStatusEnum];
 
 /**
  * @type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration

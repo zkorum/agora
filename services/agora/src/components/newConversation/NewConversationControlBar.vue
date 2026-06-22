@@ -71,6 +71,7 @@
     :detected-language-code="props.detectedLanguageCode"
     :detected-source-language-code="props.detectedSourceLanguageCode"
     :detected-raw-language-code="props.detectedRawLanguageCode"
+    :auto-detection-status="props.autoDetectionStatus"
   />
 
   <LoginRequirementDialog
@@ -113,6 +114,7 @@ import {
   SupportedSpokenLanguageMetadataList,
 } from "src/shared/languages";
 import type {
+  AutoLanguageDetectionStatus,
   ConversationLanguageSettingInput,
   ConversationMultilingualSetting,
   ConversationType,
@@ -164,6 +166,7 @@ interface Props {
   detectedLanguageCode?: SupportedDisplayLanguageCodes | null;
   detectedSourceLanguageCode?: SupportedSpokenLanguageCodes | null;
   detectedRawLanguageCode?: string | null;
+  autoDetectionStatus?: AutoLanguageDetectionStatus;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -176,6 +179,7 @@ const props = withDefaults(defineProps<Props>(), {
   detectedLanguageCode: undefined,
   detectedSourceLanguageCode: undefined,
   detectedRawLanguageCode: undefined,
+  autoDetectionStatus: undefined,
 });
 
 const { t } = useComponentI18n<NewConversationControlBarTranslations>(

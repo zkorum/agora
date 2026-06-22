@@ -49,6 +49,8 @@ const backfillLanguageSettingSelect = {
         conversationLanguageSettingTable.detectedRawLanguageProvider,
     detectionConfidence: conversationLanguageSettingTable.detectionConfidence,
     detectedFromCorpusHash: conversationLanguageSettingTable.detectedFromCorpusHash,
+    autoDetectionRetryable:
+        conversationLanguageSettingTable.autoDetectionRetryable,
 };
 
 interface BackfillLanguageSettingRow {
@@ -60,6 +62,7 @@ interface BackfillLanguageSettingRow {
     detectedRawLanguageProvider: StoredConversationLanguageSetting["detectedRawLanguageProvider"];
     detectionConfidence: number | null;
     detectedFromCorpusHash: string | null;
+    autoDetectionRetryable: boolean | null;
 }
 
 function normalizeBackfillLanguageSetting({
@@ -79,6 +82,7 @@ function normalizeBackfillLanguageSetting({
                   detectedRawLanguageProvider: row.detectedRawLanguageProvider,
                   detectionConfidence: row.detectionConfidence,
                   detectedFromCorpusHash: row.detectedFromCorpusHash,
+                  autoDetectionRetryable: row.autoDetectionRetryable ?? false,
               },
     );
 }

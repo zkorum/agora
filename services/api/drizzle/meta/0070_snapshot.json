@@ -1,5 +1,5 @@
 {
-  "id": "7303072a-c056-4cd4-b2af-e7a6c9cf3a45",
+  "id": "c890041b-650e-4aed-84e3-092dd631a887",
   "prevId": "e7ec5c0a-95ba-40db-a5f1-02aa2195cae9",
   "version": "7",
   "dialect": "postgresql",
@@ -2716,6 +2716,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "auto_detection_retryable": {
+          "name": "auto_detection_retryable",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (0)",
@@ -3223,6 +3230,21 @@
           "method": "btree",
           "with": {}
         },
+        "conversation_project_id_idx": {
+          "name": "conversation_project_id_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "conversation_author_timeline_idx": {
           "name": "conversation_author_timeline_idx",
           "columns": [
@@ -3286,21 +3308,6 @@
           ],
           "isUnique": false,
           "where": "\"conversation\".\"current_content_id\" is not null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "conversation_project_id_idx": {
-          "name": "conversation_project_id_idx",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -8915,7 +8922,7 @@
           "name": "name",
           "type": "varchar(65)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "slug": {
           "name": "slug",
@@ -9327,15 +9334,15 @@
             "cycle": false
           }
         },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
         "organization_id": {
           "name": "organization_id",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -9398,27 +9405,6 @@
         }
       },
       "indexes": {
-        "premium_feature_entitlement_user_idx": {
-          "name": "premium_feature_entitlement_user_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "feature",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "premium_feature_entitlement_org_idx": {
           "name": "premium_feature_entitlement_org_idx",
           "columns": [
@@ -9439,15 +9425,36 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "premium_feature_entitlement_user_idx": {
+          "name": "premium_feature_entitlement_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "feature",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
-        "premium_feature_entitlement_user_id_user_id_fk": {
-          "name": "premium_feature_entitlement_user_id_user_id_fk",
+        "premium_feature_entitlement_organization_id_organization_id_fk": {
+          "name": "premium_feature_entitlement_organization_id_organization_id_fk",
           "tableFrom": "premium_feature_entitlement",
-          "tableTo": "user",
+          "tableTo": "organization",
           "columnsFrom": [
-            "user_id"
+            "organization_id"
           ],
           "columnsTo": [
             "id"
@@ -9455,12 +9462,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "premium_feature_entitlement_organization_id_organization_id_fk": {
-          "name": "premium_feature_entitlement_organization_id_organization_id_fk",
+        "premium_feature_entitlement_user_id_user_id_fk": {
+          "name": "premium_feature_entitlement_user_id_user_id_fk",
           "tableFrom": "premium_feature_entitlement",
-          "tableTo": "organization",
+          "tableTo": "user",
           "columnsFrom": [
-            "organization_id"
+            "user_id"
           ],
           "columnsTo": [
             "id"

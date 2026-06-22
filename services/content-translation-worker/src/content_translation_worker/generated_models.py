@@ -350,9 +350,7 @@ class Conversation(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     slug_id: Mapped[str] = mapped_column(String(8))
-    author_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
-    organization_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    project_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    project_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     current_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_indexed: Mapped[bool] = mapped_column(Boolean, server_default="true")

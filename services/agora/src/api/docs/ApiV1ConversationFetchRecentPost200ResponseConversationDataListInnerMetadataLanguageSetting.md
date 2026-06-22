@@ -11,6 +11,7 @@ Name | Type | Description | Notes
 **detectedSourceLanguageCode** | **string** |  | [default to undefined]
 **detectedRawLanguageCode** | **string** |  | [default to undefined]
 **detectionConfidence** | **number** |  | [default to undefined]
+**autoDetectionStatus** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -24,6 +25,7 @@ const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListI
     detectedSourceLanguageCode,
     detectedRawLanguageCode,
     detectionConfidence,
+    autoDetectionStatus,
 };
 ```
 

@@ -167,6 +167,11 @@ export interface LanguageDetectionResult {
     confidence: number | null;
 }
 
+export type LanguageDetectionFallbackOutcome =
+    | { kind: "detected"; result: LanguageDetectionResult }
+    | { kind: "retryable_unknown" }
+    | { kind: "stable_unknown" };
+
 export interface LanguageDetectionHint {
     languageCode: string;
     weight: number;
@@ -764,23 +769,26 @@ async function computeHintedLocalDetectionResults({
     return hintedResults;
 }
 
-function googleAttemptToResult({
+function googleAttemptToOutcome({
     attempt,
     text,
 }: {
     attempt: GoogleLanguageDetectionAttempt;
     text: string;
-}): LanguageDetectionResult | undefined {
+}): LanguageDetectionFallbackOutcome {
     if (attempt.status === "failed") {
-        return undefined;
+        return { kind: "retryable_unknown" };
     }
     if (attempt.result === undefined) {
-        return undefined;
+        return { kind: "stable_unknown" };
     }
-    return normalizeGoogleDetection({ detection: attempt.result, text });
+    return {
+        kind: "detected",
+        result: normalizeGoogleDetection({ detection: attempt.result, text }),
+    };
 }
 
-export async function detectLanguageWithFallback({
+export async function detectLanguageWithFallbackOutcome({
     text,
     googleText,
     languageHints = [],
@@ -792,13 +800,13 @@ export async function detectLanguageWithFallback({
     languageHints?: readonly LanguageDetectionHintInput[];
     localDetector?: LocalLanguageDetector;
     googleDetector?: GoogleLanguageDetector;
-}): Promise<LanguageDetectionResult | undefined> {
+}): Promise<LanguageDetectionFallbackOutcome> {
     const localDetectionPolicy = localLanguageDetectionPolicyForText({ text });
     if (!localDetectionPolicy.allowLocalDetection) {
         if (googleDetector === undefined) {
-            return undefined;
+            return { kind: "retryable_unknown" };
         }
-        return googleAttemptToResult({
+        return googleAttemptToOutcome({
             attempt: await detectWithGoogle({
                 googleDetector,
                 text: googleText ?? text,
@@ -812,9 +820,9 @@ export async function detectLanguageWithFallback({
 
     if (resolvedLocalDetector === undefined) {
         if (googleDetector === undefined) {
-            return undefined;
+            return { kind: "retryable_unknown" };
         }
-        return googleAttemptToResult({
+        return googleAttemptToOutcome({
             attempt: await detectWithGoogle({ googleDetector, text }),
             text,
         });
@@ -824,7 +832,7 @@ export async function detectLanguageWithFallback({
     try {
         localDetection = await resolvedLocalDetector.detect({ text });
     } catch {
-        return undefined;
+        return { kind: "retryable_unknown" };
     }
 
     const localResult =
@@ -845,11 +853,14 @@ export async function detectLanguageWithFallback({
         hintedResolution.result?.sourceLanguageCode !== undefined &&
         hintedResolution.result.sourceLanguageCode !== null
     ) {
-        return hintedResolution.result;
+        return { kind: "detected", result: hintedResolution.result };
     }
 
     if (googleDetector === undefined) {
-        return hintedResolution.result;
+        if (hintedResolution.result === undefined) {
+            return { kind: "stable_unknown" };
+        }
+        return { kind: "detected", result: hintedResolution.result };
     }
 
     const googleAttempt = await detectWithGoogle({
@@ -857,16 +868,43 @@ export async function detectLanguageWithFallback({
         text: googleText ?? text,
     });
     if (googleAttempt.status === "failed") {
-        return undefined;
+        return { kind: "retryable_unknown" };
     }
 
-    const googleResult = googleAttemptToResult({
+    const googleOutcome = googleAttemptToOutcome({
         attempt: googleAttempt,
         text: googleText ?? text,
     });
-    if (googleResult !== undefined) {
-        return googleResult;
+    if (googleOutcome.kind === "detected") {
+        return googleOutcome;
     }
 
-    return localResult;
+    if (localResult !== undefined) {
+        return { kind: "detected", result: localResult };
+    }
+
+    return googleOutcome;
+}
+
+export async function detectLanguageWithFallback({
+    text,
+    googleText,
+    languageHints = [],
+    localDetector,
+    googleDetector,
+}: {
+    text: string;
+    googleText?: string;
+    languageHints?: readonly LanguageDetectionHintInput[];
+    localDetector?: LocalLanguageDetector;
+    googleDetector?: GoogleLanguageDetector;
+}): Promise<LanguageDetectionResult | undefined> {
+    const outcome = await detectLanguageWithFallbackOutcome({
+        text,
+        googleText,
+        languageHints,
+        localDetector,
+        googleDetector,
+    });
+    return outcome.kind === "detected" ? outcome.result : undefined;
 }

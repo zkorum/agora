@@ -163,7 +163,7 @@ export async function getOrCreatePersonalOrganization({
     }
 
     const userRows = await db
-        .select({ firstName: userTable.firstName })
+        .select({ username: userTable.username })
         .from(userTable)
         .where(eq(userTable.id, userId))
         .limit(1);
@@ -176,7 +176,7 @@ export async function getOrCreatePersonalOrganization({
         .insert(organizationTable)
         .values({
             slug: personalOrganizationSlug(userId),
-            displayName: user.firstName,
+            displayName: user.username,
             directoryVisibility: "unlisted",
             autoProvisionedForUserId: userId,
             imagePath: null,

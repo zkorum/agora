@@ -55,6 +55,7 @@
         :detected-language-code="visibleDetectedLanguageCode"
         :detected-source-language-code="visibleDetectedSourceLanguageCode"
         :detected-raw-language-code="visibleDetectedRawLanguageCode"
+        :auto-detection-status="visibleAutoDetectionStatus"
       />
 
       <ZKCard
@@ -203,6 +204,9 @@ const detectedSourceLanguageCode = ref<
 const detectedRawLanguageCode = ref<
   ConversationLanguageSettingOutput["detectedRawLanguageCode"]
 >(null);
+const autoDetectionStatus = ref<
+  ConversationLanguageSettingOutput["autoDetectionStatus"]
+>("not_attempted");
 
 const titleInputRef = ref<HTMLDivElement>();
 
@@ -372,14 +376,15 @@ const visibleDetectedSourceLanguageCode = computed(() =>
 const visibleDetectedRawLanguageCode = computed(() =>
   canShowStoredAutoDetection.value ? detectedRawLanguageCode.value : undefined
 );
+const visibleAutoDetectionStatus = computed(() =>
+  canShowStoredAutoDetection.value ? autoDetectionStatus.value : undefined
+);
 
 const canRetryUnknownAutoDetection = computed(() => {
   return (
     canShowStoredAutoDetection.value &&
     languageSetting.value.mode === "auto" &&
-    detectedLanguageCode.value === null &&
-    detectedSourceLanguageCode.value === null &&
-    detectedRawLanguageCode.value === null
+    autoDetectionStatus.value === "retryable_unknown"
   );
 });
 
@@ -574,6 +579,7 @@ onMounted(async () => {
     detectedSourceLanguageCode.value =
       response.languageSetting.detectedSourceLanguageCode;
     detectedRawLanguageCode.value = response.languageSetting.detectedRawLanguageCode;
+    autoDetectionStatus.value = response.languageSetting.autoDetectionStatus;
 
     initializeFromData({
       title: response.conversationTitle,

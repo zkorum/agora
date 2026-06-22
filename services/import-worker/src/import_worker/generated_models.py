@@ -492,6 +492,7 @@ class ConversationLanguageSetting(Base):
     )
     detection_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     detected_from_corpus_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    auto_detection_retryable: Mapped[bool] = mapped_column(Boolean, server_default="false")
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
@@ -501,9 +502,7 @@ class Conversation(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     slug_id: Mapped[str] = mapped_column(String(8))
-    author_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
-    organization_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    project_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    project_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     current_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_indexed: Mapped[bool] = mapped_column(Boolean, server_default="true")
@@ -752,17 +751,15 @@ class Organization(Base):
     __tablename__ = "organization"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String(65))
-    slug: Mapped[str | None] = mapped_column(String(65), nullable=True)
-    display_name: Mapped[str | None] = mapped_column(String(65), nullable=True)
-    directory_visibility: Mapped[DirectoryVisibility | None] = mapped_column(
+    slug: Mapped[str] = mapped_column(String(65))
+    display_name: Mapped[str] = mapped_column(String(65))
+    directory_visibility: Mapped[DirectoryVisibility] = mapped_column(
         SaEnum(
             DirectoryVisibility,
             name="directory_visibility",
             values_callable=_enum_values,
             native_enum=True,
         ),
-        nullable=True,
     )
     auto_provisioned_for_user_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
     image_path: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -807,7 +804,6 @@ class User(Base):
     id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True)
     polis_participant_id: Mapped[int] = mapped_column(Integer)
     username: Mapped[str] = mapped_column(String(20))
-    first_name: Mapped[str | None] = mapped_column(String(65), nullable=True)
     is_site_moderator: Mapped[bool] = mapped_column(Boolean, server_default="false")
     is_site_org_admin: Mapped[bool] = mapped_column(Boolean, server_default="false")
     is_imported: Mapped[bool] = mapped_column(Boolean, server_default="false")

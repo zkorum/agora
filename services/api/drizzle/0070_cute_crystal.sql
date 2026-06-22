@@ -62,6 +62,7 @@ CREATE TABLE "conversation_language_setting" (
 	"detected_raw_language_provider" "language_detection_provider",
 	"detection_confidence" real,
 	"detected_from_corpus_hash" varchar(64),
+	"auto_detection_retryable" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "conversation_language_setting_conversation_unique" UNIQUE("conversation_id"),
@@ -160,6 +161,7 @@ ALTER TABLE "opinion_group_candidate_description_locale_request" ALTER COLUMN "l
 ALTER TABLE "opinion_group_description" ALTER COLUMN "locale" SET DATA TYPE "display_language_code" USING "locale"::"display_language_code";--> statement-breakpoint
 ALTER TABLE "opinion_group_description_translation" ALTER COLUMN "locale" SET DATA TYPE "display_language_code" USING "locale"::"display_language_code";--> statement-breakpoint
 ALTER TABLE "opinion_group_description_translation_work" ALTER COLUMN "locale" SET DATA TYPE "display_language_code" USING "locale"::"display_language_code";--> statement-breakpoint
+ALTER TABLE "organization" ALTER COLUMN "name" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "organization" ALTER COLUMN "image_path" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "survey_question_content" ALTER COLUMN "source_language_code" SET DATA TYPE "spoken_language_code" USING "source_language_code"::"spoken_language_code";--> statement-breakpoint
 ALTER TABLE "survey_question_content_translation" ALTER COLUMN "display_language_code" SET DATA TYPE "display_language_code" USING "display_language_code"::"display_language_code";--> statement-breakpoint

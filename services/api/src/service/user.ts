@@ -530,7 +530,6 @@ export async function bulkInsertUsersFromExternalPolisConvo({
         return {
             id: userId,
             username: `ext_${conversationSlugId}_${String(participantId)}`,
-            firstName: `ext_${conversationSlugId}_${String(participantId)}`,
             isImported: true,
         };
     });
