@@ -691,7 +691,7 @@ const controlButtons = computed((): ControlButton[] => [
     icon: showLanguageSettingDialog.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
-    isVisible: props.isEditMode || importSettings.value.importType === null,
+    isVisible: true,
     clickHandler: toggleLanguageSetting,
     clickable: true,
   },

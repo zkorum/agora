@@ -208,6 +208,7 @@ import type {
   ConversationLanguageSettingInput,
   ConversationMultilingualSetting,
 } from "src/shared/types/zod";
+import { toBcp47Locale } from "src/utils/language";
 import { computed, ref, watch } from "vue";
 
 import {
@@ -254,7 +255,7 @@ const multilingualSetting = defineModel<ConversationMultilingualSetting>(
   { required: true }
 );
 
-const { t } = useComponentI18n<ConversationLanguageSettingDialogTranslations>(
+const { t, locale } = useComponentI18n<ConversationLanguageSettingDialogTranslations>(
   conversationLanguageSettingDialogTranslations
 );
 const $q = useQuasar();
@@ -270,15 +271,40 @@ function isDisplayLanguageMetadata(
   return language.displaySupported;
 }
 
-const languageOptions: LanguageOption[] =
+function getLocalizedLanguageName(languageCode: string): string | undefined {
+  const trimmedLanguageCode = languageCode.trim().replaceAll("_", "-");
+  if (trimmedLanguageCode.length === 0) {
+    return undefined;
+  }
+
+  try {
+    const canonicalLanguageCode = Intl.getCanonicalLocales(trimmedLanguageCode).at(0);
+    if (canonicalLanguageCode === undefined) {
+      return undefined;
+    }
+    const displayName = new Intl.DisplayNames([toBcp47Locale(locale.value)], {
+      type: "language",
+      fallback: "none",
+    }).of(canonicalLanguageCode);
+    return displayName;
+  } catch {
+    return undefined;
+  }
+}
+
+const languageOptions = computed<LanguageOption[]>(() =>
   SupportedSpokenLanguageMetadataList.filter(isDisplayLanguageMetadata).map(
-    (language) => ({
-      label: language.englishName,
-      caption: language.name,
-      searchText: `${language.englishName} ${language.name}`,
-      value: language.code,
-    })
-  );
+    (language) => {
+      const label = getLocalizedLanguageName(language.code) ?? language.englishName;
+      return {
+        label,
+        caption: language.name,
+        searchText: `${label} ${language.englishName} ${language.name}`,
+        value: language.code,
+      };
+    }
+  )
+);
 
 const primaryLanguageLabel = computed(() => {
   if (languageSetting.value.mode === "auto") {
@@ -290,12 +316,12 @@ const primaryLanguageLabel = computed(() => {
 
 const additionalLanguageOptions = computed(() => {
   if (languageSetting.value.mode === "auto") {
-    return languageOptions;
+    return languageOptions.value;
   }
 
   const primaryLanguageCode = languageSetting.value.languageCode;
 
-  return languageOptions.filter(
+  return languageOptions.value.filter(
     (language) => language.value !== primaryLanguageCode
   );
 });
@@ -304,7 +330,7 @@ const filteredLanguageOptions = computed(() => {
   const options =
     currentPage.value === "additional-languages"
       ? additionalLanguageOptions.value
-      : languageOptions;
+      : languageOptions.value;
   const query = searchQuery.value.trim().toLocaleLowerCase();
   if (query.length === 0) {
     return options;
@@ -351,30 +377,6 @@ type AutoDetectDescriptionState =
   | { kind: "detected"; languageLabel: string }
   | { kind: "unsupported"; languageLabel: string };
 
-function getIntlLanguageLabel(languageCode: string): string | undefined {
-  const trimmedLanguageCode = languageCode.trim().replaceAll("_", "-");
-  if (trimmedLanguageCode.length === 0) {
-    return undefined;
-  }
-
-  try {
-    const canonicalLanguageCode = Intl.getCanonicalLocales(trimmedLanguageCode).at(0);
-    if (canonicalLanguageCode === undefined) {
-      return undefined;
-    }
-    const displayName = new Intl.DisplayNames(["en"], {
-      type: "language",
-      fallback: "none",
-    }).of(canonicalLanguageCode);
-    if (displayName === undefined) {
-      return undefined;
-    }
-    return displayName;
-  } catch {
-    return undefined;
-  }
-}
-
 function getAutoDetectDescriptionState({
   detectedLanguageCode,
   detectedSourceLanguageCode,
@@ -416,7 +418,7 @@ function getAutoDetectDescriptionState({
   }
 
   if (detectedRawLanguageCode !== null && detectedRawLanguageCode !== undefined) {
-    const rawLanguageLabel = getIntlLanguageLabel(detectedRawLanguageCode);
+    const rawLanguageLabel = getLocalizedLanguageName(detectedRawLanguageCode);
     if (rawLanguageLabel !== undefined) {
       return { kind: "unsupported", languageLabel: rawLanguageLabel };
     }
@@ -485,8 +487,10 @@ function getLanguageLabel(
     return "";
   }
   return (
+    getLocalizedLanguageName(languageCode) ??
     SupportedSpokenLanguageMetadataList.find((language) => language.code === languageCode)
-      ?.englishName ?? getIntlLanguageLabel(languageCode) ?? languageCode
+      ?.englishName ??
+    languageCode
   );
 }
 
