@@ -1,6 +1,7 @@
 # ---- Dependencies (production only) ----
 FROM node:24.14.1-alpine AS deps
 WORKDIR /app
+RUN apk add --no-cache python3 make g++
 RUN corepack enable && corepack prepare pnpm@10 --activate
 COPY package.json pnpm-lock.yaml ./
 COPY pnpm-workspace-docker.yaml ./pnpm-workspace.yaml
@@ -10,6 +11,7 @@ RUN pnpm install --frozen-lockfile --prod
 # ---- Build ----
 FROM node:24.14.1-alpine AS build
 WORKDIR /app
+RUN apk add --no-cache python3 make g++
 RUN corepack enable && corepack prepare pnpm@10 --activate
 COPY package.json pnpm-lock.yaml ./
 COPY pnpm-workspace-docker.yaml ./pnpm-workspace.yaml
