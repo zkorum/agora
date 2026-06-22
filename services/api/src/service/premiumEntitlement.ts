@@ -1,5 +1,17 @@
 import { httpErrors } from "@fastify/sensible";
-import { and, desc, eq, inArray, isNotNull, isNull, lte } from "drizzle-orm";
+import {
+    and,
+    desc,
+    eq,
+    gt,
+    inArray,
+    isNotNull,
+    isNull,
+    lt,
+    lte,
+    ne,
+    or,
+} from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     enqueueScheduledConversationForMathWork,
@@ -714,6 +726,57 @@ async function resolveEntitlementSubject({
     throw httpErrors.badRequest("Invalid entitlement subject");
 }
 
+async function assertNoOverlappingPremiumFeatureEntitlements({
+    db,
+    organizationId,
+    features,
+    startsAt,
+    expiresAt,
+    excludedEntitlementId,
+}: {
+    db: PostgresJsDatabase;
+    organizationId: number;
+    features: PremiumFeature[];
+    startsAt: Date;
+    expiresAt: Date | null;
+    excludedEntitlementId?: number;
+}): Promise<void> {
+    const overlapConditions = [
+        eq(premiumFeatureEntitlementTable.organizationId, organizationId),
+        inArray(premiumFeatureEntitlementTable.feature, features),
+        isNull(premiumFeatureEntitlementTable.revokedAt),
+        or(
+            isNull(premiumFeatureEntitlementTable.expiresAt),
+            gt(premiumFeatureEntitlementTable.expiresAt, startsAt),
+        ),
+    ];
+
+    if (expiresAt !== null) {
+        overlapConditions.push(
+            lt(premiumFeatureEntitlementTable.startsAt, expiresAt),
+        );
+    }
+
+    if (excludedEntitlementId !== undefined) {
+        overlapConditions.push(
+            ne(premiumFeatureEntitlementTable.id, excludedEntitlementId),
+        );
+    }
+
+    const rows = await db
+        .select({ feature: premiumFeatureEntitlementTable.feature })
+        .from(premiumFeatureEntitlementTable)
+        .where(and(...overlapConditions))
+        .limit(1);
+
+    const overlappingEntitlement = rows.at(0);
+    if (overlappingEntitlement !== undefined) {
+        throw httpErrors.conflict(
+            `Premium feature entitlement already exists within that period for ${overlappingEntitlement.feature}`,
+        );
+    }
+}
+
 function toEntitlementItem(row: {
     id: number;
     userId: string | null;
@@ -816,6 +879,14 @@ export async function createPremiumFeatureEntitlement({
     const expiresAt =
         data.expiresAt !== undefined ? new Date(data.expiresAt) : null;
 
+    await assertNoOverlappingPremiumFeatureEntitlements({
+        db,
+        organizationId: subject.organizationId,
+        features,
+        startsAt,
+        expiresAt,
+    });
+
     await db.transaction(async (tx) => {
         for (const feature of features) {
             await tx.insert(premiumFeatureEntitlementTable).values({
@@ -878,6 +949,7 @@ export async function updatePremiumFeatureEntitlement({
         .select({
             organizationId: premiumFeatureEntitlementTable.organizationId,
             feature: premiumFeatureEntitlementTable.feature,
+            revokedAt: premiumFeatureEntitlementTable.revokedAt,
         })
         .from(premiumFeatureEntitlementTable)
         .where(eq(premiumFeatureEntitlementTable.id, data.entitlementId))
@@ -898,10 +970,12 @@ export async function updatePremiumFeatureEntitlement({
               })
             : false;
 
+    const startsAt = new Date(data.startsAt);
+    const expiresAt =
+        data.expiresAt !== undefined ? new Date(data.expiresAt) : null;
     const updateValues: PremiumFeatureEntitlementUpdateValues = {
-        startsAt: new Date(data.startsAt),
-        expiresAt:
-            data.expiresAt !== undefined ? new Date(data.expiresAt) : null,
+        startsAt,
+        expiresAt,
         adminNote: data.adminNote ?? null,
         updatedByUserId: adminUserId,
         updatedAt: now,
@@ -910,6 +984,21 @@ export async function updatePremiumFeatureEntitlement({
     if (data.revokedAt !== undefined) {
         updateValues.revokedAt =
             data.revokedAt === null ? null : new Date(data.revokedAt);
+    }
+
+    const finalRevokedAt =
+        data.revokedAt === undefined
+            ? existingEntitlement?.revokedAt
+            : updateValues.revokedAt;
+    if (existingEntitlement !== undefined && finalRevokedAt == null) {
+        await assertNoOverlappingPremiumFeatureEntitlements({
+            db,
+            organizationId: existingEntitlement.organizationId,
+            features: [existingEntitlement.feature],
+            startsAt,
+            expiresAt,
+            excludedEntitlementId: data.entitlementId,
+        });
     }
 
     await db

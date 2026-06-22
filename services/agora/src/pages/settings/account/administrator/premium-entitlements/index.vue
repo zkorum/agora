@@ -33,14 +33,12 @@
           :options="organizationOptions"
         />
 
-        <q-select
-          v-model="features"
-          outlined
-          multiple
-          emit-value
-          map-options
+        <ZKSelect
+          :model-value="features"
           :label="t('featureLabel')"
           :options="featureOptions"
+          multiple
+          @update:model-value="handleFeatureUpdate"
         />
 
         <q-input
@@ -122,6 +120,7 @@
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
+import ZKSelect from "src/components/ui-library/ZKSelect.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
@@ -133,7 +132,7 @@ import type {
   OrganizationProperties,
   PremiumFeature,
 } from "src/shared/types/zod";
-import { zodUsername } from "src/shared/types/zod";
+import { zodGrantablePremiumFeature, zodUsername } from "src/shared/types/zod";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { useBackendAdministratorPremiumEntitlementApi } from "src/utils/api/administrator/premiumEntitlement";
 import { computed, onMounted, ref } from "vue";
@@ -170,7 +169,7 @@ const revokingEntitlementId = ref<number | null>(null);
 const subjectType = ref<SubjectType>("user");
 const username = ref<string | number | null>("");
 const organizationSlug = ref<string | number | null>("");
-const features = ref<GrantablePremiumFeature[]>(["survey"]);
+const features = ref<GrantablePremiumFeature[]>([]);
 const startsAt = ref<string | number | null>(toDateTimeLocal(new Date()));
 const expiresAt = ref<string | number | null>("");
 const adminNote = ref<string | number | null>("");
@@ -209,16 +208,36 @@ const canCreateEntitlement = computed(() => {
     subjectType.value === "user"
       ? getInputString(username.value).trim()
       : getInputString(organizationSlug.value).trim();
+  const startsAtDate = parseInputDate(startsAt.value);
+  const expiresAtValue = getInputString(expiresAt.value);
+  const expiresAtDate =
+    expiresAtValue !== "" ? parseInputDate(expiresAtValue) : undefined;
 
   const hasValidSubject =
     subjectType.value === "user"
       ? zodUsername.safeParse(subjectValue).success
       : subjectValue !== "";
+  const hasValidExpiresAt = expiresAtValue === "" || expiresAtDate !== undefined;
+  const hasValidPeriod =
+    startsAtDate !== undefined &&
+    hasValidExpiresAt &&
+    (expiresAtDate === undefined || expiresAtDate > startsAtDate);
+  const hasOverlappingEntitlement =
+    startsAtDate !== undefined &&
+    entitlements.value.some((entitlement) =>
+      isOverlappingSelectedEntitlement({
+        entitlement,
+        subjectValue,
+        startsAt: startsAtDate,
+        expiresAt: expiresAtDate,
+      })
+    );
 
   return (
     hasValidSubject &&
     features.value.length > 0 &&
-    !Number.isNaN(new Date(getInputString(startsAt.value)).getTime())
+    hasValidPeriod &&
+    !hasOverlappingEntitlement
   );
 });
 
@@ -245,6 +264,69 @@ function getInputString(value: string | number | null): string {
   }
 
   return String(value);
+}
+
+function parseInputDate(value: string | number | null): Date | undefined {
+  const date = new Date(getInputString(value));
+  if (Number.isNaN(date.getTime())) {
+    return undefined;
+  }
+
+  return date;
+}
+
+function handleFeatureUpdate(value: string | string[] | null): void {
+  if (!Array.isArray(value)) {
+    features.value = [];
+    return;
+  }
+
+  features.value = value.flatMap((feature) => {
+    const parsedFeature = zodGrantablePremiumFeature.safeParse(feature);
+    return parsedFeature.success ? [parsedFeature.data] : [];
+  });
+}
+
+function isOverlappingSelectedEntitlement({
+  entitlement,
+  subjectValue,
+  startsAt,
+  expiresAt,
+}: {
+  entitlement: PremiumFeatureEntitlementItem;
+  subjectValue: string;
+  startsAt: Date;
+  expiresAt: Date | undefined;
+}): boolean {
+  if (
+    entitlement.revokedAt !== undefined ||
+    !features.value.includes(entitlement.feature)
+  ) {
+    return false;
+  }
+
+  const matchesSubject =
+    subjectType.value === "user"
+      ? entitlement.username === subjectValue
+      : organizationList.value.some(
+          (organization) =>
+            organization.slug === subjectValue &&
+            entitlement.organizationName === organization.name
+        );
+  if (!matchesSubject) {
+    return false;
+  }
+
+  const entitlementStartsAt = new Date(entitlement.startsAt);
+  const entitlementExpiresAt =
+    entitlement.expiresAt !== undefined
+      ? new Date(entitlement.expiresAt)
+      : undefined;
+
+  return (
+    (entitlementExpiresAt === undefined || entitlementExpiresAt > startsAt) &&
+    (expiresAt === undefined || entitlementStartsAt < expiresAt)
+  );
 }
 
 function getFeatureLabel(value: PremiumFeature): string {
@@ -298,6 +380,10 @@ function buildCreateRequest(): CreatePremiumFeatureEntitlementRequest {
 }
 
 async function createEntitlement(): Promise<void> {
+  if (!canCreateEntitlement.value) {
+    return;
+  }
+
   isCreating.value = true;
   const success = await createPremiumFeatureEntitlement({
     data: buildCreateRequest(),
