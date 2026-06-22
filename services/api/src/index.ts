@@ -214,7 +214,6 @@ import {
 } from "./shared-backend/googleCloudAuth.js";
 import { nowZeroMs } from "./shared/util.js";
 import {
-    backfillConversationContentMetadata,
     logActiveConversationBodyLimits,
     logConversationBodyLimitCompatibility,
 } from "./service/conversationTextMaintenance.js";
@@ -619,7 +618,6 @@ if (
         "[API] Google Cloud Translation not configured - translations disabled",
     );
 }
-void backfillConversationContentMetadata({ db, googleCloudCredentials });
 
 // Initialize Valkey (optional - for vote buffer persistence and UCAN replay protection)
 const queueValkeyRef: ValkeyRef = {
