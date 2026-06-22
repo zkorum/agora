@@ -114,11 +114,7 @@ export function isConversationLanguageDetectionCorpusMeaningful(
     return corpus.trim().length >= MIN_CONVERSATION_LANGUAGE_DETECTION_CHARS;
 }
 
-function emptyAutoLanguageSetting({
-    corpusHash,
-}: {
-    corpusHash: string | null;
-}): StoredConversationLanguageSetting {
+function emptyAutoLanguageSetting(): StoredConversationLanguageSetting {
     return {
         mode: "auto",
         languageCode: null,
@@ -127,8 +123,21 @@ function emptyAutoLanguageSetting({
         detectedRawLanguageCode: null,
         detectedRawLanguageProvider: null,
         detectionConfidence: null,
-        detectedFromCorpusHash: corpusHash,
+        detectedFromCorpusHash: null,
     };
+}
+
+function shouldReuseStoredConversationLanguageDetection({
+    existing,
+    corpusHash,
+}: {
+    existing: StoredConversationLanguageSetting;
+    corpusHash: string;
+}): boolean {
+    return (
+        existing.detectedFromCorpusHash === corpusHash &&
+        existing.detectedRawLanguageProvider === "google_translate"
+    );
 }
 
 function normalizeLanguageCodeForOutput(
@@ -181,8 +190,7 @@ export function conversationLanguageSettingToOutput({
 }: {
     setting: StoredConversationLanguageSetting | undefined;
 }): ConversationLanguageSettingOutput {
-    const resolvedSetting =
-        setting ?? emptyAutoLanguageSetting({ corpusHash: null });
+    const resolvedSetting = setting ?? emptyAutoLanguageSetting();
     return {
         mode: resolvedSetting.mode,
         languageCode: resolvedSetting.languageCode,
@@ -245,32 +253,31 @@ async function detectConversationLanguage({
                       });
                   });
 
-        const detectionOutcome = await detectLanguageWithFallback({
+        const detectionResult = await detectLanguageWithFallback({
             text: corpus,
             googleText: googleCorpus,
             languageHints,
             localDetector: localLanguageDetector,
             googleDetector: resolvedGoogleLanguageDetector,
         });
-        if (detectionOutcome.result === undefined) {
-            return emptyAutoLanguageSetting({
-                corpusHash: detectionOutcome.cacheable ? corpusHash : null,
-            });
+        if (detectionResult === undefined) {
+            return emptyAutoLanguageSetting();
         }
 
         return {
             mode: "auto",
-            languageCode: detectionOutcome.result.languageCode,
-            detectedLanguageCode: detectionOutcome.result.languageCode,
-            detectedSourceLanguageCode: detectionOutcome.result.sourceLanguageCode,
-            detectedRawLanguageCode: detectionOutcome.result.rawLanguageCode,
-            detectedRawLanguageProvider: detectionOutcome.result.provider,
-            detectionConfidence: detectionOutcome.result.confidence,
-            detectedFromCorpusHash: corpusHash,
+            languageCode: detectionResult.languageCode,
+            detectedLanguageCode: detectionResult.languageCode,
+            detectedSourceLanguageCode: detectionResult.sourceLanguageCode,
+            detectedRawLanguageCode: detectionResult.rawLanguageCode,
+            detectedRawLanguageProvider: detectionResult.provider,
+            detectionConfidence: detectionResult.confidence,
+            detectedFromCorpusHash:
+                detectionResult.provider === "google_translate" ? corpusHash : null,
         };
     } catch (error) {
         log.warn(error, "[ConversationLanguage] Failed to detect language");
-        return emptyAutoLanguageSetting({ corpusHash: null });
+        return emptyAutoLanguageSetting();
     }
 }
 
@@ -310,10 +317,13 @@ export async function resolveConversationLanguageSetting({
     });
     const corpusHash = hashConversationLanguageDetectionCorpus(corpus);
     if (!isConversationLanguageDetectionCorpusMeaningful(corpus)) {
-        return emptyAutoLanguageSetting({ corpusHash });
+        return emptyAutoLanguageSetting();
     }
 
-    if (existing?.detectedFromCorpusHash === corpusHash) {
+    if (
+        existing !== undefined &&
+        shouldReuseStoredConversationLanguageDetection({ existing, corpusHash })
+    ) {
         return {
             ...existing,
             mode: "auto",

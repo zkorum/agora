@@ -224,21 +224,21 @@ export async function resolveContentLanguageMetadata({
                           projectId: googleCloudCredentials.config.projectId,
                           location: googleCloudCredentials.config.location,
                       });
-        const detectionOutcome = await detectLanguageWithFallback({
+        const detectionResult = await detectLanguageWithFallback({
             text,
             googleText,
             languageHints,
             localDetector: localLanguageDetector,
             googleDetector,
         });
-        if (detectionOutcome.result === undefined) {
+        if (detectionResult === undefined) {
             return UNKNOWN_CONTENT_LANGUAGE_METADATA;
         }
         return {
-            sourceLanguageCode: detectionOutcome.result.sourceLanguageCode,
-            sourceRawLanguageCode: detectionOutcome.result.rawLanguageCode,
-            sourceLanguageProvider: detectionOutcome.result.provider,
-            sourceLanguageConfidence: detectionOutcome.result.confidence,
+            sourceLanguageCode: detectionResult.sourceLanguageCode,
+            sourceRawLanguageCode: detectionResult.rawLanguageCode,
+            sourceLanguageProvider: detectionResult.provider,
+            sourceLanguageConfidence: detectionResult.confidence,
         };
     } catch (error) {
         log.warn(error, "[ContentLanguageMetadata] Failed to detect content language");
