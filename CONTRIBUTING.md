@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for contributing to ZKorum! ❤️
+Thank you for contributing to Agora Citizen Network! ❤️
 
 ## AUTHORS file
 
@@ -10,7 +10,7 @@ Every contributor must add their full name and email address in the [AUTHORS fil
 
 Every contributor must [sign their commits](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits).
 
-After configuring the signing key, commit using `git commit -s` or simply [configure your `.gitconfig` to do add the `-s` parameter automatically](https://github.com/zkorum/agora/blob/main/CONTRIBUTING.md#local-git-config-configuration).
+After configuring the signing key, commit using `git commit -s` or simply [configure your `.gitconfig` to add the `-s` parameter automatically](https://github.com/zkorum/agora/blob/main/CONTRIBUTING.md#local-git-config-configuration).
 
 ## FLA
 
@@ -31,7 +31,7 @@ Follow these steps:
 - create a feature branch (never push to main)
 - create upstream remote locally
 - do some work, commit and push on this feature branch
-- open a DRAFT PR from this branch to upstream ZKorum main
+- open a DRAFT PR from this branch to upstream Agora Citizen Network main
 - sync your fork main from upstream and rebase your feature branch from main before every new work session
 
 Let's detail some of the steps.
@@ -73,7 +73,7 @@ git remote add upstream git@github.com:zkorum/agora.git
 ### Open a DRAFT PR
 
 Connect to GitHub, and visit the page of your fork.
-A popup suggestion will appear after you've pushed some code in your feature branc. Click on it and choose "DRAFT PR". Source: `<your_fork/<your_branch>`, destination `upstream/main`. Default should be good already, no need to change it.
+A popup suggestion will appear after you've pushed some code in your feature branch. Click on it and choose "DRAFT PR". Source: `<your_fork>/<your_branch>`, destination `upstream/main`. Default should be good already, no need to change it.
 
 ### Sync your fork's main from upstream's main
 
@@ -106,7 +106,7 @@ git checkout 11_my_feature_branch
 # We assume this local branch is up to date with remote origin (everything committed and pushed)
 # Note: you can't rebase if you have uncommitted changes locally. Do not stash them or when you will unstash them after the rebase, it might create conflicts. Just commit.
 git rebase -i origin/main
-# The above will open a screen on your editor of choice that you have configure earlier, so you can choose what to fixup/squash
+# The above will open a screen on your editor of choice that you configured earlier, so you can choose what to fixup/squash
 # Fixup or squash everything (fixup is better imho) except the first commit to avoid solving the same conflict multiple times at each of your commits.
 # Then save and close the window
 

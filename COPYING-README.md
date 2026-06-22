@@ -18,8 +18,8 @@
 | [`scoring-worker`](./services/scoring-worker) | [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](./services/scoring-worker/COPYING)| [![documentation](https://img.shields.io/badge/readme-blue)](./services/scoring-worker) | 🏆 Solidago scoring worker for MaxDiff rankings    |
 | [`x-analyzer`](./services/x-analyzer)         | [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](./services/x-analyzer/COPYING)    | [![documentation](https://img.shields.io/badge/readme-blue)](./services/x-analyzer)     | 🐦 X/Twitter reply and quote tweet analyzer        |
 
-Attribution information for ZKorum is contained in the [AUTHORS](AUTHORS) file.
+Attribution information for Agora Citizen Network is contained in the [AUTHORS](AUTHORS) file.
 
-Every contributors have signed the [Fiduciary Licensing Agreement (FLA)](https://cla-assistant.io/zkorum/zkorum) with [ZKorum SAS](https://annuaire-entreprises.data.gouv.fr/entreprise/zkorum-984736173) as the Trustee.
+The [Fiduciary Licensing Agreement (FLA)](https://cla-assistant.io/zkorum/zkorum) names [ZKorum SAS](https://annuaire-entreprises.data.gouv.fr/entreprise/zkorum-984736173) as the Trustee.
 
 Note that ZKORUM and AGORA CITIZEN NETWORK are registered trademarks. The logos, custom icons and other assets are all rights reserved © 2024 ZKorum SAS <hello@zkorum.com>. These assets cannot be used without written consent from ZKorum SAS.
