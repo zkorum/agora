@@ -1,5 +1,4 @@
 import type {
-  ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner,
   ApiV1ConversationImportPost200Response,
 } from "src/api";
 import {

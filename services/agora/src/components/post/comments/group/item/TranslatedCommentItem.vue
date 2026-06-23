@@ -22,8 +22,8 @@ import { storeToRefs } from "pinia";
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
-  EventSlug,
   DisplayedOpinionItem,
+  EventSlug,
   ParticipationMode,
   SurveyGateSummary,
 } from "src/shared/types/zod";

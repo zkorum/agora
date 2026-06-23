@@ -99,7 +99,7 @@ export function useConversationDisplayContentCache({
 
   return useQuery<ConversationContentFetchResponse>({
     queryKey,
-    queryFn: async () => {
+    queryFn: () => {
       const cached = queryClient.getQueryData<ConversationContentFetchResponse>(
         queryKey.value
       );
