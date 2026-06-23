@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Protocol
@@ -255,6 +256,10 @@ def now_zero_ms() -> datetime:
     return datetime.now(UTC).replace(microsecond=0, tzinfo=None)
 
 
+def _elapsed_ms(started_at: float) -> float:
+    return (time.perf_counter() - started_at) * 1000
+
+
 def _chunks[T](items: list[T], chunk_size: int) -> Iterable[list[T]]:
     for index in range(0, len(items), chunk_size):
         yield items[index : index + chunk_size]
@@ -286,8 +291,18 @@ def _build_imported_polis_conversation(
     *,
     polis_fetch_timeout_seconds: float,
 ) -> tuple[ImportPolisResults, str]:
+    load_started_at = time.perf_counter()
     if request.type == "csv":
-        return build_import_from_csv(request.files.model_dump(by_alias=True)), "csv"
+        imported = build_import_from_csv(request.files.model_dump(by_alias=True))
+        LOGGER.info(
+            "Loaded import source importSlugId=%s importType=csv comments=%s votes=%s "
+            "durationMs=%.1f",
+            request.import_slug_id,
+            len(imported.comments_data),
+            len(imported.votes_data),
+            _elapsed_ms(load_started_at),
+        )
+        return imported, "csv"
 
     polis_id = extract_polis_id_from_url(request.polis_url)
     loader: PolisLoader
@@ -316,6 +331,15 @@ def _build_imported_polis_conversation(
             "comments_data": loader.comments_data,
             "votes_data": loader.votes_data,
         },
+    )
+    LOGGER.info(
+        "Loaded import source importSlugId=%s importType=url polisUrlType=%s comments=%s "
+        "votes=%s durationMs=%.1f",
+        request.import_slug_id,
+        polis_url_type,
+        len(imported.comments_data),
+        len(imported.votes_data),
+        _elapsed_ms(load_started_at),
     )
     return imported, polis_url_type
 
@@ -1308,6 +1332,7 @@ def process_import_request(
     polis_fetch_timeout_seconds: float,
 ) -> ImportProcessResult:
     conversation_id: int | None = None
+    import_started_at = time.perf_counter()
     try:
         import_user_id = _get_import_user_id(session, import_slug_id=request.import_slug_id)
         if str(import_user_id) != request.actor_user_id:
@@ -1325,6 +1350,7 @@ def process_import_request(
             request=request,
             google_detector=google_detector,
         )
+        phase_started_at = time.perf_counter()
         conversation_ids = _create_conversation(
             session,
             request=request,
@@ -1333,11 +1359,29 @@ def process_import_request(
             google_detector=active_google_detector,
         )
         conversation_id = conversation_ids.conversation_id
+        LOGGER.info(
+            "Created imported conversation importSlugId=%s conversationSlugId=%s "
+            "durationMs=%.1f",
+            request.import_slug_id,
+            conversation_ids.conversation_slug_id,
+            _elapsed_ms(phase_started_at),
+        )
+        phase_started_at = time.perf_counter()
         participant_data = _insert_imported_users(
             session,
             imported=imported,
             conversation_slug_id=conversation_ids.conversation_slug_id,
         )
+        LOGGER.info(
+            "Inserted imported participants importSlugId=%s conversationSlugId=%s "
+            "participants=%s totalParticipants=%s durationMs=%.1f",
+            request.import_slug_id,
+            conversation_ids.conversation_slug_id,
+            participant_data.participant_count,
+            participant_data.total_participant_count,
+            _elapsed_ms(phase_started_at),
+        )
+        phase_started_at = time.perf_counter()
         opinions = _insert_opinions(
             session,
             imported=imported,
@@ -1345,6 +1389,19 @@ def process_import_request(
             participant_data=participant_data,
             google_detector=active_google_detector,
         )
+        LOGGER.info(
+            "Inserted imported statements importSlugId=%s conversationSlugId=%s "
+            "statements=%s totalStatements=%s moderatedStatements=%s hiddenStatements=%s "
+            "durationMs=%.1f",
+            request.import_slug_id,
+            conversation_ids.conversation_slug_id,
+            participant_data.opinion_count,
+            participant_data.total_opinion_count,
+            participant_data.moderated_opinion_count,
+            participant_data.hidden_opinion_count,
+            _elapsed_ms(phase_started_at),
+        )
+        phase_started_at = time.perf_counter()
         _insert_votes(
             session,
             imported=imported,
@@ -1352,17 +1409,47 @@ def process_import_request(
             participant_data=participant_data,
             conversation_slug_id=conversation_ids.conversation_slug_id,
         )
+        LOGGER.info(
+            "Inserted imported votes importSlugId=%s conversationSlugId=%s votes=%s "
+            "totalVotes=%s durationMs=%.1f",
+            request.import_slug_id,
+            conversation_ids.conversation_slug_id,
+            participant_data.vote_count,
+            participant_data.total_vote_count,
+            _elapsed_ms(phase_started_at),
+        )
+        phase_started_at = time.perf_counter()
         content_translation_schedule = _create_content_translation_work(
             session,
             conversation_ids=conversation_ids,
             opinions=opinions,
         )
+        LOGGER.info(
+            "Created imported content translation work importSlugId=%s conversationSlugId=%s "
+            "workCount=%s durationMs=%.1f",
+            request.import_slug_id,
+            conversation_ids.conversation_slug_id,
+            0
+            if content_translation_schedule is None
+            else len(content_translation_schedule.work_ids),
+            _elapsed_ms(phase_started_at),
+        )
+        phase_started_at = time.perf_counter()
         schedule = _update_counts_and_schedule(
             session,
             conversation_id=conversation_ids.conversation_id,
             participant_data=participant_data,
         )
+        LOGGER.info(
+            "Updated imported conversation counts importSlugId=%s conversationSlugId=%s "
+            "shouldEnqueueAnalysis=%s durationMs=%.1f",
+            request.import_slug_id,
+            conversation_ids.conversation_slug_id,
+            schedule.should_enqueue_analysis,
+            _elapsed_ms(phase_started_at),
+        )
 
+        phase_started_at = time.perf_counter()
         session.execute(
             update(ConversationImport)
             .where(ConversationImport.slug_id == request.import_slug_id)
@@ -1372,6 +1459,14 @@ def process_import_request(
             ),
         )
         session.commit()
+        LOGGER.info(
+            "Finalized imported conversation row importSlugId=%s conversationSlugId=%s "
+            "durationMs=%.1f totalDurationMs=%.1f",
+            request.import_slug_id,
+            conversation_ids.conversation_slug_id,
+            _elapsed_ms(phase_started_at),
+            _elapsed_ms(import_started_at),
+        )
         analysis_queue_schedule = (
             AnalysisQueueSchedule(
                 conversation_id=conversation_ids.conversation_id,
