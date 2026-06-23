@@ -14,6 +14,7 @@ IMPORT_WORKER_ENV_KEYS = (
     "IMPORT_WORKER_MAX_CONCURRENCY",
     "IMPORT_WORKER_STALE_THRESHOLD_MS",
     "IMPORT_WORKER_STALE_CLEANUP_EVERY_N_FLUSHES",
+    "IMPORT_WORKER_POLIS_FETCH_TIMEOUT_SECONDS",
     "IMPORT_WORKER_GOOGLE_CLOUD_PROJECT_ID",
     "IMPORT_WORKER_GOOGLE_CLOUD_TRANSLATION_ENDPOINT",
     "IMPORT_WORKER_GOOGLE_CLOUD_TRANSLATION_LOCATION",
@@ -118,6 +119,21 @@ def test_settings_reject_zero_batch_size(
             {
                 "connection_string": "postgresql://primary.example/agora",
                 "max_batch_size": 0,
+            },
+            monkeypatch=monkeypatch,
+            tmp_path=tmp_path,
+        )
+
+
+def test_settings_reject_invalid_polis_fetch_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(ValidationError):
+        build_settings(
+            {
+                "connection_string": "postgresql://primary.example/agora",
+                "polis_fetch_timeout_seconds": 0,
             },
             monkeypatch=monkeypatch,
             tmp_path=tmp_path,
