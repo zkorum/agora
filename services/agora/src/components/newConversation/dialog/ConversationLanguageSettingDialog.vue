@@ -17,6 +17,12 @@
             <span class="language-settings-row__value">{{
               primaryLanguageLabel
             }}</span>
+            <span
+              v-if="primaryLanguageDescription !== undefined"
+              class="language-settings-row__description"
+            >
+              {{ primaryLanguageDescription }}
+            </span>
           </span>
           <q-icon :name="forwardIcon" class="language-settings-row__icon" />
         </button>
@@ -255,9 +261,10 @@ const multilingualSetting = defineModel<ConversationMultilingualSetting>(
   { required: true }
 );
 
-const { t, locale } = useComponentI18n<ConversationLanguageSettingDialogTranslations>(
-  conversationLanguageSettingDialogTranslations
-);
+const { t, locale } =
+  useComponentI18n<ConversationLanguageSettingDialogTranslations>(
+    conversationLanguageSettingDialogTranslations
+  );
 const $q = useQuasar();
 
 const currentPage = ref<LanguageDialogPage>("overview");
@@ -278,7 +285,8 @@ function getLocalizedLanguageName(languageCode: string): string | undefined {
   }
 
   try {
-    const canonicalLanguageCode = Intl.getCanonicalLocales(trimmedLanguageCode).at(0);
+    const canonicalLanguageCode =
+      Intl.getCanonicalLocales(trimmedLanguageCode).at(0);
     if (canonicalLanguageCode === undefined) {
       return undefined;
     }
@@ -295,7 +303,8 @@ function getLocalizedLanguageName(languageCode: string): string | undefined {
 const languageOptions = computed<LanguageOption[]>(() =>
   SupportedSpokenLanguageMetadataList.filter(isDisplayLanguageMetadata).map(
     (language) => {
-      const label = getLocalizedLanguageName(language.code) ?? language.englishName;
+      const label =
+        getLocalizedLanguageName(language.code) ?? language.englishName;
       return {
         label,
         caption: language.name,
@@ -410,14 +419,20 @@ function getAutoDetectDescriptionState({
     };
   }
 
-  if (detectedSourceLanguageCode !== null && detectedSourceLanguageCode !== undefined) {
+  if (
+    detectedSourceLanguageCode !== null &&
+    detectedSourceLanguageCode !== undefined
+  ) {
     return {
       kind: "unsupported",
       languageLabel: getLanguageLabel(detectedSourceLanguageCode),
     };
   }
 
-  if (detectedRawLanguageCode !== null && detectedRawLanguageCode !== undefined) {
+  if (
+    detectedRawLanguageCode !== null &&
+    detectedRawLanguageCode !== undefined
+  ) {
     const rawLanguageLabel = getLocalizedLanguageName(detectedRawLanguageCode);
     if (rawLanguageLabel !== undefined) {
       return { kind: "unsupported", languageLabel: rawLanguageLabel };
@@ -455,6 +470,16 @@ const autoDetectOptionDescription = computed(() => {
     language: state.languageLabel,
   });
 });
+const primaryLanguageDescription = computed(() => {
+  if (
+    languageSetting.value.mode !== "auto" ||
+    autoDetectDescriptionState.value.kind === "neutral"
+  ) {
+    return undefined;
+  }
+
+  return autoDetectOptionDescription.value;
+});
 const manualLanguageOptionDescription = computed(() =>
   languageSetting.value.mode === "manual"
     ? getLanguageLabel(languageSetting.value.languageCode)
@@ -488,8 +513,9 @@ function getLanguageLabel(
   }
   return (
     getLocalizedLanguageName(languageCode) ??
-    SupportedSpokenLanguageMetadataList.find((language) => language.code === languageCode)
-      ?.englishName ??
+    SupportedSpokenLanguageMetadataList.find(
+      (language) => language.code === languageCode
+    )?.englishName ??
     languageCode
   );
 }
@@ -660,7 +686,6 @@ watch(
   },
   { deep: true }
 );
-
 </script>
 
 <style scoped lang="scss">
