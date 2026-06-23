@@ -158,12 +158,14 @@ type TranslationWorkInput =
 async function ensureTranslationWork({
     db,
     input,
+    translationExists,
     now,
     priority,
     log,
 }: {
     db: PostgresDatabase;
     input: TranslationWorkInput;
+    translationExists: boolean;
     now: Date;
     priority: ContentTranslationQueuePriority;
     log: Pick<BaseLogger, "info">;
@@ -205,6 +207,8 @@ async function ensureTranslationWork({
     const existing = existingRows.at(0);
 
     if (existing !== undefined) {
+        const completedTranslationExists =
+            existing.status === "completed" && translationExists;
         const nextPriorityRank = Math.min(
             existing.priorityRank,
             priority,
@@ -212,7 +216,7 @@ async function ensureTranslationWork({
         await db
             .update(contentTranslationWorkTable)
             .set({
-                status: existing.status === "completed" ? "completed" : "pending",
+                status: completedTranslationExists ? "completed" : "pending",
                 priorityRank: nextPriorityRank,
                 leaseOwner: null,
                 leaseToken: null,
@@ -232,13 +236,14 @@ async function ensureTranslationWork({
                 previousStatus: existing.status,
                 previousPriorityRank: existing.priorityRank,
                 nextPriorityRank,
-                shouldQueue: existing.status !== "completed",
+                translationExists,
+                shouldQueue: !completedTranslationExists,
             },
             "[ContentTranslation] Reused translation work row",
         );
         return {
             workId: existing.id,
-            shouldQueue: existing.status !== "completed",
+            shouldQueue: !completedTranslationExists,
         };
     }
 
@@ -315,6 +320,7 @@ async function queueMissingTranslationWork({
     valkey,
     queueScript,
     input,
+    translationExists,
     now,
     log,
     priority,
@@ -323,6 +329,7 @@ async function queueMissingTranslationWork({
     valkey: Valkey | undefined;
     queueScript: Script;
     input: TranslationWorkInput;
+    translationExists: boolean;
     now: Date;
     log: Pick<BaseLogger, "info" | "error">;
     priority: ContentTranslationQueuePriority;
@@ -330,6 +337,7 @@ async function queueMissingTranslationWork({
     const ensuredWork = await ensureTranslationWork({
         db,
         input,
+        translationExists,
         now,
         priority,
         log,
@@ -953,6 +961,7 @@ async function ensureAndQueueEagerTranslationWork({
     valkey,
     queueScript,
     input,
+    translationExists,
     now,
     log,
 }: {
@@ -960,6 +969,7 @@ async function ensureAndQueueEagerTranslationWork({
     valkey: Valkey | undefined;
     queueScript: Script;
     input: TranslationWorkInput;
+    translationExists: boolean;
     now: Date;
     log: Pick<BaseLogger, "info" | "error">;
 }): Promise<void> {
@@ -968,6 +978,7 @@ async function ensureAndQueueEagerTranslationWork({
         valkey,
         queueScript,
         input,
+        translationExists,
         now,
         log,
         priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.eagerVisible,
@@ -1030,6 +1041,7 @@ export async function scheduleEagerContentTranslationForConversation({
                     sourceContentId: conversationSource.contentId,
                     targetLanguageCode,
                 },
+                translationExists: false,
                 now,
                 log,
             });
@@ -1062,6 +1074,7 @@ export async function scheduleEagerContentTranslationForConversation({
                     ),
                     targetLanguageCode,
                 },
+                translationExists: false,
                 now,
                 log,
             });
@@ -1091,6 +1104,7 @@ export async function scheduleEagerContentTranslationForConversation({
                     sourceContentId: source.contentId,
                     targetLanguageCode,
                 },
+                translationExists: false,
                 now,
                 log,
             });
@@ -1473,6 +1487,7 @@ export async function requestContentTranslation({
                     ),
                     targetLanguageCode,
                 },
+                translationExists,
                 now,
                 log,
                 priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.userInteractive,
@@ -1522,6 +1537,7 @@ export async function requestContentTranslation({
                     sourceContentId: source.contentId,
                     targetLanguageCode,
                 },
+                translationExists,
                 now,
                 log,
                 priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.userInteractive,
@@ -1571,6 +1587,7 @@ export async function requestContentTranslation({
                 sourceContentId: source.contentId,
                 targetLanguageCode,
             },
+            translationExists,
             now,
             log,
             priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.userInteractive,
@@ -1634,6 +1651,7 @@ export async function requestConversationContentTranslation({
                 sourceContentId: source.contentId,
                 targetLanguageCode,
             },
+            translationExists,
             now,
             log,
             priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.userInteractive,
@@ -1698,6 +1716,7 @@ export async function requestSurveyQuestionContentTranslation({
                 ),
                 targetLanguageCode,
             },
+            translationExists,
             now,
             log,
             priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.userInteractive,
