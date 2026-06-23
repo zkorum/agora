@@ -11,7 +11,7 @@ import {
   useConversationDisplayContentCache,
 } from "src/utils/api/contentTranslation/useContentTranslationQueries";
 import type { MaybeRefOrGetter } from "vue";
-import { computed, ref, toValue } from "vue";
+import { computed, ref, toValue, watch } from "vue";
 
 import {
   type ContentTranslationDisplayMode,
@@ -34,8 +34,11 @@ export function useConversationDisplayContent({
 }: {
   extendedConversation: MaybeRefOrGetter<ExtendedConversation | undefined>;
 }) {
-  const { displayLanguage } = storeToRefs(useLanguageStore());
+  const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
   const modePreference = ref<ConversationContentMode | undefined>();
+  const sortedSpokenLanguageKey = computed(() =>
+    [...spokenLanguages.value].sort().join("\u0000")
+  );
   const conversationSlugId = computed(
     () => toValue(extendedConversation)?.metadata.conversationSlugId ?? ""
   );
@@ -147,6 +150,10 @@ export function useConversationDisplayContent({
   function setTranslationMode(mode: ContentTranslationDisplayMode): void {
     modePreference.value = mode;
   }
+
+  watch([displayLanguage, sortedSpokenLanguageKey], () => {
+    modePreference.value = undefined;
+  });
 
   return {
     activeDisplayContent,

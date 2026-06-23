@@ -97,9 +97,15 @@ export function useConversationQuery({
   const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
   const queryClient = useQueryClient();
+  const sortedSpokenLanguages = computed(() => [...spokenLanguages.value].sort());
 
   return useQuery({
-    queryKey: ["conversation", computed(() => toValue(conversationSlugId))],
+    queryKey: [
+      "conversation",
+      computed(() => toValue(conversationSlugId)),
+      displayLanguage,
+      sortedSpokenLanguages,
+    ],
     queryFn: async () => {
       const slugId = toValue(conversationSlugId);
       const fetchedConversation = await fetchConversationBySlugIdWithDisplayContent({

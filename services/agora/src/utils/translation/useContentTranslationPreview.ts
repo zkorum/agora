@@ -126,6 +126,9 @@ function useContentTranslationController({
   );
   const modePreference = ref<ContentTranslationDisplayMode | undefined>(undefined);
   const hasRequestedTranslation = ref(false);
+  const sortedSpokenLanguageKey = computed(() =>
+    [...spokenLanguages.value].sort().join("\u0000")
+  );
   let waitTimeout: ReturnType<typeof setTimeout> | undefined;
 
   const resolvedState = computed(() =>
@@ -244,7 +247,7 @@ function useContentTranslationController({
     hasRequestedTranslation.value = false;
   }
 
-  watch(displayLanguage, () => {
+  watch([displayLanguage, sortedSpokenLanguageKey], () => {
     modePreference.value = undefined;
     hasRequestedTranslation.value = false;
   });

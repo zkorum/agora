@@ -6,7 +6,6 @@ import type {
   ApiV1OpinionFetchByConversationPostRequest,
   ApiV1OpinionFetchBySlugIdListPostRequest,
   ApiV1OpinionFetchHiddenByConversationPostRequest,
-  ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem,
 } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import type {
@@ -29,7 +28,6 @@ import type {
   OpinionItem,
   PolisKey,
 } from "src/shared/types/zod";
-import { zodOpinionItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 
 import { useBackendAuthApi } from "../auth";
@@ -70,20 +68,6 @@ export function useBackendCommentApi() {
     useAuthenticationStore()
   );
   const { updateAuthState } = useBackendAuthApi();
-
-  function createLocalCommentObject(
-    webCommentItemList: ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem[]
-  ): OpinionItem[] {
-    // Use zod to parse and validate - zodDateTimeFlexible handles date conversion automatically
-    const result = zodOpinionItem.array().safeParse(webCommentItemList);
-
-    if (!result.success) {
-      console.error("Failed to parse opinion data with zod:", result.error);
-      return [];
-    }
-
-    return result.data;
-  }
 
   function parseFetchOpinionsResponse(data: unknown): DisplayedOpinionItem[] {
     const result = Dto.fetchOpinionsResponse.safeParse(data);
