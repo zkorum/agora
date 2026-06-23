@@ -268,6 +268,7 @@ def _promote_opinion_source_metadata(
 class ClaimedContentTranslationWork:
     id: int
     conversation_id: int
+    conversation_slug_id: str | None
     source_kind: ContentTranslationSourceKind
     conversation_content_id: int | None
     opinion_content_id: int | None
@@ -333,6 +334,10 @@ def retry_failed_eager_work(
                     == ContentTranslationWorkStatus.failed,
                     ContentTranslationWork.priority_rank
                     == EAGER_VISIBLE_PRIORITY_RANK,
+                    or_(
+                        ContentTranslationWork.last_error_code.is_(None),
+                        ContentTranslationWork.last_error_code != "missing_source",
+                    ),
                     ContentTranslationWork.failed_at.is_not(None),
                     ContentTranslationWork.failed_at <= retry_after,
                 )
@@ -372,28 +377,32 @@ def claim_content_translation_work_batch(
     conditions = [
         ContentTranslationWork.status == ContentTranslationWorkStatus.pending,
         ContentTranslationWork.source_kind.in_(SUPPORTED_SOURCE_KINDS),
+        Conversation.current_content_id.is_not(None),
+        or_(
+            ContentTranslationWork.source_kind != ContentTranslationSourceKind.conversation,
+            Conversation.current_content_id == ContentTranslationWork.conversation_content_id,
+        ),
     ]
     if work_ids is not None:
         if not work_ids:
             return []
         conditions.append(ContentTranslationWork.id.in_(work_ids))
 
-    rows = list(
-        session.scalars(
-            select(ContentTranslationWork)
-            .where(and_(*conditions))
-            .order_by(
-                ContentTranslationWork.priority_rank.asc(),
-                ContentTranslationWork.updated_at.asc(),
-                ContentTranslationWork.id.asc(),
-            )
-            .limit(batch_size)
-            .with_for_update(skip_locked=True)
+    rows = session.execute(
+        select(ContentTranslationWork, Conversation.slug_id)
+        .join(Conversation, Conversation.id == ContentTranslationWork.conversation_id)
+        .where(and_(*conditions))
+        .order_by(
+            ContentTranslationWork.priority_rank.asc(),
+            ContentTranslationWork.updated_at.asc(),
+            ContentTranslationWork.id.asc(),
         )
+        .limit(batch_size)
+        .with_for_update(skip_locked=True)
     )
 
     claims: list[ClaimedContentTranslationWork] = []
-    for row in rows:
+    for row, conversation_slug_id in rows:
         lease_token = create_lease_token()
         row.status = ContentTranslationWorkStatus.running
         row.attempt_count += 1
@@ -405,6 +414,7 @@ def claim_content_translation_work_batch(
             ClaimedContentTranslationWork(
                 id=row.id,
                 conversation_id=row.conversation_id,
+                conversation_slug_id=conversation_slug_id,
                 source_kind=row.source_kind,
                 conversation_content_id=row.conversation_content_id,
                 opinion_content_id=row.opinion_content_id,
@@ -438,6 +448,15 @@ def process_claimed_work(
                 conversation_content_id=claim.conversation_content_id,
             )
             if source is None:
+                log.warning(
+                    "[Worker] Missing translation source work_id=%d source_kind=conversation "
+                    "conversationSlugId=%s conversation_id=%d conversation_content_id=%d "
+                    "reason=source_not_current_or_deleted",
+                    claim.id,
+                    claim.conversation_slug_id,
+                    claim.conversation_id,
+                    claim.conversation_content_id,
+                )
                 _mark_missing_source(session, claim=claim)
                 return ProcessWorkResult(work_id=claim.id, status="missing_source")
             log.info(
@@ -499,6 +518,16 @@ def process_claimed_work(
                 survey_question_option_content_ids=claim.survey_question_option_content_ids,
             )
             if source is None:
+                log.warning(
+                    "[Worker] Missing translation source work_id=%d source_kind=survey_question "
+                    "conversationSlugId=%s conversation_id=%d survey_question_content_id=%d "
+                    "survey_option_content_ids=%s reason=source_not_current_or_deleted",
+                    claim.id,
+                    claim.conversation_slug_id,
+                    claim.conversation_id,
+                    claim.survey_question_content_id,
+                    claim.survey_question_option_content_ids,
+                )
                 _mark_missing_source(session, claim=claim)
                 return ProcessWorkResult(work_id=claim.id, status="missing_source")
             log.info(
@@ -555,6 +584,15 @@ def process_claimed_work(
             return ProcessWorkResult(work_id=claim.id, status="failed")
         source = _fetch_opinion_source(session, opinion_content_id=claim.opinion_content_id)
         if source is None:
+            log.warning(
+                "[Worker] Missing translation source work_id=%d source_kind=opinion "
+                "conversationSlugId=%s conversation_id=%d opinion_content_id=%d "
+                "reason=source_not_current_or_deleted",
+                claim.id,
+                claim.conversation_slug_id,
+                claim.conversation_id,
+                claim.opinion_content_id,
+            )
             _mark_missing_source(session, claim=claim)
             return ProcessWorkResult(work_id=claim.id, status="missing_source")
         log.info(
