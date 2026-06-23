@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import signal
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 from urllib.parse import unquote, urlparse
@@ -219,6 +219,7 @@ def _process_request(
     session_factory: sessionmaker[Session],
     request: ImportRequest,
     google_detector: GoogleLanguageDetector | None,
+    polis_fetch_timeout_seconds: float,
 ) -> ProcessedImport:
     with session_factory() as session:
         try:
@@ -227,6 +228,7 @@ def _process_request(
                 session,
                 request=request,
                 google_detector=google_detector,
+                polis_fetch_timeout_seconds=polis_fetch_timeout_seconds,
             )
             LOGGER.info("Completed %s import %s", request.type, request.import_slug_id)
             return ProcessedImport(result=result, failure_event=None)
@@ -315,10 +317,12 @@ def run_worker(settings: Settings) -> None:
     global _running
 
     LOGGER.info(
-        "Starting import worker (flush_interval_ms=%s, max_batch_size=%s, max_concurrency=%s)",
+        "Starting import worker (flush_interval_ms=%s, max_batch_size=%s, "
+        "max_concurrency=%s, polis_fetch_timeout_seconds=%s)",
         settings.flush_interval_ms,
         settings.max_batch_size,
         settings.max_concurrency,
+        settings.polis_fetch_timeout_seconds,
     )
     should_stop = False
 
@@ -365,14 +369,34 @@ def run_worker(settings: Settings) -> None:
             LOGGER.exception("Initial stale import cleanup failed")
 
     with ThreadPoolExecutor(max_workers=settings.max_concurrency) as executor:
+        pending_futures: dict[Future[ProcessedImport], ImportRequest] = {}
         while not should_stop:
+            completed_futures = [future for future in pending_futures if future.done()]
+            for future in completed_futures:
+                request = pending_futures.pop(future)
+                try:
+                    _push_result_events(vk, processed=future.result())
+                except Exception:
+                    LOGGER.exception(
+                        "Failed to handle import result %s",
+                        request.import_slug_id,
+                    )
+
             if settings.max_batch_size <= 0:
+                time.sleep(settings.flush_interval_ms / 1000)
+                continue
+
+            available_capacity = settings.max_concurrency - len(pending_futures)
+            if available_capacity <= 0:
                 time.sleep(settings.flush_interval_ms / 1000)
                 continue
 
             flush_count += 1
             try:
-                batch = pop_import_requests(vk, count=settings.max_batch_size)
+                batch = pop_import_requests(
+                    vk,
+                    count=min(settings.max_batch_size, available_capacity),
+                )
             except Exception:
                 LOGGER.exception("Import queue poll failed")
                 time.sleep(settings.flush_interval_ms / 1000)
@@ -395,7 +419,10 @@ def run_worker(settings: Settings) -> None:
                 except Exception:
                     LOGGER.exception("Ready import completion failed")
 
-                if flush_count % settings.stale_cleanup_every_n_flushes == 0:
+                if (
+                    not pending_futures
+                    and flush_count % settings.stale_cleanup_every_n_flushes == 0
+                ):
                     try:
                         _push_stale_cleanup_events(
                             vk=vk,
@@ -418,20 +445,15 @@ def run_worker(settings: Settings) -> None:
 
             LOGGER.info("Dequeued %s import requests", len(batch.requests))
 
-            futures = [
-                executor.submit(
+            for request in batch.requests:
+                future = executor.submit(
                     _process_request,
                     session_factory=session_factory,
                     request=request,
                     google_detector=google_detector,
+                    polis_fetch_timeout_seconds=settings.polis_fetch_timeout_seconds,
                 )
-                for request in batch.requests
-            ]
-            for future in as_completed(futures):
-                try:
-                    _push_result_events(vk, processed=future.result())
-                except Exception:
-                    LOGGER.exception("Failed to handle import result")
+                pending_futures[future] = request
 
             try:
                 _push_ready_import_events(vk=vk, session_factory=session_factory)

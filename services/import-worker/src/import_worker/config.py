@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     max_concurrency: int = Field(default=2, ge=1)
     stale_threshold_ms: int = Field(default=300000, ge=1)
     stale_cleanup_every_n_flushes: int = Field(default=60, ge=1)
+    polis_fetch_timeout_seconds: float = Field(default=30.0, gt=0)
 
     google_cloud_project_id: str | None = Field(
         default=None,

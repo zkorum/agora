@@ -85,11 +85,24 @@ class PolisLoader(Protocol):
 
 
 class RedDwarfPolisLoader:
-    def __init__(self, *, polis_id: str, data_source: str | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        polis_id: str,
+        request_timeout_seconds: float,
+        data_source: str | None = None,
+    ) -> None:
         if data_source is None:
-            self._loader: Any = Loader(polis_id=polis_id)
+            self._loader: Any = TimeoutRedDwarfLoader(
+                polis_id=polis_id,
+                request_timeout_seconds=request_timeout_seconds,
+            )
         else:
-            self._loader = Loader(polis_id=polis_id, data_source=data_source)
+            self._loader = TimeoutRedDwarfLoader(
+                polis_id=polis_id,
+                data_source=data_source,
+                request_timeout_seconds=request_timeout_seconds,
+            )
 
     @property
     def report_id(self) -> object | None:
@@ -115,6 +128,36 @@ class RedDwarfPolisLoader:
 
     def load_api_data_conversation(self) -> object:
         return self._loader.load_api_data_conversation()
+
+
+class TimeoutRedDwarfLoader(Loader):
+    _request_timeout_seconds: float
+
+    def __init__(
+        self,
+        *,
+        polis_id: str,
+        request_timeout_seconds: float,
+        data_source: str | None = None,
+    ) -> None:
+        self._request_timeout_seconds = request_timeout_seconds
+        loader_init: Any = vars(Loader)["__init__"]
+        if data_source is None:
+            loader_init(self, polis_id=polis_id)
+        else:
+            loader_init(self, polis_id=polis_id, data_source=data_source)
+
+    def init_http_client(self) -> None:
+        super().init_http_client()
+        session: Any = self.session
+        original_request = session.request
+        request_timeout_seconds = self._request_timeout_seconds
+
+        def request_with_timeout(method: str, url: str, **kwargs: Any) -> Any:
+            kwargs.setdefault("timeout", request_timeout_seconds)
+            return original_request(method, url, **kwargs)
+
+        session.request = request_with_timeout
 
 
 LOGGER = logging.getLogger(__name__)
@@ -238,18 +281,29 @@ def _display_language_code_or_none(language_code: str | None) -> str | None:
         return None
 
 
-def _build_imported_polis_conversation(request: ImportRequest) -> tuple[ImportPolisResults, str]:
+def _build_imported_polis_conversation(
+    request: ImportRequest,
+    *,
+    polis_fetch_timeout_seconds: float,
+) -> tuple[ImportPolisResults, str]:
     if request.type == "csv":
         return build_import_from_csv(request.files.model_dump(by_alias=True)), "csv"
 
     polis_id = extract_polis_id_from_url(request.polis_url)
     loader: PolisLoader
     if polis_id.report_id is not None:
-        loader = RedDwarfPolisLoader(polis_id=polis_id.report_id, data_source="csv_export")
+        loader = RedDwarfPolisLoader(
+            polis_id=polis_id.report_id,
+            data_source="csv_export",
+            request_timeout_seconds=polis_fetch_timeout_seconds,
+        )
         loader.load_api_data_conversation()
         polis_url_type = "report"
     elif polis_id.conversation_id is not None:
-        loader = RedDwarfPolisLoader(polis_id=polis_id.conversation_id)
+        loader = RedDwarfPolisLoader(
+            polis_id=polis_id.conversation_id,
+            request_timeout_seconds=polis_fetch_timeout_seconds,
+        )
         polis_url_type = "conversation"
     else:
         raise ValueError("Incorrect Polis URL")
@@ -1251,6 +1305,7 @@ def process_import_request(
     *,
     request: ImportRequest,
     google_detector: GoogleLanguageDetector | None = None,
+    polis_fetch_timeout_seconds: float,
 ) -> ImportProcessResult:
     conversation_id: int | None = None
     try:
@@ -1262,7 +1317,10 @@ def process_import_request(
                 f"import owner {import_user_id}",
             )
 
-        imported, polis_url_type = _build_imported_polis_conversation(request)
+        imported, polis_url_type = _build_imported_polis_conversation(
+            request,
+            polis_fetch_timeout_seconds=polis_fetch_timeout_seconds,
+        )
         active_google_detector = google_detector_for_import(
             request=request,
             google_detector=google_detector,
