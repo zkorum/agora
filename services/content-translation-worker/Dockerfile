@@ -10,7 +10,7 @@ COPY services/content-translation-worker/pyproject.toml services/content-transla
 RUN uv sync --frozen --no-dev --no-install-project
 
 COPY services/content-translation-worker/src ./src
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev --no-editable
 
 FROM python:3.13-slim
 
