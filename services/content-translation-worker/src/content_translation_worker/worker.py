@@ -213,11 +213,13 @@ def main() -> int:
             for claim in claims:
                 log.info(
                     "[Worker] Processing translation work_id=%d source_kind=%s "
-                    "target_language=%s conversation_content_id=%s opinion_content_id=%s "
-                    "survey_question_content_id=%s survey_option_content_ids=%s",
+                    "target_language=%s conversationSlugId=%s conversation_content_id=%s "
+                    "opinion_content_id=%s survey_question_content_id=%s "
+                    "survey_option_content_ids=%s",
                     claim.id,
                     claim.source_kind.value,
                     claim.display_language_code.value,
+                    claim.conversation_slug_id,
                     claim.conversation_content_id,
                     claim.opinion_content_id,
                     claim.survey_question_content_id,
