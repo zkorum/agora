@@ -1,0 +1,83 @@
+Section,Field,Type,Description,Status,Notes
+Existing backend,organization.id,integer,Internal organization primary key,Existing,services/api/src/shared-backend/schema.ts
+Existing backend,organization.slug,string unique,Stable organization identifier used by APIs and UI,Existing,Validated by zodOrganizationSlug
+Existing backend,organization.displayName,string,Public organization name,Existing,Max length follows MAX_LENGTH_NAME_CREATOR
+Existing backend,organization.directoryVisibility,enum: listed | unlisted,Controls organization-facing exposure such as directories and post-as-organization pickers,Existing,"Requirement maps directory_visible organization to listed"
+Existing backend,organization.autoProvisionedForUserId,uuid nullable,Marks personal auto-provisioned backing organizations,Existing,"Do not use as visibility flag"
+Existing backend,organization.imagePath,text nullable,Organization logo or image path,Existing,May be local image service path or full URL
+Existing backend,organization.isFullImagePath,boolean,Whether organization.imagePath is already a full URL,Existing,Used by imagePathToUrl
+Existing backend,organization.websiteUrl,text nullable,Organization website URL,Existing,
+Existing backend,organization.description,string nullable,Organization description/about text,Existing,
+Existing backend,project.id,integer,Internal project primary key,Existing,services/api/src/shared-backend/schema.ts
+Existing backend,project.slug,string unique,Stable project identifier suitable for URLs,Existing,"Currently globally unique, not organization-scoped"
+Existing backend,project.displayName,string,Project name,Existing,Max length follows MAX_LENGTH_NAME_CREATOR
+Existing backend,project.directoryVisibility,enum: listed | unlisted,Project discoverability/listing visibility,Existing,
+Existing backend,project.autoProvisionedForOrganizationId,integer nullable unique,Marks the default auto-provisioned project for an organization,Existing,"New partner/on-demand projects must keep this null"
+Existing backend,project_organization_ownership.projectId,integer,Links an owning organization to a project,Existing,One project can have multiple owner organizations
+Existing backend,project_organization_ownership.organizationId,integer,Owning organization for a project,Existing,Use to power who-is-behind-this
+Existing backend,conversation.projectId,integer,Associates conversations and votes with a project,Existing,"Conversation page redesign can rely on existing project relationship"
+Admin create operation,organizationSlug,string slug,Existing listed organization that will own the new project,Needed,"Reject if organization.directoryVisibility is not listed"
+Admin create operation,projectSlug,string slug,Stable URL slug for the new project,Needed,"Should be inserted into project.slug; needs unique conflict handling"
+Admin create operation,projectName,string,Main project title,Needed,Insert into project.displayName
+Admin create operation,projectVisibility,enum: listed | unlisted,Whether the project is listed/discoverable,Needed,Insert into project.directoryVisibility
+Admin create operation,autoProvisionedForOrganizationId,null,Ensures this is not the existing auto-provisioned/default project,Needed,"Always null for this admin-created path"
+Admin create operation,ownership,array of organization slug/id,Organizations owning or co-owning the project,Needed,"First version can support one owner only; co-owners can be added later"
+Project landing page,projectLifecycleStatus,enum: draft | scheduled | live | closed,Public/admin project status pill and filtering,New,"Different from directoryVisibility; can be manually set at first"
+Project landing page,subtitle,string nullable,Secondary line under the title,New,"Example: Civic Dialogue in Kyrgyzstan"
+Project landing page,summary,text,Short public description explaining the consultation,New,"Prototype calls this lede/sub"
+Project landing page,locationLabel,string nullable,Human place label shown as a chip,New,"Example: Kyrgyzstan or Bishkek"
+Project landing page,startsAt,date nullable,Structured project start date,New,Optional if dateRangeLabel is used first
+Project landing page,endsAt,date nullable,Structured project end date,New,Optional if dateRangeLabel is used first
+Project landing page,dateRangeLabel,string nullable,Human display date range,New,"Example: May - Oct 2026; useful for rough admin page"
+Project landing page,heroImagePath,text nullable,Project banner image path or URL,New,Use same image-path pattern as organization
+Project landing page,heroImageIsFullPath,boolean,Whether heroImagePath is already a full URL,New,Mirrors organization.isFullImagePath
+Project landing page,heroImageAlt,string nullable,Accessible alt text for the project banner,New,
+Project landing page,brandPrimaryColor,string nullable,Client/project primary brand color,New,"Example: #1A5FB4"
+Project landing page,brandSecondaryColor,string nullable,Optional secondary gradient or accent color,New,"Example: #4C8FCF"
+Project landing page,liveLabel,string nullable,Text like Live consultation,New or derived,Could be derived from projectLifecycleStatus
+Project landing page,participantCount,number,Joined/residents count shown on project page,Derived,Should be computed from project conversations when possible
+Project landing page,voteCount,number,Total votes/reactions shown in admin cards or landing stats,Derived,Should be computed from project conversations when possible
+Project landing page,activityCount,number,Number of conversations/votes/phases in the project,Derived,Should be computed from project conversations
+Project landing page,footerOwnershipNote,string nullable,Footer text describing content ownership,New,"Example: Project content is owned by Kurak Foundation"
+Organization display,ownerOrganizations,array,Organizations shown under Who is behind this,Existing,Use project_organization_ownership
+Organization display,organization.name,string,Display name for owner organization,Existing,organization.displayName
+Organization display,organization.slug,string slug,Owner organization URL/reference slug,Existing,organization.slug
+Organization display,organization.logoUrl,string nullable,Owner organization logo URL,Existing,Derived from imagePath and isFullImagePath
+Organization display,organization.websiteUrl,string nullable,Owner organization website,Existing,
+Organization display,organization.description,string nullable,Owner organization about text,Existing,
+Organization display,organizationLocationLabel,string nullable,Organization location label shown in org/dashboard prototype,New maybe defer,Probably not required for first project page
+Organization display,organizationTags,string array,Labels like Local government or Transport,New maybe defer,Probably not required for first project page
+Organization display,organizationBranding,object,Organization colors/banner used in admin dashboard mock,New maybe defer,Probably not required for first project page
+Facilitator,facilitatorName,string nullable,Person shown as the project facilitator,New,"Example: Aida Saparova"
+Facilitator,facilitatorRoleLabel,string nullable,Role and affiliation line,New,"Example: Facilitator - Kurak Foundation"
+Facilitator,facilitatorEmail,string email nullable,Email used by Contact facilitator,New,Could render as mailto link
+Facilitator,facilitatorContactUrl,string URL nullable,Alternative facilitator contact URL,New,Use if contact is not email
+Facilitator,facilitatorAvatarImagePath,text nullable,Optional facilitator avatar image,New,
+Facilitator,facilitatorInitials,string nullable,Fallback initials for facilitator avatar,New or derived,Can derive from facilitatorName
+Activities,activities,array,Conversations and votes belonging to the project,Existing,Use conversation.projectId
+Activities,activity.type,enum: polis | maxdiff,Whether activity is a conversation or prioritization vote,Existing,conversation.conversationType
+Activities,activity.title,string,Activity card title,Existing,conversation_content.title
+Activities,activity.description,text nullable,Activity card summary,Existing or new override,Could use conversation_content.bodyPlainText initially
+Activities,activity.status,enum: open | upcoming | closed | importing,Status displayed on activity card,Partly derived,"isClosed and isImporting exist; upcoming/scheduled does not"
+Activities,activity.participantCount,number,Participants for one activity,Derived,Existing stats in conversation metadata
+Activities,activity.voteCount,number,Votes/reactions for one activity,Derived,Existing stats in conversation metadata
+Activities,activity.order,integer,Ordering of activities/phases on the hub,Missing,"Can initially sort by createdAt; add explicit order later"
+Activities,activity.opensAt,datetime nullable,Scheduled activity opening time,Missing defer,Only needed for upcoming/scheduled activity UX
+Activities,activity.closesAt,datetime nullable,Scheduled activity closing time,Missing defer,Only needed for scheduled close UX
+Minimal new backend shape,project_profile.projectId,integer unique,Foreign key to project.id for landing-page-specific fields,Recommended new table,Could also be named project_landing_page
+Minimal new backend shape,project_profile.lifecycleStatus,enum: draft | scheduled | live | closed,Manual lifecycle/status for the project hub,Recommended new field,
+Minimal new backend shape,project_profile.subtitle,string nullable,Landing page subtitle,Recommended new field,
+Minimal new backend shape,project_profile.summary,text,Landing page summary/lede,Recommended new field,
+Minimal new backend shape,project_profile.locationLabel,string nullable,Landing page location chip,Recommended new field,
+Minimal new backend shape,project_profile.dateRangeLabel,string nullable,Landing page human date chip,Recommended new field,
+Minimal new backend shape,project_profile.heroImagePath,text nullable,Banner image path or URL,Recommended new field,
+Minimal new backend shape,project_profile.heroImageIsFullPath,boolean,Whether heroImagePath is a full URL,Recommended new field,
+Minimal new backend shape,project_profile.brandPrimaryColor,string nullable,Primary brand/accent color,Recommended new field,
+Minimal new backend shape,project_profile.facilitatorName,string nullable,Facilitator display name,Recommended new field,
+Minimal new backend shape,project_profile.facilitatorRoleLabel,string nullable,Facilitator role/affiliation line,Recommended new field,
+Minimal new backend shape,project_profile.facilitatorEmail,string email nullable,Facilitator email,Recommended new field,
+Open question,projectUrlShape,question,"Should project URLs be globally slugged like /project/voices-for-change or org-scoped like /org/kurak/voices-for-change?",Needs decision,"DB currently supports globally unique project.slug"
+Open question,multilingualLandingCopy,question,Do we need multilingual project landing-page copy now or one language only for the rough admin page?,Needs decision,"Prototype has language switching; multilingual content would change schema shape"
+Open question,lifecycleStatusSource,question,Should draft/scheduled/live/closed be manually set or derived from activities/conversations?,Needs decision,
+Open question,behindThisRoles,question,"Should Who is behind this only show owner organizations, or do we need display roles such as partner, sponsor, or facilitator organization?",Needs decision,
+Open question,createFirstActivity,question,Should the first admin form create only the project shell or also create the first conversation/activity?,Needs decision,

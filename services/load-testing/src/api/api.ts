@@ -100,6 +100,96 @@ export interface ApiV1AdministratorPremiumEntitlementUpdatePostRequest {
     'adminNote'?: string;
 }
 /**
+ * @type ApiV1AdministratorProjectCreatePost200Response
+ */
+export type ApiV1AdministratorProjectCreatePost200Response = ApiV1AdministratorProjectCreatePost200ResponseOneOf | ApiV1AdministratorProjectCreatePost200ResponseOneOf1;
+
+export interface ApiV1AdministratorProjectCreatePost200ResponseOneOf {
+    'success': boolean;
+    'projectId': number;
+    'projectSlug': string;
+}
+export interface ApiV1AdministratorProjectCreatePost200ResponseOneOf1 {
+    'success': boolean;
+    'reason': ApiV1AdministratorProjectCreatePost200ResponseOneOf1ReasonEnum;
+    'organizationSlugs'?: Array<string>;
+}
+
+export const ApiV1AdministratorProjectCreatePost200ResponseOneOf1ReasonEnum = {
+    UnknownOrganizationSlug: 'unknown_organization_slug',
+    OrganizationNotListed: 'organization_not_listed',
+    ProjectSlugAlreadyExists: 'project_slug_already_exists',
+    ProjectConflict: 'project_conflict',
+} as const;
+
+export type ApiV1AdministratorProjectCreatePost200ResponseOneOf1ReasonEnum = typeof ApiV1AdministratorProjectCreatePost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1AdministratorProjectCreatePost200ResponseOneOf1ReasonEnum];
+
+export interface ApiV1AdministratorProjectCreatePostRequest {
+    'projectSlug': string;
+    'projectTitle': string;
+    'ownerOrganizationSlugs': Array<string>;
+    'subtitle'?: string;
+    'body'?: string;
+    'bodyPlainText'?: string;
+    'heroImagePath'?: string;
+    'heroImageIsFullPath'?: boolean;
+    'attributions'?: Array<ApiV1AdministratorProjectCreatePostRequestAttributionsInner>;
+    'contact'?: ApiV1AdministratorProjectCreatePostRequestContact;
+}
+/**
+ * @type ApiV1AdministratorProjectCreatePostRequestAttributionsInner
+ */
+export type ApiV1AdministratorProjectCreatePostRequestAttributionsInner = ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf | ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1;
+
+export interface ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf {
+    'source': ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfSourceEnum;
+    'role': ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfRoleEnum;
+    'organizationSlug': string;
+}
+
+export const ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfSourceEnum = {
+    Organization: 'organization',
+} as const;
+
+export type ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfSourceEnum = typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfSourceEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfSourceEnum];
+export const ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfRoleEnum = {
+    ProjectOwner: 'project_owner',
+    Sponsor: 'sponsor',
+    Partner: 'partner',
+} as const;
+
+export type ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfRoleEnum = typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfRoleEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfRoleEnum];
+
+export interface ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1 {
+    'source': ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1SourceEnum;
+    'role': ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1RoleEnum;
+    'displayName': string;
+    'description'?: string;
+    'imagePath'?: string;
+    'isFullImagePath'?: boolean;
+    'websiteUrl'?: string;
+}
+
+export const ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1SourceEnum = {
+    External: 'external',
+} as const;
+
+export type ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1SourceEnum = typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1SourceEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1SourceEnum];
+export const ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1RoleEnum = {
+    ProjectOwner: 'project_owner',
+    Sponsor: 'sponsor',
+    Partner: 'partner',
+} as const;
+
+export type ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1RoleEnum = typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1RoleEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1RoleEnum];
+
+export interface ApiV1AdministratorProjectCreatePostRequestContact {
+    'name': string;
+    'roleLabel'?: string;
+    'email': string;
+    'organizationSlug'?: string;
+}
+/**
  * @type ApiV1AuthAuthenticatePost200Response
  */
 export type ApiV1AuthAuthenticatePost200Response = ApiV1AuthAuthenticatePost200ResponseOneOf | ApiV1AuthAuthenticatePost200ResponseOneOf1;
@@ -5558,6 +5648,44 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          *
+         * @param {ApiV1AdministratorProjectCreatePostRequest} apiV1AdministratorProjectCreatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectCreatePost: async (apiV1AdministratorProjectCreatePostRequest: ApiV1AdministratorProjectCreatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorProjectCreatePostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorProjectCreatePost', 'apiV1AdministratorProjectCreatePostRequest', apiV1AdministratorProjectCreatePostRequest)
+            const localVarPath = `/api/v1/administrator/project/create`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorProjectCreatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         *
          * @param {ApiV1AuthAuthenticatePostRequest} apiV1AuthAuthenticatePostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -8850,6 +8978,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          *
+         * @param {ApiV1AdministratorProjectCreatePostRequest} apiV1AdministratorProjectCreatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorProjectCreatePost(apiV1AdministratorProjectCreatePostRequest: ApiV1AdministratorProjectCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorProjectCreatePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorProjectCreatePost(apiV1AdministratorProjectCreatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorProjectCreatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         *
          * @param {ApiV1AuthAuthenticatePostRequest} apiV1AuthAuthenticatePostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -9971,6 +10111,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          *
+         * @param {ApiV1AdministratorProjectCreatePostRequest} apiV1AdministratorProjectCreatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectCreatePost(apiV1AdministratorProjectCreatePostRequest: ApiV1AdministratorProjectCreatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorProjectCreatePost200Response> {
+            return localVarFp.apiV1AdministratorProjectCreatePost(apiV1AdministratorProjectCreatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         *
          * @param {ApiV1AuthAuthenticatePostRequest} apiV1AuthAuthenticatePostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -10843,6 +10992,16 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1AdministratorPremiumEntitlementUpdatePost(apiV1AdministratorPremiumEntitlementUpdatePostRequest: ApiV1AdministratorPremiumEntitlementUpdatePostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1AdministratorPremiumEntitlementUpdatePost(apiV1AdministratorPremiumEntitlementUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     *
+     * @param {ApiV1AdministratorProjectCreatePostRequest} apiV1AdministratorProjectCreatePostRequest
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorProjectCreatePost(apiV1AdministratorProjectCreatePostRequest: ApiV1AdministratorProjectCreatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorProjectCreatePost(apiV1AdministratorProjectCreatePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

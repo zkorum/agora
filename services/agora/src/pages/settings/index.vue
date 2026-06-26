@@ -224,6 +224,12 @@ const moderatorSettings: SettingsInterface[] = [
   },
   {
     type: "navigation",
+    label: t("moderatorProject"),
+    to: "/settings/account/administrator/project/",
+    style: "none",
+  },
+  {
+    type: "navigation",
     label: t("moderatorPremiumEntitlements"),
     to: "/settings/account/administrator/premium-entitlements/",
     style: "none",

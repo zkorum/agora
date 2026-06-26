@@ -13628,6 +13628,255 @@
                 }
             }
         },
+        "/api/v1/administrator/project/create": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "projectSlug": {
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                    },
+                                    "projectTitle": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 140
+                                    },
+                                    "ownerOrganizationSlugs": {
+                                        "minItems": 1,
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "maxLength": 65,
+                                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                        }
+                                    },
+                                    "subtitle": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 140
+                                    },
+                                    "body": {
+                                        "type": "string"
+                                    },
+                                    "bodyPlainText": {
+                                        "type": "string"
+                                    },
+                                    "heroImagePath": {
+                                        "type": "string",
+                                        "minLength": 1
+                                    },
+                                    "heroImageIsFullPath": {
+                                        "default": false,
+                                        "type": "boolean"
+                                    },
+                                    "attributions": {
+                                        "default": [],
+                                        "type": "array",
+                                        "items": {
+                                            "oneOf": [
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "source": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "organization"
+                                                            ]
+                                                        },
+                                                        "role": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "project_owner",
+                                                                "sponsor",
+                                                                "partner"
+                                                            ]
+                                                        },
+                                                        "organizationSlug": {
+                                                            "type": "string",
+                                                            "maxLength": 65,
+                                                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "source",
+                                                        "role",
+                                                        "organizationSlug"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "source": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "external"
+                                                            ]
+                                                        },
+                                                        "role": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "project_owner",
+                                                                "sponsor",
+                                                                "partner"
+                                                            ]
+                                                        },
+                                                        "displayName": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 65
+                                                        },
+                                                        "description": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 280
+                                                        },
+                                                        "imagePath": {
+                                                            "type": "string",
+                                                            "minLength": 1
+                                                        },
+                                                        "isFullImagePath": {
+                                                            "default": false,
+                                                            "type": "boolean"
+                                                        },
+                                                        "websiteUrl": {
+                                                            "type": "string",
+                                                            "format": "uri"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "source",
+                                                        "role",
+                                                        "displayName"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "contact": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 65
+                                            },
+                                            "roleLabel": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 140
+                                            },
+                                            "email": {
+                                                "type": "string",
+                                                "maxLength": 254,
+                                                "format": "email",
+                                                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                            },
+                                            "organizationSlug": {
+                                                "type": "string",
+                                                "maxLength": 65,
+                                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                            }
+                                        },
+                                        "required": [
+                                            "name",
+                                            "email"
+                                        ],
+                                        "additionalProperties": false
+                                    }
+                                },
+                                "required": [
+                                    "projectSlug",
+                                    "projectTitle",
+                                    "ownerOrganizationSlugs"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "projectId": {
+                                                    "type": "integer",
+                                                    "exclusiveMinimum": true,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "projectSlug": {
+                                                    "type": "string",
+                                                    "maxLength": 65,
+                                                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "projectId",
+                                                "projectSlug"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "unknown_organization_slug",
+                                                        "organization_not_listed",
+                                                        "project_slug_already_exists",
+                                                        "project_conflict"
+                                                    ]
+                                                },
+                                                "organizationSlugs": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "maxLength": 65,
+                                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/administrator/organization/add-user-organization-mapping": {
             "post": {
                 "requestBody": {

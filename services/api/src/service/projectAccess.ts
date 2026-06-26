@@ -238,7 +238,7 @@ export async function getOrCreateDefaultProjectForOrganization({
         .insert(projectTable)
         .values({
             slug: defaultProjectSlug(organizationId),
-            displayName: organization.displayName,
+            title: organization.displayName,
             directoryVisibility: "unlisted",
             autoProvisionedForOrganizationId: organizationId,
         })

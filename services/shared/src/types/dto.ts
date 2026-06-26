@@ -74,12 +74,20 @@ import {
     zodLocalizedContentDisplayMode,
     zodConversationDisplayedContent,
     zodSurveyQuestionDisplayedContent,
+    zodProjectOrganizationAttributionRole,
+    zodProjectSlug,
 } from "./zod.js";
+import { zodEmail } from "./zod-email.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
     ZodSupportedSpokenLanguageCodes,
     ZodSupportedDisplayLanguageCodes,
 } from "../languages.js";
+import {
+    MAX_LENGTH_DESCRIPTION_CREATOR,
+    MAX_LENGTH_NAME_CREATOR,
+    MAX_LENGTH_TITLE,
+} from "../shared.js";
 
 const zodConversationEditPermissions = z
     .object({
@@ -214,6 +222,14 @@ const zodConversationContentMode = zodLocalizedContentDisplayMode;
 const zodConversationContentRequestMode = z.enum([
     "read_existing",
     "queue_if_missing",
+]);
+const zodProjectTitle = z.string().trim().min(1).max(MAX_LENGTH_TITLE);
+const zodOptionalProjectText = z.string().trim().min(1).optional();
+const zodCreateProjectFailureReason = z.enum([
+    "unknown_organization_slug",
+    "organization_not_listed",
+    "project_slug_already_exists",
+    "project_conflict",
 ]);
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
@@ -1231,6 +1247,76 @@ export class Dto {
             organizationName: zodOrganizationSlug,
         })
         .strict();
+    static createProjectAttributionRequest = z.discriminatedUnion("source", [
+        z
+            .object({
+                source: z.literal("organization"),
+                role: zodProjectOrganizationAttributionRole,
+                organizationSlug: zodOrganizationSlug,
+            })
+            .strict(),
+        z
+            .object({
+                source: z.literal("external"),
+                role: zodProjectOrganizationAttributionRole,
+                displayName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
+                description: z
+                    .string()
+                    .trim()
+                    .min(1)
+                    .max(MAX_LENGTH_DESCRIPTION_CREATOR)
+                    .optional(),
+                imagePath: zodOptionalProjectText,
+                isFullImagePath: z.boolean().default(false),
+                websiteUrl: z.url().optional(),
+            })
+            .strict(),
+    ]);
+    static createProjectContactRequest = z
+        .object({
+            name: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
+            roleLabel: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
+            email: zodEmail,
+            organizationSlug: zodOrganizationSlug.optional(),
+        })
+        .strict();
+    static createProjectRequest = z
+        .object({
+            projectSlug: zodProjectSlug,
+            projectTitle: zodProjectTitle,
+            ownerOrganizationSlugs: z
+                .array(zodOrganizationSlug)
+                .min(1)
+                .refine(
+                    (slugs) => new Set(slugs).size === slugs.length,
+                    "Owner organizations must be unique",
+                ),
+            subtitle: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
+            body: zodConversationBodyInput,
+            bodyPlainText: zodConversationBodyPlainTextInput.optional(),
+            heroImagePath: zodOptionalProjectText,
+            heroImageIsFullPath: z.boolean().default(false),
+            attributions: z.array(Dto.createProjectAttributionRequest).default([]),
+            contact: Dto.createProjectContactRequest.optional(),
+        })
+        .strict();
+    static createProjectResponse = z
+        .discriminatedUnion("success", [
+            z
+                .object({
+                    success: z.literal(true),
+                    projectId: z.number().int().positive(),
+                    projectSlug: zodProjectSlug,
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: zodCreateProjectFailureReason,
+                    organizationSlugs: z.array(zodOrganizationSlug).optional(),
+                })
+                .strict(),
+        ]);
     static premiumFeatureEntitlementSubjectRequest = z
         .object({
             username: zodUsername.optional(),
@@ -1798,6 +1884,17 @@ export type UpdatePremiumFeatureEntitlementRequest = z.infer<
 >;
 export type RevokePremiumFeatureEntitlementRequest = z.infer<
     typeof Dto.revokePremiumFeatureEntitlementRequest
+>;
+export type CreateProjectAttributionRequest = z.infer<
+    typeof Dto.createProjectAttributionRequest
+>;
+export type CreateProjectContactRequest = z.infer<
+    typeof Dto.createProjectContactRequest
+>;
+export type CreateProjectRequest = z.infer<typeof Dto.createProjectRequest>;
+export type CreateProjectResponse = z.infer<typeof Dto.createProjectResponse>;
+export type CreateProjectFailureReason = z.infer<
+    typeof zodCreateProjectFailureReason
 >;
 export type GetAllTopicsResponse = z.infer<typeof Dto.getAllTopicsResponse>;
 export type GetUserFollowedTopicCodesResponse = z.infer<

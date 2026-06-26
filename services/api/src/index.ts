@@ -176,6 +176,7 @@ import {
     getOrganizationsByUsername,
     removeUserOrganizationMapping,
 } from "./service/administrator/organization.js";
+import { createProject } from "./service/administrator/project.js";
 import type {
     ConversationMultilingualSetting,
     DeviceIsKnownTrueLoginStatus,
@@ -3859,6 +3860,24 @@ server.after(() => {
                 entitlementId: request.body.entitlementId,
                 adminUserId,
                 now: nowZeroMs(),
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/project/create`,
+        schema: {
+            body: Dto.createProjectRequest,
+            response: {
+                200: Dto.createProjectResponse,
+            },
+        },
+        handler: async (request) => {
+            await requireSiteOrgAdmin(request);
+            return await createProject({
+                db,
+                data: request.body,
             });
         },
     });

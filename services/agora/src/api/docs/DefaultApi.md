@@ -16,6 +16,7 @@ All URIs are relative to *http://localhost*
 |[**apiV1AdministratorPremiumEntitlementListPost**](#apiv1administratorpremiumentitlementlistpost) | **POST** /api/v1/administrator/premium-entitlement/list | |
 |[**apiV1AdministratorPremiumEntitlementRevokePost**](#apiv1administratorpremiumentitlementrevokepost) | **POST** /api/v1/administrator/premium-entitlement/revoke | |
 |[**apiV1AdministratorPremiumEntitlementUpdatePost**](#apiv1administratorpremiumentitlementupdatepost) | **POST** /api/v1/administrator/premium-entitlement/update | |
+|[**apiV1AdministratorProjectCreatePost**](#apiv1administratorprojectcreatepost) | **POST** /api/v1/administrator/project/create | |
 |[**apiV1AuthAuthenticatePost**](#apiv1authauthenticatepost) | **POST** /api/v1/auth/authenticate | |
 |[**apiV1AuthCheckLoginStatusPost**](#apiv1authcheckloginstatuspost) | **POST** /api/v1/auth/check-login-status | |
 |[**apiV1AuthEmailAuthenticatePost**](#apiv1authemailauthenticatepost) | **POST** /api/v1/auth/email/authenticate | |
@@ -688,6 +689,57 @@ void (empty response body)
 
  - **Content-Type**: application/json
  - **Accept**: Not defined
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1AdministratorProjectCreatePost**
+> ApiV1AdministratorProjectCreatePost200Response apiV1AdministratorProjectCreatePost(apiV1AdministratorProjectCreatePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1AdministratorProjectCreatePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1AdministratorProjectCreatePostRequest: ApiV1AdministratorProjectCreatePostRequest; //
+
+const { status, data } = await apiInstance.apiV1AdministratorProjectCreatePost(
+    apiV1AdministratorProjectCreatePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1AdministratorProjectCreatePostRequest** | **ApiV1AdministratorProjectCreatePostRequest**|  | |
+
+
+### Return type
+
+**ApiV1AdministratorProjectCreatePost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
 
 
 ### HTTP response details

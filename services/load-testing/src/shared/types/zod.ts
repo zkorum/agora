@@ -31,6 +31,7 @@ export const zodOrganizationSlug = z
         /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
         "Organization slug may only contain lower-cased letters, numbers and single hyphens",
     );
+export const zodProjectSlug = zodOrganizationSlug;
 
 export const zodEventSlug = z.enum(["devconnect-2025"]);
 
@@ -58,6 +59,14 @@ export const zodParticipationMode = z.enum([
     "guest",
 ]);
 export const zodConversationType = z.enum(["polis", "maxdiff"]);
+export const projectOrganizationAttributionRoleValues = [
+    "project_owner",
+    "sponsor",
+    "partner",
+] satisfies [string, ...string[]];
+export const zodProjectOrganizationAttributionRole = z.enum(
+    projectOrganizationAttributionRoleValues,
+);
 export const zodConversationLanguageSettingMode = z.enum(["auto", "manual"]);
 export const zodLanguageDetectionProvider = z.enum([
     "lingua",

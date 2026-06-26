@@ -25,6 +25,7 @@ import {
     ZodSupportedDisplayLanguageCodes,
     ZodSupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
+import { projectOrganizationAttributionRoleValues } from "@/shared/types/zod.js";
 // import { MAX_LENGTH_TITLE, MAX_LENGTH_OPINION, MAX_LENGTH_BODY } from "./shared/shared.js"; // unfortunately it breaks drizzle generate... :o TODO: find a way
 // WARNING: when you modify these limits, change this in shared.ts as well
 const MAX_LENGTH_TITLE = 140;
@@ -634,6 +635,11 @@ export const directoryVisibilityEnum = pgEnum("directory_visibility", [
     "unlisted",
 ]);
 
+export const projectOrganizationAttributionRoleEnum = pgEnum(
+    "project_organization_attribution_role",
+    projectOrganizationAttributionRoleValues,
+);
+
 export const organizationMembershipCapabilityEnum = pgEnum(
     "organization_membership_capability_enum",
     [
@@ -1095,13 +1101,15 @@ export const projectTable = pgTable("project", {
     slug: varchar("slug", { length: MAX_LENGTH_NAME_CREATOR })
         .notNull()
         .unique(),
-    displayName: varchar("display_name", { length: MAX_LENGTH_NAME_CREATOR })
-        .notNull(),
+    title: varchar("title", { length: MAX_LENGTH_TITLE }).notNull(),
     directoryVisibility: directoryVisibilityEnum("directory_visibility").notNull(),
     autoProvisionedForOrganizationId: integer(
         "auto_provisioned_for_organization_id",
     )
         .references(() => organizationTable.id)
+        .unique(),
+    currentContentId: integer("current_content_id")
+        .references((): AnyPgColumn => projectContentTable.id)
         .unique(),
     createdAt: timestamp("created_at", {
         mode: "date",
@@ -1116,6 +1124,164 @@ export const projectTable = pgTable("project", {
         .defaultNow()
         .notNull(),
 });
+
+/** @service api */
+export const projectContentTable = pgTable("project_content", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    projectId: integer("project_id")
+        .references(() => projectTable.id)
+        .notNull(),
+    subtitle: varchar("subtitle", { length: MAX_LENGTH_TITLE }),
+    body: text("body"),
+    bodyPlainText: text("body_plain_text"),
+    heroImagePath: text("hero_image_path"),
+    heroImageIsFullPath: boolean("hero_image_is_full_path")
+        .notNull()
+        .default(false),
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
+
+/** @service api */
+export const projectExternalOrganizationTable = pgTable(
+    "project_external_organization",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectId: integer("project_id")
+            .references(() => projectTable.id)
+            .notNull(),
+        displayName: varchar("display_name", {
+            length: MAX_LENGTH_NAME_CREATOR,
+        }).notNull(),
+        description: varchar("description", {
+            length: MAX_LENGTH_DESCRIPTION_CREATOR,
+        }),
+        imagePath: text("image_path"),
+        isFullImagePath: boolean("is_full_image_path").notNull().default(false),
+        websiteUrl: text("website_url"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("project_external_organization_project_id_id_unique").on(
+            table.projectId,
+            table.id,
+        ),
+        index("project_external_organization_project_idx").on(table.projectId),
+    ],
+);
+
+/** @service api */
+export const projectOrganizationAttributionTable = pgTable(
+    "project_organization_attribution",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectId: integer("project_id")
+            .references(() => projectTable.id)
+            .notNull(),
+        role: projectOrganizationAttributionRoleEnum("role").notNull(),
+        sortOrder: integer("sort_order").notNull().default(0),
+        organizationId: integer("organization_id").references(
+            () => organizationTable.id,
+        ),
+        externalOrganizationId: integer("external_organization_id"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        check(
+            "project_organization_attribution_source_xor_check",
+            sql`num_nonnulls(${table.organizationId}, ${table.externalOrganizationId}) = 1`,
+        ),
+        unique("project_organization_attribution_order_unique").on(
+            table.projectId,
+            table.role,
+            table.sortOrder,
+        ),
+        uniqueIndex("project_organization_attribution_real_unique")
+            .on(table.projectId, table.role, table.organizationId)
+            .where(isNotNull(table.organizationId)),
+        uniqueIndex("project_organization_attribution_external_unique")
+            .on(table.projectId, table.role, table.externalOrganizationId)
+            .where(isNotNull(table.externalOrganizationId)),
+        foreignKey({
+            columns: [table.projectId, table.externalOrganizationId],
+            foreignColumns: [
+                projectExternalOrganizationTable.projectId,
+                projectExternalOrganizationTable.id,
+            ],
+            name: "project_organization_attribution_external_project_fk",
+        }),
+        index("project_organization_attribution_project_idx").on(table.projectId),
+        index("project_organization_attribution_organization_idx").on(
+            table.organizationId,
+        ),
+    ],
+);
+
+/** @service api */
+export const projectContactTable = pgTable(
+    "project_contact",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectId: integer("project_id")
+            .references(() => projectTable.id)
+            .notNull()
+            .unique(),
+        name: varchar("name", { length: MAX_LENGTH_NAME_CREATOR }).notNull(),
+        roleLabel: varchar("role_label", { length: MAX_LENGTH_TITLE }),
+        email: text("email").notNull(),
+        organizationId: integer("organization_id").references(
+            () => organizationTable.id,
+        ),
+        externalOrganizationId: integer("external_organization_id"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        check(
+            "project_contact_affiliation_source_check",
+            sql`num_nonnulls(${table.organizationId}, ${table.externalOrganizationId}) <= 1`,
+        ),
+        foreignKey({
+            columns: [table.projectId, table.externalOrganizationId],
+            foreignColumns: [
+                projectExternalOrganizationTable.projectId,
+                projectExternalOrganizationTable.id,
+            ],
+            name: "project_contact_external_project_fk",
+        }),
+        index("project_contact_organization_idx").on(table.organizationId),
+    ],
+);
 
 /** @service scoring-worker, api, math-updater, shared-analysis-worker, import-worker */
 export const projectOrganizationOwnershipTable = pgTable(

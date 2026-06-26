@@ -19,6 +19,7 @@ export interface SettingsTranslations {
   communityGuidelines: string;
   logOut: string;
   moderatorOrganization: string;
+  moderatorProject: string;
   moderatorPremiumEntitlements: string;
   componentTesting: string;
   accountDeleted: string;
@@ -53,6 +54,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "Community Guidelines",
     logOut: "Log Out",
     moderatorOrganization: "Moderator - Organization",
+    moderatorProject: "Moderator - Project",
     moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 Component Testing",
     accountDeleted: "Account deleted",
@@ -82,6 +84,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "إرشادات المجتمع",
     logOut: "تسجيل الخروج",
     moderatorOrganization: "المشرف - المنظمة",
+    moderatorProject: "Moderator - Project",
     moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 اختبار المكونات",
     accountDeleted: "تم حذف الحساب",
@@ -111,6 +114,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "Directrices de la comunidad",
     logOut: "Cerrar sesión",
     moderatorOrganization: "Moderador - Organización",
+    moderatorProject: "Moderator - Project",
     moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 Pruebas de componentes",
     accountDeleted: "Cuenta eliminada",
@@ -141,6 +145,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "راهنمای جامعه",
     logOut: "خروج",
     moderatorOrganization: "مدیر محتوا - سازمان",
+    moderatorProject: "Moderator - Project",
     moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 آزمایش کامپوننت‌ها",
     accountDeleted: "حساب کاربری حذف شد",
@@ -170,6 +175,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "הנחיות קהילה",
     logOut: "התנתקות",
     moderatorOrganization: "מנהל/ת תוכן - ארגון",
+    moderatorProject: "Moderator - Project",
     moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 בדיקת רכיבים",
     accountDeleted: "החשבון נמחק",
@@ -199,6 +205,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "Règles de la communauté",
     logOut: "Se déconnecter",
     moderatorOrganization: "Modérateur - Organisation",
+    moderatorProject: "Modérateur - Projet",
     moderatorPremiumEntitlements: "Modérateur - Droits premium",
     componentTesting: "🔧 Tests de composants",
     accountDeleted: "Compte supprimé",
@@ -229,6 +236,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "社区准则",
     logOut: "登出",
     moderatorOrganization: "版主 - 组织",
+    moderatorProject: "Moderator - Project",
     moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 组件测试",
     accountDeleted: "账户已删除",
@@ -258,6 +266,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "社群準則",
     logOut: "登出",
     moderatorOrganization: "版主 - 組織",
+    moderatorProject: "Moderator - Project",
     moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 組件測試",
     accountDeleted: "帳戶已刪除",
@@ -287,6 +296,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "コミュニティガイドライン",
     logOut: "ログアウト",
     moderatorOrganization: "モデレーター - 組織",
+    moderatorProject: "Moderator - Project",
     moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 コンポーネントテスト",
     accountDeleted: "アカウントが削除されました",
@@ -317,6 +327,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "Коомчулук эрежелери",
     logOut: "Чыгуу",
     moderatorOrganization: "Модератор - Уюм",
+    moderatorProject: "Moderator - Project",
     moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 Компоненттерди тестирлөө",
     accountDeleted: "Каттоо эсеби жок кылынды",
@@ -346,6 +357,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "Правила сообщества",
     logOut: "Выйти",
     moderatorOrganization: "Модератор - Организация",
+    moderatorProject: "Модератор - Проект",
     moderatorPremiumEntitlements: "Модератор - Премиум-доступ",
     componentTesting: "🔧 Тестирование компонентов",
     accountDeleted: "Аккаунт удалён",

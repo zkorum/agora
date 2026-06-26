@@ -485,9 +485,23 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/settings/account/administrator/project/': RouteRecordInfo<
+      '/settings/account/administrator/project/',
+      '/settings/account/administrator/project',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/settings/account/administrator/premium-entitlements/': RouteRecordInfo<
       '/settings/account/administrator/premium-entitlements/',
       '/settings/account/administrator/premium-entitlements',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/settings/account/administrator/project/': RouteRecordInfo<
+      '/settings/account/administrator/project/',
+      '/settings/account/administrator/project',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -1036,9 +1050,21 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/settings/account/administrator/project/index.vue': {
+      routes:
+        | '/settings/account/administrator/project/'
+      views:
+        | never
+    }
     'src/pages/settings/account/administrator/premium-entitlements/index.vue': {
       routes:
         | '/settings/account/administrator/premium-entitlements/'
+      views:
+        | never
+    }
+    'src/pages/settings/account/administrator/project/index.vue': {
+      routes:
+        | '/settings/account/administrator/project/'
       views:
         | never
     }
