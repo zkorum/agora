@@ -96,3 +96,7 @@ agents_tmp_doc/
 
 # generated test data
 generated_test/
+
+# local planning artifacts
+/project-language-*.csv
+/project-language-*.md

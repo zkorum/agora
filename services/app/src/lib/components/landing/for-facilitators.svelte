@@ -162,7 +162,7 @@
         variant="soft"
         size="sm"
         trailingIcon="icon-[lucide--arrow-right] size-4"
-        class="shrink-0 self-start gap-2"
+        class="shrink-0 gap-2 self-start"
       >
         Read the guide
       </GradientButton>

@@ -476,6 +476,10 @@ Avoid `as` type assertions, `!` non-null assertions, `@ts-ignore`, `@ts-expect-e
 
 This codebase prioritizes **strong static type safety** using TypeScript to eliminate entire classes of bugs at compile time, rather than relying on runtime defensive checks.
 
+Before throwing for an internal invariant, first try to redesign the type, schema, or API so the invalid state is unrepresentable. Runtime errors are still appropriate at external boundaries, impossible-to-type legacy integrations, and genuinely exceptional failures, but prefer type-safe input shapes, discriminated unions, branded/parsed values, and DB/API constraints over internal `throw` guards whenever feasible.
+
+Push type-safety and invariants as low as practical. Prefer DB-level constraints for data invariants when they are expressible cleanly, then API/schema validation for cross-row or cross-table invariants that are awkward in SQL, then TypeScript types for in-process guarantees. Avoid relying on application-level runtime checks when the database can prevent invalid persisted state directly.
+
 **Preferred approach:**
 
 ```typescript
