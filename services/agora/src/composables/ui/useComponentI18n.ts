@@ -1,6 +1,14 @@
-import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+import {
+  getDisplayLanguageFallbackChain,
+  parseSupportedDisplayLanguageOrUndefined,
+  type SupportedDisplayLanguageCodes,
+} from "src/shared/languages";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+
+type ComponentTranslations<T> =
+  | Readonly<Partial<Record<SupportedDisplayLanguageCodes, T>> & { en: T }>
+  | Readonly<Record<string, T>>;
 
 /**
  * Typed composable for component-specific i18n with per-file translations
@@ -27,7 +35,7 @@ import { useI18n } from "vue-i18n";
  * const greeting = t("greeting", { name: "John" }); // With parameters
  */
 export function useComponentI18n<T extends { [K in keyof T]: string }>(
-  translations: Record<SupportedDisplayLanguageCodes, T>
+  translations: ComponentTranslations<T>
 ) {
   const { locale } = useI18n();
 
@@ -35,22 +43,21 @@ export function useComponentI18n<T extends { [K in keyof T]: string }>(
     key: keyof T,
     params?: Record<string, string | number>
   ): string => {
-    const currentLocale = locale.value as SupportedDisplayLanguageCodes;
-    const localeTranslations = translations[currentLocale];
+    const currentLocale = parseSupportedDisplayLanguageOrUndefined(
+      locale.value
+    );
+    const localeChain = currentLocale === undefined
+      ? ["en" as const]
+      : [...getDisplayLanguageFallbackChain({ languageCode: currentLocale }), "en" as const];
+    let translation = String(key);
 
-    let translation: string;
-
-    if (!localeTranslations) {
-      // Fallback to English if current locale not found
-      const fallbackTranslations = translations["en"];
-      if (fallbackTranslations && key in fallbackTranslations) {
-        translation = fallbackTranslations[key];
-      } else {
-        // Return key as string if no translation found
-        translation = String(key);
+    for (const languageCode of localeChain) {
+      const localeTranslations = translations[languageCode];
+      const nextTranslation = localeTranslations?.[key];
+      if (nextTranslation !== undefined) {
+        translation = nextTranslation;
+        break;
       }
-    } else {
-      translation = localeTranslations[key] || String(key);
     }
 
     // Replace placeholders with parameter values if provided

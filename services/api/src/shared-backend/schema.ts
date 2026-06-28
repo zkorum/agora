@@ -25,7 +25,7 @@ import {
     ZodSupportedDisplayLanguageCodes,
     ZodSupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
-import { projectOrganizationAttributionRoleValues } from "@/shared/types/zod.js";
+import { projectOrganizationAttributionRoleValues } from "@/shared/types/project.js";
 // import { MAX_LENGTH_TITLE, MAX_LENGTH_OPINION, MAX_LENGTH_BODY } from "./shared/shared.js"; // unfortunately it breaks drizzle generate... :o TODO: find a way
 // WARNING: when you modify these limits, change this in shared.ts as well
 const MAX_LENGTH_TITLE = 140;
@@ -601,6 +601,10 @@ export const conversationTypeEnum = pgEnum("conversation_type", [
 ]);
 export const conversationLanguageSettingModeEnum = pgEnum(
     "conversation_language_setting_mode",
+    ["inherit", "auto", "manual"],
+);
+export const projectLanguageSettingModeEnum = pgEnum(
+    "project_language_setting_mode",
     ["auto", "manual"],
 );
 export const languageDetectionProviderEnum = pgEnum(
@@ -623,7 +627,7 @@ export const premiumFeatureEnum = pgEnum("premium_feature", [
 ]);
 export const contentTranslationSourceKindEnum = pgEnum(
     "content_translation_source_kind",
-    ["conversation", "opinion", "survey_question"],
+    ["conversation", "opinion", "survey_question", "project"],
 );
 export const contentTranslationWorkStatusEnum = pgEnum(
     "content_translation_work_status",
@@ -1056,16 +1060,49 @@ export const userDisplayLanguageTable = pgTable(
     ],
 );
 
+export const projectParticipantDisplayLanguageTable = pgTable(
+    "project_participant_display_language",
+    {
+        id: serial("id").primaryKey(),
+        projectId: integer("project_id")
+            .references(() => projectTable.id)
+            .notNull(),
+        userId: uuid("user_id")
+            .references(() => userTable.id, { onDelete: "cascade" })
+            .notNull(),
+        languageCode: displayLanguageCodeEnum("language_code").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("project_participant_display_language_unique").on(
+            table.projectId,
+            table.userId,
+        ),
+    ],
+);
+
 /** @service import-worker */
 export const organizationTable = pgTable(
     "organization",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        slug: varchar("slug", { length: MAX_LENGTH_NAME_CREATOR })
-            .notNull()
-            .unique(),
+        slug: varchar("slug", { length: MAX_LENGTH_NAME_CREATOR }).notNull(),
         displayName: varchar("display_name", { length: MAX_LENGTH_NAME_CREATOR })
             .notNull(),
+        // Migration note: keep nullable in generated V0073 so existing rows can
+        // be backfilled in V0073.2 before a future NOT NULL constraint.
+        defaultLanguageCode: displayLanguageCodeEnum("default_language_code"),
         // Controls organization-facing exposure, such as directories and "post as organization" pickers.
         // Auto-provisioned personal backing orgs start unlisted; promoting one to a real org lists it.
         directoryVisibility: directoryVisibilityEnum("directory_visibility").notNull(),
@@ -1092,10 +1129,58 @@ export const organizationTable = pgTable(
         })
             .defaultNow()
             .notNull(),
+        deletedAt: timestamp("deleted_at", {
+            mode: "date",
+            precision: 0,
+        }),
     },
+    (table) => [
+        uniqueIndex("organization_active_slug_unique")
+            .on(table.slug)
+            .where(sql`${table.deletedAt} IS NULL`),
+    ],
 );
 
-/** @service scoring-worker, api, math-updater, import-worker */
+/** @service api */
+export const organizationLocalizationTable = pgTable(
+    "organization_localization",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        organizationId: integer("organization_id")
+            .references(() => organizationTable.id)
+            .notNull(),
+        languageCode: displayLanguageCodeEnum("language_code").notNull(),
+        displayName: varchar("display_name", {
+            length: MAX_LENGTH_NAME_CREATOR,
+        }).notNull(),
+        description: varchar("description", {
+            length: MAX_LENGTH_DESCRIPTION_CREATOR,
+        }).notNull(),
+        websiteUrl: text("website_url"),
+        imagePath: text("image_path"),
+        isFullImagePath: boolean("is_full_image_path").notNull().default(false),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("organization_localization_organization_language_unique").on(
+            table.organizationId,
+            table.languageCode,
+        ),
+    ],
+);
+
+/** @service scoring-worker, api, math-updater, import-worker, content-translation-worker */
 export const projectTable = pgTable("project", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     slug: varchar("slug", { length: MAX_LENGTH_NAME_CREATOR })
@@ -1111,6 +1196,9 @@ export const projectTable = pgTable("project", {
     currentContentId: integer("current_content_id")
         .references((): AnyPgColumn => projectContentTable.id)
         .unique(),
+    dynamicTranslationEnabled: boolean("dynamic_translation_enabled")
+        .notNull()
+        .default(false),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -1125,26 +1213,108 @@ export const projectTable = pgTable("project", {
         .notNull(),
 });
 
+/** @service api, content-translation-worker */
+export const projectContentTable = pgTable(
+    "project_content",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectId: integer("project_id")
+            .references(() => projectTable.id)
+            .notNull(),
+        title: varchar("title", { length: MAX_LENGTH_TITLE }).notNull(),
+        subtitle: varchar("subtitle", { length: MAX_LENGTH_TITLE }),
+        body: text("body"),
+        bodyPlainText: text("body_plain_text"),
+        heroImagePath: text("hero_image_path"),
+        heroImageIsFullPath: boolean("hero_image_is_full_path")
+            .notNull()
+            .default(false),
+        sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
+        sourceRawLanguageCode: varchar("source_raw_language_code", {
+            length: 35,
+        }),
+        sourceLanguageProvider: languageDetectionProviderEnum(
+            "source_language_provider",
+        ),
+        sourceLanguageConfidence: real("source_language_confidence"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        check(
+            "project_content_source_metadata_check",
+            sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
+        ),
+    ],
+);
+
+// Migration note: legacy table kept only for V0073 backfill compatibility.
+// Project content language is detected on project_content, dynamic translation
+// now lives on project.dynamic_translation_enabled, and additional languages
+// live on project_translation_target_language. Drop this table in the final
+// cleanup migration after those fields are backfilled and all code is switched.
 /** @service api */
-export const projectContentTable = pgTable("project_content", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    projectId: integer("project_id")
-        .references(() => projectTable.id)
-        .notNull(),
-    subtitle: varchar("subtitle", { length: MAX_LENGTH_TITLE }),
-    body: text("body"),
-    bodyPlainText: text("body_plain_text"),
-    heroImagePath: text("hero_image_path"),
-    heroImageIsFullPath: boolean("hero_image_is_full_path")
-        .notNull()
-        .default(false),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const projectLanguageSettingTable = pgTable(
+    "project_language_setting",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectId: integer("project_id")
+            .references(() => projectTable.id)
+            .notNull(),
+        mode: projectLanguageSettingModeEnum("mode").notNull(),
+        languageCode: displayLanguageCodeEnum("language_code"),
+        dynamicTranslationEnabled: boolean("dynamic_translation_enabled")
+            .notNull()
+            .default(false),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("project_language_setting_project_unique").on(table.projectId),
+        check(
+            "project_language_setting_manual_language_check",
+            sql`(${table.mode} <> 'manual') OR (${table.languageCode} IS NOT NULL)`,
+        ),
+    ],
+);
+
+/** @service api, content-translation-worker */
+export const projectTranslationTargetLanguageTable = pgTable(
+    "project_translation_target_language",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectId: integer("project_id")
+            .references(() => projectTable.id)
+            .notNull(),
+        languageCode: displayLanguageCodeEnum("language_code").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("project_translation_target_language_unique").on(
+            table.projectId,
+            table.languageCode,
+        ),
+    ],
+);
 
 /** @service api */
 export const projectExternalOrganizationTable = pgTable(
@@ -1157,6 +1327,8 @@ export const projectExternalOrganizationTable = pgTable(
         displayName: varchar("display_name", {
             length: MAX_LENGTH_NAME_CREATOR,
         }).notNull(),
+        defaultLanguageCode: displayLanguageCodeEnum("default_language_code")
+            .notNull(),
         description: varchar("description", {
             length: MAX_LENGTH_DESCRIPTION_CREATOR,
         }),
@@ -1182,6 +1354,45 @@ export const projectExternalOrganizationTable = pgTable(
             table.id,
         ),
         index("project_external_organization_project_idx").on(table.projectId),
+    ],
+);
+
+/** @service api */
+export const projectExternalOrganizationLocalizationTable = pgTable(
+    "project_external_organization_localization",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        externalOrganizationId: integer("external_organization_id")
+            .references(() => projectExternalOrganizationTable.id)
+            .notNull(),
+        languageCode: displayLanguageCodeEnum("language_code").notNull(),
+        displayName: varchar("display_name", {
+            length: MAX_LENGTH_NAME_CREATOR,
+        }).notNull(),
+        description: varchar("description", {
+            length: MAX_LENGTH_DESCRIPTION_CREATOR,
+        }).notNull(),
+        websiteUrl: text("website_url"),
+        imagePath: text("image_path"),
+        isFullImagePath: boolean("is_full_image_path").notNull().default(false),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("project_external_org_loc_external_org_language_unique").on(
+            table.externalOrganizationId,
+            table.languageCode,
+        ),
     ],
 );
 
@@ -1807,6 +2018,9 @@ export const conversationTable = pgTable(
         currentContentId: integer("current_content_id")
             .references((): AnyPgColumn => conversationContentTable.id)
             .unique(), // null if conversation was deleted
+        dynamicTranslationEnabled: boolean("dynamic_translation_enabled")
+            .notNull()
+            .default(false),
         currentRankingScoreId: integer("current_ranking_score_id")
             .references((): AnyPgColumn => rankingScoreTable.id)
             .unique(), // null for polis conversations or if no scores computed yet
@@ -1890,6 +2104,12 @@ export const conversationTable = pgTable(
     ],
 );
 
+// Migration note: legacy table kept only for V0073 backfill compatibility.
+// Conversation source language is detected on conversation_content, dynamic
+// translation now lives on conversation.dynamic_translation_enabled, and
+// additional languages live on conversation_translation_target_language. Drop
+// this table in the final cleanup migration after those fields are backfilled
+// and all code is switched.
 /** @service api, shared-analysis-worker, import-worker */
 export const conversationLanguageSettingTable = pgTable(
     "conversation_language_setting",
@@ -1900,6 +2120,9 @@ export const conversationLanguageSettingTable = pgTable(
             .references(() => conversationTable.id),
         mode: conversationLanguageSettingModeEnum("mode").notNull(),
         languageCode: displayLanguageCodeEnum("language_code"),
+        dynamicTranslationEnabled: boolean("dynamic_translation_enabled")
+            .notNull()
+            .default(false),
         detectedLanguageCode: displayLanguageCodeEnum("detected_language_code"),
         detectedSourceLanguageCode: spokenLanguageCodeEnum(
             "detected_source_language_code",
@@ -1945,14 +2168,18 @@ export const conversationLanguageSettingTable = pgTable(
     ],
 );
 
+// Migration note: legacy table kept only for V0073 backfill compatibility.
+// Drop this table in the final cleanup migration after all application reads/writes
+// use conversation.dynamic_translation_enabled and
+// conversation_translation_target_language.conversation_id directly.
 /** @service api, shared-analysis-worker, content-translation-worker, import-worker */
 export const conversationTranslationSettingTable = pgTable(
     "conversation_translation_setting",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        conversationId: integer("conversation_id")
-            .notNull()
-            .references(() => conversationTable.id),
+        conversationId: integer("conversation_id").references(
+            () => conversationTable.id,
+        ),
         dynamicTranslationEnabled: boolean("dynamic_translation_enabled")
             .notNull()
             .default(false),
@@ -1981,8 +2208,16 @@ export const conversationTranslationTargetLanguageTable = pgTable(
     "conversation_translation_target_language",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        // Migration note: keep nullable in generated V0073 so existing rows can
+        // be backfilled from translation_setting_id before V0073.2 sets this
+        // column NOT NULL.
+        conversationId: integer("conversation_id").references(
+            () => conversationTable.id,
+        ),
+        // Migration note: legacy column kept only for V0073 backfill compatibility.
+        // Drop this column with conversation_translation_setting in the final
+        // cleanup migration.
         translationSettingId: integer("translation_setting_id")
-            .notNull()
             .references(() => conversationTranslationSettingTable.id),
         languageCode: displayLanguageCodeEnum("language_code").notNull(),
         createdAt: timestamp("created_at", {
@@ -1993,6 +2228,12 @@ export const conversationTranslationTargetLanguageTable = pgTable(
             .notNull(),
     },
     (table) => [
+        unique("conversation_translation_target_language_conversation_unique").on(
+            table.conversationId,
+            table.languageCode,
+        ),
+        // Migration note: legacy uniqueness for translation_setting_id. Drop this
+        // with translation_setting_id in the final cleanup migration.
         unique("conversation_translation_target_language_unique").on(
             table.translationSettingId,
             table.languageCode,
@@ -2140,6 +2381,52 @@ export const conversationContentTranslationTable = pgTable(
         ),
         unique("conversation_content_translation_unique").on(
             table.conversationContentId,
+            table.displayLanguageCode,
+        ),
+    ],
+);
+
+/** @service api, content-translation-worker */
+export const projectContentTranslationTable = pgTable(
+    "project_content_translation",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectContentId: integer("project_content_id")
+            .notNull()
+            .references(() => projectContentTable.id),
+        displayLanguageCode:
+            displayLanguageCodeEnum("display_language_code").notNull(),
+        translatedTitle: text("translated_title").notNull(),
+        translatedSubtitle: text("translated_subtitle"),
+        translatedBody: text("translated_body"),
+        sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
+        sourceRawLanguageCode: varchar("source_raw_language_code", {
+            length: 35,
+        }),
+        sourceLanguageProvider: languageDetectionProviderEnum(
+            "source_language_provider",
+        ),
+        sourceLanguageConfidence: real("source_language_confidence"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        check(
+            "project_content_translation_source_metadata_check",
+            sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
+        ),
+        unique("project_content_translation_unique").on(
+            table.projectContentId,
             table.displayLanguageCode,
         ),
     ],
@@ -2640,10 +2927,13 @@ export const contentTranslationWorkTable = pgTable(
     "content_translation_work",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        conversationId: integer("conversation_id")
-            .notNull()
-            .references(() => conversationTable.id),
+        conversationId: integer("conversation_id").references(
+            () => conversationTable.id,
+        ),
         sourceKind: contentTranslationSourceKindEnum("source_kind").notNull(),
+        projectContentId: integer("project_content_id").references(
+            () => projectContentTable.id,
+        ),
         conversationContentId: integer("conversation_content_id").references(
             () => conversationContentTable.id,
         ),
@@ -2705,6 +2995,14 @@ export const contentTranslationWorkTable = pgTable(
                     isNotNull(table.conversationContentId),
                 ),
             ),
+        uniqueIndex("content_translation_work_project_unique")
+            .on(table.projectContentId, table.displayLanguageCode)
+            .where(
+                sqlAnd(
+                    sql`${table.sourceKind} = 'project'`,
+                    isNotNull(table.projectContentId),
+                ),
+            ),
         uniqueIndex("content_translation_work_opinion_unique")
             .on(table.opinionContentId, table.displayLanguageCode)
             .where(
@@ -2737,13 +3035,26 @@ export const contentTranslationWorkTable = pgTable(
             sqlOr(
                 sqlAnd(
                     sql`${table.sourceKind} = 'conversation'`,
+                    isNotNull(table.conversationId),
+                    isNull(table.projectContentId),
                     isNotNull(table.conversationContentId),
                     isNull(table.opinionContentId),
                     isNull(table.surveyQuestionContentId),
                     isNull(table.surveyQuestionOptionContentIds),
                 ),
                 sqlAnd(
+                    sql`${table.sourceKind} = 'project'`,
+                    isNull(table.conversationId),
+                    isNotNull(table.projectContentId),
+                    isNull(table.conversationContentId),
+                    isNull(table.opinionContentId),
+                    isNull(table.surveyQuestionContentId),
+                    isNull(table.surveyQuestionOptionContentIds),
+                ),
+                sqlAnd(
                     sql`${table.sourceKind} = 'opinion'`,
+                    isNotNull(table.conversationId),
+                    isNull(table.projectContentId),
                     isNull(table.conversationContentId),
                     isNotNull(table.opinionContentId),
                     isNull(table.surveyQuestionContentId),
@@ -2751,6 +3062,8 @@ export const contentTranslationWorkTable = pgTable(
                 ),
                 sqlAnd(
                     sql`${table.sourceKind} = 'survey_question'`,
+                    isNotNull(table.conversationId),
+                    isNull(table.projectContentId),
                     isNull(table.conversationContentId),
                     isNull(table.opinionContentId),
                     isNotNull(table.surveyQuestionContentId),

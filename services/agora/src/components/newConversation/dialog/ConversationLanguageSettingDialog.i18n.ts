@@ -3,6 +3,11 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 export interface ConversationLanguageSettingDialogTranslations {
   languagesTitle: string;
   languagesDescription: string;
+  detectedLanguageTitle: string;
+  detectedLanguageAfterPublishing: string;
+  detectedLanguageUnknown: string;
+  detectedLanguageDescription: string;
+  detectedLanguageUnsupportedDescription: string;
   primaryLanguageTitle: string;
   primaryLanguageDescription: string;
   autoDetectTitle: string;
@@ -27,6 +32,12 @@ export interface ConversationLanguageSettingDialogTranslations {
 const englishTranslations: ConversationLanguageSettingDialogTranslations = {
   languagesTitle: "Languages",
   languagesDescription: "Choose the languages Agora should support for this conversation.",
+  detectedLanguageTitle: "Detected language",
+  detectedLanguageAfterPublishing: "After publishing",
+  detectedLanguageUnknown: "Not detected",
+  detectedLanguageDescription: "Detected from the conversation content.",
+  detectedLanguageUnsupportedDescription:
+    "Detected from the conversation content. Not supported for translations.",
   primaryLanguageTitle: "Primary language",
   primaryLanguageDescription:
     "Choose the main target language for generated descriptions.",

@@ -6,13 +6,15 @@ import {
     contentTranslationWorkTable,
     conversationContentTable,
     conversationContentTranslationTable,
-    conversationLanguageSettingTable,
     conversationTable,
-    conversationTranslationSettingTable,
     conversationTranslationTargetLanguageTable,
     opinionContentTable,
     opinionContentTranslationTable,
     opinionTable,
+    projectContentTable,
+    projectContentTranslationTable,
+    projectTable,
+    projectTranslationTargetLanguageTable,
     surveyQuestionContentTable,
     surveyQuestionContentTranslationTable,
     surveyQuestionOptionContentTable,
@@ -82,6 +84,15 @@ interface ScheduleEagerContentTranslationParams {
     log: Pick<BaseLogger, "info" | "error">;
 }
 
+interface ScheduleEagerProjectContentTranslationParams {
+    db: PostgresDatabase;
+    valkey: Valkey | undefined;
+    queueScript: Script;
+    projectId: number;
+    now: Date;
+    log: Pick<BaseLogger, "info" | "error">;
+}
+
 interface ConversationContentSource {
     conversationId: number;
     conversationSlugId: string;
@@ -134,7 +145,25 @@ interface SurveyQuestionContentSource {
     options: SurveyQuestionOptionContentSource[];
 }
 
+interface ProjectContentSource {
+    projectId: number;
+    contentId: number;
+    title: string;
+    subtitle: string | null;
+    body: string | null;
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    sourceLanguageProvider: LanguageDetectionProvider | null;
+    sourceLanguageConfidence: number | null;
+}
+
 type TranslationWorkInput =
+    | {
+          conversationId: null;
+          sourceKind: "project";
+          projectContentId: number;
+          targetLanguageCode: SupportedDisplayLanguageCodes;
+      }
     | {
           conversationId: number;
           sourceKind: "conversation";
@@ -171,7 +200,9 @@ async function ensureTranslationWork({
     log: Pick<BaseLogger, "info">;
 }): Promise<{ workId: number; shouldQueue: boolean }> {
     const sourceWhere =
-        input.sourceKind === "conversation"
+        input.sourceKind === "project"
+            ? eq(contentTranslationWorkTable.projectContentId, input.projectContentId)
+            : input.sourceKind === "conversation"
             ? eq(contentTranslationWorkTable.conversationContentId, input.sourceContentId)
             : input.sourceKind === "opinion"
               ? eq(contentTranslationWorkTable.opinionContentId, input.sourceContentId)
@@ -252,6 +283,8 @@ async function ensureTranslationWork({
         sourceKind: input.sourceKind,
         conversationContentId:
             input.sourceKind === "conversation" ? input.sourceContentId : null,
+        projectContentId:
+            input.sourceKind === "project" ? input.projectContentId : null,
         opinionContentId:
             input.sourceKind === "opinion" ? input.sourceContentId : null,
         surveyQuestionContentId:
@@ -735,42 +768,20 @@ async function fetchConfiguredTargetLanguageCodes({
 }): Promise<SupportedDisplayLanguageCodes[]> {
     const rows = await db
         .select({
-            mode: conversationLanguageSettingTable.mode,
-            languageCode: conversationLanguageSettingTable.languageCode,
-            detectedLanguageCode:
-                conversationLanguageSettingTable.detectedLanguageCode,
-            additionalLanguageCode:
-                conversationTranslationTargetLanguageTable.languageCode,
+            languageCode: conversationTranslationTargetLanguageTable.languageCode,
         })
-        .from(conversationTable)
+        .from(conversationTranslationTargetLanguageTable)
         .innerJoin(
-            conversationTranslationSettingTable,
+            conversationTable,
             eq(
-                conversationTranslationSettingTable.conversationId,
+                conversationTranslationTargetLanguageTable.conversationId,
                 conversationTable.id,
-            ),
-        )
-        .leftJoin(
-            conversationLanguageSettingTable,
-            eq(
-                conversationLanguageSettingTable.conversationId,
-                conversationTable.id,
-            ),
-        )
-        .leftJoin(
-            conversationTranslationTargetLanguageTable,
-            eq(
-                conversationTranslationTargetLanguageTable.translationSettingId,
-                conversationTranslationSettingTable.id,
             ),
         )
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
-                eq(
-                    conversationTranslationSettingTable.dynamicTranslationEnabled,
-                    true,
-                ),
+                eq(conversationTable.dynamicTranslationEnabled, true),
             ),
         )
         .orderBy(asc(conversationTranslationTargetLanguageTable.id));
@@ -778,28 +789,110 @@ async function fetchConfiguredTargetLanguageCodes({
     const targetLanguageCodes: SupportedDisplayLanguageCodes[] = [];
     const seenTargetLanguageCodes = new Set<SupportedDisplayLanguageCodes>();
     for (const row of rows) {
-        const mainLanguageCode =
-            row.mode === "manual"
-                ? row.languageCode
-                : row.mode === "auto"
-                  ? row.detectedLanguageCode
-                  : null;
-        if (
-            mainLanguageCode !== null &&
-            !seenTargetLanguageCodes.has(mainLanguageCode)
-        ) {
-            targetLanguageCodes.push(mainLanguageCode);
-            seenTargetLanguageCodes.add(mainLanguageCode);
-        }
-        if (
-            row.additionalLanguageCode !== null &&
-            !seenTargetLanguageCodes.has(row.additionalLanguageCode)
-        ) {
-            targetLanguageCodes.push(row.additionalLanguageCode);
-            seenTargetLanguageCodes.add(row.additionalLanguageCode);
+        if (!seenTargetLanguageCodes.has(row.languageCode)) {
+            targetLanguageCodes.push(row.languageCode);
+            seenTargetLanguageCodes.add(row.languageCode);
         }
     }
     return targetLanguageCodes;
+}
+
+async function fetchConfiguredProjectTargetLanguageCodes({
+    db,
+    projectId,
+}: {
+    db: PostgresDatabase;
+    projectId: number;
+}): Promise<SupportedDisplayLanguageCodes[]> {
+    const rows = await db
+        .select({
+            languageCode: projectTranslationTargetLanguageTable.languageCode,
+        })
+        .from(projectTranslationTargetLanguageTable)
+        .innerJoin(
+            projectTable,
+            eq(projectTranslationTargetLanguageTable.projectId, projectTable.id),
+        )
+        .where(
+            and(
+                eq(projectTable.id, projectId),
+                eq(projectTable.dynamicTranslationEnabled, true),
+            ),
+        )
+        .orderBy(asc(projectTranslationTargetLanguageTable.id));
+
+    const targetLanguageCodes: SupportedDisplayLanguageCodes[] = [];
+    const seenTargetLanguageCodes = new Set<SupportedDisplayLanguageCodes>();
+    for (const row of rows) {
+        if (!seenTargetLanguageCodes.has(row.languageCode)) {
+            targetLanguageCodes.push(row.languageCode);
+            seenTargetLanguageCodes.add(row.languageCode);
+        }
+    }
+    return targetLanguageCodes;
+}
+
+async function fetchProjectContentSource({
+    db,
+    projectId,
+}: {
+    db: PostgresDatabase;
+    projectId: number;
+}): Promise<ProjectContentSource | undefined> {
+    const rows = await db
+        .select({
+            projectId: projectTable.id,
+            contentId: projectContentTable.id,
+            title: projectContentTable.title,
+            subtitle: projectContentTable.subtitle,
+            body: projectContentTable.body,
+            sourceLanguageCode: projectContentTable.sourceLanguageCode,
+            sourceRawLanguageCode: projectContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider: projectContentTable.sourceLanguageProvider,
+            sourceLanguageConfidence: projectContentTable.sourceLanguageConfidence,
+        })
+        .from(projectTable)
+        .innerJoin(
+            projectContentTable,
+            eq(projectContentTable.id, projectTable.currentContentId),
+        )
+        .where(eq(projectTable.id, projectId))
+        .limit(1);
+    return rows.at(0);
+}
+
+async function hasProjectContentTranslation({
+    db,
+    source,
+    targetLanguageCode,
+}: {
+    db: PostgresDatabase;
+    source: ProjectContentSource;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+}): Promise<boolean> {
+    const rows = await db
+        .select({
+            sourceLanguageCode: projectContentTranslationTable.sourceLanguageCode,
+        })
+        .from(projectContentTranslationTable)
+        .where(
+            and(
+                eq(projectContentTranslationTable.projectContentId, source.contentId),
+                eq(
+                    projectContentTranslationTable.displayLanguageCode,
+                    targetLanguageCode,
+                ),
+            ),
+        )
+        .limit(1);
+    const row = rows.at(0);
+    return (
+        row !== undefined &&
+        translationSourceMatchesCurrentSource({
+            translationSourceLanguageCode: row.sourceLanguageCode,
+            currentSourceLanguageCode: source.sourceLanguageCode,
+        })
+    );
 }
 
 async function fetchSeedOpinionSources({
@@ -1109,6 +1202,59 @@ export async function scheduleEagerContentTranslationForConversation({
                 log,
             });
         }
+    }
+}
+
+export async function scheduleEagerContentTranslationForProject({
+    db,
+    valkey,
+    queueScript,
+    projectId,
+    now,
+    log,
+}: ScheduleEagerProjectContentTranslationParams): Promise<void> {
+    const targetLanguageCodes = await fetchConfiguredProjectTargetLanguageCodes({
+        db,
+        projectId,
+    });
+    if (targetLanguageCodes.length === 0) {
+        return;
+    }
+
+    const source = await fetchProjectContentSource({ db, projectId });
+    if (source === undefined) {
+        return;
+    }
+
+    for (const targetLanguageCode of targetLanguageCodes) {
+        if (
+            !shouldTranslateContent({
+                sourceLanguageCode: source.sourceLanguageCode,
+                targetLanguageCode,
+            }) ||
+            (await hasProjectContentTranslation({
+                db,
+                source,
+                targetLanguageCode,
+            }))
+        ) {
+            continue;
+        }
+
+        await ensureAndQueueEagerTranslationWork({
+            db,
+            valkey,
+            queueScript,
+            input: {
+                conversationId: null,
+                sourceKind: "project",
+                projectContentId: source.contentId,
+                targetLanguageCode,
+            },
+            translationExists: false,
+            now,
+            log,
+        });
     }
 }
 

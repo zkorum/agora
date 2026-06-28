@@ -15,7 +15,19 @@
       </p>
     </SpaLink>
 
+    <SpaLink to="/dev/project-page" class="route-card">
+      <div class="route-card-header">
+        <i class="pi pi-sitemap section-icon"></i>
+        <span>Project page</span>
+      </div>
+      <p class="route-card-description">
+        Open a full-screen project-page showcase with static project, activity,
+        attribution, language, and contact variants.
+      </p>
+    </SpaLink>
+
     <AnalysisVariantLoadingTest />
+    <ConversationLanguageSettingDialogTest />
     <PreferencesDialogTest />
     <OpinionGroupVisualizationTest />
     <AnalysisReportTest />
@@ -37,6 +49,7 @@ import {
 import AnalysisReportTest from "./test-components/AnalysisReportTest.vue";
 import AnalysisVariantLoadingTest from "./test-components/AnalysisVariantLoadingTest.vue";
 import AsyncStateHandlerTest from "./test-components/AsyncStateHandlerTest.vue";
+import ConversationLanguageSettingDialogTest from "./test-components/ConversationLanguageSettingDialogTest.vue";
 import EmbeddedBrowserWarningTest from "./test-components/EmbeddedBrowserWarningTest.vue";
 import OpinionGroupVisualizationTest from "./test-components/OpinionGroupVisualizationTest.vue";
 import PreferencesDialogTest from "./test-components/PreferencesDialogTest.vue";

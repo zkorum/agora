@@ -234,7 +234,6 @@ export function toConversationContentFetchResponse({
     mode,
     translationAllowed,
     displayLanguage,
-    spokenLanguages,
 }: {
     content: LocalizedConversationContent;
     mode: ConversationContentMode;

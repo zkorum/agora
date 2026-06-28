@@ -5,27 +5,22 @@
       :subtitle="overviewSubtitle"
     >
       <div class="language-settings-list">
-        <button
-          type="button"
-          class="language-settings-row"
-          @click="openPrimaryPage"
-        >
+        <div class="language-settings-row">
           <span class="language-settings-row__content">
             <span class="language-settings-row__title">{{
-              t("primaryLanguageTitle")
+              t("detectedLanguageTitle")
             }}</span>
             <span class="language-settings-row__value">{{
-              primaryLanguageLabel
+              detectedLanguageValue
             }}</span>
             <span
-              v-if="primaryLanguageDescription !== undefined"
+              v-if="detectedLanguageDescription !== undefined"
               class="language-settings-row__description"
             >
-              {{ primaryLanguageDescription }}
+              {{ detectedLanguageDescription }}
             </span>
           </span>
-          <q-icon :name="forwardIcon" class="language-settings-row__icon" />
-        </button>
+        </div>
 
         <button
           type="button"
@@ -91,50 +86,6 @@
               @update:model-value="setDynamicTranslation"
             />
           </span>
-        </button>
-      </div>
-    </ZKBottomDialogContainer>
-  </q-dialog>
-
-  <q-dialog v-model="showPrimaryDialog" position="bottom">
-    <ZKBottomDialogContainer
-      :title="t('primaryLanguageTitle')"
-      :subtitle="t('primaryLanguageDescription')"
-    >
-      <template #leadingAction>
-        <ZKBottomDialogBackButton @click="goBackFromPrimary" />
-      </template>
-
-      <div class="language-settings-list">
-        <button
-          v-for="option in primaryLanguageOptions"
-          :key="option.value"
-          type="button"
-          class="language-settings-row"
-          :class="{
-            'language-settings-row--selected':
-              primarySelectedValue === option.value,
-            'language-settings-row--disabled': option.disabled === true,
-          }"
-          :disabled="option.disabled === true"
-          @click="handlePrimaryOptionSelected(option)"
-        >
-          <span class="language-settings-row__content">
-            <span class="language-settings-row__title">{{ option.title }}</span>
-            <span class="language-settings-row__description">{{
-              option.description
-            }}</span>
-          </span>
-          <q-icon
-            v-if="primarySelectedValue === option.value"
-            name="mdi-check"
-            class="language-settings-row__icon language-settings-row__icon--selected"
-          />
-          <q-icon
-            v-else-if="option.value === 'manual'"
-            :name="forwardIcon"
-            class="language-settings-row__icon"
-          />
         </button>
       </div>
     </ZKBottomDialogContainer>
@@ -222,18 +173,7 @@ import {
   conversationLanguageSettingDialogTranslations,
 } from "./ConversationLanguageSettingDialog.i18n";
 
-type LanguageDialogPage =
-  | "overview"
-  | "primary"
-  | "manual-language"
-  | "additional-languages";
-
-interface DialogOption {
-  title: string;
-  description: string;
-  value: string;
-  disabled?: boolean;
-}
+type LanguageDialogPage = "overview" | "additional-languages";
 
 interface LanguageOption {
   label: string;
@@ -243,7 +183,6 @@ interface LanguageOption {
 }
 
 const props = defineProps<{
-  canEditPrimaryLanguage: boolean;
   canUseDynamicTranslation: boolean;
   detectedLanguageCode?: SupportedDisplayLanguageCodes | null;
   detectedSourceLanguageCode?: SupportedSpokenLanguageCodes | null;
@@ -268,7 +207,6 @@ const { t, locale } =
 const $q = useQuasar();
 
 const currentPage = ref<LanguageDialogPage>("overview");
-const showPrimaryDialog = ref(false);
 const showLanguagePickerDialog = ref(false);
 const searchQuery = ref("");
 
@@ -315,31 +253,19 @@ const languageOptions = computed<LanguageOption[]>(() =>
   )
 );
 
-const primaryLanguageLabel = computed(() => {
-  if (languageSetting.value.mode === "auto") {
-    return t("autoDetectTitle");
-  }
-
-  return getLanguageLabel(languageSetting.value.languageCode);
-});
-
 const additionalLanguageOptions = computed(() => {
-  if (languageSetting.value.mode === "auto") {
+  const detectedLanguageCode = props.detectedLanguageCode;
+  if (detectedLanguageCode === null || detectedLanguageCode === undefined) {
     return languageOptions.value;
   }
 
-  const primaryLanguageCode = languageSetting.value.languageCode;
-
   return languageOptions.value.filter(
-    (language) => language.value !== primaryLanguageCode
+    (language) => language.value !== detectedLanguageCode
   );
 });
 
 const filteredLanguageOptions = computed(() => {
-  const options =
-    currentPage.value === "additional-languages"
-      ? additionalLanguageOptions.value
-      : languageOptions.value;
+  const options = additionalLanguageOptions.value;
   const query = searchQuery.value.trim().toLocaleLowerCase();
   if (query.length === 0) {
     return options;
@@ -363,19 +289,12 @@ const additionalLanguagesValue = computed(() => {
 
 const overviewSubtitle = computed(() => t("languagesDescription"));
 
-const languagePickerTitle = computed(() =>
-  currentPage.value === "manual-language"
-    ? t("manualLanguageDialogTitle")
-    : t("additionalLanguagesTitle")
-);
+const languagePickerTitle = computed(() => t("additionalLanguagesTitle"));
 
 const languagePickerSubtitle = computed(() =>
-  currentPage.value === "manual-language"
-    ? t("manualLanguageDescription")
-    : t("additionalLanguagesDescription")
+  t("additionalLanguagesDescription")
 );
 
-const primarySelectedValue = computed(() => languageSetting.value.mode);
 const forwardIcon = computed(() =>
   $q.lang.rtl ? "mdi-chevron-left" : "mdi-chevron-right"
 );
@@ -450,56 +369,30 @@ const autoDetectDescriptionState = computed(() =>
     autoDetectionStatus: props.autoDetectionStatus,
   })
 );
-const autoDetectOptionDescription = computed(() => {
+const detectedLanguageValue = computed(() => {
   const state = autoDetectDescriptionState.value;
   if (state.kind === "neutral") {
-    return t("autoDetectDescription");
+    return t("detectedLanguageAfterPublishing");
   }
   if (state.kind === "stable_unknown") {
-    return t("autoDetectUnknownDescription");
+    return t("detectedLanguageUnknown");
   }
   if (state.kind === "retryable_unknown") {
-    return t("autoDetectRetryableUnknownDescription");
+    return t("detectedLanguageUnknown");
   }
-  if (state.kind === "unsupported") {
-    return t("autoDetectUnsupportedDescription", {
-      language: state.languageLabel,
-    });
-  }
-  return t("autoDetectDetectedDescription", {
-    language: state.languageLabel,
-  });
+  return state.languageLabel;
 });
-const primaryLanguageDescription = computed(() => {
-  if (
-    languageSetting.value.mode !== "auto" ||
-    autoDetectDescriptionState.value.kind === "neutral"
-  ) {
+
+const detectedLanguageDescription = computed(() => {
+  const state = autoDetectDescriptionState.value;
+  if (state.kind === "neutral") {
     return undefined;
   }
-
-  return autoDetectOptionDescription.value;
+  if (state.kind === "unsupported") {
+    return t("detectedLanguageUnsupportedDescription");
+  }
+  return t("detectedLanguageDescription");
 });
-const manualLanguageOptionDescription = computed(() =>
-  languageSetting.value.mode === "manual"
-    ? getLanguageLabel(languageSetting.value.languageCode)
-    : t("manualOptionDescription")
-);
-
-const primaryLanguageOptions = computed<DialogOption[]>(() => [
-  {
-    title: t("autoDetectTitle"),
-    description: autoDetectOptionDescription.value,
-    value: "auto",
-    disabled: !props.canEditPrimaryLanguage,
-  },
-  {
-    title: t("manualTitle"),
-    description: manualLanguageOptionDescription.value,
-    value: "manual",
-    disabled: !props.canEditPrimaryLanguage,
-  },
-]);
 
 function getLanguageLabel(
   languageCode:
@@ -520,12 +413,6 @@ function getLanguageLabel(
   );
 }
 
-function openPrimaryPage(): void {
-  currentPage.value = "primary";
-  showDialog.value = false;
-  showPrimaryDialog.value = true;
-}
-
 function openAdditionalLanguagesPage(): void {
   if (!props.canUseDynamicTranslation) {
     return;
@@ -537,35 +424,9 @@ function openAdditionalLanguagesPage(): void {
   showLanguagePickerDialog.value = true;
 }
 
-function handlePrimaryOptionSelected(option: DialogOption): void {
-  if (option.disabled === true) {
-    return;
-  }
-
-  if (option.value === "auto") {
-    languageSetting.value = { mode: "auto" };
-    showPrimaryDialog.value = false;
-    return;
-  }
-
-  if (option.value === "manual") {
-    currentPage.value = "manual-language";
-    searchQuery.value = "";
-    showPrimaryDialog.value = false;
-    showLanguagePickerDialog.value = true;
-  }
-}
-
 function isLanguageSelected(
   languageCode: SupportedDisplayLanguageCodes
 ): boolean {
-  if (currentPage.value === "manual-language") {
-    return (
-      languageSetting.value.mode === "manual" &&
-      languageSetting.value.languageCode === languageCode
-    );
-  }
-
   return multilingualSetting.value.additionalLanguageCodes.includes(
     languageCode
   );
@@ -575,7 +436,6 @@ function isLanguageOptionDisabled(
   languageCode: SupportedDisplayLanguageCodes
 ): boolean {
   return (
-    currentPage.value === "additional-languages" &&
     multilingualSetting.value.additionalLanguageCodes.length >= 2 &&
     !multilingualSetting.value.additionalLanguageCodes.includes(languageCode)
   );
@@ -583,13 +443,6 @@ function isLanguageOptionDisabled(
 
 function selectLanguage(languageCode: SupportedDisplayLanguageCodes): void {
   if (isLanguageOptionDisabled(languageCode)) {
-    return;
-  }
-
-  if (currentPage.value === "manual-language") {
-    languageSetting.value = { mode: "manual", languageCode };
-    removeAdditionalLanguage(languageCode);
-    showLanguagePickerDialog.value = false;
     return;
   }
 
@@ -660,31 +513,30 @@ function selectFirstFilteredLanguage(): void {
   selectLanguage(firstLanguage.value);
 }
 
-function goBackFromPrimary(): void {
-  currentPage.value = "overview";
-  showPrimaryDialog.value = false;
-  showDialog.value = true;
-}
-
 function goBackFromLanguagePicker(): void {
-  const shouldOpenPrimaryDialog = currentPage.value === "manual-language";
-  currentPage.value = shouldOpenPrimaryDialog ? "primary" : "overview";
+  currentPage.value = "overview";
   showLanguagePickerDialog.value = false;
-  if (shouldOpenPrimaryDialog) {
-    showPrimaryDialog.value = true;
-    return;
-  }
   showDialog.value = true;
 }
 
 watch(
-  () => languageSetting.value,
-  (setting) => {
-    if (setting.mode === "manual") {
-      removeAdditionalLanguage(setting.languageCode);
+  () => props.detectedLanguageCode,
+  (detectedLanguageCode) => {
+    if (detectedLanguageCode !== null && detectedLanguageCode !== undefined) {
+      removeAdditionalLanguage(detectedLanguageCode);
     }
   },
-  { deep: true }
+  { immediate: true }
+);
+
+watch(
+  () => languageSetting.value.mode,
+  (mode) => {
+    if (mode !== "auto") {
+      languageSetting.value = { mode: "auto" };
+    }
+  },
+  { immediate: true }
 );
 </script>
 

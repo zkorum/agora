@@ -10,7 +10,7 @@ import {
     userTable,
     zkPassportTable,
 } from "@/shared-backend/schema.js";
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, isNull } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import type { IsLoggedInResponse } from "@/shared/types/dto-auth.js";
 import { normalizeEmail } from "@/shared/types/zod-email.js";
@@ -192,6 +192,7 @@ export async function isUserPartOfOrganization({
             and(
                 eq(userTable.id, userId),
                 eq(organizationTable.slug, organizationName),
+                isNull(organizationTable.deletedAt),
             ),
         );
     if (result.length === 0) {
@@ -214,10 +215,15 @@ export async function isUserPartOfOrganizationById({
     const result = await db
         .select({ id: organizationMembershipTable.id })
         .from(organizationMembershipTable)
+        .innerJoin(
+            organizationTable,
+            eq(organizationTable.id, organizationMembershipTable.organizationId),
+        )
         .where(
             and(
                 eq(organizationMembershipTable.userId, userId),
                 eq(organizationMembershipTable.organizationId, organizationId),
+                isNull(organizationTable.deletedAt),
             ),
         )
         .limit(1);

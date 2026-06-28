@@ -21,9 +21,6 @@ from import_worker.generated_models import (
     Conversation,
     ConversationContent,
     ConversationImport,
-    ConversationLanguageSetting,
-    ConversationLanguageSettingMode,
-    ConversationTranslationSetting,
     ConversationTranslationTargetLanguage,
     ConversationViewSnapshot,
     ConversationViewSnapshotReasonEnum,
@@ -47,9 +44,6 @@ from import_worker.html import html_to_counted_text, process_user_generated_html
 from import_worker.ids import generate_random_slug_id, generate_uuid
 from import_worker.import_models import ImportPolisResults
 from import_worker.language_detection import (
-    ADDITIONAL_LANGUAGE_HINT_WEIGHT,
-    AUTO_MAIN_LANGUAGE_HINT_WEIGHT,
-    MANUAL_MAIN_LANGUAGE_HINT_WEIGHT,
     GoogleLanguageDetector,
     SourceLanguageHint,
     SourceLanguageMetadata,
@@ -391,60 +385,13 @@ def _create_conversation(
     )
     body = process_user_generated_html(body, enable_links=True, mode="input")
     body_plain_text = html_to_counted_text(body)
-    language_setting = request.form_data.language_setting
-    language_setting_mode = (
-        ConversationLanguageSettingMode.manual
-        if language_setting.mode == "manual"
-        else ConversationLanguageSettingMode.auto
-    )
-    manual_language_code = (
-        language_setting.language_code.value if language_setting.mode == "manual" else None
-    )
-    block_language_hints = (
-        [
-            SourceLanguageHint(
-                language_code=manual_language_code,
-                weight=MANUAL_MAIN_LANGUAGE_HINT_WEIGHT,
-            ),
-        ]
-        if manual_language_code is not None
-        else []
-    )
     detected_language_metadata = detect_source_language(
         f"{title}\n{body_plain_text}",
         google_detector=google_detector,
-        language_hints=block_language_hints,
     )
     content_source_language_code = detected_language_metadata.language_code
     content_source_language_confidence = detected_language_metadata.confidence
-    main_language_code = (
-        manual_language_code
-        if language_setting.mode == "manual"
-        else detected_language_metadata.language_code
-    )
     content_language_hints: list[SourceLanguageHint] = []
-    seen_hint_language_codes: set[str] = set()
-    if main_language_code is not None:
-        content_language_hints.append(
-            SourceLanguageHint(
-                language_code=main_language_code,
-                weight=MANUAL_MAIN_LANGUAGE_HINT_WEIGHT
-                if language_setting.mode == "manual"
-                else AUTO_MAIN_LANGUAGE_HINT_WEIGHT,
-            ),
-        )
-        seen_hint_language_codes.add(main_language_code)
-    for language_code in request.form_data.multilingual_setting.additional_language_codes:
-        additional_language_code = language_code.value
-        if additional_language_code in seen_hint_language_codes:
-            continue
-        content_language_hints.append(
-            SourceLanguageHint(
-                language_code=additional_language_code,
-                weight=ADDITIONAL_LANGUAGE_HINT_WEIGHT,
-            ),
-        )
-        seen_hint_language_codes.add(additional_language_code)
     conversation_slug_id = generate_random_slug_id()
     import_url = request.polis_url if request.type == "url" else None
 
@@ -472,6 +419,9 @@ def _create_conversation(
             import_created_at=_timestamp_from_polis(imported.conversation_data.created),
             import_author=imported.conversation_data.ownername,
             import_method=request.type,
+            dynamic_translation_enabled=(
+                request.form_data.multilingual_setting.dynamic_translation_enabled
+            ),
         )
         .returning(Conversation.id),
     ).first()
@@ -502,44 +452,20 @@ def _create_conversation(
         .where(Conversation.id == conversation_id)
         .values(current_content_id=conversation_content_id),
     )
-    session.execute(
-        sqlalchemy_insert(ConversationLanguageSetting).values(
-            conversation_id=conversation_id,
-            mode=language_setting_mode,
-            language_code=manual_language_code,
-            detected_language_code=_display_language_code_or_none(
-                detected_language_metadata.language_code
-            ),
-            detected_source_language_code=detected_language_metadata.language_code,
-            detected_raw_language_code=detected_language_metadata.raw_language_code,
-            detected_raw_language_provider=detected_language_metadata.provider,
-            detection_confidence=detected_language_metadata.confidence,
-            detected_from_corpus_hash=None,
-            created_at=now,
-            updated_at=now,
-        ),
+    source_display_language_code = _display_language_code_or_none(
+        content_source_language_code
     )
-    translation_setting_row = session.execute(
-        sqlalchemy_insert(ConversationTranslationSetting)
-        .values(
-            conversation_id=conversation_id,
-            dynamic_translation_enabled=(
-                request.form_data.multilingual_setting.dynamic_translation_enabled
-            ),
-            created_at=now,
-            updated_at=now,
-        )
-        .returning(ConversationTranslationSetting.id),
-    ).first()
-    if translation_setting_row is None:
-        raise RuntimeError("Failed to create conversation translation setting")
-    target_languages = request.form_data.multilingual_setting.additional_language_codes
+    target_languages = [
+        language_code
+        for language_code in request.form_data.multilingual_setting.additional_language_codes
+        if language_code.value != source_display_language_code
+    ]
     if target_languages:
         session.execute(
             sqlalchemy_insert(ConversationTranslationTargetLanguage),
             [
                 {
-                    "translation_setting_id": translation_setting_row.id,
+                    "conversation_id": conversation_id,
                     "language_code": DisplayLanguageCode(language_code.value),
                     "created_at": now,
                 }
@@ -872,30 +798,19 @@ def _create_content_translation_work(
 ) -> ContentTranslationQueueSchedule | None:
     target_rows = session.execute(
         select(
-            ConversationLanguageSetting.mode,
-            ConversationLanguageSetting.language_code,
-            ConversationLanguageSetting.detected_language_code,
             ConversationTranslationTargetLanguage.language_code.label(
                 "target_language_code",
             ),
         )
-        .select_from(ConversationTranslationSetting)
-        .join(
-            ConversationLanguageSetting,
-            ConversationLanguageSetting.conversation_id
-            == ConversationTranslationSetting.conversation_id,
-        )
+        .select_from(Conversation)
         .join(
             ConversationTranslationTargetLanguage,
-            ConversationTranslationTargetLanguage.translation_setting_id
-            == ConversationTranslationSetting.id,
-            isouter=True,
+            ConversationTranslationTargetLanguage.conversation_id == Conversation.id,
         )
         .where(
             and_(
-                ConversationTranslationSetting.conversation_id
-                == conversation_ids.conversation_id,
-                ConversationTranslationSetting.dynamic_translation_enabled.is_(True),
+                Conversation.id == conversation_ids.conversation_id,
+                Conversation.dynamic_translation_enabled.is_(True),
             ),
         )
         .order_by(ConversationTranslationTargetLanguage.id.asc()),
@@ -903,21 +818,7 @@ def _create_content_translation_work(
     target_language_codes: list[DisplayLanguageCode] = []
     seen_target_language_codes: set[DisplayLanguageCode] = set()
     for row in target_rows:
-        main_language_code = (
-            row.language_code
-            if row.mode == ConversationLanguageSettingMode.manual
-            else row.detected_language_code
-        )
-        if (
-            main_language_code is not None
-            and main_language_code not in seen_target_language_codes
-        ):
-            target_language_codes.append(main_language_code)
-            seen_target_language_codes.add(main_language_code)
-        if (
-            row.target_language_code is not None
-            and row.target_language_code not in seen_target_language_codes
-        ):
+        if row.target_language_code not in seen_target_language_codes:
             target_language_codes.append(row.target_language_code)
             seen_target_language_codes.add(row.target_language_code)
     if not target_language_codes:

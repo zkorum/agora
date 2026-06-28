@@ -1,9 +1,6 @@
 import { createHash } from "node:crypto";
-import { eq } from "drizzle-orm";
-import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { log } from "@/app.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
-import { conversationLanguageSettingTable } from "@/shared-backend/schema.js";
 import { detectLanguage } from "@/shared-backend/translate.js";
 import {
     detectLanguageWithFallbackOutcome,
@@ -26,22 +23,10 @@ import type {
 } from "@/shared/types/zod.js";
 
 export interface StoredConversationLanguageSetting {
-    mode: "auto" | "manual";
+    mode: "inherit" | "auto" | "manual";
     languageCode: SupportedDisplayLanguageCodes | null;
     detectedLanguageCode: SupportedDisplayLanguageCodes | null;
     detectedSourceLanguageCode: NormalizedLanguageCodes | null;
-    detectedRawLanguageCode: string | null;
-    detectedRawLanguageProvider: LanguageDetectionProvider | null;
-    detectionConfidence: number | null;
-    detectedFromCorpusHash: string | null;
-    autoDetectionRetryable: boolean;
-}
-
-interface ConversationLanguageSettingRow {
-    mode: "auto" | "manual";
-    languageCode: string | null;
-    detectedLanguageCode: string | null;
-    detectedSourceLanguageCode: string | null;
     detectedRawLanguageCode: string | null;
     detectedRawLanguageProvider: LanguageDetectionProvider | null;
     detectionConfidence: number | null;
@@ -162,34 +147,6 @@ function normalizeSourceLanguageCodeForOutput(
     return parseNormalizedLanguageOrUndefined(languageCode) ?? null;
 }
 
-export function normalizeConversationLanguageSettingRow(
-    row: ConversationLanguageSettingRow | undefined,
-): StoredConversationLanguageSetting | undefined {
-    if (row === undefined) {
-        return undefined;
-    }
-
-    const languageCode = normalizeLanguageCodeForOutput(row.languageCode);
-    const detectedLanguageCode = normalizeLanguageCodeForOutput(
-        row.detectedLanguageCode,
-    );
-    const detectedSourceLanguageCode = normalizeSourceLanguageCodeForOutput(
-        row.detectedSourceLanguageCode,
-    );
-
-    return {
-        mode: row.mode,
-        languageCode,
-        detectedLanguageCode,
-        detectedSourceLanguageCode,
-        detectedRawLanguageCode: row.detectedRawLanguageCode,
-        detectedRawLanguageProvider: row.detectedRawLanguageProvider,
-        detectionConfidence: row.detectionConfidence,
-        detectedFromCorpusHash: row.detectedFromCorpusHash,
-        autoDetectionRetryable: row.autoDetectionRetryable,
-    };
-}
-
 function autoDetectionStatusForOutput({
     setting,
 }: {
@@ -227,24 +184,32 @@ export function conversationLanguageSettingToOutput({
     };
 }
 
-export function conversationLanguageSettingToSourceMetadata({
-    setting,
+export function conversationContentSourceMetadataToLanguageSettingOutput({
+    sourceLanguageCode,
+    sourceRawLanguageCode,
+    sourceLanguageConfidence,
 }: {
-    setting: StoredConversationLanguageSetting;
-}): {
     sourceLanguageCode: string | null;
+    sourceRawLanguageCode: string | null;
     sourceLanguageConfidence: number | null;
-} {
-    if (setting.mode === "manual") {
-        return {
-            sourceLanguageCode: setting.languageCode,
-            sourceLanguageConfidence: null,
-        };
-    }
+}): ConversationLanguageSettingOutput {
+    const detectedLanguageCode = normalizeLanguageCodeForOutput(sourceLanguageCode);
+    const detectedSourceLanguageCode = normalizeSourceLanguageCodeForOutput(
+        sourceLanguageCode,
+    );
+    const autoDetectionStatus: AutoLanguageDetectionStatus =
+        sourceLanguageCode !== null || sourceRawLanguageCode !== null
+            ? "detected"
+            : "stable_unknown";
 
     return {
-        sourceLanguageCode: setting.detectedSourceLanguageCode,
-        sourceLanguageConfidence: setting.detectionConfidence,
+        mode: "auto",
+        languageCode: null,
+        detectedLanguageCode,
+        detectedSourceLanguageCode,
+        detectedRawLanguageCode: sourceRawLanguageCode,
+        detectionConfidence: sourceLanguageConfidence,
+        autoDetectionStatus,
     };
 }
 
@@ -373,83 +338,4 @@ export async function resolveConversationLanguageSetting({
         localLanguageDetector,
         googleLanguageDetector,
     });
-}
-
-export async function getConversationLanguageSetting({
-    db,
-    conversationId,
-}: {
-    db: PostgresDatabase;
-    conversationId: number;
-}): Promise<StoredConversationLanguageSetting | undefined> {
-    const rows = await db
-        .select({
-            mode: conversationLanguageSettingTable.mode,
-            languageCode: conversationLanguageSettingTable.languageCode,
-            detectedLanguageCode:
-                conversationLanguageSettingTable.detectedLanguageCode,
-            detectedSourceLanguageCode:
-                conversationLanguageSettingTable.detectedSourceLanguageCode,
-            detectedRawLanguageCode:
-                conversationLanguageSettingTable.detectedRawLanguageCode,
-            detectedRawLanguageProvider:
-                conversationLanguageSettingTable.detectedRawLanguageProvider,
-            detectionConfidence:
-                conversationLanguageSettingTable.detectionConfidence,
-            detectedFromCorpusHash:
-                conversationLanguageSettingTable.detectedFromCorpusHash,
-            autoDetectionRetryable:
-                conversationLanguageSettingTable.autoDetectionRetryable,
-        })
-        .from(conversationLanguageSettingTable)
-        .where(
-            eq(conversationLanguageSettingTable.conversationId, conversationId),
-        )
-        .limit(1);
-
-    return normalizeConversationLanguageSettingRow(rows.at(0));
-}
-
-export async function upsertConversationLanguageSetting({
-    db,
-    conversationId,
-    setting,
-    now,
-}: {
-    db: PostgresDatabase;
-    conversationId: number;
-    setting: StoredConversationLanguageSetting;
-    now: Date;
-}): Promise<void> {
-    await db
-        .insert(conversationLanguageSettingTable)
-        .values({
-            conversationId,
-            mode: setting.mode,
-            languageCode: setting.languageCode,
-            detectedLanguageCode: setting.detectedLanguageCode,
-            detectedSourceLanguageCode: setting.detectedSourceLanguageCode,
-            detectedRawLanguageCode: setting.detectedRawLanguageCode,
-            detectedRawLanguageProvider: setting.detectedRawLanguageProvider,
-            detectionConfidence: setting.detectionConfidence,
-            detectedFromCorpusHash: setting.detectedFromCorpusHash,
-            autoDetectionRetryable: setting.autoDetectionRetryable,
-            createdAt: now,
-            updatedAt: now,
-        })
-        .onConflictDoUpdate({
-            target: conversationLanguageSettingTable.conversationId,
-            set: {
-                mode: setting.mode,
-                languageCode: setting.languageCode,
-                detectedLanguageCode: setting.detectedLanguageCode,
-                detectedSourceLanguageCode: setting.detectedSourceLanguageCode,
-                detectedRawLanguageCode: setting.detectedRawLanguageCode,
-                detectedRawLanguageProvider: setting.detectedRawLanguageProvider,
-                detectionConfidence: setting.detectionConfidence,
-                detectedFromCorpusHash: setting.detectedFromCorpusHash,
-                autoDetectionRetryable: setting.autoDetectionRetryable,
-                updatedAt: now,
-            },
-        });
 }

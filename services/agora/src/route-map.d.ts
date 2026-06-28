@@ -310,6 +310,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dev/project-page': RouteRecordInfo<
+      '/dev/project-page',
+      '/dev/project-page',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/dev/test-components/AnalysisReportTest': RouteRecordInfo<
       '/dev/test-components/AnalysisReportTest',
       '/dev/test-components/AnalysisReportTest',
@@ -481,13 +488,6 @@ declare module 'vue-router/auto-routes' {
     '/settings/account/administrator/organization/': RouteRecordInfo<
       '/settings/account/administrator/organization/',
       '/settings/account/administrator/organization',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/settings/account/administrator/project/': RouteRecordInfo<
-      '/settings/account/administrator/project/',
-      '/settings/account/administrator/project',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -900,6 +900,12 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/dev/project-page.vue': {
+      routes:
+        | '/dev/project-page'
+      views:
+        | never
+    }
     'src/pages/dev/test-components/AnalysisReportTest.vue': {
       routes:
         | '/dev/test-components/AnalysisReportTest'
@@ -1047,12 +1053,6 @@ declare module 'vue-router/auto-routes' {
     'src/pages/settings/account/administrator/organization/index.vue': {
       routes:
         | '/settings/account/administrator/organization/'
-      views:
-        | never
-    }
-    'src/pages/settings/account/administrator/project/index.vue': {
-      routes:
-        | '/settings/account/administrator/project/'
       views:
         | never
     }

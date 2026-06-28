@@ -21,6 +21,7 @@ import {
     ZodSupportedSpokenLanguageCodes,
     ZodSupportedDisplayLanguageCodes,
 } from "../languages.js";
+import { projectOrganizationAttributionRoleValues } from "./project.js";
 
 export const zodDateTimeFlexible = z.coerce.date();
 export const zodSlugId = z.string().max(10);
@@ -59,15 +60,14 @@ export const zodParticipationMode = z.enum([
     "guest",
 ]);
 export const zodConversationType = z.enum(["polis", "maxdiff"]);
-export const projectOrganizationAttributionRoleValues = [
-    "project_owner",
-    "sponsor",
-    "partner",
-] satisfies [string, ...string[]];
 export const zodProjectOrganizationAttributionRole = z.enum(
     projectOrganizationAttributionRoleValues,
 );
-export const zodConversationLanguageSettingMode = z.enum(["auto", "manual"]);
+export const zodConversationLanguageSettingMode = z.enum([
+    "inherit",
+    "auto",
+    "manual",
+]);
 export const zodLanguageDetectionProvider = z.enum([
     "lingua",
     "google_translate",
@@ -90,6 +90,12 @@ export const zodConversationLanguageSettingInput = z.discriminatedUnion(
             .strict(),
     ],
 );
+export const zodProjectTranslationLanguageSetting = z
+    .object({
+        dynamicTranslationEnabled: z.boolean(),
+        additionalLanguageCodes: z.array(ZodSupportedDisplayLanguageCodes).max(2),
+    })
+    .strict();
 export const zodConversationLanguageSettingOutput = z
     .object({
         mode: zodConversationLanguageSettingMode,
@@ -1965,6 +1971,9 @@ export type ConversationLanguageSettingInput = z.infer<
 >;
 export type ConversationLanguageSettingOutput = z.infer<
     typeof zodConversationLanguageSettingOutput
+>;
+export type ProjectTranslationLanguageSetting = z.infer<
+    typeof zodProjectTranslationLanguageSetting
 >;
 export type ConversationMultilingualSetting = z.infer<
     typeof zodConversationMultilingualSetting

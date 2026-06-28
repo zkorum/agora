@@ -171,12 +171,17 @@ import {
 import {
     addUserOrganizationMapping,
     createOrganization,
-    deleteOrganization,
+    archiveOrganization,
     getAllOrganizations,
     getOrganizationsByUsername,
     removeUserOrganizationMapping,
+    updateOrganizationLocalization,
 } from "./service/administrator/organization.js";
-import { createProject } from "./service/administrator/project.js";
+import {
+    createProject,
+    updateProjectExternalOrganizationLocalization,
+    updateProjectLanguageSetting,
+} from "./service/administrator/project.js";
 import type {
     ConversationMultilingualSetting,
     DeviceIsKnownTrueLoginStatus,
@@ -192,15 +197,15 @@ import {
     getLanguagePreferences,
     updateLanguagePreferences,
 } from "./service/language.js";
+import { getAutoProvisionedDefaultLanguage } from "./service/projectLanguage.js";
 import {
     ZodSupportedDisplayLanguageCodes,
     type SupportedDisplayLanguageCodes,
 } from "./shared/languages.js";
 import { createDb } from "./shared-backend/db.js";
 import {
+    conversationContentTable,
     conversationTable,
-    conversationLanguageSettingTable,
-    conversationTranslationSettingTable,
     conversationTranslationTargetLanguageTable,
     deviceTable,
     organizationTable,
@@ -487,6 +492,7 @@ async function assertMaxdiffGitHubAllowedForConversation({
             and(
                 eq(conversationTable.slugId, conversationSlugId),
                 isNull(organizationTable.autoProvisionedForUserId),
+                isNull(organizationTable.deletedAt),
             ),
         )
         .limit(1);
@@ -509,34 +515,22 @@ async function getContentTranslationAvailabilityForConversation({
 }> {
     const rows = await db
         .select({
-            languageCode: conversationLanguageSettingTable.languageCode,
-            detectedLanguageCode:
-                conversationLanguageSettingTable.detectedLanguageCode,
             dynamicTranslationEnabled:
-                conversationTranslationSettingTable.dynamicTranslationEnabled,
+                conversationTable.dynamicTranslationEnabled,
+            sourceLanguageCode: conversationContentTable.sourceLanguageCode,
             targetLanguageCode:
                 conversationTranslationTargetLanguageTable.languageCode,
         })
         .from(conversationTable)
-        .leftJoin(
-            conversationLanguageSettingTable,
-            eq(
-                conversationLanguageSettingTable.conversationId,
-                conversationTable.id,
-            ),
-        )
-        .leftJoin(
-            conversationTranslationSettingTable,
-            eq(
-                conversationTranslationSettingTable.conversationId,
-                conversationTable.id,
-            ),
+        .innerJoin(
+            conversationContentTable,
+            eq(conversationContentTable.id, conversationTable.currentContentId),
         )
         .leftJoin(
             conversationTranslationTargetLanguageTable,
             eq(
-                conversationTranslationTargetLanguageTable.translationSettingId,
-                conversationTranslationSettingTable.id,
+                conversationTranslationTargetLanguageTable.conversationId,
+                conversationTable.id,
             ),
         )
         .where(eq(conversationTable.slugId, conversationSlugId));
@@ -548,16 +542,18 @@ async function getContentTranslationAvailabilityForConversation({
         );
     }
     const multilingualSetting: ConversationMultilingualSetting = {
-        dynamicTranslationEnabled: firstRow.dynamicTranslationEnabled ?? false,
+        dynamicTranslationEnabled: firstRow.dynamicTranslationEnabled,
         additionalLanguageCodes: rows.flatMap((row) =>
             row.targetLanguageCode === null ? [] : [row.targetLanguageCode],
         ),
     };
+    const parsedSourceLanguageCode = ZodSupportedDisplayLanguageCodes.safeParse(
+        firstRow.sourceLanguageCode,
+    );
     const configuredTargetLanguageCodes = new Set<SupportedDisplayLanguageCodes>([
-        ...(firstRow.languageCode === null ? [] : [firstRow.languageCode]),
-        ...(firstRow.detectedLanguageCode === null
-            ? []
-            : [firstRow.detectedLanguageCode]),
+        ...(parsedSourceLanguageCode.success
+            ? [parsedSourceLanguageCode.data]
+            : []),
         ...multilingualSetting.additionalLanguageCodes,
     ]);
     const translationAllowed =
@@ -1945,6 +1941,13 @@ server.after(() => {
                         db,
                         userId: deviceStatus.userId,
                         postAsOrganization: request.body.postAsOrganization,
+                        autoProvisionedDefaultLanguage:
+                            getAutoProvisionedDefaultLanguage({
+                                storedUserDisplayLanguage: undefined,
+                                currentDisplayLanguage: getRequestDisplayLanguage({
+                                    request,
+                                }),
+                            }),
                     },
                 );
 
@@ -2771,6 +2774,12 @@ server.after(() => {
                         isRegistered: true,
                     },
                 });
+            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const autoProvisionedDefaultLanguage =
+                getAutoProvisionedDefaultLanguage({
+                    storedUserDisplayLanguage: undefined,
+                    currentDisplayLanguage: headerDisplayLanguage,
+                });
 
             const hasSurvey =
                 (request.body.surveyConfig?.questions.length ?? 0) > 0;
@@ -2800,6 +2809,7 @@ server.after(() => {
                                 userId: deviceStatus.userId,
                                 postAsOrganization:
                                     request.body.postAsOrganization,
+                                autoProvisionedDefaultLanguage,
                             },
                         ),
                     features: premiumFeatures,
@@ -2817,6 +2827,7 @@ server.after(() => {
                 authorId: deviceStatus.userId,
                 didWrite: didWrite,
                 postAsOrganization: request.body.postAsOrganization,
+                autoProvisionedDefaultLanguage,
                 isIndexed: request.body.isIndexed,
                 participationMode: request.body.participationMode,
                 conversationType: request.body.conversationType,
@@ -2923,6 +2934,10 @@ server.after(() => {
                 db,
                 userId: deviceStatus.userId,
                 postAsOrganizationSlug: request.body.postAsOrganization,
+                autoProvisionedDefaultLanguage: getAutoProvisionedDefaultLanguage({
+                    storedUserDisplayLanguage: undefined,
+                    currentDisplayLanguage: getRequestDisplayLanguage({ request }),
+                }),
             });
 
             const premiumFeatures =
@@ -3102,6 +3117,10 @@ server.after(() => {
                 db,
                 userId: deviceStatus.userId,
                 postAsOrganizationSlug: parsedFields.postAsOrganization,
+                autoProvisionedDefaultLanguage: getAutoProvisionedDefaultLanguage({
+                    storedUserDisplayLanguage: undefined,
+                    currentDisplayLanguage: getRequestDisplayLanguage({ request }),
+                }),
             });
 
             const premiumFeatures =
@@ -3252,7 +3271,7 @@ server.after(() => {
                     requestMode: "read_existing",
                     now: nowZeroMs(),
                     log,
-                    beforeQueueTranslationWork: async () => undefined,
+                    beforeQueueTranslationWork: () => Promise.resolve(),
                 });
             if (localizedContent === undefined) {
                 throw server.httpErrors.notFound("Conversation content not found");
@@ -3407,8 +3426,8 @@ server.after(() => {
                                       requestMode: "read_existing",
                                       now: nowZeroMs(),
                                       log,
-                                      beforeQueueTranslationWork: async () =>
-                                          undefined,
+                                      beforeQueueTranslationWork: () =>
+                                          Promise.resolve(),
                                   },
                               );
                     if (localizedContent === undefined) {
@@ -3878,6 +3897,57 @@ server.after(() => {
             return await createProject({
                 db,
                 data: request.body,
+                googleCloudCredentials,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/project/language-setting/update`,
+        schema: {
+            body: Dto.updateProjectLanguageSettingRequest,
+            response: {
+                200: Dto.updateProjectLanguageSettingResponse,
+            },
+        },
+        handler: async (request) => {
+            await requireSiteOrgAdmin(request);
+            const result = await updateProjectLanguageSetting({
+                db,
+                data: request.body,
+                googleCloudCredentials,
+            });
+            if (request.body.setting.dynamicTranslationEnabled) {
+                await contentTranslationService.scheduleEagerContentTranslationForProject(
+                    {
+                        db,
+                        valkey: queueValkeyRef.current,
+                        queueScript: contentTranslationQueueScript,
+                        projectId: result.projectId,
+                        now: new Date(),
+                        log,
+                    },
+                );
+            }
+            return { success: true as const };
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/project/external-organization/localization/update`,
+        schema: {
+            body: Dto.updateProjectExternalOrganizationLocalizationRequest,
+            response: {
+                200: Dto.updateProjectExternalOrganizationLocalizationResponse,
+            },
+        },
+        handler: async (request) => {
+            await requireSiteOrgAdmin(request);
+            return await updateProjectExternalOrganizationLocalization({
+                db,
+                data: request.body,
             });
         },
     });
@@ -4064,10 +4134,29 @@ server.after(() => {
                 db: db,
                 organizationName: request.body.organizationName,
                 organizationSlug: request.body.organizationSlug,
+                defaultLanguageCode: request.body.defaultLanguageCode,
                 imagePath: request.body.imagePath,
                 isFullImagePath: request.body.isFullImagePath,
                 websiteUrl: request.body.websiteUrl,
                 description: request.body.description,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/localization/update`,
+        schema: {
+            body: Dto.updateOrganizationLocalizationRequest,
+            response: {
+                200: Dto.updateOrganizationLocalizationResponse,
+            },
+        },
+        handler: async (request) => {
+            await requireSiteOrgAdmin(request);
+            return await updateOrganizationLocalization({
+                db,
+                data: request.body,
             });
         },
     });
@@ -4100,7 +4189,7 @@ server.after(() => {
                 );
             }
 
-            await deleteOrganization({
+            await archiveOrganization({
                 db: db,
                 organizationName: request.body.organizationName,
             });

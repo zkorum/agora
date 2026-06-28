@@ -512,6 +512,13 @@
       "when": 1782151224388,
       "tag": "0072_faithful_rocket_raccoon",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1782668439733,
+      "tag": "0073_nosy_norman_osborn",
+      "breakpoints": true
     }
   ]
 }

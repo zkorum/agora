@@ -66,7 +66,6 @@
     v-model:show-dialog="showLanguageSettingDialog"
     v-model:language-setting="languageSetting"
     v-model:multilingual-setting="multilingualSetting"
-    :can-edit-primary-language="props.canEditConversationContent"
     :can-use-dynamic-translation="canUseDynamicTranslation"
     :detected-language-code="props.detectedLanguageCode"
     :detected-source-language-code="props.detectedSourceLanguageCode"
@@ -162,7 +161,6 @@ interface Props {
   canRemoveEventTicket?: boolean;
   canUseAnalysisVariantsPreference?: boolean;
   canUseDynamicTranslation?: boolean;
-  canEditConversationContent?: boolean;
   detectedLanguageCode?: SupportedDisplayLanguageCodes | null;
   detectedSourceLanguageCode?: SupportedSpokenLanguageCodes | null;
   detectedRawLanguageCode?: string | null;
@@ -175,7 +173,6 @@ const props = withDefaults(defineProps<Props>(), {
   canRemoveEventTicket: true,
   canUseAnalysisVariantsPreference: false,
   canUseDynamicTranslation: false,
-  canEditConversationContent: true,
   detectedLanguageCode: undefined,
   detectedSourceLanguageCode: undefined,
   detectedRawLanguageCode: undefined,
@@ -618,10 +615,10 @@ const analysisPreferenceLabel = computed(() => {
 });
 
 const languageSettingLabel = computed(() => {
-  const primaryLanguage =
-    languageSetting.value.mode === "auto"
+  const detectedLanguage =
+    props.detectedLanguageCode === null || props.detectedLanguageCode === undefined
       ? t("languagePrimaryAuto")
-      : getDisplayLanguageName(languageSetting.value.languageCode);
+      : getDisplayLanguageName(props.detectedLanguageCode);
   const additionalLanguageCount =
     multilingualSetting.value.additionalLanguageCodes.length;
   const additionalLanguageSuffix =
@@ -635,7 +632,7 @@ const languageSettingLabel = computed(() => {
       : "";
 
   return t("languagesLabel", {
-    primaryLanguage,
+    primaryLanguage: detectedLanguage,
     additionalLanguageSuffix,
     translateSuffix,
   });

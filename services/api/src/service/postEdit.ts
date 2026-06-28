@@ -7,7 +7,7 @@ import {
     organizationTable,
     projectOrganizationOwnershipTable,
 } from "@/shared-backend/schema.js";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { log } from "@/app.js";
 import { httpErrors } from "@fastify/sensible";
 import {
@@ -39,29 +39,21 @@ import { queueConversationSettingsUpdatedEvent } from "@/service/realtimeEventOu
 import {
     buildConversationLanguageDetectionCorpus,
     buildGoogleConversationLanguageDetectionCorpus,
-    conversationLanguageSettingToOutput,
-    getConversationLanguageSetting,
-    resolveConversationLanguageSetting,
-    type StoredConversationLanguageSetting,
-    upsertConversationLanguageSetting,
+    conversationContentSourceMetadataToLanguageSettingOutput,
 } from "@/service/conversationLanguage.js";
 import {
     getConversationMultilingualSetting,
-    normalizeConversationMultilingualSetting,
     upsertConversationMultilingualSetting,
 } from "@/service/conversationMultilingual.js";
 import {
     buildContentBlockLanguageDetectionCorpus,
     buildSurveyLanguageDetectionCorpus,
     contentLanguageMetadataUpdateValues,
-    getBlockLanguageHints,
-    getContentItemLanguageHints,
     refreshCurrentConversationOwnedContentLanguageMetadata,
     type ContentLanguageMetadata,
     resolveContentLanguageMetadata,
 } from "./contentLanguageMetadata.js";
-import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
-import type { ConversationMultilingualSetting } from "@/shared/types/zod.js";
+import { normalizeTranslationLanguageSetting } from "./translationLanguageSetting.js";
 
 interface GetConversationForEditProps {
     db: PostgresDatabase;
@@ -81,6 +73,10 @@ export async function getConversationForEdit({
             projectId: conversationTable.projectId,
             conversationTitle: conversationContentTable.title,
             conversationBody: conversationContentTable.body,
+            sourceLanguageCode: conversationContentTable.sourceLanguageCode,
+            sourceRawLanguageCode: conversationContentTable.sourceRawLanguageCode,
+            sourceLanguageConfidence:
+                conversationContentTable.sourceLanguageConfidence,
             isIndexed: conversationTable.isIndexed,
             participationMode: conversationTable.participationMode,
             conversationType: conversationTable.conversationType,
@@ -121,7 +117,12 @@ export async function getConversationForEdit({
                 conversationTable.id,
             ),
         )
-        .where(eq(conversationTable.slugId, conversationSlugId));
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                isNull(organizationTable.deletedAt),
+            ),
+        );
 
     if (results.length === 0) {
         return { success: false, reason: "not_found" };
@@ -143,10 +144,6 @@ export async function getConversationForEdit({
     const isLocked = conversation.moderationAction === "lock";
 
     const surveyConfig = await getSurveyConfigForConversation({
-        db,
-        conversationId: conversation.conversationId,
-    });
-    const languageSetting = await getConversationLanguageSetting({
         db,
         conversationId: conversation.conversationId,
     });
@@ -172,8 +169,10 @@ export async function getConversationForEdit({
         conversationSlugId: conversation.conversationSlugId,
         conversationTitle: conversation.conversationTitle,
         conversationBody: toUnionUndefined(conversation.conversationBody),
-        languageSetting: conversationLanguageSettingToOutput({
-            setting: languageSetting,
+        languageSetting: conversationContentSourceMetadataToLanguageSettingOutput({
+            sourceLanguageCode: conversation.sourceLanguageCode,
+            sourceRawLanguageCode: conversation.sourceRawLanguageCode,
+            sourceLanguageConfidence: conversation.sourceLanguageConfidence,
         }),
         multilingualSetting,
         isIndexed: conversation.isIndexed,
@@ -206,110 +205,6 @@ interface UpdateConversationProps {
     };
 }
 
-interface ContentDetectionHintState {
-    mode: StoredConversationLanguageSetting["mode"];
-    mainLanguageCode: SupportedDisplayLanguageCodes | null;
-    manualLanguageCode: SupportedDisplayLanguageCodes | null;
-    additionalLanguageCodes: SupportedDisplayLanguageCodes[];
-}
-
-function contentDetectionHintState({
-    languageSetting,
-    additionalLanguageCodes,
-}: {
-    languageSetting: StoredConversationLanguageSetting | undefined;
-    additionalLanguageCodes: readonly SupportedDisplayLanguageCodes[];
-}): ContentDetectionHintState {
-    const sortedAdditionalLanguageCodes = [...additionalLanguageCodes].sort();
-    if (languageSetting === undefined) {
-        return {
-            mode: "auto" as const,
-            mainLanguageCode: null,
-            manualLanguageCode: null,
-            additionalLanguageCodes: sortedAdditionalLanguageCodes,
-        };
-    }
-    return {
-        mode: languageSetting.mode,
-        mainLanguageCode:
-            languageSetting.mode === "manual"
-                ? languageSetting.languageCode
-                : languageSetting.detectedLanguageCode,
-        manualLanguageCode:
-            languageSetting.mode === "manual" ? languageSetting.languageCode : null,
-        additionalLanguageCodes: sortedAdditionalLanguageCodes,
-    };
-}
-
-function contentDetectionHintStateMatches({
-    previous,
-    next,
-}: {
-    previous: ContentDetectionHintState;
-    next: ContentDetectionHintState;
-}): boolean {
-    return (
-        previous.mode === next.mode &&
-        previous.mainLanguageCode === next.mainLanguageCode &&
-        previous.manualLanguageCode === next.manualLanguageCode &&
-        previous.additionalLanguageCodes.length ===
-            next.additionalLanguageCodes.length &&
-        previous.additionalLanguageCodes.every(
-            (languageCode, index) =>
-                languageCode === next.additionalLanguageCodes[index],
-        )
-    );
-}
-
-function contentDetectionHintsChanged({
-    previousLanguageSetting,
-    nextLanguageSetting,
-    previousAdditionalLanguageCodes,
-    nextAdditionalLanguageCodes,
-}: {
-    previousLanguageSetting: StoredConversationLanguageSetting | undefined;
-    nextLanguageSetting: StoredConversationLanguageSetting;
-    previousAdditionalLanguageCodes: readonly SupportedDisplayLanguageCodes[];
-    nextAdditionalLanguageCodes: readonly SupportedDisplayLanguageCodes[];
-}): boolean {
-    return !contentDetectionHintStateMatches({
-        previous: contentDetectionHintState({
-            languageSetting: previousLanguageSetting,
-            additionalLanguageCodes: previousAdditionalLanguageCodes,
-        }),
-        next: contentDetectionHintState({
-            languageSetting: nextLanguageSetting,
-            additionalLanguageCodes: nextAdditionalLanguageCodes,
-        }),
-    });
-}
-
-function shouldRefreshCurrentContentLanguageMetadata({
-    previousLanguageSetting,
-    nextLanguageSetting,
-    previousMultilingualSetting,
-    nextMultilingualSetting,
-}: {
-    previousLanguageSetting: StoredConversationLanguageSetting | undefined;
-    nextLanguageSetting: StoredConversationLanguageSetting;
-    previousMultilingualSetting: ConversationMultilingualSetting;
-    nextMultilingualSetting: ConversationMultilingualSetting;
-}): boolean {
-    if (!nextMultilingualSetting.dynamicTranslationEnabled) {
-        return false;
-    }
-    if (!previousMultilingualSetting.dynamicTranslationEnabled) {
-        return true;
-    }
-    return contentDetectionHintsChanged({
-        previousLanguageSetting,
-        nextLanguageSetting,
-        previousAdditionalLanguageCodes:
-            previousMultilingualSetting.additionalLanguageCodes,
-        nextAdditionalLanguageCodes: nextMultilingualSetting.additionalLanguageCodes,
-    });
-}
-
 export async function updateConversation({
     db,
     userId,
@@ -323,7 +218,6 @@ export async function updateConversation({
         conversationBodyPlainText,
         isIndexed,
         participationMode,
-        languageSetting,
         multilingualSetting,
         requiresEventTicket,
         aiLabelingEnabled,
@@ -391,6 +285,8 @@ export async function updateConversation({
                     conversationTable.preferredOpinionGroupCount,
                 currentTitle: conversationContentTable.title,
                 currentBody: conversationContentTable.body,
+                currentSourceLanguageCode:
+                    conversationContentTable.sourceLanguageCode,
                 moderationAction: conversationModerationTable.moderationAction,
             })
             .from(conversationTable)
@@ -422,7 +318,12 @@ export async function updateConversation({
                     conversationTable.id,
                 ),
             )
-            .where(eq(conversationTable.slugId, conversationSlugId));
+            .where(
+                and(
+                    eq(conversationTable.slugId, conversationSlugId),
+                    isNull(organizationTable.deletedAt),
+                ),
+            );
 
         if (conversationResults.length === 0) {
             return { success: false, reason: "not_found" } as const;
@@ -464,25 +365,10 @@ export async function updateConversation({
         const surveyLanguageDetectionCorpus = buildSurveyLanguageDetectionCorpus({
             surveyConfig: effectiveSurveyConfig,
         });
-        const blockLanguageHints = getBlockLanguageHints({ languageSetting });
-        const currentLanguageSetting = await getConversationLanguageSetting({
-            db: tx,
-            conversationId,
-        });
         const currentMultilingualSetting = await getConversationMultilingualSetting({
             db: tx,
             conversationId,
         });
-        const resolvedLanguageSetting =
-            await resolveConversationLanguageSetting({
-                request: languageSetting,
-                existing: currentLanguageSetting,
-                conversationTitle,
-                bodyPlainText,
-                supplementalPlainText: surveyLanguageDetectionCorpus,
-                googleCloudCredentials,
-                languageHints: blockLanguageHints,
-            });
         const subject = getPremiumEntitlementSubjectForConversation({
             conversation: { projectId: conversation.projectId, userId },
         });
@@ -494,25 +380,8 @@ export async function updateConversation({
                 mode: "creation",
                 now,
             });
-        const normalizedMultilingualSetting =
-            normalizeConversationMultilingualSetting({
-                languageSetting,
-                multilingualSetting,
-                canUseDynamicTranslation:
-                    restrictedDynamicTranslationFeatures.length === 0,
-            });
-        const contentItemLanguageHints = getContentItemLanguageHints({
-            languageSetting: resolvedLanguageSetting,
-            additionalLanguageCodes:
-                normalizedMultilingualSetting.additionalLanguageCodes,
-        });
-        const shouldRefreshContentSourceLanguageMetadata =
-            shouldRefreshCurrentContentLanguageMetadata({
-                previousLanguageSetting: currentLanguageSetting,
-                nextLanguageSetting: resolvedLanguageSetting,
-                previousMultilingualSetting: currentMultilingualSetting,
-                nextMultilingualSetting: normalizedMultilingualSetting,
-            });
+        const canUseDynamicTranslation =
+            restrictedDynamicTranslationFeatures.length === 0;
         if (
             restrictedDynamicTranslationFeatures.length > 0 &&
             (multilingualSetting.dynamicTranslationEnabled ||
@@ -523,6 +392,8 @@ export async function updateConversation({
                 reason: "premium_access_required",
             } as const;
         }
+        const requestedDynamicTranslationEnabled =
+            canUseDynamicTranslation && multilingualSetting.dynamicTranslationEnabled;
         const currentBody = toUnionUndefined(conversation.currentBody);
         const contentChanged =
             conversation.currentTitle !== conversationTitle ||
@@ -545,9 +416,7 @@ export async function updateConversation({
                     supplementalPlainText: surveyLanguageDetectionCorpus,
                 }),
                 googleCloudCredentials,
-                useGoogleLanguageDetection:
-                    normalizedMultilingualSetting.dynamicTranslationEnabled,
-                languageHints: contentItemLanguageHints,
+                useGoogleLanguageDetection: requestedDynamicTranslationEnabled,
             });
             return blockSourceLanguageMetadataPromise;
         };
@@ -655,9 +524,11 @@ export async function updateConversation({
 
         // Create new conversation content
         let newContentId: number | undefined;
+        let finalSourceLanguageCode = conversation.currentSourceLanguageCode;
         if (contentChanged) {
             const sourceLanguageMetadata =
                 await getBlockSourceLanguageMetadata();
+            finalSourceLanguageCode = sourceLanguageMetadata.sourceLanguageCode;
             const newContentResult = await tx
                 .insert(conversationContentTable)
                 .values({
@@ -709,19 +580,6 @@ export async function updateConversation({
             .set(conversationUpdateValues)
             .where(eq(conversationTable.id, conversationId));
 
-        await upsertConversationLanguageSetting({
-            db: tx,
-            conversationId,
-            setting: resolvedLanguageSetting,
-            now,
-        });
-        await upsertConversationMultilingualSetting({
-            db: tx,
-            conversationId,
-            setting: normalizedMultilingualSetting,
-            now,
-        });
-
         if (surveyConfig !== undefined) {
             const sourceLanguageMetadata =
                 await getBlockSourceLanguageMetadata();
@@ -731,24 +589,40 @@ export async function updateConversation({
                 surveyConfig: surveyConfig ?? null,
                 now,
                 googleCloudCredentials,
-                useGoogleLanguageDetection:
-                    normalizedMultilingualSetting.dynamicTranslationEnabled,
+                useGoogleLanguageDetection: requestedDynamicTranslationEnabled,
                 sourceLanguageMetadata,
             });
         }
 
-        if (shouldRefreshContentSourceLanguageMetadata) {
-            await refreshCurrentConversationOwnedContentLanguageMetadata({
-                db: tx,
-                conversationId,
-                languageSetting: resolvedLanguageSetting,
-                additionalLanguageCodes:
-                    normalizedMultilingualSetting.additionalLanguageCodes,
-                googleCloudCredentials,
-                useGoogleLanguageDetection:
-                    normalizedMultilingualSetting.dynamicTranslationEnabled,
-            });
+        if (
+            !contentChanged &&
+            requestedDynamicTranslationEnabled &&
+            (!currentMultilingualSetting.dynamicTranslationEnabled ||
+                surveyConfig !== undefined)
+        ) {
+            const sourceLanguageMetadata =
+                await refreshCurrentConversationOwnedContentLanguageMetadata({
+                    db: tx,
+                    conversationId,
+                    googleCloudCredentials,
+                    useGoogleLanguageDetection: requestedDynamicTranslationEnabled,
+                });
+            if (sourceLanguageMetadata !== undefined) {
+                finalSourceLanguageCode = sourceLanguageMetadata.sourceLanguageCode;
+            }
         }
+
+        const effectiveMultilingualSetting = normalizeTranslationLanguageSetting({
+            setting: multilingualSetting,
+            canUseDynamicTranslation,
+            sourceLanguageCode: finalSourceLanguageCode,
+        });
+        await upsertConversationMultilingualSetting({
+            db: tx,
+            conversationId,
+            setting: effectiveMultilingualSetting,
+            now,
+        });
 
         if (contentChanged || surveyConfig !== undefined) {
             await createConversationViewSnapshotsFromCurrentState({

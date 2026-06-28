@@ -207,6 +207,7 @@ class LanguageDetectionProvider(StrEnum):
 
 
 class ConversationLanguageSettingMode(StrEnum):
+    inherit = "inherit"
     auto = "auto"
     manual = "manual"
 
@@ -520,6 +521,7 @@ class ConversationLanguageSetting(Base):
         ),
         nullable=True,
     )
+    dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
     detected_language_code: Mapped[DisplayLanguageCode | None] = mapped_column(
         SaEnum(
             DisplayLanguageCode,
@@ -562,6 +564,7 @@ class Conversation(Base):
     slug_id: Mapped[str] = mapped_column(String(8))
     project_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
     current_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_indexed: Mapped[bool] = mapped_column(Boolean, server_default="true")
     participation_mode: Mapped[ParticipationMode] = mapped_column(
@@ -612,7 +615,7 @@ class ConversationTranslationSetting(Base):
     __tablename__ = "conversation_translation_setting"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    conversation_id: Mapped[int] = mapped_column(Integer)
+    conversation_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
@@ -622,7 +625,8 @@ class ConversationTranslationTargetLanguage(Base):
     __tablename__ = "conversation_translation_target_language"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    translation_setting_id: Mapped[int] = mapped_column(Integer)
+    conversation_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    translation_setting_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     language_code: Mapped[DisplayLanguageCode] = mapped_column(
         SaEnum(
             DisplayLanguageCode,

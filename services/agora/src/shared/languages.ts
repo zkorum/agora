@@ -245,6 +245,21 @@ export interface DisplayLanguageMetadata extends LanguageMetadata {
     displaySupported: true;
 }
 
+export function getDisplayLanguageFallbackChain({
+    languageCode,
+}: {
+    languageCode: SupportedDisplayLanguageCodes;
+}): SupportedDisplayLanguageCodes[] {
+    switch (languageCode) {
+        case "zh-Hant":
+            return ["zh-Hant", "zh-Hans"];
+        case "zh-Hans":
+            return ["zh-Hans", "zh-Hant"];
+        default:
+            return [languageCode];
+    }
+}
+
 // Comprehensive language list for spoken languages
 export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
     // Display-supported languages (UI translations available)

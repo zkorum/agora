@@ -20,7 +20,6 @@ import {
 } from "@/shared-backend/analysisScheduler.js";
 import {
     conversationTable,
-    conversationTranslationSettingTable,
     conversationTranslationTargetLanguageTable,
     organizationMembershipTable,
     organizationTable,
@@ -30,6 +29,7 @@ import {
     userTable,
 } from "@/shared-backend/schema.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
+import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import type {
     CreatePremiumFeatureEntitlementRequest,
     ListPremiumFeatureEntitlementsResponse,
@@ -47,6 +47,7 @@ import {
     getOrCreatePersonalOrganization,
     resolveConversationCreateTarget,
 } from "./projectAccess.js";
+import { getAutoProvisionedDefaultLanguage } from "./projectLanguage.js";
 
 type PremiumFeatureEntitlementUpdateValues = Partial<
     typeof premiumFeatureEntitlementTable.$inferInsert
@@ -158,15 +159,18 @@ export async function getPremiumEntitlementSubjectForCreate({
     db,
     userId,
     postAsOrganization,
+    autoProvisionedDefaultLanguage,
 }: {
     db: PostgresJsDatabase;
     userId: string;
     postAsOrganization?: string;
+    autoProvisionedDefaultLanguage: SupportedDisplayLanguageCodes;
 }): Promise<PremiumEntitlementSubject> {
     const target = await resolveConversationCreateTarget({
         db,
         userId,
         postAsOrganizationSlug: postAsOrganization,
+        autoProvisionedDefaultLanguage,
     });
     return { projectId: target.projectId, userId };
 }
@@ -493,23 +497,18 @@ export async function getPremiumFeaturesInConversation({
     const translationRows = await db
         .select({
             dynamicTranslationEnabled:
-                conversationTranslationSettingTable.dynamicTranslationEnabled,
+                conversationTable.dynamicTranslationEnabled,
             languageId: conversationTranslationTargetLanguageTable.id,
         })
-        .from(conversationTranslationSettingTable)
+        .from(conversationTable)
         .leftJoin(
             conversationTranslationTargetLanguageTable,
             eq(
-                conversationTranslationTargetLanguageTable.translationSettingId,
-                conversationTranslationSettingTable.id,
+                conversationTranslationTargetLanguageTable.conversationId,
+                conversationTable.id,
             ),
         )
-        .where(
-            eq(
-                conversationTranslationSettingTable.conversationId,
-                conversation.conversationId,
-            ),
-        );
+        .where(eq(conversationTable.id, conversation.conversationId));
 
     if (
         translationRows.some(
@@ -704,6 +703,10 @@ async function resolveEntitlementSubject({
         const organization = await getOrCreatePersonalOrganization({
             db,
             userId: user.userId,
+            autoProvisionedDefaultLanguage: getAutoProvisionedDefaultLanguage({
+                storedUserDisplayLanguage: undefined,
+                currentDisplayLanguage: undefined,
+            }),
         });
         return { organizationId: organization.organizationId };
     }
@@ -712,7 +715,12 @@ async function resolveEntitlementSubject({
         const organizations = await db
             .select({ organizationId: organizationTable.id })
             .from(organizationTable)
-            .where(eq(organizationTable.slug, subject.organizationName))
+            .where(
+                and(
+                    eq(organizationTable.slug, subject.organizationName),
+                    isNull(organizationTable.deletedAt),
+                ),
+            )
             .limit(1);
 
         const organization = organizations.at(0);

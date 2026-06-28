@@ -1,11 +1,10 @@
-import type {
-  ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest,
-  ApiV1AdministratorOrganizationDeleteOrganizationPostRequest,
-  ApiV1UserUsernameUpdatePostRequest,
-} from "src/api";
-import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { Dto } from "src/shared/types/dto";
+import {
+  type AdminOrganizationProperties,
+  type CreateOrganizationRequest,
+  Dto,
+  type UpdateOrganizationLocalizationRequest,
+} from "src/shared/types/dto";
 import type { OrganizationProperties } from "src/shared/types/zod";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
@@ -25,27 +24,36 @@ export function useBackendAdministratorOrganizationApi() {
     administratorOrganizationApiTranslations
   );
 
-  async function getAllOrganizations(): Promise<OrganizationProperties[]> {
-    try {
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationGetAllOrganizationsPost();
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1AdministratorOrganizationGetAllOrganizationsPost({
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
+  async function postWithUcan<TResponse>({
+    url,
+    data,
+    responseSchema,
+  }: {
+    url: string;
+    data?: unknown;
+    responseSchema?: { parse: (data: unknown) => TResponse };
+  }): Promise<TResponse | undefined> {
+    const encodedUcan = await buildEncodedUcan(url, { method: "POST" });
+    const response = await api.post(url, data, {
+      headers: {
+        ...buildAuthorizationHeader(encodedUcan),
+      },
+    });
 
-      if (response.status == 200) {
-        return response.data.organizationList;
-      } else {
-        showNotifyMessage(t("failedToFetchOrganizations"));
-        return [];
-      }
+    if (responseSchema === undefined) {
+      return undefined;
+    }
+
+    return responseSchema.parse(response.data);
+  }
+
+  async function getAllOrganizations(): Promise<AdminOrganizationProperties[]> {
+    try {
+      const response = await postWithUcan({
+        url: "/api/v1/administrator/organization/get-all-organizations",
+        responseSchema: Dto.getAllOrganizationsResponse,
+      });
+      return response?.organizationList ?? [];
     } catch (e) {
       console.error(e);
       showNotifyMessage(t("failedToFetchOrganizations"));
@@ -53,39 +61,24 @@ export function useBackendAdministratorOrganizationApi() {
     }
   }
 
-  async function addUserOrganizationMapping(
-    username: string,
-    organizationName: string
-  ) {
+  async function addUserOrganizationMapping({
+    username,
+    organizationName,
+  }: {
+    username: string;
+    organizationName: string;
+  }): Promise<boolean> {
     try {
-      const params: ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest =
-        {
-          username: username,
-          organizationName: organizationName,
-        };
-
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationAddUserOrganizationMappingPost(
-          params
-        );
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1AdministratorOrganizationAddUserOrganizationMappingPost(params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
+      const params = Dto.addUserOrganizationMappingRequest.parse({
+        username,
+        organizationName,
       });
-
-      if (response.status == 200) {
-        showNotifyMessage(t("addedUserOrganizationMapping"));
-        return true;
-      } else {
-        showNotifyMessage(t("failedToAddUserOrganizationMapping"));
-        return false;
-      }
+      await postWithUcan({
+        url: "/api/v1/administrator/organization/add-user-organization-mapping",
+        data: params,
+      });
+      showNotifyMessage(t("addedUserOrganizationMapping"));
+      return true;
     } catch (e) {
       console.error(e);
       showNotifyMessage(t("failedToAddUserOrganizationMapping"));
@@ -93,42 +86,24 @@ export function useBackendAdministratorOrganizationApi() {
     }
   }
 
-  async function removeUserOrganizationMapping(
-    username: string,
-    organizationName: string
-  ) {
+  async function removeUserOrganizationMapping({
+    username,
+    organizationName,
+  }: {
+    username: string;
+    organizationName: string;
+  }): Promise<boolean> {
     try {
-      const params: ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest =
-        {
-          username: username,
-          organizationName: organizationName,
-        };
-
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationRemoveUserOrganizationMappingPost(
-          params
-        );
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1AdministratorOrganizationRemoveUserOrganizationMappingPost(
-        params,
-        {
-          headers: {
-            ...buildAuthorizationHeader(encodedUcan),
-          },
-        }
-      );
-
-      if (response.status == 200) {
-        showNotifyMessage(t("removedUserOrganizationMapping"));
-        return true;
-      } else {
-        showNotifyMessage(t("failedToRemoveUserOrganizationMapping"));
-        return false;
-      }
+      const params = Dto.removeUserOrganizationMappingRequest.parse({
+        username,
+        organizationName,
+      });
+      await postWithUcan({
+        url: "/api/v1/administrator/organization/remove-user-organization-mapping",
+        data: params,
+      });
+      showNotifyMessage(t("removedUserOrganizationMapping"));
+      return true;
     } catch (e) {
       console.error(e);
       showNotifyMessage(t("failedToRemoveUserOrganizationMapping"));
@@ -136,76 +111,40 @@ export function useBackendAdministratorOrganizationApi() {
     }
   }
 
-  async function deleteOrganization(organizationName: string) {
+  async function archiveOrganization({
+    organizationName,
+  }: {
+    organizationName: string;
+  }): Promise<boolean> {
     try {
-      const params: ApiV1AdministratorOrganizationDeleteOrganizationPostRequest =
-        {
-          organizationName: organizationName,
-        };
-
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationDeleteOrganizationPost(
-          params
-        );
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1AdministratorOrganizationDeleteOrganizationPost(params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
+      const params = Dto.deleteOrganizationRequest.parse({
+        organizationName,
       });
-
-      if (response.status == 200) {
-        showNotifyMessage(t("deletedOrganization"));
-        return true;
-      } else {
-        showNotifyMessage(t("failedToDeleteOrganization"));
-        return false;
-      }
+      await postWithUcan({
+        url: "/api/v1/administrator/organization/delete-organization",
+        data: params,
+      });
+      showNotifyMessage(t("archivedOrganization"));
+      return true;
     } catch (e) {
       console.error(e);
-      showNotifyMessage(t("failedToDeleteOrganization"));
+      showNotifyMessage(t("failedToArchiveOrganization"));
       return false;
     }
   }
 
   async function createOrganization(
-    description: string,
-    imagePath: string,
-    isFullImagePath: boolean,
-    organizationName: string,
-    organizationSlug: string,
-    websiteUrl: string
-  ) {
+    data: CreateOrganizationRequest
+  ): Promise<boolean> {
     try {
-      const params = Dto.createOrganizationRequest.parse({
-        description: description,
-        imagePath: imagePath,
-        isFullImagePath: isFullImagePath,
-        organizationName: organizationName,
-        organizationSlug: organizationSlug,
-        ...(websiteUrl.trim() === "" ? {} : { websiteUrl: websiteUrl.trim() }),
-      });
+      const params = Dto.createOrganizationRequest.parse(data);
 
-      const url = "/api/v1/administrator/organization/create-organization";
-      const options = { method: "POST" };
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await api.post(url, params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
+      await postWithUcan({
+        url: "/api/v1/administrator/organization/create-organization",
+        data: params,
       });
-
-      if (response.status == 200) {
-        showNotifyMessage(t("createdUserOrganization"));
-        return true;
-      } else {
-        showNotifyMessage(t("failedToCreateUserOrganization"));
-        return false;
-      }
+      showNotifyMessage(t("createdUserOrganization"));
+      return true;
     } catch (e) {
       console.error(e);
       showNotifyMessage(t("failedToCreateUserOrganization"));
@@ -217,34 +156,13 @@ export function useBackendAdministratorOrganizationApi() {
     username: string
   ): Promise<OrganizationProperties[]> {
     try {
-      const params: ApiV1UserUsernameUpdatePostRequest = {
-        username: username,
-      };
-
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost(
-          params
-        );
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost(
-        params,
-        {
-          headers: {
-            ...buildAuthorizationHeader(encodedUcan),
-          },
-        }
-      );
-
-      if (response.status == 200) {
-        return response.data.organizationList;
-      } else {
-        showNotifyMessage(t("failedToGetUserOrganizations"));
-        return [];
-      }
+      const params = Dto.getOrganizationsByUsernameRequest.parse({ username });
+      const response = await postWithUcan({
+        url: "/api/v1/administrator/organization/get-organization-names-by-username",
+        data: params,
+        responseSchema: Dto.getOrganizationsByUsernameResponse,
+      });
+      return response?.organizationList ?? [];
     } catch (e) {
       console.error(e);
       showNotifyMessage(t("failedToGetUserOrganizations"));
@@ -252,9 +170,29 @@ export function useBackendAdministratorOrganizationApi() {
     }
   }
 
+  async function updateOrganizationLocalization(
+    data: UpdateOrganizationLocalizationRequest
+  ): Promise<boolean> {
+    try {
+      const params = Dto.updateOrganizationLocalizationRequest.parse(data);
+      await postWithUcan({
+        url: "/api/v1/administrator/organization/localization/update",
+        data: params,
+        responseSchema: Dto.updateOrganizationLocalizationResponse,
+      });
+      showNotifyMessage(t("updatedOrganization"));
+      return true;
+    } catch (e) {
+      console.error(e);
+      showNotifyMessage(t("failedToUpdateOrganization"));
+      return false;
+    }
+  }
+
   return {
-    deleteOrganization,
+    archiveOrganization,
     createOrganization,
+    updateOrganizationLocalization,
     addUserOrganizationMapping,
     removeUserOrganizationMapping,
     getAllOrganizations,

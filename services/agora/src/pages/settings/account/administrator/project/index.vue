@@ -9,7 +9,7 @@
 
       <div class="form-grid">
         <q-input
-          v-model="projectTitle"
+          v-model="projectTitleInput"
           outlined
           :label="t('projectTitleLabel')"
           autocomplete="off"
@@ -17,7 +17,7 @@
           data-1p-ignore
         />
         <q-input
-          v-model="projectSlug"
+          v-model="projectSlugInput"
           outlined
           :label="t('projectSlugLabel')"
           autocomplete="off"
@@ -37,14 +37,19 @@
           :options="organizationOptions"
         />
         <q-input
-          v-model="subtitle"
+          v-model="subtitleInput"
           outlined
           :maxlength="MAX_LENGTH_TITLE"
           :label="t('subtitleLabel')"
         />
-        <q-input v-model="bodyText" outlined autogrow :label="t('bodyLabel')" />
         <q-input
-          v-model="heroImagePath"
+          v-model="bodyTextInput"
+          outlined
+          autogrow
+          :label="t('bodyLabel')"
+        />
+        <q-input
+          v-model="heroImagePathInput"
           outlined
           :label="t('heroImagePathLabel')"
         />
@@ -87,26 +92,26 @@
         />
         <template v-else>
           <q-input
-            v-model="externalDisplayName"
+            v-model="externalDisplayNameInput"
             outlined
             :maxlength="MAX_LENGTH_NAME_CREATOR"
             :label="t('externalNameLabel')"
           />
           <q-input
-            v-model="externalDescription"
+            v-model="externalDescriptionInput"
             outlined
             autogrow
             :maxlength="MAX_LENGTH_DESCRIPTION_CREATOR"
             :label="t('externalDescriptionLabel')"
           />
           <q-input
-            v-model="externalWebsiteUrl"
+            v-model="externalWebsiteUrlInput"
             outlined
             type="url"
             :label="t('externalWebsiteLabel')"
           />
           <q-input
-            v-model="externalImagePath"
+            v-model="externalImagePathInput"
             outlined
             :label="t('externalImagePathLabel')"
           />
@@ -152,10 +157,18 @@
     <ZKCard padding="1rem" class="card-background">
       <div class="section-title">{{ t("contactTitle") }}</div>
       <div class="form-grid">
-        <q-input v-model="contactName" outlined :label="t('contactNameLabel')" />
-        <q-input v-model="contactRole" outlined :label="t('contactRoleLabel')" />
         <q-input
-          v-model="contactEmail"
+          v-model="contactNameInput"
+          outlined
+          :label="t('contactNameLabel')"
+        />
+        <q-input
+          v-model="contactRoleInput"
+          outlined
+          :label="t('contactRoleLabel')"
+        />
+        <q-input
+          v-model="contactEmailInput"
           outlined
           type="email"
           :label="t('contactEmailLabel')"
@@ -209,9 +222,10 @@ import {
   createRandomOrganizationSlugFallback,
   slugifyOrganizationDisplayName,
 } from "src/shared-app-api/organizationSlug";
+import { useLanguageStore } from "src/stores/language";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { useBackendAdministratorProjectApi } from "src/utils/api/administrator/project";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, type Ref, ref, watch, type WritableComputedRef } from "vue";
 
 import {
   type AdministratorProjectTranslations,
@@ -232,6 +246,7 @@ const { t } = useComponentI18n<AdministratorProjectTranslations>(
 );
 const { getAllOrganizations } = useBackendAdministratorOrganizationApi();
 const { createProject } = useBackendAdministratorProjectApi();
+const languageStore = useLanguageStore();
 
 const organizationList = ref<OrganizationProperties[]>([]);
 const isLoadingOrganizations = ref(false);
@@ -258,6 +273,19 @@ const contactRole = ref("");
 const contactEmail = ref("");
 const contactOrganizationSlug = ref<string | null>(null);
 const isCreating = ref(false);
+
+const projectTitleInput = stringInputModel(projectTitle);
+const projectSlugInput = stringInputModel(projectSlug);
+const subtitleInput = stringInputModel(subtitle);
+const bodyTextInput = stringInputModel(bodyText);
+const heroImagePathInput = stringInputModel(heroImagePath);
+const externalDisplayNameInput = stringInputModel(externalDisplayName);
+const externalDescriptionInput = stringInputModel(externalDescription);
+const externalWebsiteUrlInput = stringInputModel(externalWebsiteUrl);
+const externalImagePathInput = stringInputModel(externalImagePath);
+const contactNameInput = stringInputModel(contactName);
+const contactRoleInput = stringInputModel(contactRole);
+const contactEmailInput = stringInputModel(contactEmail);
 
 const roleLabels: Record<AttributionRole, () => string> = {
   project_owner: () => t("projectOwnerRole"),
@@ -362,6 +390,17 @@ function optionalString(value: string): string | undefined {
   return trimmed === "" ? undefined : trimmed;
 }
 
+function stringInputModel(
+  source: Ref<string>
+): WritableComputedRef<string | number | null> {
+  return computed({
+    get: () => source.value,
+    set: (value) => {
+      source.value = String(value ?? "");
+    },
+  });
+}
+
 function isOptionalUrlValid(value: string): boolean {
   const trimmed = value.trim();
   if (trimmed === "") {
@@ -448,6 +487,7 @@ function addAttribution(): void {
   attributions.value.push({
     source: "external",
     role,
+    defaultLanguageCode: languageStore.displayLanguage,
     displayName: externalDisplayName.value.trim(),
     description: optionalString(externalDescription.value),
     imagePath: optionalString(externalImagePath.value),
@@ -470,6 +510,7 @@ function buildCreateRequest(): CreateProjectRequest {
   return {
     projectSlug: projectSlug.value.trim(),
     projectTitle: projectTitle.value.trim(),
+    defaultLanguageCode: languageStore.displayLanguage,
     ownerOrganizationSlugs: ownerOrganizationSlugs.value,
     subtitle: optionalString(subtitle.value),
     body: plainTextToHtml(bodyText.value),

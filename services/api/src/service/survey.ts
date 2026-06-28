@@ -89,14 +89,12 @@ import {
     buildSurveyLanguageDetectionCorpus,
     contentLanguageMetadataUpdateValues,
     type ContentLanguageMetadata,
-    getContentItemLanguageHints,
     resolveContentLanguageMetadata,
     UNKNOWN_CONTENT_LANGUAGE_METADATA,
 } from "./contentLanguageMetadata.js";
 import {
     buildConversationLanguageDetectionCorpus,
     buildGoogleConversationLanguageDetectionCorpus,
-    getConversationLanguageSetting,
 } from "./conversationLanguage.js";
 import { getConversationMultilingualSetting } from "./conversationMultilingual.js";
 
@@ -148,17 +146,6 @@ async function resolveSurveyBlockLanguageMetadata({
     }
     const bodyPlainText = conversationContent.bodyPlainText ?? "";
     const surveyCorpus = buildSurveyLanguageDetectionCorpus({ surveyConfig });
-    const languageSetting = await getConversationLanguageSetting({
-        db,
-        conversationId,
-    });
-    const languageHints =
-        languageSetting === undefined
-            ? []
-            : getContentItemLanguageHints({
-                  languageSetting,
-                  additionalLanguageCodes: [],
-              });
 
     return await resolveContentLanguageMetadata({
         text: buildContentBlockLanguageDetectionCorpus({
@@ -175,7 +162,6 @@ async function resolveSurveyBlockLanguageMetadata({
         }),
         googleCloudCredentials,
         useGoogleLanguageDetection,
-        languageHints,
     });
 }
 

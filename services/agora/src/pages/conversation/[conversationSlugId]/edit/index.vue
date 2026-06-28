@@ -51,7 +51,6 @@
         :can-remove-event-ticket="canRemoveEventTicket"
         :can-use-analysis-variants-preference="canUseAnalysisVariantsPreference"
         :can-use-dynamic-translation="canUseDynamicTranslation"
-        :can-edit-conversation-content="canEditConversationContent"
         :detected-language-code="visibleDetectedLanguageCode"
         :detected-source-language-code="visibleDetectedSourceLanguageCode"
         :detected-raw-language-code="visibleDetectedRawLanguageCode"

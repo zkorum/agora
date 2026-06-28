@@ -42,8 +42,6 @@ from agora_analysis_worker_shared.generated_models import (
     AnalysisSnapshotResult,
     Conversation,
     ConversationContent,
-    ConversationLanguageSetting,
-    ConversationTranslationSetting,
     ConversationTranslationTargetLanguage,
     ConversationType,
     ConversationViewSnapshot,
@@ -2072,7 +2070,7 @@ def _fetch_eager_description_candidates(
             OpinionGroupCandidate.id.label("candidate_id"),
             OpinionGroupVariant.group_count,
             Conversation.preferred_opinion_group_count,
-            ConversationLanguageSetting.language_code,
+            ConversationContent.source_language_code.label("language_code"),
             OpinionGroupCandidateAssessment.selection_score,
         )
         .join(
@@ -2088,9 +2086,9 @@ def _fetch_eager_description_candidates(
             OpinionGroupCandidateAssessment.candidate_id == OpinionGroupCandidate.id,
         )
         .join(Conversation, Conversation.id == AnalysisSnapshotResult.conversation_id)
-        .outerjoin(
-            ConversationLanguageSetting,
-            ConversationLanguageSetting.conversation_id == Conversation.id,
+        .join(
+            ConversationContent,
+            ConversationContent.id == Conversation.current_content_id,
         )
         .join(
             ConversationViewSnapshot,
@@ -2159,7 +2157,7 @@ def _fetch_eager_additional_translation_locale_rows(
 
     rows = session.execute(
         select(
-            ConversationTranslationSetting.conversation_id,
+            ConversationTranslationTargetLanguage.conversation_id,
             ConversationTranslationTargetLanguage.language_code,
             _active_dynamic_translation_entitlement_exists().label(
                 "dynamic_translation_entitled"
@@ -2167,16 +2165,13 @@ def _fetch_eager_additional_translation_locale_rows(
         )
         .select_from(ConversationTranslationTargetLanguage)
         .join(
-            ConversationTranslationSetting,
-            ConversationTranslationSetting.id
-            == ConversationTranslationTargetLanguage.translation_setting_id,
+            Conversation,
+            Conversation.id == ConversationTranslationTargetLanguage.conversation_id,
         )
-        .join(Conversation, Conversation.id == ConversationTranslationSetting.conversation_id)
         .where(
             and_(
-                ConversationTranslationSetting.conversation_id.in_(
-                    sorted(set(conversation_ids))
-                ),
+                Conversation.id.in_(sorted(set(conversation_ids))),
+                Conversation.dynamic_translation_enabled.is_(True),
                 ConversationTranslationTargetLanguage.language_code.in_(
                     sorted(SUPPORTED_EAGER_TRANSLATION_TARGET_LANGUAGE_CODES)
                 ),
@@ -2491,11 +2486,11 @@ def _translation_work_candidate_relevance_conditions(
 
     eager_detected_language_candidate = and_(
         effective_preferred_candidate,
-        ConversationLanguageSetting.language_code.in_(
+        ConversationContent.source_language_code.in_(
             sorted(SUPPORTED_EAGER_TRANSLATION_TARGET_LANGUAGE_CODES)
         ),
         OpinionGroupDescriptionTranslationWork.locale
-        == ConversationLanguageSetting.language_code,
+        == ConversationContent.source_language_code,
     )
     eager_additional_language_candidate = and_(
         effective_preferred_candidate,
@@ -2503,15 +2498,11 @@ def _translation_work_candidate_relevance_conditions(
             sorted(SUPPORTED_EAGER_TRANSLATION_TARGET_LANGUAGE_CODES)
         ),
         _active_dynamic_translation_entitlement_exists(),
+        Conversation.dynamic_translation_enabled.is_(True),
         select(ConversationTranslationTargetLanguage.id)
-        .join(
-            ConversationTranslationSetting,
-            ConversationTranslationSetting.id
-            == ConversationTranslationTargetLanguage.translation_setting_id,
-        )
         .where(
             and_(
-                ConversationTranslationSetting.conversation_id == Conversation.id,
+                ConversationTranslationTargetLanguage.conversation_id == Conversation.id,
                 ConversationTranslationTargetLanguage.language_code
                 == OpinionGroupDescriptionTranslationWork.locale,
             )
@@ -2555,9 +2546,9 @@ def _translation_work_relevant_candidate_exists_filter(
             AnalysisSnapshotResult.id == OpinionGroupCandidate.snapshot_result_id,
         )
         .join(Conversation, Conversation.id == AnalysisSnapshotResult.conversation_id)
-        .outerjoin(
-            ConversationLanguageSetting,
-            ConversationLanguageSetting.conversation_id == Conversation.id,
+        .join(
+            ConversationContent,
+            ConversationContent.id == Conversation.current_content_id,
         )
         .join(
             ConversationViewSnapshot,

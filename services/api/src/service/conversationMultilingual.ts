@@ -1,66 +1,15 @@
 import { eq, inArray } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import {
-    conversationTranslationSettingTable,
+    conversationTable,
     conversationTranslationTargetLanguageTable,
 } from "@/shared-backend/schema.js";
-import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
-import type {
-    ConversationLanguageSettingInput,
-    ConversationMultilingualSetting,
-} from "@/shared/types/zod.js";
+import type { ConversationMultilingualSetting } from "@/shared/types/zod.js";
 
 export const DEFAULT_CONVERSATION_MULTILINGUAL_SETTING: ConversationMultilingualSetting = {
     additionalLanguageCodes: [],
     dynamicTranslationEnabled: false,
 };
-
-export function getUniqueConfiguredConversationLanguageCodes({
-    mainLanguageCode,
-    additionalLanguageCodes,
-}: {
-    mainLanguageCode: SupportedDisplayLanguageCodes | null;
-    additionalLanguageCodes: readonly SupportedDisplayLanguageCodes[];
-}): SupportedDisplayLanguageCodes[] {
-    const languageCodes = new Set<SupportedDisplayLanguageCodes>();
-    if (mainLanguageCode !== null) {
-        languageCodes.add(mainLanguageCode);
-    }
-    for (const languageCode of additionalLanguageCodes) {
-        languageCodes.add(languageCode);
-    }
-    return [...languageCodes];
-}
-
-export function normalizeConversationMultilingualSetting({
-    languageSetting,
-    multilingualSetting,
-    canUseDynamicTranslation,
-}: {
-    languageSetting: ConversationLanguageSettingInput;
-    multilingualSetting: ConversationMultilingualSetting;
-    canUseDynamicTranslation: boolean;
-}): ConversationMultilingualSetting {
-    if (!canUseDynamicTranslation) {
-        return DEFAULT_CONVERSATION_MULTILINGUAL_SETTING;
-    }
-
-    const uniqueLanguageCodes = Array.from(
-        new Set(multilingualSetting.additionalLanguageCodes),
-    );
-    const additionalLanguageCodes =
-        languageSetting.mode === "manual"
-            ? uniqueLanguageCodes.filter(
-                  (languageCode) => languageCode !== languageSetting.languageCode,
-              )
-            : uniqueLanguageCodes;
-
-    return {
-        dynamicTranslationEnabled:
-            multilingualSetting.dynamicTranslationEnabled,
-        additionalLanguageCodes: additionalLanguageCodes.slice(0, 2),
-    };
-}
 
 export async function getConversationMultilingualSetting({
     db,
@@ -71,14 +20,11 @@ export async function getConversationMultilingualSetting({
 }): Promise<ConversationMultilingualSetting> {
     const settingRows = await db
         .select({
-            settingId: conversationTranslationSettingTable.id,
             dynamicTranslationEnabled:
-                conversationTranslationSettingTable.dynamicTranslationEnabled,
+                conversationTable.dynamicTranslationEnabled,
         })
-        .from(conversationTranslationSettingTable)
-        .where(
-            eq(conversationTranslationSettingTable.conversationId, conversationId),
-        )
+        .from(conversationTable)
+        .where(eq(conversationTable.id, conversationId))
         .limit(1);
     const setting = settingRows.at(0);
     if (setting === undefined) {
@@ -93,16 +39,14 @@ export async function getConversationMultilingualSetting({
         .from(conversationTranslationTargetLanguageTable)
         .where(
             eq(
-                conversationTranslationTargetLanguageTable.translationSettingId,
-                setting.settingId,
+                conversationTranslationTargetLanguageTable.conversationId,
+                conversationId,
             ),
         );
 
     return {
         dynamicTranslationEnabled: setting.dynamicTranslationEnabled,
-        additionalLanguageCodes: languageRows.map(
-            (row): SupportedDisplayLanguageCodes => row.languageCode,
-        ),
+        additionalLanguageCodes: languageRows.map((row) => row.languageCode),
     };
 }
 
@@ -128,25 +72,19 @@ export async function getConversationMultilingualSettingsByConversationId({
 
     const rows = await db
         .select({
-            conversationId: conversationTranslationSettingTable.conversationId,
-            dynamicTranslationEnabled:
-                conversationTranslationSettingTable.dynamicTranslationEnabled,
+            conversationId: conversationTable.id,
+            dynamicTranslationEnabled: conversationTable.dynamicTranslationEnabled,
             languageCode: conversationTranslationTargetLanguageTable.languageCode,
         })
-        .from(conversationTranslationSettingTable)
+        .from(conversationTable)
         .leftJoin(
             conversationTranslationTargetLanguageTable,
             eq(
-                conversationTranslationTargetLanguageTable.translationSettingId,
-                conversationTranslationSettingTable.id,
+                conversationTranslationTargetLanguageTable.conversationId,
+                conversationTable.id,
             ),
         )
-        .where(
-            inArray(
-                conversationTranslationSettingTable.conversationId,
-                uniqueConversationIds,
-            ),
-        );
+        .where(inArray(conversationTable.id, uniqueConversationIds));
 
     for (const row of rows) {
         const existingSetting = settings.get(row.conversationId);
@@ -177,30 +115,20 @@ export async function upsertConversationMultilingualSetting({
     setting: ConversationMultilingualSetting;
     now: Date;
 }): Promise<void> {
-    const settingRows = await db
-        .insert(conversationTranslationSettingTable)
-        .values({
-            conversationId,
+    await db
+        .update(conversationTable)
+        .set({
             dynamicTranslationEnabled: setting.dynamicTranslationEnabled,
-            createdAt: now,
             updatedAt: now,
         })
-        .onConflictDoUpdate({
-            target: conversationTranslationSettingTable.conversationId,
-            set: {
-                dynamicTranslationEnabled: setting.dynamicTranslationEnabled,
-                updatedAt: now,
-            },
-        })
-        .returning({ settingId: conversationTranslationSettingTable.id });
-    const settingId = settingRows[0].settingId;
+        .where(eq(conversationTable.id, conversationId));
 
     await db
         .delete(conversationTranslationTargetLanguageTable)
         .where(
             eq(
-                conversationTranslationTargetLanguageTable.translationSettingId,
-                settingId,
+                conversationTranslationTargetLanguageTable.conversationId,
+                conversationId,
             ),
         );
 
@@ -210,7 +138,7 @@ export async function upsertConversationMultilingualSetting({
 
     await db.insert(conversationTranslationTargetLanguageTable).values(
         setting.additionalLanguageCodes.map((languageCode) => ({
-            translationSettingId: settingId,
+            conversationId,
             languageCode,
             createdAt: now,
         })),

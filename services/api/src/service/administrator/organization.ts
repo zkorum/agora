@@ -1,17 +1,22 @@
 import {
+    organizationLocalizationTable,
     organizationMembershipTable,
     organizationTable,
 } from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { useCommonUser } from "../common.js";
 import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
 import type {
+    AdminOrganizationProperties,
     GetAllOrganizationsResponse,
     GetOrganizationsByUsernameResponse,
+    UpdateOrganizationLocalizationRequest,
+    UpdateOrganizationLocalizationResponse,
 } from "@/shared/types/dto.js";
 import type { OrganizationProperties } from "@/shared/types/zod.js";
+import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
 import { ensureOrganizationMembershipBaselineCapabilities } from "../projectAccess.js";
 
@@ -47,12 +52,29 @@ function buildOrganizationProperties({
     };
 }
 
+function optionalUrl(url: string | null): string | undefined {
+    return url ?? undefined;
+}
+
+function optionalText(text: string | null): string | undefined {
+    return text === null || text.trim() === "" ? undefined : text;
+}
+
 function isUniqueViolation(error: unknown): boolean {
     return (
         typeof error === "object" &&
         error !== null &&
         "code" in error &&
         error.code === "23505"
+    );
+}
+
+function hasHttpStatusCode(error: unknown): error is { statusCode: number } {
+    return (
+        typeof error === "object" &&
+        error !== null &&
+        "statusCode" in error &&
+        typeof error.statusCode === "number"
     );
 }
 
@@ -65,22 +87,87 @@ export async function getAllOrganizations({
     db,
     baseImageServiceUrl,
 }: GetAllOrganizationsProps): Promise<GetAllOrganizationsResponse> {
-    const organizationList: OrganizationProperties[] = [];
-
     const organizationTableResponse = await db
         .select({
+            id: organizationTable.id,
             name: organizationTable.displayName,
             slug: organizationTable.slug,
+            defaultLanguageCode: organizationTable.defaultLanguageCode,
             description: organizationTable.description,
             imagePath: organizationTable.imagePath,
             isFullImagePath: organizationTable.isFullImagePath,
             websiteUrl: organizationTable.websiteUrl,
         })
         .from(organizationTable)
-        .where(eq(organizationTable.directoryVisibility, "listed"));
-    organizationTableResponse.forEach((response) => {
-        if (response.name) {
-            organizationList.push(buildOrganizationProperties({
+        .where(
+            and(
+                eq(organizationTable.directoryVisibility, "listed"),
+                isNull(organizationTable.deletedAt),
+            ),
+        );
+
+    const organizationIds = organizationTableResponse.map(
+        (organization) => organization.id,
+    );
+    const localizationRows =
+        organizationIds.length === 0
+            ? []
+            : await db
+                  .select({
+                      organizationId:
+                          organizationLocalizationTable.organizationId,
+                      languageCode: organizationLocalizationTable.languageCode,
+                      displayName: organizationLocalizationTable.displayName,
+                      description: organizationLocalizationTable.description,
+                      websiteUrl: organizationLocalizationTable.websiteUrl,
+                      imagePath: organizationLocalizationTable.imagePath,
+                      isFullImagePath:
+                          organizationLocalizationTable.isFullImagePath,
+                  })
+                  .from(organizationLocalizationTable)
+                  .where(
+                      inArray(
+                          organizationLocalizationTable.organizationId,
+                          organizationIds,
+                      ),
+                  );
+
+    const localizationsByOrganizationId = new Map<
+        number,
+        AdminOrganizationProperties["localizations"]
+    >();
+    for (const localization of localizationRows) {
+        const localizations =
+            localizationsByOrganizationId.get(localization.organizationId) ?? [];
+        const websiteUrl = optionalUrl(localization.websiteUrl);
+        const imagePath = optionalText(localization.imagePath);
+        localizations.push({
+            languageCode: localization.languageCode,
+            displayName: localization.displayName,
+            description: localization.description,
+            ...(websiteUrl === undefined ? {} : { websiteUrl }),
+            ...(imagePath === undefined ? {} : { imagePath }),
+            isFullImagePath: localization.isFullImagePath,
+        });
+        localizationsByOrganizationId.set(
+            localization.organizationId,
+            localizations,
+        );
+    }
+
+    const organizationList: AdminOrganizationProperties[] = [];
+    for (const response of organizationTableResponse) {
+        const defaultLanguageCode = response.defaultLanguageCode;
+        if (defaultLanguageCode === null) {
+            log.warn(
+                { organizationSlug: response.slug },
+                "[AdminOrganization] Skipping organization without default language",
+            );
+            continue;
+        }
+
+        organizationList.push({
+            ...buildOrganizationProperties({
                 name: response.name,
                 slug: response.slug,
                 description: response.description,
@@ -88,9 +175,11 @@ export async function getAllOrganizations({
                 isFullImagePath: response.isFullImagePath,
                 websiteUrl: response.websiteUrl,
                 baseImageServiceUrl,
-            }));
-        }
-    });
+            }),
+            defaultLanguageCode,
+            localizations: localizationsByOrganizationId.get(response.id) ?? [],
+        });
+    }
 
     return {
         organizationList: organizationList,
@@ -168,7 +257,19 @@ export async function getOrganizationIdsByUserId({
     const organizationTableResponse = await db
         .select({ organizationId: organizationMembershipTable.organizationId })
         .from(organizationMembershipTable)
-        .where(eq(organizationMembershipTable.userId, userId));
+        .innerJoin(
+            organizationTable,
+            eq(
+                organizationTable.id,
+                organizationMembershipTable.organizationId,
+            ),
+        )
+        .where(
+            and(
+                eq(organizationMembershipTable.userId, userId),
+                isNull(organizationTable.deletedAt),
+            ),
+        );
 
     return organizationTableResponse.map((response) => response.organizationId);
 }
@@ -200,6 +301,7 @@ export async function getOrganizationMembershipsByUserId({
             and(
                 eq(organizationMembershipTable.userId, userId),
                 eq(organizationTable.directoryVisibility, "listed"),
+                isNull(organizationTable.deletedAt),
             ),
         );
 
@@ -234,37 +336,25 @@ export async function removeUserOrganizationMapping({
         username: username,
     });
 
-    try {
-        const organizationId = await getOrganizationIdFromOrganizationName(
-            db,
-            organizationName,
-        );
-        if (organizationId == undefined) {
-            throw httpErrors.notFound("Failed to locate organization ID");
-        } else {
-            const deletedMapping = await db
-                .delete(organizationMembershipTable)
-                .where(
-                    and(
-                        eq(organizationMembershipTable.userId, targetUserId),
-                        eq(
-                            organizationMembershipTable.organizationId,
-                            organizationId,
-                        ),
-                    ),
-                )
-                .returning();
-            if (deletedMapping.length == 0) {
-                throw httpErrors.internalServerError(
-                    "Organization mapping does not exist",
-                );
-            }
-        }
-    } catch (err: unknown) {
-        log.error(err);
-        throw httpErrors.internalServerError(
-            "Database error while removing user organization mapping",
-        );
+    const organizationId = await getListedOrganizationIdFromOrganizationSlug({
+        db,
+        organizationSlug: organizationName,
+    });
+    if (organizationId === undefined) {
+        throw httpErrors.notFound("Organization not found");
+    }
+
+    const deletedMapping = await db
+        .delete(organizationMembershipTable)
+        .where(
+            and(
+                eq(organizationMembershipTable.userId, targetUserId),
+                eq(organizationMembershipTable.organizationId, organizationId),
+            ),
+        )
+        .returning();
+    if (deletedMapping.length === 0) {
+        throw httpErrors.notFound("Organization mapping does not exist");
     }
 }
 
@@ -285,33 +375,27 @@ export async function addUserOrganizationMapping({
         username: username,
     });
 
-    try {
-        const organizationId = await getOrganizationIdFromOrganizationName(
-            db,
-            organizationName,
-        );
+    const organizationId = await getListedOrganizationIdFromOrganizationSlug({
+        db,
+        organizationSlug: organizationName,
+    });
 
-        if (organizationId == undefined) {
-            throw httpErrors.notFound("Failed to locate organization ID");
-        } else {
-            await ensureOrganizationMembershipBaselineCapabilities({
-                db,
-                userId: targetUserId,
-                organizationId,
-            });
-        }
-    } catch (err: unknown) {
-        log.error(err);
-        throw httpErrors.internalServerError(
-            "Database error while adding user organization mapping",
-        );
+    if (organizationId === undefined) {
+        throw httpErrors.notFound("Organization not found");
     }
+
+    await ensureOrganizationMembershipBaselineCapabilities({
+        db,
+        userId: targetUserId,
+        organizationId,
+    });
 }
 
 interface CreateOrganizationProps {
     db: PostgresJsDatabase;
     organizationName: string;
     organizationSlug: string;
+    defaultLanguageCode: SupportedDisplayLanguageCodes;
     imagePath: string | undefined;
     isFullImagePath: boolean;
     websiteUrl: string | undefined;
@@ -322,24 +406,48 @@ export async function createOrganization({
     db,
     organizationName,
     organizationSlug,
+    defaultLanguageCode,
     imagePath,
     isFullImagePath,
     websiteUrl,
     description,
 }: CreateOrganizationProps) {
     try {
-        // Create a new organization entry
-        await db.insert(organizationTable).values({
-            slug: organizationSlug,
-            displayName: organizationName,
-            directoryVisibility: "listed",
-            imagePath:
+        await db.transaction(async (tx) => {
+            const normalizedImagePath =
                 imagePath === undefined || imagePath.trim() === ""
                     ? null
-                    : imagePath,
-            isFullImagePath: isFullImagePath,
-            websiteUrl: websiteUrl ?? null,
-            description: description,
+                    : imagePath;
+            const normalizedWebsiteUrl = websiteUrl ?? null;
+            const insertedOrganizations = await tx
+                .insert(organizationTable)
+                .values({
+                    slug: organizationSlug,
+                    displayName: organizationName,
+                    defaultLanguageCode,
+                    directoryVisibility: "listed",
+                    imagePath: normalizedImagePath,
+                    isFullImagePath: isFullImagePath,
+                    websiteUrl: normalizedWebsiteUrl,
+                    description: description,
+                })
+                .returning({ organizationId: organizationTable.id });
+            const insertedOrganization = insertedOrganizations.at(0);
+            if (insertedOrganization === undefined) {
+                throw httpErrors.internalServerError(
+                    "Failed to create organization",
+                );
+            }
+
+            await tx.insert(organizationLocalizationTable).values({
+                organizationId: insertedOrganization.organizationId,
+                languageCode: defaultLanguageCode,
+                displayName: organizationName,
+                description,
+                websiteUrl: normalizedWebsiteUrl,
+                imagePath: normalizedImagePath,
+                isFullImagePath,
+            });
         });
     } catch (err: unknown) {
         if (isUniqueViolation(err)) {
@@ -353,49 +461,145 @@ export async function createOrganization({
     }
 }
 
-interface deleteOrganizationProps {
+export async function updateOrganizationLocalization({
+    db,
+    data,
+}: {
+    db: PostgresJsDatabase;
+    data: UpdateOrganizationLocalizationRequest;
+}): Promise<UpdateOrganizationLocalizationResponse> {
+    const imagePath =
+        data.imagePath === undefined || data.imagePath.trim() === ""
+            ? null
+            : data.imagePath;
+    const websiteUrl = data.websiteUrl ?? null;
+
+    await db.transaction(async (tx) => {
+        const organizationRows = await tx
+            .select({ organizationId: organizationTable.id })
+            .from(organizationTable)
+            .where(
+                and(
+                    eq(organizationTable.slug, data.organizationSlug),
+                    isNull(organizationTable.deletedAt),
+                ),
+            )
+            .limit(1);
+        const organization = organizationRows.at(0);
+        if (organization === undefined) {
+            throw httpErrors.notFound("Organization not found");
+        }
+
+        await tx
+            .insert(organizationLocalizationTable)
+            .values({
+                organizationId: organization.organizationId,
+                languageCode: data.languageCode,
+                displayName: data.displayName,
+                description: data.description,
+                websiteUrl,
+                imagePath,
+                isFullImagePath: data.isFullImagePath,
+            })
+            .onConflictDoUpdate({
+                target: [
+                    organizationLocalizationTable.organizationId,
+                    organizationLocalizationTable.languageCode,
+                ],
+                set: {
+                    displayName: data.displayName,
+                    description: data.description,
+                    websiteUrl,
+                    imagePath,
+                    isFullImagePath: data.isFullImagePath,
+                    updatedAt: new Date(),
+                },
+            });
+
+        if (data.setAsDefault) {
+            await tx
+                .update(organizationTable)
+                .set({
+                    defaultLanguageCode: data.languageCode,
+                    displayName: data.displayName,
+                    description: data.description,
+                    websiteUrl,
+                    imagePath,
+                    isFullImagePath: data.isFullImagePath,
+                    updatedAt: new Date(),
+                })
+                .where(eq(organizationTable.id, organization.organizationId));
+        }
+    });
+
+    return { success: true };
+}
+
+interface ArchiveOrganizationProps {
     db: PostgresJsDatabase;
     organizationName: string;
 }
 
-export async function deleteOrganization({
+export async function archiveOrganization({
     db,
     organizationName,
-}: deleteOrganizationProps) {
+}: ArchiveOrganizationProps) {
     try {
-        await db
-            .delete(organizationTable)
-            .where(eq(organizationTable.slug, organizationName));
+        const now = new Date();
+        const updatedOrganizations = await db
+            .update(organizationTable)
+            .set({
+                directoryVisibility: "unlisted",
+                deletedAt: now,
+                updatedAt: now,
+            })
+            .where(
+                and(
+                    eq(organizationTable.slug, organizationName),
+                    isNull(organizationTable.deletedAt),
+                ),
+            )
+            .returning({ organizationId: organizationTable.id });
+        if (updatedOrganizations.length === 0) {
+            throw httpErrors.notFound("Organization not found");
+        }
     } catch (err: unknown) {
+        if (hasHttpStatusCode(err)) {
+            throw err;
+        }
+
         log.error(err);
         throw httpErrors.internalServerError(
-            "Database error while deleting organization metadata",
+            "Database error while archiving organization metadata",
         );
     }
 }
 
-async function getOrganizationIdFromOrganizationName(
-    db: PostgresJsDatabase,
-    organizationName: string,
-): Promise<number | undefined> {
-    try {
-        // Find out the organization ID
-        const organizationTableResponse = await db
-            .select({
-                organizationId: organizationTable.id,
-            })
-            .from(organizationTable)
-            .where(eq(organizationTable.slug, organizationName));
+async function getListedOrganizationIdFromOrganizationSlug({
+    db,
+    organizationSlug,
+}: {
+    db: PostgresJsDatabase;
+    organizationSlug: string;
+}): Promise<number | undefined> {
+    const organizationTableResponse = await db
+        .select({
+            organizationId: organizationTable.id,
+        })
+        .from(organizationTable)
+        .where(
+            and(
+                eq(organizationTable.slug, organizationSlug),
+                eq(organizationTable.directoryVisibility, "listed"),
+                isNull(organizationTable.deletedAt),
+            ),
+        )
+        .limit(1);
 
-        if (organizationTableResponse.length != 1) {
-            return undefined;
-        } else {
-            return organizationTableResponse[0].organizationId;
-        }
-    } catch (err: unknown) {
-        log.error(err);
-        throw httpErrors.internalServerError(
-            "Database error while retrieving organization ID from organization name",
-        );
+    const organization = organizationTableResponse.at(0);
+    if (organization === undefined) {
+        return undefined;
     }
+
+    return organization.organizationId;
 }

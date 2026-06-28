@@ -1,22 +1,40 @@
 import { httpErrors } from "@fastify/sensible";
-import { inArray, eq } from "drizzle-orm";
+import { and, inArray, eq, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     organizationTable,
     projectContactTable,
     projectContentTable,
     projectExternalOrganizationTable,
+    projectExternalOrganizationLocalizationTable,
     projectOrganizationAttributionTable,
     projectOrganizationOwnershipTable,
     projectTable,
+    projectTranslationTargetLanguageTable,
 } from "@/shared-backend/schema.js";
 import type {
     CreateProjectAttributionRequest,
     CreateProjectFailureReason,
     CreateProjectRequest,
     CreateProjectResponse,
+    UpdateProjectExternalOrganizationLocalizationRequest,
+    UpdateProjectExternalOrganizationLocalizationResponse,
+    UpdateProjectLanguageSettingRequest,
+    UpdateProjectLanguageSettingResponse,
 } from "@/shared/types/dto.js";
+import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
+import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import { normalizeEmail } from "@/shared/types/zod-email.js";
+import { htmlToCountedText } from "@/shared/shared.js";
+import {
+    contentLanguageMetadataUpdateValues,
+    resolveContentLanguageMetadata,
+} from "../contentLanguageMetadata.js";
+import {
+    buildConversationLanguageDetectionCorpus,
+    buildGoogleConversationLanguageDetectionCorpus,
+} from "../conversationLanguage.js";
+import { normalizeTranslationLanguageSetting } from "../translationLanguageSetting.js";
 
 type ProjectOrganizationAttributionRole =
     CreateProjectAttributionRequest["role"];
@@ -36,6 +54,7 @@ interface RealAttribution {
 interface ExternalAttribution {
     source: "external";
     role: ProjectOrganizationAttributionRole;
+    defaultLanguageCode: SupportedDisplayLanguageCodes;
     displayName: string;
     description: string | null;
     imagePath: string | null;
@@ -136,7 +155,12 @@ async function getListedOrganizationsBySlug({
             directoryVisibility: organizationTable.directoryVisibility,
         })
         .from(organizationTable)
-        .where(inArray(organizationTable.slug, uniqueSlugs));
+        .where(
+            and(
+                inArray(organizationTable.slug, uniqueSlugs),
+                isNull(organizationTable.deletedAt),
+            ),
+        );
 
     const organizationsBySlug = new Map(
         rows.map((organization) => [organization.slug, organization]),
@@ -238,6 +262,7 @@ function buildAttributions({
         attributions.push({
             source: "external",
             role: attribution.role,
+            defaultLanguageCode: attribution.defaultLanguageCode,
             displayName: attribution.displayName,
             description: normalizeOptionalString(attribution.description),
             imagePath: normalizeOptionalString(attribution.imagePath),
@@ -252,9 +277,11 @@ function buildAttributions({
 export async function createProject({
     db,
     data,
+    googleCloudCredentials,
 }: {
     db: PostgresJsDatabase;
     data: CreateProjectRequest;
+    googleCloudCredentials: GoogleCloudCredentials | undefined;
 }): Promise<CreateProjectResponse> {
     const existingProject = await db
         .select({ id: projectTable.id })
@@ -297,6 +324,20 @@ export async function createProject({
         organizationsBySlug: organizationLookup.organizationsBySlug,
     });
 
+    const bodyPlainText = data.bodyPlainText ?? htmlToCountedText(data.body ?? "");
+    const projectLanguageMetadata = await resolveContentLanguageMetadata({
+        text: buildConversationLanguageDetectionCorpus({
+            conversationTitle: data.projectTitle,
+            bodyPlainText,
+        }),
+        googleText: buildGoogleConversationLanguageDetectionCorpus({
+            conversationTitle: data.projectTitle,
+            bodyPlainText,
+        }),
+        googleCloudCredentials,
+        useGoogleLanguageDetection: false,
+    });
+
     try {
         return await db.transaction(async (tx) => {
             const insertedProjects = await tx
@@ -307,6 +348,7 @@ export async function createProject({
                     directoryVisibility: "listed",
                     autoProvisionedForOrganizationId: null,
                     currentContentId: null,
+                    dynamicTranslationEnabled: false,
                 })
                 .returning({ projectId: projectTable.id });
             const insertedProject = insertedProjects.at(0);
@@ -318,11 +360,13 @@ export async function createProject({
                 .insert(projectContentTable)
                 .values({
                     projectId: insertedProject.projectId,
+                    title: data.projectTitle,
                     subtitle: normalizeOptionalString(data.subtitle),
                     body: normalizeOptionalString(data.body),
-                    bodyPlainText: normalizeOptionalString(data.bodyPlainText),
+                    bodyPlainText,
                     heroImagePath: normalizeOptionalString(data.heroImagePath),
                     heroImageIsFullPath: data.heroImageIsFullPath,
+                    ...contentLanguageMetadataUpdateValues(projectLanguageMetadata),
                 })
                 .returning({ contentId: projectContentTable.id });
             const insertedContent = insertedContents.at(0);
@@ -373,6 +417,7 @@ export async function createProject({
                     .values({
                         projectId: insertedProject.projectId,
                         displayName: attribution.displayName,
+                        defaultLanguageCode: attribution.defaultLanguageCode,
                         description: attribution.description,
                         imagePath: attribution.imagePath,
                         isFullImagePath: attribution.isFullImagePath,
@@ -389,6 +434,17 @@ export async function createProject({
                         "Failed to create external organization",
                     );
                 }
+
+                await tx.insert(projectExternalOrganizationLocalizationTable).values({
+                    externalOrganizationId:
+                        insertedExternalOrganization.externalOrganizationId,
+                    languageCode: attribution.defaultLanguageCode,
+                    displayName: attribution.displayName,
+                    description: attribution.description ?? "",
+                    websiteUrl: attribution.websiteUrl,
+                    imagePath: attribution.imagePath,
+                    isFullImagePath: attribution.isFullImagePath,
+                });
 
                 await tx.insert(projectOrganizationAttributionTable).values({
                     projectId: insertedProject.projectId,
@@ -434,4 +490,165 @@ export async function createProject({
 
         throw error;
     }
+}
+
+export async function updateProjectLanguageSetting({
+    db,
+    data,
+    googleCloudCredentials,
+}: {
+    db: PostgresJsDatabase;
+    data: UpdateProjectLanguageSettingRequest;
+    googleCloudCredentials: GoogleCloudCredentials | undefined;
+}): Promise<UpdateProjectLanguageSettingResponse & { projectId: number }> {
+    const projectRows = await db
+        .select({ projectId: projectTable.id })
+        .from(projectTable)
+        .where(eq(projectTable.slug, data.projectSlug))
+        .limit(1);
+    const project = projectRows.at(0);
+    if (project === undefined) {
+        throw httpErrors.notFound("Project not found");
+    }
+
+    await db.transaction(async (tx) => {
+        const now = new Date();
+        await tx
+            .update(projectTable)
+            .set({
+                dynamicTranslationEnabled: data.setting.dynamicTranslationEnabled,
+                updatedAt: now,
+            })
+            .where(eq(projectTable.id, project.projectId));
+
+        await tx
+            .delete(projectTranslationTargetLanguageTable)
+            .where(
+                eq(projectTranslationTargetLanguageTable.projectId, project.projectId),
+            );
+        const currentContentRows = await tx
+            .select({
+                contentId: projectContentTable.id,
+                title: projectContentTable.title,
+                body: projectContentTable.body,
+                bodyPlainText: projectContentTable.bodyPlainText,
+                sourceLanguageCode: projectContentTable.sourceLanguageCode,
+            })
+            .from(projectTable)
+            .innerJoin(
+                projectContentTable,
+                eq(projectContentTable.id, projectTable.currentContentId),
+            )
+            .where(eq(projectTable.id, project.projectId))
+            .limit(1);
+        const currentContent = currentContentRows.at(0);
+        let finalSourceLanguageCode = currentContent?.sourceLanguageCode ?? null;
+
+        if (
+            currentContent !== undefined &&
+            data.setting.dynamicTranslationEnabled
+        ) {
+            const bodyPlainText =
+                currentContent.bodyPlainText ??
+                htmlToCountedText(currentContent.body ?? "");
+            const sourceLanguageMetadata = await resolveContentLanguageMetadata({
+                text: buildConversationLanguageDetectionCorpus({
+                    conversationTitle: currentContent.title,
+                    bodyPlainText,
+                }),
+                googleText: buildGoogleConversationLanguageDetectionCorpus({
+                    conversationTitle: currentContent.title,
+                    bodyPlainText,
+                }),
+                googleCloudCredentials,
+                useGoogleLanguageDetection: true,
+            });
+            finalSourceLanguageCode = sourceLanguageMetadata.sourceLanguageCode;
+            await tx
+                .update(projectContentTable)
+                .set(contentLanguageMetadataUpdateValues(sourceLanguageMetadata))
+                .where(eq(projectContentTable.id, currentContent.contentId));
+        }
+
+        const normalizedSetting = normalizeTranslationLanguageSetting({
+            setting: data.setting,
+            canUseDynamicTranslation: true,
+            sourceLanguageCode: finalSourceLanguageCode,
+        });
+
+        if (normalizedSetting.additionalLanguageCodes.length > 0) {
+            await tx.insert(projectTranslationTargetLanguageTable).values(
+                normalizedSetting.additionalLanguageCodes.map((languageCode) => ({
+                    projectId: project.projectId,
+                    languageCode,
+                })),
+            );
+        }
+    });
+
+    return { success: true, projectId: project.projectId };
+}
+
+export async function updateProjectExternalOrganizationLocalization({
+    db,
+    data,
+}: {
+    db: PostgresJsDatabase;
+    data: UpdateProjectExternalOrganizationLocalizationRequest;
+}): Promise<UpdateProjectExternalOrganizationLocalizationResponse> {
+    const imagePath =
+        data.imagePath === undefined || data.imagePath.trim() === ""
+            ? null
+            : data.imagePath;
+    const websiteUrl = data.websiteUrl ?? null;
+
+    await db.transaction(async (tx) => {
+        await tx
+            .insert(projectExternalOrganizationLocalizationTable)
+            .values({
+                externalOrganizationId: data.externalOrganizationId,
+                languageCode: data.languageCode,
+                displayName: data.displayName,
+                description: data.description,
+                websiteUrl,
+                imagePath,
+                isFullImagePath: data.isFullImagePath,
+            })
+            .onConflictDoUpdate({
+                target: [
+                    projectExternalOrganizationLocalizationTable.externalOrganizationId,
+                    projectExternalOrganizationLocalizationTable.languageCode,
+                ],
+                set: {
+                    displayName: data.displayName,
+                    description: data.description,
+                    websiteUrl,
+                    imagePath,
+                    isFullImagePath: data.isFullImagePath,
+                    updatedAt: new Date(),
+                },
+            });
+
+        if (data.setAsDefault) {
+            await tx
+                .update(projectExternalOrganizationTable)
+                .set({
+                    defaultLanguageCode: data.languageCode,
+                    displayName: data.displayName,
+                    description: data.description,
+                    websiteUrl,
+                    imagePath,
+                    isFullImagePath: data.isFullImagePath,
+                    updatedAt: new Date(),
+                })
+                .where(
+                    eq(
+                        projectExternalOrganizationTable.id,
+                        data.externalOrganizationId,
+                    ),
+                );
+        }
+    });
+
+    return { success: true };
 }
