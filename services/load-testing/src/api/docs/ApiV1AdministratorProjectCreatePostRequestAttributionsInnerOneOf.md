@@ -7,7 +7,13 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **source** | **string** |  | [default to undefined]
 **role** | **string** |  | [default to undefined]
-**organizationSlug** | **string** |  | [default to undefined]
+**defaultLanguageCode** | **string** |  | [default to undefined]
+**displayName** | **string** |  | [default to undefined]
+**description** | **string** |  | [optional] [default to undefined]
+**imagePath** | **string** |  | [optional] [default to undefined]
+**isFullImagePath** | **boolean** |  | [optional] [default to false]
+**websiteUrl** | **string** |  | [optional] [default to undefined]
+**additionalLocalizations** | [**Array&lt;ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInner&gt;**](ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInner.md) |  | [optional] [default to undefined]
 
 ## Example
 
@@ -17,7 +23,13 @@ import { ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf } from
 const instance: ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf = {
     source,
     role,
-    organizationSlug,
+    defaultLanguageCode,
+    displayName,
+    description,
+    imagePath,
+    isFullImagePath,
+    websiteUrl,
+    additionalLocalizations,
 };
 ```
 

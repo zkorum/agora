@@ -1,58 +1,71 @@
 <template>
   <form class="section" @submit.prevent="submitCreateOrganization">
-    <div class="sectionHeader">
-      <h2>{{ t("createTitle") }}</h2>
-      <p>{{ t("createDescription") }}</p>
-    </div>
+    <AdminSectionHeader
+      :title="t('createTitle')"
+      :description="t('createDescription')"
+    />
 
-    <q-input
-      :model-value="form.organizationName"
-      :label="t('nameLabel')"
-      autocomplete="off"
-      data-1p-ignore
-      @update:model-value="
-        (value) => setTextField({ field: 'organizationName', value })
-      "
-    />
-    <q-input
-      :model-value="form.organizationSlug"
-      :label="t('slugLabel')"
-      :error="form.organizationSlug.length > 0 && !isSlugValid"
-      autocomplete="off"
-      data-1p-ignore
-      @update:model-value="
-        (value) => setTextField({ field: 'organizationSlug', value })
-      "
-    />
-    <q-select
-      :model-value="form.defaultLanguageCode"
-      :options="displayLanguageOptions"
-      :label="t('defaultLanguageLabel')"
-      emit-value
-      map-options
-      @update:model-value="setDefaultLanguage"
-    />
-    <q-input
-      :model-value="form.description"
-      :label="t('descriptionLabel')"
-      type="textarea"
-      autogrow
-      @update:model-value="
-        (value) => setTextField({ field: 'description', value })
-      "
-    />
-    <q-input
-      :model-value="form.imagePath"
-      :label="t('imagePathLabel')"
-      :hint="t('imagePathHint')"
-      @update:model-value="(value) => setTextField({ field: 'imagePath', value })"
-    />
-    <q-input
-      :model-value="form.websiteUrl"
-      :label="t('websiteUrlLabel')"
-      @update:model-value="(value) => setTextField({ field: 'websiteUrl', value })"
-    />
+    <div class="formGrid">
+      <q-input
+        :model-value="form.organizationName"
+        outlined
+        :label="t('nameLabel')"
+        autocomplete="off"
+        data-1p-ignore
+        @update:model-value="
+          (value) => setTextField({ field: 'organizationName', value })
+        "
+      />
+      <q-input
+        :model-value="form.organizationSlug"
+        outlined
+        :label="t('slugLabel')"
+        :error="form.organizationSlug.length > 0 && !isSlugValid"
+        autocomplete="off"
+        data-1p-ignore
+        @update:model-value="
+          (value) => setTextField({ field: 'organizationSlug', value })
+        "
+      />
+      <q-select
+        :model-value="form.defaultLanguageCode"
+        outlined
+        :options="displayLanguageOptions"
+        :label="t('defaultLanguageLabel')"
+        emit-value
+        map-options
+        @update:model-value="setDefaultLanguage"
+      />
+      <q-input
+        :model-value="form.description"
+        outlined
+        :label="t('descriptionLabel')"
+        type="textarea"
+        autogrow
+        @update:model-value="
+          (value) => setTextField({ field: 'description', value })
+        "
+      />
+      <q-input
+        :model-value="form.imagePath"
+        outlined
+        :label="t('imagePathLabel')"
+        :hint="t('imagePathHint')"
+        @update:model-value="
+          (value) => setTextField({ field: 'imagePath', value })
+        "
+      />
+      <q-input
+        :model-value="form.websiteUrl"
+        outlined
+        :label="t('websiteUrlLabel')"
+        @update:model-value="
+          (value) => setTextField({ field: 'websiteUrl', value })
+        "
+      />
+    </div>
     <ZKButton
+      class="createButton"
       button-type="largeButton"
       :label="t('createButton')"
       type="submit"
@@ -64,8 +77,21 @@
 </template>
 
 <script setup lang="ts">
+import AdminSectionHeader from "src/components/administrator/AdminSectionHeader.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  type AdministratorOrganizationTranslations,
+  administratorOrganizationTranslations,
+} from "src/pages/settings/account/administrator/organization/index.i18n";
+import {
+  buildCreateOrganizationRequest,
+  displayLanguageOptions,
+  inputToString,
+  isCreateOrganizationFormValid,
+  type OrganizationCreateFormState,
+  parseDisplayLanguage,
+} from "src/pages/settings/account/administrator/organization/organizationAdminForm";
 import { zodOrganizationSlug } from "src/shared/types/zod";
 import {
   createRandomOrganizationSlugFallback,
@@ -74,19 +100,6 @@ import {
 import { useLanguageStore } from "src/stores/language";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { computed, reactive, ref, watch } from "vue";
-
-import {
-  type AdministratorOrganizationTranslations,
-  administratorOrganizationTranslations,
-} from "./index.i18n";
-import {
-  buildCreateOrganizationRequest,
-  displayLanguageOptions,
-  inputToString,
-  isCreateOrganizationFormValid,
-  type OrganizationCreateFormState,
-  parseDisplayLanguage,
-} from "./organizationAdminForm";
 
 type CreateTextField =
   | "organizationName"
@@ -189,19 +202,13 @@ async function submitCreateOrganization(): Promise<void> {
   gap: 1rem;
 }
 
-.sectionHeader {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
 }
 
-.sectionHeader h2,
-.sectionHeader p {
-  margin: 0;
-}
-
-.sectionHeader p {
-  color: #5f6368;
-  line-height: 1.4;
+.createButton {
+  margin-top: 0.25rem;
 }
 </style>

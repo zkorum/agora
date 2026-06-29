@@ -2,6 +2,7 @@ import {
     organizationLocalizationTable,
     organizationMembershipTable,
     organizationTable,
+    userTable,
 } from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { and, eq, inArray, isNull } from "drizzle-orm";
@@ -11,7 +12,9 @@ import { log } from "@/app.js";
 import type {
     AdminOrganizationProperties,
     GetAllOrganizationsResponse,
+    GetOrganizationMembersResponse,
     GetOrganizationsByUsernameResponse,
+    UpdateOrganizationSlugResponse,
     UpdateOrganizationLocalizationRequest,
     UpdateOrganizationLocalizationResponse,
 } from "@/shared/types/dto.js";
@@ -184,6 +187,76 @@ export async function getAllOrganizations({
     return {
         organizationList: organizationList,
     };
+}
+
+export async function getOrganizationMembers({
+    db,
+    organizationName,
+}: {
+    db: PostgresJsDatabase;
+    organizationName: string;
+}): Promise<GetOrganizationMembersResponse> {
+    const memberRows = await db
+        .select({ username: userTable.username })
+        .from(organizationMembershipTable)
+        .innerJoin(
+            organizationTable,
+            eq(organizationTable.id, organizationMembershipTable.organizationId),
+        )
+        .innerJoin(userTable, eq(userTable.id, organizationMembershipTable.userId))
+        .where(
+            and(
+                eq(organizationTable.slug, organizationName),
+                eq(organizationTable.directoryVisibility, "listed"),
+                isNull(organizationTable.deletedAt),
+                eq(userTable.isDeleted, false),
+            ),
+        );
+
+    return {
+        memberList: memberRows,
+    };
+}
+
+export async function updateOrganizationSlug({
+    db,
+    currentOrganizationSlug,
+    newOrganizationSlug,
+}: {
+    db: PostgresJsDatabase;
+    currentOrganizationSlug: string;
+    newOrganizationSlug: string;
+}): Promise<UpdateOrganizationSlugResponse> {
+    if (currentOrganizationSlug === newOrganizationSlug) {
+        return { success: true };
+    }
+
+    try {
+        const updatedRows = await db
+            .update(organizationTable)
+            .set({ slug: newOrganizationSlug, updatedAt: new Date() })
+            .where(
+                and(
+                    eq(organizationTable.slug, currentOrganizationSlug),
+                    isNull(organizationTable.deletedAt),
+                ),
+            )
+            .returning({ id: organizationTable.id });
+        if (updatedRows.length === 0) {
+            return { success: false, reason: "organization_not_found" };
+        }
+
+        return { success: true };
+    } catch (error) {
+        if (isUniqueViolation(error)) {
+            return {
+                success: false,
+                reason: "organization_slug_already_exists",
+            };
+        }
+
+        throw error;
+    }
 }
 
 interface GetOrganizationsByUsernameProps {

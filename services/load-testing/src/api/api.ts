@@ -30,16 +30,139 @@ export interface ApiV1AdministratorOrganizationAddUserOrganizationMappingPostReq
 export interface ApiV1AdministratorOrganizationCreateOrganizationPostRequest {
     'organizationName': string;
     'organizationSlug': string;
-    'imagePath': string;
+    'defaultLanguageCode': ApiV1AdministratorOrganizationCreateOrganizationPostRequestDefaultLanguageCodeEnum;
+    'imagePath'?: string;
     'isFullImagePath': boolean;
     'websiteUrl'?: string;
     'description': string;
 }
-export interface ApiV1AdministratorOrganizationDeleteOrganizationPostRequest {
+
+export const ApiV1AdministratorOrganizationCreateOrganizationPostRequestDefaultLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1AdministratorOrganizationCreateOrganizationPostRequestDefaultLanguageCodeEnum = typeof ApiV1AdministratorOrganizationCreateOrganizationPostRequestDefaultLanguageCodeEnum[keyof typeof ApiV1AdministratorOrganizationCreateOrganizationPostRequestDefaultLanguageCodeEnum];
+
+export interface ApiV1AdministratorOrganizationGetAllOrganizationsPost200Response {
+    'organizationList': Array<ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInner>;
+}
+export interface ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInner {
+    'name': string;
+    'slug': string;
+    'imageUrl'?: string;
+    'websiteUrl'?: string;
+    'description': string;
+    'defaultLanguageCode': ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerDefaultLanguageCodeEnum;
+    'localizations': Array<ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInner>;
+}
+
+export const ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerDefaultLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerDefaultLanguageCodeEnum = typeof ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerDefaultLanguageCodeEnum[keyof typeof ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerDefaultLanguageCodeEnum];
+
+export interface ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInner {
+    'languageCode': ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInnerLanguageCodeEnum;
+    'displayName': string;
+    'description': string;
+    'websiteUrl'?: string;
+    'imagePath'?: string;
+    'isFullImagePath': boolean;
+}
+
+export const ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInnerLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInnerLanguageCodeEnum];
+
+export interface ApiV1AdministratorOrganizationGetMembersPost200Response {
+    'memberList': Array<ApiV1UserUsernameUpdatePostRequest>;
+}
+export interface ApiV1AdministratorOrganizationGetMembersPostRequest {
     'organizationName': string;
 }
 export interface ApiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost200Response {
     'organizationList': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization>;
+}
+export interface ApiV1AdministratorOrganizationLocalizationUpdatePostRequest {
+    'organizationSlug': string;
+    'languageCode': ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum;
+    'displayName': string;
+    'description': string;
+    'websiteUrl'?: string;
+    'imagePath'?: string;
+    'isFullImagePath'?: boolean;
+    'setAsDefault'?: boolean;
+}
+
+export const ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum = typeof ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum[keyof typeof ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum];
+
+/**
+ * @type ApiV1AdministratorOrganizationSlugUpdatePost200Response
+ */
+export type ApiV1AdministratorOrganizationSlugUpdatePost200Response = ApiV1AdministratorOrganizationSlugUpdatePost200ResponseOneOf | ApiV1ConversationClosePost200ResponseOneOf;
+
+export interface ApiV1AdministratorOrganizationSlugUpdatePost200ResponseOneOf {
+    'success': boolean;
+    'reason': ApiV1AdministratorOrganizationSlugUpdatePost200ResponseOneOfReasonEnum;
+}
+
+export const ApiV1AdministratorOrganizationSlugUpdatePost200ResponseOneOfReasonEnum = {
+    OrganizationNotFound: 'organization_not_found',
+    OrganizationSlugAlreadyExists: 'organization_slug_already_exists',
+} as const;
+
+export type ApiV1AdministratorOrganizationSlugUpdatePost200ResponseOneOfReasonEnum = typeof ApiV1AdministratorOrganizationSlugUpdatePost200ResponseOneOfReasonEnum[keyof typeof ApiV1AdministratorOrganizationSlugUpdatePost200ResponseOneOfReasonEnum];
+
+export interface ApiV1AdministratorOrganizationSlugUpdatePostRequest {
+    'currentOrganizationSlug': string;
+    'newOrganizationSlug': string;
 }
 export interface ApiV1AdministratorPremiumEntitlementCreatePostRequest {
     'subject': ApiV1AdministratorPremiumEntitlementCreatePostRequestSubject;
@@ -133,22 +256,29 @@ export interface ApiV1AdministratorProjectCreatePostRequest {
     'bodyPlainText'?: string;
     'heroImagePath'?: string;
     'heroImageIsFullPath'?: boolean;
+    'translationSetting'?: ApiV1AdministratorProjectCreatePostRequestTranslationSetting;
     'attributions'?: Array<ApiV1AdministratorProjectCreatePostRequestAttributionsInner>;
-    'contact'?: ApiV1AdministratorProjectCreatePostRequestContact;
+    'contact'?: ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact;
 }
 /**
  * @type ApiV1AdministratorProjectCreatePostRequestAttributionsInner
  */
-export type ApiV1AdministratorProjectCreatePostRequestAttributionsInner = ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf | ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1;
+export type ApiV1AdministratorProjectCreatePostRequestAttributionsInner = ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf | ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf;
 
 export interface ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf {
     'source': ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfSourceEnum;
     'role': ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfRoleEnum;
-    'organizationSlug': string;
+    'defaultLanguageCode': ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfDefaultLanguageCodeEnum;
+    'displayName': string;
+    'description'?: string;
+    'imagePath'?: string;
+    'isFullImagePath'?: boolean;
+    'websiteUrl'?: string;
+    'additionalLocalizations'?: Array<ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInner>;
 }
 
 export const ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfSourceEnum = {
-    Organization: 'organization',
+    External: 'external',
 } as const;
 
 export type ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfSourceEnum = typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfSourceEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfSourceEnum];
@@ -159,35 +289,307 @@ export const ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfRol
 } as const;
 
 export type ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfRoleEnum = typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfRoleEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfRoleEnum];
-
-export interface ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1 {
-    'source': ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1SourceEnum;
-    'role': ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1RoleEnum;
-    'displayName': string;
-    'description'?: string;
-    'imagePath'?: string;
-    'isFullImagePath'?: boolean;
-    'websiteUrl'?: string;
-}
-
-export const ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1SourceEnum = {
-    External: 'external',
+export const ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfDefaultLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
 } as const;
 
-export type ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1SourceEnum = typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1SourceEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1SourceEnum];
-export const ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1RoleEnum = {
+export type ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfDefaultLanguageCodeEnum = typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfDefaultLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfDefaultLanguageCodeEnum];
+
+export interface ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInner {
+    'languageCode': ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum;
+    'displayName': string;
+    'description': string;
+    'websiteUrl'?: string;
+    'imagePath'?: string;
+    'isFullImagePath'?: boolean;
+}
+
+export const ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum];
+
+export interface ApiV1AdministratorProjectCreatePostRequestTranslationSetting {
+    'dynamicTranslationEnabled': boolean;
+    'additionalLanguageCodes': Array<ApiV1AdministratorProjectCreatePostRequestTranslationSettingAdditionalLanguageCodesEnum>;
+}
+
+export const ApiV1AdministratorProjectCreatePostRequestTranslationSettingAdditionalLanguageCodesEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1AdministratorProjectCreatePostRequestTranslationSettingAdditionalLanguageCodesEnum = typeof ApiV1AdministratorProjectCreatePostRequestTranslationSettingAdditionalLanguageCodesEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestTranslationSettingAdditionalLanguageCodesEnum];
+
+export interface ApiV1AdministratorProjectDeleteProjectPostRequest {
+    'projectSlug': string;
+}
+export interface ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest {
+    'externalOrganizationId': number;
+    'languageCode': ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequestLanguageCodeEnum;
+    'displayName': string;
+    'description': string;
+    'websiteUrl'?: string;
+    'imagePath'?: string;
+    'isFullImagePath'?: boolean;
+    'setAsDefault'?: boolean;
+}
+
+export const ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequestLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequestLanguageCodeEnum = typeof ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequestLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequestLanguageCodeEnum];
+
+export interface ApiV1AdministratorProjectGetAllProjectsPost200Response {
+    'projectList': Array<ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInner>;
+}
+export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInner {
+    'projectSlug': string;
+    'projectTitle': string;
+    'ownerOrganizationSlugs': Array<string>;
+    'subtitle'?: string;
+    'body'?: string;
+    'bodyPlainText'?: string;
+    'heroImagePath'?: string;
+    'heroImageIsFullPath': boolean;
+    'dynamicTranslationEnabled': boolean;
+    'additionalLanguageCodes': Array<ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAdditionalLanguageCodesEnum>;
+    'attributions': Array<ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInner>;
+    'contact'?: ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact;
+}
+
+export const ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAdditionalLanguageCodesEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAdditionalLanguageCodesEnum = typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAdditionalLanguageCodesEnum[keyof typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAdditionalLanguageCodesEnum];
+
+/**
+ * @type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInner
+ */
+export type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInner = ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf | ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1;
+
+export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf {
+    'source': ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOfSourceEnum;
+    'role': ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOfRoleEnum;
+    'organizationSlug': string;
+}
+
+export const ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOfSourceEnum = {
+    Organization: 'organization',
+} as const;
+
+export type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOfSourceEnum = typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOfSourceEnum[keyof typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOfSourceEnum];
+export const ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOfRoleEnum = {
     ProjectOwner: 'project_owner',
     Sponsor: 'sponsor',
     Partner: 'partner',
 } as const;
 
-export type ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1RoleEnum = typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1RoleEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOf1RoleEnum];
+export type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOfRoleEnum = typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOfRoleEnum[keyof typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOfRoleEnum];
 
-export interface ApiV1AdministratorProjectCreatePostRequestContact {
+export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1 {
+    'source': ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1SourceEnum;
+    'role': ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1RoleEnum;
+    'defaultLanguageCode': ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1DefaultLanguageCodeEnum;
+    'displayName': string;
+    'description'?: string;
+    'imagePath'?: string;
+    'isFullImagePath': boolean;
+    'websiteUrl'?: string;
+    'additionalLocalizations': Array<ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1AdditionalLocalizationsInner>;
+}
+
+export const ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1SourceEnum = {
+    External: 'external',
+} as const;
+
+export type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1SourceEnum = typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1SourceEnum[keyof typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1SourceEnum];
+export const ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1RoleEnum = {
+    ProjectOwner: 'project_owner',
+    Sponsor: 'sponsor',
+    Partner: 'partner',
+} as const;
+
+export type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1RoleEnum = typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1RoleEnum[keyof typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1RoleEnum];
+export const ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1DefaultLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1DefaultLanguageCodeEnum = typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1DefaultLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1DefaultLanguageCodeEnum];
+
+export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1AdditionalLocalizationsInner {
+    'languageCode': ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1AdditionalLocalizationsInnerLanguageCodeEnum;
+    'displayName': string;
+    'description': string;
+    'websiteUrl'?: string;
+    'imagePath'?: string;
+    'isFullImagePath': boolean;
+}
+
+export const ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1AdditionalLocalizationsInnerLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1AdditionalLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1AdditionalLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1AdditionalLocalizationsInnerLanguageCodeEnum];
+
+export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact {
     'name': string;
     'roleLabel'?: string;
     'email': string;
     'organizationSlug'?: string;
+}
+export interface ApiV1AdministratorProjectLanguageSettingUpdatePostRequest {
+    'projectSlug': string;
+    'setting': ApiV1AdministratorProjectLanguageSettingUpdatePostRequestSetting;
+}
+export interface ApiV1AdministratorProjectLanguageSettingUpdatePostRequestSetting {
+    'dynamicTranslationEnabled': boolean;
+    'additionalLanguageCodes': Array<ApiV1AdministratorProjectLanguageSettingUpdatePostRequestSettingAdditionalLanguageCodesEnum>;
+}
+
+export const ApiV1AdministratorProjectLanguageSettingUpdatePostRequestSettingAdditionalLanguageCodesEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1AdministratorProjectLanguageSettingUpdatePostRequestSettingAdditionalLanguageCodesEnum = typeof ApiV1AdministratorProjectLanguageSettingUpdatePostRequestSettingAdditionalLanguageCodesEnum[keyof typeof ApiV1AdministratorProjectLanguageSettingUpdatePostRequestSettingAdditionalLanguageCodesEnum];
+
+/**
+ * @type ApiV1AdministratorProjectSlugUpdatePost200Response
+ */
+export type ApiV1AdministratorProjectSlugUpdatePost200Response = ApiV1AdministratorProjectSlugUpdatePost200ResponseOneOf | ApiV1ConversationClosePost200ResponseOneOf;
+
+export interface ApiV1AdministratorProjectSlugUpdatePost200ResponseOneOf {
+    'success': boolean;
+    'reason': ApiV1AdministratorProjectSlugUpdatePost200ResponseOneOfReasonEnum;
+}
+
+export const ApiV1AdministratorProjectSlugUpdatePost200ResponseOneOfReasonEnum = {
+    ProjectNotFound: 'project_not_found',
+    ProjectSlugAlreadyExists: 'project_slug_already_exists',
+} as const;
+
+export type ApiV1AdministratorProjectSlugUpdatePost200ResponseOneOfReasonEnum = typeof ApiV1AdministratorProjectSlugUpdatePost200ResponseOneOfReasonEnum[keyof typeof ApiV1AdministratorProjectSlugUpdatePost200ResponseOneOfReasonEnum];
+
+export interface ApiV1AdministratorProjectSlugUpdatePostRequest {
+    'currentProjectSlug': string;
+    'newProjectSlug': string;
+}
+/**
+ * @type ApiV1AdministratorProjectUpdatePost200Response
+ */
+export type ApiV1AdministratorProjectUpdatePost200Response = ApiV1AdministratorProjectCreatePost200ResponseOneOf | ApiV1AdministratorProjectUpdatePost200ResponseOneOf;
+
+export interface ApiV1AdministratorProjectUpdatePost200ResponseOneOf {
+    'success': boolean;
+    'reason': ApiV1AdministratorProjectUpdatePost200ResponseOneOfReasonEnum;
+    'organizationSlugs'?: Array<string>;
+}
+
+export const ApiV1AdministratorProjectUpdatePost200ResponseOneOfReasonEnum = {
+    ProjectNotFound: 'project_not_found',
+    UnknownOrganizationSlug: 'unknown_organization_slug',
+    OrganizationNotListed: 'organization_not_listed',
+    ProjectSlugAlreadyExists: 'project_slug_already_exists',
+    ProjectConflict: 'project_conflict',
+} as const;
+
+export type ApiV1AdministratorProjectUpdatePost200ResponseOneOfReasonEnum = typeof ApiV1AdministratorProjectUpdatePost200ResponseOneOfReasonEnum[keyof typeof ApiV1AdministratorProjectUpdatePost200ResponseOneOfReasonEnum];
+
+export interface ApiV1AdministratorProjectUpdatePostRequest {
+    'projectSlug': string;
+    'projectTitle': string;
+    'ownerOrganizationSlugs': Array<string>;
+    'subtitle'?: string;
+    'body'?: string;
+    'bodyPlainText'?: string;
+    'heroImagePath'?: string;
+    'heroImageIsFullPath'?: boolean;
+    'translationSetting'?: ApiV1AdministratorProjectCreatePostRequestTranslationSetting;
+    'attributions'?: Array<ApiV1AdministratorProjectCreatePostRequestAttributionsInner>;
+    'contact'?: ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact;
+    'currentProjectSlug': string;
 }
 /**
  * @type ApiV1AuthAuthenticatePost200Response
@@ -2368,6 +2770,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
 }
 
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingModeEnum = {
+    Inherit: 'inherit',
     Auto: 'auto',
     Manual: 'manual',
 } as const;
@@ -5354,13 +5757,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          *
-         * @param {ApiV1AdministratorOrganizationDeleteOrganizationPostRequest} apiV1AdministratorOrganizationDeleteOrganizationPostRequest
+         * @param {ApiV1AdministratorOrganizationGetMembersPostRequest} apiV1AdministratorOrganizationGetMembersPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AdministratorOrganizationDeleteOrganizationPost: async (apiV1AdministratorOrganizationDeleteOrganizationPostRequest: ApiV1AdministratorOrganizationDeleteOrganizationPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1AdministratorOrganizationDeleteOrganizationPostRequest' is not null or undefined
-            assertParamExists('apiV1AdministratorOrganizationDeleteOrganizationPost', 'apiV1AdministratorOrganizationDeleteOrganizationPostRequest', apiV1AdministratorOrganizationDeleteOrganizationPostRequest)
+        apiV1AdministratorOrganizationDeleteOrganizationPost: async (apiV1AdministratorOrganizationGetMembersPostRequest: ApiV1AdministratorOrganizationGetMembersPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorOrganizationGetMembersPostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorOrganizationDeleteOrganizationPost', 'apiV1AdministratorOrganizationGetMembersPostRequest', apiV1AdministratorOrganizationGetMembersPostRequest)
             const localVarPath = `/api/v1/administrator/organization/delete-organization`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -5382,7 +5785,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationDeleteOrganizationPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationGetMembersPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -5416,6 +5819,44 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorOrganizationGetMembersPostRequest} apiV1AdministratorOrganizationGetMembersPostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorOrganizationGetMembersPost: async (apiV1AdministratorOrganizationGetMembersPostRequest: ApiV1AdministratorOrganizationGetMembersPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorOrganizationGetMembersPostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorOrganizationGetMembersPost', 'apiV1AdministratorOrganizationGetMembersPostRequest', apiV1AdministratorOrganizationGetMembersPostRequest)
+            const localVarPath = `/api/v1/administrator/organization/get-members`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationGetMembersPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -5462,6 +5903,44 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          *
+         * @param {ApiV1AdministratorOrganizationLocalizationUpdatePostRequest} apiV1AdministratorOrganizationLocalizationUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorOrganizationLocalizationUpdatePost: async (apiV1AdministratorOrganizationLocalizationUpdatePostRequest: ApiV1AdministratorOrganizationLocalizationUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorOrganizationLocalizationUpdatePostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorOrganizationLocalizationUpdatePost', 'apiV1AdministratorOrganizationLocalizationUpdatePostRequest', apiV1AdministratorOrganizationLocalizationUpdatePostRequest)
+            const localVarPath = `/api/v1/administrator/organization/localization/update`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationLocalizationUpdatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         *
          * @param {ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest} apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -5491,6 +5970,44 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorOrganizationSlugUpdatePostRequest} apiV1AdministratorOrganizationSlugUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorOrganizationSlugUpdatePost: async (apiV1AdministratorOrganizationSlugUpdatePostRequest: ApiV1AdministratorOrganizationSlugUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorOrganizationSlugUpdatePostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorOrganizationSlugUpdatePost', 'apiV1AdministratorOrganizationSlugUpdatePostRequest', apiV1AdministratorOrganizationSlugUpdatePostRequest)
+            const localVarPath = `/api/v1/administrator/organization/slug/update`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationSlugUpdatePostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -5678,6 +6195,228 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorProjectCreatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorProjectDeleteProjectPostRequest} apiV1AdministratorProjectDeleteProjectPostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectDeleteProjectPost: async (apiV1AdministratorProjectDeleteProjectPostRequest: ApiV1AdministratorProjectDeleteProjectPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorProjectDeleteProjectPostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorProjectDeleteProjectPost', 'apiV1AdministratorProjectDeleteProjectPostRequest', apiV1AdministratorProjectDeleteProjectPostRequest)
+            const localVarPath = `/api/v1/administrator/project/delete-project`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorProjectDeleteProjectPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest} apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePost: async (apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest: ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePost', 'apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest', apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest)
+            const localVarPath = `/api/v1/administrator/project/external-organization/localization/update`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         *
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectGetAllProjectsPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/administrator/project/get-all-projects`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorProjectLanguageSettingUpdatePostRequest} apiV1AdministratorProjectLanguageSettingUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectLanguageSettingUpdatePost: async (apiV1AdministratorProjectLanguageSettingUpdatePostRequest: ApiV1AdministratorProjectLanguageSettingUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorProjectLanguageSettingUpdatePostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorProjectLanguageSettingUpdatePost', 'apiV1AdministratorProjectLanguageSettingUpdatePostRequest', apiV1AdministratorProjectLanguageSettingUpdatePostRequest)
+            const localVarPath = `/api/v1/administrator/project/language-setting/update`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorProjectLanguageSettingUpdatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorProjectSlugUpdatePostRequest} apiV1AdministratorProjectSlugUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectSlugUpdatePost: async (apiV1AdministratorProjectSlugUpdatePostRequest: ApiV1AdministratorProjectSlugUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorProjectSlugUpdatePostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorProjectSlugUpdatePost', 'apiV1AdministratorProjectSlugUpdatePostRequest', apiV1AdministratorProjectSlugUpdatePostRequest)
+            const localVarPath = `/api/v1/administrator/project/slug/update`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorProjectSlugUpdatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorProjectUpdatePostRequest} apiV1AdministratorProjectUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectUpdatePost: async (apiV1AdministratorProjectUpdatePostRequest: ApiV1AdministratorProjectUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorProjectUpdatePostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorProjectUpdatePost', 'apiV1AdministratorProjectUpdatePostRequest', apiV1AdministratorProjectUpdatePostRequest)
+            const localVarPath = `/api/v1/administrator/project/update`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorProjectUpdatePostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -8883,12 +9622,12 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          *
-         * @param {ApiV1AdministratorOrganizationDeleteOrganizationPostRequest} apiV1AdministratorOrganizationDeleteOrganizationPostRequest
+         * @param {ApiV1AdministratorOrganizationGetMembersPostRequest} apiV1AdministratorOrganizationGetMembersPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationDeleteOrganizationPostRequest: ApiV1AdministratorOrganizationDeleteOrganizationPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationDeleteOrganizationPostRequest, options);
+        async apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationGetMembersPostRequest: ApiV1AdministratorOrganizationGetMembersPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationGetMembersPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationDeleteOrganizationPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -8898,10 +9637,22 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1AdministratorOrganizationGetAllOrganizationsPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost200Response>> {
+        async apiV1AdministratorOrganizationGetAllOrganizationsPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorOrganizationGetAllOrganizationsPost200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationGetAllOrganizationsPost(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationGetAllOrganizationsPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorOrganizationGetMembersPostRequest} apiV1AdministratorOrganizationGetMembersPostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorOrganizationGetMembersPostRequest: ApiV1AdministratorOrganizationGetMembersPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorOrganizationGetMembersPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorOrganizationGetMembersPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationGetMembersPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -8918,6 +9669,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          *
+         * @param {ApiV1AdministratorOrganizationLocalizationUpdatePostRequest} apiV1AdministratorOrganizationLocalizationUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorOrganizationLocalizationUpdatePost(apiV1AdministratorOrganizationLocalizationUpdatePostRequest: ApiV1AdministratorOrganizationLocalizationUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationClosePost200ResponseOneOf>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationLocalizationUpdatePost(apiV1AdministratorOrganizationLocalizationUpdatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationLocalizationUpdatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         *
          * @param {ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest} apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -8926,6 +9689,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationRemoveUserOrganizationMappingPost(apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationRemoveUserOrganizationMappingPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorOrganizationSlugUpdatePostRequest} apiV1AdministratorOrganizationSlugUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorOrganizationSlugUpdatePost(apiV1AdministratorOrganizationSlugUpdatePostRequest: ApiV1AdministratorOrganizationSlugUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorOrganizationSlugUpdatePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationSlugUpdatePost(apiV1AdministratorOrganizationSlugUpdatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationSlugUpdatePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -8986,6 +9761,77 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorProjectCreatePost(apiV1AdministratorProjectCreatePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorProjectCreatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorProjectDeleteProjectPostRequest} apiV1AdministratorProjectDeleteProjectPostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorProjectDeleteProjectPost(apiV1AdministratorProjectDeleteProjectPostRequest: ApiV1AdministratorProjectDeleteProjectPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorProjectDeleteProjectPost(apiV1AdministratorProjectDeleteProjectPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorProjectDeleteProjectPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest} apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePost(apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest: ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationClosePost200ResponseOneOf>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePost(apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         *
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorProjectGetAllProjectsPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorProjectGetAllProjectsPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorProjectGetAllProjectsPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorProjectGetAllProjectsPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorProjectLanguageSettingUpdatePostRequest} apiV1AdministratorProjectLanguageSettingUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorProjectLanguageSettingUpdatePost(apiV1AdministratorProjectLanguageSettingUpdatePostRequest: ApiV1AdministratorProjectLanguageSettingUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationClosePost200ResponseOneOf>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorProjectLanguageSettingUpdatePost(apiV1AdministratorProjectLanguageSettingUpdatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorProjectLanguageSettingUpdatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorProjectSlugUpdatePostRequest} apiV1AdministratorProjectSlugUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorProjectSlugUpdatePost(apiV1AdministratorProjectSlugUpdatePostRequest: ApiV1AdministratorProjectSlugUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorProjectSlugUpdatePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorProjectSlugUpdatePost(apiV1AdministratorProjectSlugUpdatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorProjectSlugUpdatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorProjectUpdatePostRequest} apiV1AdministratorProjectUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorProjectUpdatePost(apiV1AdministratorProjectUpdatePostRequest: ApiV1AdministratorProjectUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorProjectUpdatePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorProjectUpdatePost(apiV1AdministratorProjectUpdatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorProjectUpdatePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -10040,20 +10886,29 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          *
-         * @param {ApiV1AdministratorOrganizationDeleteOrganizationPostRequest} apiV1AdministratorOrganizationDeleteOrganizationPostRequest
+         * @param {ApiV1AdministratorOrganizationGetMembersPostRequest} apiV1AdministratorOrganizationGetMembersPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationDeleteOrganizationPostRequest: ApiV1AdministratorOrganizationDeleteOrganizationPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationDeleteOrganizationPostRequest, options).then((request) => request(axios, basePath));
+        apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationGetMembersPostRequest: ApiV1AdministratorOrganizationGetMembersPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationGetMembersPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          *
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AdministratorOrganizationGetAllOrganizationsPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost200Response> {
+        apiV1AdministratorOrganizationGetAllOrganizationsPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorOrganizationGetAllOrganizationsPost200Response> {
             return localVarFp.apiV1AdministratorOrganizationGetAllOrganizationsPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorOrganizationGetMembersPostRequest} apiV1AdministratorOrganizationGetMembersPostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorOrganizationGetMembersPostRequest: ApiV1AdministratorOrganizationGetMembersPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorOrganizationGetMembersPost200Response> {
+            return localVarFp.apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorOrganizationGetMembersPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          *
@@ -10066,12 +10921,30 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          *
+         * @param {ApiV1AdministratorOrganizationLocalizationUpdatePostRequest} apiV1AdministratorOrganizationLocalizationUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorOrganizationLocalizationUpdatePost(apiV1AdministratorOrganizationLocalizationUpdatePostRequest: ApiV1AdministratorOrganizationLocalizationUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationClosePost200ResponseOneOf> {
+            return localVarFp.apiV1AdministratorOrganizationLocalizationUpdatePost(apiV1AdministratorOrganizationLocalizationUpdatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         *
          * @param {ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest} apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         apiV1AdministratorOrganizationRemoveUserOrganizationMappingPost(apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest: ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
             return localVarFp.apiV1AdministratorOrganizationRemoveUserOrganizationMappingPost(apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorOrganizationSlugUpdatePostRequest} apiV1AdministratorOrganizationSlugUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorOrganizationSlugUpdatePost(apiV1AdministratorOrganizationSlugUpdatePostRequest: ApiV1AdministratorOrganizationSlugUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorOrganizationSlugUpdatePost200Response> {
+            return localVarFp.apiV1AdministratorOrganizationSlugUpdatePost(apiV1AdministratorOrganizationSlugUpdatePostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          *
@@ -10117,6 +10990,59 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1AdministratorProjectCreatePost(apiV1AdministratorProjectCreatePostRequest: ApiV1AdministratorProjectCreatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorProjectCreatePost200Response> {
             return localVarFp.apiV1AdministratorProjectCreatePost(apiV1AdministratorProjectCreatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorProjectDeleteProjectPostRequest} apiV1AdministratorProjectDeleteProjectPostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectDeleteProjectPost(apiV1AdministratorProjectDeleteProjectPostRequest: ApiV1AdministratorProjectDeleteProjectPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1AdministratorProjectDeleteProjectPost(apiV1AdministratorProjectDeleteProjectPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest} apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePost(apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest: ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationClosePost200ResponseOneOf> {
+            return localVarFp.apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePost(apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         *
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectGetAllProjectsPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorProjectGetAllProjectsPost200Response> {
+            return localVarFp.apiV1AdministratorProjectGetAllProjectsPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorProjectLanguageSettingUpdatePostRequest} apiV1AdministratorProjectLanguageSettingUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectLanguageSettingUpdatePost(apiV1AdministratorProjectLanguageSettingUpdatePostRequest: ApiV1AdministratorProjectLanguageSettingUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationClosePost200ResponseOneOf> {
+            return localVarFp.apiV1AdministratorProjectLanguageSettingUpdatePost(apiV1AdministratorProjectLanguageSettingUpdatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorProjectSlugUpdatePostRequest} apiV1AdministratorProjectSlugUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectSlugUpdatePost(apiV1AdministratorProjectSlugUpdatePostRequest: ApiV1AdministratorProjectSlugUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorProjectSlugUpdatePost200Response> {
+            return localVarFp.apiV1AdministratorProjectSlugUpdatePost(apiV1AdministratorProjectSlugUpdatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         *
+         * @param {ApiV1AdministratorProjectUpdatePostRequest} apiV1AdministratorProjectUpdatePostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectUpdatePost(apiV1AdministratorProjectUpdatePostRequest: ApiV1AdministratorProjectUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorProjectUpdatePost200Response> {
+            return localVarFp.apiV1AdministratorProjectUpdatePost(apiV1AdministratorProjectUpdatePostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          *
@@ -10917,12 +11843,12 @@ export class DefaultApi extends BaseAPI {
 
     /**
      *
-     * @param {ApiV1AdministratorOrganizationDeleteOrganizationPostRequest} apiV1AdministratorOrganizationDeleteOrganizationPostRequest
+     * @param {ApiV1AdministratorOrganizationGetMembersPostRequest} apiV1AdministratorOrganizationGetMembersPostRequest
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationDeleteOrganizationPostRequest: ApiV1AdministratorOrganizationDeleteOrganizationPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationDeleteOrganizationPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationGetMembersPostRequest: ApiV1AdministratorOrganizationGetMembersPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationGetMembersPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -10932,6 +11858,16 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1AdministratorOrganizationGetAllOrganizationsPost(options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationGetAllOrganizationsPost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     *
+     * @param {ApiV1AdministratorOrganizationGetMembersPostRequest} apiV1AdministratorOrganizationGetMembersPostRequest
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorOrganizationGetMembersPostRequest: ApiV1AdministratorOrganizationGetMembersPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorOrganizationGetMembersPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -10946,12 +11882,32 @@ export class DefaultApi extends BaseAPI {
 
     /**
      *
+     * @param {ApiV1AdministratorOrganizationLocalizationUpdatePostRequest} apiV1AdministratorOrganizationLocalizationUpdatePostRequest
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorOrganizationLocalizationUpdatePost(apiV1AdministratorOrganizationLocalizationUpdatePostRequest: ApiV1AdministratorOrganizationLocalizationUpdatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationLocalizationUpdatePost(apiV1AdministratorOrganizationLocalizationUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     *
      * @param {ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest} apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
     public apiV1AdministratorOrganizationRemoveUserOrganizationMappingPost(apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest: ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationRemoveUserOrganizationMappingPost(apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     *
+     * @param {ApiV1AdministratorOrganizationSlugUpdatePostRequest} apiV1AdministratorOrganizationSlugUpdatePostRequest
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorOrganizationSlugUpdatePost(apiV1AdministratorOrganizationSlugUpdatePostRequest: ApiV1AdministratorOrganizationSlugUpdatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationSlugUpdatePost(apiV1AdministratorOrganizationSlugUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -11002,6 +11958,65 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1AdministratorProjectCreatePost(apiV1AdministratorProjectCreatePostRequest: ApiV1AdministratorProjectCreatePostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1AdministratorProjectCreatePost(apiV1AdministratorProjectCreatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     *
+     * @param {ApiV1AdministratorProjectDeleteProjectPostRequest} apiV1AdministratorProjectDeleteProjectPostRequest
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorProjectDeleteProjectPost(apiV1AdministratorProjectDeleteProjectPostRequest: ApiV1AdministratorProjectDeleteProjectPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorProjectDeleteProjectPost(apiV1AdministratorProjectDeleteProjectPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     *
+     * @param {ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest} apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePost(apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest: ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePost(apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     *
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorProjectGetAllProjectsPost(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorProjectGetAllProjectsPost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     *
+     * @param {ApiV1AdministratorProjectLanguageSettingUpdatePostRequest} apiV1AdministratorProjectLanguageSettingUpdatePostRequest
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorProjectLanguageSettingUpdatePost(apiV1AdministratorProjectLanguageSettingUpdatePostRequest: ApiV1AdministratorProjectLanguageSettingUpdatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorProjectLanguageSettingUpdatePost(apiV1AdministratorProjectLanguageSettingUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     *
+     * @param {ApiV1AdministratorProjectSlugUpdatePostRequest} apiV1AdministratorProjectSlugUpdatePostRequest
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorProjectSlugUpdatePost(apiV1AdministratorProjectSlugUpdatePostRequest: ApiV1AdministratorProjectSlugUpdatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorProjectSlugUpdatePost(apiV1AdministratorProjectSlugUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     *
+     * @param {ApiV1AdministratorProjectUpdatePostRequest} apiV1AdministratorProjectUpdatePostRequest
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorProjectUpdatePost(apiV1AdministratorProjectUpdatePostRequest: ApiV1AdministratorProjectUpdatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorProjectUpdatePost(apiV1AdministratorProjectUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

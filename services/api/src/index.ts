@@ -173,14 +173,20 @@ import {
     createOrganization,
     archiveOrganization,
     getAllOrganizations,
+    getOrganizationMembers,
     getOrganizationsByUsername,
     removeUserOrganizationMapping,
     updateOrganizationLocalization,
+    updateOrganizationSlug,
 } from "./service/administrator/organization.js";
 import {
+    archiveProject,
     createProject,
+    getAllProjects,
+    updateProject,
     updateProjectExternalOrganizationLocalization,
     updateProjectLanguageSetting,
+    updateProjectSlug,
 } from "./service/administrator/project.js";
 import type {
     ConversationMultilingualSetting,
@@ -3885,6 +3891,20 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
+        url: `/api/${apiVersion}/administrator/project/get-all-projects`,
+        schema: {
+            response: {
+                200: Dto.getAllProjectsResponse,
+            },
+        },
+        handler: async (request) => {
+            await requireSiteOrgAdmin(request);
+            return await getAllProjects({ db });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
         url: `/api/${apiVersion}/administrator/project/create`,
         schema: {
             body: Dto.createProjectRequest,
@@ -3894,11 +3914,24 @@ server.after(() => {
         },
         handler: async (request) => {
             await requireSiteOrgAdmin(request);
-            return await createProject({
+            const result = await createProject({
                 db,
                 data: request.body,
                 googleCloudCredentials,
             });
+            if (result.success && request.body.translationSetting.dynamicTranslationEnabled) {
+                await contentTranslationService.scheduleEagerContentTranslationForProject(
+                    {
+                        db,
+                        valkey: queueValkeyRef.current,
+                        queueScript: contentTranslationQueueScript,
+                        projectId: result.projectId,
+                        now: new Date(),
+                        log,
+                    },
+                );
+            }
+            return result;
         },
     });
 
@@ -3931,6 +3964,72 @@ server.after(() => {
                 );
             }
             return { success: true as const };
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/project/slug/update`,
+        schema: {
+            body: Dto.updateProjectSlugRequest,
+            response: {
+                200: Dto.updateProjectSlugResponse,
+            },
+        },
+        handler: async (request) => {
+            await requireSiteOrgAdmin(request);
+            return await updateProjectSlug({
+                db,
+                currentProjectSlug: request.body.currentProjectSlug,
+                newProjectSlug: request.body.newProjectSlug,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/project/update`,
+        schema: {
+            body: Dto.updateProjectRequest,
+            response: {
+                200: Dto.updateProjectResponse,
+            },
+        },
+        handler: async (request) => {
+            await requireSiteOrgAdmin(request);
+            const result = await updateProject({
+                db,
+                data: request.body,
+                googleCloudCredentials,
+            });
+            if (result.success && request.body.translationSetting.dynamicTranslationEnabled) {
+                await contentTranslationService.scheduleEagerContentTranslationForProject(
+                    {
+                        db,
+                        valkey: queueValkeyRef.current,
+                        queueScript: contentTranslationQueueScript,
+                        projectId: result.projectId,
+                        now: new Date(),
+                        log,
+                    },
+                );
+            }
+            return result;
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/project/delete-project`,
+        schema: {
+            body: Dto.deleteProjectRequest,
+        },
+        handler: async (request) => {
+            await requireSiteOrgAdmin(request);
+            await archiveProject({
+                db,
+                projectSlug: request.body.projectSlug,
+            });
         },
     });
 
@@ -3993,7 +4092,7 @@ server.after(() => {
         method: "POST",
         url: `/api/${apiVersion}/administrator/organization/remove-user-organization-mapping`,
         schema: {
-            body: Dto.addUserOrganizationMappingRequest,
+            body: Dto.removeUserOrganizationMappingRequest,
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
@@ -4061,6 +4160,44 @@ server.after(() => {
                 db: db,
                 username: request.body.username,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/get-members`,
+        schema: {
+            body: Dto.getOrganizationMembersRequest,
+            response: {
+                200: Dto.getOrganizationMembersResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isRegistered: true,
+                        isLoggedIn: true,
+                    },
+                },
+            );
+            const isOrgAdmin = await isSiteOrgAdminAccount({
+                db: db,
+                userId: deviceStatus.userId,
+            });
+
+            if (!isOrgAdmin) {
+                throw server.httpErrors.unauthorized(
+                    "User is not a site org admin",
+                );
+            }
+
+            return await getOrganizationMembers({
+                db,
+                organizationName: request.body.organizationName,
             });
         },
     });
@@ -4157,6 +4294,25 @@ server.after(() => {
             return await updateOrganizationLocalization({
                 db,
                 data: request.body,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/slug/update`,
+        schema: {
+            body: Dto.updateOrganizationSlugRequest,
+            response: {
+                200: Dto.updateOrganizationSlugResponse,
+            },
+        },
+        handler: async (request) => {
+            await requireSiteOrgAdmin(request);
+            return await updateOrganizationSlug({
+                db,
+                currentOrganizationSlug: request.body.currentOrganizationSlug,
+                newOrganizationSlug: request.body.newOrganizationSlug,
             });
         },
     });

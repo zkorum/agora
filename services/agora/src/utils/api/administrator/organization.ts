@@ -3,7 +3,9 @@ import {
   type AdminOrganizationProperties,
   type CreateOrganizationRequest,
   Dto,
+  type OrganizationMember,
   type UpdateOrganizationLocalizationRequest,
+  type UpdateOrganizationSlugRequest,
 } from "src/shared/types/dto";
 import type { OrganizationProperties } from "src/shared/types/zod";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
@@ -15,6 +17,19 @@ import {
   type AdministratorOrganizationApiTranslations,
   administratorOrganizationApiTranslations,
 } from "./organization.i18n";
+
+type UpdateOrganizationSlugFailureReason = Exclude<
+  Awaited<ReturnType<typeof Dto.updateOrganizationSlugResponse.parse>>,
+  { success: true }
+>["reason"];
+
+const updateSlugFailureTranslationKeys: Record<
+  UpdateOrganizationSlugFailureReason,
+  keyof AdministratorOrganizationApiTranslations
+> = {
+  organization_not_found: "organizationNotFound",
+  organization_slug_already_exists: "organizationSlugAlreadyExists",
+};
 
 export function useBackendAdministratorOrganizationApi() {
   const { buildEncodedUcan } = useCommonApi();
@@ -57,6 +72,26 @@ export function useBackendAdministratorOrganizationApi() {
     } catch (e) {
       console.error(e);
       showNotifyMessage(t("failedToFetchOrganizations"));
+      return [];
+    }
+  }
+
+  async function getOrganizationMembers({
+    organizationName,
+  }: {
+    organizationName: string;
+  }): Promise<OrganizationMember[]> {
+    try {
+      const params = Dto.getOrganizationMembersRequest.parse({ organizationName });
+      const response = await postWithUcan({
+        url: "/api/v1/administrator/organization/get-members",
+        data: params,
+        responseSchema: Dto.getOrganizationMembersResponse,
+      });
+      return response?.memberList ?? [];
+    } catch (e) {
+      console.error(e);
+      showNotifyMessage(t("failedToFetchOrganizationMembers"));
       return [];
     }
   }
@@ -189,13 +224,44 @@ export function useBackendAdministratorOrganizationApi() {
     }
   }
 
+  async function updateOrganizationSlug(
+    data: UpdateOrganizationSlugRequest
+  ): Promise<boolean> {
+    try {
+      const params = Dto.updateOrganizationSlugRequest.parse(data);
+      const response = await postWithUcan({
+        url: "/api/v1/administrator/organization/slug/update",
+        data: params,
+        responseSchema: Dto.updateOrganizationSlugResponse,
+      });
+      if (response?.success) {
+        showNotifyMessage(t("updatedOrganizationSlug"));
+        return true;
+      }
+
+      if (response !== undefined) {
+        showNotifyMessage(t(updateSlugFailureTranslationKeys[response.reason]));
+        return false;
+      }
+
+      showNotifyMessage(t("failedToUpdateOrganizationSlug"));
+      return false;
+    } catch (e) {
+      console.error(e);
+      showNotifyMessage(t("failedToUpdateOrganizationSlug"));
+      return false;
+    }
+  }
+
   return {
     archiveOrganization,
     createOrganization,
     updateOrganizationLocalization,
+    updateOrganizationSlug,
     addUserOrganizationMapping,
     removeUserOrganizationMapping,
     getAllOrganizations,
+    getOrganizationMembers,
     getOrganizationsByUsername,
   };
 }

@@ -345,6 +345,20 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dev/test-components/ConversationLanguageSettingDialogTest': RouteRecordInfo<
+      '/dev/test-components/ConversationLanguageSettingDialogTest',
+      '/dev/test-components/ConversationLanguageSettingDialogTest',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/dev/test-components/CreateConversationProjectLanguageTest': RouteRecordInfo<
+      '/dev/test-components/CreateConversationProjectLanguageTest',
+      '/dev/test-components/CreateConversationProjectLanguageTest',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/dev/test-components/EmbeddedBrowserWarningTest': RouteRecordInfo<
       '/dev/test-components/EmbeddedBrowserWarningTest',
       '/dev/test-components/EmbeddedBrowserWarningTest',
@@ -927,6 +941,18 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dev/test-components/CheckpointTimelineTest.vue': {
       routes:
         | '/dev/test-components/CheckpointTimelineTest'
+      views:
+        | never
+    }
+    'src/pages/dev/test-components/ConversationLanguageSettingDialogTest.vue': {
+      routes:
+        | '/dev/test-components/ConversationLanguageSettingDialogTest'
+      views:
+        | never
+    }
+    'src/pages/dev/test-components/CreateConversationProjectLanguageTest.vue': {
+      routes:
+        | '/dev/test-components/CreateConversationProjectLanguageTest'
       views:
         | never
     }

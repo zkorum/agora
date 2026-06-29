@@ -92,7 +92,14 @@ export const zodConversationLanguageSettingInput = z.discriminatedUnion(
 export const zodProjectTranslationLanguageSetting = z
     .object({
         dynamicTranslationEnabled: z.boolean(),
-        additionalLanguageCodes: z.array(ZodSupportedDisplayLanguageCodes).max(2),
+        additionalLanguageCodes: z
+            .array(ZodSupportedDisplayLanguageCodes)
+            .max(2)
+            .refine(
+                (languageCodes) =>
+                    new Set(languageCodes).size === languageCodes.length,
+                "Additional languages must be unique",
+            ),
     })
     .strict();
 export const zodConversationLanguageSettingOutput = z
@@ -110,7 +117,12 @@ export const zodConversationMultilingualSetting = z
     .object({
         additionalLanguageCodes: z
             .array(ZodSupportedDisplayLanguageCodes)
-            .max(2),
+            .max(2)
+            .refine(
+                (languageCodes) =>
+                    new Set(languageCodes).size === languageCodes.length,
+                "Additional languages must be unique",
+            ),
         dynamicTranslationEnabled: z.boolean(),
     })
     .strict();
@@ -180,6 +192,10 @@ export const zodExportFileType = z.enum([
     "survey_full_aggregates",
 ]);
 export const zodExportFileAudience = z.enum(["redacted", "owner", "requester"]);
+const zodHttpUrl = z.url().refine((value) => {
+    const protocol = new URL(value).protocol;
+    return protocol === "http:" || protocol === "https:";
+}, "URL must use http or https");
 export const zodExportFileInfo = z
     .object({
         fileType: zodExportFileType,
@@ -203,9 +219,7 @@ export const zodOrganization = z
         name: z.string(),
         slug: zodOrganizationSlug,
         imageUrl: z.string().optional(),
-        websiteUrl: z
-            .url({ message: "Invalid organization website url" })
-            .optional(),
+        websiteUrl: zodHttpUrl.optional(),
         description: z.string(),
     })
     .strict();

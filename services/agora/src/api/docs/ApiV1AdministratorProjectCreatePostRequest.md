@@ -13,8 +13,9 @@ Name | Type | Description | Notes
 **bodyPlainText** | **string** |  | [optional] [default to undefined]
 **heroImagePath** | **string** |  | [optional] [default to undefined]
 **heroImageIsFullPath** | **boolean** |  | [optional] [default to false]
+**translationSetting** | [**ApiV1AdministratorProjectCreatePostRequestTranslationSetting**](ApiV1AdministratorProjectCreatePostRequestTranslationSetting.md) |  | [optional] [default to undefined]
 **attributions** | [**Array&lt;ApiV1AdministratorProjectCreatePostRequestAttributionsInner&gt;**](ApiV1AdministratorProjectCreatePostRequestAttributionsInner.md) |  | [optional] [default to undefined]
-**contact** | [**ApiV1AdministratorProjectCreatePostRequestContact**](ApiV1AdministratorProjectCreatePostRequestContact.md) |  | [optional] [default to undefined]
+**contact** | [**ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact**](ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact.md) |  | [optional] [default to undefined]
 
 ## Example
 
@@ -30,6 +31,7 @@ const instance: ApiV1AdministratorProjectCreatePostRequest = {
     bodyPlainText,
     heroImagePath,
     heroImageIsFullPath,
+    translationSetting,
     attributions,
     contact,
 };

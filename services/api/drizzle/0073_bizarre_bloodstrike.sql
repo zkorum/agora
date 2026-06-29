@@ -116,16 +116,6 @@ CREATE TABLE "project_organization_attribution" (
 	CONSTRAINT "project_organization_attribution_source_xor_check" CHECK (num_nonnulls("project_organization_attribution"."organization_id", "project_organization_attribution"."external_organization_id") = 1)
 );
 --> statement-breakpoint
-CREATE TABLE "project_participant_display_language" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"project_id" integer NOT NULL,
-	"user_id" uuid NOT NULL,
-	"language_code" "display_language_code" NOT NULL,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "project_participant_display_language_unique" UNIQUE("project_id","user_id")
-);
---> statement-breakpoint
 CREATE TABLE "project_translation_target_language" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "project_translation_target_language_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"project_id" integer NOT NULL,
@@ -135,8 +125,8 @@ CREATE TABLE "project_translation_target_language" (
 );
 --> statement-breakpoint
 ALTER TABLE "project" RENAME COLUMN "display_name" TO "title";--> statement-breakpoint
-ALTER TABLE "project" ALTER COLUMN "title" TYPE varchar(140);--> statement-breakpoint
 ALTER TABLE "organization" DROP CONSTRAINT "organization_slug_unique";--> statement-breakpoint
+ALTER TABLE "project" DROP CONSTRAINT "project_slug_unique";--> statement-breakpoint
 ALTER TABLE "content_translation_work" ALTER COLUMN "conversation_id" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "conversation_translation_setting" ALTER COLUMN "conversation_id" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "conversation_translation_target_language" ALTER COLUMN "translation_setting_id" DROP NOT NULL;--> statement-breakpoint
@@ -148,6 +138,7 @@ ALTER TABLE "organization" ADD COLUMN "default_language_code" "display_language_
 ALTER TABLE "organization" ADD COLUMN "deleted_at" timestamp (0);--> statement-breakpoint
 ALTER TABLE "project" ADD COLUMN "current_content_id" integer;--> statement-breakpoint
 ALTER TABLE "project" ADD COLUMN "dynamic_translation_enabled" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "project" ADD COLUMN "deleted_at" timestamp (0);--> statement-breakpoint
 ALTER TABLE "organization_localization" ADD CONSTRAINT "organization_localization_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "project_contact" ADD CONSTRAINT "project_contact_project_id_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."project"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "project_contact" ADD CONSTRAINT "project_contact_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -160,18 +151,15 @@ ALTER TABLE "project_language_setting" ADD CONSTRAINT "project_language_setting_
 ALTER TABLE "project_organization_attribution" ADD CONSTRAINT "project_organization_attribution_project_id_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."project"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "project_organization_attribution" ADD CONSTRAINT "project_organization_attribution_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "project_organization_attribution" ADD CONSTRAINT "project_organization_attribution_external_project_fk" FOREIGN KEY ("project_id","external_organization_id") REFERENCES "public"."project_external_organization"("project_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "project_participant_display_language" ADD CONSTRAINT "project_participant_display_language_project_id_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."project"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "project_participant_display_language" ADD CONSTRAINT "project_participant_display_language_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "project_translation_target_language" ADD CONSTRAINT "project_translation_target_language_project_id_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."project"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "project_contact_organization_idx" ON "project_contact" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "project_external_organization_project_idx" ON "project_external_organization" USING btree ("project_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "project_organization_attribution_real_unique" ON "project_organization_attribution" USING btree ("project_id","role","organization_id") WHERE "project_organization_attribution"."organization_id" is not null;--> statement-breakpoint
 CREATE UNIQUE INDEX "project_organization_attribution_external_unique" ON "project_organization_attribution" USING btree ("project_id","role","external_organization_id") WHERE "project_organization_attribution"."external_organization_id" is not null;--> statement-breakpoint
-CREATE INDEX "project_organization_attribution_project_idx" ON "project_organization_attribution" USING btree ("project_id");--> statement-breakpoint
 CREATE INDEX "project_organization_attribution_organization_idx" ON "project_organization_attribution" USING btree ("organization_id");--> statement-breakpoint
 ALTER TABLE "content_translation_work" ADD CONSTRAINT "content_translation_work_project_content_id_project_content_id_fk" FOREIGN KEY ("project_content_id") REFERENCES "public"."project_content"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversation_translation_target_language" ADD CONSTRAINT "conversation_translation_target_language_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "project" ADD CONSTRAINT "project_current_content_id_project_content_id_fk" FOREIGN KEY ("current_content_id") REFERENCES "public"."project_content"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "organization_active_slug_unique" ON "organization" USING btree ("slug") WHERE "organization"."deleted_at" IS NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "project_active_slug_unique" ON "project" USING btree ("slug") WHERE "project"."deleted_at" IS NULL;--> statement-breakpoint
 ALTER TABLE "conversation_translation_target_language" ADD CONSTRAINT "conversation_translation_target_language_conversation_unique" UNIQUE("conversation_id","language_code");--> statement-breakpoint
 ALTER TABLE "project" ADD CONSTRAINT "project_current_content_id_unique" UNIQUE("current_content_id");--> statement-breakpoint

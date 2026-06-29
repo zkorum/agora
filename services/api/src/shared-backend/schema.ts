@@ -1060,38 +1060,6 @@ export const userDisplayLanguageTable = pgTable(
     ],
 );
 
-export const projectParticipantDisplayLanguageTable = pgTable(
-    "project_participant_display_language",
-    {
-        id: serial("id").primaryKey(),
-        projectId: integer("project_id")
-            .references(() => projectTable.id)
-            .notNull(),
-        userId: uuid("user_id")
-            .references(() => userTable.id, { onDelete: "cascade" })
-            .notNull(),
-        languageCode: displayLanguageCodeEnum("language_code").notNull(),
-        createdAt: timestamp("created_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-        updatedAt: timestamp("updated_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-    },
-    (table) => [
-        unique("project_participant_display_language_unique").on(
-            table.projectId,
-            table.userId,
-        ),
-    ],
-);
-
 /** @service import-worker */
 export const organizationTable = pgTable(
     "organization",
@@ -1181,37 +1149,44 @@ export const organizationLocalizationTable = pgTable(
 );
 
 /** @service scoring-worker, api, math-updater, import-worker, content-translation-worker */
-export const projectTable = pgTable("project", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    slug: varchar("slug", { length: MAX_LENGTH_NAME_CREATOR })
-        .notNull()
-        .unique(),
-    title: varchar("title", { length: MAX_LENGTH_TITLE }).notNull(),
-    directoryVisibility: directoryVisibilityEnum("directory_visibility").notNull(),
-    autoProvisionedForOrganizationId: integer(
-        "auto_provisioned_for_organization_id",
-    )
-        .references(() => organizationTable.id)
-        .unique(),
-    currentContentId: integer("current_content_id")
-        .references((): AnyPgColumn => projectContentTable.id)
-        .unique(),
-    dynamicTranslationEnabled: boolean("dynamic_translation_enabled")
-        .notNull()
-        .default(false),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const projectTable = pgTable(
+    "project",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        slug: varchar("slug", { length: MAX_LENGTH_NAME_CREATOR }).notNull(),
+        title: varchar("title", { length: MAX_LENGTH_TITLE }).notNull(),
+        directoryVisibility: directoryVisibilityEnum("directory_visibility").notNull(),
+        autoProvisionedForOrganizationId: integer(
+            "auto_provisioned_for_organization_id",
+        )
+            .references(() => organizationTable.id)
+            .unique(),
+        currentContentId: integer("current_content_id")
+            .references((): AnyPgColumn => projectContentTable.id)
+            .unique(),
+        dynamicTranslationEnabled: boolean("dynamic_translation_enabled")
+            .notNull()
+            .default(false),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+    },
+    (table) => [
+        uniqueIndex("project_active_slug_unique")
+            .on(table.slug)
+            .where(sql`${table.deletedAt} IS NULL`),
+    ],
+);
 
 /** @service api, content-translation-worker */
 export const projectContentTable = pgTable(
@@ -1353,7 +1328,6 @@ export const projectExternalOrganizationTable = pgTable(
             table.projectId,
             table.id,
         ),
-        index("project_external_organization_project_idx").on(table.projectId),
     ],
 );
 
@@ -1441,7 +1415,6 @@ export const projectOrganizationAttributionTable = pgTable(
             ],
             name: "project_organization_attribution_external_project_fk",
         }),
-        index("project_organization_attribution_project_idx").on(table.projectId),
         index("project_organization_attribution_organization_idx").on(
             table.organizationId,
         ),

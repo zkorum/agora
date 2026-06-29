@@ -4,22 +4,35 @@
   </Teleport>
 
   <div class="container">
-    <ZKCard padding="1rem" class="cardBackground">
+    <q-tabs
+      v-model="activeTab"
+      class="adminTabs"
+      align="justify"
+      active-color="primary"
+      indicator-color="primary"
+    >
+      <q-tab name="create" :label="t('createTab')" />
+      <q-tab name="manage" :label="t('manageTab')" />
+    </q-tabs>
+
+    <ZKCard v-if="activeTab === 'create'" padding="1rem" class="cardBackground">
       <OrganizationCreatePanel @created="organizationCreated" />
     </ZKCard>
 
-    <ZKCard padding="1rem" class="cardBackground">
+    <template v-else>
       <OrganizationManagePanel
         v-model:selected-organization-slug="selectedOrganizationSlug"
         :organization-list="organizationList"
         @archived="refreshOrganizations"
         @saved="refreshOrganizations"
       />
-    </ZKCard>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
+import OrganizationCreatePanel from "src/components/administrator/organization/OrganizationCreatePanel.vue";
+import OrganizationManagePanel from "src/components/administrator/organization/OrganizationManagePanel.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
@@ -32,8 +45,6 @@ import {
   type AdministratorOrganizationTranslations,
   administratorOrganizationTranslations,
 } from "./index.i18n";
-import OrganizationCreatePanel from "./OrganizationCreatePanel.vue";
-import OrganizationManagePanel from "./OrganizationManagePanel.vue";
 
 const { isActive } = usePageLayout({ reducedWidth: true });
 const { t } = useComponentI18n<AdministratorOrganizationTranslations>(
@@ -43,6 +54,7 @@ const { getAllOrganizations } = useBackendAdministratorOrganizationApi();
 
 const organizationList = ref<AdminOrganizationProperties[]>([]);
 const selectedOrganizationSlug = ref<string | undefined>(undefined);
+const activeTab = ref<"create" | "manage">("create");
 
 onMounted(async () => {
   await refreshOrganizations();
@@ -63,6 +75,7 @@ async function refreshOrganizations(): Promise<void> {
 async function organizationCreated(organizationSlug: string): Promise<void> {
   await refreshOrganizations();
   selectedOrganizationSlug.value = organizationSlug;
+  activeTab.value = "manage";
 }
 </script>
 
@@ -75,5 +88,10 @@ async function organizationCreated(organizationSlug: string): Promise<void> {
 
 .cardBackground {
   background-color: white;
+}
+
+.adminTabs {
+  border-radius: 1rem;
+  background: white;
 }
 </style>

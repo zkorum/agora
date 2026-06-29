@@ -11,8 +11,6 @@ export interface NewConversationControlBarTranslations {
   aiOff: string;
   recommendedDefault: string;
   groupsLabel: string;
-  languageAuto: string;
-  languageManual: string;
   languagesLabel: string;
   languagePrimaryAuto: string;
   languageTranslateSuffix: string;
@@ -43,8 +41,6 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM off",
     recommendedDefault: "Groups: Auto",
     groupsLabel: "{count} groups",
-    languageAuto: "Language: Auto",
-    languageManual: "Language: {languageCode}",
     languagesLabel:
       "Languages: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
     languagePrimaryAuto: "Auto",
@@ -71,8 +67,6 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM معطّل",
     recommendedDefault: "المجموعات: تلقائي",
     groupsLabel: "{count} مجموعات",
-    languageAuto: "اللغة: تلقائي",
-    languageManual: "اللغة: {languageCode}",
     languagesLabel:
       "اللغات: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
     languagePrimaryAuto: "تلقائي",
@@ -99,8 +93,6 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM desactivado",
     recommendedDefault: "Grupos: Auto",
     groupsLabel: "{count} grupos",
-    languageAuto: "Idioma: Auto",
-    languageManual: "Idioma: {languageCode}",
     languagesLabel:
       "Idiomas: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
     languagePrimaryAuto: "Auto",
@@ -127,8 +119,6 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM غیرفعال",
     recommendedDefault: "گروه‌ها: خودکار",
     groupsLabel: "{count} گروه",
-    languageAuto: "زبان: خودکار",
-    languageManual: "زبان: {languageCode}",
     languagesLabel:
       "زبان‌ها: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
     languagePrimaryAuto: "خودکار",
@@ -155,8 +145,6 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM désactivé",
     recommendedDefault: "Groupes : auto",
     groupsLabel: "{count} groupes",
-    languageAuto: "Langue : auto",
-    languageManual: "Langue : {languageCode}",
     languagesLabel:
       "Langues : {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
     languagePrimaryAuto: "auto",
@@ -183,8 +171,6 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM 关闭",
     recommendedDefault: "组：自动",
     groupsLabel: "{count} 个组",
-    languageAuto: "语言：自动",
-    languageManual: "语言：{languageCode}",
     languagesLabel:
       "语言：{primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
     languagePrimaryAuto: "自动",
@@ -211,8 +197,6 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM 關閉",
     recommendedDefault: "群組：自動",
     groupsLabel: "{count} 個群組",
-    languageAuto: "語言：自動",
-    languageManual: "語言：{languageCode}",
     languagesLabel:
       "語言：{primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
     languagePrimaryAuto: "自動",
@@ -239,8 +223,6 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM כבוי",
     recommendedDefault: "קבוצות: אוטומטי",
     groupsLabel: "{count} קבוצות",
-    languageAuto: "שפה: אוטומטי",
-    languageManual: "שפה: {languageCode}",
     languagesLabel:
       "שפות: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
     languagePrimaryAuto: "אוטומטי",
@@ -267,8 +249,6 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM オフ",
     recommendedDefault: "グループ: 自動",
     groupsLabel: "{count} グループ",
-    languageAuto: "言語: 自動",
-    languageManual: "言語: {languageCode}",
     languagesLabel:
       "言語: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
     languagePrimaryAuto: "自動",
@@ -295,8 +275,6 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM өчүрүлгөн",
     recommendedDefault: "Топтор: авто",
     groupsLabel: "{count} groups",
-    languageAuto: "Тил: автоматтык",
-    languageManual: "Тил: {languageCode}",
     languagesLabel:
       "Тилдер: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
     languagePrimaryAuto: "авто",
@@ -323,8 +301,6 @@ export const newConversationControlBarTranslations: Record<
     aiOff: "LLM выключена",
     recommendedDefault: "Группы: авто",
     groupsLabel: "{count} групп",
-    languageAuto: "Язык: авто",
-    languageManual: "Язык: {languageCode}",
     languagesLabel:
       "Языки: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
     languagePrimaryAuto: "авто",

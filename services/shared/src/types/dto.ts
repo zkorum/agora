@@ -225,14 +225,28 @@ const zodConversationContentRequestMode = z.enum([
 ]);
 const zodProjectTitle = z.string().trim().min(1).max(MAX_LENGTH_TITLE);
 const zodOptionalNonEmptyText = z.string().trim().min(1).optional();
+const zodHttpUrl = z.url().refine((value) => {
+    const protocol = new URL(value).protocol;
+    return protocol === "http:" || protocol === "https:";
+}, "URL must use http or https");
 const zodOrganizationLocalization = z
     .object({
         languageCode: ZodSupportedDisplayLanguageCodes,
         displayName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
         description: z.string().trim().max(MAX_LENGTH_DESCRIPTION_CREATOR),
-        websiteUrl: z.url().optional(),
+        websiteUrl: zodHttpUrl.optional(),
         imagePath: zodOptionalNonEmptyText,
         isFullImagePath: z.boolean(),
+    })
+    .strict();
+const zodProjectExternalOrganizationLocalizationInput = z
+    .object({
+        languageCode: ZodSupportedDisplayLanguageCodes,
+        displayName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
+        description: z.string().trim().max(MAX_LENGTH_DESCRIPTION_CREATOR),
+        websiteUrl: zodHttpUrl.optional(),
+        imagePath: zodOptionalNonEmptyText,
+        isFullImagePath: z.boolean().default(false),
     })
     .strict();
 const zodAdminOrganization = zodOrganization
@@ -247,6 +261,37 @@ const zodCreateProjectFailureReason = z.enum([
     "project_slug_already_exists",
     "project_conflict",
 ]);
+const zodUpdateOrganizationSlugFailureReason = z.enum([
+    "organization_not_found",
+    "organization_slug_already_exists",
+]);
+const zodUpdateProjectSlugFailureReason = z.enum([
+    "project_not_found",
+    "project_slug_already_exists",
+]);
+const zodUpdateProjectFailureReason = z.enum([
+    "project_not_found",
+    "unknown_organization_slug",
+    "organization_not_listed",
+    "project_slug_already_exists",
+    "project_conflict",
+]);
+const zodAdminProject = z
+    .object({
+        projectSlug: zodProjectSlug,
+        projectTitle: zodProjectTitle,
+        ownerOrganizationSlugs: z.array(zodOrganizationSlug).min(1),
+        subtitle: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
+        body: zodConversationBodyInput,
+        bodyPlainText: zodConversationBodyPlainTextInput.optional(),
+        heroImagePath: zodOptionalNonEmptyText,
+        heroImageIsFullPath: z.boolean(),
+        dynamicTranslationEnabled: z.boolean(),
+        additionalLanguageCodes: z.array(ZodSupportedDisplayLanguageCodes).max(2),
+        attributions: z.array(z.lazy(() => Dto.createProjectAttributionRequest)),
+        contact: z.lazy(() => Dto.createProjectContactRequest).optional(),
+    })
+    .strict();
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Dto {
@@ -1228,7 +1273,7 @@ export class Dto {
             defaultLanguageCode: ZodSupportedDisplayLanguageCodes,
             imagePath: zodOptionalNonEmptyText,
             isFullImagePath: z.boolean(),
-            websiteUrl: z.url().optional(),
+            websiteUrl: zodHttpUrl.optional(),
             description: z.string().trim().max(MAX_LENGTH_DESCRIPTION_CREATOR),
         })
         .strict();
@@ -1238,7 +1283,7 @@ export class Dto {
             languageCode: ZodSupportedDisplayLanguageCodes,
             displayName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
             description: z.string().trim().max(MAX_LENGTH_DESCRIPTION_CREATOR),
-            websiteUrl: z.url().optional(),
+            websiteUrl: zodHttpUrl.optional(),
             imagePath: zodOptionalNonEmptyText,
             isFullImagePath: z.boolean().default(false),
             setAsDefault: z.boolean().default(false),
@@ -1247,6 +1292,21 @@ export class Dto {
     static updateOrganizationLocalizationResponse = z
         .object({ success: z.literal(true) })
         .strict();
+    static updateOrganizationSlugRequest = z
+        .object({
+            currentOrganizationSlug: zodOrganizationSlug,
+            newOrganizationSlug: zodOrganizationSlug,
+        })
+        .strict();
+    static updateOrganizationSlugResponse = z.discriminatedUnion("success", [
+        z.object({ success: z.literal(true) }).strict(),
+        z
+            .object({
+                success: z.literal(false),
+                reason: zodUpdateOrganizationSlugFailureReason,
+            })
+            .strict(),
+    ]);
     static deleteOrganizationRequest = z
         .object({
             organizationName: zodOrganizationSlug,
@@ -1265,6 +1325,21 @@ export class Dto {
     static getAllOrganizationsResponse = z
         .object({
             organizationList: z.array(zodAdminOrganization),
+        })
+        .strict();
+    static getOrganizationMembersRequest = z
+        .object({
+            organizationName: zodOrganizationSlug,
+        })
+        .strict();
+    static organizationMember = z
+        .object({
+            username: zodUsername,
+        })
+        .strict();
+    static getOrganizationMembersResponse = z
+        .object({
+            memberList: z.array(Dto.organizationMember),
         })
         .strict();
     static addUserOrganizationMappingRequest = z
@@ -1301,7 +1376,10 @@ export class Dto {
                     .optional(),
                 imagePath: zodOptionalNonEmptyText,
                 isFullImagePath: z.boolean().default(false),
-                websiteUrl: z.url().optional(),
+                websiteUrl: zodHttpUrl.optional(),
+                additionalLocalizations: z
+                    .array(zodProjectExternalOrganizationLocalizationInput)
+                    .default([]),
             })
             .strict(),
     ]);
@@ -1317,7 +1395,6 @@ export class Dto {
         .object({
             projectSlug: zodProjectSlug,
             projectTitle: zodProjectTitle,
-            defaultLanguageCode: ZodSupportedDisplayLanguageCodes,
             ownerOrganizationSlugs: z
                 .array(zodOrganizationSlug)
                 .min(1)
@@ -1330,6 +1407,10 @@ export class Dto {
             bodyPlainText: zodConversationBodyPlainTextInput.optional(),
             heroImagePath: zodOptionalNonEmptyText,
             heroImageIsFullPath: z.boolean().default(false),
+            translationSetting: zodProjectTranslationLanguageSetting.default({
+                dynamicTranslationEnabled: false,
+                additionalLanguageCodes: [],
+            }),
             attributions: z.array(Dto.createProjectAttributionRequest).default([]),
             contact: Dto.createProjectContactRequest.optional(),
         })
@@ -1343,13 +1424,54 @@ export class Dto {
     static updateProjectLanguageSettingResponse = z
         .object({ success: z.literal(true) })
         .strict();
+    static updateProjectSlugRequest = z
+        .object({
+            currentProjectSlug: zodProjectSlug,
+            newProjectSlug: zodProjectSlug,
+        })
+        .strict();
+    static updateProjectSlugResponse = z.discriminatedUnion("success", [
+        z.object({ success: z.literal(true) }).strict(),
+        z
+            .object({
+                success: z.literal(false),
+                reason: zodUpdateProjectSlugFailureReason,
+            })
+            .strict(),
+    ]);
+    static deleteProjectRequest = z
+        .object({
+            projectSlug: zodProjectSlug,
+        })
+        .strict();
+    static updateProjectRequest = Dto.createProjectRequest
+        .extend({
+            currentProjectSlug: zodProjectSlug,
+        })
+        .strict();
+    static updateProjectResponse = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+                projectId: z.number().int().positive(),
+                projectSlug: zodProjectSlug,
+            })
+            .strict(),
+        z
+            .object({
+                success: z.literal(false),
+                reason: zodUpdateProjectFailureReason,
+                organizationSlugs: z.array(zodOrganizationSlug).optional(),
+            })
+            .strict(),
+    ]);
     static updateProjectExternalOrganizationLocalizationRequest = z
         .object({
             externalOrganizationId: z.number().int().positive(),
             languageCode: ZodSupportedDisplayLanguageCodes,
             displayName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
             description: z.string().trim().max(MAX_LENGTH_DESCRIPTION_CREATOR),
-            websiteUrl: z.url().optional(),
+            websiteUrl: zodHttpUrl.optional(),
             imagePath: zodOptionalNonEmptyText,
             isFullImagePath: z.boolean().default(false),
             setAsDefault: z.boolean().default(false),
@@ -1375,6 +1497,11 @@ export class Dto {
                 })
                 .strict(),
         ]);
+    static getAllProjectsResponse = z
+        .object({
+            projectList: z.array(zodAdminProject),
+        })
+        .strict();
     static premiumFeatureEntitlementSubjectRequest = z
         .object({
             username: zodUsername.optional(),
@@ -1928,6 +2055,10 @@ export type GetOrganizationsByUsernameResponse = z.infer<
 export type GetAllOrganizationsResponse = z.infer<
     typeof Dto.getAllOrganizationsResponse
 >;
+export type OrganizationMember = z.infer<typeof Dto.organizationMember>;
+export type GetOrganizationMembersResponse = z.infer<
+    typeof Dto.getOrganizationMembersResponse
+>;
 export type AdminOrganizationProperties = z.infer<typeof zodAdminOrganization>;
 export type CreateOrganizationRequest = z.infer<
     typeof Dto.createOrganizationRequest
@@ -1955,11 +2086,19 @@ export type CreateProjectContactRequest = z.infer<
 >;
 export type CreateProjectRequest = z.infer<typeof Dto.createProjectRequest>;
 export type CreateProjectResponse = z.infer<typeof Dto.createProjectResponse>;
+export type AdminProject = z.infer<typeof zodAdminProject>;
+export type GetAllProjectsResponse = z.infer<typeof Dto.getAllProjectsResponse>;
 export type UpdateOrganizationLocalizationRequest = z.infer<
     typeof Dto.updateOrganizationLocalizationRequest
 >;
 export type UpdateOrganizationLocalizationResponse = z.infer<
     typeof Dto.updateOrganizationLocalizationResponse
+>;
+export type UpdateOrganizationSlugRequest = z.infer<
+    typeof Dto.updateOrganizationSlugRequest
+>;
+export type UpdateOrganizationSlugResponse = z.infer<
+    typeof Dto.updateOrganizationSlugResponse
 >;
 export type UpdateProjectLanguageSettingRequest = z.infer<
     typeof Dto.updateProjectLanguageSettingRequest
@@ -1967,6 +2106,13 @@ export type UpdateProjectLanguageSettingRequest = z.infer<
 export type UpdateProjectLanguageSettingResponse = z.infer<
     typeof Dto.updateProjectLanguageSettingResponse
 >;
+export type UpdateProjectSlugRequest = z.infer<typeof Dto.updateProjectSlugRequest>;
+export type UpdateProjectSlugResponse = z.infer<
+    typeof Dto.updateProjectSlugResponse
+>;
+export type DeleteProjectRequest = z.infer<typeof Dto.deleteProjectRequest>;
+export type UpdateProjectRequest = z.infer<typeof Dto.updateProjectRequest>;
+export type UpdateProjectResponse = z.infer<typeof Dto.updateProjectResponse>;
 export type UpdateProjectExternalOrganizationLocalizationRequest = z.infer<
     typeof Dto.updateProjectExternalOrganizationLocalizationRequest
 >;

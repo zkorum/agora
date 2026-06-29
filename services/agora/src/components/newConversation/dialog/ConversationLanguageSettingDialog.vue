@@ -5,73 +5,25 @@
       :subtitle="overviewSubtitle"
     >
       <div class="language-settings-list">
-        <div class="language-settings-row">
-          <span class="language-settings-row__content">
-            <span class="language-settings-row__title">{{
-              t("detectedLanguageTitle")
-            }}</span>
-            <span class="language-settings-row__value">{{
-              detectedLanguageValue
-            }}</span>
-            <span
-              v-if="detectedLanguageDescription !== undefined"
-              class="language-settings-row__description"
-            >
-              {{ detectedLanguageDescription }}
-            </span>
-          </span>
-        </div>
-
-        <button
-          type="button"
-          class="language-settings-row"
-          :class="{
-            'language-settings-row--disabled': !canUseDynamicTranslation,
-          }"
+        <ConversationLanguageSettingsRow
+          :title="t('languagesTitle')"
+          :value="selectedLanguagesValue"
+          :description="selectedLanguagesDescription"
+          :icon="canUseDynamicTranslation ? forwardIcon : 'mdi-lock-outline'"
           :disabled="!canUseDynamicTranslation"
+          :clickable="true"
           @click="openAdditionalLanguagesPage"
-        >
-          <span class="language-settings-row__content">
-            <span class="language-settings-row__title">{{
-              t("additionalLanguagesTitle")
-            }}</span>
-            <span class="language-settings-row__value">{{
-              additionalLanguagesValue
-            }}</span>
-            <span
-              v-if="
-                canUseDynamicTranslation &&
-                multilingualSetting.additionalLanguageCodes.length === 0
-              "
-              class="language-settings-row__description"
-            >
-              {{ t("additionalLanguagesEmptyDescription") }}
-            </span>
-          </span>
-          <q-icon
-            :name="canUseDynamicTranslation ? forwardIcon : 'mdi-lock-outline'"
-            class="language-settings-row__icon"
-          />
-        </button>
+        />
 
-        <button
-          type="button"
-          class="language-settings-row"
-          :class="{
-            'language-settings-row--disabled': !canUseDynamicTranslation,
-          }"
+        <ConversationLanguageSettingsRow
+          :title="t('dynamicTranslationTitle')"
+          :value="undefined"
+          :description="t('dynamicTranslationDescription')"
+          :icon="undefined"
           :disabled="!canUseDynamicTranslation"
-          @click="toggleDynamicTranslation"
+          :clickable="false"
         >
-          <span class="language-settings-row__content">
-            <span class="language-settings-row__title">{{
-              t("dynamicTranslationTitle")
-            }}</span>
-            <span class="language-settings-row__description">
-              {{ t("dynamicTranslationDescription") }}
-            </span>
-          </span>
-          <span class="language-settings-row__actions" @click.stop>
+          <template #actions>
             <q-icon
               v-if="!canUseDynamicTranslation"
               name="mdi-lock-outline"
@@ -85,110 +37,66 @@
               "
               @update:model-value="setDynamicTranslation"
             />
-          </span>
-        </button>
+          </template>
+        </ConversationLanguageSettingsRow>
       </div>
     </ZKBottomDialogContainer>
   </q-dialog>
 
-  <q-dialog v-model="showLanguagePickerDialog" position="bottom">
-    <ZKBottomDialogContainer
-      :title="languagePickerTitle"
-      :subtitle="languagePickerSubtitle"
-    >
-      <template #leadingAction>
-        <ZKBottomDialogBackButton @click="goBackFromLanguagePicker" />
-      </template>
-
-      <div class="language-picker-page">
-        <div class="language-search-wrapper">
-          <div @keydown.enter.prevent="selectFirstFilteredLanguage">
-            <q-input
-              :model-value="searchQuery"
-              outlined
-              dense
-              clearable
-              autofocus
-              :placeholder="t('languageSearchPlaceholder')"
-              @update:model-value="updateSearchQuery"
-            >
-              <template #prepend>
-                <q-icon name="mdi-magnify" />
-              </template>
-            </q-input>
-          </div>
-        </div>
-
-        <q-list class="language-picker-list" separator>
-          <q-item
-            v-for="language in filteredLanguageOptions"
-            :key="language.value"
-            clickable
-            :active="isLanguageSelected(language.value)"
-            active-class="language-picker-item--active"
-            :disable="isLanguageOptionDisabled(language.value)"
-            class="language-picker-item"
-            @click="selectLanguage(language.value)"
-          >
-            <q-item-section>
-              <q-item-label class="language-picker-item__label">{{
-                language.label
-              }}</q-item-label>
-              <q-item-label caption class="language-picker-item__caption">{{
-                language.caption
-              }}</q-item-label>
-            </q-item-section>
-            <q-item-section v-if="isLanguageSelected(language.value)" side>
-              <q-icon name="mdi-check" color="primary" />
-            </q-item-section>
-          </q-item>
-        </q-list>
-      </div>
-    </ZKBottomDialogContainer>
-  </q-dialog>
+  <ConversationAdditionalLanguagesDialog
+    v-model:show-dialog="showLanguagePickerDialog"
+    v-model:multilingual-setting="multilingualSetting"
+    :can-edit-languages="canUseDynamicTranslation"
+    :show-auto-language="showAutoLanguage"
+    :auto-language-caption="autoLanguageCaption"
+    :detected-language-code="props.detectedLanguageCode"
+    @back="goBackFromLanguagePicker"
+  />
 </template>
 
 <script setup lang="ts">
 import { useQuasar } from "quasar";
-import ZKBottomDialogBackButton from "src/components/ui-library/ZKBottomDialogBackButton.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
-  type DisplayLanguageMetadata,
-  type LanguageMetadata,
   type SupportedDisplayLanguageCodes,
   type SupportedSpokenLanguageCodes,
-  SupportedSpokenLanguageMetadataList,
 } from "src/shared/languages";
 import type {
   AutoLanguageDetectionStatus,
   ConversationLanguageSettingInput,
   ConversationMultilingualSetting,
 } from "src/shared/types/zod";
-import { toBcp47Locale } from "src/utils/language";
 import { computed, ref, watch } from "vue";
 
+import ConversationAdditionalLanguagesDialog from "./ConversationAdditionalLanguagesDialog.vue";
 import {
   type ConversationLanguageSettingDialogTranslations,
   conversationLanguageSettingDialogTranslations,
 } from "./ConversationLanguageSettingDialog.i18n";
+import {
+  getLanguageLabel,
+  getLocalizedLanguageName,
+} from "./conversationLanguageSettings.utils";
+import ConversationLanguageSettingsRow from "./ConversationLanguageSettingsRow.vue";
 
-type LanguageDialogPage = "overview" | "additional-languages";
-
-interface LanguageOption {
-  label: string;
-  caption: string;
-  searchText: string;
-  value: SupportedDisplayLanguageCodes;
-}
-
-const props = defineProps<{
-  canUseDynamicTranslation: boolean;
-  detectedLanguageCode?: SupportedDisplayLanguageCodes | null;
-  detectedSourceLanguageCode?: SupportedSpokenLanguageCodes | null;
-  detectedRawLanguageCode?: string | null;
-  autoDetectionStatus?: AutoLanguageDetectionStatus;
-}>();
+const props = withDefaults(
+  defineProps<{
+    canUseDynamicTranslation: boolean;
+    showAutoLanguage?: boolean;
+    detectedLanguageCode?: SupportedDisplayLanguageCodes | null;
+    detectedSourceLanguageCode?: SupportedSpokenLanguageCodes | null;
+    detectedRawLanguageCode?: string | null;
+    autoDetectionStatus?: AutoLanguageDetectionStatus;
+  }>(),
+  {
+    autoDetectionStatus: undefined,
+    detectedLanguageCode: undefined,
+    detectedRawLanguageCode: undefined,
+    detectedSourceLanguageCode: undefined,
+    showAutoLanguage: true,
+  }
+);
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
 const languageSetting = defineModel<ConversationLanguageSettingInput>(
@@ -206,94 +114,18 @@ const { t, locale } =
   );
 const $q = useQuasar();
 
-const currentPage = ref<LanguageDialogPage>("overview");
 const showLanguagePickerDialog = ref(false);
-const searchQuery = ref("");
-
-function isDisplayLanguageMetadata(
-  language: LanguageMetadata
-): language is DisplayLanguageMetadata {
-  return language.displaySupported;
-}
-
-function getLocalizedLanguageName(languageCode: string): string | undefined {
-  const trimmedLanguageCode = languageCode.trim().replaceAll("_", "-");
-  if (trimmedLanguageCode.length === 0) {
-    return undefined;
-  }
-
-  try {
-    const canonicalLanguageCode =
-      Intl.getCanonicalLocales(trimmedLanguageCode).at(0);
-    if (canonicalLanguageCode === undefined) {
-      return undefined;
-    }
-    const displayName = new Intl.DisplayNames([toBcp47Locale(locale.value)], {
-      type: "language",
-      fallback: "none",
-    }).of(canonicalLanguageCode);
-    return displayName;
-  } catch {
-    return undefined;
-  }
-}
-
-const languageOptions = computed<LanguageOption[]>(() =>
-  SupportedSpokenLanguageMetadataList.filter(isDisplayLanguageMetadata).map(
-    (language) => {
-      const label =
-        getLocalizedLanguageName(language.code) ?? language.englishName;
-      return {
-        label,
-        caption: language.name,
-        searchText: `${label} ${language.englishName} ${language.name}`,
-        value: language.code,
-      };
-    }
-  )
-);
-
-const additionalLanguageOptions = computed(() => {
-  const detectedLanguageCode = props.detectedLanguageCode;
-  if (detectedLanguageCode === null || detectedLanguageCode === undefined) {
-    return languageOptions.value;
-  }
-
-  return languageOptions.value.filter(
-    (language) => language.value !== detectedLanguageCode
-  );
-});
-
-const filteredLanguageOptions = computed(() => {
-  const options = additionalLanguageOptions.value;
-  const query = searchQuery.value.trim().toLocaleLowerCase();
-  if (query.length === 0) {
-    return options;
-  }
-
-  return options.filter((language) =>
-    language.searchText.toLocaleLowerCase().includes(query)
-  );
-});
 
 const additionalLanguagesValue = computed(() => {
   const additionalLanguageLabels =
     multilingualSetting.value.additionalLanguageCodes
-      .map(getLanguageLabel)
+      .map(getDisplayLanguageLabel)
       .filter((label) => label.length > 0);
 
-  return additionalLanguageLabels.length === 0
-    ? t("additionalLanguagesNone")
-    : additionalLanguageLabels.join(", ");
+  return additionalLanguageLabels.join(", ");
 });
 
 const overviewSubtitle = computed(() => t("languagesDescription"));
-
-const languagePickerTitle = computed(() => t("additionalLanguagesTitle"));
-
-const languagePickerSubtitle = computed(() =>
-  t("additionalLanguagesDescription")
-);
 
 const forwardIcon = computed(() =>
   $q.lang.rtl ? "mdi-chevron-left" : "mdi-chevron-right"
@@ -334,7 +166,7 @@ function getAutoDetectDescriptionState({
   if (detectedLanguageCode !== null && detectedLanguageCode !== undefined) {
     return {
       kind: "detected",
-      languageLabel: getLanguageLabel(detectedLanguageCode),
+      languageLabel: getDisplayLanguageLabel(detectedLanguageCode),
     };
   }
 
@@ -344,7 +176,7 @@ function getAutoDetectDescriptionState({
   ) {
     return {
       kind: "unsupported",
-      languageLabel: getLanguageLabel(detectedSourceLanguageCode),
+      languageLabel: getDisplayLanguageLabel(detectedSourceLanguageCode),
     };
   }
 
@@ -352,7 +184,10 @@ function getAutoDetectDescriptionState({
     detectedRawLanguageCode !== null &&
     detectedRawLanguageCode !== undefined
   ) {
-    const rawLanguageLabel = getLocalizedLanguageName(detectedRawLanguageCode);
+    const rawLanguageLabel = getLocalizedLanguageName({
+      languageCode: detectedRawLanguageCode,
+      locale: locale.value,
+    });
     if (rawLanguageLabel !== undefined) {
       return { kind: "unsupported", languageLabel: rawLanguageLabel };
     }
@@ -369,48 +204,58 @@ const autoDetectDescriptionState = computed(() =>
     autoDetectionStatus: props.autoDetectionStatus,
   })
 );
-const detectedLanguageValue = computed(() => {
+const autoLanguageValue = computed(() => {
+  const state = autoDetectDescriptionState.value;
+  if (state.kind === "detected") {
+    return `${t("languageAutoLabel")} (${t("autoDetectDetectedDescription", {
+      language: state.languageLabel,
+    })})`;
+  }
+  return t("languageAutoLabel");
+});
+
+const autoLanguageCaption = computed(() => {
   const state = autoDetectDescriptionState.value;
   if (state.kind === "neutral") {
     return t("detectedLanguageAfterPublishing");
   }
   if (state.kind === "stable_unknown") {
-    return t("detectedLanguageUnknown");
+    return t("autoDetectUnknownDescription");
   }
   if (state.kind === "retryable_unknown") {
-    return t("detectedLanguageUnknown");
+    return t("autoDetectRetryableUnknownDescription");
   }
-  return state.languageLabel;
+  if (state.kind === "detected") {
+    return t("autoDetectDetectedDescription", {
+      language: state.languageLabel,
+    });
+  }
+  return t("autoDetectUnsupportedDescription", {
+    language: state.languageLabel,
+  });
 });
 
-const detectedLanguageDescription = computed(() => {
-  const state = autoDetectDescriptionState.value;
-  if (state.kind === "neutral") {
-    return undefined;
+const selectedLanguagesValue = computed(() => {
+  const values = props.showAutoLanguage ? [autoLanguageValue.value] : [];
+  if (additionalLanguagesValue.value.length > 0) {
+    values.push(additionalLanguagesValue.value);
   }
-  if (state.kind === "unsupported") {
-    return t("detectedLanguageUnsupportedDescription");
-  }
-  return t("detectedLanguageDescription");
+  const value = values.join(", ");
+  return value.length === 0 ? undefined : value;
 });
 
-function getLanguageLabel(
+const selectedLanguagesDescription = computed(() => {
+  return t("additionalLanguagesEmptyDescription");
+});
+
+function getDisplayLanguageLabel(
   languageCode:
     | SupportedDisplayLanguageCodes
     | SupportedSpokenLanguageCodes
     | null
     | undefined
 ): string {
-  if (languageCode === null || languageCode === undefined) {
-    return "";
-  }
-  return (
-    getLocalizedLanguageName(languageCode) ??
-    SupportedSpokenLanguageMetadataList.find(
-      (language) => language.code === languageCode
-    )?.englishName ??
-    languageCode
-  );
+  return getLanguageLabel({ languageCode, locale: locale.value });
 }
 
 function openAdditionalLanguagesPage(): void {
@@ -418,52 +263,8 @@ function openAdditionalLanguagesPage(): void {
     return;
   }
 
-  currentPage.value = "additional-languages";
-  searchQuery.value = "";
   showDialog.value = false;
   showLanguagePickerDialog.value = true;
-}
-
-function isLanguageSelected(
-  languageCode: SupportedDisplayLanguageCodes
-): boolean {
-  return multilingualSetting.value.additionalLanguageCodes.includes(
-    languageCode
-  );
-}
-
-function isLanguageOptionDisabled(
-  languageCode: SupportedDisplayLanguageCodes
-): boolean {
-  return (
-    multilingualSetting.value.additionalLanguageCodes.length >= 2 &&
-    !multilingualSetting.value.additionalLanguageCodes.includes(languageCode)
-  );
-}
-
-function selectLanguage(languageCode: SupportedDisplayLanguageCodes): void {
-  if (isLanguageOptionDisabled(languageCode)) {
-    return;
-  }
-
-  if (!props.canUseDynamicTranslation) {
-    return;
-  }
-
-  if (
-    multilingualSetting.value.additionalLanguageCodes.includes(languageCode)
-  ) {
-    removeAdditionalLanguage(languageCode);
-    return;
-  }
-
-  multilingualSetting.value = {
-    ...multilingualSetting.value,
-    additionalLanguageCodes: [
-      ...multilingualSetting.value.additionalLanguageCodes,
-      languageCode,
-    ].slice(0, 2),
-  };
 }
 
 function removeAdditionalLanguage(
@@ -478,14 +279,6 @@ function removeAdditionalLanguage(
   };
 }
 
-function toggleDynamicTranslation(): void {
-  if (!props.canUseDynamicTranslation) {
-    return;
-  }
-
-  setDynamicTranslation(!multilingualSetting.value.dynamicTranslationEnabled);
-}
-
 function setDynamicTranslation(value: boolean): void {
   if (!props.canUseDynamicTranslation) {
     return;
@@ -497,24 +290,7 @@ function setDynamicTranslation(value: boolean): void {
   };
 }
 
-function updateSearchQuery(value: string | number | null): void {
-  searchQuery.value = String(value ?? "");
-}
-
-function selectFirstFilteredLanguage(): void {
-  const firstLanguage = filteredLanguageOptions.value.find(
-    (language) => !isLanguageOptionDisabled(language.value)
-  );
-
-  if (firstLanguage === undefined) {
-    return;
-  }
-
-  selectLanguage(firstLanguage.value);
-}
-
 function goBackFromLanguagePicker(): void {
-  currentPage.value = "overview";
   showLanguagePickerDialog.value = false;
   showDialog.value = true;
 }
@@ -541,119 +317,14 @@ watch(
 </script>
 
 <style scoped lang="scss">
-.language-settings-list,
-.language-picker-page {
+.language-settings-list {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-}
-
-.language-settings-list {
   overflow: hidden;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 18px;
   background: white;
 }
 
-.language-settings-row {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem;
-  border: 0;
-  background: white;
-  color: inherit;
-  text-align: start;
-  cursor: pointer;
-
-  &:not(:last-child) {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  }
-}
-
-.language-settings-row--disabled {
-  cursor: not-allowed;
-}
-
-.language-settings-row--selected {
-  background: rgba($primary, 0.08);
-}
-
-.language-settings-row__content {
-  min-width: 0;
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.language-settings-row__title {
-  color: $color-text-strong;
-  font-weight: var(--font-weight-medium);
-  line-height: 1.3;
-}
-
-.language-settings-row__value,
-.language-settings-row__description {
-  color: $color-text-weak;
-  font-size: 0.9rem;
-  line-height: 1.3;
-}
-
-.language-settings-row__icon {
-  flex-shrink: 0;
-  color: $color-text-weak;
-}
-
-.language-settings-row__icon--selected {
-  color: $primary;
-}
-
-.language-settings-row__actions {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.language-search-wrapper {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: white;
-}
-
-.language-picker-list {
-  max-height: min(26rem, 46dvh);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 18px;
-  background: white;
-}
-
-.language-picker-item {
-  min-height: 3.6rem;
-  padding-block: 0.75rem;
-}
-
-.language-picker-item__label {
-  font-weight: var(--font-weight-medium);
-  line-height: 1.3;
-}
-
-.language-picker-item__caption {
-  color: $color-text-weak;
-  font-size: 0.9rem;
-  line-height: 1.3;
-}
-
-.language-picker-item--active {
-  background: rgba($primary, 0.08);
-  color: $primary;
-}
 </style>

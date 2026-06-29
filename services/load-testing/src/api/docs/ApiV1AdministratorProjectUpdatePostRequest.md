@@ -1,0 +1,42 @@
+# ApiV1AdministratorProjectUpdatePostRequest
+
+
+## Properties
+
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**projectSlug** | **string** |  | [default to undefined]
+**projectTitle** | **string** |  | [default to undefined]
+**ownerOrganizationSlugs** | **Array&lt;string&gt;** |  | [default to undefined]
+**subtitle** | **string** |  | [optional] [default to undefined]
+**body** | **string** |  | [optional] [default to undefined]
+**bodyPlainText** | **string** |  | [optional] [default to undefined]
+**heroImagePath** | **string** |  | [optional] [default to undefined]
+**heroImageIsFullPath** | **boolean** |  | [optional] [default to false]
+**translationSetting** | [**ApiV1AdministratorProjectCreatePostRequestTranslationSetting**](ApiV1AdministratorProjectCreatePostRequestTranslationSetting.md) |  | [optional] [default to undefined]
+**attributions** | [**Array&lt;ApiV1AdministratorProjectCreatePostRequestAttributionsInner&gt;**](ApiV1AdministratorProjectCreatePostRequestAttributionsInner.md) |  | [optional] [default to undefined]
+**contact** | [**ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact**](ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact.md) |  | [optional] [default to undefined]
+**currentProjectSlug** | **string** |  | [default to undefined]
+
+## Example
+
+```typescript
+import { ApiV1AdministratorProjectUpdatePostRequest } from './api';
+
+const instance: ApiV1AdministratorProjectUpdatePostRequest = {
+    projectSlug,
+    projectTitle,
+    ownerOrganizationSlugs,
+    subtitle,
+    body,
+    bodyPlainText,
+    heroImagePath,
+    heroImageIsFullPath,
+    translationSetting,
+    attributions,
+    contact,
+    currentProjectSlug,
+};
+```
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
