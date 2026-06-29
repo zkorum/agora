@@ -2181,9 +2181,8 @@ export const conversationTranslationTargetLanguageTable = pgTable(
     "conversation_translation_target_language",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        // Migration note: keep nullable in generated V0073 so existing rows can
-        // be backfilled from translation_setting_id before V0073.2 sets this
-        // column NOT NULL.
+        // Migration note: keep nullable for V0073 backfill compatibility. Drop
+        // translation_setting_id and tighten this in the final cleanup migration.
         conversationId: integer("conversation_id").references(
             () => conversationTable.id,
         ),
