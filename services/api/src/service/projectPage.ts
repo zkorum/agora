@@ -31,7 +31,6 @@ import {
     projectOrganizationAttributionTable,
     projectTable,
     projectTranslationTargetLanguageTable,
-    userDisplayLanguageTable,
 } from "@/shared-backend/schema.js";
 import {
     getDisplayLanguageFallbackChain,
@@ -75,10 +74,6 @@ import {
 interface ProjectPageServiceParams {
     db: PostgresJsDatabase;
     baseImageServiceUrl: string;
-}
-
-interface AuthenticatedProjectPageParams extends ProjectPageServiceParams {
-    userId: string | undefined;
 }
 
 interface ProjectBaseRow {
@@ -191,7 +186,7 @@ function languageOptionFor({
         searchText: [metadata?.name, metadata?.englishName, languageCode]
             .filter((value): value is string => value !== undefined)
             .join(" "),
-        shortLabel: languageCode.toUpperCase(),
+        shortLabel: metadata?.name ?? languageCode,
     };
 }
 
@@ -293,40 +288,30 @@ async function fetchProjectTargetLanguages({
     return rows.map((row) => row.languageCode);
 }
 
-async function fetchStoredUserDisplayLanguage({
-    db,
-    userId,
-}: {
-    db: PostgresJsDatabase;
-    userId: string | undefined;
-}): Promise<SupportedDisplayLanguageCodes | undefined> {
-    if (userId === undefined) {
-        return undefined;
-    }
-    const rows = await db
-        .select({ languageCode: userDisplayLanguageTable.languageCode })
-        .from(userDisplayLanguageTable)
-        .where(eq(userDisplayLanguageTable.userId, userId))
-        .limit(1);
-    return rows.at(0)?.languageCode;
-}
-
 function buildProjectPageLanguageOptions({
     projectSupportedLanguageCodes,
 }: {
     projectSupportedLanguageCodes: readonly SupportedDisplayLanguageCodes[];
 }): ProjectPageLanguageOption[] {
-    const projectSupportedLanguageSet = new Set(projectSupportedLanguageCodes);
-    const remainingLanguageCodes = ZodSupportedDisplayLanguageCodes.options.filter(
-        (languageCode) => !projectSupportedLanguageSet.has(languageCode),
+    const dedupedProjectSupportedLanguageCodes = Array.from(
+        new Set(projectSupportedLanguageCodes),
     );
+    const projectSupportedLanguageSet = new Set(
+        dedupedProjectSupportedLanguageCodes,
+    );
+    const remainingLanguageCodes =
+        ZodSupportedDisplayLanguageCodes.options.filter(
+            (languageCode) => !projectSupportedLanguageSet.has(languageCode),
+        );
 
-    return [...projectSupportedLanguageCodes, ...remainingLanguageCodes].map(
-        (languageCode) =>
-            languageOptionFor({
-                languageCode,
-                isProjectSupported: projectSupportedLanguageSet.has(languageCode),
-            }),
+    return [
+        ...dedupedProjectSupportedLanguageCodes,
+        ...remainingLanguageCodes,
+    ].map((languageCode) =>
+        languageOptionFor({
+            languageCode,
+            isProjectSupported: projectSupportedLanguageSet.has(languageCode),
+        }),
     );
 }
 
@@ -1203,10 +1188,9 @@ async function fetchProjectContact({
 async function buildProjectPagePayload({
     db,
     baseImageServiceUrl,
-    userId,
     request,
     currentDisplayLanguage,
-}: AuthenticatedProjectPageParams & {
+}: ProjectPageServiceParams & {
     request: FetchProjectPageRequest;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }): Promise<FetchProjectPageResponse> {
@@ -1221,11 +1205,7 @@ async function buildProjectPagePayload({
         db,
         projectId: project.projectId,
     });
-    const storedUserDisplayLanguage = await fetchStoredUserDisplayLanguage({
-        db,
-        userId,
-    });
-    const displayLanguage = storedUserDisplayLanguage ?? currentDisplayLanguage;
+    const displayLanguage = currentDisplayLanguage;
     const { preferredContentLanguage } = resolvePreferredContentLanguage({
         displayLanguage,
         defaultContentLanguage: defaultLanguageCode,
@@ -1301,17 +1281,15 @@ async function buildProjectPagePayload({
 export async function fetchProjectPage({
     db,
     baseImageServiceUrl,
-    userId,
     request,
     currentDisplayLanguage,
-}: AuthenticatedProjectPageParams & {
+}: ProjectPageServiceParams & {
     request: FetchProjectPageRequest;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }): Promise<FetchProjectPageResponse> {
     return await buildProjectPagePayload({
         db,
         baseImageServiceUrl,
-        userId,
         request,
         currentDisplayLanguage,
     });
@@ -1319,10 +1297,10 @@ export async function fetchProjectPage({
 
 export async function fetchProjectPageActivities({
     db,
-    userId,
     currentDisplayLanguage,
     request,
-}: AuthenticatedProjectPageParams & {
+}: {
+    db: PostgresJsDatabase;
     request: FetchProjectPageActivitiesRequest;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }): Promise<FetchProjectPageActivitiesResponse> {
@@ -1330,14 +1308,10 @@ export async function fetchProjectPageActivities({
         db,
         projectSlug: request.projectSlug,
     });
-    const storedUserDisplayLanguage = await fetchStoredUserDisplayLanguage({
-        db,
-        userId,
-    });
     return await fetchProjectActivities({
         db,
         projectId: project.projectId,
-        displayLanguage: storedUserDisplayLanguage ?? currentDisplayLanguage,
+        displayLanguage: currentDisplayLanguage,
         activityLimit: request.activityLimit,
         activityCursor: request.activityCursor,
     });

@@ -1757,11 +1757,9 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
             return await projectPageService.fetchProjectPage({
                 db,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
-                userId: deviceStatus.isKnown ? deviceStatus.userId : undefined,
                 request: request.body,
                 currentDisplayLanguage: getRequestDisplayLanguage({ request }),
             });
@@ -1778,11 +1776,8 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
             return await projectPageService.fetchProjectPageActivities({
                 db,
-                baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
-                userId: deviceStatus.isKnown ? deviceStatus.userId : undefined,
                 request: request.body,
                 currentDisplayLanguage: getRequestDisplayLanguage({ request }),
             });

@@ -45,7 +45,7 @@
             <q-icon name="mdi-message-text-outline" size="1rem" />
             {{
               t("statementsCount", {
-                count: formatNumber(activity.stats.opinionCount),
+                count: activity.stats.opinionCount,
               })
             }}
           </span>
@@ -53,15 +53,13 @@
             <q-icon name="mdi-account-outline" size="1rem" />
             {{
               t("participantsCount", {
-                count: formatNumber(activity.stats.participantCount),
+                count: activity.stats.participantCount,
               })
             }}
           </span>
           <span>
             <q-icon name="mdi-check-circle-outline" size="1rem" />
-            {{
-              t("votesCount", { count: formatNumber(activity.stats.voteCount) })
-            }}
+            {{ t("votesCount", { count: activity.stats.voteCount }) }}
           </span>
         </div>
 
@@ -93,7 +91,6 @@ import { computed } from "vue";
 
 import ProjectActionButton from "./ProjectActionButton.vue";
 import {
-  formatProjectPageNumber,
   type ProjectPageTranslations,
   translateProjectPageText,
 } from "./projectPageI18n";
@@ -143,10 +140,6 @@ function t(
     key,
     params,
   });
-}
-
-function formatNumber(value: number): string {
-  return formatProjectPageNumber({ languageCode: props.languageCode, value });
 }
 </script>
 

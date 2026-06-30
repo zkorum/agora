@@ -5,6 +5,7 @@
     :label="t('languageLabel')"
     :dialog-title="t('languageDialogTitle')"
     :search-placeholder="t('languageSearchPlaceholder')"
+    :no-results-label="t('languageNoResults')"
     search-mode="always"
     :options="displayLanguageOptions"
     :text-direction="textDirection"
@@ -42,8 +43,22 @@ const selectedLanguageValue = computed(() => {
   return selectedLanguage.value;
 });
 
-const displayLanguageOptions = computed<readonly ProjectLanguageOption[]>(() =>
-  props.languageOptions.map(toDisplayLanguageOption)
+const displayLanguageOptions = computed<readonly ProjectLanguageOption[]>(
+  () => {
+    const seenLanguageCodes = new Set<string>();
+    const options: ProjectLanguageOption[] = [];
+
+    for (const option of props.languageOptions) {
+      if (seenLanguageCodes.has(option.value)) {
+        continue;
+      }
+
+      seenLanguageCodes.add(option.value);
+      options.push(toDisplayLanguageOption(option));
+    }
+
+    return options;
+  }
 );
 
 function toDisplayLanguageOption(
@@ -52,9 +67,10 @@ function toDisplayLanguageOption(
   return {
     label: option.label,
     value: option.value,
-    caption: option.projectSupported ? t("languageSupportedByProject") : undefined,
+    caption: option.projectSupported
+      ? t("languageSupportedByProject")
+      : undefined,
     searchText: option.searchText,
-    shortLabel: option.shortLabel,
   };
 }
 
