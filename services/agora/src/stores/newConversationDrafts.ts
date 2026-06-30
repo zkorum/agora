@@ -118,6 +118,9 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
         left: current.multilingualSetting,
         right: emptyDraft.multilingualSetting,
       });
+    const hasProjectSelectionChanges =
+      current.selectedProjectSlug !== emptyDraft.selectedProjectSlug ||
+      current.inheritProjectLanguages !== emptyDraft.inheritProjectLanguages;
 
     // Check seed opinions changes
     const hasSeedOpinionsChanges =
@@ -164,6 +167,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       hasContentChanges ||
       hasLanguageSettingChanges ||
       hasMultilingualSettingChanges ||
+      hasProjectSelectionChanges ||
       hasSeedOpinionsChanges ||
       hasConversationTypeChanges ||
       hasPostAsChanges ||
@@ -232,6 +236,8 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   function disablePostAsOrganization(): void {
     conversationDraft.value.postAs.postAsOrganization = false;
     conversationDraft.value.postAs.organizationName = "";
+    conversationDraft.value.selectedProjectSlug = undefined;
+    conversationDraft.value.inheritProjectLanguages = false;
     if (!isImportAllowedForCurrentActor()) {
       clearImportDraft();
     }

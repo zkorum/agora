@@ -8,7 +8,17 @@
     />
 
     <ConversationControlButton
-      v-for="button in visibleControlButtons"
+      v-for="button in visibleControlButtonsBeforeExtra"
+      :key="button.id"
+      :label="button.label"
+      :icon="button.icon"
+      :class="{ 'cursor-pointer': button.clickable }"
+      :aria-label="button.label"
+      @click="button.clickHandler"
+    />
+    <slot name="extra-controls" />
+    <ConversationControlButton
+      v-for="button in visibleControlButtonsAfterExtra"
       :key="button.id"
       :label="button.label"
       :icon="button.icon"
@@ -106,11 +116,8 @@ import {
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
-  type DisplayLanguageMetadata,
-  type LanguageMetadata,
   type SupportedDisplayLanguageCodes,
   type SupportedSpokenLanguageCodes,
-  SupportedSpokenLanguageMetadataList,
 } from "src/shared/languages";
 import type {
   AutoLanguageDetectionStatus,
@@ -138,6 +145,10 @@ import { usePremiumFeatureApi } from "src/utils/api/premiumFeature";
 import { processEnv } from "src/utils/processEnv";
 import { computed, ref, watch } from "vue";
 
+import {
+  formatLanguageControlLabel,
+  getDisplayLanguageName,
+} from "./conversationLanguageControlLabel";
 import MaxDiffSourceDialog from "./dialog/MaxDiffSourceDialog.vue";
 import PostTypeDialog from "./dialog/PostTypeDialog.vue";
 import {
@@ -165,6 +176,7 @@ interface Props {
   detectedSourceLanguageCode?: SupportedSpokenLanguageCodes | null;
   detectedRawLanguageCode?: string | null;
   autoDetectionStatus?: AutoLanguageDetectionStatus;
+  hideLanguageSetting?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -177,6 +189,7 @@ const props = withDefaults(defineProps<Props>(), {
   detectedSourceLanguageCode: undefined,
   detectedRawLanguageCode: undefined,
   autoDetectionStatus: undefined,
+  hideLanguageSetting: false,
 });
 
 const { t } = useComponentI18n<NewConversationControlBarTranslations>(
@@ -592,22 +605,6 @@ const getEventTicketLabel = (): string => {
   }
 };
 
-function isDisplayLanguageMetadata(
-  language: LanguageMetadata
-): language is DisplayLanguageMetadata {
-  return language.displaySupported;
-}
-
-function getDisplayLanguageName(
-  languageCode: SupportedDisplayLanguageCodes
-): string {
-  return (
-    SupportedSpokenLanguageMetadataList.filter(isDisplayLanguageMetadata).find(
-      (language) => language.code === languageCode
-    )?.englishName ?? languageCode
-  );
-}
-
 const analysisPreferenceLabel = computed(() => {
   return preferredOpinionGroupCount.value === null
     ? t("recommendedDefault")
@@ -618,23 +615,14 @@ const languageSettingLabel = computed(() => {
   const detectedLanguage =
     props.detectedLanguageCode === null || props.detectedLanguageCode === undefined
       ? t("languagePrimaryAuto")
-      : getDisplayLanguageName(props.detectedLanguageCode);
-  const additionalLanguageCount =
-    multilingualSetting.value.additionalLanguageCodes.length;
-  const additionalLanguageSuffix =
-    additionalLanguageCount === 0
-      ? ""
-      : ` +${additionalLanguageCount.toString()}`;
-  const translateSuffix =
-    canUseDynamicTranslation.value &&
-    multilingualSetting.value.dynamicTranslationEnabled
-      ? t("languageTranslateSuffix")
-      : "";
+      : getDisplayLanguageName({ languageCode: props.detectedLanguageCode });
 
-  return t("languagesLabel", {
+  return formatLanguageControlLabel({
+    languagesLabel: t("languagesLabel"),
     primaryLanguage: detectedLanguage,
-    additionalLanguageSuffix,
-    translateSuffix,
+    multilingualSetting: multilingualSetting.value,
+    canUseDynamicTranslation: canUseDynamicTranslation.value,
+    languageTranslateSuffix: t("languageTranslateSuffix"),
   });
 });
 
@@ -695,16 +683,6 @@ const controlButtons = computed((): ControlButton[] => [
     clickable: true,
   },
   {
-    id: "language-setting",
-    label: languageSettingLabel.value,
-    icon: showLanguageSettingDialog.value
-      ? "pi pi-chevron-up"
-      : "pi pi-chevron-down",
-    isVisible: true,
-    clickHandler: toggleLanguageSetting,
-    clickable: true,
-  },
-  {
     id: "login-requirement",
     label:
       participationMode.value === "account_required"
@@ -719,6 +697,16 @@ const controlButtons = computed((): ControlButton[] => [
       : "pi pi-chevron-down",
     isVisible: true,
     clickHandler: toggleLoginRequirement,
+    clickable: true,
+  },
+  {
+    id: "language-setting",
+    label: languageSettingLabel.value,
+    icon: showLanguageSettingDialog.value
+      ? "pi pi-chevron-up"
+      : "pi pi-chevron-down",
+    isVisible: !props.hideLanguageSetting,
+    clickHandler: toggleLanguageSetting,
     clickable: true,
   },
   {
@@ -737,6 +725,23 @@ const controlButtons = computed((): ControlButton[] => [
 
 const visibleControlButtons = computed(() =>
   controlButtons.value.filter((button) => button.isVisible)
+);
+
+const extraControlsInsertionIndex = computed(() => {
+  const loginRequirementIndex = visibleControlButtons.value.findIndex(
+    (button) => button.id === "login-requirement"
+  );
+  return loginRequirementIndex === -1
+    ? visibleControlButtons.value.length
+    : loginRequirementIndex + 1;
+});
+
+const visibleControlButtonsBeforeExtra = computed(() =>
+  visibleControlButtons.value.slice(0, extraControlsInsertionIndex.value)
+);
+
+const visibleControlButtonsAfterExtra = computed(() =>
+  visibleControlButtons.value.slice(extraControlsInsertionIndex.value)
 );
 </script>
 

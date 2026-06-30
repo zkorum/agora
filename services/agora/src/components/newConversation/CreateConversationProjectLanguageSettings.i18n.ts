@@ -3,6 +3,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 export interface CreateConversationProjectLanguageSettingsTranslations {
   projectLabel: string;
   noProjectLabel: string;
+  projectSelectionDescription: string;
   projectLanguagesDescription: string;
   inheritProjectLanguagesTitle: string;
   inheritProjectLanguagesDescription: string;
@@ -19,6 +20,8 @@ export interface CreateConversationProjectLanguageSettingsTranslations {
 const englishTranslations: CreateConversationProjectLanguageSettingsTranslations = {
   projectLabel: "Project",
   noProjectLabel: "No project",
+  projectSelectionDescription:
+    "Choose the listed project this conversation belongs to, or use no project.",
   projectLanguagesDescription:
     "Choose whether this conversation should inherit project language settings or override them.",
   inheritProjectLanguagesTitle: "Inherit project languages",
@@ -70,9 +73,11 @@ export const createConversationProjectLanguageSettingsTranslations: Record<
     ...englishTranslations,
     projectLabel: "Projet",
     noProjectLabel: "Aucun projet",
+    projectSelectionDescription:
+      "Choisissez le projet listé auquel cette conversation appartient, ou n'utilisez aucun projet.",
     projectLanguagesDescription:
       "Choisissez si cette conversation doit hériter des paramètres de langue du projet ou les remplacer.",
-    inheritProjectLanguagesTitle: "Hériter des langues du projet",
+    inheritProjectLanguagesTitle: "Hériter les langues du projet",
     inheritProjectLanguagesDescription:
       "Utiliser les paramètres de langue et de traduction du projet sélectionné.",
     inheritedProjectLanguagesDescription:

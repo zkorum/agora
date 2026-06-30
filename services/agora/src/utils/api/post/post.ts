@@ -1,6 +1,3 @@
-import type {
-  ApiV1ConversationImportPost200Response,
-} from "src/api";
 import {
   type ApiV1ConversationFetchRecentPostRequest,
   type ApiV1ModerationConversationWithdrawPostRequest,
@@ -10,7 +7,10 @@ import {
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   ConversationContentFetchResponse,
+  ConversationLanguageSettingsSource,
   CreateNewConversationResponse,
+  GetConversationCreateProjectOptionsResponse,
+  ImportConversationResponse,
   ImportCsvConversationResponse,
 } from "src/shared/types/dto";
 import type {
@@ -202,6 +202,8 @@ export function useBackendPostApi() {
     postTitle: string;
     postBody: string | undefined;
     postBodyPlainText: string;
+    projectSlug?: string;
+    languageSettingsSource: ConversationLanguageSettingsSource;
     languageSetting: ConversationLanguageSettingInput;
     multilingualSetting: ConversationMultilingualSetting;
     postAsOrganizationName: string;
@@ -216,6 +218,24 @@ export function useBackendPostApi() {
     surveyConfig?: SurveyConfig | null;
   }
 
+  async function fetchConversationCreateProjectOptions({
+    postAsOrganizationName,
+  }: {
+    postAsOrganizationName: string;
+  }): Promise<GetConversationCreateProjectOptionsResponse> {
+    const url = "/api/v1/project/create-options/list";
+    const params = Dto.getConversationCreateProjectOptionsRequest.parse({
+      postAsOrganization: postAsOrganizationName,
+    });
+    const encodedUcan = await buildEncodedUcan(url, { method: "POST" });
+    const response = await api.post(
+      url,
+      params,
+      createRawAxiosRequestConfig({ encodedUcan })
+    );
+    return Dto.getConversationCreateProjectOptionsResponse.parse(response.data);
+  }
+
   type CreateNewPostSuccessResponse =
     AxiosSuccessResponse<CreateNewConversationResponse>;
   type CreateNewPostResponse =
@@ -224,6 +244,8 @@ export function useBackendPostApi() {
 
   interface ImportConversationProps {
     polisUrl: string;
+    projectSlug?: string;
+    languageSettingsSource: ConversationLanguageSettingsSource;
     postAsOrganizationName: string;
     isIndexed: boolean;
     participationMode: ParticipationMode;
@@ -234,16 +256,16 @@ export function useBackendPostApi() {
     preferredOpinionGroupCount: PreferredOpinionGroupCount;
   }
 
-  type ImportConversationSuccessResponse =
-    AxiosSuccessResponse<ApiV1ConversationImportPost200Response>;
-  type ImportConversationResponse =
-    | ImportConversationSuccessResponse
+  type ImportConversationApiResponse =
+    | AxiosSuccessResponse<ImportConversationResponse>
     | AxiosErrorResponse;
 
   interface ImportConversationFromCsvParams {
     summaryFile: File;
     commentsFile: File;
     votesFile: File;
+    projectSlug?: string;
+    languageSettingsSource: ConversationLanguageSettingsSource;
     postAsOrganizationName: string;
     isIndexed: boolean;
     participationMode: ParticipationMode;
@@ -265,6 +287,8 @@ export function useBackendPostApi() {
     formData.append(CSV_UPLOAD_FIELD_NAMES.VOTES_FILE, params.votesFile);
 
     // Add metadata
+    formData.append("projectSlug", params.projectSlug ?? "");
+    formData.append("languageSettingsSource", params.languageSettingsSource);
     formData.append("postAsOrganization", params.postAsOrganizationName);
     formData.append("isIndexed", String(params.isIndexed));
     formData.append("participationMode", params.participationMode);
@@ -311,6 +335,8 @@ export function useBackendPostApi() {
 
   async function importConversation({
     polisUrl,
+    projectSlug,
+    languageSettingsSource,
     postAsOrganizationName,
     isIndexed,
     participationMode,
@@ -319,10 +345,12 @@ export function useBackendPostApi() {
     requiresEventTicket,
     aiLabelingEnabled,
     preferredOpinionGroupCount,
-  }: ImportConversationProps): Promise<ImportConversationResponse> {
+  }: ImportConversationProps): Promise<ImportConversationApiResponse> {
     try {
       const params = Dto.importConversationRequest.parse({
         polisUrl,
+        projectSlug,
+        languageSettingsSource,
         postAsOrganization: postAsOrganizationName,
         isIndexed,
         participationMode,
@@ -346,7 +374,7 @@ export function useBackendPostApi() {
       );
 
       return {
-        data: response.data,
+        data: Dto.importConversationResponse.parse(response.data),
         status: "success",
       };
     } catch (e) {
@@ -358,6 +386,8 @@ export function useBackendPostApi() {
     postTitle,
     postBody,
     postBodyPlainText,
+    projectSlug,
+    languageSettingsSource,
     languageSetting,
     multilingualSetting,
     postAsOrganizationName,
@@ -376,6 +406,8 @@ export function useBackendPostApi() {
         conversationTitle: postTitle,
         conversationBody: postBody,
         conversationBodyPlainText: postBodyPlainText,
+        projectSlug,
+        languageSettingsSource,
         languageSetting,
         multilingualSetting,
         isIndexed: isIndexed,
@@ -617,6 +649,7 @@ export function useBackendPostApi() {
     deletePostBySlugId,
     importConversation,
     importConversationFromCsv,
+    fetchConversationCreateProjectOptions,
     validateCsvFiles,
     getConversationImportStatus,
     getActiveImport,

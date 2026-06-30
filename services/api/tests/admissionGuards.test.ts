@@ -175,6 +175,7 @@ describe("Admission guards", () => {
                         additionalLanguageCodes: [],
                         dynamicTranslationEnabled: false,
                     },
+                    languageSettingsSource: "conversation_override",
                 },
                 didWrite: "did:test:queue",
                 importBuffer,

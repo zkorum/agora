@@ -130,7 +130,7 @@ const en: AdministratorProjectTranslations = {
   realOrganizationLabel: "Existing organization",
   externalLanguageLabel: "External organization language",
   externalLanguageHint:
-    "This creates the first/default external organization profile in the selected language.",
+    "Choose the language used for this organization name and description.",
   externalNameLabel: "External organization name",
   externalDescriptionLabel: "External organization description",
   externalWebsiteLabel: "External organization website",

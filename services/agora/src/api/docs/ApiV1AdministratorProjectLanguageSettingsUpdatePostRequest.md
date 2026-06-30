@@ -6,7 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **projectSlug** | **string** |  | [default to undefined]
-**languageSettings** | [**ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerLanguageSettings**](ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerLanguageSettings.md) |  | [default to undefined]
+**languageSettings** | [**ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettings**](ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettings.md) |  | [default to undefined]
 
 ## Example
 

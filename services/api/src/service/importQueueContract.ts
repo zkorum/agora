@@ -1,16 +1,9 @@
-import type {
-    ConversationLanguageSettingInput,
-    ConversationMultilingualSetting,
-    EventSlug,
-    ParticipationMode,
-    PreferredOpinionGroupCount,
-} from "@/shared/types/zod.js";
 import {
     zodConversationLanguageSettingInput,
-    zodConversationMultilingualSetting,
     zodEventSlug,
     zodParticipationMode,
 } from "@/shared/types/zod.js";
+import { ZodSupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { z } from "zod";
 import type { CsvFiles } from "./csvImport.js";
 import { zodCsvFiles } from "./csvImport.js";
@@ -37,10 +30,28 @@ const zodImportFormData = withJsonSchemaId(
             languageSetting: zodConversationLanguageSettingInput.default({
                 mode: "auto",
             }),
-            multilingualSetting: zodConversationMultilingualSetting.default({
-                additionalLanguageCodes: [],
-                dynamicTranslationEnabled: false,
-            }),
+            multilingualSetting: z
+                .object({
+                    additionalLanguageCodes: z
+                        .array(ZodSupportedDisplayLanguageCodes)
+                        .max(3)
+                        .refine(
+                            (languageCodes) =>
+                                new Set(languageCodes).size ===
+                                languageCodes.length,
+                            "Additional languages must be unique",
+                        ),
+                    dynamicTranslationEnabled: z.boolean(),
+                })
+                .strict()
+                .default({
+                    additionalLanguageCodes: [],
+                    dynamicTranslationEnabled: false,
+                }),
+            languageSettingsSource: z.enum([
+                "conversation_override",
+                "project_inherited",
+            ]),
         })
         .strict(),
 );
@@ -119,20 +130,14 @@ export const zodImportWorkerContracts = withJsonSchemaId(
         .strict(),
 );
 
+type ImportFormData = z.infer<typeof zodImportFormData>;
+
 interface ImportRequestBase {
     importSlugId: string;
     userId: string;
     actorUserId: string;
     projectId: number;
-    formData: {
-        participationMode: ParticipationMode;
-        isIndexed: boolean;
-        requiresEventTicket?: EventSlug;
-        aiLabelingEnabled: boolean;
-        preferredOpinionGroupCount?: PreferredOpinionGroupCount;
-        languageSetting: ConversationLanguageSettingInput;
-        multilingualSetting: ConversationMultilingualSetting;
-    };
+    formData: ImportFormData;
     didWrite: string;
 }
 

@@ -61,9 +61,14 @@ class MultilingualSetting(BaseModel):
         validate_by_name=True,
     )
     additional_language_codes: list[LanguageCode] = Field(
-        ..., alias="additionalLanguageCodes", max_length=2
+        ..., alias="additionalLanguageCodes", max_length=3
     )
     dynamic_translation_enabled: bool = Field(..., alias="dynamicTranslationEnabled")
+
+
+class LanguageSettingsSource(StrEnum):
+    conversation_override = "conversation_override"
+    project_inherited = "project_inherited"
 
 
 class ImportFormData(BaseModel):
@@ -86,6 +91,7 @@ class ImportFormData(BaseModel):
         alias="multilingualSetting",
         validate_default=True,
     )
+    language_settings_source: LanguageSettingsSource = Field(..., alias="languageSettingsSource")
 
 
 class CsvFiles(BaseModel):

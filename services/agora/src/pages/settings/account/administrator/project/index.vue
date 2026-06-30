@@ -118,6 +118,9 @@
             "
             :display-language-options="displayLanguageOptions"
             :machine-localizations="noMachineContentLocalizations"
+            :dynamic-translation-enabled="
+              createMultilingualSetting.dynamicTranslationEnabled
+            "
           />
         </div>
       </ZKCard>
@@ -423,6 +426,9 @@
               :machine-localizations="
                 selectedProject?.machineContentLocalizations ??
                 noMachineContentLocalizations
+              "
+              :dynamic-translation-enabled="
+                manageMultilingualSetting.dynamicTranslationEnabled
               "
             />
           </div>
@@ -814,7 +820,7 @@ const projectBody = ref("");
 const projectBodyPlainText = ref("");
 const isProjectBodyOverLimit = ref(false);
 const bannerPath = ref("");
-const bannerIsFullPath = ref(false);
+const bannerIsFullPath = ref(true);
 const createContentLocalizations = ref<ProjectContentLocalization[]>([]);
 const attributionRole = ref<AttributionRole>("sponsor");
 const attributionSource = ref<AttributionSource>("organization");
@@ -826,7 +832,7 @@ const externalDisplayName = ref("");
 const externalDescription = ref("");
 const externalWebsiteUrl = ref("");
 const externalImagePath = ref("");
-const externalImageIsFullPath = ref(false);
+const externalImageIsFullPath = ref(true);
 const externalLocalizations = ref<ExternalLocalization[]>([]);
 const attributions = ref<CreateProjectAttributionRequest[]>([]);
 const dismissedOwnerAttributionSlugs = ref<Set<string>>(new Set());
@@ -846,7 +852,7 @@ const manageProjectBody = ref("");
 const manageProjectBodyPlainText = ref("");
 const isManageProjectBodyOverLimit = ref(false);
 const manageBannerPath = ref("");
-const manageBannerIsFullPath = ref(false);
+const manageBannerIsFullPath = ref(true);
 const manageContentLocalizations = ref<ProjectContentLocalization[]>([]);
 const manageAttributions = ref<CreateProjectAttributionRequest[]>([]);
 const manageDismissedOwnerAttributionSlugs = ref<Set<string>>(new Set());
@@ -1321,7 +1327,7 @@ watch(selectedProject, (project) => {
     manageProjectBodyPlainText.value = "";
     isManageProjectBodyOverLimit.value = false;
     manageBannerPath.value = "";
-    manageBannerIsFullPath.value = false;
+    manageBannerIsFullPath.value = true;
     manageContentLocalizations.value = [];
     manageAttributions.value = [];
     manageDismissedOwnerAttributionSlugs.value = new Set();
@@ -1680,7 +1686,7 @@ function addAttribution(): void {
   externalDescription.value = "";
   externalWebsiteUrl.value = "";
   externalImagePath.value = "";
-  externalImageIsFullPath.value = false;
+  externalImageIsFullPath.value = true;
   externalLocalizations.value = [];
 }
 
@@ -1735,7 +1741,7 @@ function addManageAttribution(): void {
   externalDescription.value = "";
   externalWebsiteUrl.value = "";
   externalImagePath.value = "";
-  externalImageIsFullPath.value = false;
+  externalImageIsFullPath.value = true;
   externalLocalizations.value = [];
 }
 
@@ -1886,7 +1892,7 @@ function resetForm(): void {
   projectBodyPlainText.value = "";
   isProjectBodyOverLimit.value = false;
   bannerPath.value = "";
-  bannerIsFullPath.value = false;
+  bannerIsFullPath.value = true;
   createContentLocalizations.value = [];
   attributions.value = [];
   dismissedOwnerAttributionSlugs.value = new Set();
@@ -1898,7 +1904,7 @@ function resetForm(): void {
   externalDescription.value = "";
   externalWebsiteUrl.value = "";
   externalImagePath.value = "";
-  externalImageIsFullPath.value = false;
+  externalImageIsFullPath.value = true;
   externalLocalizations.value = [];
   contactName.value = "";
   contactRole.value = "";

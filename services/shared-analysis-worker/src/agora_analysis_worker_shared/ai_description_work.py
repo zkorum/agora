@@ -262,6 +262,7 @@ class EagerDescriptionCandidateRow:
     conversation_id: int
     candidate_id: int
     language_code: str | None
+    language_settings_source: str
 
 
 @dataclass(frozen=True)
@@ -280,6 +281,7 @@ class EagerCandidateOptionRow:
     preferred_group_count: int | None
     selection_score: float
     language_code: str | None
+    language_settings_source: str
 
 
 @dataclass(frozen=True)
@@ -1724,6 +1726,7 @@ def eager_translation_target_locales_by_candidate(
     for candidate in candidates:
         target_locales: set[str] = set()
         if (
+            candidate.language_settings_source != "project_inherited" and
             candidate.language_code is not None
             and candidate.language_code in supported_codes
         ):
@@ -2039,6 +2042,7 @@ def _select_eager_candidates(
             conversation_id=selected_row.conversation_id,
             candidate_id=selected_row.candidate_id,
             language_code=selected_row.language_code,
+            language_settings_source=selected_row.language_settings_source,
         )
 
     return list(candidates_by_id.values())
@@ -2070,6 +2074,7 @@ def _fetch_eager_description_candidates(
             OpinionGroupCandidate.id.label("candidate_id"),
             OpinionGroupVariant.group_count,
             Conversation.preferred_opinion_group_count,
+            Conversation.language_settings_source,
             ConversationContent.source_language_code.label("language_code"),
             OpinionGroupCandidateAssessment.selection_score,
         )
@@ -2140,6 +2145,7 @@ def _fetch_eager_description_candidates(
                 preferred_group_count=row.preferred_opinion_group_count,
                 selection_score=row.selection_score,
                 language_code=row.language_code,
+                language_settings_source=row.language_settings_source,
             )
             for row in rows
             if row.selection_score is not None

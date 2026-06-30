@@ -6,6 +6,8 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **polisUrl** | **string** |  | [default to undefined]
+**projectSlug** | **string** |  | [optional] [default to undefined]
+**languageSettingsSource** | **string** |  | [optional] [default to LanguageSettingsSourceEnum_ConversationOverride]
 **postAsOrganization** | **string** |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
@@ -22,6 +24,8 @@ import { ApiV1ConversationImportPostRequest } from './api';
 
 const instance: ApiV1ConversationImportPostRequest = {
     polisUrl,
+    projectSlug,
+    languageSettingsSource,
     postAsOrganization,
     isIndexed,
     participationMode,

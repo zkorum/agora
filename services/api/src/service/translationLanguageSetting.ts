@@ -24,6 +24,11 @@ export interface ConversationMultilingualSettings {
     additionalLanguageCodes: SupportedDisplayLanguageCodes[];
 }
 
+export interface InheritedConversationMultilingualSettings {
+    dynamicTranslationEnabled: boolean;
+    additionalLanguageCodes: SupportedDisplayLanguageCodes[];
+}
+
 export function sourceLanguageToDisplayLanguage({
     sourceLanguageCode,
 }: {
@@ -90,5 +95,18 @@ export function normalizeConversationMultilingualSettings({
             normalizedProjectLanguageSettings.dynamicTranslationEnabled,
         additionalLanguageCodes:
             normalizedProjectLanguageSettings.targetLanguageCodes,
+    };
+}
+
+export function normalizeInheritedConversationMultilingualSettings({
+    languageSettings,
+}: {
+    languageSettings: ProjectLanguageSettingsInput;
+}): InheritedConversationMultilingualSettings {
+    return {
+        dynamicTranslationEnabled: languageSettings.dynamicTranslationEnabled,
+        additionalLanguageCodes: Array.from(
+            new Set(languageSettings.targetLanguageCodes),
+        ),
     };
 }

@@ -1,4 +1,10 @@
 import type { ConversationDraft } from "src/composables/conversation/draft/conversationDraft.types";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  type CreateConversationTranslations,
+  createConversationTranslations,
+} from "src/pages/conversation/new/create/index.i18n";
+import type { CreateNewConversationResponse } from "src/shared/types/dto";
 import type { SurveyConfig } from "src/shared/types/zod";
 import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
@@ -19,11 +25,19 @@ interface PublishConversationDraftParams {
   beforeSuccessNavigation?: () => void;
 }
 
+type CreateConversationFailureReason = Extract<
+  CreateNewConversationResponse,
+  { success: false }
+>["reason"];
+
 export function usePublishConversationDraft() {
   const router = useRouter();
   const navigationStore = useNavigationStore();
   const newConversationDraftsStore = useNewPostDraftsStore();
   const { showNotifyMessage } = useNotify();
+  const { t } = useComponentI18n<CreateConversationTranslations>(
+    createConversationTranslations
+  );
   const { handleAxiosErrorStatusCodes } = useCommonApi();
   const { createNewPost } = useBackendPostApi();
   const { syncMaxDiff } = useMaxDiffApi();
@@ -52,6 +66,12 @@ export function usePublishConversationDraft() {
         postBody:
           conversationDraft.content === "" ? undefined : conversationDraft.content,
         postBodyPlainText: conversationDraft.contentPlainText,
+        projectSlug: conversationDraft.selectedProjectSlug,
+        languageSettingsSource:
+          conversationDraft.selectedProjectSlug !== undefined &&
+          conversationDraft.inheritProjectLanguages
+            ? "project_inherited"
+            : "conversation_override",
         languageSetting: conversationDraft.languageSetting,
         multilingualSetting: conversationDraft.multilingualSetting,
         postAsOrganizationName: conversationDraft.postAs.postAsOrganization
@@ -83,6 +103,11 @@ export function usePublishConversationDraft() {
             showNotifyMessage(defaultErrorMessage);
             break;
           }
+          case "organization_not_available":
+          case "missing_conversation_create_capability": {
+            showProjectTargetFailure(response.data.reason);
+            break;
+          }
         }
         return false;
       }
@@ -107,6 +132,19 @@ export function usePublishConversationDraft() {
     } catch {
       showNotifyMessage(defaultErrorMessage);
       return false;
+    }
+  }
+
+  function showProjectTargetFailure(
+    reason: CreateConversationFailureReason
+  ): void {
+    if (reason === "organization_not_available") {
+      showNotifyMessage(t("organizationUnavailable"));
+      return;
+    }
+
+    if (reason === "missing_conversation_create_capability") {
+      showNotifyMessage(t("missingProjectCreateCapability"));
     }
   }
 

@@ -23,6 +23,7 @@ import type {
 } from "@/shared/types/zod.js";
 import type {
     CloseConversationResponse,
+    ConversationLanguageSettingsSource,
     CreateNewConversationResponse,
     OpenConversationResponse,
 } from "@/shared/types/dto.js";
@@ -46,6 +47,7 @@ import { createConversationViewSnapshotsFromCurrentState } from "@/service/conve
 import { queueConversationSettingsUpdatedEvent } from "@/service/realtimeEventOutbox.js";
 import {
     hasProjectCapability,
+    getProjectLanguageSettings,
     requireProjectCapability,
     resolveConversationCreateTarget,
 } from "@/service/projectAccess.js";
@@ -61,7 +63,10 @@ import {
     contentLanguageMetadataUpdateValues,
     resolveContentLanguageMetadata,
 } from "./contentLanguageMetadata.js";
-import { normalizeConversationMultilingualSettings } from "./translationLanguageSetting.js";
+import {
+    normalizeConversationMultilingualSettings,
+    normalizeInheritedConversationMultilingualSettings,
+} from "./translationLanguageSetting.js";
 
 const MAX_CONVERSATION_SEED_ITEMS = 50;
 
@@ -73,6 +78,9 @@ interface CreateNewPostProps {
     authorId: string;
     didWrite: string;
     postAsOrganization?: string;
+    projectSlug?: string;
+    createTarget?: { projectId: number; organizationId: number };
+    languageSettingsSource: ConversationLanguageSettingsSource;
     autoProvisionedDefaultLanguage: SupportedDisplayLanguageCodes;
     isIndexed: boolean;
     participationMode: ParticipationMode;
@@ -103,6 +111,9 @@ export async function createNewPost({
     authorId,
     didWrite,
     postAsOrganization,
+    projectSlug,
+    createTarget,
+    languageSettingsSource,
     autoProvisionedDefaultLanguage,
     participationMode,
     conversationType,
@@ -128,12 +139,15 @@ export async function createNewPost({
             `A conversation can have at most ${String(MAX_CONVERSATION_SEED_ITEMS)} seed items`,
         );
     }
-    const target = await resolveConversationCreateTarget({
-        db,
-        userId: authorId,
-        postAsOrganizationSlug: postAsOrganization,
-        autoProvisionedDefaultLanguage,
-    });
+    const target =
+        createTarget ??
+        (await resolveConversationCreateTarget({
+            db,
+            userId: authorId,
+            postAsOrganizationSlug: postAsOrganization,
+            projectSlug,
+            autoProvisionedDefaultLanguage,
+        }));
     const conversationSlugId = generateRandomSlugId();
 
     let bodyPlainText = "";
@@ -197,6 +211,13 @@ export async function createNewPost({
     const surveyLanguageDetectionCorpus = buildSurveyLanguageDetectionCorpus({
         surveyConfig,
     });
+    const inheritedProjectLanguageSettings =
+        languageSettingsSource === "project_inherited"
+            ? await getProjectLanguageSettings({
+                  db,
+                  projectId: target.projectId,
+              })
+            : undefined;
     const conversationSourceLanguageMetadata = await resolveContentLanguageMetadata({
         text: buildContentBlockLanguageDetectionCorpus({
             conversationCorpus: buildConversationLanguageDetectionCorpus({
@@ -211,13 +232,21 @@ export async function createNewPost({
             supplementalPlainText: surveyLanguageDetectionCorpus,
         }),
         googleCloudCredentials,
-        useGoogleLanguageDetection: multilingualSetting.dynamicTranslationEnabled,
+        useGoogleLanguageDetection:
+            inheritedProjectLanguageSettings?.dynamicTranslationEnabled ??
+            multilingualSetting.dynamicTranslationEnabled,
     });
-    const normalizedMultilingualSetting = normalizeConversationMultilingualSettings({
-        multilingualSettings: multilingualSetting,
-        canUseDynamicTranslation: true,
-        sourceLanguageCode: conversationSourceLanguageMetadata.sourceLanguageCode,
-    });
+    const normalizedMultilingualSetting =
+        inheritedProjectLanguageSettings !== undefined
+            ? normalizeInheritedConversationMultilingualSettings({
+                  languageSettings: inheritedProjectLanguageSettings,
+              })
+            : normalizeConversationMultilingualSettings({
+                  multilingualSettings: multilingualSetting,
+                  canUseDynamicTranslation: true,
+                  sourceLanguageCode:
+                      conversationSourceLanguageMetadata.sourceLanguageCode,
+              });
 
     await db.transaction(async (tx) => {
         const now = new Date();
@@ -230,6 +259,7 @@ export async function createNewPost({
                 participationMode: participationMode,
                 conversationType: conversationType,
                 isImporting: isImporting,
+                languageSettingsSource,
                 requiresEventTicket: requiresEventTicket,
                 aiLabelingEnabled,
                 preferredOpinionGroupCount,

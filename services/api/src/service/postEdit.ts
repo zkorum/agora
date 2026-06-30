@@ -566,6 +566,7 @@ export async function updateConversation({
             requiresEventTicket: typeof requiresEventTicket | null;
             aiLabelingEnabled: boolean;
             preferredOpinionGroupCount?: typeof preferredOpinionGroupCount;
+            languageSettingsSource: "conversation_override";
             updatedAt: Date;
             isEdited?: boolean;
         } = {
@@ -573,6 +574,7 @@ export async function updateConversation({
             participationMode: participationMode,
             requiresEventTicket: requiresEventTicket ?? null,
             aiLabelingEnabled: updatedAiLabelingEnabled,
+            languageSettingsSource: "conversation_override",
             updatedAt: new Date(),
         };
 

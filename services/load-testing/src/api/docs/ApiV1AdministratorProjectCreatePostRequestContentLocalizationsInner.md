@@ -6,7 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **languageCode** | **string** |  | [default to undefined]
-**projectTitle** | **string** |  | [default to undefined]
+**projectTitle** | **string** |  | [optional] [default to undefined]
 **subtitle** | **string** |  | [optional] [default to undefined]
 **body** | **string** |  | [optional] [default to undefined]
 **bodyPlainText** | **string** |  | [optional] [default to undefined]

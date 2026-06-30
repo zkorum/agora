@@ -76,6 +76,7 @@ export function useRouterGuard() {
       "/legal/privacy/",
       "/legal/terms/",
       "/legal/guidelines/",
+      "/project/[projectSlug]",
       "/settings/",
       "/settings/languages/",
       "/settings/languages/display-language/",

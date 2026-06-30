@@ -1,0 +1,2 @@
+CREATE TYPE "public"."conversation_language_settings_source" AS ENUM('conversation_override', 'project_inherited');--> statement-breakpoint
+ALTER TABLE "conversation" ADD COLUMN "language_settings_source" "conversation_language_settings_source" DEFAULT 'conversation_override' NOT NULL;

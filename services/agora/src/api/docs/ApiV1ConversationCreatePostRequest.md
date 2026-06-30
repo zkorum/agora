@@ -8,6 +8,8 @@ Name | Type | Description | Notes
 **conversationTitle** | **string** |  | [default to undefined]
 **conversationBody** | **string** |  | [optional] [default to undefined]
 **conversationBodyPlainText** | **string** |  | [default to undefined]
+**projectSlug** | **string** |  | [optional] [default to undefined]
+**languageSettingsSource** | **string** |  | [optional] [default to LanguageSettingsSourceEnum_ConversationOverride]
 **postAsOrganization** | **string** |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
@@ -30,6 +32,8 @@ const instance: ApiV1ConversationCreatePostRequest = {
     conversationTitle,
     conversationBody,
     conversationBodyPlainText,
+    projectSlug,
+    languageSettingsSource,
     postAsOrganization,
     isIndexed,
     participationMode,

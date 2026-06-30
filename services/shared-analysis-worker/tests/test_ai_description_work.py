@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -66,9 +67,8 @@ from agora_analysis_worker_shared.generated_models import (
     AnalysisWorkState,
     Base,
     Conversation,
-    ConversationLanguageSetting,
-    ConversationLanguageSettingMode,
-    ConversationTranslationSetting,
+    ConversationContent,
+    ConversationLanguageSettingsSource,
     ConversationTranslationTargetLanguage,
     ConversationType,
     ConversationViewSnapshot,
@@ -91,6 +91,7 @@ from agora_analysis_worker_shared.generated_models import (
     PremiumFeatureEntitlement,
     ProjectOrganizationOwnership,
     RealtimeEventOutbox,
+    SpokenLanguageCode,
     VoteEnumSimple,
 )
 from agora_analysis_worker_shared.generated_shared_types import (
@@ -120,7 +121,9 @@ def _insert_non_processable_ai_work_state(
             id=10,
             slug_id="abc12345",
             project_id=1,
-            current_content_id=None,
+            current_content_id=40,
+            dynamic_translation_enabled=True,
+            language_settings_source=ConversationLanguageSettingsSource.conversation_override,
             current_ranking_score_id=None,
             is_indexed=True,
             participation_mode=ParticipationMode.account_required,
@@ -142,6 +145,21 @@ def _insert_non_processable_ai_work_state(
             created_at=NOW,
             updated_at=NOW,
             last_reacted_at=NOW,
+        )
+    )
+    session.add(
+        ConversationContent(
+            id=40,
+            public_id=uuid.UUID("00000000-0000-0000-0000-000000000040"),
+            conversation_id=10,
+            title="Test conversation",
+            body=None,
+            body_plain_text="Test conversation",
+            source_language_code=SpokenLanguageCode.en,
+            source_raw_language_code="en",
+            source_language_provider=None,
+            source_language_confidence=1.0,
+            created_at=NOW,
         )
     )
     session.add(
@@ -326,18 +344,38 @@ def _translation_claim(
 def _insert_manual_conversation_language_setting(
     session: Session,
     *,
-    language_code: str = "fr",
+    language_code: str = "en",
 ) -> None:
+    content = session.get(ConversationContent, 40)
+    if content is not None:
+        content.source_language_code = SpokenLanguageCode(language_code)
     session.add(
-        ConversationLanguageSetting(
-            id=301,
+        ConversationTranslationTargetLanguage(
+            id=203,
             conversation_id=10,
-            mode=ConversationLanguageSettingMode.manual,
-            language_code=language_code,
-            detected_language_code=None,
-            detected_raw_language_code=None,
-            detection_confidence=None,
-            detected_from_corpus_hash=None,
+            language_code=DisplayLanguageCode.fr,
+            created_at=NOW,
+        )
+    )
+    session.add(
+        ProjectOrganizationOwnership(
+            id=204,
+            project_id=1,
+            organization_id=1001,
+            created_at=NOW,
+        )
+    )
+    session.add(
+        PremiumFeatureEntitlement(
+            id=205,
+            organization_id=1001,
+            feature=PremiumFeature.dynamic_translation,
+            starts_at=NOW - timedelta(days=1),
+            expires_at=None,
+            revoked_at=None,
+            admin_note=None,
+            created_by_user_id=None,
+            updated_by_user_id=None,
             created_at=NOW,
             updated_at=NOW,
         )
@@ -549,6 +587,7 @@ def test_eager_translation_targets_merge_primary_and_entitled_additional() -> No
             conversation_id=10,
             candidate_id=100,
             language_code="fr",
+            language_settings_source="conversation_override",
         )
     ]
     additional_locale_rows = [
@@ -653,6 +692,9 @@ def test_process_translation_work_items_batch_persists_multiple_translations() -
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = None
+        session.commit()
         conversation = session.execute(select(Conversation)).scalar_one()
         conversation.current_content_id = 40
         session.add_all(
@@ -770,6 +812,7 @@ def test_content_update_events_coalesce_locales_per_snapshot() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
+        _insert_manual_conversation_language_setting(session)
         conversation = session.execute(select(Conversation)).scalar_one()
         conversation.current_content_id = 40
         view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
@@ -863,6 +906,9 @@ def test_non_processable_ai_cleanup_fallbacks_statuses_without_activation() -> N
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = None
+        session.commit()
 
     completed_ids = complete_non_processable_ai_description_work_batch(
         engine,
@@ -940,6 +986,7 @@ def test_claiming_first_pass_work_does_not_activate_snapshot() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
+        _insert_manual_conversation_language_setting(session)
         conversation = session.execute(select(Conversation)).scalar_one()
         conversation.current_content_id = 40
         session.commit()
@@ -971,6 +1018,7 @@ def test_first_pass_claiming_allows_one_immediate_lineage_retry() -> None:
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
+        _insert_manual_conversation_language_setting(session)
         conversation = session.execute(select(Conversation)).scalar_one()
         conversation.current_content_id = 40
         lineage = session.execute(select(OpinionGroupLineage)).scalar_one()
@@ -999,6 +1047,7 @@ def test_first_pass_claiming_uses_materialized_auto_and_facilitator_work() -> No
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
+        _insert_manual_conversation_language_setting(session)
         conversation = session.execute(select(Conversation)).scalar_one()
         conversation.current_content_id = 40
         conversation.preferred_opinion_group_count = 2
@@ -1259,16 +1308,9 @@ def test_first_pass_claiming_materializes_entitled_additional_translation() -> N
                     created_at=NOW,
                     updated_at=NOW,
                 ),
-                ConversationTranslationSetting(
-                    id=303,
-                    conversation_id=10,
-                    dynamic_translation_enabled=True,
-                    created_at=NOW,
-                    updated_at=NOW,
-                ),
                 ConversationTranslationTargetLanguage(
                     id=304,
-                    translation_setting_id=303,
+                    conversation_id=10,
                     language_code="es",
                     created_at=NOW,
                 ),

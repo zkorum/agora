@@ -74,7 +74,7 @@ export const conversationLanguageSettingDialogTranslations: Record<
     languagesTitle: "Langues",
     languagesDescription:
       "Choisissez les langues qu'Agora doit prendre en charge pour cette conversation.",
-    languageAutoLabel: "Auto",
+    languageAutoLabel: "auto",
     detectedLanguageAfterPublishing:
       "Détecter la langue principale après publication",
     autoDetectDetectedDescription: "Détecté : {language}",
@@ -84,9 +84,9 @@ export const conversationLanguageSettingDialogTranslations: Record<
     autoDetectUnsupportedDescription:
       "Détecté : {language}. Non pris en charge pour les traductions.",
     additionalLanguagesEmptyDescription:
-      "Ajoutez jusqu'à 2 langues cibles supplémentaires. Si Auto détecte l'une d'elles, elle ne compte qu'une seule fois.",
+      "Ajoutez jusqu'à 2 langues cibles supplémentaires. Si auto détecte l'une d'elles, elle ne compte qu'une seule fois.",
     additionalLanguagesDescription:
-      "Choisissez jusqu'à 2 langues cibles supplémentaires. Si Auto détecte l'une d'elles, elle ne compte qu'une seule fois.",
+      "Choisissez jusqu'à 2 langues cibles supplémentaires. Si auto détecte l'une d'elles, elle ne compte qu'une seule fois.",
     dynamicTranslationTitle: "Traduction dynamique",
     dynamicTranslationDescription:
       "Traduisez le titre, le corps, les propositions et les sondages dans les langues sélectionnées.",
