@@ -13,7 +13,6 @@
     v-model:selected-language="selectedLanguage"
     :project="projectPageData.project"
     :activities="activities"
-    :activity-count="projectPageData.project.activityCount"
     :can-load-more-activities="nextActivityCursor !== undefined"
     :is-loading-more-activities="isLoadingMoreActivities"
     :language-options="projectPageData.languageOptions"

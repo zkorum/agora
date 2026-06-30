@@ -77,7 +77,6 @@
       v-model:selected-language="selectedLanguage"
       :project="project"
       :activities="activities"
-      :activity-count="activities.length"
       :can-load-more-activities="false"
       :is-loading-more-activities="false"
       :language-options="languageOptions"

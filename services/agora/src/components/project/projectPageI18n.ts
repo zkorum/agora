@@ -15,7 +15,6 @@ export interface ProjectPageTranslations {
   activitiesCount: string;
   votesCount: string;
   activitiesTitle: string;
-  showingActivities: string;
   emptyActivities: string;
   allActivitiesLoaded: string;
   projectDetailsAriaLabel: string;
@@ -62,7 +61,6 @@ export const projectPageTranslations: Readonly<
     activitiesCount: "{count} activities",
     votesCount: "{count} votes",
     activitiesTitle: "Activities",
-    showingActivities: "Showing {visible} of {total}",
     emptyActivities: "No activities have been published yet.",
     allActivitiesLoaded: "All activities loaded",
     projectDetailsAriaLabel: "Project details",
@@ -104,7 +102,6 @@ export const projectPageTranslations: Readonly<
     activitiesCount: "{count} иш-чара",
     votesCount: "{count} добуш",
     activitiesTitle: "Иш-чаралар",
-    showingActivities: "{visible} / {total} көрсөтүлүүдө",
     emptyActivities: "Азырынча иш-чаралар жарыялана элек.",
     allActivitiesLoaded: "Бардык иш-чаралар жүктөлдү",
     projectDetailsAriaLabel: "Долбоор тууралуу маалымат",
@@ -145,7 +142,6 @@ export const projectPageTranslations: Readonly<
     activitiesCount: "{count} активности",
     votesCount: "{count} голосов",
     activitiesTitle: "Активности",
-    showingActivities: "Показано {visible} из {total}",
     emptyActivities: "Активности пока не опубликованы.",
     allActivitiesLoaded: "Все активности загружены",
     projectDetailsAriaLabel: "Информация о проекте",
