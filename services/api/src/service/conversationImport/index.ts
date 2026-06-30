@@ -8,6 +8,7 @@
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import type { ImportBuffer } from "../importBuffer.js";
 import type {
+    ConversationLanguageSettingsSource,
     GetConversationImportStatusResponse,
     GetActiveImportResponse,
 } from "@/shared/types/dto.js";
@@ -38,6 +39,7 @@ interface RequestConversationImportParams {
         preferredOpinionGroupCount: PreferredOpinionGroupCount;
         languageSetting: ConversationLanguageSettingInput;
         multilingualSetting: ConversationMultilingualSetting;
+        languageSettingsSource: ConversationLanguageSettingsSource;
     };
     didWrite: string;
     importBuffer: ImportBuffer;
@@ -173,6 +175,7 @@ interface RequestUrlImportParams {
         preferredOpinionGroupCount: PreferredOpinionGroupCount;
         languageSetting: ConversationLanguageSettingInput;
         multilingualSetting: ConversationMultilingualSetting;
+        languageSettingsSource: ConversationLanguageSettingsSource;
     };
     didWrite: string;
     importBuffer: ImportBuffer;

@@ -349,7 +349,7 @@ export type ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAddi
 
 export interface ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInner {
     'languageCode': ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInnerLanguageCodeEnum;
-    'projectTitle': string;
+    'projectTitle'?: string;
     'subtitle'?: string;
     'body'?: string;
     'bodyPlainText'?: string;
@@ -435,7 +435,7 @@ export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectLi
     'bannerIsFullPath': boolean;
     'contentLocalizations': Array<ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInner>;
     'machineContentLocalizations': Array<ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInner>;
-    'languageSettings': ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerLanguageSettings;
+    'languageSettings': ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettings;
     'attributions': Array<ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInner>;
     'contact'?: ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact;
 }
@@ -536,7 +536,7 @@ export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectLi
 }
 export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInner {
     'languageCode': ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInnerLanguageCodeEnum;
-    'projectTitle': string;
+    'projectTitle'?: string;
     'subtitle'?: string;
     'body'?: string;
     'bodyPlainText'?: string;
@@ -559,27 +559,6 @@ export const ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListIn
 } as const;
 
 export type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInnerLanguageCodeEnum];
-
-export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerLanguageSettings {
-    'dynamicTranslationEnabled': boolean;
-    'targetLanguageCodes': Array<ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerLanguageSettingsTargetLanguageCodesEnum>;
-}
-
-export const ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerLanguageSettingsTargetLanguageCodesEnum = {
-    En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
-    Ar: 'ar',
-    Fa: 'fa',
-    He: 'he',
-    Ky: 'ky',
-    Ru: 'ru',
-} as const;
-
-export type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerLanguageSettingsTargetLanguageCodesEnum = typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerLanguageSettingsTargetLanguageCodesEnum[keyof typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerLanguageSettingsTargetLanguageCodesEnum];
 
 export interface ApiV1AdministratorProjectGetProjectDetailsPost200Response {
     'project'?: ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInner;
@@ -614,7 +593,7 @@ export type ApiV1AdministratorProjectLanguageSettingsUpdatePost200ResponseOneOfR
 
 export interface ApiV1AdministratorProjectLanguageSettingsUpdatePostRequest {
     'projectSlug': string;
-    'languageSettings': ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerLanguageSettings;
+    'languageSettings': ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettings;
 }
 /**
  * @type ApiV1AdministratorProjectSlugUpdatePost200Response
@@ -2267,6 +2246,8 @@ export interface ApiV1ConversationCreatePost200ResponseOneOf1 {
 export const ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum = {
     PlainTextTooLong: 'plain_text_too_long',
     HtmlTooLong: 'html_too_long',
+    OrganizationNotAvailable: 'organization_not_available',
+    MissingConversationCreateCapability: 'missing_conversation_create_capability',
 } as const;
 
 export type ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum];
@@ -2275,6 +2256,8 @@ export interface ApiV1ConversationCreatePostRequest {
     'conversationTitle': string;
     'conversationBody'?: string;
     'conversationBodyPlainText': string;
+    'projectSlug'?: string;
+    'languageSettingsSource'?: ApiV1ConversationCreatePostRequestLanguageSettingsSourceEnum;
     'postAsOrganization': string;
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationCreatePostRequestParticipationModeEnum;
@@ -2289,6 +2272,12 @@ export interface ApiV1ConversationCreatePostRequest {
     'surveyConfig'?: ApiV1ConversationCreatePostRequestSurveyConfig | null;
 }
 
+export const ApiV1ConversationCreatePostRequestLanguageSettingsSourceEnum = {
+    ConversationOverride: 'conversation_override',
+    ProjectInherited: 'project_inherited',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestLanguageSettingsSourceEnum = typeof ApiV1ConversationCreatePostRequestLanguageSettingsSourceEnum[keyof typeof ApiV1ConversationCreatePostRequestLanguageSettingsSourceEnum];
 export const ApiV1ConversationCreatePostRequestParticipationModeEnum = {
     AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
@@ -3372,11 +3361,19 @@ export interface ApiV1ConversationImportActivePost200ResponseOneOf {
 export interface ApiV1ConversationImportActivePost200ResponseOneOf1 {
     'hasActiveImport': boolean;
 }
-export interface ApiV1ConversationImportPost200Response {
+/**
+ * @type ApiV1ConversationImportPost200Response
+ */
+export type ApiV1ConversationImportPost200Response = ApiV1ConversationImportPost200ResponseOneOf | ApiV1ProjectCreateOptionsListPost200ResponseOneOf1;
+
+export interface ApiV1ConversationImportPost200ResponseOneOf {
+    'success': boolean;
     'importSlugId': string;
 }
 export interface ApiV1ConversationImportPostRequest {
     'polisUrl': string;
+    'projectSlug'?: string;
+    'languageSettingsSource'?: ApiV1ConversationImportPostRequestLanguageSettingsSourceEnum;
     'postAsOrganization': string;
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationImportPostRequestParticipationModeEnum;
@@ -3387,6 +3384,12 @@ export interface ApiV1ConversationImportPostRequest {
     'preferredOpinionGroupCount'?: number | null;
 }
 
+export const ApiV1ConversationImportPostRequestLanguageSettingsSourceEnum = {
+    ConversationOverride: 'conversation_override',
+    ProjectInherited: 'project_inherited',
+} as const;
+
+export type ApiV1ConversationImportPostRequestLanguageSettingsSourceEnum = typeof ApiV1ConversationImportPostRequestLanguageSettingsSourceEnum[keyof typeof ApiV1ConversationImportPostRequestLanguageSettingsSourceEnum];
 export const ApiV1ConversationImportPostRequestParticipationModeEnum = {
     AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
@@ -4803,6 +4806,74 @@ export const ApiV1PremiumFeatureAccessCheckPostRequestFeatureEnum = {
 
 export type ApiV1PremiumFeatureAccessCheckPostRequestFeatureEnum = typeof ApiV1PremiumFeatureAccessCheckPostRequestFeatureEnum[keyof typeof ApiV1PremiumFeatureAccessCheckPostRequestFeatureEnum];
 
+/**
+ * @type ApiV1ProjectCreateOptionsListPost200Response
+ */
+export type ApiV1ProjectCreateOptionsListPost200Response = ApiV1ProjectCreateOptionsListPost200ResponseOneOf | ApiV1ProjectCreateOptionsListPost200ResponseOneOf1;
+
+export interface ApiV1ProjectCreateOptionsListPost200ResponseOneOf {
+    'success': boolean;
+    'projectList': Array<ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInner>;
+}
+export interface ApiV1ProjectCreateOptionsListPost200ResponseOneOf1 {
+    'success': boolean;
+    'reason': ApiV1ProjectCreateOptionsListPost200ResponseOneOf1ReasonEnum;
+}
+
+export const ApiV1ProjectCreateOptionsListPost200ResponseOneOf1ReasonEnum = {
+    OrganizationNotAvailable: 'organization_not_available',
+    MissingConversationCreateCapability: 'missing_conversation_create_capability',
+} as const;
+
+export type ApiV1ProjectCreateOptionsListPost200ResponseOneOf1ReasonEnum = typeof ApiV1ProjectCreateOptionsListPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ProjectCreateOptionsListPost200ResponseOneOf1ReasonEnum];
+
+export interface ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInner {
+    'projectSlug': string;
+    'projectTitle': string;
+    'defaultLanguageCode': ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerDefaultLanguageCodeEnum;
+    'languageSettings': ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettings;
+}
+
+export const ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerDefaultLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerDefaultLanguageCodeEnum = typeof ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerDefaultLanguageCodeEnum[keyof typeof ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerDefaultLanguageCodeEnum];
+
+export interface ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettings {
+    'dynamicTranslationEnabled': boolean;
+    'targetLanguageCodes': Array<ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettingsTargetLanguageCodesEnum>;
+}
+
+export const ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettingsTargetLanguageCodesEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettingsTargetLanguageCodesEnum = typeof ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettingsTargetLanguageCodesEnum[keyof typeof ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettingsTargetLanguageCodesEnum];
+
+export interface ApiV1ProjectCreateOptionsListPostRequest {
+    'postAsOrganization': string;
+}
 export interface ApiV1ProjectPageActivitiesFetchPost200Response {
     'activities': Array<ApiV1ProjectPageFetchPost200ResponseActivitiesInner>;
     'nextActivityCursor'?: ApiV1ProjectPageFetchPost200ResponseNextActivityCursor;
@@ -9069,6 +9140,44 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          *
+         * @param {ApiV1ProjectCreateOptionsListPostRequest} apiV1ProjectCreateOptionsListPostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ProjectCreateOptionsListPost: async (apiV1ProjectCreateOptionsListPostRequest: ApiV1ProjectCreateOptionsListPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ProjectCreateOptionsListPostRequest' is not null or undefined
+            assertParamExists('apiV1ProjectCreateOptionsListPost', 'apiV1ProjectCreateOptionsListPostRequest', apiV1ProjectCreateOptionsListPostRequest)
+            const localVarPath = `/api/v1/project/create-options/list`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ProjectCreateOptionsListPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         *
          * @param {ApiV1ProjectPageActivitiesFetchPostRequest} apiV1ProjectPageActivitiesFetchPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -11175,6 +11284,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          *
+         * @param {ApiV1ProjectCreateOptionsListPostRequest} apiV1ProjectCreateOptionsListPostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ProjectCreateOptionsListPost(apiV1ProjectCreateOptionsListPostRequest: ApiV1ProjectCreateOptionsListPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ProjectCreateOptionsListPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ProjectCreateOptionsListPost(apiV1ProjectCreateOptionsListPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ProjectCreateOptionsListPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         *
          * @param {ApiV1ProjectPageActivitiesFetchPostRequest} apiV1ProjectPageActivitiesFetchPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -12281,6 +12402,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          *
+         * @param {ApiV1ProjectCreateOptionsListPostRequest} apiV1ProjectCreateOptionsListPostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ProjectCreateOptionsListPost(apiV1ProjectCreateOptionsListPostRequest: ApiV1ProjectCreateOptionsListPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ProjectCreateOptionsListPost200Response> {
+            return localVarFp.apiV1ProjectCreateOptionsListPost(apiV1ProjectCreateOptionsListPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         *
          * @param {ApiV1ProjectPageActivitiesFetchPostRequest} apiV1ProjectPageActivitiesFetchPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -13375,6 +13505,16 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1PremiumFeatureAccessCheckPost(apiV1PremiumFeatureAccessCheckPostRequest: ApiV1PremiumFeatureAccessCheckPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1PremiumFeatureAccessCheckPost(apiV1PremiumFeatureAccessCheckPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     *
+     * @param {ApiV1ProjectCreateOptionsListPostRequest} apiV1ProjectCreateOptionsListPostRequest
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1ProjectCreateOptionsListPost(apiV1ProjectCreateOptionsListPostRequest: ApiV1ProjectCreateOptionsListPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ProjectCreateOptionsListPost(apiV1ProjectCreateOptionsListPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

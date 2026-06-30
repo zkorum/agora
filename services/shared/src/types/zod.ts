@@ -94,7 +94,7 @@ export const zodProjectLanguageSettings = z
         dynamicTranslationEnabled: z.boolean(),
         targetLanguageCodes: z
             .array(ZodSupportedDisplayLanguageCodes)
-            .max(2)
+            .max(3)
             .refine(
                 (languageCodes) =>
                     new Set(languageCodes).size === languageCodes.length,

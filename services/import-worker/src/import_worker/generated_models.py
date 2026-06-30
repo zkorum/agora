@@ -216,6 +216,11 @@ class ImportFailureReasonEnum(StrEnum):
     invalid_data_format = "invalid_data_format"
 
 
+class ConversationLanguageSettingsSource(StrEnum):
+    conversation_override = "conversation_override"
+    project_inherited = "project_inherited"
+
+
 class ParticipationMode(StrEnum):
     account_required = "account_required"
     strong_verification = "strong_verification"
@@ -446,6 +451,14 @@ class Conversation(Base):
     project_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    language_settings_source: Mapped[ConversationLanguageSettingsSource] = mapped_column(
+        SaEnum(
+            ConversationLanguageSettingsSource,
+            name="conversation_language_settings_source",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
     current_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_indexed: Mapped[bool] = mapped_column(Boolean, server_default="true")
     participation_mode: Mapped[ParticipationMode] = mapped_column(

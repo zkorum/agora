@@ -37,7 +37,19 @@
         v-model:multilingual-setting="multilingualSetting"
         v-model:ai-labeling-enabled="aiLabelingEnabled"
         v-model:preferred-opinion-group-count="preferredOpinionGroupCount"
-      />
+        :hide-language-setting="selectedProjectSlug !== undefined"
+      >
+        <template #extra-controls>
+          <CreateConversationProjectLanguageSettings
+            v-if="projectLanguageProjects.length > 0"
+            v-model:selected-project-slug="selectedProjectSlug"
+            v-model:inherit-project-languages="inheritProjectLanguages"
+            v-model:override-language-setting="languageSetting"
+            v-model:override-multilingual-setting="multilingualSetting"
+            :project-list="projectLanguageProjects"
+          />
+        </template>
+      </NewConversationControlBar>
 
       <!-- Active Import Banner -->
       <ActiveImportBanner
@@ -166,6 +178,8 @@ import PreParticipationIntentionDialog from "src/components/authentication/inten
 import ActiveImportBanner from "src/components/conversation/import/ActiveImportBanner.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import type { CreateConversationProjectLanguageProject } from "src/components/newConversation/CreateConversationProjectLanguageSettings.vue";
+import CreateConversationProjectLanguageSettings from "src/components/newConversation/CreateConversationProjectLanguageSettings.vue";
 import PolisCsvUpload from "src/components/newConversation/import/csv/PolisCsvUpload.vue";
 import PolisUrlInput from "src/components/newConversation/import/url/PolisUrlInput.vue";
 import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
@@ -177,6 +191,7 @@ import {
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_LENGTH_CONVERSATION_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
+import type { GetConversationCreateProjectOptionsResponse } from "src/shared/types/dto";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
@@ -185,6 +200,7 @@ import { type AxiosErrorCode, useCommonApi } from "src/utils/api/common";
 import { useActiveImportQuery } from "src/utils/api/conversationImport/useConversationImportQueries";
 import { useBackendPostApi } from "src/utils/api/post/post";
 import { isHistoryPathEqual } from "src/utils/nav/historyBack";
+import { useNotify } from "src/utils/ui/notify";
 import {
   computed,
   defineAsyncComponent,
@@ -210,6 +226,11 @@ const Editor = defineAsyncComponent(
   () => import("src/components/editor/Editor.vue")
 );
 
+type ProjectTargetFailureReason = Extract<
+  GetConversationCreateProjectOptionsResponse,
+  { success: false }
+>["reason"];
+
 const { t } = useComponentI18n<CreateConversationTranslations>(
   createConversationTranslations
 );
@@ -222,6 +243,8 @@ const {
   contentPlainText,
   languageSetting,
   multilingualSetting,
+  selectedProjectSlug,
+  inheritProjectLanguages,
   conversationType,
   isPrivate,
   participationMode,
@@ -266,7 +289,13 @@ const showTitleError = computed(
 
 const router = useRouter();
 
-const { importConversation, importConversationFromCsv } = useBackendPostApi();
+const {
+  fetchConversationCreateProjectOptions,
+  importConversation,
+  importConversationFromCsv,
+} = useBackendPostApi();
+const projectLanguageProjects = ref<CreateConversationProjectLanguageProject[]>([]);
+let projectOptionsRequestId = 0;
 
 // Disable the warning since Vue template refs can be potentially null
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
@@ -286,6 +315,7 @@ const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 const { createNewConversationIntention } = useLoginIntentionStore();
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { handleAxiosErrorStatusCodes } = useCommonApi();
+const { showNotifyMessage } = useNotify();
 
 const showLoginDialog = ref(false);
 
@@ -298,9 +328,58 @@ const activeImportQuery = useActiveImportQuery({
   ),
 });
 
+watch(
+  () => ({
+    isLoggedIn: isLoggedIn.value,
+    postAsOrganization: postAs.value.postAsOrganization,
+    organizationName: postAs.value.organizationName,
+  }),
+  async ({ isLoggedIn, postAsOrganization, organizationName }) => {
+    const requestId = ++projectOptionsRequestId;
+    projectLanguageProjects.value = [];
+    selectedProjectSlug.value = undefined;
+    inheritProjectLanguages.value = false;
+
+    if (!isLoggedIn || !postAsOrganization || organizationName === "") {
+      return;
+    }
+
+    const response = await fetchConversationCreateProjectOptions({
+      postAsOrganizationName: organizationName,
+    });
+    if (requestId !== projectOptionsRequestId) {
+      return;
+    }
+
+    if (!response.success) {
+      showProjectTargetFailure(response.reason);
+      return;
+    }
+
+    projectLanguageProjects.value = response.projectList.map((project) => ({
+      slug: project.projectSlug,
+      title: project.projectTitle,
+      defaultLanguageCode: project.defaultLanguageCode,
+      languageSettings: project.languageSettings,
+    }));
+  },
+  { immediate: true }
+);
+
 const hasActiveImport = computed(() => {
   return activeImportQuery.data.value?.hasActiveImport ?? false;
 });
+
+function showProjectTargetFailure(reason: ProjectTargetFailureReason): void {
+  if (reason === "organization_not_available") {
+    showNotifyMessage(t("organizationUnavailable"));
+    return;
+  }
+
+  if (reason === "missing_conversation_create_capability") {
+    showNotifyMessage(t("missingProjectCreateCapability"));
+  }
+}
 
 function hasForwardSeedEntry(): boolean {
   return isHistoryPathEqual({
@@ -399,6 +478,12 @@ function scrollToCsvUpload() {
 }
 
 async function handleImportSubmission(): Promise<void> {
+  const languageSettingsSource =
+    conversationDraft.value.selectedProjectSlug !== undefined &&
+    conversationDraft.value.inheritProjectLanguages
+      ? "project_inherited"
+      : "conversation_override";
+
   if (conversationDraft.value.importSettings.importType === "csv-import") {
     // CSV Import - use the CSV endpoint
     const files = polisCsvUploadRef.value?.getFiles();
@@ -415,6 +500,8 @@ async function handleImportSubmission(): Promise<void> {
         summaryFile: files.summary,
         commentsFile: files.comments,
         votesFile: files.votes,
+        projectSlug: conversationDraft.value.selectedProjectSlug,
+        languageSettingsSource,
         postAsOrganizationName: conversationDraft.value.postAs.organizationName,
         isIndexed: !conversationDraft.value.isPrivate,
         participationMode: conversationDraft.value.participationMode,
@@ -425,6 +512,11 @@ async function handleImportSubmission(): Promise<void> {
         preferredOpinionGroupCount:
           conversationDraft.value.preferredOpinionGroupCount,
       });
+
+      if (!response.success) {
+        showProjectTargetFailure(response.reason);
+        return;
+      }
 
       resetDraft();
       // CSV import is async - redirect to import status page to poll for completion
@@ -446,6 +538,8 @@ async function handleImportSubmission(): Promise<void> {
     // URL Import - use the URL endpoint
     const response = await importConversation({
       polisUrl: conversationDraft.value.importSettings.polisUrl,
+      projectSlug: conversationDraft.value.selectedProjectSlug,
+      languageSettingsSource,
       postAsOrganizationName: conversationDraft.value.postAs.organizationName,
       isIndexed: !conversationDraft.value.isPrivate,
       participationMode: conversationDraft.value.participationMode,
@@ -458,6 +552,11 @@ async function handleImportSubmission(): Promise<void> {
     });
 
     if (response.status === "success") {
+      if (!response.data.success) {
+        showProjectTargetFailure(response.data.reason);
+        return;
+      }
+
       resetDraft();
       // URL import is now async - redirect to import status page to poll for completion
       isNavigatingAway.value = true;

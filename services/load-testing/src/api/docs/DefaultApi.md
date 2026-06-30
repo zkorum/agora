@@ -88,6 +88,7 @@ All URIs are relative to *http://localhost*
 |[**apiV1OpinionFetchCommentStatsByConversationPost**](#apiv1opinionfetchcommentstatsbyconversationpost) | **POST** /api/v1/opinion/fetch-comment-stats-by-conversation | |
 |[**apiV1OpinionFetchHiddenByConversationPost**](#apiv1opinionfetchhiddenbyconversationpost) | **POST** /api/v1/opinion/fetch-hidden-by-conversation | |
 |[**apiV1PremiumFeatureAccessCheckPost**](#apiv1premiumfeatureaccesscheckpost) | **POST** /api/v1/premium-feature/access/check | |
+|[**apiV1ProjectCreateOptionsListPost**](#apiv1projectcreateoptionslistpost) | **POST** /api/v1/project/create-options/list | |
 |[**apiV1ProjectPageActivitiesFetchPost**](#apiv1projectpageactivitiesfetchpost) | **POST** /api/v1/project/page/activities/fetch | |
 |[**apiV1ProjectPageDisplayLanguageUpdatePost**](#apiv1projectpagedisplaylanguageupdatepost) | **POST** /api/v1/project/page/display-language/update | |
 |[**apiV1ProjectPageFetchPost**](#apiv1projectpagefetchpost) | **POST** /api/v1/project/page/fetch | |
@@ -4280,6 +4281,57 @@ const { status, data } = await apiInstance.apiV1PremiumFeatureAccessCheckPost(
 ### Return type
 
 **ApiV1PremiumFeatureAccessCheckPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1ProjectCreateOptionsListPost**
+> ApiV1ProjectCreateOptionsListPost200Response apiV1ProjectCreateOptionsListPost(apiV1ProjectCreateOptionsListPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ProjectCreateOptionsListPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ProjectCreateOptionsListPostRequest: ApiV1ProjectCreateOptionsListPostRequest; //
+
+const { status, data } = await apiInstance.apiV1ProjectCreateOptionsListPost(
+    apiV1ProjectCreateOptionsListPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ProjectCreateOptionsListPostRequest** | **ApiV1ProjectCreateOptionsListPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1ProjectCreateOptionsListPost200Response**
 
 ### Authorization
 

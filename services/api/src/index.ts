@@ -1,6 +1,8 @@
 import {
     Dto,
     type GetConversationResponse,
+    type ImportConversationResponse,
+    type ImportCsvConversationResponse,
     type SurveyFormFetchResponse,
 } from "@/shared/types/dto.js";
 import {
@@ -63,7 +65,12 @@ import { fetchAnalysisCheckpointsByConversationSlugId } from "@/service/conversa
 import { createExportWorker } from "@/service/conversationExport/core.js";
 import type { ValkeyRef } from "@/service/valkeyRef.js";
 import { validateS3Access } from "./service/s3.js";
-import { resolveConversationCreateTarget } from "@/service/projectAccess.js";
+import {
+    getConversationCreateProjectOptions,
+    getProjectLanguageSettings,
+    resolveConversationCreateTargetResult,
+} from "@/service/projectAccess.js";
+import { normalizeInheritedConversationMultilingualSettings } from "@/service/translationLanguageSetting.js";
 
 import {
     httpMethodToAbility,
@@ -1605,6 +1612,35 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
+        url: `/api/${apiVersion}/project/create-options/list`,
+        schema: {
+            body: Dto.getConversationCreateProjectOptionsRequest,
+            response: {
+                200: Dto.getConversationCreateProjectOptionsResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                },
+            );
+
+            return await getConversationCreateProjectOptions({
+                db,
+                userId: deviceStatus.userId,
+                postAsOrganizationSlug: request.body.postAsOrganization,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
         url: `/api/${apiVersion}/project/page/fetch`,
         schema: {
             body: Dto.fetchProjectPageRequest,
@@ -2879,13 +2915,40 @@ server.after(() => {
 
             const hasSurvey =
                 (request.body.surveyConfig?.questions.length ?? 0) > 0;
+            const createTargetResult = await resolveConversationCreateTargetResult({
+                db,
+                userId: deviceStatus.userId,
+                postAsOrganizationSlug: request.body.postAsOrganization,
+                projectSlug: request.body.projectSlug,
+                autoProvisionedDefaultLanguage,
+            });
+            if (!createTargetResult.success) {
+                return createTargetResult;
+            }
+            if (
+                request.body.languageSettingsSource === "project_inherited" &&
+                request.body.projectSlug === undefined
+            ) {
+                throw server.httpErrors.badRequest(
+                    "Project language inheritance requires a selected project",
+                );
+            }
+            const effectiveMultilingualSetting =
+                request.body.languageSettingsSource === "project_inherited"
+                    ? normalizeInheritedConversationMultilingualSettings({
+                          languageSettings: await getProjectLanguageSettings({
+                              db,
+                              projectId: createTargetResult.target.projectId,
+                          }),
+                      })
+                    : request.body.multilingualSetting;
             const premiumFeatures =
                 premiumEntitlementService.getPremiumFeaturesFromCreateRequest({
                     requiresEventTicket: request.body.requiresEventTicket,
                     hasSurvey,
                     preferredOpinionGroupCount:
                         request.body.preferredOpinionGroupCount,
-                    multilingualSetting: request.body.multilingualSetting,
+                    multilingualSetting: effectiveMultilingualSetting,
                 });
 
             if (request.body.externalSourceConfig != null) {
@@ -2898,16 +2961,10 @@ server.after(() => {
             if (premiumFeatures.length > 0) {
                 await premiumEntitlementService.requirePremiumAccess({
                     db,
-                    subject:
-                        await premiumEntitlementService.getPremiumEntitlementSubjectForCreate(
-                            {
-                                db,
-                                userId: deviceStatus.userId,
-                                postAsOrganization:
-                                    request.body.postAsOrganization,
-                                autoProvisionedDefaultLanguage,
-                            },
-                        ),
+                    subject: {
+                        projectId: createTargetResult.target.projectId,
+                        userId: deviceStatus.userId,
+                    },
                     features: premiumFeatures,
                     mode: "creation",
                     now: nowZeroMs(),
@@ -2923,6 +2980,9 @@ server.after(() => {
                 authorId: deviceStatus.userId,
                 didWrite: didWrite,
                 postAsOrganization: request.body.postAsOrganization,
+                projectSlug: request.body.projectSlug,
+                createTarget: createTargetResult.target,
+                languageSettingsSource: request.body.languageSettingsSource,
                 autoProvisionedDefaultLanguage,
                 isIndexed: request.body.isIndexed,
                 participationMode: request.body.participationMode,
@@ -3026,10 +3086,11 @@ server.after(() => {
                 }
             }
 
-            const createTarget = await resolveConversationCreateTarget({
+            const createTargetResult = await resolveConversationCreateTargetResult({
                 db,
                 userId: deviceStatus.userId,
                 postAsOrganizationSlug: request.body.postAsOrganization,
+                projectSlug: request.body.projectSlug,
                 autoProvisionedDefaultLanguage:
                     getAutoProvisionedDefaultLanguage({
                         storedUserDisplayLanguage: undefined,
@@ -3038,6 +3099,26 @@ server.after(() => {
                         }),
                     }),
             });
+            if (!createTargetResult.success) {
+                return createTargetResult;
+            }
+            if (
+                request.body.languageSettingsSource === "project_inherited" &&
+                request.body.projectSlug === undefined
+            ) {
+                throw server.httpErrors.badRequest(
+                    "Project language inheritance requires a selected project",
+                );
+            }
+            const importMultilingualSetting =
+                request.body.languageSettingsSource === "project_inherited"
+                    ? normalizeInheritedConversationMultilingualSettings({
+                          languageSettings: await getProjectLanguageSettings({
+                              db,
+                              projectId: createTargetResult.target.projectId,
+                          }),
+                      })
+                    : request.body.multilingualSetting;
 
             const premiumFeatures =
                 premiumEntitlementService.getPremiumFeaturesFromCreateRequest({
@@ -3045,13 +3126,13 @@ server.after(() => {
                     hasSurvey: false,
                     preferredOpinionGroupCount:
                         request.body.preferredOpinionGroupCount,
-                    multilingualSetting: request.body.multilingualSetting,
+                    multilingualSetting: importMultilingualSetting,
                 });
             if (premiumFeatures.length > 0) {
                 await premiumEntitlementService.requirePremiumAccess({
                     db,
                     subject: {
-                        projectId: createTarget.projectId,
+                        projectId: createTargetResult.target.projectId,
                         userId: deviceStatus.userId,
                     },
                     features: premiumFeatures,
@@ -3061,10 +3142,10 @@ server.after(() => {
             }
 
             // Queue URL import for async processing
-            return await conversationImportService.requestUrlImport({
+            const importResult = await conversationImportService.requestUrlImport({
                 db,
                 userId: deviceStatus.userId,
-                projectId: createTarget.projectId,
+                projectId: createTargetResult.target.projectId,
                 polisUrl: request.body.polisUrl,
                 formData: {
                     participationMode: request.body.participationMode,
@@ -3074,12 +3155,18 @@ server.after(() => {
                     preferredOpinionGroupCount:
                         request.body.preferredOpinionGroupCount,
                     languageSetting: request.body.languageSetting,
-                    multilingualSetting: request.body.multilingualSetting,
+                    multilingualSetting: importMultilingualSetting,
+                    languageSettingsSource: request.body.languageSettingsSource,
                 },
                 didWrite,
                 importBuffer,
                 realtimeSSEManager,
             });
+            const response: ImportConversationResponse = {
+                success: true,
+                importSlugId: importResult.importSlugId,
+            };
+            return response;
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({
@@ -3212,10 +3299,11 @@ server.after(() => {
                 }
             }
 
-            const createTarget = await resolveConversationCreateTarget({
+            const createTargetResult = await resolveConversationCreateTargetResult({
                 db,
                 userId: deviceStatus.userId,
                 postAsOrganizationSlug: parsedFields.postAsOrganization,
+                projectSlug: parsedFields.projectSlug,
                 autoProvisionedDefaultLanguage:
                     getAutoProvisionedDefaultLanguage({
                         storedUserDisplayLanguage: undefined,
@@ -3224,6 +3312,27 @@ server.after(() => {
                         }),
                     }),
             });
+            if (!createTargetResult.success) {
+                reply.send(createTargetResult);
+                return;
+            }
+            if (
+                parsedFields.languageSettingsSource === "project_inherited" &&
+                parsedFields.projectSlug === undefined
+            ) {
+                throw server.httpErrors.badRequest(
+                    "Project language inheritance requires a selected project",
+                );
+            }
+            const importMultilingualSetting =
+                parsedFields.languageSettingsSource === "project_inherited"
+                    ? normalizeInheritedConversationMultilingualSettings({
+                          languageSettings: await getProjectLanguageSettings({
+                              db,
+                              projectId: createTargetResult.target.projectId,
+                          }),
+                      })
+                    : parsedFields.multilingualSetting;
 
             const premiumFeatures =
                 premiumEntitlementService.getPremiumFeaturesFromCreateRequest({
@@ -3231,13 +3340,13 @@ server.after(() => {
                     hasSurvey: false,
                     preferredOpinionGroupCount:
                         parsedFields.preferredOpinionGroupCount,
-                    multilingualSetting: parsedFields.multilingualSetting,
+                    multilingualSetting: importMultilingualSetting,
                 });
             if (premiumFeatures.length > 0) {
                 await premiumEntitlementService.requirePremiumAccess({
                     db,
                     subject: {
-                        projectId: createTarget.projectId,
+                        projectId: createTargetResult.target.projectId,
                         userId: deviceStatus.userId,
                     },
                     features: premiumFeatures,
@@ -3251,7 +3360,7 @@ server.after(() => {
                 await conversationImportService.requestConversationImport({
                     db,
                     userId: deviceStatus.userId,
-                    projectId: createTarget.projectId,
+                    projectId: createTargetResult.target.projectId,
                     files: parsedFiles.data,
                     formData: {
                         participationMode: parsedFields.participationMode,
@@ -3261,14 +3370,19 @@ server.after(() => {
                         preferredOpinionGroupCount:
                             parsedFields.preferredOpinionGroupCount,
                         languageSetting: parsedFields.languageSetting,
-                        multilingualSetting: parsedFields.multilingualSetting,
+                        multilingualSetting: importMultilingualSetting,
+                        languageSettingsSource: parsedFields.languageSettingsSource,
                     },
                     didWrite,
                     importBuffer,
                     realtimeSSEManager,
                 });
 
-            reply.send({ importSlugId });
+            const response: ImportCsvConversationResponse = {
+                success: true,
+                importSlugId,
+            };
+            reply.send(response);
         },
     });
 

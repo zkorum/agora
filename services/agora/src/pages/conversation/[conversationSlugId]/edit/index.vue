@@ -586,6 +586,7 @@ onMounted(async () => {
       contentPlainText: "",
       languageSetting: loadedLanguageSetting,
       multilingualSetting: response.multilingualSetting,
+      inheritProjectLanguages: false,
       isPrivate: !response.isIndexed,
       participationMode: response.participationMode,
       requiresEventTicket: response.requiresEventTicket,

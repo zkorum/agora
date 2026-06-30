@@ -291,10 +291,22 @@ const zodUpdateProjectLanguageSettingsFailureReason = z.enum([
     "dynamic_translation_entitlement_required",
     "missing_manual_project_content_localization",
 ]);
+const zodGetConversationCreateProjectOptionsFailureReason = z.enum([
+    "organization_not_available",
+    "missing_conversation_create_capability",
+]);
+const zodConversationCreateFailureReason = z.union([
+    zodRichTextValidationFailureReason,
+    zodGetConversationCreateProjectOptionsFailureReason,
+]);
+const zodConversationLanguageSettingsSource = z.enum([
+    "conversation_override",
+    "project_inherited",
+]);
 const zodProjectContentLocalization = z
     .object({
         languageCode: ZodSupportedDisplayLanguageCodes,
-        projectTitle: zodProjectTitle,
+        projectTitle: zodProjectTitle.optional(),
         subtitle: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
         body: zodConversationBodyInput,
         bodyPlainText: zodConversationBodyPlainTextInput.optional(),
@@ -664,6 +676,10 @@ export class Dto {
             conversationTitle: zodConversationTitle,
             conversationBody: zodConversationBodyInput,
             conversationBodyPlainText: zodConversationBodyPlainTextInput,
+            projectSlug: zodProjectSlug.optional(),
+            languageSettingsSource: zodConversationLanguageSettingsSource.default(
+                "conversation_override",
+            ),
             postAsOrganization: z.preprocess(
                 (val) => (val === "" || val === undefined ? undefined : val),
                 zodOrganizationSlug.optional(),
@@ -692,13 +708,17 @@ export class Dto {
         z
             .object({
                 success: z.literal(false),
-                reason: zodRichTextValidationFailureReason,
+                reason: zodConversationCreateFailureReason,
             })
             .strict(),
     ]);
     static importConversationRequest = z
         .object({
             polisUrl: zodPolisUrl,
+            projectSlug: zodProjectSlug.optional(),
+            languageSettingsSource: zodConversationLanguageSettingsSource.default(
+                "conversation_override",
+            ),
             postAsOrganization: z.preprocess(
                 (val) => (val === "" || val === undefined ? undefined : val),
                 zodOrganizationSlug.optional(),
@@ -718,16 +738,29 @@ export class Dto {
                 zodPreferredOpinionGroupCount.default(null),
         })
         .strict();
-    static importConversationResponse = z
-        .object({
-            importSlugId: z.string(),
-        })
-        .strict();
+    static importConversationResponse = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+                importSlugId: z.string(),
+            })
+            .strict(),
+        z
+            .object({
+                success: z.literal(false),
+                reason: zodGetConversationCreateProjectOptionsFailureReason,
+            })
+            .strict(),
+    ]);
     static importCsvConversationRequest = z
         .object({
             postAsOrganization: z.preprocess(
                 (val) => (val === "" || val === undefined ? undefined : val),
                 zodOrganizationSlug.optional(),
+            ),
+            projectSlug: zodProjectSlug.optional(),
+            languageSettingsSource: zodConversationLanguageSettingsSource.default(
+                "conversation_override",
             ),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
@@ -738,6 +771,17 @@ export class Dto {
             postAsOrganization: z.preprocess(
                 (val) => (val === "" || val === undefined ? undefined : val),
                 zodOrganizationSlug.optional(),
+            ),
+            projectSlug: z.preprocess(
+                (val) => (val === "" || val === undefined ? undefined : val),
+                zodProjectSlug.optional(),
+            ),
+            languageSettingsSource: z.preprocess(
+                (val) =>
+                    val === "" || val === undefined
+                        ? "conversation_override"
+                        : val,
+                zodConversationLanguageSettingsSource,
             ),
             isIndexed: z.preprocess(
                 (val) => val === "true" || val === true,
@@ -801,11 +845,20 @@ export class Dto {
             }, zodPreferredOpinionGroupCount.default(null)),
         })
         .strict();
-    static importCsvConversationResponse = z
-        .object({
-            importSlugId: z.string(),
-        })
-        .strict();
+    static importCsvConversationResponse = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+                importSlugId: z.string(),
+            })
+            .strict(),
+        z
+            .object({
+                success: z.literal(false),
+                reason: zodGetConversationCreateProjectOptionsFailureReason,
+            })
+            .strict(),
+    ]);
     static getActiveImportResponse = z.discriminatedUnion("hasActiveImport", [
         z
             .object({
@@ -1716,6 +1769,39 @@ export class Dto {
             projectList: z.array(zodAdminProjectOption),
         })
         .strict();
+    static getConversationCreateProjectOptionsRequest = z
+        .object({
+            postAsOrganization: z.preprocess(
+                (val) => (val === "" || val === undefined ? undefined : val),
+                zodOrganizationSlug.optional(),
+            ),
+        })
+        .strict();
+    static conversationCreateProjectOption = z
+        .object({
+            projectSlug: zodProjectSlug,
+            projectTitle: zodProjectTitle,
+            defaultLanguageCode: ZodSupportedDisplayLanguageCodes,
+            languageSettings: zodProjectLanguageSettings,
+        })
+        .strict();
+    static getConversationCreateProjectOptionsResponse = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    projectList: z.array(Dto.conversationCreateProjectOption),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: zodGetConversationCreateProjectOptionsFailureReason,
+                })
+                .strict(),
+        ],
+    );
     static getProjectDetailsRequest = z
         .object({
             projectSlug: zodProjectSlug,
@@ -2372,6 +2458,18 @@ export type AdminProjectOption = z.infer<typeof zodAdminProjectOption>;
 export type GetAllProjectsResponse = z.infer<typeof Dto.getAllProjectsResponse>;
 export type GetProjectOptionsResponse = z.infer<
     typeof Dto.getProjectOptionsResponse
+>;
+export type ConversationCreateProjectOption = z.infer<
+    typeof Dto.conversationCreateProjectOption
+>;
+export type GetConversationCreateProjectOptionsRequest = z.infer<
+    typeof Dto.getConversationCreateProjectOptionsRequest
+>;
+export type GetConversationCreateProjectOptionsResponse = z.infer<
+    typeof Dto.getConversationCreateProjectOptionsResponse
+>;
+export type ConversationLanguageSettingsSource = z.infer<
+    typeof zodConversationLanguageSettingsSource
 >;
 export type GetProjectDetailsRequest = z.infer<
     typeof Dto.getProjectDetailsRequest

@@ -6,6 +6,11 @@ import {
 } from "@/shared-backend/schema.js";
 import type { ConversationMultilingualSetting } from "@/shared/types/zod.js";
 
+interface PersistedConversationMultilingualSetting {
+    dynamicTranslationEnabled: boolean;
+    additionalLanguageCodes: readonly ConversationMultilingualSetting["additionalLanguageCodes"][number][];
+}
+
 export const DEFAULT_CONVERSATION_MULTILINGUAL_SETTING: ConversationMultilingualSetting = {
     additionalLanguageCodes: [],
     dynamicTranslationEnabled: false,
@@ -118,7 +123,7 @@ export async function upsertConversationMultilingualSetting({
 }: {
     db: PostgresDatabase;
     conversationId: number;
-    setting: ConversationMultilingualSetting;
+    setting: PersistedConversationMultilingualSetting;
     now: Date;
 }): Promise<void> {
     await db

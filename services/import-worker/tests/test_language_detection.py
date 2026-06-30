@@ -73,6 +73,7 @@ def _build_import_request(*, dynamic_translation_enabled: bool) -> ImportRequest
                     "additionalLanguageCodes": ["fr"],
                     "dynamicTranslationEnabled": dynamic_translation_enabled,
                 },
+                "languageSettingsSource": "conversation_override",
             },
             "didWrite": "did:key:test",
             "type": "url",

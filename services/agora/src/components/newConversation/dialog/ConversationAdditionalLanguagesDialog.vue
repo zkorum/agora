@@ -2,7 +2,7 @@
   <q-dialog v-model="showDialog" position="bottom">
     <ZKBottomDialogContainer
       :title="t('languagesTitle')"
-      :subtitle="t('additionalLanguagesDescription')"
+      :subtitle="props.subtitle ?? t('additionalLanguagesDescription')"
     >
       <template #leadingAction>
         <ZKBottomDialogBackButton @click="emit('back')" />
@@ -94,6 +94,7 @@ const props = defineProps<{
   canEditLanguages: boolean;
   showAutoLanguage: boolean;
   autoLanguageCaption: string;
+  subtitle?: string;
   detectedLanguageCode: SupportedDisplayLanguageCodes | null | undefined;
 }>();
 

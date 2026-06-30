@@ -108,11 +108,15 @@ type ProjectContentLocalization =
     CreateProjectRequest["contentLocalizations"][number];
 interface SanitizedProjectContentLocalization {
     languageCode: SupportedDisplayLanguageCodes;
-    projectTitle: string;
+    projectTitle: string | null;
     subtitle: string | null;
     body: string | null;
     bannerPath: string | null;
     bannerIsFullPath: boolean;
+}
+interface SanitizedProjectContentTextLocalization
+    extends SanitizedProjectContentLocalization {
+    projectTitle: string;
 }
 type ProjectDatabase =
     | PostgresJsDatabase
@@ -257,14 +261,27 @@ function sanitizeProjectContentLocalizations({
             );
         }
 
+        const projectTitle = normalizeOptionalString(localization.projectTitle);
         const sanitizedBody = sanitizeProjectBody(localization.body);
         const subtitle = normalizeOptionalString(localization.subtitle);
-        if (localizedSubtitleRequired && subtitle === null) {
+        if (
+            projectTitle === null &&
+            (subtitle !== null || sanitizedBody.body !== undefined)
+        ) {
+            throw httpErrors.badRequest(
+                "Project content localization title is required when localized subtitle or body is set",
+            );
+        }
+        if (projectTitle !== null && localizedSubtitleRequired && subtitle === null) {
             throw httpErrors.badRequest(
                 "Project content localization subtitle is required when the project subtitle is set",
             );
         }
-        if (localizedBodyRequired && sanitizedBody.body === undefined) {
+        if (
+            projectTitle !== null &&
+            localizedBodyRequired &&
+            sanitizedBody.body === undefined
+        ) {
             throw httpErrors.badRequest(
                 "Project content localization body is required when the project body is set",
             );
@@ -272,7 +289,7 @@ function sanitizeProjectContentLocalizations({
 
         return {
             languageCode: localization.languageCode,
-            projectTitle: localization.projectTitle.trim(),
+            projectTitle,
             subtitle,
             body: sanitizedBody.body ?? null,
             bannerPath: normalizeOptionalString(localization.bannerPath),
@@ -302,8 +319,8 @@ function assertCompleteManualProjectContentLocalizations({
     for (const languageCode of targetLanguageCodes) {
         const localization = localizationsByLanguageCode.get(languageCode);
         if (
-            localization === undefined ||
-            localization.projectTitle.trim() === "" ||
+            localization?.projectTitle === undefined ||
+            localization.projectTitle === null ||
             (sourceSubtitleRequired && localization.subtitle === null) ||
             (sourceBodyRequired && localization.body === null)
         ) {
@@ -397,11 +414,15 @@ async function syncProjectContentLocalizations({
     sourceLanguageMetadata: ContentLanguageMetadata;
     now: Date;
 }): Promise<void> {
-    const providedLanguageCodeSet = new Set(
-        localizations.map((localization) => localization.languageCode),
+    const textLocalizations = localizations.filter(
+        (localization): localization is SanitizedProjectContentTextLocalization =>
+            localization.projectTitle !== null,
+    );
+    const textLocalizationLanguageCodeSet = new Set(
+        textLocalizations.map((localization) => localization.languageCode),
     );
     const omittedTargetLanguageCodes = targetLanguageCodes.filter(
-        (languageCode) => !providedLanguageCodeSet.has(languageCode),
+        (languageCode) => !textLocalizationLanguageCodeSet.has(languageCode),
     );
     if (omittedTargetLanguageCodes.length > 0) {
         await db
@@ -423,7 +444,7 @@ async function syncProjectContentLocalizations({
             );
     }
 
-    for (const localization of localizations) {
+    for (const localization of textLocalizations) {
         await db
             .insert(projectContentTranslationTable)
             .values({
@@ -1474,6 +1495,33 @@ export async function getAllProjects({
         });
         contentLocalizationsBySourceKind.set(
             localization.projectContentId,
+            contentLocalizations,
+        );
+    }
+
+    for (const [projectContentId, bannerLocalizations] of bannerLocalizationsByProjectContentId) {
+        const activeLanguageCodes = activeLanguageCodesByProjectContentId.get(projectContentId);
+        const contentLocalizations =
+            contentLocalizationsByProjectContentId.get(projectContentId) ?? [];
+        const existingLocalizationLanguageCodes = new Set(
+            contentLocalizations.map((localization) => localization.languageCode),
+        );
+        for (const bannerLocalization of bannerLocalizations) {
+            if (
+                activeLanguageCodes?.has(bannerLocalization.languageCode) !== true ||
+                existingLocalizationLanguageCodes.has(bannerLocalization.languageCode)
+            ) {
+                continue;
+            }
+
+            contentLocalizations.push({
+                languageCode: bannerLocalization.languageCode,
+                bannerPath: bannerLocalization.bannerPath,
+                bannerIsFullPath: bannerLocalization.bannerIsFullPath,
+            });
+        }
+        contentLocalizationsByProjectContentId.set(
+            projectContentId,
             contentLocalizations,
         );
     }

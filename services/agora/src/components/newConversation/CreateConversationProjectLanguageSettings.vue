@@ -1,25 +1,34 @@
 <template>
   <div class="project-language-settings">
-    <q-select
-      v-if="actualProjects.length > 0"
-      v-model="projectSelectValue"
-      outlined
-      emit-value
-      map-options
-      :label="tProject('projectLabel')"
-      :options="projectOptions"
-    />
-
-    <ConversationLanguageSettingsRow
-      :title="tLanguage('languagesTitle')"
-      :value="languageControlSummary"
-      :description="languageControlDescription"
-      :icon="forwardIcon"
-      :disabled="false"
-      :clickable="true"
+    <ConversationControlButton
+      v-if="selectedProject !== undefined"
+      :label="languageControlLabel"
+      :icon="showProjectLanguageDialog ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
       @click="openProjectLanguageSettings"
     />
+
+    <ConversationControlButton
+      v-if="actualProjects.length > 0"
+      :label="projectControlLabel"
+      :icon="showProjectDialog ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
+      @click="showProjectDialog = true"
+    />
   </div>
+
+  <q-dialog v-model="showProjectDialog" position="bottom">
+    <ZKBottomDialogContainer
+      :title="tProject('projectLabel')"
+      :subtitle="tProject('projectSelectionDescription')"
+    >
+      <ZKSelect
+        :model-value="projectSelectValue"
+        searchable
+        :label="tProject('projectLabel')"
+        :options="projectOptions"
+        @update:model-value="setProjectSelectValue"
+      />
+    </ZKBottomDialogContainer>
+  </q-dialog>
 
   <q-dialog v-model="showProjectLanguageDialog" position="bottom">
     <ZKBottomDialogContainer
@@ -37,19 +46,21 @@
           :clickable="false"
         >
           <template #actions>
-            <q-toggle v-model="inheritProjectLanguages" />
+            <q-toggle
+              :model-value="inheritProjectLanguages"
+              @update:model-value="setInheritProjectLanguages"
+            />
           </template>
         </ConversationLanguageSettingsRow>
 
         <template v-if="selectedProject !== undefined && inheritProjectLanguages">
           <ConversationLanguageSettingsRow
             :title="tLanguage('languagesTitle')"
-            :value="projectLanguageSummary"
+            :value="projectLanguageDetails"
             :description="tProject('inheritedProjectLanguagesDescription')"
-            :icon="forwardIcon"
+            :icon="undefined"
             :disabled="false"
-            :clickable="true"
-            @click="startLanguageOverride"
+            :clickable="false"
           />
           <ConversationLanguageSettingsRow
             :title="tLanguage('dynamicTranslationTitle')"
@@ -61,7 +72,7 @@
           >
             <template #actions>
               <q-toggle
-                :model-value="selectedProject.multilingualSetting.dynamicTranslationEnabled"
+                :model-value="selectedProject.languageSettings.dynamicTranslationEnabled"
                 @update:model-value="startDynamicTranslationOverride"
               />
             </template>
@@ -108,6 +119,7 @@
 
 <script setup lang="ts">
 import { useQuasar } from "quasar";
+import ConversationControlButton from "src/components/newConversation/ConversationControlButton.vue";
 import {
   type CreateConversationProjectLanguageSettingsTranslations,
   createConversationProjectLanguageSettingsTranslations,
@@ -117,24 +129,35 @@ import {
   type ConversationLanguageSettingDialogTranslations,
   conversationLanguageSettingDialogTranslations,
 } from "src/components/newConversation/dialog/ConversationLanguageSettingDialog.i18n";
-import { getLanguageLabel as getLocalizedLanguageLabel } from "src/components/newConversation/dialog/conversationLanguageSettings.utils";
+import { getLanguageLabel } from "src/components/newConversation/dialog/conversationLanguageSettings.utils";
 import ConversationLanguageSettingsRow from "src/components/newConversation/dialog/ConversationLanguageSettingsRow.vue";
+import {
+  type NewConversationControlBarTranslations,
+  newConversationControlBarTranslations,
+} from "src/components/newConversation/NewConversationControlBar.i18n";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import ZKSelect from "src/components/ui-library/ZKSelect.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { type SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
   ConversationLanguageSettingInput,
   ConversationMultilingualSetting,
+  ProjectLanguageSettings,
 } from "src/shared/types/zod";
 import { computed, ref, watch } from "vue";
+
+import {
+  formatCompactLanguageSummary,
+  formatLanguageControlLabel,
+} from "./conversationLanguageControlLabel";
 
 export interface CreateConversationProjectLanguageProject {
   slug: string;
   title: string;
-  directoryVisible: boolean;
-  deletedAt: string | null;
+  directoryVisible?: boolean;
+  deletedAt?: string | null;
   defaultLanguageCode: SupportedDisplayLanguageCodes;
-  multilingualSetting: ConversationMultilingualSetting;
+  languageSettings: ProjectLanguageSettings;
 }
 
 interface ProjectOption {
@@ -164,27 +187,26 @@ const overrideMultilingualSetting =
 
 const noProjectValue = "__no_project__";
 const $q = useQuasar();
-const { t: tLanguage, locale } =
+const { t: tLanguage } =
   useComponentI18n<ConversationLanguageSettingDialogTranslations>(
     conversationLanguageSettingDialogTranslations
   );
-const { t: tProject } =
+const { t: tProject, locale } =
   useComponentI18n<CreateConversationProjectLanguageSettingsTranslations>(
     createConversationProjectLanguageSettingsTranslations
   );
+const { t: tControl } = useComponentI18n<NewConversationControlBarTranslations>(
+  newConversationControlBarTranslations
+);
 const showProjectLanguageDialog = ref(false);
+const showProjectDialog = ref(false);
 const showOverrideLanguagePicker = ref(false);
 const returnToProjectLanguageDialog = ref(false);
 const hasInitializedProjectSelection = ref(false);
-const isEditingInheritedProjectLanguages = ref(false);
-const inheritedLanguagePickerSetting = ref<ConversationMultilingualSetting>({
-  additionalLanguageCodes: [],
-  dynamicTranslationEnabled: false,
-});
 
 const actualProjects = computed(() =>
   props.projectList.filter(
-    (project) => project.directoryVisible && project.deletedAt === null
+    (project) => project.directoryVisible !== false && project.deletedAt == null
   )
 );
 
@@ -200,23 +222,27 @@ const selectedProject = computed(() =>
   actualProjects.value.find((project) => project.slug === selectedProjectSlug.value)
 );
 
-const projectSelectValue = computed({
-  get: () => selectedProjectSlug.value ?? noProjectValue,
-  set: (value: string) => {
-    if (
-      value === noProjectValue &&
-      !hasInitializedProjectSelection.value &&
-      actualProjects.value.length > 0
-    ) {
-      return;
-    }
+const projectSelectValue = computed(() => selectedProjectSlug.value ?? noProjectValue);
 
-    hasInitializedProjectSelection.value = true;
-    const nextProjectSlug = value === noProjectValue ? undefined : value;
-    selectedProjectSlug.value = nextProjectSlug;
-    inheritProjectLanguages.value = nextProjectSlug !== undefined;
-  },
-});
+function setProjectSelectValue(value: string | string[] | null): void {
+  const selectedValue = Array.isArray(value) ? value[0] : value;
+  if (
+    selectedValue === noProjectValue &&
+    !hasInitializedProjectSelection.value &&
+    actualProjects.value.length > 0
+  ) {
+    return;
+  }
+
+  hasInitializedProjectSelection.value = true;
+  const nextProjectSlug =
+    selectedValue === null || selectedValue === noProjectValue
+      ? undefined
+      : selectedValue;
+  selectedProjectSlug.value = nextProjectSlug;
+  inheritProjectLanguages.value = nextProjectSlug !== undefined;
+  showProjectDialog.value = false;
+}
 
 const forwardIcon = computed(() =>
   $q.lang.rtl ? "mdi-chevron-left" : "mdi-chevron-right"
@@ -228,15 +254,35 @@ const projectLanguageSummary = computed(() => {
     return undefined;
   }
 
-  return formatLanguageSummary({
+  return formatProjectLanguageSettingsSummary({
     defaultLanguageCode: project.defaultLanguageCode,
-    multilingualSetting: project.multilingualSetting,
+    languageSettings: project.languageSettings,
+    languageTranslateSuffix: tControl("languageTranslateSuffix"),
   });
 });
 
+const projectLanguageDetails = computed(() => {
+  const project = selectedProject.value;
+  if (project === undefined) {
+    return undefined;
+  }
+
+  return getInheritedProjectLanguageCodes(project)
+    .map((languageCode) =>
+      getLanguageLabel({
+        languageCode,
+        locale: locale.value,
+      })
+    )
+    .join(", ");
+});
+
 const overrideLanguageSummary = computed(() =>
-  formatOverrideLanguageSummary({
+  formatCompactLanguageSummary({
+    primaryLanguage: tControl("languagePrimaryAuto"),
     multilingualSetting: overrideMultilingualSetting.value,
+    canUseDynamicTranslation: true,
+    languageTranslateSuffix: tControl("languageTranslateSuffix"),
   })
 );
 
@@ -246,7 +292,7 @@ const projectDynamicTranslationSummary = computed(() => {
     return undefined;
   }
 
-  return project.multilingualSetting.dynamicTranslationEnabled
+  return project.languageSettings.dynamicTranslationEnabled
     ? tLanguage("dynamicTranslationOn")
     : tLanguage("dynamicTranslationOff");
 });
@@ -258,52 +304,37 @@ const languageControlSummary = computed(() => {
     }`;
   }
 
+  if (selectedProject.value === undefined) {
+    return overrideLanguageSummary.value;
+  }
+
   return `${tProject("overrideSummaryPrefix")}: ${overrideLanguageSummary.value}`;
 });
 
-const languageControlDescription = computed(() => {
+const projectControlLabel = computed(() => {
   const project = selectedProject.value;
-  if (project === undefined) {
-    return tProject("noProjectLanguagesDescription");
-  }
-
-  return inheritProjectLanguages.value
-    ? tProject("usingProjectLanguagesDescription", { projectTitle: project.title })
-    : tProject("overridingProjectLanguagesDescription", {
-        projectTitle: project.title,
-      });
+  return project === undefined
+    ? tProject("noProjectLabel")
+    : project.title;
 });
 
+const languageControlLabel = computed(() =>
+  formatLanguageControlLabel({
+    languagesLabel: tControl("languagesLabel"),
+    primaryLanguage: languageControlSummary.value,
+    multilingualSetting: {
+      additionalLanguageCodes: [],
+      dynamicTranslationEnabled: false,
+    },
+    canUseDynamicTranslation: true,
+    languageTranslateSuffix: tControl("languageTranslateSuffix"),
+  })
+);
+
 const languagePickerMultilingualSetting = computed({
-  get: () =>
-    isEditingInheritedProjectLanguages.value
-      ? inheritedLanguagePickerSetting.value
-      : overrideMultilingualSetting.value,
+  get: () => overrideMultilingualSetting.value,
   set: (nextSetting: ConversationMultilingualSetting) => {
-    if (!isEditingInheritedProjectLanguages.value) {
-      overrideMultilingualSetting.value = nextSetting;
-      return;
-    }
-
-    inheritedLanguagePickerSetting.value = copyMultilingualSetting(nextSetting);
-    const project = selectedProject.value;
-    if (project === undefined) {
-      return;
-    }
-
-    if (
-      areMultilingualSettingsEqual({
-        first: nextSetting,
-        second: project.multilingualSetting,
-      })
-    ) {
-      return;
-    }
-
-    overrideLanguageSetting.value = { mode: "auto" };
-    overrideMultilingualSetting.value = copyMultilingualSetting(nextSetting);
-    inheritProjectLanguages.value = false;
-    isEditingInheritedProjectLanguages.value = false;
+    overrideMultilingualSetting.value = nextSetting;
   },
 });
 
@@ -344,12 +375,6 @@ watch(
   { immediate: true }
 );
 
-watch(showOverrideLanguagePicker, (isShown) => {
-  if (!isShown) {
-    isEditingInheritedProjectLanguages.value = false;
-  }
-});
-
 function openProjectLanguageSettings(): void {
   if (selectedProject.value === undefined) {
     openOverrideLanguagePicker({ returnToProjectDialog: false });
@@ -369,23 +394,16 @@ function openOverrideLanguagePicker({
   showOverrideLanguagePicker.value = true;
 }
 
-function startLanguageOverride(): void {
-  const project = selectedProject.value;
-  if (project === undefined) {
-    return;
-  }
-
-  inheritedLanguagePickerSetting.value = copyMultilingualSetting(
-    project.multilingualSetting
-  );
-  isEditingInheritedProjectLanguages.value = true;
-  openOverrideLanguagePicker({ returnToProjectDialog: true });
-}
-
 function goBackFromOverrideLanguagePicker(): void {
   showOverrideLanguagePicker.value = false;
-  isEditingInheritedProjectLanguages.value = false;
   showProjectLanguageDialog.value = returnToProjectLanguageDialog.value;
+}
+
+function setInheritProjectLanguages(value: boolean): void {
+  if (!value) {
+    copySelectedProjectSettingsToOverride();
+  }
+  inheritProjectLanguages.value = value;
 }
 
 function startDynamicTranslationOverride(value: boolean): void {
@@ -404,76 +422,77 @@ function copySelectedProjectSettingsToOverride(): void {
   }
 
   overrideLanguageSetting.value = { mode: "auto" };
-  overrideMultilingualSetting.value = copyMultilingualSetting(
-    project.multilingualSetting
+  overrideMultilingualSetting.value = projectLanguageSettingsToOverride(
+    project.languageSettings
   );
 }
 
-function copyMultilingualSetting(
-  setting: ConversationMultilingualSetting
+function formatProjectLanguageSettingsSummary({
+  defaultLanguageCode,
+  languageSettings,
+  languageTranslateSuffix,
+}: {
+  defaultLanguageCode: SupportedDisplayLanguageCodes;
+  languageSettings: ProjectLanguageSettings;
+  languageTranslateSuffix: string;
+}): string {
+  const inheritedLanguageCodes = getInheritedProjectLanguageCodes({
+    defaultLanguageCode,
+    languageSettings,
+  });
+  const [firstLanguageCode, ...extraLanguageCodes] = inheritedLanguageCodes;
+  const translateSuffix = languageSettings.dynamicTranslationEnabled
+    ? languageTranslateSuffix
+    : "";
+
+  const extraLanguageCount = extraLanguageCodes.length;
+  const extraLanguageSuffix =
+    extraLanguageCount === 0 ? "" : ` +${extraLanguageCount.toString()}`;
+
+  return `${getLanguageLabel({
+    languageCode: firstLanguageCode,
+    locale: locale.value,
+  })}${extraLanguageSuffix}${translateSuffix}`;
+}
+
+function getInheritedProjectLanguageCodes({
+  defaultLanguageCode,
+  languageSettings,
+}: {
+  defaultLanguageCode: SupportedDisplayLanguageCodes;
+  languageSettings: ProjectLanguageSettings;
+}): SupportedDisplayLanguageCodes[] {
+  return [
+    defaultLanguageCode,
+    ...languageSettings.targetLanguageCodes.filter(
+      (languageCode) => languageCode !== defaultLanguageCode
+    ),
+  ];
+}
+
+function projectLanguageSettingsToOverride(
+  languageSettings: ProjectLanguageSettings
 ): ConversationMultilingualSetting {
   return {
-    additionalLanguageCodes: [...setting.additionalLanguageCodes],
-    dynamicTranslationEnabled: setting.dynamicTranslationEnabled,
+    additionalLanguageCodes: languageSettings.targetLanguageCodes.slice(0, 2),
+    dynamicTranslationEnabled: languageSettings.dynamicTranslationEnabled,
   };
 }
 
-function areMultilingualSettingsEqual({
-  first,
-  second,
-}: {
-  first: ConversationMultilingualSetting;
-  second: ConversationMultilingualSetting;
-}): boolean {
-  return (
-    first.dynamicTranslationEnabled === second.dynamicTranslationEnabled &&
-    first.additionalLanguageCodes.length === second.additionalLanguageCodes.length &&
-    first.additionalLanguageCodes.every(
-      (languageCode, index) => second.additionalLanguageCodes[index] === languageCode
-    )
-  );
-}
-
-function formatLanguageSummary({
-  defaultLanguageCode,
-  multilingualSetting,
-}: {
-  defaultLanguageCode: SupportedDisplayLanguageCodes;
-  multilingualSetting: ConversationMultilingualSetting;
-}): string {
-  return [
-    getLanguageSummaryLabel(defaultLanguageCode),
-    ...multilingualSetting.additionalLanguageCodes.map(getLanguageSummaryLabel),
-  ].join(", ");
-}
-
-function formatOverrideLanguageSummary({
-  multilingualSetting,
-}: {
-  multilingualSetting: ConversationMultilingualSetting;
-}): string {
-  return [
-    tLanguage("languageAutoLabel"),
-    ...multilingualSetting.additionalLanguageCodes.map(getLanguageSummaryLabel),
-  ].join(", ");
-}
-
-function getLanguageSummaryLabel(
-  languageCode: SupportedDisplayLanguageCodes
-): string {
-  return getLocalizedLanguageLabel({ languageCode, locale: locale.value });
-}
 </script>
 
 <style scoped lang="scss">
-.project-language-settings,
 .language-settings-list {
   display: flex;
-  flex-direction: column;
   gap: 0.75rem;
 }
 
+.project-language-settings {
+  display: contents;
+}
+
 .language-settings-list {
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 18px;

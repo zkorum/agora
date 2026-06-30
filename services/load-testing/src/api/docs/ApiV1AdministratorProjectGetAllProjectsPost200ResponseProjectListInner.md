@@ -15,7 +15,7 @@ Name | Type | Description | Notes
 **bannerIsFullPath** | **boolean** |  | [default to undefined]
 **contentLocalizations** | [**Array&lt;ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInner&gt;**](ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInner.md) |  | [default to undefined]
 **machineContentLocalizations** | [**Array&lt;ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInner&gt;**](ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInner.md) |  | [default to undefined]
-**languageSettings** | [**ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerLanguageSettings**](ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerLanguageSettings.md) |  | [default to undefined]
+**languageSettings** | [**ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettings**](ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettings.md) |  | [default to undefined]
 **attributions** | [**Array&lt;ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInner&gt;**](ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInner.md) |  | [default to undefined]
 **contact** | [**ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact**](ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact.md) |  | [optional] [default to undefined]
 

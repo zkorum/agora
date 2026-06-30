@@ -1,5 +1,5 @@
 import { httpErrors } from "@fastify/sensible";
-import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, lte, or } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import {
     conversationTable,
@@ -13,16 +13,35 @@ import {
     projectContentTable,
     projectOrganizationOwnershipTable,
     projectTable,
+    projectTranslationTargetLanguageTable,
     userTable,
 } from "@/shared-backend/schema.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
+import type { GetConversationCreateProjectOptionsResponse } from "@/shared/types/dto.js";
 import type { PremiumFeature } from "@/shared/types/zod.js";
+import type { ProjectLanguageSettingsInput } from "@/service/translationLanguageSetting.js";
 import {
     type AllProjectCapability,
     getProjectIdsWithCapabilityFromGrants,
     hasActivePremiumFeatureEntitlement,
     hasCapabilityForProject,
 } from "@/service/projectAccessLogic.js";
+import { getImplicitDefaultDisplayLanguage } from "./projectLanguage.js";
+import { sourceLanguageToDisplayLanguage } from "./translationLanguageSetting.js";
+
+type ConversationCreateProjectTargetFailureReason = Extract<
+    GetConversationCreateProjectOptionsResponse,
+    { success: false }
+>["reason"];
+
+interface ConversationCreateTarget {
+    projectId: number;
+    organizationId: number;
+}
+
+type ResolveConversationCreateTargetResult =
+    | { success: true; target: ConversationCreateTarget }
+    | { success: false; reason: ConversationCreateProjectTargetFailureReason };
 
 export type OrganizationCapability =
     (typeof organizationMembershipCapabilityEnum.enumValues)[number];
@@ -301,13 +320,29 @@ export async function resolveConversationCreateTarget({
     db,
     userId,
     postAsOrganizationSlug,
+    projectSlug,
     autoProvisionedDefaultLanguage,
 }: {
     db: PostgresDatabase;
     userId: string;
     postAsOrganizationSlug: string | undefined;
+    projectSlug?: string;
     autoProvisionedDefaultLanguage: SupportedDisplayLanguageCodes;
-}): Promise<{ projectId: number; organizationId: number }> {
+}): Promise<ConversationCreateTarget> {
+    if (projectSlug !== undefined) {
+        const result = await resolveExplicitConversationCreateTarget({
+            db,
+            userId,
+            postAsOrganizationSlug,
+            projectSlug,
+        });
+        if (!result.success) {
+            throw httpErrors.forbidden(result.reason);
+        }
+
+        return result.target;
+    }
+
     if (postAsOrganizationSlug === undefined || postAsOrganizationSlug === "") {
         const organization = await getOrCreatePersonalOrganization({
             db,
@@ -369,6 +404,273 @@ export async function resolveConversationCreateTarget({
     }
 
     return { ...organization, ...project };
+}
+
+export async function resolveConversationCreateTargetResult({
+    db,
+    userId,
+    postAsOrganizationSlug,
+    projectSlug,
+    autoProvisionedDefaultLanguage,
+}: {
+    db: PostgresDatabase;
+    userId: string;
+    postAsOrganizationSlug: string | undefined;
+    projectSlug?: string;
+    autoProvisionedDefaultLanguage: SupportedDisplayLanguageCodes;
+}): Promise<ResolveConversationCreateTargetResult> {
+    if (projectSlug !== undefined) {
+        return await resolveExplicitConversationCreateTarget({
+            db,
+            userId,
+            postAsOrganizationSlug,
+            projectSlug,
+        });
+    }
+
+    return {
+        success: true,
+        target: await resolveConversationCreateTarget({
+            db,
+            userId,
+            postAsOrganizationSlug,
+            autoProvisionedDefaultLanguage,
+        }),
+    };
+}
+
+async function resolveExplicitConversationCreateTarget({
+    db,
+    userId,
+    postAsOrganizationSlug,
+    projectSlug,
+}: {
+    db: PostgresDatabase;
+    userId: string;
+    postAsOrganizationSlug: string | undefined;
+    projectSlug: string;
+}): Promise<ResolveConversationCreateTargetResult> {
+    if (postAsOrganizationSlug === undefined || postAsOrganizationSlug === "") {
+        return { success: false, reason: "organization_not_available" };
+    }
+
+    const targetRows = await db
+        .select({
+            projectId: projectTable.id,
+            organizationId: organizationTable.id,
+        })
+        .from(projectTable)
+        .innerJoin(
+            projectOrganizationOwnershipTable,
+            and(
+                eq(projectOrganizationOwnershipTable.projectId, projectTable.id),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            organizationTable,
+            eq(organizationTable.id, projectOrganizationOwnershipTable.organizationId),
+        )
+        .innerJoin(
+            organizationMembershipTable,
+            eq(organizationMembershipTable.organizationId, organizationTable.id),
+        )
+        .where(
+            and(
+                eq(projectTable.slug, projectSlug),
+                eq(projectTable.directoryVisibility, "listed"),
+                isNull(projectTable.deletedAt),
+                eq(organizationTable.slug, postAsOrganizationSlug),
+                isNull(organizationTable.deletedAt),
+                eq(organizationMembershipTable.userId, userId),
+                isNull(organizationMembershipTable.deletedAt),
+            ),
+        )
+        .limit(1);
+    const target = targetRows.at(0);
+    if (target === undefined) {
+        return { success: false, reason: "organization_not_available" };
+    }
+
+    const canCreate = await hasProjectCapability({
+        db,
+        userId,
+        projectId: target.projectId,
+        capability: "conversation_create",
+    });
+    if (!canCreate) {
+        return {
+            success: false,
+            reason: "missing_conversation_create_capability",
+        };
+    }
+
+    return { success: true, target };
+}
+
+export async function getConversationCreateProjectOptions({
+    db,
+    userId,
+    postAsOrganizationSlug,
+}: {
+    db: PostgresDatabase;
+    userId: string;
+    postAsOrganizationSlug: string | undefined;
+}): Promise<GetConversationCreateProjectOptionsResponse> {
+    if (postAsOrganizationSlug === undefined || postAsOrganizationSlug === "") {
+        return { success: true, projectList: [] };
+    }
+
+    const organizationRows = await db
+        .select({ organizationId: organizationTable.id })
+        .from(organizationTable)
+        .innerJoin(
+            organizationMembershipTable,
+            eq(organizationMembershipTable.organizationId, organizationTable.id),
+        )
+        .where(
+            and(
+                eq(organizationTable.slug, postAsOrganizationSlug),
+                isNull(organizationTable.deletedAt),
+                eq(organizationMembershipTable.userId, userId),
+                isNull(organizationMembershipTable.deletedAt),
+            ),
+        )
+        .limit(1);
+    const organization = organizationRows.at(0);
+    if (organization === undefined) {
+        return { success: false, reason: "organization_not_available" };
+    }
+
+    const projectIdsWithCreate = new Set(
+        await getProjectIdsWithCapability({
+            db,
+            userId,
+            capability: "conversation_create",
+        }),
+    );
+
+    const projectRows = await db
+        .select({
+            projectId: projectTable.id,
+            projectSlug: projectTable.slug,
+            projectTitle: projectTable.title,
+            sourceLanguageCode: projectContentTable.sourceLanguageCode,
+            dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
+        })
+        .from(projectTable)
+        .innerJoin(
+            projectOrganizationOwnershipTable,
+            and(
+                eq(projectOrganizationOwnershipTable.projectId, projectTable.id),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            organizationTable,
+            eq(organizationTable.id, projectOrganizationOwnershipTable.organizationId),
+        )
+        .leftJoin(
+            projectContentTable,
+            eq(projectContentTable.id, projectTable.currentContentId),
+        )
+        .where(
+            and(
+                eq(organizationTable.id, organization.organizationId),
+                isNull(organizationTable.deletedAt),
+                eq(projectTable.directoryVisibility, "listed"),
+                isNull(projectTable.deletedAt),
+            ),
+        );
+
+    const availableProjectRows = projectRows.filter((project) =>
+        projectIdsWithCreate.has(project.projectId),
+    );
+    if (projectRows.length > 0 && availableProjectRows.length === 0) {
+        return {
+            success: false,
+            reason: "missing_conversation_create_capability",
+        };
+    }
+    const projectIds = availableProjectRows.map((project) => project.projectId);
+    const targetLanguageRows =
+        projectIds.length === 0
+            ? []
+            : await db
+                  .select({
+                      projectId: projectTranslationTargetLanguageTable.projectId,
+                      languageCode: projectTranslationTargetLanguageTable.languageCode,
+                  })
+                  .from(projectTranslationTargetLanguageTable)
+                  .where(
+                      and(
+                          inArray(
+                              projectTranslationTargetLanguageTable.projectId,
+                              projectIds,
+                          ),
+                          isNull(projectTranslationTargetLanguageTable.deletedAt),
+                      ),
+                  );
+    const targetLanguageCodesByProjectId = new Map<
+        number,
+        SupportedDisplayLanguageCodes[]
+    >();
+    for (const targetLanguage of targetLanguageRows) {
+        const languageCodes =
+            targetLanguageCodesByProjectId.get(targetLanguage.projectId) ?? [];
+        languageCodes.push(targetLanguage.languageCode);
+        targetLanguageCodesByProjectId.set(targetLanguage.projectId, languageCodes);
+    }
+
+    return {
+        success: true,
+        projectList: availableProjectRows.map((project) => ({
+            projectSlug: project.projectSlug,
+            projectTitle: project.projectTitle,
+            defaultLanguageCode:
+                sourceLanguageToDisplayLanguage({
+                    sourceLanguageCode: project.sourceLanguageCode,
+                }) ?? getImplicitDefaultDisplayLanguage(),
+            languageSettings: {
+                dynamicTranslationEnabled: project.dynamicTranslationEnabled,
+                targetLanguageCodes:
+                    targetLanguageCodesByProjectId.get(project.projectId) ?? [],
+            },
+        })),
+    };
+}
+
+export async function getProjectLanguageSettings({
+    db,
+    projectId,
+}: {
+    db: PostgresDatabase;
+    projectId: number;
+}): Promise<ProjectLanguageSettingsInput> {
+    const projectRows = await db
+        .select({ dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled })
+        .from(projectTable)
+        .where(and(eq(projectTable.id, projectId), isNull(projectTable.deletedAt)))
+        .limit(1);
+    const project = projectRows.at(0);
+    if (project === undefined) {
+        throw httpErrors.notFound("Project not found");
+    }
+
+    const targetLanguageRows = await db
+        .select({ languageCode: projectTranslationTargetLanguageTable.languageCode })
+        .from(projectTranslationTargetLanguageTable)
+        .where(
+            and(
+                eq(projectTranslationTargetLanguageTable.projectId, projectId),
+                isNull(projectTranslationTargetLanguageTable.deletedAt),
+            ),
+        );
+
+    return {
+        dynamicTranslationEnabled: project.dynamicTranslationEnabled,
+        targetLanguageCodes: targetLanguageRows.map((row) => row.languageCode),
+    };
 }
 
 export async function hasProjectCapability({

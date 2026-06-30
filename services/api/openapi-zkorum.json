@@ -1669,6 +1669,157 @@
                 }
             }
         },
+        "/api/v1/project/create-options/list": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "postAsOrganization": {
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                    }
+                                },
+                                "required": [
+                                    "postAsOrganization"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "projectList": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "projectSlug": {
+                                                                "type": "string",
+                                                                "maxLength": 65,
+                                                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                            },
+                                                            "projectTitle": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 140
+                                                            },
+                                                            "defaultLanguageCode": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "en",
+                                                                    "es",
+                                                                    "fr",
+                                                                    "zh-Hant",
+                                                                    "zh-Hans",
+                                                                    "ja",
+                                                                    "ar",
+                                                                    "fa",
+                                                                    "he",
+                                                                    "ky",
+                                                                    "ru"
+                                                                ]
+                                                            },
+                                                            "languageSettings": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "dynamicTranslationEnabled": {
+                                                                        "type": "boolean"
+                                                                    },
+                                                                    "targetLanguageCodes": {
+                                                                        "maxItems": 3,
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "en",
+                                                                                "es",
+                                                                                "fr",
+                                                                                "zh-Hant",
+                                                                                "zh-Hans",
+                                                                                "ja",
+                                                                                "ar",
+                                                                                "fa",
+                                                                                "he",
+                                                                                "ky",
+                                                                                "ru"
+                                                                            ]
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "dynamicTranslationEnabled",
+                                                                    "targetLanguageCodes"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "projectSlug",
+                                                            "projectTitle",
+                                                            "defaultLanguageCode",
+                                                            "languageSettings"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "projectList"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "organization_not_available",
+                                                        "missing_conversation_create_capability"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/project/page/fetch": {
             "post": {
                 "requestBody": {
@@ -8842,6 +8993,19 @@
                                     "conversationBodyPlainText": {
                                         "type": "string"
                                     },
+                                    "projectSlug": {
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                    },
+                                    "languageSettingsSource": {
+                                        "default": "conversation_override",
+                                        "type": "string",
+                                        "enum": [
+                                            "conversation_override",
+                                            "project_inherited"
+                                        ]
+                                    },
                                     "postAsOrganization": {
                                         "type": "string",
                                         "maxLength": 65,
@@ -9301,10 +9465,21 @@
                                                     ]
                                                 },
                                                 "reason": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "plain_text_too_long",
-                                                        "html_too_long"
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "plain_text_too_long",
+                                                                "html_too_long"
+                                                            ]
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "organization_not_available",
+                                                                "missing_conversation_create_capability"
+                                                            ]
+                                                        }
                                                     ]
                                                 }
                                             },
@@ -9334,6 +9509,19 @@
                                     "polisUrl": {
                                         "type": "string",
                                         "format": "uri"
+                                    },
+                                    "projectSlug": {
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                    },
+                                    "languageSettingsSource": {
+                                        "default": "conversation_override",
+                                        "type": "string",
+                                        "enum": [
+                                            "conversation_override",
+                                            "project_inherited"
+                                        ]
                                     },
                                     "postAsOrganization": {
                                         "type": "string",
@@ -9478,16 +9666,50 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "importSlugId": {
-                                            "type": "string"
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "importSlugId": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "importSlugId"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "organization_not_available",
+                                                        "missing_conversation_create_capability"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
                                         }
-                                    },
-                                    "required": [
-                                        "importSlugId"
-                                    ],
-                                    "additionalProperties": false
+                                    ]
                                 }
                             }
                         }
@@ -9567,16 +9789,50 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "importSlugId": {
-                                            "type": "string"
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "importSlugId": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "importSlugId"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "organization_not_available",
+                                                        "missing_conversation_create_capability"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
                                         }
-                                    },
-                                    "required": [
-                                        "importSlugId"
-                                    ],
-                                    "additionalProperties": false
+                                    ]
                                 }
                             }
                         }
@@ -14418,7 +14674,6 @@
                                                             },
                                                             "required": [
                                                                 "languageCode",
-                                                                "projectTitle",
                                                                 "bannerIsFullPath"
                                                             ],
                                                             "additionalProperties": false
@@ -14472,7 +14727,6 @@
                                                             },
                                                             "required": [
                                                                 "languageCode",
-                                                                "projectTitle",
                                                                 "bannerIsFullPath"
                                                             ],
                                                             "additionalProperties": false
@@ -14485,7 +14739,7 @@
                                                                 "type": "boolean"
                                                             },
                                                             "targetLanguageCodes": {
-                                                                "maxItems": 2,
+                                                                "maxItems": 3,
                                                                 "type": "array",
                                                                 "items": {
                                                                     "type": "string",
@@ -14888,7 +15142,6 @@
                                                         },
                                                         "required": [
                                                             "languageCode",
-                                                            "projectTitle",
                                                             "bannerIsFullPath"
                                                         ],
                                                         "additionalProperties": false
@@ -14942,7 +15195,6 @@
                                                         },
                                                         "required": [
                                                             "languageCode",
-                                                            "projectTitle",
                                                             "bannerIsFullPath"
                                                         ],
                                                         "additionalProperties": false
@@ -14955,7 +15207,7 @@
                                                             "type": "boolean"
                                                         },
                                                         "targetLanguageCodes": {
-                                                            "maxItems": 2,
+                                                            "maxItems": 3,
                                                             "type": "array",
                                                             "items": {
                                                                 "type": "string",
@@ -15284,8 +15536,7 @@
                                                 }
                                             },
                                             "required": [
-                                                "languageCode",
-                                                "projectTitle"
+                                                "languageCode"
                                             ],
                                             "additionalProperties": false
                                         }
@@ -15301,7 +15552,7 @@
                                                 "type": "boolean"
                                             },
                                             "targetLanguageCodes": {
-                                                "maxItems": 2,
+                                                "maxItems": 3,
                                                 "type": "array",
                                                 "items": {
                                                     "type": "string",
@@ -15620,7 +15871,7 @@
                                                 "type": "boolean"
                                             },
                                             "targetLanguageCodes": {
-                                                "maxItems": 2,
+                                                "maxItems": 3,
                                                 "type": "array",
                                                 "items": {
                                                     "type": "string",
@@ -15886,8 +16137,7 @@
                                                 }
                                             },
                                             "required": [
-                                                "languageCode",
-                                                "projectTitle"
+                                                "languageCode"
                                             ],
                                             "additionalProperties": false
                                         }
@@ -15903,7 +16153,7 @@
                                                 "type": "boolean"
                                             },
                                             "targetLanguageCodes": {
-                                                "maxItems": 2,
+                                                "maxItems": 3,
                                                 "type": "array",
                                                 "items": {
                                                     "type": "string",

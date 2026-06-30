@@ -80,6 +80,8 @@ export function createEmptyDraft(): ConversationDraft {
       additionalLanguageCodes: [],
       dynamicTranslationEnabled: false,
     },
+    selectedProjectSlug: undefined,
+    inheritProjectLanguages: false,
     seedOpinions: [],
 
     // Conversation Type

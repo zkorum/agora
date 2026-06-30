@@ -422,6 +422,7 @@ def _create_conversation(
             dynamic_translation_enabled=(
                 request.form_data.multilingual_setting.dynamic_translation_enabled
             ),
+            language_settings_source=request.form_data.language_settings_source.value,
         )
         .returning(Conversation.id),
     ).first()
@@ -455,11 +456,15 @@ def _create_conversation(
     source_display_language_code = _display_language_code_or_none(
         content_source_language_code
     )
-    target_languages = [
-        language_code
-        for language_code in request.form_data.multilingual_setting.additional_language_codes
-        if language_code.value != source_display_language_code
-    ]
+    target_languages = list(
+        request.form_data.multilingual_setting.additional_language_codes
+    )
+    if request.form_data.language_settings_source.value == "conversation_override":
+        target_languages = [
+            language_code
+            for language_code in target_languages
+            if language_code.value != source_display_language_code
+        ]
     if target_languages:
         session.execute(
             sqlalchemy_insert(ConversationTranslationTargetLanguage),

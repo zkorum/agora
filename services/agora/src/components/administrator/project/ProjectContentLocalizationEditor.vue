@@ -61,7 +61,11 @@
             v-model="draftTitleInput"
             outlined
             :maxlength="MAX_LENGTH_TITLE"
-            :label="requiredLabel(projectTitleLabel)"
+            :label="
+              dynamicTranslationEnabled
+                ? optionalLabel(projectTitleLabel)
+                : requiredLabel(projectTitleLabel)
+            "
           />
           <q-input
             v-model="draftSubtitleInput"
@@ -184,6 +188,7 @@ const props = defineProps<{
   targetLanguageCodes: SupportedDisplayLanguageCodes[];
   displayLanguageOptions: LanguageOption[];
   machineLocalizations: ProjectContentLocalization[];
+  dynamicTranslationEnabled: boolean;
 }>();
 
 const localizations = defineModel<ProjectContentLocalization[]>({
@@ -199,7 +204,7 @@ const draftBody = ref("");
 const draftBodyPlainText = ref("");
 const isDraftBodyOverLimit = ref(false);
 const draftBannerPath = ref("");
-const draftBannerIsFullPath = ref(false);
+const draftBannerIsFullPath = ref(true);
 const editingLanguageCode = ref<SupportedDisplayLanguageCodes | undefined>(
   undefined
 );
@@ -235,16 +240,35 @@ const availableMachineLocalizations = computed(() =>
   )
 );
 
+const effectiveLocalizedSubtitleRequired = computed(
+  () => !props.dynamicTranslationEnabled && props.localizedSubtitleRequired
+);
+
+const effectiveLocalizedBodyRequired = computed(
+  () => !props.dynamicTranslationEnabled && props.localizedBodyRequired
+);
+
 const subtitleInputLabel = computed(() =>
-  props.localizedSubtitleRequired
+  effectiveLocalizedSubtitleRequired.value
     ? requiredLabel(props.subtitleLabel)
     : optionalLabel(props.subtitleLabel)
 );
 
 const bodyPlaceholder = computed(() =>
-  props.localizedBodyRequired
+  effectiveLocalizedBodyRequired.value
     ? requiredLabel(props.bodyLabel)
     : optionalLabel(props.bodyLabel)
+);
+
+const hasLocalizedTitle = computed(() => optionalString(draftTitle.value) !== undefined);
+const hasLocalizedBanner = computed(
+  () => optionalString(draftBannerPath.value) !== undefined
+);
+const hasOrphanLocalizedContent = computed(
+  () =>
+    !hasLocalizedTitle.value &&
+    (optionalString(draftSubtitle.value) !== undefined ||
+      optionalString(draftBodyPlainText.value) !== undefined)
 );
 
 const canSaveDraftLocalization = computed(
@@ -253,9 +277,13 @@ const canSaveDraftLocalization = computed(
       availableLanguageOptions.value.some(
         (option) => option.value === draftLanguageCode.value
       )) &&
-    draftTitle.value.trim() !== "" &&
-    (!props.localizedSubtitleRequired || draftSubtitle.value.trim() !== "") &&
-    (!props.localizedBodyRequired || draftBodyPlainText.value.trim() !== "") &&
+    (hasLocalizedTitle.value ||
+      (props.dynamicTranslationEnabled && hasLocalizedBanner.value)) &&
+    !hasOrphanLocalizedContent.value &&
+    (!effectiveLocalizedSubtitleRequired.value ||
+      draftSubtitle.value.trim() !== "") &&
+    (!effectiveLocalizedBodyRequired.value ||
+      draftBodyPlainText.value.trim() !== "") &&
     !isDraftBodyOverLimit.value
 );
 
@@ -313,10 +341,15 @@ function getLanguageLabel(languageCode: SupportedDisplayLanguageCodes): string {
 }
 
 function isCompleteLocalization(localization: ProjectContentLocalization): boolean {
+  const projectTitle = localization.projectTitle;
+
   return (
-    localization.projectTitle.trim() !== "" &&
-    (!props.localizedSubtitleRequired || localization.subtitle?.trim() !== "") &&
-    (!props.localizedBodyRequired || localization.bodyPlainText?.trim() !== "")
+    projectTitle !== undefined &&
+    projectTitle.trim() !== "" &&
+    (!effectiveLocalizedSubtitleRequired.value ||
+      localization.subtitle?.trim() !== "") &&
+    (!effectiveLocalizedBodyRequired.value ||
+      localization.bodyPlainText?.trim() !== "")
   );
 }
 
@@ -364,7 +397,7 @@ function startMachineLocalizationDraft(
 function buildDraftLocalization(): ProjectContentLocalization {
   return {
     languageCode: draftLanguageCode.value,
-    projectTitle: draftTitle.value.trim(),
+    projectTitle: optionalString(draftTitle.value),
     subtitle: optionalString(draftSubtitle.value),
     body: optionalRichTextHtml({
       html: draftBody.value,
@@ -383,7 +416,7 @@ function editLocalization(localization: ProjectContentLocalization): void {
 function populateDraft(localization: ProjectContentLocalization): void {
   editingLanguageCode.value = localization.languageCode;
   draftLanguageCode.value = localization.languageCode;
-  draftTitle.value = localization.projectTitle;
+  draftTitle.value = localization.projectTitle ?? "";
   draftSubtitle.value = localization.subtitle ?? "";
   draftBody.value = localization.body ?? "";
   draftBodyPlainText.value = localization.bodyPlainText ?? "";
@@ -416,7 +449,7 @@ function resetDraft(): void {
   draftBodyPlainText.value = "";
   isDraftBodyOverLimit.value = false;
   draftBannerPath.value = "";
-  draftBannerIsFullPath.value = false;
+  draftBannerIsFullPath.value = true;
 }
 </script>
 
@@ -514,3 +547,14 @@ function resetDraft(): void {
   font-size: 0.9rem;
 }
 </style>
+const hasLocalizedTitle = computed(() => draftTitle.value.trim() !== "");
+
+const hasLocalizedSubtitle = computed(() => draftSubtitle.value.trim() !== "");
+
+const hasLocalizedBody = computed(() => draftBodyPlainText.value.trim() !== "");
+
+const hasLocalizedBanner = computed(() => draftBannerPath.value.trim() !== "");
+
+const hasOrphanLocalizedContent = computed(
+  () => !hasLocalizedTitle.value && (hasLocalizedSubtitle.value || hasLocalizedBody.value)
+);

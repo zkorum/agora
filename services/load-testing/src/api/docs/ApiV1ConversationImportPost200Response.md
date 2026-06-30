@@ -5,7 +5,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**success** | **boolean** |  | [default to undefined]
 **importSlugId** | **string** |  | [default to undefined]
+**reason** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -13,7 +15,9 @@ Name | Type | Description | Notes
 import { ApiV1ConversationImportPost200Response } from './api';
 
 const instance: ApiV1ConversationImportPost200Response = {
+    success,
     importSlugId,
+    reason,
 };
 ```
 

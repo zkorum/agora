@@ -599,6 +599,10 @@ export const conversationTypeEnum = pgEnum("conversation_type", [
     "polis",
     "maxdiff",
 ]);
+export const conversationLanguageSettingsSourceEnum = pgEnum(
+    "conversation_language_settings_source",
+    ["conversation_override", "project_inherited"],
+);
 export const languageDetectionProviderEnum = pgEnum(
     "language_detection_provider",
     ["lingua", "google_translate"],
@@ -2027,6 +2031,11 @@ export const conversationTable = pgTable(
         dynamicTranslationEnabled: boolean("dynamic_translation_enabled")
             .notNull()
             .default(false),
+        languageSettingsSource: conversationLanguageSettingsSourceEnum(
+            "language_settings_source",
+        )
+            .notNull()
+            .default("conversation_override"),
         currentRankingScoreId: integer("current_ranking_score_id")
             .references((): AnyPgColumn => rankingScoreTable.id)
             .unique(), // null for polis conversations or if no scores computed yet

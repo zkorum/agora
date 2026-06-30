@@ -15,6 +15,7 @@ import {
   zodExternalSourceConfig,
   zodParticipationMode,
   zodPreferredOpinionGroupCount,
+  zodProjectSlug,
   zodSurveyConfig,
 } from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
@@ -130,6 +131,8 @@ export const zodSerializableConversationDraft = z.preprocess(
       additionalLanguageCodes: [],
       dynamicTranslationEnabled: false,
     }),
+    selectedProjectSlug: zodProjectSlug.optional(),
+    inheritProjectLanguages: z.boolean().default(false),
     seedOpinions: z.array(z.string()),
 
     // Conversation type

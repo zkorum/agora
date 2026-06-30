@@ -56,6 +56,8 @@ export interface UseConversationDraftReturn {
   contentPlainText: Ref<string>;
   languageSetting: Ref<ConversationLanguageSettingInput>;
   multilingualSetting: Ref<ConversationMultilingualSetting>;
+  selectedProjectSlug: Ref<string | undefined>;
+  inheritProjectLanguages: Ref<boolean>;
   seedOpinions: Ref<string[]>;
   conversationType: Ref<ConversationType>;
   isPrivate: Ref<boolean>;
@@ -135,6 +137,10 @@ export function useConversationDraft(
   const multilingualSetting = ref<ConversationMultilingualSetting>(
     initialDraft.multilingualSetting
   );
+  const selectedProjectSlug = ref<string | undefined>(
+    initialDraft.selectedProjectSlug
+  );
+  const inheritProjectLanguages = ref(initialDraft.inheritProjectLanguages);
   const seedOpinions = ref<string[]>([...initialDraft.seedOpinions]);
   const conversationType = ref<ConversationType>(initialDraft.conversationType);
   const isPrivate = ref(initialDraft.isPrivate);
@@ -173,6 +179,8 @@ export function useConversationDraft(
       contentPlainText: contentPlainText.value,
       languageSetting: languageSetting.value,
       multilingualSetting: multilingualSetting.value,
+      selectedProjectSlug: selectedProjectSlug.value,
+      inheritProjectLanguages: inheritProjectLanguages.value,
       seedOpinions: [...seedOpinions.value],
       conversationType: conversationType.value,
       isPrivate: isPrivate.value,
@@ -196,6 +204,9 @@ export function useConversationDraft(
         store.conversationDraft.languageSetting = newSnapshot.languageSetting;
         store.conversationDraft.multilingualSetting =
           newSnapshot.multilingualSetting;
+        store.conversationDraft.selectedProjectSlug = newSnapshot.selectedProjectSlug;
+        store.conversationDraft.inheritProjectLanguages =
+          newSnapshot.inheritProjectLanguages;
         store.conversationDraft.seedOpinions = newSnapshot.seedOpinions;
         store.conversationDraft.conversationType = newSnapshot.conversationType;
         store.conversationDraft.isPrivate = newSnapshot.isPrivate;
@@ -439,6 +450,9 @@ export function useConversationDraft(
         left: multilingualSetting.value,
         right: emptyDraft.multilingualSetting,
       });
+    const hasProjectSelectionChanges =
+      selectedProjectSlug.value !== emptyDraft.selectedProjectSlug ||
+      inheritProjectLanguages.value !== emptyDraft.inheritProjectLanguages;
 
     // Check seed opinions changes
     const hasSeedOpinionsChanges =
@@ -484,6 +498,7 @@ export function useConversationDraft(
       hasContentChanges ||
       hasLanguageSettingChanges ||
       hasMultilingualSettingChanges ||
+      hasProjectSelectionChanges ||
       hasSeedOpinionsChanges ||
       hasConversationTypeChanges ||
       hasPostAsChanges ||
@@ -514,6 +529,8 @@ export function useConversationDraft(
     contentPlainText.value = emptyDraft.contentPlainText;
     languageSetting.value = emptyDraft.languageSetting;
     multilingualSetting.value = emptyDraft.multilingualSetting;
+    selectedProjectSlug.value = emptyDraft.selectedProjectSlug;
+    inheritProjectLanguages.value = emptyDraft.inheritProjectLanguages;
     seedOpinions.value = [];
     conversationType.value = emptyDraft.conversationType;
     isPrivate.value = emptyDraft.isPrivate;
@@ -542,6 +559,8 @@ export function useConversationDraft(
     contentPlainText.value = data.contentPlainText;
     languageSetting.value = data.languageSetting;
     multilingualSetting.value = data.multilingualSetting;
+    selectedProjectSlug.value = data.selectedProjectSlug;
+    inheritProjectLanguages.value = data.inheritProjectLanguages;
     isPrivate.value = data.isPrivate;
     participationMode.value = data.participationMode;
     requiresEventTicket.value = data.requiresEventTicket;
@@ -561,6 +580,8 @@ export function useConversationDraft(
       contentPlainText: contentPlainText.value,
       languageSetting: languageSetting.value,
       multilingualSetting: multilingualSetting.value,
+      selectedProjectSlug: selectedProjectSlug.value,
+      inheritProjectLanguages: inheritProjectLanguages.value,
       isPrivate: isPrivate.value,
       participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
@@ -596,6 +617,8 @@ export function useConversationDraft(
     contentPlainText,
     languageSetting,
     multilingualSetting,
+    selectedProjectSlug,
+    inheritProjectLanguages,
     seedOpinions,
     conversationType,
     isPrivate,

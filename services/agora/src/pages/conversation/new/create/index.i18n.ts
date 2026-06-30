@@ -13,6 +13,8 @@ export interface CreateConversationTranslations {
   githubRepositoryPlaceholder: string;
   githubLabel: string;
   githubLabelPlaceholder: string;
+  organizationUnavailable: string;
+  missingProjectCreateCapability: string;
 }
 
 export const createConversationTranslations: Record<
@@ -33,6 +35,9 @@ export const createConversationTranslations: Record<
     githubRepositoryPlaceholder: "owner/repo",
     githubLabel: "Issue Label",
     githubLabelPlaceholder: "roadmap",
+    organizationUnavailable: "The selected organization is no longer available.",
+    missingProjectCreateCapability:
+      "You do not have permission to create conversations in this organization's listed projects.",
     viewImportStatus: "View Import Status",
   },
   ar: {
@@ -50,6 +55,9 @@ export const createConversationTranslations: Record<
     githubRepositoryPlaceholder: "owner/repo",
     githubLabel: "Issue Label",
     githubLabelPlaceholder: "roadmap",
+    organizationUnavailable: "المؤسسة المحددة لم تعد متاحة.",
+    missingProjectCreateCapability:
+      "ليست لديك صلاحية إنشاء محادثات في المشاريع المدرجة لهذه المؤسسة.",
   },
   es: {
     importButton: "Importar",
@@ -65,6 +73,10 @@ export const createConversationTranslations: Record<
     githubRepositoryPlaceholder: "owner/repo",
     githubLabel: "Issue Label",
     githubLabelPlaceholder: "roadmap",
+    organizationUnavailable:
+      "La organización seleccionada ya no está disponible.",
+    missingProjectCreateCapability:
+      "No tienes permiso para crear conversaciones en los proyectos listados de esta organización.",
   },
   fa: {
     importButton: "وارد کردن",
@@ -81,6 +93,9 @@ export const createConversationTranslations: Record<
     githubRepositoryPlaceholder: "owner/repo",
     githubLabel: "Issue Label",
     githubLabelPlaceholder: "roadmap",
+    organizationUnavailable: "سازمان انتخاب‌شده دیگر در دسترس نیست.",
+    missingProjectCreateCapability:
+      "شما اجازه ایجاد گفتگو در پروژه‌های فهرست‌شده این سازمان را ندارید.",
   },
   he: {
     importButton: "ייבוא",
@@ -97,6 +112,9 @@ export const createConversationTranslations: Record<
     githubRepositoryPlaceholder: "owner/repo",
     githubLabel: "Issue Label",
     githubLabelPlaceholder: "roadmap",
+    organizationUnavailable: "הארגון שנבחר אינו זמין עוד.",
+    missingProjectCreateCapability:
+      "אין לך הרשאה ליצור שיחות בפרויקטים הרשומים של הארגון הזה.",
   },
   fr: {
     importButton: "Importer",
@@ -112,6 +130,10 @@ export const createConversationTranslations: Record<
     githubRepositoryPlaceholder: "owner/repo",
     githubLabel: "Issue Label",
     githubLabelPlaceholder: "roadmap",
+    organizationUnavailable:
+      "L'organisation sélectionnée n'est plus disponible.",
+    missingProjectCreateCapability:
+      "Vous n'avez pas l'autorisation de créer des conversations dans les projets listés de cette organisation.",
   },
   "zh-Hans": {
     importButton: "导入",
@@ -126,6 +148,9 @@ export const createConversationTranslations: Record<
     githubRepositoryPlaceholder: "owner/repo",
     githubLabel: "Issue 标签",
     githubLabelPlaceholder: "roadmap",
+    organizationUnavailable: "所选组织已不可用。",
+    missingProjectCreateCapability:
+      "你无权在该组织列出的项目中创建对话。",
   },
   "zh-Hant": {
     importButton: "匯入",
@@ -140,6 +165,9 @@ export const createConversationTranslations: Record<
     githubRepositoryPlaceholder: "owner/repo",
     githubLabel: "Issue 標籤",
     githubLabelPlaceholder: "roadmap",
+    organizationUnavailable: "所選組織已無法使用。",
+    missingProjectCreateCapability:
+      "你沒有權限在此組織列出的專案中建立對話。",
   },
   ja: {
     importButton: "インポート",
@@ -156,6 +184,9 @@ export const createConversationTranslations: Record<
     githubRepositoryPlaceholder: "owner/repo",
     githubLabel: "Issue ラベル",
     githubLabelPlaceholder: "roadmap",
+    organizationUnavailable: "選択した組織は利用できなくなりました。",
+    missingProjectCreateCapability:
+      "この組織の一覧掲載プロジェクトで会話を作成する権限がありません。",
   },
   ky: {
     importButton: "Импорттоо",
@@ -172,6 +203,9 @@ export const createConversationTranslations: Record<
     githubRepositoryPlaceholder: "owner/repo",
     githubLabel: "Issue Label",
     githubLabelPlaceholder: "roadmap",
+    organizationUnavailable: "Тандалган уюм жеткиликтүү эмес.",
+    missingProjectCreateCapability:
+      "Бул уюмдун тизмеленген долбоорлорунда сүйлөшүү түзүүгө уруксатыңыз жок.",
   },
   ru: {
     importButton: "Импорт",
@@ -188,5 +222,8 @@ export const createConversationTranslations: Record<
     githubRepositoryPlaceholder: "owner/repo",
     githubLabel: "Issue Label",
     githubLabelPlaceholder: "roadmap",
+    organizationUnavailable: "Выбранная организация больше недоступна.",
+    missingProjectCreateCapability:
+      "У вас нет разрешения создавать обсуждения в перечисленных проектах этой организации.",
   },
 };

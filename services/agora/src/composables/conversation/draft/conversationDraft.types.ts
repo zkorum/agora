@@ -63,6 +63,10 @@ export interface ConversationDraft {
   languageSetting: ConversationLanguageSettingInput;
   /** Additional target languages and Dynamic Translation activation. */
   multilingualSetting: ConversationMultilingualSetting;
+  /** Listed project selected for this conversation; undefined means the hidden default project. */
+  selectedProjectSlug?: string;
+  /** Whether the conversation should use the selected project's language settings. */
+  inheritProjectLanguages: boolean;
   /** Initial opinion responses to seed the conversation */
   seedOpinions: string[];
 
@@ -178,6 +182,8 @@ export interface ConversationFormState {
   contentPlainText: string;
   languageSetting: ConversationLanguageSettingInput;
   multilingualSetting: ConversationMultilingualSetting;
+  selectedProjectSlug?: string;
+  inheritProjectLanguages: boolean;
 
   // Privacy settings
   isPrivate: boolean;

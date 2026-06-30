@@ -159,17 +159,20 @@ export async function getPremiumEntitlementSubjectForCreate({
     db,
     userId,
     postAsOrganization,
+    projectSlug,
     autoProvisionedDefaultLanguage,
 }: {
     db: PostgresJsDatabase;
     userId: string;
     postAsOrganization?: string;
+    projectSlug?: string;
     autoProvisionedDefaultLanguage: SupportedDisplayLanguageCodes;
 }): Promise<PremiumEntitlementSubject> {
     const target = await resolveConversationCreateTarget({
         db,
         userId,
         postAsOrganizationSlug: postAsOrganization,
+        projectSlug,
         autoProvisionedDefaultLanguage,
     });
     return { projectId: target.projectId, userId };

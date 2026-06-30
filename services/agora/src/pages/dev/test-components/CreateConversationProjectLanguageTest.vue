@@ -59,6 +59,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
   ConversationLanguageSettingInput,
   ConversationMultilingualSetting,
+  ProjectLanguageSettings,
 } from "src/shared/types/zod";
 import { computed, ref } from "vue";
 
@@ -75,7 +76,7 @@ interface DevProject {
   directoryVisible: boolean;
   deletedAt: string | null;
   defaultLanguageCode: SupportedDisplayLanguageCodes;
-  multilingualSetting: ConversationMultilingualSetting;
+  languageSettings: ProjectLanguageSettings;
 }
 
 const visibleProjectsScenario: DevProject[] = [
@@ -85,8 +86,8 @@ const visibleProjectsScenario: DevProject[] = [
     directoryVisible: true,
     deletedAt: null,
     defaultLanguageCode: "en",
-    multilingualSetting: {
-      additionalLanguageCodes: ["fr", "ar"],
+    languageSettings: {
+      targetLanguageCodes: ["fr", "ar", "es"],
       dynamicTranslationEnabled: true,
     },
   },
@@ -96,8 +97,8 @@ const visibleProjectsScenario: DevProject[] = [
     directoryVisible: true,
     deletedAt: null,
     defaultLanguageCode: "es",
-    multilingualSetting: {
-      additionalLanguageCodes: ["en"],
+    languageSettings: {
+      targetLanguageCodes: ["en"],
       dynamicTranslationEnabled: false,
     },
   },
@@ -107,8 +108,8 @@ const visibleProjectsScenario: DevProject[] = [
     directoryVisible: false,
     deletedAt: null,
     defaultLanguageCode: "fr",
-    multilingualSetting: {
-      additionalLanguageCodes: ["en"],
+    languageSettings: {
+      targetLanguageCodes: ["en"],
       dynamicTranslationEnabled: true,
     },
   },
@@ -118,8 +119,8 @@ const visibleProjectsScenario: DevProject[] = [
     directoryVisible: true,
     deletedAt: "2026-06-01T00:00:00.000Z",
     defaultLanguageCode: "en",
-    multilingualSetting: {
-      additionalLanguageCodes: ["ja"],
+    languageSettings: {
+      targetLanguageCodes: ["ja"],
       dynamicTranslationEnabled: true,
     },
   },
@@ -132,8 +133,8 @@ const hiddenProjectsScenario: DevProject[] = [
     directoryVisible: false,
     deletedAt: null,
     defaultLanguageCode: "en",
-    multilingualSetting: {
-      additionalLanguageCodes: ["fr"],
+    languageSettings: {
+      targetLanguageCodes: ["fr"],
       dynamicTranslationEnabled: true,
     },
   },
@@ -143,8 +144,8 @@ const hiddenProjectsScenario: DevProject[] = [
     directoryVisible: true,
     deletedAt: "2026-06-01T00:00:00.000Z",
     defaultLanguageCode: "es",
-    multilingualSetting: {
-      additionalLanguageCodes: ["en"],
+    languageSettings: {
+      targetLanguageCodes: ["en"],
       dynamicTranslationEnabled: false,
     },
   },
