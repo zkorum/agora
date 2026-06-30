@@ -63,7 +63,6 @@
             class="project-page-view__body"
             :plain-text="project.bodyPlainText"
             :compact-mode="false"
-            :enable-links="true"
             :collapsed-line-count="4"
             :desktop-collapsed-line-count="4"
           />
