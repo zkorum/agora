@@ -26,6 +26,7 @@ class ContentTranslationSourceKind(StrEnum):
     conversation = "conversation"
     opinion = "opinion"
     survey_question = "survey_question"
+    project = "project"
 
 
 class DisplayLanguageCode(StrEnum):
@@ -214,6 +215,16 @@ class ImportMethod(StrEnum):
     csv = "csv"
 
 
+class ProjectContentTranslationSourceKind(StrEnum):
+    manual = "manual"
+    machine = "machine"
+
+
+class DirectoryVisibility(StrEnum):
+    listed = "listed"
+    unlisted = "unlisted"
+
+
 class SurveyQuestionType(StrEnum):
     choice = "choice"
     free_text = "free_text"
@@ -229,7 +240,7 @@ class ContentTranslationWork(Base):
     __tablename__ = "content_translation_work"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    conversation_id: Mapped[int] = mapped_column(Integer)
+    conversation_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     source_kind: Mapped[ContentTranslationSourceKind] = mapped_column(
         SaEnum(
             ContentTranslationSourceKind,
@@ -238,6 +249,7 @@ class ContentTranslationWork(Base):
             native_enum=True,
         ),
     )
+    project_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     conversation_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     opinion_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     survey_question_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -353,6 +365,7 @@ class Conversation(Base):
     slug_id: Mapped[str] = mapped_column(String(8))
     project_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
     current_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_indexed: Mapped[bool] = mapped_column(Boolean, server_default="true")
     participation_mode: Mapped[ParticipationMode] = mapped_column(
@@ -399,21 +412,11 @@ class Conversation(Base):
     last_reacted_at: Mapped[datetime] = mapped_column(DateTime)
 
 
-class ConversationTranslationSetting(Base):
-    __tablename__ = "conversation_translation_setting"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    conversation_id: Mapped[int] = mapped_column(Integer)
-    dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
-    created_at: Mapped[datetime] = mapped_column(DateTime)
-    updated_at: Mapped[datetime] = mapped_column(DateTime)
-
-
 class ConversationTranslationTargetLanguage(Base):
     __tablename__ = "conversation_translation_target_language"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    translation_setting_id: Mapped[int] = mapped_column(Integer)
+    conversation_id: Mapped[int] = mapped_column(Integer)
     language_code: Mapped[DisplayLanguageCode] = mapped_column(
         SaEnum(
             DisplayLanguageCode,
@@ -423,6 +426,7 @@ class ConversationTranslationTargetLanguage(Base):
         ),
     )
     created_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class OpinionContent(Base):
@@ -510,6 +514,129 @@ class Opinion(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
     last_reacted_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class ProjectContent(Base):
+    __tablename__ = "project_content"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    project_id: Mapped[int] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(140))
+    subtitle: Mapped[str | None] = mapped_column(String(140), nullable=True)
+    body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    body_plain_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    banner_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    banner_is_full_path: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    source_language_code: Mapped[SpokenLanguageCode | None] = mapped_column(
+        SaEnum(
+            SpokenLanguageCode,
+            name="spoken_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    source_raw_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    source_language_provider: Mapped[LanguageDetectionProvider | None] = mapped_column(
+        SaEnum(
+            LanguageDetectionProvider,
+            name="language_detection_provider",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class ProjectContentTranslation(Base):
+    __tablename__ = "project_content_translation"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    project_content_id: Mapped[int] = mapped_column(Integer)
+    display_language_code: Mapped[DisplayLanguageCode] = mapped_column(
+        SaEnum(
+            DisplayLanguageCode,
+            name="display_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    translated_title: Mapped[str] = mapped_column(Text)
+    translated_subtitle: Mapped[str | None] = mapped_column(Text, nullable=True)
+    translated_body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_kind: Mapped[ProjectContentTranslationSourceKind] = mapped_column(
+        SaEnum(
+            ProjectContentTranslationSourceKind,
+            name="project_content_translation_source_kind",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    source_language_code: Mapped[SpokenLanguageCode | None] = mapped_column(
+        SaEnum(
+            SpokenLanguageCode,
+            name="spoken_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    source_raw_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    source_language_provider: Mapped[LanguageDetectionProvider | None] = mapped_column(
+        SaEnum(
+            LanguageDetectionProvider,
+            name="language_detection_provider",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class Project(Base):
+    __tablename__ = "project"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug: Mapped[str] = mapped_column(String(65))
+    title: Mapped[str] = mapped_column(String(140))
+    directory_visibility: Mapped[DirectoryVisibility] = mapped_column(
+        SaEnum(
+            DirectoryVisibility,
+            name="directory_visibility",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    auto_provisioned_for_organization_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class ProjectTranslationTargetLanguage(Base):
+    __tablename__ = "project_translation_target_language"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    project_id: Mapped[int] = mapped_column(Integer)
+    language_code: Mapped[DisplayLanguageCode] = mapped_column(
+        SaEnum(
+            DisplayLanguageCode,
+            name="display_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class RealtimeEventOutbox(Base):

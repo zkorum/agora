@@ -265,7 +265,10 @@ async function getOpinionCount({
         .from(opinionTable)
         .leftJoin(
             opinionModerationTable,
-            eq(opinionTable.id, opinionModerationTable.opinionId),
+            and(
+                eq(opinionTable.id, opinionModerationTable.opinionId),
+                isNull(opinionModerationTable.deletedAt),
+            ),
         )
         .where(
             and(

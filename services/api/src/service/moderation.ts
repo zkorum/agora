@@ -14,7 +14,7 @@ import type {
     ConversationModerationProperties,
     ModerationReason,
 } from "@/shared/types/zod.js";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/util.js";
 import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
@@ -58,7 +58,10 @@ export async function moderateByPostSlugId({
                 updatedAt: nowZeroMs(),
             })
             .where(
-                eq(conversationModerationTable.conversationId, postDetails.id),
+                and(
+                    eq(conversationModerationTable.conversationId, postDetails.id),
+                    isNull(conversationModerationTable.deletedAt),
+                ),
             );
     } else {
         await db.insert(conversationModerationTable).values({
@@ -104,7 +107,12 @@ export async function moderateByCommentSlugId({
                 moderationAction: opinionModerationTable.moderationAction,
             })
             .from(opinionModerationTable)
-            .where(eq(opinionModerationTable.opinionId, opinionId))
+            .where(
+                and(
+                    eq(opinionModerationTable.opinionId, opinionId),
+                    isNull(opinionModerationTable.deletedAt),
+                ),
+            )
             .limit(1);
 
         const existingModeration = moderationRows.at(0);
@@ -176,7 +184,12 @@ export async function fetchModerationReportByPostSlugId({
                 conversationModerationTable.conversationId,
             ),
         )
-        .where(eq(conversationTable.slugId, postSlugId));
+        .where(
+            and(
+                eq(conversationTable.slugId, postSlugId),
+                isNull(conversationModerationTable.deletedAt),
+            ),
+        );
 
     if (moderationPostsTableResponse.length != 1) {
         return {
@@ -217,7 +230,12 @@ export async function fetchModerationReportByCommentSlugId({
             opinionTable,
             eq(opinionTable.id, opinionModerationTable.opinionId),
         )
-        .where(eq(opinionTable.slugId, commentSlugId));
+        .where(
+            and(
+                eq(opinionTable.slugId, commentSlugId),
+                isNull(opinionModerationTable.deletedAt),
+            ),
+        );
 
     if (moderationTableResponse.length != 1) {
         return {
@@ -252,8 +270,14 @@ export async function withdrawModerationReportByPostSlugId({
     });
 
     const moderationPostTableResponse = await db
-        .delete(conversationModerationTable)
-        .where(eq(conversationModerationTable.conversationId, postDetails.id))
+        .update(conversationModerationTable)
+        .set({ deletedAt: nowZeroMs(), updatedAt: nowZeroMs() })
+        .where(
+            and(
+                eq(conversationModerationTable.conversationId, postDetails.id),
+                isNull(conversationModerationTable.deletedAt),
+            ),
+        )
         .returning();
 
     if (moderationPostTableResponse.length != 1) {
@@ -293,7 +317,12 @@ export async function withdrawModerationReportByCommentSlugId({
                 moderationAction: opinionModerationTable.moderationAction,
             })
             .from(opinionModerationTable)
-            .where(eq(opinionModerationTable.opinionId, commentId))
+            .where(
+                and(
+                    eq(opinionModerationTable.opinionId, commentId),
+                    isNull(opinionModerationTable.deletedAt),
+                ),
+            )
             .limit(1);
 
         if (moderationRows.length !== 1) {
@@ -311,8 +340,14 @@ export async function withdrawModerationReportByCommentSlugId({
         }
 
         const moderationCommentsTableResponse = await tx
-            .delete(opinionModerationTable)
-            .where(eq(opinionModerationTable.id, moderation.id))
+            .update(opinionModerationTable)
+            .set({ deletedAt: nowZeroMs(), updatedAt: nowZeroMs() })
+            .where(
+                and(
+                    eq(opinionModerationTable.id, moderation.id),
+                    isNull(opinionModerationTable.deletedAt),
+                ),
+            )
             .returning();
 
         if (moderationCommentsTableResponse.length != 1) {

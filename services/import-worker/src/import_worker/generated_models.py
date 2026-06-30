@@ -35,6 +35,7 @@ class ContentTranslationSourceKind(StrEnum):
     conversation = "conversation"
     opinion = "opinion"
     survey_question = "survey_question"
+    project = "project"
 
 
 class DisplayLanguageCode(StrEnum):
@@ -215,11 +216,6 @@ class ImportFailureReasonEnum(StrEnum):
     invalid_data_format = "invalid_data_format"
 
 
-class ConversationLanguageSettingMode(StrEnum):
-    auto = "auto"
-    manual = "manual"
-
-
 class ParticipationMode(StrEnum):
     account_required = "account_required"
     strong_verification = "strong_verification"
@@ -334,7 +330,7 @@ class ContentTranslationWork(Base):
     __tablename__ = "content_translation_work"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    conversation_id: Mapped[int] = mapped_column(Integer)
+    conversation_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     source_kind: Mapped[ContentTranslationSourceKind] = mapped_column(
         SaEnum(
             ContentTranslationSourceKind,
@@ -343,6 +339,7 @@ class ContentTranslationWork(Base):
             native_enum=True,
         ),
     )
+    project_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     conversation_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     opinion_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     survey_question_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -441,63 +438,6 @@ class ConversationImport(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
 
-class ConversationLanguageSetting(Base):
-    __tablename__ = "conversation_language_setting"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    conversation_id: Mapped[int] = mapped_column(Integer)
-    mode: Mapped[ConversationLanguageSettingMode] = mapped_column(
-        SaEnum(
-            ConversationLanguageSettingMode,
-            name="conversation_language_setting_mode",
-            values_callable=_enum_values,
-            native_enum=True,
-        ),
-    )
-    language_code: Mapped[DisplayLanguageCode | None] = mapped_column(
-        SaEnum(
-            DisplayLanguageCode,
-            name="display_language_code",
-            values_callable=_enum_values,
-            native_enum=True,
-        ),
-        nullable=True,
-    )
-    detected_language_code: Mapped[DisplayLanguageCode | None] = mapped_column(
-        SaEnum(
-            DisplayLanguageCode,
-            name="display_language_code",
-            values_callable=_enum_values,
-            native_enum=True,
-        ),
-        nullable=True,
-    )
-    detected_source_language_code: Mapped[SpokenLanguageCode | None] = mapped_column(
-        SaEnum(
-            SpokenLanguageCode,
-            name="spoken_language_code",
-            values_callable=_enum_values,
-            native_enum=True,
-        ),
-        nullable=True,
-    )
-    detected_raw_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
-    detected_raw_language_provider: Mapped[LanguageDetectionProvider | None] = mapped_column(
-        SaEnum(
-            LanguageDetectionProvider,
-            name="language_detection_provider",
-            values_callable=_enum_values,
-            native_enum=True,
-        ),
-        nullable=True,
-    )
-    detection_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
-    detected_from_corpus_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    auto_detection_retryable: Mapped[bool] = mapped_column(Boolean, server_default="false")
-    created_at: Mapped[datetime] = mapped_column(DateTime)
-    updated_at: Mapped[datetime] = mapped_column(DateTime)
-
-
 class Conversation(Base):
     __tablename__ = "conversation"
 
@@ -505,6 +445,7 @@ class Conversation(Base):
     slug_id: Mapped[str] = mapped_column(String(8))
     project_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
     current_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_indexed: Mapped[bool] = mapped_column(Boolean, server_default="true")
     participation_mode: Mapped[ParticipationMode] = mapped_column(
@@ -551,21 +492,11 @@ class Conversation(Base):
     last_reacted_at: Mapped[datetime] = mapped_column(DateTime)
 
 
-class ConversationTranslationSetting(Base):
-    __tablename__ = "conversation_translation_setting"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    conversation_id: Mapped[int] = mapped_column(Integer)
-    dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
-    created_at: Mapped[datetime] = mapped_column(DateTime)
-    updated_at: Mapped[datetime] = mapped_column(DateTime)
-
-
 class ConversationTranslationTargetLanguage(Base):
     __tablename__ = "conversation_translation_target_language"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    translation_setting_id: Mapped[int] = mapped_column(Integer)
+    conversation_id: Mapped[int] = mapped_column(Integer)
     language_code: Mapped[DisplayLanguageCode] = mapped_column(
         SaEnum(
             DisplayLanguageCode,
@@ -575,6 +506,7 @@ class ConversationTranslationTargetLanguage(Base):
         ),
     )
     created_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class ConversationViewSnapshot(Base):
@@ -730,6 +662,7 @@ class OpinionModeration(Base):
     moderation_explanation: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class Opinion(Base):
@@ -755,6 +688,14 @@ class Organization(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     slug: Mapped[str] = mapped_column(String(65))
     display_name: Mapped[str] = mapped_column(String(65))
+    default_language_code: Mapped[DisplayLanguageCode] = mapped_column(
+        SaEnum(
+            DisplayLanguageCode,
+            name="display_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
     directory_visibility: Mapped[DirectoryVisibility] = mapped_column(
         SaEnum(
             DirectoryVisibility,
@@ -770,6 +711,7 @@ class Organization(Base):
     description: Mapped[str | None] = mapped_column(String(280), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class ProjectOrganizationOwnership(Base):
@@ -779,6 +721,7 @@ class ProjectOrganizationOwnership(Base):
     project_id: Mapped[int] = mapped_column(Integer)
     organization_id: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class Project(Base):
@@ -786,7 +729,7 @@ class Project(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     slug: Mapped[str] = mapped_column(String(65))
-    display_name: Mapped[str] = mapped_column(String(65))
+    title: Mapped[str] = mapped_column(String(140))
     directory_visibility: Mapped[DirectoryVisibility] = mapped_column(
         SaEnum(
             DirectoryVisibility,
@@ -796,8 +739,11 @@ class Project(Base):
         ),
     )
     auto_provisioned_for_organization_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class User(Base):

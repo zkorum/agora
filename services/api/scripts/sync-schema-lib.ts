@@ -186,6 +186,35 @@ export function parseSqlTables(
     return tables;
 }
 
+export function assertParsedTablesForService({
+    allowedTables,
+    parsedTables,
+    service,
+}: {
+    allowedTables: Set<string>;
+    parsedTables: Map<string, Column[]>;
+    service: string;
+}): void {
+    if (allowedTables.size === 0) {
+        return;
+    }
+
+    if (parsedTables.size === 0) {
+        throw new Error(
+            `[sync-schema] Parsed 0 table(s) for service "${service}" despite ${String(allowedTables.size)} tagged table(s). The SQL export is probably empty or invalid.`,
+        );
+    }
+
+    const missingTables = Array.from(allowedTables).filter(
+        (table) => !parsedTables.has(table),
+    );
+    if (missingTables.length > 0) {
+        throw new Error(
+            `[sync-schema] SQL export is missing tagged table(s) for service "${service}": ${missingTables.join(", ")}`,
+        );
+    }
+}
+
 export function parseEnums(sql: string): Map<string, string[]> {
     const regex =
         /CREATE\s+TYPE\s+"(?:public"\.)?"?(\w+)"?\s+AS\s+ENUM\s*\(([^)]+)\)/g;

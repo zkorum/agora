@@ -20,6 +20,7 @@ import {
     ZodSupportedSpokenLanguageCodes,
     ZodSupportedDisplayLanguageCodes,
 } from "../languages.js";
+import { projectOrganizationAttributionRoleValues } from "./project.js";
 
 export const zodDateTimeFlexible = z.coerce.date();
 export const zodSlugId = z.string().max(10);
@@ -30,6 +31,7 @@ export const zodOrganizationSlug = z
         /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
         "Organization slug may only contain lower-cased letters, numbers and single hyphens",
     );
+export const zodProjectSlug = zodOrganizationSlug;
 
 export const zodEventSlug = z.enum(["devconnect-2025"]);
 
@@ -57,7 +59,14 @@ export const zodParticipationMode = z.enum([
     "guest",
 ]);
 export const zodConversationType = z.enum(["polis", "maxdiff"]);
-export const zodConversationLanguageSettingMode = z.enum(["auto", "manual"]);
+export const zodProjectOrganizationAttributionRole = z.enum(
+    projectOrganizationAttributionRoleValues,
+);
+export const zodConversationLanguageSettingMode = z.enum([
+    "inherit",
+    "auto",
+    "manual",
+]);
 export const zodLanguageDetectionProvider = z.enum([
     "lingua",
     "google_translate",
@@ -80,6 +89,19 @@ export const zodConversationLanguageSettingInput = z.discriminatedUnion(
             .strict(),
     ],
 );
+export const zodProjectLanguageSettings = z
+    .object({
+        dynamicTranslationEnabled: z.boolean(),
+        targetLanguageCodes: z
+            .array(ZodSupportedDisplayLanguageCodes)
+            .max(2)
+            .refine(
+                (languageCodes) =>
+                    new Set(languageCodes).size === languageCodes.length,
+                "Target languages must be unique",
+            ),
+    })
+    .strict();
 export const zodConversationLanguageSettingOutput = z
     .object({
         mode: zodConversationLanguageSettingMode,
@@ -95,7 +117,12 @@ export const zodConversationMultilingualSetting = z
     .object({
         additionalLanguageCodes: z
             .array(ZodSupportedDisplayLanguageCodes)
-            .max(2),
+            .max(2)
+            .refine(
+                (languageCodes) =>
+                    new Set(languageCodes).size === languageCodes.length,
+                "Additional languages must be unique",
+            ),
         dynamicTranslationEnabled: z.boolean(),
     })
     .strict();
@@ -165,6 +192,10 @@ export const zodExportFileType = z.enum([
     "survey_full_aggregates",
 ]);
 export const zodExportFileAudience = z.enum(["redacted", "owner", "requester"]);
+const zodHttpUrl = z.url().refine((value) => {
+    const protocol = new URL(value).protocol;
+    return protocol === "http:" || protocol === "https:";
+}, "URL must use http or https");
 export const zodExportFileInfo = z
     .object({
         fileType: zodExportFileType,
@@ -188,9 +219,7 @@ export const zodOrganization = z
         name: z.string(),
         slug: zodOrganizationSlug,
         imageUrl: z.string().optional(),
-        websiteUrl: z
-            .url({ message: "Invalid organization website url" })
-            .optional(),
+        websiteUrl: zodHttpUrl.optional(),
         description: z.string(),
     })
     .strict();
@@ -1956,6 +1985,7 @@ export type ConversationLanguageSettingInput = z.infer<
 export type ConversationLanguageSettingOutput = z.infer<
     typeof zodConversationLanguageSettingOutput
 >;
+export type ProjectLanguageSettings = z.infer<typeof zodProjectLanguageSettings>;
 export type ConversationMultilingualSetting = z.infer<
     typeof zodConversationMultilingualSetting
 >;

@@ -36,6 +36,7 @@ import { createMaxdiffItem } from "./maxdiffItem.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import { deleteAllConversationExports } from "@/service/conversationExport/index.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
+import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import {
     getSurveyGateSummary,
     setSurveyConfigForConversation,
@@ -51,22 +52,16 @@ import {
 import {
     buildGoogleConversationLanguageDetectionCorpus,
     buildConversationLanguageDetectionCorpus,
-    resolveConversationLanguageSetting,
-    upsertConversationLanguageSetting,
 } from "@/service/conversationLanguage.js";
-import {
-    normalizeConversationMultilingualSetting,
-    upsertConversationMultilingualSetting,
-} from "@/service/conversationMultilingual.js";
+import { upsertConversationMultilingualSetting } from "@/service/conversationMultilingual.js";
 import type { ConversationLanguageSettingInput } from "@/shared/types/zod.js";
 import {
     buildContentBlockLanguageDetectionCorpus,
     buildSurveyLanguageDetectionCorpus,
     contentLanguageMetadataUpdateValues,
-    getBlockLanguageHints,
-    getContentItemLanguageHints,
     resolveContentLanguageMetadata,
 } from "./contentLanguageMetadata.js";
+import { normalizeConversationMultilingualSettings } from "./translationLanguageSetting.js";
 
 const MAX_CONVERSATION_SEED_ITEMS = 50;
 
@@ -78,6 +73,7 @@ interface CreateNewPostProps {
     authorId: string;
     didWrite: string;
     postAsOrganization?: string;
+    autoProvisionedDefaultLanguage: SupportedDisplayLanguageCodes;
     isIndexed: boolean;
     participationMode: ParticipationMode;
     conversationType: ConversationType;
@@ -107,6 +103,7 @@ export async function createNewPost({
     authorId,
     didWrite,
     postAsOrganization,
+    autoProvisionedDefaultLanguage,
     participationMode,
     conversationType,
     isIndexed,
@@ -117,7 +114,6 @@ export async function createNewPost({
     preferredOpinionGroupCount,
     externalSourceConfig,
     surveyConfig,
-    languageSetting,
     multilingualSetting,
     googleCloudCredentials,
     importUrl,
@@ -136,6 +132,7 @@ export async function createNewPost({
         db,
         userId: authorId,
         postAsOrganizationSlug: postAsOrganization,
+        autoProvisionedDefaultLanguage,
     });
     const conversationSlugId = generateRandomSlugId();
 
@@ -197,28 +194,8 @@ export async function createNewPost({
         }
     }
 
-    const normalizedMultilingualSetting =
-        normalizeConversationMultilingualSetting({
-            languageSetting,
-            multilingualSetting,
-            canUseDynamicTranslation: true,
-        });
     const surveyLanguageDetectionCorpus = buildSurveyLanguageDetectionCorpus({
         surveyConfig,
-    });
-    const blockLanguageHints = getBlockLanguageHints({ languageSetting });
-    const resolvedLanguageSetting = await resolveConversationLanguageSetting({
-        request: languageSetting,
-        existing: undefined,
-        conversationTitle,
-        bodyPlainText,
-        supplementalPlainText: surveyLanguageDetectionCorpus,
-        googleCloudCredentials,
-        languageHints: blockLanguageHints,
-    });
-    const contentItemLanguageHints = getContentItemLanguageHints({
-        languageSetting: resolvedLanguageSetting,
-        additionalLanguageCodes: normalizedMultilingualSetting.additionalLanguageCodes,
     });
     const conversationSourceLanguageMetadata = await resolveContentLanguageMetadata({
         text: buildContentBlockLanguageDetectionCorpus({
@@ -234,9 +211,12 @@ export async function createNewPost({
             supplementalPlainText: surveyLanguageDetectionCorpus,
         }),
         googleCloudCredentials,
-        useGoogleLanguageDetection:
-            normalizedMultilingualSetting.dynamicTranslationEnabled,
-        languageHints: contentItemLanguageHints,
+        useGoogleLanguageDetection: multilingualSetting.dynamicTranslationEnabled,
+    });
+    const normalizedMultilingualSetting = normalizeConversationMultilingualSettings({
+        multilingualSettings: multilingualSetting,
+        canUseDynamicTranslation: true,
+        sourceLanguageCode: conversationSourceLanguageMetadata.sourceLanguageCode,
     });
 
     await db.transaction(async (tx) => {
@@ -294,12 +274,6 @@ export async function createNewPost({
             })
             .where(eq(conversationTable.id, insertedConversationId));
 
-        await upsertConversationLanguageSetting({
-            db: tx,
-            conversationId: insertedConversationId,
-            setting: resolvedLanguageSetting,
-            now,
-        });
         await upsertConversationMultilingualSetting({
             db: tx,
             conversationId: insertedConversationId,
@@ -347,7 +321,6 @@ export async function createNewPost({
                         googleCloudCredentials,
                         useGoogleLanguageDetection:
                             normalizedMultilingualSetting.dynamicTranslationEnabled,
-                        languageHints: contentItemLanguageHints,
                         conversationMetadata: {
                             conversationId: insertedConversationId,
                             conversationContentId:

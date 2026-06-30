@@ -1,59 +1,28 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
-  <div v-if="isDisclosureEnabled" class="html-content-wrapper">
-    <div
-      :id="contentId"
-      ref="contentRef"
-      class="textBreak"
-      :class="{
-        truncate: compactMode,
-        'collapsible-content': isDisclosureEnabled,
-        'collapsible-content--collapsed': isDisclosureEnabled && isCollapsed,
-        coloredHrefs: !compactMode,
-      }"
-      :style="contentStyle"
-      role="user-content"
-      :aria-label="compactMode ? t('postContentPreview') : t('postContent')"
-      @click="handleClick"
-      v-html="sanitizedHtmlBody"
-    ></div>
-
-    <button
-      v-if="showDisclosureButton"
-      type="button"
-      class="disclosure-button"
-      :aria-expanded="!isCollapsed"
-      :aria-controls="contentId"
-      @click.stop="toggleDisclosure"
-    >
-      {{ isCollapsed ? t("readMore") : t("showLess") }}
-    </button>
-  </div>
-
-  <span
-    v-else
+  <ZKContentDisclosure
     class="textBreak"
-    :class="{ truncate: compactMode, coloredHrefs: !compactMode }"
+    :class="{ coloredHrefs: !compactMode }"
+    :compact-mode="compactMode"
+    :disclosure-enabled="isDisclosureEnabled"
+    :collapsed-line-count="collapsedLineCount"
+    :desktop-collapsed-line-count="desktopCollapsedLineCount"
+    :compact-line-count="compactLineCount"
+    :refresh-key="sanitizedHtmlBody"
     role="user-content"
     :aria-label="compactMode ? t('postContentPreview') : t('postContent')"
     @click="handleClick"
-    v-html="sanitizedHtmlBody"
-  ></span>
+  >
+    <span v-html="sanitizedHtmlBody"></span>
+  </ZKContentDisclosure>
 </template>
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { processUserGeneratedHtml } from "src/shared-app-api/html";
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  useId,
-  watch,
-} from "vue";
+import { computed } from "vue";
 
+import ZKContentDisclosure from "./ZKContentDisclosure.vue";
 import {
   type ZKHtmlContentTranslations,
   zkHtmlContentTranslations,
@@ -70,24 +39,20 @@ const props = withDefaults(
     collapsible?: boolean;
     collapsedLineCount?: number;
     desktopCollapsedLineCount?: number;
+    compactLineCount?: number;
   }>(),
   {
     contentRole: "body",
     collapsible: true,
     collapsedLineCount: 10,
     desktopCollapsedLineCount: 10,
+    compactLineCount: 5,
   }
 );
 
 const { t } = useComponentI18n<ZKHtmlContentTranslations>(
   zkHtmlContentTranslations
 );
-
-const contentId = `zk-html-content-${useId()}`;
-const contentRef = ref<HTMLElement | null>(null);
-const isCollapsed = ref(true);
-const isOverflowing = ref(false);
-let resizeObserver: ResizeObserver | undefined;
 
 const sanitizedHtmlBody = computed(() => {
   try {
@@ -110,46 +75,6 @@ const isDisclosureEnabled = computed(
   () => props.collapsible && props.contentRole === "body" && !props.compactMode
 );
 
-const showDisclosureButton = computed(
-  () => isDisclosureEnabled.value && isOverflowing.value
-);
-
-const contentStyle = computed(() => ({
-  "--collapsed-line-count": props.collapsedLineCount.toString(),
-  "--desktop-collapsed-line-count": props.desktopCollapsedLineCount.toString(),
-}));
-
-function observeContentElement(contentElement: HTMLElement | null): void {
-  resizeObserver?.disconnect();
-  if (resizeObserver !== undefined && contentElement !== null) {
-    resizeObserver.observe(contentElement);
-  }
-}
-
-async function updateOverflowState(): Promise<void> {
-  await nextTick();
-  const contentElement = contentRef.value;
-  if (contentElement === null || !isDisclosureEnabled.value) {
-    isOverflowing.value = false;
-    return;
-  }
-
-  if (!isCollapsed.value) {
-    return;
-  }
-
-  isOverflowing.value =
-    contentElement.scrollHeight > contentElement.clientHeight + 1;
-}
-
-function toggleDisclosure(): void {
-  isCollapsed.value = !isCollapsed.value;
-  if (isCollapsed.value) {
-    contentRef.value?.scrollIntoView({ block: "nearest" });
-    void updateOverflowState();
-  }
-}
-
 const handleClick = (event: Event) => {
   const target = event.target as HTMLElement;
   // Check if the clicked element is a link or is inside a link
@@ -159,33 +84,6 @@ const handleClick = (event: Event) => {
     event.stopPropagation();
   }
 };
-
-onMounted(() => {
-  if (typeof ResizeObserver !== "undefined") {
-    resizeObserver = new ResizeObserver(() => {
-      void updateOverflowState();
-    });
-    observeContentElement(contentRef.value);
-  }
-  void updateOverflowState();
-});
-
-onBeforeUnmount(() => {
-  resizeObserver?.disconnect();
-});
-
-watch(
-  [sanitizedHtmlBody, isDisclosureEnabled, () => props.collapsedLineCount],
-  () => {
-    isCollapsed.value = true;
-    void updateOverflowState();
-  }
-);
-
-watch(contentRef, (contentElement) => {
-  observeContentElement(contentElement);
-  void updateOverflowState();
-});
 </script>
 
 <style lang="scss" scoped>
@@ -194,45 +92,6 @@ watch(contentRef, (contentElement) => {
   line-height: normal;
   overflow-wrap: break-word;
   word-break: break-word;
-}
-
-.html-content-wrapper {
-  display: block;
-}
-
-.collapsible-content {
-  position: relative;
-}
-
-.collapsible-content--collapsed {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: var(--collapsed-line-count);
-  line-clamp: var(--collapsed-line-count);
-  -webkit-box-orient: vertical;
-
-  @media (min-width: $breakpoint-sm) {
-    -webkit-line-clamp: var(--desktop-collapsed-line-count);
-    line-clamp: var(--desktop-collapsed-line-count);
-  }
-}
-
-.disclosure-button {
-  display: flex;
-  align-items: center;
-  padding: 0;
-  width: fit-content;
-  margin-block: 0.5rem;
-  border: 0;
-  background: transparent;
-  color: $primary;
-  font: inherit;
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-}
-
-.disclosure-button:hover {
-  text-decoration: underline;
 }
 
 :deep(p) {
@@ -303,20 +162,11 @@ watch(contentRef, (contentElement) => {
   margin-right: 0.25rem;
 }
 
-.truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
-  line-clamp: 5;
-  -webkit-box-orient: vertical;
-}
-
 /* Ensure any remaining potentially dangerous content is hidden */
 :deep(script),
 :deep(iframe),
 :deep(object),
 :deep(embed) {
-  display: none !important;
+  display: none;
 }
 </style>

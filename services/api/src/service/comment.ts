@@ -16,8 +16,6 @@ import {
     opinionTable,
     opinionContentTranslationTable,
     conversationTable,
-    conversationLanguageSettingTable,
-    conversationTranslationSettingTable,
     conversationTranslationTargetLanguageTable,
     conversationViewSnapshotCheckpointReasonTable,
     conversationViewSnapshotTable,
@@ -63,7 +61,6 @@ import type {
     DisplayedOpinionItem,
     ModerationReason,
     OpinionItem,
-    OpinionItemPerSlugId,
     OpinionModerationAction,
     SlugId,
     PolisKey,
@@ -107,10 +104,8 @@ import type {
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import {
     contentLanguageMetadataUpdateValues,
-    getContentLanguageHintsForConversation,
     resolveContentLanguageMetadata,
 } from "./contentLanguageMetadata.js";
-import type { LanguageDetectionHintInput } from "./languageDetection.js";
 import { getConversationMultilingualSetting } from "./conversationMultilingual.js";
 import { buildTranslationMetadata } from "./contentTranslationContent.js";
 import { translationSourceMatchesCurrentSource } from "@/shared-backend/translate.js";
@@ -576,7 +571,10 @@ export async function fetchOpinionsByPostId({
         )
         .leftJoin(
             opinionModerationTable,
-            eq(opinionModerationTable.opinionId, opinionTable.id),
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
+            ),
         );
 
     // Add vote table join for discover (authenticated) and my_votes filters
@@ -783,11 +781,8 @@ export async function fetchOpinionsByOpinionSlugIdList({
         .select({
             opinionId: opinionTable.id,
             conversationId: opinionTable.conversationId,
-            conversationLanguageCode: conversationLanguageSettingTable.languageCode,
-            conversationDetectedLanguageCode:
-                conversationLanguageSettingTable.detectedLanguageCode,
             dynamicTranslationEnabled:
-                conversationTranslationSettingTable.dynamicTranslationEnabled,
+                conversationTable.dynamicTranslationEnabled,
             configuredTargetLanguageCode:
                 conversationTranslationTargetLanguageTable.languageCode,
             opinionContentId: opinionContentTable.id,
@@ -827,30 +822,17 @@ export async function fetchOpinionsByOpinionSlugIdList({
             eq(opinionContentTable.id, opinionTable.currentContentId),
         )
         .leftJoin(
-            conversationLanguageSettingTable,
-            eq(
-                conversationLanguageSettingTable.conversationId,
-                conversationTable.id,
-            ),
-        )
-        .leftJoin(
-            conversationTranslationSettingTable,
-            eq(
-                conversationTranslationSettingTable.conversationId,
-                conversationTable.id,
-            ),
-        )
-        .leftJoin(
             conversationTranslationTargetLanguageTable,
             and(
                 eq(
-                    conversationTranslationTargetLanguageTable.translationSettingId,
-                    conversationTranslationSettingTable.id,
+                    conversationTranslationTargetLanguageTable.conversationId,
+                    conversationTable.id,
                 ),
                 eq(
                     conversationTranslationTargetLanguageTable.languageCode,
                     displayContentViewerPreferences.displayLanguage,
                 ),
+                isNull(conversationTranslationTargetLanguageTable.deletedAt),
             ),
         )
         .leftJoin(
@@ -868,7 +850,10 @@ export async function fetchOpinionsByOpinionSlugIdList({
         )
         .leftJoin(
             opinionModerationTable,
-            eq(opinionModerationTable.opinionId, opinionTable.id),
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
+            ),
         )
         .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
         .orderBy(desc(opinionTable.createdAt))
@@ -893,12 +878,17 @@ export async function fetchOpinionsByOpinionSlugIdList({
             commentResponse.moderationCreatedAt,
             commentResponse.moderationUpdatedAt,
         );
+        const parsedSourceDisplayLanguage =
+            ZodSupportedDisplayLanguageCodes.safeParse(
+                commentResponse.sourceLanguageCode,
+            );
+        const sourceMatchesDisplayLanguage =
+            parsedSourceDisplayLanguage.success &&
+            parsedSourceDisplayLanguage.data ===
+                displayContentViewerPreferences.displayLanguage;
         const translationAllowed =
-            commentResponse.dynamicTranslationEnabled === true &&
-            (commentResponse.conversationLanguageCode ===
-                displayContentViewerPreferences.displayLanguage ||
-                commentResponse.conversationDetectedLanguageCode ===
-                    displayContentViewerPreferences.displayLanguage ||
+            commentResponse.dynamicTranslationEnabled &&
+            (sourceMatchesDisplayLanguage ||
                 commentResponse.configuredTargetLanguageCode ===
                     displayContentViewerPreferences.displayLanguage);
 
@@ -1158,6 +1148,7 @@ function getAnalysisOpinionMuteJoin({
         : and(
               eq(userMutePreferenceTable.sourceUserId, personalizationUserId),
               eq(userMutePreferenceTable.targetUserId, opinionTable.authorId),
+              isNull(userMutePreferenceTable.deletedAt),
           );
 }
 
@@ -1236,7 +1227,10 @@ async function fetchAnalysisOpinionRowsByIds({
         )
         .leftJoin(
             opinionModerationTable,
-            eq(opinionModerationTable.opinionId, opinionTable.id),
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
+            ),
         )
         .leftJoin(
             userMutePreferenceTable,
@@ -1308,7 +1302,10 @@ async function fetchAnalysisOpinionRowsForList({
         )
         .leftJoin(
             opinionModerationTable,
-            eq(opinionModerationTable.opinionId, opinionTable.id),
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
+            ),
         )
         .leftJoin(
             userMutePreferenceTable,
@@ -2525,7 +2522,10 @@ async function getHasVotedOnAllAvailableOpinions({
         )
         .leftJoin(
             opinionModerationTable,
-            eq(opinionModerationTable.opinionId, opinionTable.id),
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
+            ),
         )
         .leftJoin(
             voteTable,
@@ -2540,6 +2540,7 @@ async function getHasVotedOnAllAvailableOpinions({
             and(
                 eq(userMutePreferenceTable.sourceUserId, personalizationUserId),
                 eq(userMutePreferenceTable.targetUserId, opinionTable.authorId),
+                isNull(userMutePreferenceTable.deletedAt),
             ),
         )
         .where(
@@ -2589,7 +2590,6 @@ interface PostNewOpinionProps {
     isSeed: boolean;
     googleCloudCredentials?: GoogleCloudCredentials;
     useGoogleLanguageDetection?: boolean;
-    languageHints?: readonly LanguageDetectionHintInput[];
     voteBuffer?: VoteBuffer;
     realtimeSSEManager?: RealtimeSSEManager;
     conversationMetadata?: {
@@ -2616,7 +2616,6 @@ export async function postNewOpinion({
     isSeed,
     googleCloudCredentials,
     useGoogleLanguageDetection,
-    languageHints,
     voteBuffer,
     realtimeSSEManager,
     conversationMetadata,
@@ -2694,12 +2693,6 @@ export async function postNewOpinion({
         return participationContext;
     }
 
-    const resolvedLanguageHints =
-        languageHints ??
-        (await getContentLanguageHintsForConversation({
-            db,
-            conversationId: participationContext.conversationId,
-        }));
     const resolvedUseGoogleLanguageDetection =
         useGoogleLanguageDetection ??
         (
@@ -2712,7 +2705,6 @@ export async function postNewOpinion({
         text: contentPlainText,
         googleCloudCredentials,
         useGoogleLanguageDetection: resolvedUseGoogleLanguageDetection,
-        languageHints: resolvedLanguageHints,
     });
 
     const opinionSlugId = generateRandomSlugId();
@@ -2918,7 +2910,12 @@ export async function deleteOpinionBySlugId({
         const moderationRows = await tx
             .select({ moderationId: opinionModerationTable.id })
             .from(opinionModerationTable)
-            .where(eq(opinionModerationTable.opinionId, opinion.opinionId))
+            .where(
+                and(
+                    eq(opinionModerationTable.opinionId, opinion.opinionId),
+                    isNull(opinionModerationTable.deletedAt),
+                ),
+            )
             .limit(1);
         const activeVoteRows = await tx
             .select({ voteId: voteTable.id })

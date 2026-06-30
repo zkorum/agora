@@ -18,6 +18,7 @@ import {
     parseSqlTables,
     parseEnums,
     generateSqlAlchemyModels,
+    assertParsedTablesForService,
 } from "./sync-schema-lib.js";
 
 function getArg(name: string): string {
@@ -51,6 +52,11 @@ console.log(
 for (const t of allowed) console.log(`  - ${t}`);
 
 const tables = parseSqlTables(sql, allowed);
+assertParsedTablesForService({
+    allowedTables: allowed,
+    parsedTables: tables,
+    service,
+});
 const enums = parseEnums(sql);
 const output = generateSqlAlchemyModels({ tables, enums, service });
 

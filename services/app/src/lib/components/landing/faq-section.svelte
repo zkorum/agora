@@ -99,16 +99,16 @@
 
           <div
             class="
-            px-5 pb-5
-            sm:px-6
-          "
+              px-5 pb-5
+              sm:px-6
+            "
           >
             {#each group.items as item (item.question)}
               <details
                 class="
-                border-t border-border py-5
-                first:border-t-0
-              "
+                  border-t border-border py-5
+                  first:border-t-0
+                "
               >
                 <summary
                   class="

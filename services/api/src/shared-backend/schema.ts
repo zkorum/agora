@@ -25,6 +25,7 @@ import {
     ZodSupportedDisplayLanguageCodes,
     ZodSupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
+import { projectOrganizationAttributionRoleValues } from "@/shared/types/project.js";
 // import { MAX_LENGTH_TITLE, MAX_LENGTH_OPINION, MAX_LENGTH_BODY } from "./shared/shared.js"; // unfortunately it breaks drizzle generate... :o TODO: find a way
 // WARNING: when you modify these limits, change this in shared.ts as well
 const MAX_LENGTH_TITLE = 140;
@@ -598,10 +599,6 @@ export const conversationTypeEnum = pgEnum("conversation_type", [
     "polis",
     "maxdiff",
 ]);
-export const conversationLanguageSettingModeEnum = pgEnum(
-    "conversation_language_setting_mode",
-    ["auto", "manual"],
-);
 export const languageDetectionProviderEnum = pgEnum(
     "language_detection_provider",
     ["lingua", "google_translate"],
@@ -622,7 +619,11 @@ export const premiumFeatureEnum = pgEnum("premium_feature", [
 ]);
 export const contentTranslationSourceKindEnum = pgEnum(
     "content_translation_source_kind",
-    ["conversation", "opinion", "survey_question"],
+    ["conversation", "opinion", "survey_question", "project"],
+);
+export const projectContentTranslationSourceKindEnum = pgEnum(
+    "project_content_translation_source_kind",
+    ["manual", "machine"],
 );
 export const contentTranslationWorkStatusEnum = pgEnum(
     "content_translation_work_status",
@@ -633,6 +634,11 @@ export const directoryVisibilityEnum = pgEnum("directory_visibility", [
     "listed",
     "unlisted",
 ]);
+
+export const projectOrganizationAttributionRoleEnum = pgEnum(
+    "project_organization_attribution_role",
+    projectOrganizationAttributionRoleValues,
+);
 
 export const organizationMembershipCapabilityEnum = pgEnum(
     "organization_membership_capability_enum",
@@ -909,12 +915,12 @@ export const organizationMembershipTable = pgTable(
         })
             .defaultNow()
             .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
     },
     (t) => [
-        unique("organization_membership_user_organization_unique").on(
-            t.userId,
-            t.organizationId,
-        ),
+        uniqueIndex("organization_membership_active_unique")
+            .on(t.userId, t.organizationId)
+            .where(isNull(t.deletedAt)),
         index("organization_membership_organization_idx").on(t.organizationId),
     ],
 );
@@ -969,8 +975,13 @@ export const followedTopicTable = pgTable(
         })
             .defaultNow()
             .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
     },
-    (t) => [unique("followed_topic_unique").on(t.userId, t.topicId)],
+    (t) => [
+        uniqueIndex("followed_topic_active_unique")
+            .on(t.userId, t.topicId)
+            .where(isNull(t.deletedAt)),
+    ],
 );
 
 export const userMutePreferenceTable = pgTable(
@@ -989,9 +1000,12 @@ export const userMutePreferenceTable = pgTable(
         })
             .defaultNow()
             .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
     },
     (t) => [
-        unique("user_unique_mute").on(t.sourceUserId, t.targetUserId),
+        uniqueIndex("user_mute_preference_active_unique")
+            .on(t.sourceUserId, t.targetUserId)
+            .where(isNull(t.deletedAt)),
     ],
 );
 
@@ -1021,33 +1035,27 @@ export const userSpokenLanguagesTable = pgTable(
     ],
 );
 
-// User display language (UI language) - can have only one active
+// Current user display language (UI language).
 export const userDisplayLanguageTable = pgTable(
     "user_display_language",
     {
-        id: serial("id").primaryKey(),
         userId: uuid("user_id")
-            .references(() => userTable.id, { onDelete: "cascade" })
-            .notNull(),
+            .primaryKey()
+            .references(() => userTable.id, { onDelete: "cascade" }),
         languageCode: displayLanguageCodeEnum("language_code").notNull(),
-        isDeleted: boolean("is_deleted").notNull().default(false),
-        deletedAt: timestamp("deleted_at", {
-            mode: "date",
-            precision: 0,
-        }),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
         })
             .defaultNow()
             .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
     },
-    (t) => [
-        unique("user_display_language_unique").on(t.userId, t.languageCode),
-        uniqueIndex("user_display_language_active_user_unique")
-            .on(t.userId)
-            .where(sql`${t.isDeleted} = false`),
-    ],
 );
 
 /** @service import-worker */
@@ -1055,11 +1063,11 @@ export const organizationTable = pgTable(
     "organization",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        slug: varchar("slug", { length: MAX_LENGTH_NAME_CREATOR })
-            .notNull()
-            .unique(),
+        slug: varchar("slug", { length: MAX_LENGTH_NAME_CREATOR }).notNull(),
         displayName: varchar("display_name", { length: MAX_LENGTH_NAME_CREATOR })
             .notNull(),
+        defaultLanguageCode:
+            displayLanguageCodeEnum("default_language_code").notNull(),
         // Controls organization-facing exposure, such as directories and "post as organization" pickers.
         // Auto-provisioned personal backing orgs start unlisted; promoting one to a real org lists it.
         directoryVisibility: directoryVisibilityEnum("directory_visibility").notNull(),
@@ -1086,36 +1094,411 @@ export const organizationTable = pgTable(
         })
             .defaultNow()
             .notNull(),
+        deletedAt: timestamp("deleted_at", {
+            mode: "date",
+            precision: 0,
+        }),
     },
+    (table) => [
+        uniqueIndex("organization_active_slug_unique")
+            .on(table.slug)
+            .where(sql`${table.deletedAt} IS NULL`),
+    ],
 );
 
-/** @service scoring-worker, api, math-updater, import-worker */
-export const projectTable = pgTable("project", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    slug: varchar("slug", { length: MAX_LENGTH_NAME_CREATOR })
-        .notNull()
-        .unique(),
-    displayName: varchar("display_name", { length: MAX_LENGTH_NAME_CREATOR })
-        .notNull(),
-    directoryVisibility: directoryVisibilityEnum("directory_visibility").notNull(),
-    autoProvisionedForOrganizationId: integer(
-        "auto_provisioned_for_organization_id",
-    )
-        .references(() => organizationTable.id)
-        .unique(),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+/** @service api */
+export const organizationLocalizationTable = pgTable(
+    "organization_localization",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        organizationId: integer("organization_id")
+            .references(() => organizationTable.id)
+            .notNull(),
+        languageCode: displayLanguageCodeEnum("language_code").notNull(),
+        displayName: varchar("display_name", {
+            length: MAX_LENGTH_NAME_CREATOR,
+        }).notNull(),
+        description: varchar("description", {
+            length: MAX_LENGTH_DESCRIPTION_CREATOR,
+        }).notNull(),
+        websiteUrl: text("website_url"),
+        imagePath: text("image_path"),
+        isFullImagePath: boolean("is_full_image_path").notNull().default(false),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("organization_localization_organization_language_unique").on(
+            table.organizationId,
+            table.languageCode,
+        ),
+    ],
+);
+
+/** @service scoring-worker, api, math-updater, import-worker, content-translation-worker */
+export const projectTable = pgTable(
+    "project",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        slug: varchar("slug", { length: MAX_LENGTH_NAME_CREATOR }).notNull(),
+        title: varchar("title", { length: MAX_LENGTH_TITLE }).notNull(),
+        directoryVisibility: directoryVisibilityEnum("directory_visibility").notNull(),
+        autoProvisionedForOrganizationId: integer(
+            "auto_provisioned_for_organization_id",
+        )
+            .references(() => organizationTable.id)
+            .unique(),
+        // Project creation inserts the project before its content row because project_content references project.
+        currentContentId: integer("current_content_id")
+            .references((): AnyPgColumn => projectContentTable.id)
+            .unique(),
+        dynamicTranslationEnabled: boolean("dynamic_translation_enabled")
+            .notNull()
+            .default(false),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+    },
+    (table) => [
+        uniqueIndex("project_active_slug_unique")
+            .on(table.slug)
+            .where(sql`${table.deletedAt} IS NULL`),
+    ],
+);
+
+/** @service api, content-translation-worker */
+export const projectContentTable = pgTable(
+    "project_content",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectId: integer("project_id")
+            .references(() => projectTable.id)
+            .notNull(),
+        title: varchar("title", { length: MAX_LENGTH_TITLE }).notNull(),
+        subtitle: varchar("subtitle", { length: MAX_LENGTH_TITLE }),
+        body: text("body"),
+        bodyPlainText: text("body_plain_text"),
+        bannerPath: text("banner_path"),
+        bannerIsFullPath: boolean("banner_is_full_path")
+            .notNull()
+            .default(false),
+        sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
+        sourceRawLanguageCode: varchar("source_raw_language_code", {
+            length: 35,
+        }),
+        sourceLanguageProvider: languageDetectionProviderEnum(
+            "source_language_provider",
+        ),
+        sourceLanguageConfidence: real("source_language_confidence"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+    },
+    (table) => [
+        check(
+            "project_content_source_metadata_check",
+            sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
+        ),
+    ],
+);
+
+/** @service api */
+export const projectContentBannerLocalizationTable = pgTable(
+    "project_content_banner_localization",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectContentId: integer("project_content_id")
+            .notNull()
+            .references(() => projectContentTable.id),
+        languageCode: displayLanguageCodeEnum("language_code").notNull(),
+        bannerPath: text("banner_path").notNull(),
+        bannerIsFullPath: boolean("banner_is_full_path")
+            .notNull()
+            .default(false),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+    },
+    (table) => [
+        uniqueIndex("project_content_banner_localization_active_unique")
+            .on(table.projectContentId, table.languageCode)
+            .where(isNull(table.deletedAt)),
+    ],
+);
+
+/** @service api, content-translation-worker */
+export const projectTranslationTargetLanguageTable = pgTable(
+    "project_translation_target_language",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectId: integer("project_id")
+            .references(() => projectTable.id)
+            .notNull(),
+        languageCode: displayLanguageCodeEnum("language_code").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+    },
+    (table) => [
+        uniqueIndex("project_translation_target_language_active_unique")
+            .on(table.projectId, table.languageCode)
+            .where(isNull(table.deletedAt)),
+    ],
+);
+
+/** @service api */
+export const projectParticipantDisplayLanguageTable = pgTable(
+    "project_participant_display_language",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectId: integer("project_id")
+            .references(() => projectTable.id)
+            .notNull(),
+        userId: uuid("user_id")
+            .references(() => userTable.id, { onDelete: "cascade" })
+            .notNull(),
+        languageCode: displayLanguageCodeEnum("language_code").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("project_participant_display_language_unique").on(
+            table.projectId,
+            table.userId,
+        ),
+        index("project_participant_display_language_user_idx").on(table.userId),
+    ],
+);
+
+/** @service api */
+export const projectExternalOrganizationTable = pgTable(
+    "project_external_organization",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectId: integer("project_id")
+            .references(() => projectTable.id)
+            .notNull(),
+        displayName: varchar("display_name", {
+            length: MAX_LENGTH_NAME_CREATOR,
+        }).notNull(),
+        defaultLanguageCode: displayLanguageCodeEnum("default_language_code")
+            .notNull(),
+        description: varchar("description", {
+            length: MAX_LENGTH_DESCRIPTION_CREATOR,
+        }),
+        imagePath: text("image_path"),
+        isFullImagePath: boolean("is_full_image_path").notNull().default(false),
+        websiteUrl: text("website_url"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+    },
+    (table) => [
+        unique("project_external_organization_project_id_id_unique").on(
+            table.projectId,
+            table.id,
+        ),
+    ],
+);
+
+/** @service api */
+export const projectExternalOrganizationLocalizationTable = pgTable(
+    "project_external_organization_localization",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        externalOrganizationId: integer("external_organization_id")
+            .references(() => projectExternalOrganizationTable.id)
+            .notNull(),
+        languageCode: displayLanguageCodeEnum("language_code").notNull(),
+        displayName: varchar("display_name", {
+            length: MAX_LENGTH_NAME_CREATOR,
+        }).notNull(),
+        description: varchar("description", {
+            length: MAX_LENGTH_DESCRIPTION_CREATOR,
+        }).notNull(),
+        websiteUrl: text("website_url"),
+        imagePath: text("image_path"),
+        isFullImagePath: boolean("is_full_image_path").notNull().default(false),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+    },
+    (table) => [
+        uniqueIndex("project_external_org_loc_active_unique")
+            .on(table.externalOrganizationId, table.languageCode)
+            .where(isNull(table.deletedAt)),
+    ],
+);
+
+/** @service api */
+export const projectOrganizationAttributionTable = pgTable(
+    "project_organization_attribution",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectId: integer("project_id")
+            .references(() => projectTable.id)
+            .notNull(),
+        role: projectOrganizationAttributionRoleEnum("role").notNull(),
+        sortOrder: integer("sort_order").notNull().default(0),
+        organizationId: integer("organization_id").references(
+            () => organizationTable.id,
+        ),
+        externalOrganizationId: integer("external_organization_id"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+    },
+    (table) => [
+        check(
+            "project_organization_attribution_source_xor_check",
+            sql`num_nonnulls(${table.organizationId}, ${table.externalOrganizationId}) = 1`,
+        ),
+        uniqueIndex("project_organization_attribution_order_active_unique")
+            .on(table.projectId, table.role, table.sortOrder)
+            .where(isNull(table.deletedAt)),
+        uniqueIndex("project_organization_attribution_real_active_unique")
+            .on(table.projectId, table.role, table.organizationId)
+            .where(
+                sqlAnd(isNotNull(table.organizationId), isNull(table.deletedAt)),
+            ),
+        uniqueIndex("project_organization_attribution_external_active_unique")
+            .on(table.projectId, table.role, table.externalOrganizationId)
+            .where(
+                sqlAnd(
+                    isNotNull(table.externalOrganizationId),
+                    isNull(table.deletedAt),
+                ),
+            ),
+        foreignKey({
+            columns: [table.projectId, table.externalOrganizationId],
+            foreignColumns: [
+                projectExternalOrganizationTable.projectId,
+                projectExternalOrganizationTable.id,
+            ],
+            name: "project_organization_attribution_external_project_fk",
+        }),
+    ],
+);
+
+/** @service api */
+export const projectContactTable = pgTable(
+    "project_contact",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectId: integer("project_id")
+            .references(() => projectTable.id)
+            .notNull(),
+        name: varchar("name", { length: MAX_LENGTH_NAME_CREATOR }).notNull(),
+        roleLabel: varchar("role_label", { length: MAX_LENGTH_TITLE }),
+        email: text("email").notNull(),
+        organizationId: integer("organization_id").references(
+            () => organizationTable.id,
+        ),
+        externalOrganizationId: integer("external_organization_id"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+    },
+    (table) => [
+        check(
+            "project_contact_affiliation_source_check",
+            sql`num_nonnulls(${table.organizationId}, ${table.externalOrganizationId}) <= 1`,
+        ),
+        foreignKey({
+            columns: [table.projectId, table.externalOrganizationId],
+            foreignColumns: [
+                projectExternalOrganizationTable.projectId,
+                projectExternalOrganizationTable.id,
+            ],
+            name: "project_contact_external_project_fk",
+        }),
+        uniqueIndex("project_contact_project_active_unique")
+            .on(table.projectId)
+            .where(isNull(table.deletedAt)),
+    ],
+);
 
 /** @service scoring-worker, api, math-updater, shared-analysis-worker, import-worker */
 export const projectOrganizationOwnershipTable = pgTable(
@@ -1134,12 +1517,12 @@ export const projectOrganizationOwnershipTable = pgTable(
         })
             .defaultNow()
             .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
     },
     (table) => [
-        unique("project_organization_ownership_project_org_unique").on(
-            table.projectId,
-            table.organizationId,
-        ),
+        uniqueIndex("project_organization_ownership_active_unique")
+            .on(table.projectId, table.organizationId)
+            .where(isNull(table.deletedAt)),
         index("project_organization_ownership_organization_idx").on(
             table.organizationId,
         ),
@@ -1641,6 +2024,9 @@ export const conversationTable = pgTable(
         currentContentId: integer("current_content_id")
             .references((): AnyPgColumn => conversationContentTable.id)
             .unique(), // null if conversation was deleted
+        dynamicTranslationEnabled: boolean("dynamic_translation_enabled")
+            .notNull()
+            .default(false),
         currentRankingScoreId: integer("current_ranking_score_id")
             .references((): AnyPgColumn => rankingScoreTable.id)
             .unique(), // null for polis conversations or if no scores computed yet
@@ -1724,100 +2110,14 @@ export const conversationTable = pgTable(
     ],
 );
 
-/** @service api, shared-analysis-worker, import-worker */
-export const conversationLanguageSettingTable = pgTable(
-    "conversation_language_setting",
-    {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        conversationId: integer("conversation_id")
-            .notNull()
-            .references(() => conversationTable.id),
-        mode: conversationLanguageSettingModeEnum("mode").notNull(),
-        languageCode: displayLanguageCodeEnum("language_code"),
-        detectedLanguageCode: displayLanguageCodeEnum("detected_language_code"),
-        detectedSourceLanguageCode: spokenLanguageCodeEnum(
-            "detected_source_language_code",
-        ),
-        detectedRawLanguageCode: varchar("detected_raw_language_code", {
-            length: 35,
-        }),
-        detectedRawLanguageProvider: languageDetectionProviderEnum(
-            "detected_raw_language_provider",
-        ),
-        detectionConfidence: real("detection_confidence"),
-        detectedFromCorpusHash: varchar("detected_from_corpus_hash", {
-            length: 64,
-        }),
-        autoDetectionRetryable: boolean("auto_detection_retryable")
-            .notNull()
-            .default(false),
-        createdAt: timestamp("created_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-        updatedAt: timestamp("updated_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-    },
-    (table) => [
-        unique("conversation_language_setting_conversation_unique").on(
-            table.conversationId,
-        ),
-        check(
-            "conversation_language_setting_manual_language_check",
-            sql`(${table.mode} <> 'manual') OR (${table.languageCode} IS NOT NULL)`,
-        ),
-        check(
-            "conversation_language_setting_detected_raw_provider_check",
-            sql`((${table.detectedRawLanguageProvider} IS NULL AND ${table.detectedRawLanguageCode} IS NULL) OR (${table.detectedRawLanguageProvider} IS NOT NULL AND ${table.detectedRawLanguageCode} IS NOT NULL))`,
-        ),
-    ],
-);
-
-/** @service api, shared-analysis-worker, content-translation-worker, import-worker */
-export const conversationTranslationSettingTable = pgTable(
-    "conversation_translation_setting",
-    {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        conversationId: integer("conversation_id")
-            .notNull()
-            .references(() => conversationTable.id),
-        dynamicTranslationEnabled: boolean("dynamic_translation_enabled")
-            .notNull()
-            .default(false),
-        createdAt: timestamp("created_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-        updatedAt: timestamp("updated_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-    },
-    (table) => [
-        unique("conversation_translation_setting_conversation_unique").on(
-            table.conversationId,
-        ),
-    ],
-);
-
 /** @service api, shared-analysis-worker, content-translation-worker, import-worker */
 export const conversationTranslationTargetLanguageTable = pgTable(
     "conversation_translation_target_language",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        translationSettingId: integer("translation_setting_id")
+        conversationId: integer("conversation_id")
             .notNull()
-            .references(() => conversationTranslationSettingTable.id),
+            .references(() => conversationTable.id),
         languageCode: displayLanguageCodeEnum("language_code").notNull(),
         createdAt: timestamp("created_at", {
             mode: "date",
@@ -1825,12 +2125,12 @@ export const conversationTranslationTargetLanguageTable = pgTable(
         })
             .defaultNow()
             .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
     },
     (table) => [
-        unique("conversation_translation_target_language_unique").on(
-            table.translationSettingId,
-            table.languageCode,
-        ),
+        uniqueIndex("conversation_translation_target_language_active_unique")
+            .on(table.conversationId, table.languageCode)
+            .where(isNull(table.deletedAt)),
     ],
 );
 
@@ -1976,6 +2276,55 @@ export const conversationContentTranslationTable = pgTable(
             table.conversationContentId,
             table.displayLanguageCode,
         ),
+    ],
+);
+
+/** @service api, content-translation-worker */
+export const projectContentTranslationTable = pgTable(
+    "project_content_translation",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectContentId: integer("project_content_id")
+            .notNull()
+            .references(() => projectContentTable.id),
+        displayLanguageCode:
+            displayLanguageCodeEnum("display_language_code").notNull(),
+        translatedTitle: text("translated_title").notNull(),
+        translatedSubtitle: text("translated_subtitle"),
+        translatedBody: text("translated_body"),
+        sourceKind: projectContentTranslationSourceKindEnum("source_kind")
+            .notNull()
+            .default("machine"),
+        sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
+        sourceRawLanguageCode: varchar("source_raw_language_code", {
+            length: 35,
+        }),
+        sourceLanguageProvider: languageDetectionProviderEnum(
+            "source_language_provider",
+        ),
+        sourceLanguageConfidence: real("source_language_confidence"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+    },
+    (table) => [
+        check(
+            "project_content_translation_source_metadata_check",
+            sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
+        ),
+        uniqueIndex("project_content_translation_active_unique")
+            .on(table.projectContentId, table.displayLanguageCode)
+            .where(isNull(table.deletedAt)),
     ],
 );
 
@@ -2474,10 +2823,13 @@ export const contentTranslationWorkTable = pgTable(
     "content_translation_work",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        conversationId: integer("conversation_id")
-            .notNull()
-            .references(() => conversationTable.id),
+        conversationId: integer("conversation_id").references(
+            () => conversationTable.id,
+        ),
         sourceKind: contentTranslationSourceKindEnum("source_kind").notNull(),
+        projectContentId: integer("project_content_id").references(
+            () => projectContentTable.id,
+        ),
         conversationContentId: integer("conversation_content_id").references(
             () => conversationContentTable.id,
         ),
@@ -2539,6 +2891,14 @@ export const contentTranslationWorkTable = pgTable(
                     isNotNull(table.conversationContentId),
                 ),
             ),
+        uniqueIndex("content_translation_work_project_unique")
+            .on(table.projectContentId, table.displayLanguageCode)
+            .where(
+                sqlAnd(
+                    sql`${table.sourceKind} = 'project'`,
+                    isNotNull(table.projectContentId),
+                ),
+            ),
         uniqueIndex("content_translation_work_opinion_unique")
             .on(table.opinionContentId, table.displayLanguageCode)
             .where(
@@ -2571,13 +2931,26 @@ export const contentTranslationWorkTable = pgTable(
             sqlOr(
                 sqlAnd(
                     sql`${table.sourceKind} = 'conversation'`,
+                    isNotNull(table.conversationId),
+                    isNull(table.projectContentId),
                     isNotNull(table.conversationContentId),
                     isNull(table.opinionContentId),
                     isNull(table.surveyQuestionContentId),
                     isNull(table.surveyQuestionOptionContentIds),
                 ),
                 sqlAnd(
+                    sql`${table.sourceKind} = 'project'`,
+                    isNull(table.conversationId),
+                    isNotNull(table.projectContentId),
+                    isNull(table.conversationContentId),
+                    isNull(table.opinionContentId),
+                    isNull(table.surveyQuestionContentId),
+                    isNull(table.surveyQuestionOptionContentIds),
+                ),
+                sqlAnd(
                     sql`${table.sourceKind} = 'opinion'`,
+                    isNotNull(table.conversationId),
+                    isNull(table.projectContentId),
                     isNull(table.conversationContentId),
                     isNotNull(table.opinionContentId),
                     isNull(table.surveyQuestionContentId),
@@ -2585,6 +2958,8 @@ export const contentTranslationWorkTable = pgTable(
                 ),
                 sqlAnd(
                     sql`${table.sourceKind} = 'survey_question'`,
+                    isNotNull(table.conversationId),
+                    isNull(table.projectContentId),
                     isNull(table.conversationContentId),
                     isNull(table.opinionContentId),
                     isNotNull(table.surveyQuestionContentId),
@@ -2762,7 +3137,6 @@ export const conversationModerationTable = pgTable(
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         conversationId: integer("conversation_id") // one moderation action per conversation
             .references(() => conversationTable.id)
-            .unique()
             .notNull(),
         authorId: uuid("author_id")
             .references(() => userTable.id)
@@ -2785,37 +3159,51 @@ export const conversationModerationTable = pgTable(
         })
             .defaultNow()
             .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
     },
+    (table) => [
+        uniqueIndex("conversation_moderation_active_conversation_unique")
+            .on(table.conversationId)
+            .where(isNull(table.deletedAt)),
+    ],
 );
 
 /** @service shared-analysis-worker */
 /** @service import-worker */
-export const opinionModerationTable = pgTable("opinion_moderation", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    opinionId: integer("opinion_id") // one moderation action per opinion
-        .references(() => opinionTable.id)
-        .unique()
-        .notNull(),
-    authorId: uuid("author_id").references(() => userTable.id), // null if imported data
-    moderationAction:
-        opinionModerationActionEnum("moderation_action").notNull(),
-    moderationReason: moderationReasonsEnum("moderation_reason").notNull(),
-    moderationExplanation: varchar("moderation_explanation", {
-        length: MAX_LENGTH_BODY,
-    }),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const opinionModerationTable = pgTable(
+    "opinion_moderation",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        opinionId: integer("opinion_id") // one moderation action per opinion
+            .references(() => opinionTable.id)
+            .notNull(),
+        authorId: uuid("author_id").references(() => userTable.id), // null if imported data
+        moderationAction:
+            opinionModerationActionEnum("moderation_action").notNull(),
+        moderationReason: moderationReasonsEnum("moderation_reason").notNull(),
+        moderationExplanation: varchar("moderation_explanation", {
+            length: MAX_LENGTH_BODY,
+        }),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+    },
+    (table) => [
+        uniqueIndex("opinion_moderation_active_opinion_unique")
+            .on(table.opinionId)
+            .where(isNull(table.deletedAt)),
+    ],
+);
 
 // WARNING: if you change this, also change this in shared/zod.ts!
 export const notificationTypeEnum = pgEnum("notification_type_enum", [

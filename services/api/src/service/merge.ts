@@ -15,7 +15,7 @@ import {
     voteTable,
     zkPassportTable,
 } from "@/shared-backend/schema.js";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { nowZeroMs } from "@/shared/util.js";
 import { log } from "@/app.js";
@@ -96,7 +96,12 @@ export async function mergeGuestIntoVerifiedUser({
     const guestFollowedTopics = await db
         .select()
         .from(followedTopicTable)
-        .where(eq(followedTopicTable.userId, guestUserId));
+        .where(
+            and(
+                eq(followedTopicTable.userId, guestUserId),
+                isNull(followedTopicTable.deletedAt),
+            ),
+        );
 
     for (const topic of guestFollowedTopics) {
         await db
@@ -125,18 +130,22 @@ export async function mergeGuestIntoVerifiedUser({
             .onConflictDoNothing();
     }
 
-    // 10. Transfer user display language (unique constraint: userId + languageCode)
-    const guestDisplayLanguages = await db
+    // 10. Transfer user display language if the verified user has none.
+    const guestDisplayLanguage = await db
         .select()
         .from(userDisplayLanguageTable)
-        .where(eq(userDisplayLanguageTable.userId, guestUserId));
+        .where(eq(userDisplayLanguageTable.userId, guestUserId))
+        .limit(1);
 
-    for (const lang of guestDisplayLanguages) {
+    const displayLanguage = guestDisplayLanguage.at(0);
+    if (displayLanguage !== undefined) {
         await db
             .insert(userDisplayLanguageTable)
             .values({
                 userId: verifiedUserId,
-                languageCode: lang.languageCode,
+                languageCode: displayLanguage.languageCode,
+                createdAt: displayLanguage.createdAt,
+                updatedAt: now,
             })
             .onConflictDoNothing();
     }
@@ -145,7 +154,12 @@ export async function mergeGuestIntoVerifiedUser({
     const guestOrgMappings = await db
         .select()
         .from(organizationMembershipTable)
-        .where(eq(organizationMembershipTable.userId, guestUserId));
+        .where(
+            and(
+                eq(organizationMembershipTable.userId, guestUserId),
+                isNull(organizationMembershipTable.deletedAt),
+            ),
+        );
 
     for (const mapping of guestOrgMappings) {
         await db
@@ -209,16 +223,22 @@ export async function mergeGuestIntoVerifiedUser({
         .from(conversationTable)
         .innerJoin(
             projectOrganizationOwnershipTable,
-            eq(
-                projectOrganizationOwnershipTable.projectId,
-                conversationTable.projectId,
+            and(
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    conversationTable.projectId,
+                ),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
             ),
         )
         .innerJoin(
             organizationMembershipTable,
-            eq(
-                organizationMembershipTable.organizationId,
-                projectOrganizationOwnershipTable.organizationId,
+            and(
+                eq(
+                    organizationMembershipTable.organizationId,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                isNull(organizationMembershipTable.deletedAt),
             ),
         )
         .where(eq(organizationMembershipTable.userId, verifiedUserId));

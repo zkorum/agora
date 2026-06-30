@@ -376,7 +376,10 @@ async function loadSurveyCountedParticipantIds({
             .innerJoin(userTable, eq(voteTable.authorId, userTable.id))
             .leftJoin(
                 opinionModerationTable,
-                eq(opinionModerationTable.opinionId, opinionTable.id),
+                and(
+                    eq(opinionModerationTable.opinionId, opinionTable.id),
+                    isNull(opinionModerationTable.deletedAt),
+                ),
             )
             .where(
                 and(

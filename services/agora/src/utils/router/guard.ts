@@ -84,9 +84,20 @@ export function useRouterGuard() {
       "/topics/",
     ];
 
-    if (!unauthenticatedRoutes.includes(toName)) {
+    if (
+      !unauthenticatedRoutes.includes(toName) &&
+      !isDevRouteAllowed(toName)
+    ) {
       await router.push({ name: "/" });
     }
+  }
+
+  function isDevRouteAllowed(toName: RouteRecordName): boolean {
+    return (
+      import.meta.env.DEV &&
+      typeof toName === "string" &&
+      toName.startsWith("/dev/")
+    );
   }
 
   function conversationGuard(

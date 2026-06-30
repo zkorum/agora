@@ -217,6 +217,7 @@ class Conversation(Base):
     slug_id: Mapped[str] = mapped_column(String(8))
     project_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
     current_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_indexed: Mapped[bool] = mapped_column(Boolean, server_default="true")
     participation_mode: Mapped[ParticipationMode] = mapped_column(
@@ -330,6 +331,7 @@ class ProjectOrganizationOwnership(Base):
     project_id: Mapped[int] = mapped_column(Integer)
     organization_id: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class Project(Base):
@@ -337,7 +339,7 @@ class Project(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     slug: Mapped[str] = mapped_column(String(65))
-    display_name: Mapped[str] = mapped_column(String(65))
+    title: Mapped[str] = mapped_column(String(140))
     directory_visibility: Mapped[DirectoryVisibility] = mapped_column(
         SaEnum(
             DirectoryVisibility,
@@ -347,8 +349,11 @@ class Project(Base):
         ),
     )
     auto_provisioned_for_organization_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class RankingScoreEntity(Base):

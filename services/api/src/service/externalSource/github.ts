@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { eq, and, sql, asc } from "drizzle-orm";
+import { eq, and, sql, asc, isNull } from "drizzle-orm";
 import {
     conversationTable,
     maxdiffItemTable,
@@ -34,12 +34,20 @@ async function getDeterministicProjectMemberUserId({
         .from(projectOrganizationOwnershipTable)
         .innerJoin(
             organizationMembershipTable,
-            eq(
-                organizationMembershipTable.organizationId,
-                projectOrganizationOwnershipTable.organizationId,
+            and(
+                eq(
+                    organizationMembershipTable.organizationId,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                isNull(organizationMembershipTable.deletedAt),
             ),
         )
-        .where(eq(projectOrganizationOwnershipTable.projectId, projectId))
+        .where(
+            and(
+                eq(projectOrganizationOwnershipTable.projectId, projectId),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
+            ),
+        )
         .orderBy(asc(organizationMembershipTable.createdAt), asc(organizationMembershipTable.id))
         .limit(1);
 

@@ -9,6 +9,7 @@ import {
     toPascalCase,
     toPythonEnumMember,
     generateSqlAlchemyModels,
+    assertParsedTablesForService,
 } from "./sync-schema-lib.js";
 
 function getParsedColumns(
@@ -170,6 +171,38 @@ CREATE TABLE "unwanted" ("id" integer NOT NULL);`;
         const cols = getParsedColumns(parseSqlTables(sql, new Set(["t"])), "t");
         expect(cols).toHaveLength(1);
         expect(cols[0].name).toBe("id");
+    });
+});
+
+describe("assertParsedTablesForService", () => {
+    it("allows all tagged tables to be parsed", () => {
+        expect(() => {
+            assertParsedTablesForService({
+                allowedTables: new Set(["wanted"]),
+                parsedTables: new Map([["wanted", []]]),
+                service: "worker",
+            });
+        }).not.toThrow();
+    });
+
+    it("throws when SQL export parsed no tagged tables", () => {
+        expect(() => {
+            assertParsedTablesForService({
+                allowedTables: new Set(["wanted"]),
+                parsedTables: new Map(),
+                service: "worker",
+            });
+        }).toThrow(/Parsed 0 table\(s\).*worker.*tagged table/);
+    });
+
+    it("throws when SQL export is missing some tagged tables", () => {
+        expect(() => {
+            assertParsedTablesForService({
+                allowedTables: new Set(["present", "missing"]),
+                parsedTables: new Map([["present", []]]),
+                service: "worker",
+            });
+        }).toThrow(/missing tagged table\(s\).*missing/);
     });
 });
 

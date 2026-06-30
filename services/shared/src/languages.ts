@@ -155,6 +155,17 @@ export type DetectedSourceLanguageCode = SupportedSpokenLanguageCodes;
 export const ZodNormalizedLanguageCodes = ZodSupportedSpokenLanguageCodes;
 export type NormalizedLanguageCodes = z.infer<typeof ZodNormalizedLanguageCodes>;
 
+const RTL_LANGUAGE_CODES: readonly string[] = ["ar", "fa", "he", "ur"];
+
+export type LanguageTextDirection = "ltr" | "rtl";
+
+export function getLanguageTextDirection(
+    languageCode: string,
+): LanguageTextDirection {
+    const primaryLanguageCode = languageCode.split("-")[0] ?? languageCode;
+    return RTL_LANGUAGE_CODES.includes(primaryLanguageCode) ? "rtl" : "ltr";
+}
+
 // Master enum containing all language codes used in the metadata list
 export const ZodAllLanguageCodes = z.enum([
     "en",
@@ -242,6 +253,21 @@ export interface LanguageMetadata {
 export interface DisplayLanguageMetadata extends LanguageMetadata {
     code: SupportedDisplayLanguageCodes;
     displaySupported: true;
+}
+
+export function getDisplayLanguageFallbackChain({
+    languageCode,
+}: {
+    languageCode: SupportedDisplayLanguageCodes;
+}): SupportedDisplayLanguageCodes[] {
+    switch (languageCode) {
+        case "zh-Hant":
+            return ["zh-Hant", "zh-Hans"];
+        case "zh-Hans":
+            return ["zh-Hans", "zh-Hant"];
+        default:
+            return [languageCode];
+    }
 }
 
 // Comprehensive language list for spoken languages

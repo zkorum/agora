@@ -20,7 +20,6 @@ import {
 } from "@/shared-backend/analysisScheduler.js";
 import {
     conversationTable,
-    conversationTranslationSettingTable,
     conversationTranslationTargetLanguageTable,
     organizationMembershipTable,
     organizationTable,
@@ -30,6 +29,7 @@ import {
     userTable,
 } from "@/shared-backend/schema.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
+import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import type {
     CreatePremiumFeatureEntitlementRequest,
     ListPremiumFeatureEntitlementsResponse,
@@ -47,6 +47,7 @@ import {
     getOrCreatePersonalOrganization,
     resolveConversationCreateTarget,
 } from "./projectAccess.js";
+import { getAutoProvisionedDefaultLanguage } from "./projectLanguage.js";
 
 type PremiumFeatureEntitlementUpdateValues = Partial<
     typeof premiumFeatureEntitlementTable.$inferInsert
@@ -158,15 +159,18 @@ export async function getPremiumEntitlementSubjectForCreate({
     db,
     userId,
     postAsOrganization,
+    autoProvisionedDefaultLanguage,
 }: {
     db: PostgresJsDatabase;
     userId: string;
     postAsOrganization?: string;
+    autoProvisionedDefaultLanguage: SupportedDisplayLanguageCodes;
 }): Promise<PremiumEntitlementSubject> {
     const target = await resolveConversationCreateTarget({
         db,
         userId,
         postAsOrganizationSlug: postAsOrganization,
+        autoProvisionedDefaultLanguage,
     });
     return { projectId: target.projectId, userId };
 }
@@ -215,9 +219,12 @@ async function getCandidateEntitlements({
         .from(organizationMembershipTable)
         .innerJoin(
             projectOrganizationOwnershipTable,
-            eq(
-                projectOrganizationOwnershipTable.organizationId,
-                organizationMembershipTable.organizationId,
+            and(
+                eq(
+                    projectOrganizationOwnershipTable.organizationId,
+                    organizationMembershipTable.organizationId,
+                ),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
             ),
         )
         .innerJoin(
@@ -230,6 +237,7 @@ async function getCandidateEntitlements({
         .where(
             and(
                 eq(organizationMembershipTable.userId, subject.userId),
+                isNull(organizationMembershipTable.deletedAt),
                 eq(projectOrganizationOwnershipTable.projectId, subject.projectId),
                 inArray(premiumFeatureEntitlementTable.feature, features),
                 lte(premiumFeatureEntitlementTable.startsAt, now),
@@ -278,6 +286,61 @@ export async function hasPremiumAnalysisVariantsAccess({
     });
 }
 
+export async function getOrganizationIdsWithActiveDynamicTranslationEntitlement({
+    db,
+    organizationIds,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    organizationIds: number[];
+    now: Date;
+}): Promise<Set<number>> {
+    if (organizationIds.length === 0) {
+        return new Set();
+    }
+
+    const rows = await db
+        .select({
+            organizationId: premiumFeatureEntitlementTable.organizationId,
+        })
+        .from(premiumFeatureEntitlementTable)
+        .where(
+            and(
+                inArray(premiumFeatureEntitlementTable.organizationId, organizationIds),
+                eq(
+                    premiumFeatureEntitlementTable.feature,
+                    PREMIUM_DYNAMIC_TRANSLATION_FEATURE,
+                ),
+                lte(premiumFeatureEntitlementTable.startsAt, now),
+                isNull(premiumFeatureEntitlementTable.revokedAt),
+                or(
+                    isNull(premiumFeatureEntitlementTable.expiresAt),
+                    gt(premiumFeatureEntitlementTable.expiresAt, now),
+                ),
+            ),
+        );
+
+    return new Set(rows.map((row) => row.organizationId));
+}
+
+export async function hasActiveDynamicTranslationEntitlementForOrganizations({
+    db,
+    organizationIds,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    organizationIds: number[];
+    now: Date;
+}): Promise<boolean> {
+    const entitledOrganizationIds =
+        await getOrganizationIdsWithActiveDynamicTranslationEntitlement({
+            db,
+            organizationIds,
+            now,
+        });
+    return entitledOrganizationIds.size > 0;
+}
+
 async function refreshPremiumAnalysisForSubject({
     db,
     subject,
@@ -292,9 +355,12 @@ async function refreshPremiumAnalysisForSubject({
         .from(conversationTable)
         .innerJoin(
             projectOrganizationOwnershipTable,
-            eq(
-                projectOrganizationOwnershipTable.projectId,
-                conversationTable.projectId,
+            and(
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    conversationTable.projectId,
+                ),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
             ),
         );
 
@@ -316,9 +382,12 @@ async function refreshPremiumAnalysisForSubject({
             : await baseQuery
                   .innerJoin(
                       organizationMembershipTable,
-                      eq(
-                          organizationMembershipTable.organizationId,
-                          projectOrganizationOwnershipTable.organizationId,
+                      and(
+                          eq(
+                              organizationMembershipTable.organizationId,
+                              projectOrganizationOwnershipTable.organizationId,
+                          ),
+                          isNull(organizationMembershipTable.deletedAt),
                       ),
                   )
                   .where(
@@ -493,23 +562,21 @@ export async function getPremiumFeaturesInConversation({
     const translationRows = await db
         .select({
             dynamicTranslationEnabled:
-                conversationTranslationSettingTable.dynamicTranslationEnabled,
+                conversationTable.dynamicTranslationEnabled,
             languageId: conversationTranslationTargetLanguageTable.id,
         })
-        .from(conversationTranslationSettingTable)
+        .from(conversationTable)
         .leftJoin(
             conversationTranslationTargetLanguageTable,
-            eq(
-                conversationTranslationTargetLanguageTable.translationSettingId,
-                conversationTranslationSettingTable.id,
+            and(
+                eq(
+                    conversationTranslationTargetLanguageTable.conversationId,
+                    conversationTable.id,
+                ),
+                isNull(conversationTranslationTargetLanguageTable.deletedAt),
             ),
         )
-        .where(
-            eq(
-                conversationTranslationSettingTable.conversationId,
-                conversation.conversationId,
-            ),
-        );
+        .where(eq(conversationTable.id, conversation.conversationId));
 
     if (
         translationRows.some(
@@ -575,9 +642,12 @@ async function clearPreferredOpinionGroupCountForSubject({
                   .from(conversationTable)
                   .innerJoin(
                       projectOrganizationOwnershipTable,
-                      eq(
-                          projectOrganizationOwnershipTable.projectId,
-                          conversationTable.projectId,
+                      and(
+                          eq(
+                              projectOrganizationOwnershipTable.projectId,
+                              conversationTable.projectId,
+                          ),
+                          isNull(projectOrganizationOwnershipTable.deletedAt),
                       ),
                   )
                   .where(
@@ -704,6 +774,10 @@ async function resolveEntitlementSubject({
         const organization = await getOrCreatePersonalOrganization({
             db,
             userId: user.userId,
+            autoProvisionedDefaultLanguage: getAutoProvisionedDefaultLanguage({
+                storedUserDisplayLanguage: undefined,
+                currentDisplayLanguage: undefined,
+            }),
         });
         return { organizationId: organization.organizationId };
     }
@@ -712,7 +786,12 @@ async function resolveEntitlementSubject({
         const organizations = await db
             .select({ organizationId: organizationTable.id })
             .from(organizationTable)
-            .where(eq(organizationTable.slug, subject.organizationName))
+            .where(
+                and(
+                    eq(organizationTable.slug, subject.organizationName),
+                    isNull(organizationTable.deletedAt),
+                ),
+            )
             .limit(1);
 
         const organization = organizations.at(0);

@@ -34,6 +34,7 @@
     </q-page-container>
 
     <q-drawer
+      v-if="layoutConfig.enableDrawer"
       v-model="showMobileDrawer"
       show-if-above
       :breakpoint="drawerBreakpoint"

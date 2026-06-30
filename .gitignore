@@ -96,3 +96,10 @@ agents_tmp_doc/
 
 # generated test data
 generated_test/
+
+# local planning artifacts
+/project-*.csv
+/project-*.md
+
+# local frontend project-page dev assets
+/services/agora/public/local-project-assets/

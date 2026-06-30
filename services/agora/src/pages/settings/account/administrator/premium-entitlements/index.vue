@@ -23,13 +23,13 @@
           outlined
           :label="t('usernameLabel')"
         />
-        <q-select
+        <ZKSelect
           v-else
-          v-model="organizationSlug"
-          outlined
-          emit-value
-          map-options
+          v-model="organizationSlugSelectModel"
+          searchable
           :label="t('organizationNameLabel')"
+          :loading="isLoadingOrganizations"
+          :disable="isLoadingOrganizations"
           :options="organizationOptions"
         />
 
@@ -87,11 +87,16 @@
         >
           <div class="entitlement-main">
             <div class="entitlement-title">
-              {{ getSubjectLabel(entitlement) }} · {{ getFeatureLabel(entitlement.feature) }}
+              {{ getSubjectLabel(entitlement) }} ·
+              {{ getFeatureLabel(entitlement.feature) }}
             </div>
             <div class="entitlement-meta">
               {{ formatDate(entitlement.startsAt) }} →
-              {{ entitlement.expiresAt ? formatDate(entitlement.expiresAt) : t("noExpiry") }}
+              {{
+                entitlement.expiresAt
+                  ? formatDate(entitlement.expiresAt)
+                  : t("noExpiry")
+              }}
             </div>
             <div v-if="entitlement.adminNote" class="entitlement-note">
               {{ entitlement.adminNote }}
@@ -124,18 +129,18 @@ import ZKSelect from "src/components/ui-library/ZKSelect.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
+  AdminOrganizationOption,
   CreatePremiumFeatureEntitlementRequest,
   PremiumFeatureEntitlementItem,
 } from "src/shared/types/dto";
 import type {
   GrantablePremiumFeature,
-  OrganizationProperties,
   PremiumFeature,
 } from "src/shared/types/zod";
 import { zodGrantablePremiumFeature, zodUsername } from "src/shared/types/zod";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { useBackendAdministratorPremiumEntitlementApi } from "src/utils/api/administrator/premiumEntitlement";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 
 import {
   type AdministratorPremiumEntitlementsTranslations,
@@ -149,21 +154,23 @@ interface SelectOption<T extends string> {
   value: T;
 }
 
+type ZKSelectModel = string | string[] | null;
+
 const { isActive } = usePageLayout({ reducedWidth: true });
-const { t } =
-  useComponentI18n<AdministratorPremiumEntitlementsTranslations>(
-    administratorPremiumEntitlementsTranslations
-  );
+const { t } = useComponentI18n<AdministratorPremiumEntitlementsTranslations>(
+  administratorPremiumEntitlementsTranslations
+);
 const {
   listPremiumFeatureEntitlements,
   createPremiumFeatureEntitlement,
   revokePremiumFeatureEntitlement,
 } = useBackendAdministratorPremiumEntitlementApi();
-const { getAllOrganizations } = useBackendAdministratorOrganizationApi();
+const { getOrganizationOptions } = useBackendAdministratorOrganizationApi();
 
 const entitlements = ref<PremiumFeatureEntitlementItem[]>([]);
-const organizationList = ref<OrganizationProperties[]>([]);
+const organizationList = ref<AdminOrganizationOption[]>([]);
 const isLoading = ref(true);
+const isLoadingOrganizations = ref(false);
 const isCreating = ref(false);
 const revokingEntitlementId = ref<number | null>(null);
 const subjectType = ref<SubjectType>("user");
@@ -179,29 +186,32 @@ const subjectTypeOptions = computed<Array<SelectOption<SubjectType>>>(() => [
   { label: t("organizationLabel"), value: "organization" },
 ]);
 
-const featureOptions = computed<
-  Array<SelectOption<GrantablePremiumFeature>>
->(() => [
-  { label: t("surveyFeature"), value: "survey" },
-  { label: t("eventTicketFeature"), value: "event_ticket" },
-  { label: t("analysisVariantsFeature"), value: "analysis_variants" },
-  { label: t("dynamicTranslationFeature"), value: "dynamic_translation" },
-]);
+const featureOptions = computed<Array<SelectOption<GrantablePremiumFeature>>>(
+  () => [
+    { label: t("surveyFeature"), value: "survey" },
+    { label: t("eventTicketFeature"), value: "event_ticket" },
+    { label: t("analysisVariantsFeature"), value: "analysis_variants" },
+    { label: t("dynamicTranslationFeature"), value: "dynamic_translation" },
+  ]
+);
 
 const organizationOptions = computed<Array<SelectOption<string>>>(() =>
-  organizationList.value.flatMap((organization) => {
-    if (organization.slug === undefined) {
-      return [];
-    }
-
-    return [
-      {
-        label: `${organization.name} (${organization.slug})`,
-        value: organization.slug,
-      },
-    ];
-  })
+  organizationList.value.map((organization) => ({
+    label: `${organization.name} (${organization.slug})`,
+    value: organization.slug,
+  }))
 );
+
+const organizationSlugSelectModel = computed<ZKSelectModel>({
+  get: () => {
+    const value = getInputString(organizationSlug.value);
+    return value.length === 0 ? null : value;
+  },
+  set: (value) => {
+    organizationSlug.value =
+      typeof value === "string" && value.length > 0 ? value : null;
+  },
+});
 
 const canCreateEntitlement = computed(() => {
   const subjectValue =
@@ -216,8 +226,9 @@ const canCreateEntitlement = computed(() => {
   const hasValidSubject =
     subjectType.value === "user"
       ? zodUsername.safeParse(subjectValue).success
-      : subjectValue !== "";
-  const hasValidExpiresAt = expiresAtValue === "" || expiresAtDate !== undefined;
+      : subjectValue !== "" && !isLoadingOrganizations.value;
+  const hasValidExpiresAt =
+    expiresAtValue === "" || expiresAtDate !== undefined;
   const hasValidPeriod =
     startsAtDate !== undefined &&
     hasValidExpiresAt &&
@@ -234,6 +245,7 @@ const canCreateEntitlement = computed(() => {
     );
 
   return (
+    !isLoading.value &&
     hasValidSubject &&
     features.value.length > 0 &&
     hasValidPeriod &&
@@ -241,13 +253,28 @@ const canCreateEntitlement = computed(() => {
   );
 });
 
-onMounted(async () => {
-  const [organizations] = await Promise.all([
-    getAllOrganizations(),
-    refreshEntitlements(),
-  ]);
-  organizationList.value = organizations;
+watch(subjectType, async (nextSubjectType) => {
+  if (nextSubjectType === "organization") {
+    await ensureOrganizationOptions();
+  }
 });
+
+onMounted(async () => {
+  await refreshEntitlements();
+});
+
+async function ensureOrganizationOptions(): Promise<void> {
+  if (organizationList.value.length > 0 || isLoadingOrganizations.value) {
+    return;
+  }
+
+  isLoadingOrganizations.value = true;
+  try {
+    organizationList.value = await getOrganizationOptions();
+  } finally {
+    isLoadingOrganizations.value = false;
+  }
+}
 
 function toDateTimeLocal(date: Date): string {
   const offsetMs = date.getTimezoneOffset() * 60_000;
@@ -380,7 +407,7 @@ function buildCreateRequest(): CreatePremiumFeatureEntitlementRequest {
 }
 
 async function createEntitlement(): Promise<void> {
-  if (!canCreateEntitlement.value) {
+  if (!canCreateEntitlement.value || isCreating.value) {
     return;
   }
 
@@ -413,6 +440,7 @@ async function revokeEntitlement(entitlementId: number): Promise<void> {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  padding-bottom: max(3rem, calc(env(safe-area-inset-bottom) + 2rem));
 }
 
 .card-background {

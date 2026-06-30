@@ -3,26 +3,40 @@
     v-if="!hideTrigger"
     type="button"
     class="zk-drawer-select"
-    :class="{ 'zk-drawer-select--disabled': disable }"
+    :class="[
+      `zk-drawer-select--${variant}`,
+      { 'zk-drawer-select--disabled': disable },
+    ]"
+    :dir="textDirectionAttribute"
     :disabled="disable"
     @click="showDialog = true"
   >
+    <q-icon
+      v-if="variant === 'pill'"
+      name="mdi-web"
+      size="1.15rem"
+      class="zk-drawer-select__leading-icon"
+    />
     <span class="zk-drawer-select__text">
       <span class="zk-drawer-select__label">{{ label }}</span>
       <span class="zk-drawer-select__value">
         {{ selectedSummary }}
       </span>
     </span>
-    <q-icon :name="chevronForward" size="1.4rem" class="zk-drawer-select__icon" />
+    <q-icon :name="chevronIcon" size="1.4rem" class="zk-drawer-select__icon" />
   </button>
 
   <q-dialog v-model="showDialog" position="bottom">
     <ZKBottomDialogContainer
       :title="dialogTitle ?? label"
       :subtitle="dialogSubtitle"
+      :dir="textDirectionAttribute"
     >
       <template v-if="showBackButton" #leadingAction>
-        <ZKBottomDialogBackButton @click="goBack" />
+        <ZKBottomDialogBackButton
+          :text-direction="resolvedTextDirection"
+          @click="goBack"
+        />
       </template>
 
       <div
@@ -80,6 +94,7 @@
 import { useQuasar } from "quasar";
 import ZKBottomDialogBackButton from "src/components/ui-library/ZKBottomDialogBackButton.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import type { LanguageTextDirection } from "src/shared/languages";
 import { computed, ref, watch } from "vue";
 
 interface ZKSearchableBottomSheetSelectOption<TValue extends string> {
@@ -87,6 +102,7 @@ interface ZKSearchableBottomSheetSelectOption<TValue extends string> {
   value: TValue;
   caption?: string;
   searchText?: string;
+  shortLabel?: string;
   disabled?: boolean;
 }
 
@@ -108,6 +124,8 @@ const props = withDefaults(
     hideTrigger?: boolean;
     showBackButton?: boolean;
     disable?: boolean;
+    variant?: "list" | "pill";
+    textDirection?: LanguageTextDirection;
   }>(),
   {
     placeholder: undefined,
@@ -124,6 +142,8 @@ const props = withDefaults(
     hideTrigger: false,
     showBackButton: false,
     disable: false,
+    variant: "list",
+    textDirection: undefined,
   }
 );
 
@@ -140,9 +160,20 @@ const showDialog = defineModel<boolean>("showDialog", { default: false });
 const $q = useQuasar();
 const searchQuery = ref("");
 
-const chevronForward = computed(() =>
-  $q.lang.rtl ? "mdi-chevron-left" : "mdi-chevron-right"
-);
+const resolvedTextDirection = computed<LanguageTextDirection>(() => {
+  return props.textDirection ?? ($q.lang.rtl ? "rtl" : "ltr");
+});
+const textDirectionAttribute = computed(() => props.textDirection);
+
+const chevronIcon = computed(() => {
+  if (props.variant === "pill") {
+    return "mdi-chevron-down";
+  }
+
+  return resolvedTextDirection.value === "rtl"
+    ? "mdi-chevron-left"
+    : "mdi-chevron-right";
+});
 
 const selectedValues = computed<readonly TValue[]>(() => {
   return Array.isArray(modelValue.value) ? modelValue.value : [modelValue.value];
@@ -158,7 +189,9 @@ const selectedSummary = computed(() => {
   }
 
   if (!props.multiple || selectedOptions.length <= 2) {
-    return selectedOptions.map((option) => option.label).join(", ");
+    return selectedOptions
+      .map((option) => option.shortLabel ?? option.label)
+      .join(", ");
   }
 
   return (
@@ -310,6 +343,54 @@ watch(showDialog, (isOpen) => {
 .zk-drawer-select--disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.zk-drawer-select--pill {
+  width: auto;
+  gap: 0.45rem;
+  min-height: 2.45rem;
+  padding: 0.48rem 0.72rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(white, 0.92);
+  box-shadow: 0 0.25rem 1rem rgba(10, 7, 20, 0.08);
+
+  @media (hover: hover) {
+    &:hover {
+      background: white;
+    }
+  }
+
+  .zk-drawer-select__text {
+    display: block;
+  }
+
+  .zk-drawer-select__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .zk-drawer-select__value {
+    max-width: 4rem;
+    color: $ink-darker;
+    font-size: 0.85rem;
+    font-weight: var(--font-weight-bold);
+  }
+
+  .zk-drawer-select__icon {
+    color: $ink-darker;
+    font-size: 0.95rem !important;
+  }
+}
+
+.zk-drawer-select__leading-icon {
+  flex: none;
+  color: $ink-darker;
+  font-size: 1rem !important;
 }
 
 .zk-drawer-select__text {

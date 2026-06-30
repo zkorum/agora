@@ -2,7 +2,10 @@
 import { Lang, type QuasarLanguage } from "quasar";
 import en from "src/i18n/en";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
-import { parseDisplayLanguage } from "src/shared/languages";
+import {
+  getLanguageTextDirection,
+  parseDisplayLanguage,
+} from "src/shared/languages";
 import { nextTick } from "vue";
 import type { I18n } from "vue-i18n";
 import { createI18n } from "vue-i18n";
@@ -51,8 +54,6 @@ let i18nInstance: I18n<
  * is set correctly — Quasar's layout components (QDrawer, QLayout, etc.)
  * rely on this flag for RTL positioning.
  */
-const RTL_LANGUAGES: readonly string[] = ["ar", "fa", "he"];
-
 function getQuasarLangImport(locale: string): Promise<{ default: QuasarLanguage }> {
   switch (locale) {
     case "ar": return import("quasar/lang/ar");
@@ -87,7 +88,7 @@ export function setI18nLanguage(locale: MessageLanguages): void {
   const htmlEl = document.querySelector("html");
   if (htmlEl) {
     htmlEl.setAttribute("lang", locale);
-    htmlEl.setAttribute("dir", RTL_LANGUAGES.includes(locale) ? "rtl" : "ltr");
+    htmlEl.setAttribute("dir", getLanguageTextDirection(locale));
   }
 
   void loadQuasarLangPack(locale);

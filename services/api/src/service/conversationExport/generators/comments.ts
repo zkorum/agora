@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import sanitizeHtml from "sanitize-html";
 import {
     analysisSnapshotOpinionTable,
@@ -159,7 +159,10 @@ export const commentsGenerator: CsvGenerator = {
             )
             .leftJoin(
                 opinionModerationTable,
-                eq(opinionTable.id, opinionModerationTable.opinionId),
+                and(
+                    eq(opinionTable.id, opinionModerationTable.opinionId),
+                    isNull(opinionModerationTable.deletedAt),
+                ),
             )
             .where(eq(opinionTable.conversationId, conversationId))
             .orderBy(opinionTable.createdAt);

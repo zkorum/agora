@@ -84,12 +84,7 @@ export async function getLanguagePreferences({
                 languageCode: userDisplayLanguageTable.languageCode,
             })
             .from(userDisplayLanguageTable)
-            .where(
-                and(
-                    eq(userDisplayLanguageTable.userId, userId),
-                    eq(userDisplayLanguageTable.isDeleted, false),
-                ),
-            )
+            .where(eq(userDisplayLanguageTable.userId, userId))
             .limit(1);
 
         let displayLanguage: string;
@@ -120,13 +115,29 @@ export async function getLanguagePreferences({
             }
 
             // Save the display language preference
-            await tx.insert(userDisplayLanguageTable).values({
-                userId,
-                languageCode: defaultDisplayLanguage,
-                createdAt: new Date(),
-            });
+            await tx
+                .insert(userDisplayLanguageTable)
+                .values({
+                    userId,
+                    languageCode: defaultDisplayLanguage,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                })
+                .onConflictDoNothing({
+                    target: userDisplayLanguageTable.userId,
+                });
 
-            displayLanguage = defaultDisplayLanguage;
+            const insertedOrConcurrentDisplayLanguage = await tx
+                .select({
+                    languageCode: userDisplayLanguageTable.languageCode,
+                })
+                .from(userDisplayLanguageTable)
+                .where(eq(userDisplayLanguageTable.userId, userId))
+                .limit(1);
+
+            displayLanguage =
+                insertedOrConcurrentDisplayLanguage.at(0)?.languageCode ??
+                defaultDisplayLanguage;
         }
 
         // Validate all spoken language values from DB using zod
@@ -179,12 +190,7 @@ export async function getUserDisplayLanguage(
             languageCode: userDisplayLanguageTable.languageCode,
         })
         .from(userDisplayLanguageTable)
-        .where(
-            and(
-                eq(userDisplayLanguageTable.userId, userId),
-                eq(userDisplayLanguageTable.isDeleted, false),
-            ),
-        )
+        .where(eq(userDisplayLanguageTable.userId, userId))
         .limit(1);
 
     if (displayLanguageResult.length > 0) {
@@ -298,59 +304,22 @@ export async function updateLanguagePreferences({
                 );
             }
 
-            // Soft delete existing active display language
+            const now = new Date();
             await tx
-                .update(userDisplayLanguageTable)
-                .set({
-                    isDeleted: true,
-                    deletedAt: new Date(),
-                })
-                .where(
-                    and(
-                        eq(userDisplayLanguageTable.userId, userId),
-                        eq(userDisplayLanguageTable.isDeleted, false),
-                    ),
-                );
-
-            // Check if a soft-deleted record exists for this display language
-            const existingDeletedDisplayRecord = await tx
-                .select({ id: userDisplayLanguageTable.id })
-                .from(userDisplayLanguageTable)
-                .where(
-                    and(
-                        eq(userDisplayLanguageTable.userId, userId),
-                        eq(
-                            userDisplayLanguageTable.languageCode,
-                            preferences.displayLanguage,
-                        ),
-                        eq(userDisplayLanguageTable.isDeleted, true),
-                    ),
-                )
-                .limit(1);
-
-            if (existingDeletedDisplayRecord.length > 0) {
-                // Reactivate the soft-deleted record
-                await tx
-                    .update(userDisplayLanguageTable)
-                    .set({
-                        isDeleted: false,
-                        deletedAt: null,
-                        createdAt: new Date(),
-                    })
-                    .where(
-                        eq(
-                            userDisplayLanguageTable.id,
-                            existingDeletedDisplayRecord[0].id,
-                        ),
-                    );
-            } else {
-                // Insert new record
-                await tx.insert(userDisplayLanguageTable).values({
+                .insert(userDisplayLanguageTable)
+                .values({
                     userId,
                     languageCode: preferences.displayLanguage,
-                    createdAt: new Date(),
+                    createdAt: now,
+                    updatedAt: now,
+                })
+                .onConflictDoUpdate({
+                    target: userDisplayLanguageTable.userId,
+                    set: {
+                        languageCode: preferences.displayLanguage,
+                        updatedAt: now,
+                    },
                 });
-            }
         }
     });
 }

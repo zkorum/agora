@@ -23,6 +23,10 @@ from content_translation_worker.generated_models import (
     Opinion,
     OpinionContent,
     OpinionContentTranslation,
+    Project,
+    ProjectContent,
+    ProjectContentTranslation,
+    ProjectContentTranslationSourceKind,
     RealtimeEventOutbox,
     RealtimeEventOutboxTopic,
     SpokenLanguageCode,
@@ -49,6 +53,7 @@ if TYPE_CHECKING:
 SUPPORTED_SOURCE_KINDS = {
     ContentTranslationSourceKind.conversation,
     ContentTranslationSourceKind.opinion,
+    ContentTranslationSourceKind.project,
     ContentTranslationSourceKind.survey_question,
 }
 ALLOWED_TRANSLATED_HTML_TAGS = frozenset(
@@ -267,9 +272,11 @@ def _promote_opinion_source_metadata(
 @dataclass(frozen=True)
 class ClaimedContentTranslationWork:
     id: int
-    conversation_id: int
+    conversation_id: int | None
     conversation_slug_id: str | None
     source_kind: ContentTranslationSourceKind
+    source_key: str
+    project_content_id: int | None
     conversation_content_id: int | None
     opinion_content_id: int | None
     survey_question_content_id: int | None
@@ -365,6 +372,27 @@ def retry_failed_eager_work(
     return len(retryable_ids)
 
 
+def _source_key_for_work_row(row: ContentTranslationWork) -> str | None:
+    if row.source_kind == ContentTranslationSourceKind.project:
+        if row.project_content_id is None:
+            return None
+        return f"project_content:{row.project_content_id}"
+    if row.source_kind == ContentTranslationSourceKind.conversation:
+        if row.conversation_content_id is None:
+            return None
+        return f"conversation_content:{row.conversation_content_id}"
+    if row.source_kind == ContentTranslationSourceKind.opinion:
+        if row.opinion_content_id is None:
+            return None
+        return f"opinion_content:{row.opinion_content_id}"
+    if row.survey_question_content_id is None or row.survey_question_option_content_ids is None:
+        return None
+    option_content_ids = ",".join(
+        str(item) for item in row.survey_question_option_content_ids
+    )
+    return f"survey_question:{row.survey_question_content_id}:options:{option_content_ids}"
+
+
 def claim_content_translation_work_batch(
     session: Session,
     *,
@@ -377,10 +405,22 @@ def claim_content_translation_work_batch(
     conditions = [
         ContentTranslationWork.status == ContentTranslationWorkStatus.pending,
         ContentTranslationWork.source_kind.in_(SUPPORTED_SOURCE_KINDS),
-        Conversation.current_content_id.is_not(None),
         or_(
-            ContentTranslationWork.source_kind != ContentTranslationSourceKind.conversation,
-            Conversation.current_content_id == ContentTranslationWork.conversation_content_id,
+            and_(
+                ContentTranslationWork.source_kind == ContentTranslationSourceKind.project,
+                ContentTranslationWork.project_content_id.is_not(None),
+            ),
+            and_(
+                ContentTranslationWork.source_kind != ContentTranslationSourceKind.project,
+                ContentTranslationWork.conversation_id.is_not(None),
+                Conversation.current_content_id.is_not(None),
+                or_(
+                    ContentTranslationWork.source_kind
+                    != ContentTranslationSourceKind.conversation,
+                    Conversation.current_content_id
+                    == ContentTranslationWork.conversation_content_id,
+                ),
+            ),
         ),
     ]
     if work_ids is not None:
@@ -390,7 +430,11 @@ def claim_content_translation_work_batch(
 
     rows = session.execute(
         select(ContentTranslationWork, Conversation.slug_id)
-        .join(Conversation, Conversation.id == ContentTranslationWork.conversation_id)
+        .join(
+            Conversation,
+            Conversation.id == ContentTranslationWork.conversation_id,
+            isouter=True,
+        )
         .where(and_(*conditions))
         .order_by(
             ContentTranslationWork.priority_rank.asc(),
@@ -403,6 +447,15 @@ def claim_content_translation_work_batch(
 
     claims: list[ClaimedContentTranslationWork] = []
     for row, conversation_slug_id in rows:
+        source_key = _source_key_for_work_row(row)
+        if source_key is None:
+            row.status = ContentTranslationWorkStatus.failed
+            row.last_error_code = "invalid_source"
+            row.last_error_message = "translation work row does not match source_kind"
+            row.failed_at = datetime.now(UTC)
+            row.updated_at = datetime.now(UTC)
+            continue
+
         lease_token = create_lease_token()
         row.status = ContentTranslationWorkStatus.running
         row.attempt_count += 1
@@ -416,6 +469,8 @@ def claim_content_translation_work_batch(
                 conversation_id=row.conversation_id,
                 conversation_slug_id=conversation_slug_id,
                 source_kind=row.source_kind,
+                source_key=source_key,
+                project_content_id=row.project_content_id,
                 conversation_content_id=row.conversation_content_id,
                 opinion_content_id=row.opinion_content_id,
                 survey_question_content_id=row.survey_question_content_id,
@@ -434,6 +489,63 @@ def process_claimed_work(
     translation_service: ContentTranslationService,
 ) -> ProcessWorkResult:
     try:
+        if claim.source_kind == ContentTranslationSourceKind.project:
+            if claim.project_content_id is None:
+                _mark_failed(
+                    session,
+                    claim=claim,
+                    error_code="invalid_source",
+                    error_message="project work is missing project_content_id",
+                )
+                return ProcessWorkResult(work_id=claim.id, status="failed")
+            source = _fetch_project_source(
+                session,
+                project_content_id=claim.project_content_id,
+            )
+            if source is None:
+                log.warning(
+                    "[Worker] Missing translation source work_id=%d source_kind=project "
+                    "project_content_id=%d reason=source_not_current_or_deleted",
+                    claim.id,
+                    claim.project_content_id,
+                )
+                _mark_missing_source(session, claim=claim)
+                return ProcessWorkResult(work_id=claim.id, status="missing_source")
+            log.info(
+                "[Worker] Translation source work_id=%d source_kind=project "
+                "target_language=%s projectId=%d projectContentId=%d",
+                claim.id,
+                claim.display_language_code.value,
+                source.project_id,
+                source.content_id,
+            )
+            _lock_translation_work_group(
+                session,
+                claim=claim,
+                source_language_code=source.source_language_code,
+            )
+            if _has_fresh_project_translation(session, claim=claim, source=source):
+                _mark_completed(session, claim=claim)
+                return ProcessWorkResult(work_id=claim.id, status="completed")
+            try:
+                with session.begin_nested():
+                    _translate_project_source(
+                        session,
+                        claim=claim,
+                        source=source,
+                        translation_service=translation_service,
+                    )
+            except ContentTranslationProviderError as error:
+                _mark_failed(
+                    session,
+                    claim=claim,
+                    error_code=error.__class__.__name__,
+                    error_message=str(error),
+                )
+                return ProcessWorkResult(work_id=claim.id, status="failed")
+            _mark_completed(session, claim=claim)
+            return ProcessWorkResult(work_id=claim.id, status="completed")
+
         if claim.source_kind == ContentTranslationSourceKind.conversation:
             if claim.conversation_content_id is None:
                 _mark_failed(
@@ -695,6 +807,60 @@ class SurveyQuestionSource:
     options: list[SurveyQuestionOptionSource]
 
 
+@dataclass(frozen=True)
+class ProjectSource:
+    project_id: int
+    content_id: int
+    title: str
+    subtitle: str | None
+    body: str | None
+    source_language_code: str | None
+    source_raw_language_code: str | None
+    source_language_provider: LanguageDetectionProvider | None
+    source_language_confidence: float | None
+
+
+def _fetch_project_source(
+    session: Session,
+    *,
+    project_content_id: int,
+) -> ProjectSource | None:
+    row = session.execute(
+        select(
+            Project.id.label("project_id"),
+            ProjectContent.id,
+            ProjectContent.title,
+            ProjectContent.subtitle,
+            ProjectContent.body,
+            ProjectContent.source_language_code,
+            ProjectContent.source_raw_language_code,
+            ProjectContent.source_language_provider,
+            ProjectContent.source_language_confidence,
+        )
+        .join(Project, Project.id == ProjectContent.project_id)
+        .where(
+            and_(
+                ProjectContent.id == project_content_id,
+                Project.current_content_id == ProjectContent.id,
+            )
+        )
+        .limit(1)
+    ).one_or_none()
+    if row is None:
+        return None
+    return ProjectSource(
+        project_id=row.project_id,
+        content_id=row.id,
+        title=row.title,
+        subtitle=row.subtitle,
+        body=row.body,
+        source_language_code=row.source_language_code,
+        source_raw_language_code=row.source_raw_language_code,
+        source_language_provider=row.source_language_provider,
+        source_language_confidence=row.source_language_confidence,
+    )
+
+
 def _fetch_conversation_source(
     session: Session,
     *,
@@ -863,7 +1029,7 @@ def _lock_translation_work_group(
         [
             "content_translation",
             claim.source_kind.value,
-            str(claim.conversation_content_id or claim.opinion_content_id or ""),
+            claim.source_key,
             str(claim.survey_question_content_id or ""),
             ",".join(str(item) for item in claim.survey_question_option_content_ids or []),
             _translation_work_target_group(
@@ -934,6 +1100,33 @@ def _has_fresh_conversation_translation(
             )
         )
     ).first()
+    return row is not None and _translation_source_matches_current_source(
+        translation_source_language_code=row.source_language_code,
+        current_source_language_code=source.source_language_code,
+    )
+
+
+def _has_fresh_project_translation(
+    session: Session,
+    *,
+    claim: ClaimedContentTranslationWork,
+    source: ProjectSource,
+) -> bool:
+    row = session.execute(
+        select(
+            ProjectContentTranslation.source_language_code,
+            ProjectContentTranslation.source_kind,
+        ).where(
+            and_(
+                ProjectContentTranslation.project_content_id == source.content_id,
+                ProjectContentTranslation.display_language_code
+                == claim.display_language_code,
+                ProjectContentTranslation.deleted_at.is_(None),
+            )
+        )
+    ).first()
+    if row is not None and row.source_kind == ProjectContentTranslationSourceKind.manual:
+        return True
     return row is not None and _translation_source_matches_current_source(
         translation_source_language_code=row.source_language_code,
         current_source_language_code=source.source_language_code,
@@ -1152,6 +1345,121 @@ def _translate_conversation_source(
             source=source,
             target_language_code=display_language_code.value,
             status="completed",
+        )
+
+
+def _translate_project_source(
+    session: Session,
+    *,
+    claim: ClaimedContentTranslationWork,
+    source: ProjectSource,
+    translation_service: ContentTranslationService,
+) -> None:
+    title_results = translate_text_for_claim_target(
+        translation_service=translation_service,
+        text_value=source.title,
+        source_language_code=source.source_language_code,
+        target_language_code=claim.display_language_code.value,
+        mime_type="text/plain",
+    )
+    title_result_by_language = _results_by_display_language_code(title_results)
+    subtitle_result_by_language: dict[
+        DisplayLanguageCode,
+        ContentTranslationResult | None,
+    ] = {language_code: None for language_code in title_result_by_language}
+    body_result_by_language: dict[DisplayLanguageCode, ContentTranslationResult | None] = {
+        language_code: None for language_code in title_result_by_language
+    }
+    if source.subtitle is not None:
+        subtitle_result_by_language = {
+            language_code: result
+            for language_code, result in _results_by_display_language_code(
+                translate_text_for_claim_target(
+                    translation_service=translation_service,
+                    text_value=source.subtitle,
+                    source_language_code=source.source_language_code,
+                    target_language_code=claim.display_language_code.value,
+                    mime_type="text/plain",
+                )
+            ).items()
+        }
+    if source.body is not None:
+        body_result_by_language = {
+            language_code: result
+            for language_code, result in _results_by_display_language_code(
+                translate_text_for_claim_target(
+                    translation_service=translation_service,
+                    text_value=source.body,
+                    source_language_code=source.source_language_code,
+                    target_language_code=claim.display_language_code.value,
+                    mime_type="text/html",
+                )
+            ).items()
+        }
+
+    for display_language_code, title_result in title_result_by_language.items():
+        subtitle_result = subtitle_result_by_language.get(display_language_code)
+        body_result = body_result_by_language.get(display_language_code)
+        translated_body = (
+            sanitize_translated_html(body_result.translated_text)
+            if body_result is not None
+            else None
+        )
+        source_metadata = build_translation_source_metadata_from_results(
+            [
+                title_result,
+                *([] if subtitle_result is None else [subtitle_result]),
+                *([] if body_result is None else [body_result]),
+            ],
+            use_google_detected_source=False,
+            fallback_source_language_code=source.source_language_code,
+            fallback_source_raw_language_code=source.source_raw_language_code,
+            fallback_source_language_provider=source.source_language_provider,
+            fallback_source_language_confidence=source.source_language_confidence,
+        )
+        stmt = pg_insert(ProjectContentTranslation).values(
+            project_content_id=source.content_id,
+            display_language_code=display_language_code,
+            translated_title=title_result.translated_text,
+            translated_subtitle=(
+                subtitle_result.translated_text if subtitle_result is not None else None
+            ),
+            translated_body=translated_body,
+            source_kind=ProjectContentTranslationSourceKind.machine,
+            source_language_code=source_metadata.source_language_code,
+            source_raw_language_code=source_metadata.source_raw_language_code,
+            source_language_provider=source_metadata.source_language_provider,
+            source_language_confidence=source_metadata.source_language_confidence,
+            created_at=func.now(),
+            updated_at=func.now(),
+        )
+        session.execute(
+            stmt.on_conflict_do_update(
+                index_elements=[
+                    ProjectContentTranslation.project_content_id,
+                    ProjectContentTranslation.display_language_code,
+                ],
+                index_where=ProjectContentTranslation.deleted_at.is_(None),
+                set_={
+                    "translated_title": title_result.translated_text,
+                    "translated_subtitle": (
+                        subtitle_result.translated_text
+                        if subtitle_result is not None
+                        else None
+                    ),
+                    "translated_body": translated_body,
+                    "source_kind": ProjectContentTranslationSourceKind.machine,
+                    "source_language_code": source_metadata.source_language_code,
+                    "source_raw_language_code": source_metadata.source_raw_language_code,
+                    "source_language_provider": source_metadata.source_language_provider,
+                    "source_language_confidence": source_metadata.source_language_confidence,
+                    "updated_at": func.now(),
+                },
+                where=(
+                    ProjectContentTranslation.source_kind
+                    != ProjectContentTranslationSourceKind.manual
+                ),
+            )
         )
 
 

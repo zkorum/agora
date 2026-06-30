@@ -15,31 +15,16 @@ import { htmlToCountedText } from "@/shared/shared.js";
 import { and, eq, isNotNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
-    ADDITIONAL_LANGUAGE_HINT_WEIGHT,
-    AUTO_MAIN_LANGUAGE_HINT_WEIGHT,
     type LanguageDetectionProvider,
     detectLanguageWithFallback,
     type LanguageDetectionHintInput,
-    MANUAL_MAIN_LANGUAGE_HINT_WEIGHT,
 } from "./languageDetection.js";
 import {
     buildConversationLanguageDetectionCorpus,
     buildGoogleConversationLanguageDetectionCorpus,
-    getConversationLanguageSetting,
-    type StoredConversationLanguageSetting,
 } from "./conversationLanguage.js";
-import {
-    getConversationMultilingualSetting,
-    getUniqueConfiguredConversationLanguageCodes,
-} from "./conversationMultilingual.js";
-import type {
-    SupportedDisplayLanguageCodes,
-    SupportedSpokenLanguageCodes,
-} from "@/shared/languages.js";
-import type {
-    ConversationLanguageSettingInput,
-    SurveyConfig,
-} from "@/shared/types/zod.js";
+import type { SupportedSpokenLanguageCodes } from "@/shared/languages.js";
+import type { SurveyConfig } from "@/shared/types/zod.js";
 
 export interface ContentLanguageMetadata {
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
@@ -122,78 +107,6 @@ function buildSurveyLanguageDetectionCorpusFromRows({
     return texts.join("\n");
 }
 
-export function getBlockLanguageHints({
-    languageSetting,
-}: {
-    languageSetting: ConversationLanguageSettingInput;
-}): LanguageDetectionHintInput[] {
-    if (languageSetting.mode !== "manual") {
-        return [];
-    }
-    return [
-        {
-            languageCode: languageSetting.languageCode,
-            weight: MANUAL_MAIN_LANGUAGE_HINT_WEIGHT,
-        },
-    ];
-}
-
-export function getContentItemLanguageHints({
-    languageSetting,
-    additionalLanguageCodes,
-}: {
-    languageSetting: StoredConversationLanguageSetting;
-    additionalLanguageCodes: readonly SupportedDisplayLanguageCodes[];
-}): LanguageDetectionHintInput[] {
-    const mainLanguageCode =
-        languageSetting.mode === "manual"
-            ? languageSetting.languageCode
-            : languageSetting.detectedLanguageCode;
-    const uniqueLanguageCodes = getUniqueConfiguredConversationLanguageCodes({
-        mainLanguageCode,
-        additionalLanguageCodes,
-    });
-    return uniqueLanguageCodes.map((languageCode) => {
-        if (languageCode === mainLanguageCode) {
-            return {
-                languageCode,
-                weight:
-                    languageSetting.mode === "manual"
-                        ? MANUAL_MAIN_LANGUAGE_HINT_WEIGHT
-                        : AUTO_MAIN_LANGUAGE_HINT_WEIGHT,
-            };
-        }
-        return {
-            languageCode,
-            weight: ADDITIONAL_LANGUAGE_HINT_WEIGHT,
-        };
-    });
-}
-
-export async function getContentLanguageHintsForConversation({
-    db,
-    conversationId,
-}: {
-    db: PostgresJsDatabase;
-    conversationId: number;
-}): Promise<LanguageDetectionHintInput[]> {
-    const languageSetting = await getConversationLanguageSetting({
-        db,
-        conversationId,
-    });
-    if (languageSetting === undefined) {
-        return [];
-    }
-    const multilingualSetting = await getConversationMultilingualSetting({
-        db,
-        conversationId,
-    });
-    return getContentItemLanguageHints({
-        languageSetting,
-        additionalLanguageCodes: multilingualSetting.additionalLanguageCodes,
-    });
-}
-
 export async function resolveContentLanguageMetadata({
     text,
     googleText,
@@ -260,18 +173,14 @@ export function contentLanguageMetadataUpdateValues(
 export async function refreshCurrentConversationOwnedContentLanguageMetadata({
     db,
     conversationId,
-    languageSetting,
-    additionalLanguageCodes,
     googleCloudCredentials,
     useGoogleLanguageDetection,
 }: {
     db: PostgresJsDatabase;
     conversationId: number;
-    languageSetting: StoredConversationLanguageSetting;
-    additionalLanguageCodes: readonly SupportedDisplayLanguageCodes[];
     googleCloudCredentials: GoogleCloudCredentials | undefined;
     useGoogleLanguageDetection: boolean;
-}): Promise<void> {
+}): Promise<ContentLanguageMetadata | undefined> {
     const conversationRows = await db
         .select({
             contentId: conversationContentTable.id,
@@ -287,7 +196,7 @@ export async function refreshCurrentConversationOwnedContentLanguageMetadata({
         .limit(1);
     const conversationContent = conversationRows.at(0);
     if (conversationContent === undefined) {
-        return;
+        return undefined;
     }
 
     const surveyRows = await db
@@ -323,10 +232,6 @@ export async function refreshCurrentConversationOwnedContentLanguageMetadata({
         rows: surveyRows,
     });
     const bodyPlainText = conversationContent.bodyPlainText ?? "";
-    const contentItemLanguageHints = getContentItemLanguageHints({
-        languageSetting,
-        additionalLanguageCodes,
-    });
     const blockLanguageMetadata = await resolveContentLanguageMetadata({
         text: buildContentBlockLanguageDetectionCorpusFromParts({
             conversationCorpus: buildConversationLanguageDetectionCorpus({
@@ -342,7 +247,6 @@ export async function refreshCurrentConversationOwnedContentLanguageMetadata({
         }),
         googleCloudCredentials,
         useGoogleLanguageDetection,
-        languageHints: contentItemLanguageHints,
     });
 
     await db
@@ -400,11 +304,12 @@ export async function refreshCurrentConversationOwnedContentLanguageMetadata({
             text: plainText,
             googleCloudCredentials,
             useGoogleLanguageDetection,
-            languageHints: contentItemLanguageHints,
         });
         await db
             .update(opinionContentTable)
             .set(contentLanguageMetadataUpdateValues(sourceLanguageMetadata))
             .where(eq(opinionContentTable.id, seedOpinion.opinionContentId));
     }
+
+    return blockLanguageMetadata;
 }

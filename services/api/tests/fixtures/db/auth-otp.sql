@@ -103,13 +103,10 @@ CREATE TABLE "phone" (
 );
 
 CREATE TABLE "user_display_language" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" uuid NOT NULL,
+	"user_id" uuid PRIMARY KEY NOT NULL,
 	"language_code" "display_language_code" NOT NULL,
-	"is_deleted" boolean DEFAULT false NOT NULL,
-	"deleted_at" timestamp (0),
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "user_display_language_unique" UNIQUE("user_id","language_code")
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL
 );
 
 CREATE TABLE "user" (
@@ -151,8 +148,6 @@ CREATE INDEX "otp_phone_destination_updated_idx" ON "otp_phone_destination_state
 CREATE UNIQUE INDEX "phone_hash_active_unique" ON "phone" USING btree ("phone_hash") WHERE "phone"."is_deleted" = false;
 
 CREATE INDEX "phone_hash_idx" ON "phone" USING btree ("phone_hash");
-
-CREATE UNIQUE INDEX "user_display_language_active_user_unique" ON "user_display_language" USING btree ("user_id") WHERE "user_display_language"."is_deleted" = false;
 
 CREATE UNIQUE INDEX "zk_passport_nullifier_active_unique" ON "zk_passport" USING btree ("nullifier") WHERE "zk_passport"."is_deleted" = false;
 

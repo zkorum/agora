@@ -13,6 +13,7 @@ describe("user profile response schema", () => {
                 organizationList: [
                     {
                         name: "Agora",
+                        slug: "agora",
                         description: "",
                     },
                 ],

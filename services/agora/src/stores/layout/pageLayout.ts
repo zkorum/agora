@@ -5,6 +5,7 @@ export interface PageLayoutConfig {
   addGeneralPadding: boolean;
   addBottomPadding: boolean;
   enableHeader: boolean;
+  enableDrawer: boolean;
   enableFooter: boolean;
   reducedWidth: boolean;
 }
@@ -13,6 +14,7 @@ const defaultConfig: PageLayoutConfig = {
   addGeneralPadding: false,
   addBottomPadding: false,
   enableHeader: true,
+  enableDrawer: true,
   enableFooter: true,
   reducedWidth: false,
 };

@@ -8,7 +8,6 @@ import {
     organizationTable,
     maxdiffItemTable,
     projectOrganizationOwnershipTable,
-    conversationLanguageSettingTable,
 } from "@/shared-backend/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type {
@@ -43,8 +42,7 @@ import { getConversationEngagementScore } from "./recommendationSystem.js";
 import { log } from "@/app.js";
 import { alias } from "drizzle-orm/pg-core";
 import {
-    conversationLanguageSettingToOutput,
-    normalizeConversationLanguageSettingRow,
+    conversationContentSourceMetadataToLanguageSettingOutput,
 } from "./conversationLanguage.js";
 import {
     DEFAULT_CONVERSATION_MULTILINGUAL_SETTING,
@@ -188,6 +186,7 @@ export function useCommonPost() {
                         conversationId,
                     ),
                     eq(conversationModerationTable.moderationAction, "lock"),
+                    isNull(conversationModerationTable.deletedAt),
                 ),
             )
             .limit(1);
@@ -271,22 +270,11 @@ export function useCommonPost() {
                 isEdited: conversationTable.isEdited,
                 requiresEventTicket: conversationTable.requiresEventTicket,
                 externalSourceConfig: conversationTable.externalSourceConfig,
-                languageSettingMode: conversationLanguageSettingTable.mode,
-                languageCode: conversationLanguageSettingTable.languageCode,
-                detectedLanguageCode:
-                    conversationLanguageSettingTable.detectedLanguageCode,
-                detectedSourceLanguageCode:
-                    conversationLanguageSettingTable.detectedSourceLanguageCode,
-                detectedRawLanguageCode:
-                    conversationLanguageSettingTable.detectedRawLanguageCode,
-                detectedRawLanguageProvider:
-                    conversationLanguageSettingTable.detectedRawLanguageProvider,
-                detectionConfidence:
-                    conversationLanguageSettingTable.detectionConfidence,
-                detectedFromCorpusHash:
-                    conversationLanguageSettingTable.detectedFromCorpusHash,
-                autoDetectionRetryable:
-                    conversationLanguageSettingTable.autoDetectionRetryable,
+                sourceLanguageCode: conversationContentTable.sourceLanguageCode,
+                sourceRawLanguageCode:
+                    conversationContentTable.sourceRawLanguageCode,
+                sourceLanguageConfidence:
+                    conversationContentTable.sourceLanguageConfidence,
                 // import metadata
                 importUrl: conversationTable.importUrl,
                 importConversationUrl: conversationTable.importConversationUrl,
@@ -312,9 +300,12 @@ export function useCommonPost() {
             )
             .innerJoin(
                 projectOrganizationOwnershipTable,
-                eq(
-                    projectOrganizationOwnershipTable.projectId,
-                    conversationTable.projectId,
+                and(
+                    eq(
+                        projectOrganizationOwnershipTable.projectId,
+                        conversationTable.projectId,
+                    ),
+                    isNull(projectOrganizationOwnershipTable.deletedAt),
                 ),
             )
             .innerJoin(
@@ -333,22 +324,19 @@ export function useCommonPost() {
             )
             .leftJoin(
                 conversationModerationTable,
-                eq(
-                    conversationModerationTable.conversationId,
-                    conversationTable.id,
-                ),
-            )
-            .leftJoin(
-                conversationLanguageSettingTable,
-                eq(
-                    conversationLanguageSettingTable.conversationId,
-                    conversationTable.id,
+                and(
+                    eq(
+                        conversationModerationTable.conversationId,
+                        conversationTable.id,
+                    ),
+                    isNull(conversationModerationTable.deletedAt),
                 ),
             )
             // whereClause = and(whereClause, lt(postTable.createdAt, lastCreatedAt));
             .where(
                 and(
                     where,
+                    isNull(organizationTable.deletedAt),
                     or(
                         isNull(organizationTable.autoProvisionedForUserId),
                         eq(personalOrganizationUserTable.isDeleted, false),
@@ -455,30 +443,13 @@ export function useCommonPost() {
                 isIndexed: postItem.isIndexed,
                 aiLabelingEnabled: postItem.aiLabelingEnabled,
                 preferredOpinionGroupCount: postItem.preferredOpinionGroupCount,
-                languageSetting: conversationLanguageSettingToOutput({
-                    setting: normalizeConversationLanguageSettingRow(
-                        postItem.languageSettingMode === null
-                            ? undefined
-                            : {
-                                  mode: postItem.languageSettingMode,
-                                  languageCode: postItem.languageCode,
-                                  detectedLanguageCode:
-                                      postItem.detectedLanguageCode,
-                                  detectedSourceLanguageCode:
-                                      postItem.detectedSourceLanguageCode,
-                                  detectedRawLanguageCode:
-                                      postItem.detectedRawLanguageCode,
-                                  detectedRawLanguageProvider:
-                                      postItem.detectedRawLanguageProvider,
-                                  detectionConfidence:
-                                      postItem.detectionConfidence,
-                                  detectedFromCorpusHash:
-                                      postItem.detectedFromCorpusHash,
-                                  autoDetectionRetryable:
-                                      postItem.autoDetectionRetryable ?? false,
-                              },
-                        ),
-                }),
+                languageSetting:
+                    conversationContentSourceMetadataToLanguageSettingOutput({
+                        sourceLanguageCode: postItem.sourceLanguageCode,
+                        sourceRawLanguageCode: postItem.sourceRawLanguageCode,
+                        sourceLanguageConfidence:
+                            postItem.sourceLanguageConfidence,
+                    }),
                 multilingualSetting:
                     multilingualSettingsByConversationId.get(
                         postItem.conversationId,

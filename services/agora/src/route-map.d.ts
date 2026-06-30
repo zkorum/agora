@@ -310,6 +310,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dev/project-page': RouteRecordInfo<
+      '/dev/project-page',
+      '/dev/project-page',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/dev/test-components/AnalysisReportTest': RouteRecordInfo<
       '/dev/test-components/AnalysisReportTest',
       '/dev/test-components/AnalysisReportTest',
@@ -334,6 +341,20 @@ declare module 'vue-router/auto-routes' {
     '/dev/test-components/CheckpointTimelineTest': RouteRecordInfo<
       '/dev/test-components/CheckpointTimelineTest',
       '/dev/test-components/CheckpointTimelineTest',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/dev/test-components/ConversationLanguageSettingDialogTest': RouteRecordInfo<
+      '/dev/test-components/ConversationLanguageSettingDialogTest',
+      '/dev/test-components/ConversationLanguageSettingDialogTest',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/dev/test-components/CreateConversationProjectLanguageTest': RouteRecordInfo<
+      '/dev/test-components/CreateConversationProjectLanguageTest',
+      '/dev/test-components/CreateConversationProjectLanguageTest',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -464,6 +485,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/project/[projectSlug]': RouteRecordInfo<
+      '/project/[projectSlug]',
+      '/project/:projectSlug',
+      { projectSlug: ParamValue<true> },
+      { projectSlug: ParamValue<false> },
+      | never
+    >,
     '/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]': RouteRecordInfo<
       '/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]',
       '/reports/:reportType/:conversationSlugId/:opinionSlugId?',
@@ -488,6 +516,13 @@ declare module 'vue-router/auto-routes' {
     '/settings/account/administrator/premium-entitlements/': RouteRecordInfo<
       '/settings/account/administrator/premium-entitlements/',
       '/settings/account/administrator/premium-entitlements',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/settings/account/administrator/project/': RouteRecordInfo<
+      '/settings/account/administrator/project/',
+      '/settings/account/administrator/project',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -886,6 +921,12 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/dev/project-page.vue': {
+      routes:
+        | '/dev/project-page'
+      views:
+        | never
+    }
     'src/pages/dev/test-components/AnalysisReportTest.vue': {
       routes:
         | '/dev/test-components/AnalysisReportTest'
@@ -907,6 +948,18 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dev/test-components/CheckpointTimelineTest.vue': {
       routes:
         | '/dev/test-components/CheckpointTimelineTest'
+      views:
+        | never
+    }
+    'src/pages/dev/test-components/ConversationLanguageSettingDialogTest.vue': {
+      routes:
+        | '/dev/test-components/ConversationLanguageSettingDialogTest'
+      views:
+        | never
+    }
+    'src/pages/dev/test-components/CreateConversationProjectLanguageTest.vue': {
+      routes:
+        | '/dev/test-components/CreateConversationProjectLanguageTest'
       views:
         | never
     }
@@ -1018,6 +1071,12 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/project/[projectSlug].vue': {
+      routes:
+        | '/project/[projectSlug]'
+      views:
+        | never
+    }
     'src/pages/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]].vue': {
       routes:
         | '/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]'
@@ -1039,6 +1098,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/settings/account/administrator/premium-entitlements/index.vue': {
       routes:
         | '/settings/account/administrator/premium-entitlements/'
+      views:
+        | never
+    }
+    'src/pages/settings/account/administrator/project/index.vue': {
+      routes:
+        | '/settings/account/administrator/project/'
       views:
         | never
     }
