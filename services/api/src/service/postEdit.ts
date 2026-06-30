@@ -5,7 +5,9 @@ import {
     conversationTable,
     conversationModerationTable,
     organizationTable,
+    projectContentTable,
     projectOrganizationOwnershipTable,
+    projectTable,
 } from "@/shared-backend/schema.js";
 import { and, eq, isNull } from "drizzle-orm";
 import { log } from "@/app.js";
@@ -27,7 +29,10 @@ import type {
     UpdateConversationRequest,
     UpdateConversationResponse,
 } from "@/shared/types/dto.js";
-import { hasProjectCapability } from "@/service/projectAccess.js";
+import {
+    getProjectLanguageSettings,
+    hasProjectCapability,
+} from "@/service/projectAccess.js";
 import {
     buildConversationEditPermissions,
     getPremiumEntitlementSubjectForConversation,
@@ -53,7 +58,12 @@ import {
     type ContentLanguageMetadata,
     resolveContentLanguageMetadata,
 } from "./contentLanguageMetadata.js";
-import { normalizeConversationMultilingualSettings } from "./translationLanguageSetting.js";
+import { getImplicitDefaultDisplayLanguage } from "./projectLanguage.js";
+import {
+    normalizeConversationMultilingualSettings,
+    normalizeInheritedConversationMultilingualSettings,
+    sourceLanguageToDisplayLanguage,
+} from "./translationLanguageSetting.js";
 
 interface GetConversationForEditProps {
     db: PostgresDatabase;
@@ -71,6 +81,10 @@ export async function getConversationForEdit({
             conversationId: conversationTable.id,
             conversationSlugId: conversationTable.slugId,
             projectId: conversationTable.projectId,
+            projectSlug: projectTable.slug,
+            projectTitle: projectTable.title,
+            projectDirectoryVisibility: projectTable.directoryVisibility,
+            projectSourceLanguageCode: projectContentTable.sourceLanguageCode,
             conversationTitle: conversationContentTable.title,
             conversationBody: conversationContentTable.body,
             sourceLanguageCode: conversationContentTable.sourceLanguageCode,
@@ -90,11 +104,20 @@ export async function getConversationForEdit({
             createdAt: conversationTable.createdAt,
             updatedAt: conversationTable.updatedAt,
             moderationAction: conversationModerationTable.moderationAction,
+            languageSettingsSource: conversationTable.languageSettingsSource,
         })
         .from(conversationTable)
         .innerJoin(
             conversationContentTable,
             eq(conversationContentTable.id, conversationTable.currentContentId),
+        )
+        .innerJoin(
+            projectTable,
+            eq(projectTable.id, conversationTable.projectId),
+        )
+        .leftJoin(
+            projectContentTable,
+            eq(projectContentTable.id, projectTable.currentContentId),
         )
         .innerJoin(
             projectOrganizationOwnershipTable,
@@ -157,6 +180,28 @@ export async function getConversationForEdit({
         db,
         conversationId: conversation.conversationId,
     });
+    const projectLanguageSettings = await getProjectLanguageSettings({
+        db,
+        projectId: conversation.projectId,
+    });
+    const projectLanguageProject =
+        conversation.projectDirectoryVisibility === "listed"
+            ? {
+                  projectSlug: conversation.projectSlug,
+                  projectTitle: conversation.projectTitle,
+                  defaultLanguageCode:
+                      sourceLanguageToDisplayLanguage({
+                          sourceLanguageCode: conversation.projectSourceLanguageCode,
+                      }) ?? getImplicitDefaultDisplayLanguage(),
+                  languageSettings: {
+                      dynamicTranslationEnabled:
+                          projectLanguageSettings.dynamicTranslationEnabled,
+                      targetLanguageCodes: [
+                          ...projectLanguageSettings.targetLanguageCodes,
+                      ],
+                  },
+              }
+            : undefined;
 
     const editPermissions = await buildConversationEditPermissions({
         db,
@@ -181,6 +226,8 @@ export async function getConversationForEdit({
             sourceLanguageConfidence: conversation.sourceLanguageConfidence,
         }),
         multilingualSetting,
+        languageSettingsSource: conversation.languageSettingsSource,
+        projectLanguageProject,
         isIndexed: conversation.isIndexed,
         participationMode: conversation.participationMode,
         requiresEventTicket: toUnionUndefined(conversation.requiresEventTicket),
@@ -224,6 +271,7 @@ export async function updateConversation({
         conversationBodyPlainText,
         isIndexed,
         participationMode,
+        languageSettingsSource,
         multilingualSetting,
         requiresEventTicket,
         aiLabelingEnabled,
@@ -289,6 +337,8 @@ export async function updateConversation({
                 isClosed: conversationTable.isClosed,
                 currentPreferredOpinionGroupCount:
                     conversationTable.preferredOpinionGroupCount,
+                currentLanguageSettingsSource:
+                    conversationTable.languageSettingsSource,
                 currentTitle: conversationContentTable.title,
                 currentBody: conversationContentTable.body,
                 currentSourceLanguageCode:
@@ -381,6 +431,19 @@ export async function updateConversation({
             db: tx,
             conversationId,
         });
+        const inheritedProjectLanguageSettings =
+            languageSettingsSource === "project_inherited"
+                ? await getProjectLanguageSettings({
+                      db: tx,
+                      projectId: conversation.projectId,
+                  })
+                : undefined;
+        const requestedMultilingualSetting =
+            inheritedProjectLanguageSettings === undefined
+                ? multilingualSetting
+                : normalizeInheritedConversationMultilingualSettings({
+                      languageSettings: inheritedProjectLanguageSettings,
+                  });
         const subject = getPremiumEntitlementSubjectForConversation({
             conversation: { projectId: conversation.projectId, userId },
         });
@@ -396,8 +459,8 @@ export async function updateConversation({
             restrictedDynamicTranslationFeatures.length === 0;
         if (
             restrictedDynamicTranslationFeatures.length > 0 &&
-            (multilingualSetting.dynamicTranslationEnabled ||
-                multilingualSetting.additionalLanguageCodes.length > 0)
+            (requestedMultilingualSetting.dynamicTranslationEnabled ||
+                requestedMultilingualSetting.additionalLanguageCodes.length > 0)
         ) {
             return {
                 success: false,
@@ -405,7 +468,8 @@ export async function updateConversation({
             } as const;
         }
         const requestedDynamicTranslationEnabled =
-            canUseDynamicTranslation && multilingualSetting.dynamicTranslationEnabled;
+            canUseDynamicTranslation &&
+            requestedMultilingualSetting.dynamicTranslationEnabled;
         const currentBody = toUnionUndefined(conversation.currentBody);
         const contentChanged =
             conversation.currentTitle !== conversationTitle ||
@@ -513,7 +577,8 @@ export async function updateConversation({
             (requiresEventTicket ?? null) !==
                 conversation.requiresEventTicket ||
             updatedAiLabelingEnabled !== conversation.aiLabelingEnabled ||
-            preferredOpinionGroupCountChanged;
+            preferredOpinionGroupCountChanged ||
+            languageSettingsSource !== conversation.currentLanguageSettingsSource;
 
         if (
             preferredOpinionGroupCount !== undefined &&
@@ -566,7 +631,7 @@ export async function updateConversation({
             requiresEventTicket: typeof requiresEventTicket | null;
             aiLabelingEnabled: boolean;
             preferredOpinionGroupCount?: typeof preferredOpinionGroupCount;
-            languageSettingsSource: "conversation_override";
+            languageSettingsSource: typeof languageSettingsSource;
             updatedAt: Date;
             isEdited?: boolean;
         } = {
@@ -574,7 +639,7 @@ export async function updateConversation({
             participationMode: participationMode,
             requiresEventTicket: requiresEventTicket ?? null,
             aiLabelingEnabled: updatedAiLabelingEnabled,
-            languageSettingsSource: "conversation_override",
+            languageSettingsSource,
             updatedAt: new Date(),
         };
 
@@ -626,11 +691,14 @@ export async function updateConversation({
             }
         }
 
-        const effectiveMultilingualSetting = normalizeConversationMultilingualSettings({
-            multilingualSettings: multilingualSetting,
-            canUseDynamicTranslation,
-            sourceLanguageCode: finalSourceLanguageCode,
-        });
+        const effectiveMultilingualSetting =
+            inheritedProjectLanguageSettings === undefined
+                ? normalizeConversationMultilingualSettings({
+                      multilingualSettings: requestedMultilingualSetting,
+                      canUseDynamicTranslation,
+                      sourceLanguageCode: finalSourceLanguageCode,
+                  })
+                : requestedMultilingualSetting;
         await upsertConversationMultilingualSetting({
             db: tx,
             conversationId,

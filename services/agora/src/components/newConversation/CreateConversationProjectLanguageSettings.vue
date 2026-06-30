@@ -8,7 +8,7 @@
     />
 
     <ConversationControlButton
-      v-if="actualProjects.length > 0"
+      v-if="props.allowProjectSelection && actualProjects.length > 0"
       :label="projectControlLabel"
       :icon="showProjectDialog ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
       @click="showProjectDialog = true"
@@ -165,9 +165,13 @@ interface ProjectOption {
   value: string;
 }
 
-const props = defineProps<{
-  projectList: CreateConversationProjectLanguageProject[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    projectList: CreateConversationProjectLanguageProject[];
+    allowProjectSelection?: boolean;
+  }>(),
+  { allowProjectSelection: true }
+);
 
 const selectedProjectSlug = defineModel<string | undefined>(
   "selectedProjectSlug",
@@ -348,6 +352,11 @@ watch(
 watch(
   actualProjects,
   (projects) => {
+    if (!props.allowProjectSelection) {
+      hasInitializedProjectSelection.value = true;
+      return;
+    }
+
     if (projects.length === 0) {
       selectedProjectSlug.value = undefined;
       inheritProjectLanguages.value = false;

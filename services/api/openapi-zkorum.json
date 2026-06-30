@@ -11230,6 +11230,84 @@
                                                     ],
                                                     "additionalProperties": false
                                                 },
+                                                "languageSettingsSource": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "conversation_override",
+                                                        "project_inherited"
+                                                    ]
+                                                },
+                                                "projectLanguageProject": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "projectSlug": {
+                                                            "type": "string",
+                                                            "maxLength": 65,
+                                                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                        },
+                                                        "projectTitle": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 140
+                                                        },
+                                                        "defaultLanguageCode": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "en",
+                                                                "es",
+                                                                "fr",
+                                                                "zh-Hant",
+                                                                "zh-Hans",
+                                                                "ja",
+                                                                "ar",
+                                                                "fa",
+                                                                "he",
+                                                                "ky",
+                                                                "ru"
+                                                            ]
+                                                        },
+                                                        "languageSettings": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "dynamicTranslationEnabled": {
+                                                                    "type": "boolean"
+                                                                },
+                                                                "targetLanguageCodes": {
+                                                                    "maxItems": 3,
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "en",
+                                                                            "es",
+                                                                            "fr",
+                                                                            "zh-Hant",
+                                                                            "zh-Hans",
+                                                                            "ja",
+                                                                            "ar",
+                                                                            "fa",
+                                                                            "he",
+                                                                            "ky",
+                                                                            "ru"
+                                                                        ]
+                                                                    }
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "dynamicTranslationEnabled",
+                                                                "targetLanguageCodes"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "projectSlug",
+                                                        "projectTitle",
+                                                        "defaultLanguageCode",
+                                                        "languageSettings"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
                                                 "isIndexed": {
                                                     "type": "boolean"
                                                 },
@@ -11588,6 +11666,7 @@
                                                 "conversationTitle",
                                                 "languageSetting",
                                                 "multilingualSetting",
+                                                "languageSettingsSource",
                                                 "isIndexed",
                                                 "participationMode",
                                                 "aiLabelingEnabled",
@@ -11749,6 +11828,14 @@
                                             "dynamicTranslationEnabled"
                                         ],
                                         "additionalProperties": false
+                                    },
+                                    "languageSettingsSource": {
+                                        "default": "conversation_override",
+                                        "type": "string",
+                                        "enum": [
+                                            "conversation_override",
+                                            "project_inherited"
+                                        ]
                                     },
                                     "requiresEventTicket": {
                                         "type": "string",

@@ -303,6 +303,14 @@ const zodConversationLanguageSettingsSource = z.enum([
     "conversation_override",
     "project_inherited",
 ]);
+const zodConversationCreateProjectOption = z
+    .object({
+        projectSlug: zodProjectSlug,
+        projectTitle: zodProjectTitle,
+        defaultLanguageCode: ZodSupportedDisplayLanguageCodes,
+        languageSettings: zodProjectLanguageSettings,
+    })
+    .strict();
 const zodProjectContentLocalization = z
     .object({
         languageCode: ZodSupportedDisplayLanguageCodes,
@@ -984,6 +992,8 @@ export class Dto {
                 conversationBody: zodConversationBodyOutput,
                 languageSetting: zodConversationLanguageSettingOutput,
                 multilingualSetting: zodConversationMultilingualSetting,
+                languageSettingsSource: zodConversationLanguageSettingsSource,
+                projectLanguageProject: zodConversationCreateProjectOption.optional(),
                 isIndexed: z.boolean(),
                 participationMode: zodParticipationMode,
                 requiresEventTicket: zodEventSlug.optional(),
@@ -1014,6 +1024,9 @@ export class Dto {
             participationMode: zodParticipationMode,
             languageSetting: zodConversationLanguageSettingInput,
             multilingualSetting: zodConversationMultilingualSetting,
+            languageSettingsSource: zodConversationLanguageSettingsSource.default(
+                "conversation_override",
+            ),
             requiresEventTicket: zodEventSlug.optional(),
             aiLabelingEnabled: z.boolean().optional(),
             preferredOpinionGroupCount:
@@ -1777,14 +1790,7 @@ export class Dto {
             ),
         })
         .strict();
-    static conversationCreateProjectOption = z
-        .object({
-            projectSlug: zodProjectSlug,
-            projectTitle: zodProjectTitle,
-            defaultLanguageCode: ZodSupportedDisplayLanguageCodes,
-            languageSettings: zodProjectLanguageSettings,
-        })
-        .strict();
+    static conversationCreateProjectOption = zodConversationCreateProjectOption;
     static getConversationCreateProjectOptionsResponse = z.discriminatedUnion(
         "success",
         [
