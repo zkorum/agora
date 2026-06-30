@@ -204,6 +204,9 @@ function handleNavigationClick(): void {
 <style lang="scss" scoped>
 .container {
   height: 100dvh;
+  inline-size: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -214,6 +217,7 @@ function handleNavigationClick(): void {
   display: flex;
   gap: 1rem;
   align-items: center;
+  min-inline-size: 0;
   padding-left: 1rem;
   padding-right: 1rem;
   padding-top: 0.8rem;
@@ -277,11 +281,16 @@ function handleNavigationClick(): void {
 }
 
 .itemName {
+  min-inline-size: 0;
+  overflow: hidden;
   padding-bottom: 0.4rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .navigation-link {
   display: block;
+  min-inline-size: 0;
   text-decoration: none;
   color: $ink-darkest;
   cursor: pointer;
