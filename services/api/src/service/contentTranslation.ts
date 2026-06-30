@@ -37,6 +37,7 @@ import type {
     ContentTranslationSubject,
     LocalizedConversationContent,
     LocalizedOpinionContent,
+    LocalizedProjectContent,
     LocalizedSurveyQuestionContent,
 } from "@/shared/types/zod.js";
 import type {
@@ -149,6 +150,7 @@ interface SurveyQuestionContentSource {
 
 interface ProjectContentSource {
     projectId: number;
+    projectSlug: string;
     dynamicTranslationEnabled: boolean;
     contentId: number;
     title: string;
@@ -901,6 +903,7 @@ async function fetchProjectContentSource({
     const rows = await db
         .select({
             projectId: projectTable.id,
+            projectSlug: projectTable.slug,
             dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
             contentId: projectContentTable.id,
             title: projectContentTable.title,
@@ -917,6 +920,44 @@ async function fetchProjectContentSource({
             eq(projectContentTable.id, projectTable.currentContentId),
         )
         .where(eq(projectTable.id, projectId))
+        .limit(1);
+    return rows.at(0);
+}
+
+async function fetchProjectContentSourceBySlug({
+    db,
+    projectSlug,
+}: {
+    db: PostgresDatabase;
+    projectSlug: string;
+}): Promise<ProjectContentSource | undefined> {
+    const rows = await db
+        .select({
+            projectId: projectTable.id,
+            projectSlug: projectTable.slug,
+            dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
+            contentId: projectContentTable.id,
+            title: projectContentTable.title,
+            subtitle: projectContentTable.subtitle,
+            body: projectContentTable.body,
+            sourceLanguageCode: projectContentTable.sourceLanguageCode,
+            sourceRawLanguageCode: projectContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider: projectContentTable.sourceLanguageProvider,
+            sourceLanguageConfidence: projectContentTable.sourceLanguageConfidence,
+        })
+        .from(projectTable)
+        .innerJoin(
+            projectContentTable,
+            eq(projectContentTable.id, projectTable.currentContentId),
+        )
+        .where(
+            and(
+                eq(projectTable.slug, projectSlug),
+                eq(projectTable.directoryVisibility, "listed"),
+                isNull(projectTable.deletedAt),
+                isNull(projectContentTable.deletedAt),
+            ),
+        )
         .limit(1);
     return rows.at(0);
 }
@@ -1574,6 +1615,131 @@ async function buildConversationResponse({
     };
 }
 
+async function buildProjectResponse({
+    db,
+    source,
+    targetLanguageCode,
+    requestMode,
+}: {
+    db: PostgresDatabase;
+    source: ProjectContentSource;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+    requestMode: ContentTranslationRequestMode;
+}): Promise<{
+    subject: Extract<ContentTranslationSubject, { kind: "project" }>;
+    content: LocalizedProjectContent;
+}> {
+    const translationRows = await db
+        .select({
+            translatedTitle: projectContentTranslationTable.translatedTitle,
+            translatedSubtitle: projectContentTranslationTable.translatedSubtitle,
+            translatedBody: projectContentTranslationTable.translatedBody,
+            sourceKind: projectContentTranslationTable.sourceKind,
+            sourceLanguageCode: projectContentTranslationTable.sourceLanguageCode,
+            sourceRawLanguageCode: projectContentTranslationTable.sourceRawLanguageCode,
+            sourceLanguageProvider:
+                projectContentTranslationTable.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                projectContentTranslationTable.sourceLanguageConfidence,
+        })
+        .from(projectContentTranslationTable)
+        .where(
+            and(
+                eq(projectContentTranslationTable.projectContentId, source.contentId),
+                eq(
+                    projectContentTranslationTable.displayLanguageCode,
+                    targetLanguageCode,
+                ),
+                isNull(projectContentTranslationTable.deletedAt),
+            ),
+        )
+        .limit(1);
+    const translation = translationRows.at(0);
+    const original = {
+        title: source.title,
+        subtitle: source.subtitle ?? undefined,
+        bodyHtml: source.body ?? undefined,
+    };
+    const subject = {
+        kind: "project" as const,
+        projectSlug: source.projectSlug,
+    };
+    const sourceVersion = String(source.contentId);
+
+    if (translation?.sourceKind === "manual") {
+        return {
+            subject,
+            content: {
+                kind: "original_only",
+                sourceVersion,
+                initialMode: "original",
+                variants: {
+                    original: {
+                        title: translation.translatedTitle,
+                        subtitle: translation.translatedSubtitle ?? undefined,
+                        bodyHtml: translation.translatedBody ?? undefined,
+                    },
+                },
+            },
+        };
+    }
+
+    const freshTranslation =
+        translation !== undefined &&
+        translationSourceMatchesCurrentSource({
+            translationSourceLanguageCode: translation.sourceLanguageCode,
+            currentSourceLanguageCode: source.sourceLanguageCode,
+        })
+            ? translation
+            : undefined;
+
+    if (freshTranslation !== undefined) {
+        return {
+            subject,
+            content: {
+                kind: "translatable",
+                sourceVersion,
+                initialMode: "translated",
+                translation: {
+                    ...buildTranslationMetadata({
+                        targetLanguageCode,
+                        sourceMetadata: source,
+                        status: "completed",
+                    }),
+                },
+                variants: {
+                    original,
+                    translated: {
+                        title: freshTranslation.translatedTitle,
+                        subtitle: freshTranslation.translatedSubtitle ?? undefined,
+                        bodyHtml: freshTranslation.translatedBody ?? undefined,
+                    },
+                },
+            },
+        };
+    }
+
+    return {
+        subject,
+        content: {
+            kind: "translatable",
+            sourceVersion,
+            initialMode: "original",
+            translation: {
+                ...buildTranslationMetadata({
+                    targetLanguageCode,
+                    sourceMetadata: source,
+                    status:
+                        requestMode === "read_existing" ? "not_requested" : "pending",
+                }),
+            },
+            variants: {
+                original,
+            },
+        },
+    };
+}
+
 async function buildOpinionResponse({
     db,
     source,
@@ -1684,6 +1850,56 @@ export async function requestContentTranslation({
     log,
     beforeQueueTranslationWork,
 }: RequestContentTranslationParams) {
+    if (subject.kind === "project") {
+        const source = await fetchProjectContentSourceBySlug({
+            db,
+            projectSlug: subject.projectSlug,
+        });
+        if (source === undefined) {
+            return undefined;
+        }
+        const translationExists = await hasProjectContentTranslation({
+            db,
+            source,
+            targetLanguageCode,
+        });
+        const skipTranslation = !shouldTranslateContent({
+            sourceLanguageCode: source.sourceLanguageCode,
+            targetLanguageCode,
+        });
+        const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
+        if (
+            shouldQueueTranslationWork({
+                requestMode: effectiveRequestMode,
+                translationExists,
+            }) &&
+            !skipTranslation
+        ) {
+            await beforeQueueTranslationWork();
+            await queueMissingTranslationWork({
+                db,
+                valkey,
+                queueScript,
+                input: {
+                    conversationId: null,
+                    sourceKind: "project",
+                    projectContentId: source.contentId,
+                    targetLanguageCode,
+                },
+                translationExists,
+                now,
+                log,
+                priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.userInteractive,
+            });
+        }
+        return await buildProjectResponse({
+            db,
+            source,
+            targetLanguageCode,
+            requestMode: effectiveRequestMode,
+        });
+    }
+
     if (subject.kind === "survey_question") {
         const source = await fetchSurveyQuestionSource({
             db,

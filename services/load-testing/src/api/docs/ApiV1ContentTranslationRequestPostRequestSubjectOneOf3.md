@@ -1,4 +1,4 @@
-# ApiV1ContentTranslationRequestPostRequestSubject
+# ApiV1ContentTranslationRequestPostRequestSubjectOneOf3
 
 
 ## Properties
@@ -6,21 +6,15 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **kind** | **string** |  | [default to undefined]
-**conversationSlugId** | **string** |  | [default to undefined]
-**opinionSlugId** | **string** |  | [default to undefined]
-**questionSlugId** | **string** |  | [default to undefined]
 **projectSlug** | **string** |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import { ApiV1ContentTranslationRequestPostRequestSubject } from './api';
+import { ApiV1ContentTranslationRequestPostRequestSubjectOneOf3 } from './api';
 
-const instance: ApiV1ContentTranslationRequestPostRequestSubject = {
+const instance: ApiV1ContentTranslationRequestPostRequestSubjectOneOf3 = {
     kind,
-    conversationSlugId,
-    opinionSlugId,
-    questionSlugId,
     projectSlug,
 };
 ```

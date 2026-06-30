@@ -79,8 +79,10 @@
       :activities="activities"
       :can-load-more-activities="false"
       :is-loading-more-activities="false"
+      :is-requesting-project-translation="false"
       :language-options="languageOptions"
       initial-language="en"
+      @request-project-translation="ignoreProjectTranslationRequest"
     />
   </div>
 </template>
@@ -540,8 +542,15 @@ const baseProject = {
   slug: "amplify-civil-society-kyrgyzstan",
   title: "Amplify: Civil Society Collaboration",
   subtitle: "Local to national solutions in Kyrgyzstan",
-  bodyPlainText:
+  bodyHtml:
     "A consultation gathering ideas from civil-society organizations, community members, and public institutions to identify shared priorities and practical solutions across Kyrgyzstan.",
+  originalContent: {
+    title: "Amplify: Civil Society Collaboration",
+    subtitle: "Local to national solutions in Kyrgyzstan",
+    bodyHtml:
+      "A consultation gathering ideas from civil-society organizations, community members, and public institutions to identify shared priorities and practical solutions across Kyrgyzstan.",
+  },
+  machineTranslation: undefined,
   bannerVariant: "blue",
   bannerImageUrl: projectBannerImageUrlsByLanguage.en,
 } satisfies BaseDevProjectData;
@@ -624,9 +633,17 @@ const project = computed<ProjectPageData>(() => ({
   }),
   title: projectContent.value.title,
   subtitle: projectContent.value.subtitle,
-  bodyPlainText: hasLongProjectBody({ scenario: bodyLengthScenario.value })
+  bodyHtml: hasLongProjectBody({ scenario: bodyLengthScenario.value })
     ? projectContent.value.longBodyPlainText
     : projectContent.value.bodyPlainText,
+  originalContent: {
+    title: projectContent.value.title,
+    subtitle: projectContent.value.subtitle,
+    bodyHtml: hasLongProjectBody({ scenario: bodyLengthScenario.value })
+      ? projectContent.value.longBodyPlainText
+      : projectContent.value.bodyPlainText,
+  },
+  machineTranslation: undefined,
   bannerImageUrl: projectBannerImageUrlsByLanguage[selectedProjectLanguage.value],
   participantCount: calculateParticipantCount({ activities: activities.value }),
   voteCount: calculateVoteCount({ activities: activities.value }),
@@ -693,6 +710,8 @@ function localizeAttributions({
     };
   });
 }
+
+function ignoreProjectTranslationRequest(): void {}
 
 function localizeActivity({
   activity,

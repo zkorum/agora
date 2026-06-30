@@ -230,7 +230,10 @@ import {
     conversationTranslationTargetLanguageTable,
     deviceTable,
     organizationTable,
+    projectContentTable,
     projectOrganizationOwnershipTable,
+    projectTable,
+    projectTranslationTargetLanguageTable,
 } from "./shared-backend/schema.js";
 import { and, eq, isNull } from "drizzle-orm";
 
@@ -569,6 +572,64 @@ async function getContentTranslationAvailabilityForConversation({
         throw server.httpErrors.notFound(
             "Content translation subject not found",
         );
+    }
+    const multilingualSetting: ConversationMultilingualSetting = {
+        dynamicTranslationEnabled: firstRow.dynamicTranslationEnabled,
+        additionalLanguageCodes: rows.flatMap((row) =>
+            row.targetLanguageCode === null ? [] : [row.targetLanguageCode],
+        ),
+    };
+    const configuredTargetLanguageCodes =
+        getConfiguredTranslationDisplayLanguageCodes({
+            sourceLanguageCode: firstRow.sourceLanguageCode,
+            targetLanguageCodes: multilingualSetting.additionalLanguageCodes,
+        });
+    const translationAllowed =
+        multilingualSetting.dynamicTranslationEnabled &&
+        configuredTargetLanguageCodes.has(targetLanguageCode);
+    return { isAllowed: translationAllowed, multilingualSetting };
+}
+
+async function getContentTranslationAvailabilityForProject({
+    projectSlug,
+    targetLanguageCode,
+}: {
+    projectSlug: string;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+}): Promise<{
+    isAllowed: boolean;
+    multilingualSetting: ConversationMultilingualSetting;
+}> {
+    const rows = await db
+        .select({
+            dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
+            sourceLanguageCode: projectContentTable.sourceLanguageCode,
+            targetLanguageCode: projectTranslationTargetLanguageTable.languageCode,
+        })
+        .from(projectTable)
+        .innerJoin(
+            projectContentTable,
+            eq(projectContentTable.id, projectTable.currentContentId),
+        )
+        .leftJoin(
+            projectTranslationTargetLanguageTable,
+            and(
+                eq(projectTranslationTargetLanguageTable.projectId, projectTable.id),
+                isNull(projectTranslationTargetLanguageTable.deletedAt),
+            ),
+        )
+        .where(
+            and(
+                eq(projectTable.slug, projectSlug),
+                eq(projectTable.directoryVisibility, "listed"),
+                isNull(projectTable.deletedAt),
+                isNull(projectContentTable.deletedAt),
+            ),
+        );
+
+    const firstRow = rows.at(0);
+    if (firstRow === undefined) {
+        throw server.httpErrors.notFound("Content translation subject not found");
     }
     const multilingualSetting: ConversationMultilingualSetting = {
         dynamicTranslationEnabled: firstRow.dynamicTranslationEnabled,
@@ -5223,13 +5284,18 @@ server.after(() => {
             const queueValkey = queueValkeyRef.current;
 
             const availability =
-                await getContentTranslationAvailabilityForConversation({
-                    conversationSlugId: request.body.subject.conversationSlugId,
-                    targetLanguageCode: request.body.targetLanguageCode,
-                });
+                request.body.subject.kind === "project"
+                    ? await getContentTranslationAvailabilityForProject({
+                          projectSlug: request.body.subject.projectSlug,
+                          targetLanguageCode: request.body.targetLanguageCode,
+                      })
+                    : await getContentTranslationAvailabilityForConversation({
+                          conversationSlugId: request.body.subject.conversationSlugId,
+                          targetLanguageCode: request.body.targetLanguageCode,
+                      });
             log.info(
                 {
-                    conversationSlugId: request.body.subject.conversationSlugId,
+                    subject: request.body.subject,
                     targetLanguageCode: request.body.targetLanguageCode,
                     isAllowed: availability.isAllowed,
                     multilingualSetting: availability.multilingualSetting,

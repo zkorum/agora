@@ -51,18 +51,26 @@
 
       <div class="project-page-view__shell">
         <section class="project-page-view__intro">
-          <h1>{{ project.title }}</h1>
+          <h1>{{ displayedProjectContent.title }}</h1>
           <p
-            v-if="project.subtitle !== undefined"
+            v-if="displayedProjectContent.subtitle !== undefined"
             class="project-page-view__subtitle"
           >
-            {{ project.subtitle }}
+            {{ displayedProjectContent.subtitle }}
           </p>
-          <ZKPlainTextContent
-            v-if="project.bodyPlainText !== undefined"
+          <ContentTranslationControl
+            v-if="projectTranslationControl !== undefined"
+            v-model="projectTranslationMode"
+            class="project-page-view__translation-control"
+            :source-language-label="projectTranslationControl.sourceLanguageLabel"
+            :translation-status="projectTranslationControl.status"
+          />
+          <ZKHtmlContent
+            v-if="displayedProjectContent.bodyHtml !== undefined"
             class="project-page-view__body"
-            :plain-text="project.bodyPlainText"
+            :html-body="displayedProjectContent.bodyHtml"
             :compact-mode="false"
+            :enable-links="true"
             :collapsed-line-count="4"
             :desktop-collapsed-line-count="4"
           />
@@ -209,12 +217,22 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
+import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
 import SpaLink from "src/components/ui-library/SpaLink.vue";
+import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import ZKLiveStatusDot from "src/components/ui-library/ZKLiveStatusDot.vue";
-import ZKPlainTextContent from "src/components/ui-library/ZKPlainTextContent.vue";
 import ZKStyledText from "src/components/ui-library/ZKStyledText.vue";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { getLanguageTextDirection } from "src/shared/languages";
+import type { LocalizedContentTranslationStatus } from "src/shared/types/zod";
+import { useLanguageStore } from "src/stores/language";
+import {
+  type ContentTranslationDisplayMode,
+  resolveContentTranslationState,
+} from "src/utils/translation/contentTranslation";
 import { computed } from "vue";
+import { ref, watch } from "vue";
 
 import ProjectActivityCard from "./ProjectActivityCard.vue";
 import ProjectAttributionSection from "./ProjectAttributionSection.vue";
@@ -239,12 +257,19 @@ const props = defineProps<{
   activities: readonly ProjectActivity[];
   canLoadMoreActivities: boolean;
   isLoadingMoreActivities: boolean;
+  isRequestingProjectTranslation: boolean;
   languageOptions: readonly ProjectLanguageOption[];
   initialLanguage: string;
 }>();
 const emit = defineEmits<{
   loadMoreActivities: [done: () => void];
+  requestProjectTranslation: [targetLanguageCode: SupportedDisplayLanguageCodes];
 }>();
+
+const { spokenLanguages } = storeToRefs(useLanguageStore());
+const projectTranslationModePreference = ref<
+  ContentTranslationDisplayMode | undefined
+>();
 
 const selectedLanguage = defineModel<string | readonly string[]>(
   "selectedLanguage",
@@ -267,6 +292,83 @@ const projectTextDirection = computed(() =>
 
 const selectedBannerImageUrl = computed(() => {
   return props.project.bannerImageUrl;
+});
+
+const projectMachineTranslation = computed(() => props.project.machineTranslation);
+const projectTranslationInitialMode = computed<ContentTranslationDisplayMode>(() => {
+  const machineTranslation = projectMachineTranslation.value;
+  if (
+    machineTranslation?.status !== "completed" ||
+    machineTranslation.translatedContent === undefined
+  ) {
+    return "original";
+  }
+
+  return resolveContentTranslationState({
+    dynamicTranslationEnabled: true,
+    sourceLanguageCode: machineTranslation.sourceLanguageCode,
+    displayLanguage: machineTranslation.targetLanguageCode,
+    spokenLanguages: spokenLanguages.value,
+    supportedTargetLanguageCodes: [machineTranslation.targetLanguageCode],
+    hasTranslatedContent: true,
+  }).initialMode;
+});
+const projectTranslationMode = computed<ContentTranslationDisplayMode>({
+  get: () =>
+    projectTranslationModePreference.value ?? projectTranslationInitialMode.value,
+  set: (mode) => {
+    const machineTranslation = projectMachineTranslation.value;
+    if (machineTranslation === undefined) {
+      return;
+    }
+    if (
+      mode === "translated" &&
+      (machineTranslation.status !== "completed" ||
+        machineTranslation.translatedContent === undefined)
+    ) {
+      emit("requestProjectTranslation", machineTranslation.targetLanguageCode);
+      return;
+    }
+    projectTranslationModePreference.value = mode;
+  },
+});
+const projectTranslationControl = computed<
+  | {
+      sourceLanguageLabel: string | undefined;
+      status: LocalizedContentTranslationStatus;
+    }
+  | undefined
+>(() => {
+  const machineTranslation = projectMachineTranslation.value;
+  if (machineTranslation === undefined) {
+    return undefined;
+  }
+  return {
+    sourceLanguageLabel: machineTranslation.sourceLanguageLabel,
+    status: props.isRequestingProjectTranslation
+      ? "pending"
+      : machineTranslation.status,
+  };
+});
+const displayedProjectContent = computed(() => {
+  const machineTranslation = projectMachineTranslation.value;
+  if (machineTranslation === undefined) {
+    return {
+      title: props.project.title,
+      subtitle: props.project.subtitle,
+      bodyHtml: props.project.bodyHtml,
+    };
+  }
+
+  if (
+    projectTranslationMode.value === "translated" &&
+    machineTranslation.status === "completed" &&
+    machineTranslation.translatedContent !== undefined
+  ) {
+    return machineTranslation.translatedContent;
+  }
+
+  return props.project.originalContent;
 });
 
 const projectOwnerAttributions = computed(() =>
@@ -315,6 +417,17 @@ const activityListKey = computed(() => {
     lastActivity?.slug ?? "none",
   ].join(":");
 });
+
+watch(
+  () => [
+    props.project.slug,
+    props.project.machineTranslation?.targetLanguageCode,
+    props.project.machineTranslation?.status,
+  ],
+  () => {
+    projectTranslationModePreference.value = undefined;
+  }
+);
 
 function t(
   key: keyof ProjectPageTranslations,
@@ -499,6 +612,10 @@ h1 {
   font-size: clamp(1.1rem, 2.4vw, 1.45rem);
   font-weight: var(--font-weight-semibold);
   line-height: 1.25;
+}
+
+.project-page-view__translation-control {
+  margin-top: 0.55rem;
 }
 
 .project-page-view__body {

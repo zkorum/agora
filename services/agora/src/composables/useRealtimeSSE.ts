@@ -3,6 +3,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   type AnySSEEvent,
   type FetchCommentStatsResponse,
+  type FetchProjectPageResponse,
   type SSEContentTranslationUpdatedData,
   type SSEConversationAnalysisUpdatedData,
   type SSEConversationCommentStatsUpdatedData,
@@ -23,6 +24,10 @@ import { useBackendAuthApi } from "src/utils/api/auth";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { fetchAnalysisDataWithCache } from "src/utils/api/comment/useCommentQueries";
 import { useCommonApi } from "src/utils/api/common";
+import {
+  type ContentTranslationResponse,
+  useBackendContentTranslationApi,
+} from "src/utils/api/contentTranslation/contentTranslation";
 import {
   getConversationContentQueryPrefix,
   getConversationDisplayContentQueryPrefix,
@@ -70,6 +75,18 @@ interface ParsedRealtimeSSEEvent {
   event: AnySSEEvent;
   id: string | null;
 }
+
+type ProjectContentTranslationUpdatedData = Omit<
+  SSEContentTranslationUpdatedData,
+  "subject"
+> & {
+  subject: Extract<SSEContentTranslationUpdatedData["subject"], { kind: "project" }>;
+};
+
+type ProjectContentTranslationResponse = Extract<
+  ContentTranslationResponse,
+  { success: true; subject: { kind: "project" } }
+>;
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
@@ -260,6 +277,7 @@ export function useRealtimeSSE({
       }),
   });
   const { refreshAuthState } = useBackendAuthApi();
+  const { requestContentTranslation } = useBackendContentTranslationApi();
   const { showNotifyMessage } = useNotify();
   const { t } = useComponentI18n<RealtimeSSETranslations>(
     realtimeSSETranslations
@@ -1046,7 +1064,7 @@ export function useRealtimeSSE({
           break;
         }
         case "content_translation_updated": {
-          handleContentTranslationUpdated(sseEvent.data);
+          void handleContentTranslationUpdated(sseEvent.data);
           break;
         }
         case "subscription_ready": {
@@ -1061,9 +1079,17 @@ export function useRealtimeSSE({
     }
   }
 
-  function handleContentTranslationUpdated(
+  async function handleContentTranslationUpdated(
     data: SSEContentTranslationUpdatedData
-  ): void {
+  ): Promise<void> {
+    if (isProjectContentTranslationUpdatedData(data)) {
+      await updateProjectPageContentTranslation(data);
+      if (data.status === "failed") {
+        publishContentTranslationFailed(data);
+      }
+      return;
+    }
+
     if (data.status === "failed") {
       publishContentTranslationFailed(data);
       return;
@@ -1098,6 +1124,131 @@ export function useRealtimeSSE({
         refetchType: "active",
       });
     }
+  }
+
+  async function updateProjectPageContentTranslation(
+    data: ProjectContentTranslationUpdatedData
+  ): Promise<void> {
+    if (data.status === "failed") {
+      updateProjectPageMachineTranslationStatus({ data, status: "failed" });
+      return;
+    }
+
+    let response: ContentTranslationResponse;
+    try {
+      response = await requestContentTranslation({
+        subject: data.subject,
+        targetLanguageCode: data.targetLanguageCode,
+        requestMode: "read_existing",
+      });
+    } catch (error) {
+      console.warn("Failed to fetch project translation after SSE update", error);
+      updateProjectPageMachineTranslationStatus({ data, status: data.status });
+      return;
+    }
+    if (
+      !isProjectContentTranslationResponse(response) ||
+      response.content.kind !== "translatable" ||
+      response.content.translation.status !== "completed"
+    ) {
+      updateProjectPageMachineTranslationStatus({ data, status: data.status });
+      return;
+    }
+
+    const translation = response.content.translation;
+    const translatedContent = response.content.variants.translated;
+    if (translatedContent === undefined) {
+      updateProjectPageMachineTranslationStatus({ data, status: data.status });
+      return;
+    }
+
+    queryClient.setQueriesData<FetchProjectPageResponse>(
+      {
+        predicate: (query) => isProjectPageQueryForTranslation({ queryKey: query.queryKey, data }),
+      },
+      (previousData) => {
+        if (previousData === undefined) {
+          return previousData;
+        }
+        if (previousData.effectiveProjectDisplayLanguage !== data.targetLanguageCode) {
+          return previousData;
+        }
+        return {
+          ...previousData,
+          project: {
+            ...previousData.project,
+            title: translatedContent.title,
+            subtitle: translatedContent.subtitle,
+            bodyHtml: translatedContent.bodyHtml,
+            machineTranslation: {
+              targetLanguageCode: data.targetLanguageCode,
+              sourceLanguageCode: translation.sourceLanguageCode,
+              sourceLanguageLabel: translation.sourceLanguageLabel,
+              status: "completed",
+              translatedContent,
+            },
+          },
+        };
+      }
+    );
+  }
+
+  function updateProjectPageMachineTranslationStatus({
+    data,
+    status,
+  }: {
+    data: ProjectContentTranslationUpdatedData;
+    status: "completed" | "failed";
+  }): void {
+    queryClient.setQueriesData<FetchProjectPageResponse>(
+      {
+        predicate: (query) => isProjectPageQueryForTranslation({ queryKey: query.queryKey, data }),
+      },
+      (previousData) => {
+        const machineTranslation = previousData?.project.machineTranslation;
+        if (previousData === undefined || machineTranslation === undefined) {
+          return previousData;
+        }
+        if (previousData.effectiveProjectDisplayLanguage !== data.targetLanguageCode) {
+          return previousData;
+        }
+        return {
+          ...previousData,
+          project: {
+            ...previousData.project,
+            machineTranslation: {
+              ...machineTranslation,
+              status,
+            },
+          },
+        };
+      }
+    );
+  }
+
+  function isProjectPageQueryForTranslation({
+    queryKey,
+    data,
+  }: {
+    queryKey: readonly unknown[];
+    data: ProjectContentTranslationUpdatedData;
+  }): boolean {
+    return (
+      queryKey[0] === "projectPage" &&
+      queryKey[1] === data.subject.projectSlug
+    );
+  }
+
+  function isProjectContentTranslationUpdatedData(
+    data: SSEContentTranslationUpdatedData
+  ): data is ProjectContentTranslationUpdatedData {
+    return data.subject.kind === "project";
+  }
+
+  function isProjectContentTranslationResponse(
+    response: ContentTranslationResponse
+  ): response is ProjectContentTranslationResponse {
+    return response.success && response.subject.kind === "project";
   }
 
   function updateConversationCountsFromAnalysisEvent(

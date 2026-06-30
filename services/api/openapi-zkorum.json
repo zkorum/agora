@@ -1915,8 +1915,99 @@
                                                     "minLength": 1,
                                                     "maxLength": 140
                                                 },
-                                                "bodyPlainText": {
-                                                    "type": "string"
+                                                "bodyHtml": {
+                                                    "type": "string",
+                                                    "maxLength": 60000
+                                                },
+                                                "originalContent": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "title": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 140
+                                                        },
+                                                        "subtitle": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 140
+                                                        },
+                                                        "bodyHtml": {
+                                                            "type": "string",
+                                                            "maxLength": 60000
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "title"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                "machineTranslation": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "targetLanguageCode": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "en",
+                                                                "es",
+                                                                "fr",
+                                                                "zh-Hant",
+                                                                "zh-Hans",
+                                                                "ja",
+                                                                "ar",
+                                                                "fa",
+                                                                "he",
+                                                                "ky",
+                                                                "ru"
+                                                            ]
+                                                        },
+                                                        "sourceLanguageCode": {
+                                                            "nullable": true,
+                                                            "type": "string"
+                                                        },
+                                                        "sourceLanguageLabel": {
+                                                            "type": "string",
+                                                            "minLength": 1
+                                                        },
+                                                        "status": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "not_requested",
+                                                                "pending",
+                                                                "running",
+                                                                "failed",
+                                                                "completed"
+                                                            ]
+                                                        },
+                                                        "translatedContent": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "title": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 140
+                                                                },
+                                                                "subtitle": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 140
+                                                                },
+                                                                "bodyHtml": {
+                                                                    "type": "string",
+                                                                    "maxLength": 60000
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "title"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "targetLanguageCode",
+                                                        "status"
+                                                    ],
+                                                    "additionalProperties": false
                                                 },
                                                 "bannerVariant": {
                                                     "type": "string",
@@ -2036,6 +2127,7 @@
                                             "required": [
                                                 "slug",
                                                 "title",
+                                                "originalContent",
                                                 "bannerVariant",
                                                 "participantCount",
                                                 "voteCount",
@@ -19214,6 +19306,27 @@
                                                     "questionSlugId"
                                                 ],
                                                 "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "project"
+                                                        ]
+                                                    },
+                                                    "projectSlug": {
+                                                        "type": "string",
+                                                        "maxLength": 65,
+                                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "kind",
+                                                    "projectSlug"
+                                                ],
+                                                "additionalProperties": false
                                             }
                                         ]
                                     },
@@ -22344,6 +22457,1048 @@
                                                                             "required": [
                                                                                 "questionText",
                                                                                 "options"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "translated"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "kind",
+                                                                "sourceVersion",
+                                                                "initialMode",
+                                                                "translation",
+                                                                "variants"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "subject",
+                                                "content"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "subject": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "project"
+                                                            ]
+                                                        },
+                                                        "projectSlug": {
+                                                            "type": "string",
+                                                            "maxLength": 65,
+                                                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "kind",
+                                                        "projectSlug"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                "content": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "original_only"
+                                                                    ]
+                                                                },
+                                                                "sourceVersion": {
+                                                                    "type": "string",
+                                                                    "minLength": 1
+                                                                },
+                                                                "initialMode": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "original"
+                                                                    ]
+                                                                },
+                                                                "variants": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "original": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "title": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 140
+                                                                                },
+                                                                                "subtitle": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 140
+                                                                                },
+                                                                                "bodyHtml": {
+                                                                                    "type": "string",
+                                                                                    "maxLength": 60000
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "title"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "original"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "kind",
+                                                                "sourceVersion",
+                                                                "initialMode",
+                                                                "variants"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "translatable"
+                                                                    ]
+                                                                },
+                                                                "sourceVersion": {
+                                                                    "type": "string",
+                                                                    "minLength": 1
+                                                                },
+                                                                "initialMode": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "original"
+                                                                    ]
+                                                                },
+                                                                "translation": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "targetLanguageCode": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "en",
+                                                                                "es",
+                                                                                "fr",
+                                                                                "zh-Hant",
+                                                                                "zh-Hans",
+                                                                                "ja",
+                                                                                "ar",
+                                                                                "fa",
+                                                                                "he",
+                                                                                "ky",
+                                                                                "ru"
+                                                                            ]
+                                                                        },
+                                                                        "sourceLanguageCode": {
+                                                                            "nullable": true,
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "af",
+                                                                                "ak",
+                                                                                "am",
+                                                                                "ar",
+                                                                                "as",
+                                                                                "ay",
+                                                                                "az",
+                                                                                "be",
+                                                                                "bg",
+                                                                                "bho",
+                                                                                "bm",
+                                                                                "bn",
+                                                                                "bs",
+                                                                                "ca",
+                                                                                "ceb",
+                                                                                "ckb",
+                                                                                "co",
+                                                                                "cs",
+                                                                                "cy",
+                                                                                "da",
+                                                                                "de",
+                                                                                "doi",
+                                                                                "dv",
+                                                                                "ee",
+                                                                                "el",
+                                                                                "en",
+                                                                                "eo",
+                                                                                "es",
+                                                                                "et",
+                                                                                "eu",
+                                                                                "fa",
+                                                                                "fi",
+                                                                                "fil",
+                                                                                "fr",
+                                                                                "fy",
+                                                                                "ga",
+                                                                                "gd",
+                                                                                "gl",
+                                                                                "gn",
+                                                                                "gom",
+                                                                                "gu",
+                                                                                "ha",
+                                                                                "haw",
+                                                                                "he",
+                                                                                "hi",
+                                                                                "hmn",
+                                                                                "hr",
+                                                                                "ht",
+                                                                                "hu",
+                                                                                "hy",
+                                                                                "id",
+                                                                                "ig",
+                                                                                "ilo",
+                                                                                "is",
+                                                                                "it",
+                                                                                "ja",
+                                                                                "jv",
+                                                                                "ka",
+                                                                                "kk",
+                                                                                "km",
+                                                                                "kn",
+                                                                                "ko",
+                                                                                "kri",
+                                                                                "ku",
+                                                                                "ky",
+                                                                                "la",
+                                                                                "lb",
+                                                                                "lg",
+                                                                                "ln",
+                                                                                "lo",
+                                                                                "lt",
+                                                                                "lus",
+                                                                                "lv",
+                                                                                "mai",
+                                                                                "mg",
+                                                                                "mi",
+                                                                                "mk",
+                                                                                "ml",
+                                                                                "mn",
+                                                                                "mni-Mtei",
+                                                                                "mr",
+                                                                                "ms",
+                                                                                "mt",
+                                                                                "my",
+                                                                                "nb",
+                                                                                "ne",
+                                                                                "nl",
+                                                                                "nn",
+                                                                                "no",
+                                                                                "nso",
+                                                                                "ny",
+                                                                                "om",
+                                                                                "or",
+                                                                                "pa",
+                                                                                "pl",
+                                                                                "ps",
+                                                                                "pt",
+                                                                                "qu",
+                                                                                "ro",
+                                                                                "ru",
+                                                                                "rw",
+                                                                                "sa",
+                                                                                "sd",
+                                                                                "si",
+                                                                                "sk",
+                                                                                "sl",
+                                                                                "sm",
+                                                                                "sn",
+                                                                                "so",
+                                                                                "sq",
+                                                                                "sr",
+                                                                                "st",
+                                                                                "su",
+                                                                                "sv",
+                                                                                "sw",
+                                                                                "ta",
+                                                                                "te",
+                                                                                "tg",
+                                                                                "th",
+                                                                                "ti",
+                                                                                "tk",
+                                                                                "tn",
+                                                                                "tr",
+                                                                                "ts",
+                                                                                "tt",
+                                                                                "ug",
+                                                                                "uk",
+                                                                                "ur",
+                                                                                "uz",
+                                                                                "vi",
+                                                                                "xh",
+                                                                                "yi",
+                                                                                "yo",
+                                                                                "zh-Hans",
+                                                                                "zh-Hant",
+                                                                                "zu"
+                                                                            ]
+                                                                        },
+                                                                        "sourceLanguageLabel": {
+                                                                            "type": "string",
+                                                                            "minLength": 1
+                                                                        },
+                                                                        "sourceLanguage": {
+                                                                            "oneOf": [
+                                                                                {
+                                                                                    "type": "object",
+                                                                                    "properties": {
+                                                                                        "kind": {
+                                                                                            "type": "string",
+                                                                                            "enum": [
+                                                                                                "recognized"
+                                                                                            ]
+                                                                                        },
+                                                                                        "languageCode": {
+                                                                                            "type": "string",
+                                                                                            "enum": [
+                                                                                                "af",
+                                                                                                "ak",
+                                                                                                "am",
+                                                                                                "ar",
+                                                                                                "as",
+                                                                                                "ay",
+                                                                                                "az",
+                                                                                                "be",
+                                                                                                "bg",
+                                                                                                "bho",
+                                                                                                "bm",
+                                                                                                "bn",
+                                                                                                "bs",
+                                                                                                "ca",
+                                                                                                "ceb",
+                                                                                                "ckb",
+                                                                                                "co",
+                                                                                                "cs",
+                                                                                                "cy",
+                                                                                                "da",
+                                                                                                "de",
+                                                                                                "doi",
+                                                                                                "dv",
+                                                                                                "ee",
+                                                                                                "el",
+                                                                                                "en",
+                                                                                                "eo",
+                                                                                                "es",
+                                                                                                "et",
+                                                                                                "eu",
+                                                                                                "fa",
+                                                                                                "fi",
+                                                                                                "fil",
+                                                                                                "fr",
+                                                                                                "fy",
+                                                                                                "ga",
+                                                                                                "gd",
+                                                                                                "gl",
+                                                                                                "gn",
+                                                                                                "gom",
+                                                                                                "gu",
+                                                                                                "ha",
+                                                                                                "haw",
+                                                                                                "he",
+                                                                                                "hi",
+                                                                                                "hmn",
+                                                                                                "hr",
+                                                                                                "ht",
+                                                                                                "hu",
+                                                                                                "hy",
+                                                                                                "id",
+                                                                                                "ig",
+                                                                                                "ilo",
+                                                                                                "is",
+                                                                                                "it",
+                                                                                                "ja",
+                                                                                                "jv",
+                                                                                                "ka",
+                                                                                                "kk",
+                                                                                                "km",
+                                                                                                "kn",
+                                                                                                "ko",
+                                                                                                "kri",
+                                                                                                "ku",
+                                                                                                "ky",
+                                                                                                "la",
+                                                                                                "lb",
+                                                                                                "lg",
+                                                                                                "ln",
+                                                                                                "lo",
+                                                                                                "lt",
+                                                                                                "lus",
+                                                                                                "lv",
+                                                                                                "mai",
+                                                                                                "mg",
+                                                                                                "mi",
+                                                                                                "mk",
+                                                                                                "ml",
+                                                                                                "mn",
+                                                                                                "mni-Mtei",
+                                                                                                "mr",
+                                                                                                "ms",
+                                                                                                "mt",
+                                                                                                "my",
+                                                                                                "nb",
+                                                                                                "ne",
+                                                                                                "nl",
+                                                                                                "nn",
+                                                                                                "no",
+                                                                                                "nso",
+                                                                                                "ny",
+                                                                                                "om",
+                                                                                                "or",
+                                                                                                "pa",
+                                                                                                "pl",
+                                                                                                "ps",
+                                                                                                "pt",
+                                                                                                "qu",
+                                                                                                "ro",
+                                                                                                "ru",
+                                                                                                "rw",
+                                                                                                "sa",
+                                                                                                "sd",
+                                                                                                "si",
+                                                                                                "sk",
+                                                                                                "sl",
+                                                                                                "sm",
+                                                                                                "sn",
+                                                                                                "so",
+                                                                                                "sq",
+                                                                                                "sr",
+                                                                                                "st",
+                                                                                                "su",
+                                                                                                "sv",
+                                                                                                "sw",
+                                                                                                "ta",
+                                                                                                "te",
+                                                                                                "tg",
+                                                                                                "th",
+                                                                                                "ti",
+                                                                                                "tk",
+                                                                                                "tn",
+                                                                                                "tr",
+                                                                                                "ts",
+                                                                                                "tt",
+                                                                                                "ug",
+                                                                                                "uk",
+                                                                                                "ur",
+                                                                                                "uz",
+                                                                                                "vi",
+                                                                                                "xh",
+                                                                                                "yi",
+                                                                                                "yo",
+                                                                                                "zh-Hans",
+                                                                                                "zh-Hant",
+                                                                                                "zu"
+                                                                                            ]
+                                                                                        },
+                                                                                        "label": {
+                                                                                            "type": "string",
+                                                                                            "minLength": 1
+                                                                                        }
+                                                                                    },
+                                                                                    "required": [
+                                                                                        "kind",
+                                                                                        "languageCode",
+                                                                                        "label"
+                                                                                    ],
+                                                                                    "additionalProperties": false
+                                                                                },
+                                                                                {
+                                                                                    "type": "object",
+                                                                                    "properties": {
+                                                                                        "kind": {
+                                                                                            "type": "string",
+                                                                                            "enum": [
+                                                                                                "raw"
+                                                                                            ]
+                                                                                        },
+                                                                                        "rawLanguageCode": {
+                                                                                            "type": "string",
+                                                                                            "minLength": 1
+                                                                                        },
+                                                                                        "label": {
+                                                                                            "type": "string",
+                                                                                            "minLength": 1
+                                                                                        }
+                                                                                    },
+                                                                                    "required": [
+                                                                                        "kind",
+                                                                                        "rawLanguageCode"
+                                                                                    ],
+                                                                                    "additionalProperties": false
+                                                                                },
+                                                                                {
+                                                                                    "type": "object",
+                                                                                    "properties": {
+                                                                                        "kind": {
+                                                                                            "type": "string",
+                                                                                            "enum": [
+                                                                                                "unknown"
+                                                                                            ]
+                                                                                        }
+                                                                                    },
+                                                                                    "required": [
+                                                                                        "kind"
+                                                                                    ],
+                                                                                    "additionalProperties": false
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "not_requested",
+                                                                                "pending",
+                                                                                "running",
+                                                                                "failed",
+                                                                                "completed"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "targetLanguageCode",
+                                                                        "sourceLanguage",
+                                                                        "status"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                "variants": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "original": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "title": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 140
+                                                                                },
+                                                                                "subtitle": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 140
+                                                                                },
+                                                                                "bodyHtml": {
+                                                                                    "type": "string",
+                                                                                    "maxLength": 60000
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "title"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        },
+                                                                        "translated": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "title": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 140
+                                                                                },
+                                                                                "subtitle": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 140
+                                                                                },
+                                                                                "bodyHtml": {
+                                                                                    "type": "string",
+                                                                                    "maxLength": 60000
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "title"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "original"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "kind",
+                                                                "sourceVersion",
+                                                                "initialMode",
+                                                                "translation",
+                                                                "variants"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "translatable"
+                                                                    ]
+                                                                },
+                                                                "sourceVersion": {
+                                                                    "type": "string",
+                                                                    "minLength": 1
+                                                                },
+                                                                "initialMode": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "translated"
+                                                                    ]
+                                                                },
+                                                                "translation": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "targetLanguageCode": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "en",
+                                                                                "es",
+                                                                                "fr",
+                                                                                "zh-Hant",
+                                                                                "zh-Hans",
+                                                                                "ja",
+                                                                                "ar",
+                                                                                "fa",
+                                                                                "he",
+                                                                                "ky",
+                                                                                "ru"
+                                                                            ]
+                                                                        },
+                                                                        "sourceLanguageCode": {
+                                                                            "nullable": true,
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "af",
+                                                                                "ak",
+                                                                                "am",
+                                                                                "ar",
+                                                                                "as",
+                                                                                "ay",
+                                                                                "az",
+                                                                                "be",
+                                                                                "bg",
+                                                                                "bho",
+                                                                                "bm",
+                                                                                "bn",
+                                                                                "bs",
+                                                                                "ca",
+                                                                                "ceb",
+                                                                                "ckb",
+                                                                                "co",
+                                                                                "cs",
+                                                                                "cy",
+                                                                                "da",
+                                                                                "de",
+                                                                                "doi",
+                                                                                "dv",
+                                                                                "ee",
+                                                                                "el",
+                                                                                "en",
+                                                                                "eo",
+                                                                                "es",
+                                                                                "et",
+                                                                                "eu",
+                                                                                "fa",
+                                                                                "fi",
+                                                                                "fil",
+                                                                                "fr",
+                                                                                "fy",
+                                                                                "ga",
+                                                                                "gd",
+                                                                                "gl",
+                                                                                "gn",
+                                                                                "gom",
+                                                                                "gu",
+                                                                                "ha",
+                                                                                "haw",
+                                                                                "he",
+                                                                                "hi",
+                                                                                "hmn",
+                                                                                "hr",
+                                                                                "ht",
+                                                                                "hu",
+                                                                                "hy",
+                                                                                "id",
+                                                                                "ig",
+                                                                                "ilo",
+                                                                                "is",
+                                                                                "it",
+                                                                                "ja",
+                                                                                "jv",
+                                                                                "ka",
+                                                                                "kk",
+                                                                                "km",
+                                                                                "kn",
+                                                                                "ko",
+                                                                                "kri",
+                                                                                "ku",
+                                                                                "ky",
+                                                                                "la",
+                                                                                "lb",
+                                                                                "lg",
+                                                                                "ln",
+                                                                                "lo",
+                                                                                "lt",
+                                                                                "lus",
+                                                                                "lv",
+                                                                                "mai",
+                                                                                "mg",
+                                                                                "mi",
+                                                                                "mk",
+                                                                                "ml",
+                                                                                "mn",
+                                                                                "mni-Mtei",
+                                                                                "mr",
+                                                                                "ms",
+                                                                                "mt",
+                                                                                "my",
+                                                                                "nb",
+                                                                                "ne",
+                                                                                "nl",
+                                                                                "nn",
+                                                                                "no",
+                                                                                "nso",
+                                                                                "ny",
+                                                                                "om",
+                                                                                "or",
+                                                                                "pa",
+                                                                                "pl",
+                                                                                "ps",
+                                                                                "pt",
+                                                                                "qu",
+                                                                                "ro",
+                                                                                "ru",
+                                                                                "rw",
+                                                                                "sa",
+                                                                                "sd",
+                                                                                "si",
+                                                                                "sk",
+                                                                                "sl",
+                                                                                "sm",
+                                                                                "sn",
+                                                                                "so",
+                                                                                "sq",
+                                                                                "sr",
+                                                                                "st",
+                                                                                "su",
+                                                                                "sv",
+                                                                                "sw",
+                                                                                "ta",
+                                                                                "te",
+                                                                                "tg",
+                                                                                "th",
+                                                                                "ti",
+                                                                                "tk",
+                                                                                "tn",
+                                                                                "tr",
+                                                                                "ts",
+                                                                                "tt",
+                                                                                "ug",
+                                                                                "uk",
+                                                                                "ur",
+                                                                                "uz",
+                                                                                "vi",
+                                                                                "xh",
+                                                                                "yi",
+                                                                                "yo",
+                                                                                "zh-Hans",
+                                                                                "zh-Hant",
+                                                                                "zu"
+                                                                            ]
+                                                                        },
+                                                                        "sourceLanguageLabel": {
+                                                                            "type": "string",
+                                                                            "minLength": 1
+                                                                        },
+                                                                        "sourceLanguage": {
+                                                                            "oneOf": [
+                                                                                {
+                                                                                    "type": "object",
+                                                                                    "properties": {
+                                                                                        "kind": {
+                                                                                            "type": "string",
+                                                                                            "enum": [
+                                                                                                "recognized"
+                                                                                            ]
+                                                                                        },
+                                                                                        "languageCode": {
+                                                                                            "type": "string",
+                                                                                            "enum": [
+                                                                                                "af",
+                                                                                                "ak",
+                                                                                                "am",
+                                                                                                "ar",
+                                                                                                "as",
+                                                                                                "ay",
+                                                                                                "az",
+                                                                                                "be",
+                                                                                                "bg",
+                                                                                                "bho",
+                                                                                                "bm",
+                                                                                                "bn",
+                                                                                                "bs",
+                                                                                                "ca",
+                                                                                                "ceb",
+                                                                                                "ckb",
+                                                                                                "co",
+                                                                                                "cs",
+                                                                                                "cy",
+                                                                                                "da",
+                                                                                                "de",
+                                                                                                "doi",
+                                                                                                "dv",
+                                                                                                "ee",
+                                                                                                "el",
+                                                                                                "en",
+                                                                                                "eo",
+                                                                                                "es",
+                                                                                                "et",
+                                                                                                "eu",
+                                                                                                "fa",
+                                                                                                "fi",
+                                                                                                "fil",
+                                                                                                "fr",
+                                                                                                "fy",
+                                                                                                "ga",
+                                                                                                "gd",
+                                                                                                "gl",
+                                                                                                "gn",
+                                                                                                "gom",
+                                                                                                "gu",
+                                                                                                "ha",
+                                                                                                "haw",
+                                                                                                "he",
+                                                                                                "hi",
+                                                                                                "hmn",
+                                                                                                "hr",
+                                                                                                "ht",
+                                                                                                "hu",
+                                                                                                "hy",
+                                                                                                "id",
+                                                                                                "ig",
+                                                                                                "ilo",
+                                                                                                "is",
+                                                                                                "it",
+                                                                                                "ja",
+                                                                                                "jv",
+                                                                                                "ka",
+                                                                                                "kk",
+                                                                                                "km",
+                                                                                                "kn",
+                                                                                                "ko",
+                                                                                                "kri",
+                                                                                                "ku",
+                                                                                                "ky",
+                                                                                                "la",
+                                                                                                "lb",
+                                                                                                "lg",
+                                                                                                "ln",
+                                                                                                "lo",
+                                                                                                "lt",
+                                                                                                "lus",
+                                                                                                "lv",
+                                                                                                "mai",
+                                                                                                "mg",
+                                                                                                "mi",
+                                                                                                "mk",
+                                                                                                "ml",
+                                                                                                "mn",
+                                                                                                "mni-Mtei",
+                                                                                                "mr",
+                                                                                                "ms",
+                                                                                                "mt",
+                                                                                                "my",
+                                                                                                "nb",
+                                                                                                "ne",
+                                                                                                "nl",
+                                                                                                "nn",
+                                                                                                "no",
+                                                                                                "nso",
+                                                                                                "ny",
+                                                                                                "om",
+                                                                                                "or",
+                                                                                                "pa",
+                                                                                                "pl",
+                                                                                                "ps",
+                                                                                                "pt",
+                                                                                                "qu",
+                                                                                                "ro",
+                                                                                                "ru",
+                                                                                                "rw",
+                                                                                                "sa",
+                                                                                                "sd",
+                                                                                                "si",
+                                                                                                "sk",
+                                                                                                "sl",
+                                                                                                "sm",
+                                                                                                "sn",
+                                                                                                "so",
+                                                                                                "sq",
+                                                                                                "sr",
+                                                                                                "st",
+                                                                                                "su",
+                                                                                                "sv",
+                                                                                                "sw",
+                                                                                                "ta",
+                                                                                                "te",
+                                                                                                "tg",
+                                                                                                "th",
+                                                                                                "ti",
+                                                                                                "tk",
+                                                                                                "tn",
+                                                                                                "tr",
+                                                                                                "ts",
+                                                                                                "tt",
+                                                                                                "ug",
+                                                                                                "uk",
+                                                                                                "ur",
+                                                                                                "uz",
+                                                                                                "vi",
+                                                                                                "xh",
+                                                                                                "yi",
+                                                                                                "yo",
+                                                                                                "zh-Hans",
+                                                                                                "zh-Hant",
+                                                                                                "zu"
+                                                                                            ]
+                                                                                        },
+                                                                                        "label": {
+                                                                                            "type": "string",
+                                                                                            "minLength": 1
+                                                                                        }
+                                                                                    },
+                                                                                    "required": [
+                                                                                        "kind",
+                                                                                        "languageCode",
+                                                                                        "label"
+                                                                                    ],
+                                                                                    "additionalProperties": false
+                                                                                },
+                                                                                {
+                                                                                    "type": "object",
+                                                                                    "properties": {
+                                                                                        "kind": {
+                                                                                            "type": "string",
+                                                                                            "enum": [
+                                                                                                "raw"
+                                                                                            ]
+                                                                                        },
+                                                                                        "rawLanguageCode": {
+                                                                                            "type": "string",
+                                                                                            "minLength": 1
+                                                                                        },
+                                                                                        "label": {
+                                                                                            "type": "string",
+                                                                                            "minLength": 1
+                                                                                        }
+                                                                                    },
+                                                                                    "required": [
+                                                                                        "kind",
+                                                                                        "rawLanguageCode"
+                                                                                    ],
+                                                                                    "additionalProperties": false
+                                                                                },
+                                                                                {
+                                                                                    "type": "object",
+                                                                                    "properties": {
+                                                                                        "kind": {
+                                                                                            "type": "string",
+                                                                                            "enum": [
+                                                                                                "unknown"
+                                                                                            ]
+                                                                                        }
+                                                                                    },
+                                                                                    "required": [
+                                                                                        "kind"
+                                                                                    ],
+                                                                                    "additionalProperties": false
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "completed"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "targetLanguageCode",
+                                                                        "sourceLanguage",
+                                                                        "status"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                "variants": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "original": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "title": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 140
+                                                                                },
+                                                                                "subtitle": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 140
+                                                                                },
+                                                                                "bodyHtml": {
+                                                                                    "type": "string",
+                                                                                    "maxLength": 60000
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "title"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        },
+                                                                        "translated": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "title": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 140
+                                                                                },
+                                                                                "subtitle": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 140
+                                                                                },
+                                                                                "bodyHtml": {
+                                                                                    "type": "string",
+                                                                                    "maxLength": 60000
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "title"
                                                                             ],
                                                                             "additionalProperties": false
                                                                         }

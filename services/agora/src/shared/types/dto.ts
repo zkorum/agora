@@ -71,9 +71,11 @@ import {
     zodContentTranslationSubject,
     zodLocalizedConversationContent,
     zodLocalizedOpinionContent,
+    zodLocalizedProjectContent,
     zodLocalizedSurveyQuestionContent,
     zodLocalizedContentDisplayMode,
     zodConversationDisplayedContent,
+    zodProjectContentVariant,
     zodSurveyQuestionDisplayedContent,
     zodProjectOrganizationAttributionRole,
     zodProjectSlug,
@@ -199,10 +201,24 @@ const zodContentTranslationSurveyQuestionResponse = z
     })
     .strict();
 
+const zodContentTranslationProjectResponse = z
+    .object({
+        success: z.literal(true),
+        subject: z
+            .object({
+                kind: z.literal("project"),
+                projectSlug: zodProjectSlug,
+            })
+            .strict(),
+        content: zodLocalizedProjectContent,
+    })
+    .strict();
+
 const zodContentTranslationResponse = z.union([
     zodContentTranslationConversationResponse,
     zodContentTranslationOpinionResponse,
     zodContentTranslationSurveyQuestionResponse,
+    zodContentTranslationProjectResponse,
     z
         .object({
             success: z.literal(false),
@@ -424,12 +440,23 @@ const zodProjectPageContact = z
         websiteUrl: z.url().optional(),
     })
     .strict();
+const zodProjectPageMachineTranslation = z
+    .object({
+        targetLanguageCode: ZodSupportedDisplayLanguageCodes,
+        sourceLanguageCode: z.string().nullable().optional(),
+        sourceLanguageLabel: z.string().min(1).optional(),
+        status: z.enum(["not_requested", "pending", "running", "failed", "completed"]),
+        translatedContent: zodProjectContentVariant.optional(),
+    })
+    .strict();
 const zodProjectPageProject = z
     .object({
         slug: zodProjectSlug,
         title: zodProjectTitle,
         subtitle: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
-        bodyPlainText: zodConversationBodyPlainTextInput.optional(),
+        bodyHtml: zodConversationBodyOutput.optional(),
+        originalContent: zodProjectContentVariant,
+        machineTranslation: zodProjectPageMachineTranslation.optional(),
         bannerVariant: z.enum(["blue", "purple", "green"]),
         bannerImageUrl: z.url().optional(),
         participantCount: z.number().int().nonnegative(),

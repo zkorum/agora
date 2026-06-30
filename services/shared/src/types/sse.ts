@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { ZodSupportedDisplayLanguageCodes } from "../languages.js";
+import {
+    type SupportedDisplayLanguageCodes,
+    ZodSupportedDisplayLanguageCodes,
+} from "../languages.js";
 import {
     zodEventSlug,
     zodContentTranslationSubject,
@@ -15,6 +18,34 @@ import {
  */
 
 // Event-specific data schemas and types
+
+export function buildRealtimeConversationTopic({
+    conversationSlugId,
+}: {
+    conversationSlugId: string;
+}): string {
+    return `conversation:${conversationSlugId}`;
+}
+
+export function buildContentTranslationTopic({
+    conversationSlugId,
+    targetLanguageCode,
+}: {
+    conversationSlugId: string;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+}): string {
+    return `translation:conversation:${conversationSlugId}:target:${targetLanguageCode}`;
+}
+
+export function buildProjectContentTranslationTopic({
+    projectSlug,
+    targetLanguageCode,
+}: {
+    projectSlug: string;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+}): string {
+    return `translation:project:${projectSlug}:target:${targetLanguageCode}`;
+}
 
 /**
  * Data sent when a client successfully connects to the SSE stream

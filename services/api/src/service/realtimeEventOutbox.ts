@@ -39,6 +39,7 @@ import {
 } from "@/shared/types/zod.js";
 import {
     buildContentTranslationTopic,
+    buildProjectContentTranslationTopic,
     type RealtimeSSEManager,
 } from "./realtimeSSE.js";
 
@@ -903,6 +904,19 @@ export function createRealtimeEventOutboxBridge({
                 break;
             }
             case "content_translation_updated": {
+                if (realtimeEvent.data.subject.kind === "project") {
+                    realtimeSSEManager.broadcastToTopicSubscribers({
+                        topic: buildProjectContentTranslationTopic({
+                            projectSlug: realtimeEvent.data.subject.projectSlug,
+                            targetLanguageCode:
+                                realtimeEvent.data.targetLanguageCode,
+                        }),
+                        id: realtimeEvent.id,
+                        event: realtimeEvent.event,
+                        data: realtimeEvent.data,
+                    });
+                    break;
+                }
                 realtimeSSEManager.broadcastToTopicSubscribers({
                     topic: buildContentTranslationTopic({
                         conversationSlugId:
