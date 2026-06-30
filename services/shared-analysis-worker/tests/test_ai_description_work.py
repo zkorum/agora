@@ -10,6 +10,7 @@ from sqlalchemy.pool import StaticPool
 
 from agora_analysis_worker_shared.ai_description_work import (
     DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE,
+    SUPPORTED_EAGER_TRANSLATION_LANGUAGE_PAIRS,
     CandidateLocaleRequestRow,
     ClaimedDescriptionTranslationWorkItem,
     ClaimedLineageDescriptionWorkItem,
@@ -109,6 +110,18 @@ def _create_engine() -> Engine:
     )
     Base.metadata.create_all(engine)
     return engine
+
+
+def test_supported_eager_translation_language_pairs_use_matching_enum_types() -> None:
+    expected_display_codes = set(SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES)
+
+    assert {display_code for display_code, _ in SUPPORTED_EAGER_TRANSLATION_LANGUAGE_PAIRS} == (
+        expected_display_codes
+    )
+    for display_code, spoken_code in SUPPORTED_EAGER_TRANSLATION_LANGUAGE_PAIRS:
+        assert isinstance(display_code, DisplayLanguageCode)
+        assert isinstance(spoken_code, SpokenLanguageCode)
+        assert display_code.value == spoken_code.value
 
 
 def _insert_non_processable_ai_work_state(

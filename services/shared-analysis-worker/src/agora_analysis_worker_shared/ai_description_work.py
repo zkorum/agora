@@ -64,6 +64,7 @@ from agora_analysis_worker_shared.generated_models import (
     PremiumFeatureEntitlement,
     ProjectOrganizationOwnership,
     RealtimeEventOutbox,
+    SpokenLanguageCode,
 )
 from agora_analysis_worker_shared.generated_shared_types import (
     SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES,
@@ -75,6 +76,23 @@ POSTGRES_INSERT_BIND_PARAM_LIMIT = 60_000
 DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE = 4
 FIRST_PASS_MAX_EXISTING_ATTEMPT_COUNT = 1
 SUPPORTED_EAGER_TRANSLATION_TARGET_LANGUAGE_CODES = set(
+    SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES
+)
+
+
+def _matching_display_and_spoken_language_codes(
+    display_language_codes: tuple[DisplayLanguageCode, ...],
+) -> tuple[tuple[DisplayLanguageCode, SpokenLanguageCode], ...]:
+    spoken_language_code_by_value = {code.value: code for code in SpokenLanguageCode}
+    pairs: list[tuple[DisplayLanguageCode, SpokenLanguageCode]] = []
+    for display_language_code in display_language_codes:
+        spoken_language_code = spoken_language_code_by_value.get(display_language_code.value)
+        if spoken_language_code is not None:
+            pairs.append((display_language_code, spoken_language_code))
+    return tuple(pairs)
+
+
+SUPPORTED_EAGER_TRANSLATION_LANGUAGE_PAIRS = _matching_display_and_spoken_language_codes(
     SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES
 )
 
@@ -2492,11 +2510,19 @@ def _translation_work_candidate_relevance_conditions(
 
     eager_detected_language_candidate = and_(
         effective_preferred_candidate,
-        ConversationContent.source_language_code.in_(
-            sorted(SUPPORTED_EAGER_TRANSLATION_TARGET_LANGUAGE_CODES)
+        or_(
+            false(),
+            *(
+                and_(
+                    OpinionGroupDescriptionTranslationWork.locale
+                    == display_language_code,
+                    ConversationContent.source_language_code == spoken_language_code,
+                )
+                for display_language_code, spoken_language_code in (
+                    SUPPORTED_EAGER_TRANSLATION_LANGUAGE_PAIRS
+                )
+            ),
         ),
-        OpinionGroupDescriptionTranslationWork.locale
-        == ConversationContent.source_language_code,
     )
     eager_additional_language_candidate = and_(
         effective_preferred_candidate,
