@@ -594,7 +594,7 @@ def test_translation_work_demands_are_unique_per_description_locale() -> None:
     ]
 
 
-def test_eager_translation_targets_merge_primary_and_entitled_additional() -> None:
+def test_eager_translation_targets_merge_detected_and_entitled_configured() -> None:
     candidates = [
         EagerDescriptionCandidateRow(
             conversation_id=10,
@@ -664,6 +664,32 @@ def test_eager_translation_targets_merge_primary_and_entitled_additional() -> No
             locale="fr",
         ),
     ]
+
+
+def test_eager_translation_targets_include_detected_language_when_project_inherited() -> None:
+    candidates = [
+        EagerDescriptionCandidateRow(
+            conversation_id=10,
+            candidate_id=100,
+            language_code="fr",
+            language_settings_source="project_inherited",
+        )
+    ]
+    additional_locale_rows = [
+        EagerAdditionalTranslationLocaleRow(
+            conversation_id=10,
+            language_code="es",
+            dynamic_translation_entitled=True,
+        ),
+    ]
+
+    target_locales_by_candidate_id = eager_translation_target_locales_by_candidate(
+        candidates=candidates,
+        additional_locale_rows=additional_locale_rows,
+        supported_target_language_codes={"es", "fr"},
+    )
+
+    assert target_locales_by_candidate_id == {100: ("es", "fr")}
 
 
 def test_translation_claim_batches_keep_context_and_bound_size() -> None:

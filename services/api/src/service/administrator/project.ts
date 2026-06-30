@@ -911,7 +911,6 @@ export async function createProject({
     const normalizedLanguageSettings = normalizeProjectLanguageSettings({
         languageSettings: data.languageSettings,
         canUseDynamicTranslation: true,
-        sourceLanguageCode: projectLanguageMetadata.sourceLanguageCode,
     });
     const sourceSubtitleRequired = projectSubtitleRequiresLocalization(
         data.subtitle,
@@ -1852,13 +1851,9 @@ export async function updateProject({
                   data.languageSettings.dynamicTranslationEnabled,
           })
         : undefined;
-    const finalSourceLanguageCode =
-        projectLanguageMetadata?.sourceLanguageCode ??
-        project.sourceLanguageCode;
     const normalizedLanguageSettings = normalizeProjectLanguageSettings({
         languageSettings: data.languageSettings,
         canUseDynamicTranslation: true,
-        sourceLanguageCode: finalSourceLanguageCode,
     });
     const sourceSubtitleRequired = projectSubtitleRequiresLocalization(
         data.subtitle,
@@ -2312,8 +2307,6 @@ export async function updateProjectLanguageSettings({
             .where(eq(projectTable.id, project.projectId))
             .limit(1);
         const currentContent = currentContentRows.at(0);
-        let finalSourceLanguageCode =
-            currentContent?.sourceLanguageCode ?? null;
         let sourceLanguageMetadata: ContentLanguageMetadata | undefined;
 
         if (
@@ -2329,13 +2322,11 @@ export async function updateProjectLanguageSettings({
                 googleCloudCredentials,
                 useGoogleLanguageDetection: true,
             });
-            finalSourceLanguageCode = sourceLanguageMetadata.sourceLanguageCode;
         }
 
         const normalizedLanguageSettings = normalizeProjectLanguageSettings({
             languageSettings: data.languageSettings,
             canUseDynamicTranslation: true,
-            sourceLanguageCode: finalSourceLanguageCode,
         });
 
         if (!normalizedLanguageSettings.dynamicTranslationEnabled) {

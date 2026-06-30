@@ -244,8 +244,6 @@ export async function createNewPost({
             : normalizeConversationMultilingualSettings({
                   multilingualSettings: multilingualSetting,
                   canUseDynamicTranslation: true,
-                  sourceLanguageCode:
-                      conversationSourceLanguageMetadata.sourceLanguageCode,
               });
 
     await db.transaction(async (tx) => {

@@ -601,11 +601,9 @@ export async function updateConversation({
 
         // Create new conversation content
         let newContentId: number | undefined;
-        let finalSourceLanguageCode = conversation.currentSourceLanguageCode;
         if (contentChanged) {
             const sourceLanguageMetadata =
                 await getBlockSourceLanguageMetadata();
-            finalSourceLanguageCode = sourceLanguageMetadata.sourceLanguageCode;
             const newContentResult = await tx
                 .insert(conversationContentTable)
                 .values({
@@ -679,16 +677,12 @@ export async function updateConversation({
             (!currentMultilingualSetting.dynamicTranslationEnabled ||
                 surveyConfig !== undefined)
         ) {
-            const sourceLanguageMetadata =
-                await refreshCurrentConversationOwnedContentLanguageMetadata({
-                    db: tx,
-                    conversationId,
-                    googleCloudCredentials,
-                    useGoogleLanguageDetection: requestedDynamicTranslationEnabled,
-                });
-            if (sourceLanguageMetadata !== undefined) {
-                finalSourceLanguageCode = sourceLanguageMetadata.sourceLanguageCode;
-            }
+            await refreshCurrentConversationOwnedContentLanguageMetadata({
+                db: tx,
+                conversationId,
+                googleCloudCredentials,
+                useGoogleLanguageDetection: requestedDynamicTranslationEnabled,
+            });
         }
 
         const effectiveMultilingualSetting =
@@ -696,7 +690,6 @@ export async function updateConversation({
                 ? normalizeConversationMultilingualSettings({
                       multilingualSettings: requestedMultilingualSetting,
                       canUseDynamicTranslation,
-                      sourceLanguageCode: finalSourceLanguageCode,
                   })
                 : requestedMultilingualSetting;
         await upsertConversationMultilingualSetting({
