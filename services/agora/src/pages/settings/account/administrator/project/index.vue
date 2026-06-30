@@ -189,87 +189,13 @@
               v-model="externalImageIsFullPath"
               :label="t('externalImageIsFullPathLabel')"
             />
-            <q-expansion-item
-              class="grid-full language-expansion"
-              :label="t('additionalLanguagesTitle')"
-              dense-toggle
-            >
-              <div class="nested-form">
-                <div class="form-grid">
-                  <q-select
-                    v-model="externalLocalizationLanguage"
-                    outlined
-                    emit-value
-                    map-options
-                    :label="requiredLabel(t('externalLanguageLabel'))"
-                    :options="availableExternalLocalizationLanguageOptions"
-                  />
-                  <q-input
-                    v-model="externalLocalizationDisplayNameInput"
-                    outlined
-                    :maxlength="MAX_LENGTH_NAME_CREATOR"
-                    :label="requiredLabel(t('externalNameLabel'))"
-                  />
-                  <q-input
-                    v-model="externalLocalizationDescriptionInput"
-                    outlined
-                    autogrow
-                    :maxlength="MAX_LENGTH_DESCRIPTION_CREATOR"
-                    :label="optionalLabel(t('externalDescriptionLabel'))"
-                  />
-                  <q-input
-                    v-model="externalLocalizationWebsiteUrlInput"
-                    outlined
-                    type="url"
-                    :label="optionalLabel(t('externalWebsiteLabel'))"
-                  />
-                  <q-input
-                    v-model="externalLocalizationImagePathInput"
-                    outlined
-                    :label="optionalLabel(t('externalImagePathLabel'))"
-                  />
-                  <q-checkbox
-                    v-model="externalLocalizationImageIsFullPath"
-                    :label="t('externalImageIsFullPathLabel')"
-                  />
-                </div>
-                <q-btn
-                  class="section-action"
-                  no-caps
-                  outline
-                  color="primary"
-                  :disable="!canAddExternalLocalization"
-                  :label="t('addLanguageButton')"
-                  @click="addExternalLocalization"
-                />
-                <div
-                  v-if="externalLocalizations.length > 0"
-                  class="row-list compact-list"
-                >
-                  <div
-                    v-for="(localization, index) in externalLocalizations"
-                    :key="localization.languageCode"
-                    class="summary-row"
-                  >
-                    <div>
-                      <div class="summary-title">
-                        {{ getLanguageLabel(localization.languageCode) }}
-                      </div>
-                      <div class="summary-meta">
-                        {{ localization.displayName }}
-                      </div>
-                    </div>
-                    <q-btn
-                      flat
-                      color="negative"
-                      no-caps
-                      :label="t('removeButton')"
-                      @click="removeExternalLocalization(index)"
-                    />
-                  </div>
-                </div>
-              </div>
-            </q-expansion-item>
+            <ProjectExternalOrganizationLocalizationEditor
+              v-model="externalLocalizations"
+              class="grid-full"
+              :default-language-code="externalDefaultLanguage"
+              :display-language-options="displayLanguageOptions"
+              :labels="externalLocalizationEditorLabels"
+            />
           </template>
         </div>
         <q-btn
@@ -571,6 +497,13 @@
                 v-model="externalImageIsFullPath"
                 :label="t('externalImageIsFullPathLabel')"
               />
+              <ProjectExternalOrganizationLocalizationEditor
+                v-model="externalLocalizations"
+                class="grid-full"
+                :default-language-code="externalDefaultLanguage"
+                :display-language-options="displayLanguageOptions"
+                :labels="externalLocalizationEditorLabels"
+              />
             </template>
           </div>
           <q-btn
@@ -579,7 +512,7 @@
             outline
             no-caps
             :disable="!canAddManageAttribution"
-            :label="t('addAttributionButton')"
+            :label="manageAttributionActionLabel"
             @click="addManageAttribution"
           />
           <div v-if="manageAttributions.length === 0" class="empty-state">
@@ -599,6 +532,14 @@
                   {{ getAttributionLabel(attribution) }}
                 </div>
               </div>
+              <q-btn
+                v-if="attribution.source === 'external'"
+                flat
+                color="primary"
+                no-caps
+                :label="t('editAttributionButton')"
+                @click="editManageExternalAttribution(index)"
+              />
               <q-btn
                 flat
                 color="negative"
@@ -763,6 +704,7 @@ import { copyToClipboard, useQuasar } from "quasar";
 import AdminSectionHeader from "src/components/administrator/AdminSectionHeader.vue";
 import ProjectBodyEditor from "src/components/administrator/project/ProjectBodyEditor.vue";
 import ProjectContentLocalizationEditor from "src/components/administrator/project/ProjectContentLocalizationEditor.vue";
+import ProjectExternalOrganizationLocalizationEditor from "src/components/administrator/project/ProjectExternalOrganizationLocalizationEditor.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ConversationLanguageSettingDialog from "src/components/newConversation/dialog/ConversationLanguageSettingDialog.vue";
 import ConversationLanguageSettingsRow from "src/components/newConversation/dialog/ConversationLanguageSettingsRow.vue";
@@ -831,6 +773,10 @@ type ExternalLocalization = Extract<
   CreateProjectAttributionRequest,
   { source: "external" }
 >["additionalLocalizations"][number];
+type ExternalAttribution = Extract<
+  CreateProjectAttributionRequest,
+  { source: "external" }
+>;
 type ProjectContentLocalization =
   CreateProjectRequest["contentLocalizations"][number];
 
@@ -881,14 +827,6 @@ const externalDescription = ref("");
 const externalWebsiteUrl = ref("");
 const externalImagePath = ref("");
 const externalImageIsFullPath = ref(false);
-const externalLocalizationLanguage = ref<SupportedDisplayLanguageCodes>(
-  languageStore.displayLanguage
-);
-const externalLocalizationDisplayName = ref("");
-const externalLocalizationDescription = ref("");
-const externalLocalizationWebsiteUrl = ref("");
-const externalLocalizationImagePath = ref("");
-const externalLocalizationImageIsFullPath = ref(false);
 const externalLocalizations = ref<ExternalLocalization[]>([]);
 const attributions = ref<CreateProjectAttributionRequest[]>([]);
 const dismissedOwnerAttributionSlugs = ref<Set<string>>(new Set());
@@ -917,6 +855,7 @@ const manageContactRole = ref("");
 const manageContactEmail = ref("");
 const manageContactOrganizationSlug = ref<string | null>(null);
 const isSavingProject = ref(false);
+const editingManageAttributionIndex = ref<number | undefined>();
 let isPopulatingManageProject = false;
 let latestProjectDetailsRequest = 0;
 const showCreateLanguageSettingDialog = ref(false);
@@ -951,18 +890,6 @@ const externalDisplayNameInput = stringInputModel(externalDisplayName);
 const externalDescriptionInput = stringInputModel(externalDescription);
 const externalWebsiteUrlInput = stringInputModel(externalWebsiteUrl);
 const externalImagePathInput = stringInputModel(externalImagePath);
-const externalLocalizationDisplayNameInput = stringInputModel(
-  externalLocalizationDisplayName
-);
-const externalLocalizationDescriptionInput = stringInputModel(
-  externalLocalizationDescription
-);
-const externalLocalizationWebsiteUrlInput = stringInputModel(
-  externalLocalizationWebsiteUrl
-);
-const externalLocalizationImagePathInput = stringInputModel(
-  externalLocalizationImagePath
-);
 const contactNameInput = stringInputModel(contactName);
 const contactRoleInput = stringInputModel(contactRole);
 const contactEmailInput = stringInputModel(contactEmail);
@@ -1082,6 +1009,12 @@ const manageProjectLanguageDescription = computed(() =>
       : t("projectLanguageSettingsDescription")
 );
 
+const manageAttributionActionLabel = computed(() =>
+  editingManageAttributionIndex.value === undefined
+    ? t("addAttributionButton")
+    : t("updateAttributionButton")
+);
+
 const createLocalizedBodyRequired = computed(
   () => projectBodyPlainText.value.trim() !== ""
 );
@@ -1098,22 +1031,17 @@ const manageLocalizedSubtitleRequired = computed(
   () => manageSubtitle.value.trim() !== ""
 );
 
-const externalLocalizationLanguageCodes = computed(
-  () =>
-    new Set(
-      externalLocalizations.value.map(
-        (localization) => localization.languageCode
-      )
-    )
-);
-
-const availableExternalLocalizationLanguageOptions = computed(() =>
-  displayLanguageOptions.filter(
-    (option) =>
-      option.value !== externalDefaultLanguage.value &&
-      !externalLocalizationLanguageCodes.value.has(option.value)
-  )
-);
+const externalLocalizationEditorLabels = computed(() => ({
+  title: t("additionalLanguagesTitle"),
+  languageLabel: requiredLabel(t("externalLanguageLabel")),
+  nameLabel: requiredLabel(t("externalNameLabel")),
+  descriptionLabel: optionalLabel(t("externalDescriptionLabel")),
+  websiteLabel: optionalLabel(t("externalWebsiteLabel")),
+  imagePathLabel: optionalLabel(t("externalImagePathLabel")),
+  imageIsFullPathLabel: t("externalImageIsFullPathLabel"),
+  addLanguageButton: t("addLanguageButton"),
+  removeButton: t("removeButton"),
+}));
 
 const hasCompleteCreateManualLocalizations = computed(() =>
   hasCompleteManualLocalizations({
@@ -1170,16 +1098,6 @@ const canAddManageAttribution = computed(() => {
     isOptionalUrlValid(externalWebsiteUrl.value)
   );
 });
-
-const canAddExternalLocalization = computed(
-  () =>
-    externalLocalizationLanguage.value !== externalDefaultLanguage.value &&
-    !externalLocalizationLanguageCodes.value.has(
-      externalLocalizationLanguage.value
-    ) &&
-    externalLocalizationDisplayName.value.trim() !== "" &&
-    isOptionalUrlValid(externalLocalizationWebsiteUrl.value)
-);
 
 const hasContactInput = computed(
   () =>
@@ -1264,7 +1182,6 @@ watch(externalDefaultLanguage, () => {
     (localization) =>
       localization.languageCode !== externalDefaultLanguage.value
   );
-  selectFirstAvailableExternalLocalizationLanguage();
 });
 
 watch(ownerOrganizationSlugs, (selectedSlugs, previousSlugs) => {
@@ -1408,6 +1325,7 @@ watch(selectedProject, (project) => {
     manageContentLocalizations.value = [];
     manageAttributions.value = [];
     manageDismissedOwnerAttributionSlugs.value = new Set();
+    editingManageAttributionIndex.value = undefined;
     manageContactName.value = "";
     manageContactRole.value = "";
     manageContactEmail.value = "";
@@ -1432,6 +1350,7 @@ watch(selectedProject, (project) => {
   manageContentLocalizations.value = [...project.contentLocalizations];
   manageAttributions.value = [...project.attributions];
   manageDismissedOwnerAttributionSlugs.value = new Set();
+  editingManageAttributionIndex.value = undefined;
   manageContactName.value = project.contact?.name ?? "";
   manageContactRole.value = project.contact?.roleLabel ?? "";
   manageContactEmail.value = project.contact?.email ?? "";
@@ -1657,13 +1576,6 @@ async function refreshSelectedProjectDetails(
   }
 }
 
-function selectFirstAvailableExternalLocalizationLanguage(): void {
-  const option = availableExternalLocalizationLanguageOptions.value[0];
-  if (option !== undefined) {
-    externalLocalizationLanguage.value = option.value;
-  }
-}
-
 function hasCompleteManualLocalizations({
   languageCodes,
   localizations,
@@ -1691,9 +1603,11 @@ function hasCompleteManualLocalizations({
     const localization = localizationsByLanguageCode.get(languageCode);
     return (
       localization !== undefined &&
-      localization.projectTitle.trim() !== "" &&
-      (!localizedSubtitleRequired || localization.subtitle?.trim() !== "") &&
-      (!localizedBodyRequired || localization.bodyPlainText?.trim() !== "")
+      (localization.projectTitle?.trim() ?? "") !== "" &&
+      (!localizedSubtitleRequired ||
+        (localization.subtitle?.trim() ?? "") !== "") &&
+      (!localizedBodyRequired ||
+        (localization.bodyPlainText?.trim() ?? "") !== "")
     );
   });
 }
@@ -1759,7 +1673,7 @@ function addAttribution(): void {
     imagePath: optionalString(externalImagePath.value),
     isFullImagePath: externalImageIsFullPath.value,
     websiteUrl: optionalString(externalWebsiteUrl.value),
-    additionalLocalizations: [],
+    additionalLocalizations: [...externalLocalizations.value],
   });
   externalDefaultLanguage.value = languageStore.displayLanguage;
   externalDisplayName.value = "";
@@ -1767,7 +1681,7 @@ function addAttribution(): void {
   externalWebsiteUrl.value = "";
   externalImagePath.value = "";
   externalImageIsFullPath.value = false;
-  resetExternalLocalizationForm();
+  externalLocalizations.value = [];
 }
 
 function addManageAttribution(): void {
@@ -1778,21 +1692,28 @@ function addManageAttribution(): void {
   const role = zodProjectOrganizationAttributionRole.parse(
     attributionRole.value
   );
+  const editingIndex = editingManageAttributionIndex.value;
   if (attributionSource.value === "organization") {
     if (attributionOrganizationSlug.value === null) {
       return;
     }
 
-    manageAttributions.value.push({
+    const attribution: CreateProjectAttributionRequest = {
       source: "organization",
       role,
       organizationSlug: attributionOrganizationSlug.value,
-    });
+    };
+    if (editingIndex === undefined) {
+      manageAttributions.value.push(attribution);
+    } else {
+      manageAttributions.value.splice(editingIndex, 1, attribution);
+      editingManageAttributionIndex.value = undefined;
+    }
     attributionOrganizationSlug.value = null;
     return;
   }
 
-  manageAttributions.value.push({
+  const attribution: CreateProjectAttributionRequest = {
     source: "external",
     role,
     defaultLanguageCode: externalDefaultLanguage.value,
@@ -1801,51 +1722,21 @@ function addManageAttribution(): void {
     imagePath: optionalString(externalImagePath.value),
     isFullImagePath: externalImageIsFullPath.value,
     websiteUrl: optionalString(externalWebsiteUrl.value),
-    additionalLocalizations: externalLocalizations.value,
-  });
+    additionalLocalizations: [...externalLocalizations.value],
+  };
+  if (editingIndex === undefined) {
+    manageAttributions.value.push(attribution);
+  } else {
+    manageAttributions.value.splice(editingIndex, 1, attribution);
+    editingManageAttributionIndex.value = undefined;
+  }
   externalDefaultLanguage.value = languageStore.displayLanguage;
   externalDisplayName.value = "";
   externalDescription.value = "";
   externalWebsiteUrl.value = "";
   externalImagePath.value = "";
   externalImageIsFullPath.value = false;
-  resetExternalLocalizationForm();
-}
-
-function addExternalLocalization(): void {
-  if (!canAddExternalLocalization.value) {
-    return;
-  }
-
-  externalLocalizations.value.push({
-    languageCode: externalLocalizationLanguage.value,
-    displayName: externalLocalizationDisplayName.value.trim(),
-    description: externalLocalizationDescription.value.trim(),
-    websiteUrl: optionalString(externalLocalizationWebsiteUrl.value),
-    imagePath: optionalString(externalLocalizationImagePath.value),
-    isFullImagePath: externalLocalizationImageIsFullPath.value,
-  });
-  resetExternalLocalizationFields();
-  selectFirstAvailableExternalLocalizationLanguage();
-}
-
-function removeExternalLocalization(index: number): void {
-  externalLocalizations.value.splice(index, 1);
-  selectFirstAvailableExternalLocalizationLanguage();
-}
-
-function resetExternalLocalizationFields(): void {
-  externalLocalizationDisplayName.value = "";
-  externalLocalizationDescription.value = "";
-  externalLocalizationWebsiteUrl.value = "";
-  externalLocalizationImagePath.value = "";
-  externalLocalizationImageIsFullPath.value = false;
-}
-
-function resetExternalLocalizationForm(): void {
   externalLocalizations.value = [];
-  resetExternalLocalizationFields();
-  selectFirstAvailableExternalLocalizationLanguage();
 }
 
 function removeAttribution(index: number): void {
@@ -1874,6 +1765,46 @@ function removeManageAttribution(index: number): void {
   }
 
   manageAttributions.value.splice(index, 1);
+  if (editingManageAttributionIndex.value === undefined) {
+    return;
+  }
+
+  if (editingManageAttributionIndex.value === index) {
+    editingManageAttributionIndex.value = undefined;
+    return;
+  }
+
+  if (editingManageAttributionIndex.value > index) {
+    editingManageAttributionIndex.value -= 1;
+  }
+}
+
+function editManageExternalAttribution(index: number): void {
+  const attribution = manageAttributions.value[index];
+  if (attribution?.source !== "external") {
+    return;
+  }
+
+  populateExternalAttributionForm({ attribution });
+  editingManageAttributionIndex.value = index;
+}
+
+function populateExternalAttributionForm({
+  attribution,
+}: {
+  attribution: ExternalAttribution;
+}): void {
+  attributionSource.value = "external";
+  attributionRole.value = attribution.role;
+  externalDefaultLanguage.value = attribution.defaultLanguageCode;
+  externalDisplayName.value = attribution.displayName;
+  externalDescription.value = attribution.description ?? "";
+  externalWebsiteUrl.value = attribution.websiteUrl ?? "";
+  externalImagePath.value = attribution.imagePath ?? "";
+  externalImageIsFullPath.value = attribution.isFullImagePath;
+  externalLocalizations.value = attribution.additionalLocalizations.map(
+    (localization) => ({ ...localization })
+  );
 }
 
 function buildCreateRequest(): CreateProjectRequest {
@@ -1968,7 +1899,7 @@ function resetForm(): void {
   externalWebsiteUrl.value = "";
   externalImagePath.value = "";
   externalImageIsFullPath.value = false;
-  resetExternalLocalizationForm();
+  externalLocalizations.value = [];
   contactName.value = "";
   contactRole.value = "";
   contactEmail.value = "";
@@ -2136,10 +2067,6 @@ async function deleteSelectedProject(): Promise<void> {
   border-radius: 0.75rem;
 }
 
-.nested-form {
-  padding: 0 1rem 1rem;
-}
-
 .section-action {
   margin-top: 1rem;
 }
@@ -2207,10 +2134,6 @@ async function deleteSelectedProject(): Promise<void> {
   flex-direction: column;
   gap: 0.75rem;
   margin-top: 1rem;
-}
-
-.compact-list {
-  margin-top: 0.75rem;
 }
 
 .summary-row {

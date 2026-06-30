@@ -41,6 +41,8 @@ export interface AdministratorProjectTranslations {
   additionalLanguagesTitle: string;
   addLanguageButton: string;
   addAttributionButton: string;
+  updateAttributionButton: string;
+  editAttributionButton: string;
   noAttributions: string;
   removeButton: string;
   projectOwnerRole: string;
@@ -137,6 +139,8 @@ const en: AdministratorProjectTranslations = {
   additionalLanguagesTitle: "Additional languages",
   addLanguageButton: "Add language",
   addAttributionButton: "Add attribution to draft",
+  updateAttributionButton: "Update attribution",
+  editAttributionButton: "Edit",
   noAttributions:
     "No draft public attributions yet. Selecting an owner organization will add a removable project-owner attribution draft.",
   removeButton: "Remove",
