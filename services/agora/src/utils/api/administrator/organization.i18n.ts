@@ -7,8 +7,8 @@ export interface AdministratorOrganizationApiTranslations {
   failedToAddUserOrganizationMapping: string;
   removedUserOrganizationMapping: string;
   failedToRemoveUserOrganizationMapping: string;
-  archivedOrganization: string;
-  failedToArchiveOrganization: string;
+  deletedOrganization: string;
+  failedToDeleteOrganization: string;
   createdUserOrganization: string;
   failedToCreateUserOrganization: string;
   updatedOrganization: string;
@@ -21,25 +21,25 @@ export interface AdministratorOrganizationApiTranslations {
 }
 
 const en: AdministratorOrganizationApiTranslations = {
-    failedToFetchOrganizations: "Failed to fetch organizations",
-    failedToFetchOrganizationMembers: "Failed to fetch organization members",
-    addedUserOrganizationMapping: "Added user organization mapping",
-    failedToAddUserOrganizationMapping:
-      "Failed to add user organization mapping",
-    removedUserOrganizationMapping: "Removed user organization mapping",
-    failedToRemoveUserOrganizationMapping:
-      "Failed to remove user organization mapping",
-    archivedOrganization: "Archived organization",
-    failedToArchiveOrganization: "Failed to archive organization",
-    createdUserOrganization: "Created organization",
-    failedToCreateUserOrganization: "Failed to create organization",
-    updatedOrganization: "Updated organization",
-    failedToUpdateOrganization: "Failed to update organization",
-    updatedOrganizationSlug: "Updated organization slug",
-    failedToUpdateOrganizationSlug: "Failed to update organization slug",
-    organizationSlugAlreadyExists: "An organization with this slug already exists",
-    organizationNotFound: "Organization not found",
-    failedToGetUserOrganizations: "Failed to get user's organizations",
+  failedToFetchOrganizations: "Failed to fetch organizations",
+  failedToFetchOrganizationMembers: "Failed to fetch organization members",
+  addedUserOrganizationMapping: "Added user organization mapping",
+  failedToAddUserOrganizationMapping: "Failed to add user organization mapping",
+  removedUserOrganizationMapping: "Removed user organization mapping",
+  failedToRemoveUserOrganizationMapping:
+    "Failed to remove user organization mapping",
+  deletedOrganization: "Deleted organization",
+  failedToDeleteOrganization: "Failed to delete organization",
+  createdUserOrganization: "Created organization",
+  failedToCreateUserOrganization: "Failed to create organization",
+  updatedOrganization: "Updated organization",
+  failedToUpdateOrganization: "Failed to update organization",
+  updatedOrganizationSlug: "Updated organization slug",
+  failedToUpdateOrganizationSlug: "Failed to update organization slug",
+  organizationSlugAlreadyExists:
+    "An organization with this slug already exists",
+  organizationNotFound: "Organization not found",
+  failedToGetUserOrganizations: "Failed to get user's organizations",
 };
 
 export const administratorOrganizationApiTranslations: Record<
@@ -57,8 +57,8 @@ export const administratorOrganizationApiTranslations: Record<
     removedUserOrganizationMapping: "Asignación usuario-organización eliminada",
     failedToRemoveUserOrganizationMapping:
       "No se pudo eliminar la asignación usuario-organización",
-    archivedOrganization: "Organización archivada",
-    failedToArchiveOrganization: "No se pudo archivar la organización",
+    deletedOrganization: "Organización eliminada",
+    failedToDeleteOrganization: "No se pudo eliminar la organización",
     createdUserOrganization: "Organización creada",
     failedToCreateUserOrganization: "No se pudo crear la organización",
     updatedOrganization: "Organización actualizada",
@@ -70,14 +70,16 @@ export const administratorOrganizationApiTranslations: Record<
     ...en,
     failedToFetchOrganizations: "Échec de la récupération des organisations",
     failedToFetchOrganizationMembers: "Failed to fetch organization members",
-    addedUserOrganizationMapping: "Association utilisateur-organisation ajoutée",
+    addedUserOrganizationMapping:
+      "Association utilisateur-organisation ajoutée",
     failedToAddUserOrganizationMapping:
       "Échec de l’ajout de l’association utilisateur-organisation",
-    removedUserOrganizationMapping: "Association utilisateur-organisation supprimée",
+    removedUserOrganizationMapping:
+      "Association utilisateur-organisation supprimée",
     failedToRemoveUserOrganizationMapping:
       "Échec de la suppression de l’association utilisateur-organisation",
-    archivedOrganization: "Organisation archivée",
-    failedToArchiveOrganization: "Échec de l’archivage de l’organisation",
+    deletedOrganization: "Organisation supprimée",
+    failedToDeleteOrganization: "Échec de la suppression de l’organisation",
     createdUserOrganization: "Organisation créée",
     failedToCreateUserOrganization: "Échec de la création de l’organisation",
     updatedOrganization: "Organisation mise à jour",
@@ -93,8 +95,8 @@ export const administratorOrganizationApiTranslations: Record<
     failedToAddUserOrganizationMapping: "新增使用者組織對應失敗",
     removedUserOrganizationMapping: "已移除使用者組織對應",
     failedToRemoveUserOrganizationMapping: "移除使用者組織對應失敗",
-    archivedOrganization: "組織已封存",
-    failedToArchiveOrganization: "封存組織失敗",
+    deletedOrganization: "組織已刪除",
+    failedToDeleteOrganization: "刪除組織失敗",
     createdUserOrganization: "組織已建立",
     failedToCreateUserOrganization: "建立組織失敗",
     updatedOrganization: "組織已更新",
@@ -109,8 +111,8 @@ export const administratorOrganizationApiTranslations: Record<
     failedToAddUserOrganizationMapping: "添加用户组织映射失败",
     removedUserOrganizationMapping: "已移除用户组织映射",
     failedToRemoveUserOrganizationMapping: "移除用户组织映射失败",
-    archivedOrganization: "组织已归档",
-    failedToArchiveOrganization: "归档组织失败",
+    deletedOrganization: "组织已删除",
+    failedToDeleteOrganization: "删除组织失败",
     createdUserOrganization: "组织已创建",
     failedToCreateUserOrganization: "创建组织失败",
     updatedOrganization: "组织已更新",
@@ -127,8 +129,8 @@ export const administratorOrganizationApiTranslations: Record<
     removedUserOrganizationMapping: "ユーザーと組織の関連付けを削除しました",
     failedToRemoveUserOrganizationMapping:
       "ユーザーと組織の関連付けを削除できませんでした",
-    archivedOrganization: "組織をアーカイブしました",
-    failedToArchiveOrganization: "組織をアーカイブできませんでした",
+    deletedOrganization: "組織を削除しました",
+    failedToDeleteOrganization: "組織を削除できませんでした",
     createdUserOrganization: "組織を作成しました",
     failedToCreateUserOrganization: "組織を作成できませんでした",
     updatedOrganization: "組織を更新しました",
@@ -143,8 +145,8 @@ export const administratorOrganizationApiTranslations: Record<
     failedToAddUserOrganizationMapping: "فشل إضافة ربط المستخدم بالمؤسسة",
     removedUserOrganizationMapping: "تمت إزالة ربط المستخدم بالمؤسسة",
     failedToRemoveUserOrganizationMapping: "فشل إزالة ربط المستخدم بالمؤسسة",
-    archivedOrganization: "تمت أرشفة المؤسسة",
-    failedToArchiveOrganization: "فشلت أرشفة المؤسسة",
+    deletedOrganization: "تم حذف المؤسسة",
+    failedToDeleteOrganization: "فشل حذف المؤسسة",
     createdUserOrganization: "تم إنشاء المؤسسة",
     failedToCreateUserOrganization: "فشل إنشاء المؤسسة",
     updatedOrganization: "تم تحديث المؤسسة",
@@ -156,11 +158,13 @@ export const administratorOrganizationApiTranslations: Record<
     failedToFetchOrganizations: "دریافت سازمان‌ها ناموفق بود",
     failedToFetchOrganizationMembers: "Failed to fetch organization members",
     addedUserOrganizationMapping: "نگاشت کاربر به سازمان افزوده شد",
-    failedToAddUserOrganizationMapping: "افزودن نگاشت کاربر به سازمان ناموفق بود",
+    failedToAddUserOrganizationMapping:
+      "افزودن نگاشت کاربر به سازمان ناموفق بود",
     removedUserOrganizationMapping: "نگاشت کاربر به سازمان حذف شد",
-    failedToRemoveUserOrganizationMapping: "حذف نگاشت کاربر به سازمان ناموفق بود",
-    archivedOrganization: "سازمان بایگانی شد",
-    failedToArchiveOrganization: "بایگانی سازمان ناموفق بود",
+    failedToRemoveUserOrganizationMapping:
+      "حذف نگاشت کاربر به سازمان ناموفق بود",
+    deletedOrganization: "سازمان حذف شد",
+    failedToDeleteOrganization: "حذف سازمان ناموفق بود",
     createdUserOrganization: "سازمان ایجاد شد",
     failedToCreateUserOrganization: "ایجاد سازمان ناموفق بود",
     updatedOrganization: "سازمان به‌روزرسانی شد",
@@ -175,8 +179,8 @@ export const administratorOrganizationApiTranslations: Record<
     failedToAddUserOrganizationMapping: "הוספת שיוך המשתמש לארגון נכשלה",
     removedUserOrganizationMapping: "שיוך המשתמש לארגון הוסר",
     failedToRemoveUserOrganizationMapping: "הסרת שיוך המשתמש לארגון נכשלה",
-    archivedOrganization: "הארגון הועבר לארכיון",
-    failedToArchiveOrganization: "העברת הארגון לארכיון נכשלה",
+    deletedOrganization: "הארגון נמחק",
+    failedToDeleteOrganization: "מחיקת הארגון נכשלה",
     createdUserOrganization: "הארגון נוצר",
     failedToCreateUserOrganization: "יצירת הארגון נכשלה",
     updatedOrganization: "הארגון עודכן",
@@ -193,8 +197,8 @@ export const administratorOrganizationApiTranslations: Record<
     removedUserOrganizationMapping: "Колдонуучу-уюм байланышы өчүрүлдү",
     failedToRemoveUserOrganizationMapping:
       "Колдонуучу-уюм байланышын өчүрүү ишке ашкан жок",
-    archivedOrganization: "Уюм архивделди",
-    failedToArchiveOrganization: "Уюмду архивдөө ишке ашкан жок",
+    deletedOrganization: "Уюм өчүрүлдү",
+    failedToDeleteOrganization: "Уюмду өчүрүү ишке ашкан жок",
     createdUserOrganization: "Уюм түзүлдү",
     failedToCreateUserOrganization: "Уюм түзүү ишке ашкан жок",
     updatedOrganization: "Уюм жаңыртылды",
@@ -211,12 +215,13 @@ export const administratorOrganizationApiTranslations: Record<
     removedUserOrganizationMapping: "Связь пользователя с организацией удалена",
     failedToRemoveUserOrganizationMapping:
       "Не удалось удалить связь пользователя с организацией",
-    archivedOrganization: "Организация архивирована",
-    failedToArchiveOrganization: "Не удалось архивировать организацию",
+    deletedOrganization: "Организация удалена",
+    failedToDeleteOrganization: "Не удалось удалить организацию",
     createdUserOrganization: "Организация создана",
     failedToCreateUserOrganization: "Не удалось создать организацию",
     updatedOrganization: "Организация обновлена",
     failedToUpdateOrganization: "Не удалось обновить организацию",
-    failedToGetUserOrganizations: "Не удалось получить организации пользователя",
+    failedToGetUserOrganizations:
+      "Не удалось получить организации пользователя",
   },
 };

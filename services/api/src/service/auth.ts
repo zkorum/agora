@@ -2451,14 +2451,11 @@ export async function authenticateEmailAttempt({
     let emailLanguageCode: SupportedDisplayLanguageCodes = headerLanguageCode;
     if (type !== "register") {
         const storedDisplayLanguage = await db
-            .select({ languageCode: userDisplayLanguageTable.languageCode })
+            .select({
+                languageCode: userDisplayLanguageTable.languageCode,
+            })
             .from(userDisplayLanguageTable)
-            .where(
-                and(
-                    eq(userDisplayLanguageTable.userId, userId),
-                    eq(userDisplayLanguageTable.isDeleted, false),
-                ),
-            )
+            .where(eq(userDisplayLanguageTable.userId, userId))
             .limit(1);
         if (storedDisplayLanguage.length > 0) {
             const parsed = ZodSupportedDisplayLanguageCodes.safeParse(

@@ -1,8 +1,10 @@
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
+  type AdminOrganizationOption,
   type AdminOrganizationProperties,
   type CreateOrganizationRequest,
   Dto,
+  type GetOrganizationDetailsRequest,
   type OrganizationMember,
   type UpdateOrganizationLocalizationRequest,
   type UpdateOrganizationSlugRequest,
@@ -62,11 +64,11 @@ export function useBackendAdministratorOrganizationApi() {
     return responseSchema.parse(response.data);
   }
 
-  async function getAllOrganizations(): Promise<AdminOrganizationProperties[]> {
+  async function getOrganizationOptions(): Promise<AdminOrganizationOption[]> {
     try {
       const response = await postWithUcan({
-        url: "/api/v1/administrator/organization/get-all-organizations",
-        responseSchema: Dto.getAllOrganizationsResponse,
+        url: "/api/v1/administrator/organization/get-organization-options",
+        responseSchema: Dto.getOrganizationOptionsResponse,
       });
       return response?.organizationList ?? [];
     } catch (e) {
@@ -76,13 +78,33 @@ export function useBackendAdministratorOrganizationApi() {
     }
   }
 
+  async function getOrganizationDetails(
+    data: GetOrganizationDetailsRequest
+  ): Promise<AdminOrganizationProperties | undefined> {
+    try {
+      const params = Dto.getOrganizationDetailsRequest.parse(data);
+      const response = await postWithUcan({
+        url: "/api/v1/administrator/organization/get-organization-details",
+        data: params,
+        responseSchema: Dto.getOrganizationDetailsResponse,
+      });
+      return response?.organization;
+    } catch (e) {
+      console.error(e);
+      showNotifyMessage(t("failedToFetchOrganizations"));
+      return undefined;
+    }
+  }
+
   async function getOrganizationMembers({
     organizationName,
   }: {
     organizationName: string;
   }): Promise<OrganizationMember[]> {
     try {
-      const params = Dto.getOrganizationMembersRequest.parse({ organizationName });
+      const params = Dto.getOrganizationMembersRequest.parse({
+        organizationName,
+      });
       const response = await postWithUcan({
         url: "/api/v1/administrator/organization/get-members",
         data: params,
@@ -146,7 +168,7 @@ export function useBackendAdministratorOrganizationApi() {
     }
   }
 
-  async function archiveOrganization({
+  async function deleteOrganization({
     organizationName,
   }: {
     organizationName: string;
@@ -159,11 +181,11 @@ export function useBackendAdministratorOrganizationApi() {
         url: "/api/v1/administrator/organization/delete-organization",
         data: params,
       });
-      showNotifyMessage(t("archivedOrganization"));
+      showNotifyMessage(t("deletedOrganization"));
       return true;
     } catch (e) {
       console.error(e);
-      showNotifyMessage(t("failedToArchiveOrganization"));
+      showNotifyMessage(t("failedToDeleteOrganization"));
       return false;
     }
   }
@@ -254,13 +276,14 @@ export function useBackendAdministratorOrganizationApi() {
   }
 
   return {
-    archiveOrganization,
+    deleteOrganization,
     createOrganization,
     updateOrganizationLocalization,
     updateOrganizationSlug,
     addUserOrganizationMapping,
     removeUserOrganizationMapping,
-    getAllOrganizations,
+    getOrganizationDetails,
+    getOrganizationOptions,
     getOrganizationMembers,
     getOrganizationsByUsername,
   };

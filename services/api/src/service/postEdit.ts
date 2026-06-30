@@ -53,7 +53,7 @@ import {
     type ContentLanguageMetadata,
     resolveContentLanguageMetadata,
 } from "./contentLanguageMetadata.js";
-import { normalizeTranslationLanguageSetting } from "./translationLanguageSetting.js";
+import { normalizeConversationMultilingualSettings } from "./translationLanguageSetting.js";
 
 interface GetConversationForEditProps {
     db: PostgresDatabase;
@@ -98,9 +98,12 @@ export async function getConversationForEdit({
         )
         .innerJoin(
             projectOrganizationOwnershipTable,
-            eq(
-                projectOrganizationOwnershipTable.projectId,
-                conversationTable.projectId,
+            and(
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    conversationTable.projectId,
+                ),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
             ),
         )
         .innerJoin(
@@ -112,9 +115,12 @@ export async function getConversationForEdit({
         )
         .leftJoin(
             conversationModerationTable,
-            eq(
-                conversationModerationTable.conversationId,
-                conversationTable.id,
+            and(
+                eq(
+                    conversationModerationTable.conversationId,
+                    conversationTable.id,
+                ),
+                isNull(conversationModerationTable.deletedAt),
             ),
         )
         .where(
@@ -299,9 +305,12 @@ export async function updateConversation({
             )
             .innerJoin(
                 projectOrganizationOwnershipTable,
-                eq(
-                    projectOrganizationOwnershipTable.projectId,
-                    conversationTable.projectId,
+                and(
+                    eq(
+                        projectOrganizationOwnershipTable.projectId,
+                        conversationTable.projectId,
+                    ),
+                    isNull(projectOrganizationOwnershipTable.deletedAt),
                 ),
             )
             .innerJoin(
@@ -313,9 +322,12 @@ export async function updateConversation({
             )
             .leftJoin(
                 conversationModerationTable,
-                eq(
-                    conversationModerationTable.conversationId,
-                    conversationTable.id,
+                and(
+                    eq(
+                        conversationModerationTable.conversationId,
+                        conversationTable.id,
+                    ),
+                    isNull(conversationModerationTable.deletedAt),
                 ),
             )
             .where(
@@ -612,8 +624,8 @@ export async function updateConversation({
             }
         }
 
-        const effectiveMultilingualSetting = normalizeTranslationLanguageSetting({
-            setting: multilingualSetting,
+        const effectiveMultilingualSetting = normalizeConversationMultilingualSettings({
+            multilingualSettings: multilingualSetting,
             canUseDynamicTranslation,
             sourceLanguageCode: finalSourceLanguageCode,
         });

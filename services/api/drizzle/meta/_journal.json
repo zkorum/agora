@@ -516,8 +516,22 @@
     {
       "idx": 73,
       "version": "7",
-      "when": 1782691994142,
-      "tag": "0073_bizarre_bloodstrike",
+      "when": 1782778821848,
+      "tag": "0073_clever_tusk",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1782779749107,
+      "tag": "0074_fair_argent",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1782779956585,
+      "tag": "0075_misty_midnight",
       "breakpoints": true
     }
   ]

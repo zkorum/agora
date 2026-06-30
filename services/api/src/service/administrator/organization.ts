@@ -10,8 +10,11 @@ import { useCommonUser } from "../common.js";
 import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
 import type {
+    AdminOrganizationOption,
     AdminOrganizationProperties,
     GetAllOrganizationsResponse,
+    GetOrganizationDetailsResponse,
+    GetOrganizationOptionsResponse,
     GetOrganizationMembersResponse,
     GetOrganizationsByUsernameResponse,
     UpdateOrganizationSlugResponse,
@@ -22,6 +25,7 @@ import type { OrganizationProperties } from "@/shared/types/zod.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
 import { ensureOrganizationMembershipBaselineCapabilities } from "../projectAccess.js";
+import { getOrganizationIdsWithActiveDynamicTranslationEntitlement } from "../premiumEntitlement.js";
 
 function buildOrganizationProperties({
     name,
@@ -84,12 +88,25 @@ function hasHttpStatusCode(error: unknown): error is { statusCode: number } {
 interface GetAllOrganizationsProps {
     db: PostgresJsDatabase;
     baseImageServiceUrl: string;
+    organizationSlug?: string;
 }
 
 export async function getAllOrganizations({
     db,
     baseImageServiceUrl,
+    organizationSlug,
 }: GetAllOrganizationsProps): Promise<GetAllOrganizationsResponse> {
+    const organizationWhereClause =
+        organizationSlug === undefined
+            ? and(
+                  eq(organizationTable.directoryVisibility, "listed"),
+                  isNull(organizationTable.deletedAt),
+              )
+            : and(
+                  eq(organizationTable.directoryVisibility, "listed"),
+                  isNull(organizationTable.deletedAt),
+                  eq(organizationTable.slug, organizationSlug),
+              );
     const organizationTableResponse = await db
         .select({
             id: organizationTable.id,
@@ -102,12 +119,7 @@ export async function getAllOrganizations({
             websiteUrl: organizationTable.websiteUrl,
         })
         .from(organizationTable)
-        .where(
-            and(
-                eq(organizationTable.directoryVisibility, "listed"),
-                isNull(organizationTable.deletedAt),
-            ),
-        );
+        .where(organizationWhereClause);
 
     const organizationIds = organizationTableResponse.map(
         (organization) => organization.id,
@@ -135,13 +147,21 @@ export async function getAllOrganizations({
                       ),
                   );
 
+    const dynamicTranslationOrganizationIds =
+        await getOrganizationIdsWithActiveDynamicTranslationEntitlement({
+            db,
+            organizationIds,
+            now: new Date(),
+        });
+
     const localizationsByOrganizationId = new Map<
         number,
         AdminOrganizationProperties["localizations"]
     >();
     for (const localization of localizationRows) {
         const localizations =
-            localizationsByOrganizationId.get(localization.organizationId) ?? [];
+            localizationsByOrganizationId.get(localization.organizationId) ??
+            [];
         const websiteUrl = optionalUrl(localization.websiteUrl);
         const imagePath = optionalText(localization.imagePath);
         localizations.push({
@@ -160,15 +180,6 @@ export async function getAllOrganizations({
 
     const organizationList: AdminOrganizationProperties[] = [];
     for (const response of organizationTableResponse) {
-        const defaultLanguageCode = response.defaultLanguageCode;
-        if (defaultLanguageCode === null) {
-            log.warn(
-                { organizationSlug: response.slug },
-                "[AdminOrganization] Skipping organization without default language",
-            );
-            continue;
-        }
-
         organizationList.push({
             ...buildOrganizationProperties({
                 name: response.name,
@@ -179,14 +190,76 @@ export async function getAllOrganizations({
                 websiteUrl: response.websiteUrl,
                 baseImageServiceUrl,
             }),
-            defaultLanguageCode,
+            defaultLanguageCode: response.defaultLanguageCode,
             localizations: localizationsByOrganizationId.get(response.id) ?? [],
+            canUseDynamicTranslation: dynamicTranslationOrganizationIds.has(
+                response.id,
+            ),
         });
     }
 
     return {
         organizationList: organizationList,
     };
+}
+
+export async function getOrganizationDetails({
+    db,
+    baseImageServiceUrl,
+    organizationSlug,
+}: {
+    db: PostgresJsDatabase;
+    baseImageServiceUrl: string;
+    organizationSlug: string;
+}): Promise<GetOrganizationDetailsResponse> {
+    const response = await getAllOrganizations({
+        db,
+        baseImageServiceUrl,
+        organizationSlug,
+    });
+    return { organization: response.organizationList.at(0) };
+}
+
+export async function getOrganizationOptions({
+    db,
+}: {
+    db: PostgresJsDatabase;
+}): Promise<GetOrganizationOptionsResponse> {
+    const organizationRows = await db
+        .select({
+            id: organizationTable.id,
+            name: organizationTable.displayName,
+            slug: organizationTable.slug,
+        })
+        .from(organizationTable)
+        .where(
+            and(
+                eq(organizationTable.directoryVisibility, "listed"),
+                isNull(organizationTable.deletedAt),
+            ),
+        );
+
+    const organizationIds = organizationRows.map(
+        (organization) => organization.id,
+    );
+    const dynamicTranslationOrganizationIds =
+        await getOrganizationIdsWithActiveDynamicTranslationEntitlement({
+            db,
+            organizationIds,
+            now: new Date(),
+        });
+
+    const organizationList: AdminOrganizationOption[] = organizationRows.map(
+        (organization) => ({
+            name: organization.name,
+            slug: organization.slug,
+            canUseDynamicTranslation: dynamicTranslationOrganizationIds.has(
+                organization.id,
+            ),
+        }),
+    );
+
+    return { organizationList };
 }
 
 export async function getOrganizationMembers({
@@ -201,13 +274,20 @@ export async function getOrganizationMembers({
         .from(organizationMembershipTable)
         .innerJoin(
             organizationTable,
-            eq(organizationTable.id, organizationMembershipTable.organizationId),
+            eq(
+                organizationTable.id,
+                organizationMembershipTable.organizationId,
+            ),
         )
-        .innerJoin(userTable, eq(userTable.id, organizationMembershipTable.userId))
+        .innerJoin(
+            userTable,
+            eq(userTable.id, organizationMembershipTable.userId),
+        )
         .where(
             and(
                 eq(organizationTable.slug, organizationName),
                 eq(organizationTable.directoryVisibility, "listed"),
+                isNull(organizationMembershipTable.deletedAt),
                 isNull(organizationTable.deletedAt),
                 eq(userTable.isDeleted, false),
             ),
@@ -340,6 +420,7 @@ export async function getOrganizationIdsByUserId({
         .where(
             and(
                 eq(organizationMembershipTable.userId, userId),
+                isNull(organizationMembershipTable.deletedAt),
                 isNull(organizationTable.deletedAt),
             ),
         );
@@ -374,6 +455,7 @@ export async function getOrganizationMembershipsByUserId({
             and(
                 eq(organizationMembershipTable.userId, userId),
                 eq(organizationTable.directoryVisibility, "listed"),
+                isNull(organizationMembershipTable.deletedAt),
                 isNull(organizationTable.deletedAt),
             ),
         );
@@ -418,11 +500,13 @@ export async function removeUserOrganizationMapping({
     }
 
     const deletedMapping = await db
-        .delete(organizationMembershipTable)
+        .update(organizationMembershipTable)
+        .set({ deletedAt: new Date(), updatedAt: new Date() })
         .where(
             and(
                 eq(organizationMembershipTable.userId, targetUserId),
                 eq(organizationMembershipTable.organizationId, organizationId),
+                isNull(organizationMembershipTable.deletedAt),
             ),
         )
         .returning();

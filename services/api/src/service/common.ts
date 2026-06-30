@@ -186,6 +186,7 @@ export function useCommonPost() {
                         conversationId,
                     ),
                     eq(conversationModerationTable.moderationAction, "lock"),
+                    isNull(conversationModerationTable.deletedAt),
                 ),
             )
             .limit(1);
@@ -299,9 +300,12 @@ export function useCommonPost() {
             )
             .innerJoin(
                 projectOrganizationOwnershipTable,
-                eq(
-                    projectOrganizationOwnershipTable.projectId,
-                    conversationTable.projectId,
+                and(
+                    eq(
+                        projectOrganizationOwnershipTable.projectId,
+                        conversationTable.projectId,
+                    ),
+                    isNull(projectOrganizationOwnershipTable.deletedAt),
                 ),
             )
             .innerJoin(
@@ -320,9 +324,12 @@ export function useCommonPost() {
             )
             .leftJoin(
                 conversationModerationTable,
-                eq(
-                    conversationModerationTable.conversationId,
-                    conversationTable.id,
+                and(
+                    eq(
+                        conversationModerationTable.conversationId,
+                        conversationTable.id,
+                    ),
+                    isNull(conversationModerationTable.deletedAt),
                 ),
             )
             // whereClause = and(whereClause, lt(postTable.createdAt, lastCreatedAt));

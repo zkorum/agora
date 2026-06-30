@@ -1,5 +1,9 @@
 <template>
-  <span :class="{ gradientColor: addGradient }">
+  <span
+    :class="{
+      gradientColor: addGradient,
+    }"
+  >
     {{ text }}
   </span>
 </template>
@@ -13,8 +17,17 @@ defineProps<{
 
 <style lang="scss" scoped>
 .gradientColor {
-  background-image: $gradient-hero;
-  color: transparent;
+  display: inline-block;
+  color: $primary;
+  background-image: linear-gradient(180deg, $primary, #4f92f6);
+  -webkit-background-clip: text;
   background-clip: text;
+}
+
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .gradientColor {
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
 }
 </style>

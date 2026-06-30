@@ -7,7 +7,7 @@
     </router-view>
   </PersistentLayout>
 
-  <!-- Non-drawer pages (onboarding, embed, welcome, survey onboarding, 404) render their own layout -->
+  <!-- Non-drawer pages (onboarding, project, embed, welcome, survey onboarding, 404) render their own layout -->
   <router-view v-else />
 
   <PostSignupPreferencesDialog />
@@ -82,6 +82,7 @@ useRealtimeSSE({
 });
 const nonDrawerRoutePatterns = [
   "/onboarding/",
+  "/project/[projectSlug]",
   "/verify/",
   "/welcome",
   "/conversation/[postSlugId].onboarding",

@@ -571,7 +571,10 @@ export async function fetchOpinionsByPostId({
         )
         .leftJoin(
             opinionModerationTable,
-            eq(opinionModerationTable.opinionId, opinionTable.id),
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
+            ),
         );
 
     // Add vote table join for discover (authenticated) and my_votes filters
@@ -829,6 +832,7 @@ export async function fetchOpinionsByOpinionSlugIdList({
                     conversationTranslationTargetLanguageTable.languageCode,
                     displayContentViewerPreferences.displayLanguage,
                 ),
+                isNull(conversationTranslationTargetLanguageTable.deletedAt),
             ),
         )
         .leftJoin(
@@ -846,7 +850,10 @@ export async function fetchOpinionsByOpinionSlugIdList({
         )
         .leftJoin(
             opinionModerationTable,
-            eq(opinionModerationTable.opinionId, opinionTable.id),
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
+            ),
         )
         .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
         .orderBy(desc(opinionTable.createdAt))
@@ -1141,6 +1148,7 @@ function getAnalysisOpinionMuteJoin({
         : and(
               eq(userMutePreferenceTable.sourceUserId, personalizationUserId),
               eq(userMutePreferenceTable.targetUserId, opinionTable.authorId),
+              isNull(userMutePreferenceTable.deletedAt),
           );
 }
 
@@ -1219,7 +1227,10 @@ async function fetchAnalysisOpinionRowsByIds({
         )
         .leftJoin(
             opinionModerationTable,
-            eq(opinionModerationTable.opinionId, opinionTable.id),
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
+            ),
         )
         .leftJoin(
             userMutePreferenceTable,
@@ -1291,7 +1302,10 @@ async function fetchAnalysisOpinionRowsForList({
         )
         .leftJoin(
             opinionModerationTable,
-            eq(opinionModerationTable.opinionId, opinionTable.id),
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
+            ),
         )
         .leftJoin(
             userMutePreferenceTable,
@@ -2508,7 +2522,10 @@ async function getHasVotedOnAllAvailableOpinions({
         )
         .leftJoin(
             opinionModerationTable,
-            eq(opinionModerationTable.opinionId, opinionTable.id),
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
+            ),
         )
         .leftJoin(
             voteTable,
@@ -2523,6 +2540,7 @@ async function getHasVotedOnAllAvailableOpinions({
             and(
                 eq(userMutePreferenceTable.sourceUserId, personalizationUserId),
                 eq(userMutePreferenceTable.targetUserId, opinionTable.authorId),
+                isNull(userMutePreferenceTable.deletedAt),
             ),
         )
         .where(
@@ -2892,7 +2910,12 @@ export async function deleteOpinionBySlugId({
         const moderationRows = await tx
             .select({ moderationId: opinionModerationTable.id })
             .from(opinionModerationTable)
-            .where(eq(opinionModerationTable.opinionId, opinion.opinionId))
+            .where(
+                and(
+                    eq(opinionModerationTable.opinionId, opinion.opinionId),
+                    isNull(opinionModerationTable.deletedAt),
+                ),
+            )
             .limit(1);
         const activeVoteRows = await tx
             .select({ voteId: voteTable.id })

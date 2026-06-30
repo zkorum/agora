@@ -215,6 +215,11 @@ class ImportMethod(StrEnum):
     csv = "csv"
 
 
+class ProjectContentTranslationSourceKind(StrEnum):
+    manual = "manual"
+    machine = "machine"
+
+
 class DirectoryVisibility(StrEnum):
     listed = "listed"
     unlisted = "unlisted"
@@ -407,22 +412,11 @@ class Conversation(Base):
     last_reacted_at: Mapped[datetime] = mapped_column(DateTime)
 
 
-class ConversationTranslationSetting(Base):
-    __tablename__ = "conversation_translation_setting"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    conversation_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
-    created_at: Mapped[datetime] = mapped_column(DateTime)
-    updated_at: Mapped[datetime] = mapped_column(DateTime)
-
-
 class ConversationTranslationTargetLanguage(Base):
     __tablename__ = "conversation_translation_target_language"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    conversation_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    translation_setting_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    conversation_id: Mapped[int] = mapped_column(Integer)
     language_code: Mapped[DisplayLanguageCode] = mapped_column(
         SaEnum(
             DisplayLanguageCode,
@@ -432,6 +426,7 @@ class ConversationTranslationTargetLanguage(Base):
         ),
     )
     created_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class OpinionContent(Base):
@@ -530,8 +525,8 @@ class ProjectContent(Base):
     subtitle: Mapped[str | None] = mapped_column(String(140), nullable=True)
     body: Mapped[str | None] = mapped_column(Text, nullable=True)
     body_plain_text: Mapped[str | None] = mapped_column(Text, nullable=True)
-    hero_image_path: Mapped[str | None] = mapped_column(Text, nullable=True)
-    hero_image_is_full_path: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    banner_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    banner_is_full_path: Mapped[bool] = mapped_column(Boolean, server_default="false")
     source_language_code: Mapped[SpokenLanguageCode | None] = mapped_column(
         SaEnum(
             SpokenLanguageCode,
@@ -553,6 +548,7 @@ class ProjectContent(Base):
     )
     source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class ProjectContentTranslation(Base):
@@ -571,6 +567,14 @@ class ProjectContentTranslation(Base):
     translated_title: Mapped[str] = mapped_column(Text)
     translated_subtitle: Mapped[str | None] = mapped_column(Text, nullable=True)
     translated_body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_kind: Mapped[ProjectContentTranslationSourceKind] = mapped_column(
+        SaEnum(
+            ProjectContentTranslationSourceKind,
+            name="project_content_translation_source_kind",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
     source_language_code: Mapped[SpokenLanguageCode | None] = mapped_column(
         SaEnum(
             SpokenLanguageCode,
@@ -593,6 +597,7 @@ class ProjectContentTranslation(Base):
     source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class Project(Base):
@@ -631,6 +636,7 @@ class ProjectTranslationTargetLanguage(Base):
         ),
     )
     created_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class RealtimeEventOutbox(Base):

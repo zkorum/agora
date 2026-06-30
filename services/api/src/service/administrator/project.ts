@@ -1,8 +1,18 @@
 import { httpErrors } from "@fastify/sensible";
-import { and, inArray, eq, isNull } from "drizzle-orm";
+import {
+    and,
+    eq,
+    inArray,
+    isNull,
+    type TablesRelationalConfig,
+} from "drizzle-orm";
+import type { PgQueryResultHKT, PgTransaction } from "drizzle-orm/pg-core";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
+    contentTranslationWorkTable,
     organizationTable,
+    projectContentBannerLocalizationTable,
+    projectContentTranslationTable,
     projectContactTable,
     projectContentTable,
     projectExternalOrganizationTable,
@@ -13,35 +23,48 @@ import {
     projectTranslationTargetLanguageTable,
 } from "@/shared-backend/schema.js";
 import type {
+    AdminProjectOption,
     CreateProjectAttributionRequest,
     CreateProjectFailureReason,
     CreateProjectRequest,
     CreateProjectResponse,
     GetAllProjectsResponse,
+    GetProjectDetailsResponse,
+    GetProjectOptionsResponse,
     UpdateProjectRequest,
     UpdateProjectResponse,
     UpdateProjectExternalOrganizationLocalizationRequest,
     UpdateProjectExternalOrganizationLocalizationResponse,
-    UpdateProjectLanguageSettingRequest,
-    UpdateProjectLanguageSettingResponse,
+    UpdateProjectLanguageSettingsRequest,
+    UpdateProjectLanguageSettingsResponse,
     UpdateProjectSlugResponse,
 } from "@/shared/types/dto.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import { normalizeEmail } from "@/shared/types/zod-email.js";
-import { htmlToCountedText } from "@/shared/shared.js";
+import { htmlToCountedText, validateRichTextInput } from "@/shared/shared.js";
+import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import {
     contentLanguageMetadataUpdateValues,
+    type ContentLanguageMetadata,
+    UNKNOWN_CONTENT_LANGUAGE_METADATA,
     resolveContentLanguageMetadata,
 } from "../contentLanguageMetadata.js";
 import {
     buildConversationLanguageDetectionCorpus,
     buildGoogleConversationLanguageDetectionCorpus,
 } from "../conversationLanguage.js";
-import { normalizeTranslationLanguageSetting } from "../translationLanguageSetting.js";
+import { hasActiveDynamicTranslationEntitlementForOrganizations } from "../premiumEntitlement.js";
+import { normalizeProjectLanguageSettings } from "../translationLanguageSetting.js";
 
 type ProjectOrganizationAttributionRole =
     CreateProjectAttributionRequest["role"];
+
+type UpdateProjectLanguageSettingsServiceResponse =
+    | (Extract<UpdateProjectLanguageSettingsResponse, { success: true }> & {
+          projectId: number;
+      })
+    | Extract<UpdateProjectLanguageSettingsResponse, { success: false }>;
 
 interface OrganizationRecord {
     id: number;
@@ -75,6 +98,29 @@ interface ExternalAttributionLocalization {
     isFullImagePath: boolean;
     websiteUrl: string | null;
 }
+
+interface SanitizedProjectBody {
+    body: string | undefined;
+    bodyPlainText: string;
+}
+
+type ProjectContentLocalization =
+    CreateProjectRequest["contentLocalizations"][number];
+interface SanitizedProjectContentLocalization {
+    languageCode: SupportedDisplayLanguageCodes;
+    projectTitle: string;
+    subtitle: string | null;
+    body: string | null;
+    bannerPath: string | null;
+    bannerIsFullPath: boolean;
+}
+type ProjectDatabase =
+    | PostgresJsDatabase
+    | PgTransaction<
+          PgQueryResultHKT,
+          Record<string, unknown>,
+          TablesRelationalConfig
+      >;
 
 type AttributionToInsert = RealAttribution | ExternalAttribution;
 
@@ -129,6 +175,474 @@ function uniqueStrings(values: string[]): string[] {
 function normalizeOptionalString(value: string | undefined): string | null {
     const trimmed = value?.trim();
     return trimmed === undefined || trimmed === "" ? null : trimmed;
+}
+
+function sanitizeProjectBody(body: string | undefined): SanitizedProjectBody {
+    if (body === undefined) {
+        return { body: undefined, bodyPlainText: "" };
+    }
+
+    let sanitizedBody: string;
+    try {
+        sanitizedBody = processUserGeneratedHtml(body, false, "input");
+    } catch (error) {
+        if (error instanceof Error) {
+            throw httpErrors.badRequest(error.message);
+        }
+        throw httpErrors.badRequest("Error while sanitizing project body");
+    }
+
+    const validationResult = validateRichTextInput({
+        htmlString: sanitizedBody,
+        mode: "conversation",
+    });
+    if (!validationResult.success) {
+        throw httpErrors.badRequest(validationResult.reason);
+    }
+
+    sanitizedBody = processUserGeneratedHtml(sanitizedBody, true, "input");
+    const bodyPlainText = htmlToCountedText(sanitizedBody);
+    const normalizedBody = normalizeOptionalString(sanitizedBody);
+    if (normalizedBody === null) {
+        return { body: undefined, bodyPlainText: "" };
+    }
+
+    return { body: normalizedBody, bodyPlainText };
+}
+
+function buildProjectBannerLocalizationRows({
+    projectContentId,
+    localizations,
+}: {
+    projectContentId: number;
+    localizations: readonly SanitizedProjectContentLocalization[];
+}): {
+    projectContentId: number;
+    languageCode: SupportedDisplayLanguageCodes;
+    bannerPath: string;
+    bannerIsFullPath: boolean;
+}[] {
+    return localizations.flatMap((localization) => {
+        if (localization.bannerPath === null) {
+            return [];
+        }
+
+        return [
+            {
+                projectContentId,
+                languageCode: localization.languageCode,
+                bannerPath: localization.bannerPath,
+                bannerIsFullPath: localization.bannerIsFullPath,
+            },
+        ];
+    });
+}
+
+function sanitizeProjectContentLocalizations({
+    localizations,
+    targetLanguageCodes,
+    localizedSubtitleRequired,
+    localizedBodyRequired,
+}: {
+    localizations: readonly ProjectContentLocalization[];
+    targetLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+    localizedSubtitleRequired: boolean;
+    localizedBodyRequired: boolean;
+}): SanitizedProjectContentLocalization[] {
+    const targetLanguageCodeSet = new Set(targetLanguageCodes);
+    return localizations.map((localization) => {
+        if (!targetLanguageCodeSet.has(localization.languageCode)) {
+            throw httpErrors.badRequest(
+                "Project content localization language must be one of the active project target languages",
+            );
+        }
+
+        const sanitizedBody = sanitizeProjectBody(localization.body);
+        const subtitle = normalizeOptionalString(localization.subtitle);
+        if (localizedSubtitleRequired && subtitle === null) {
+            throw httpErrors.badRequest(
+                "Project content localization subtitle is required when the project subtitle is set",
+            );
+        }
+        if (localizedBodyRequired && sanitizedBody.body === undefined) {
+            throw httpErrors.badRequest(
+                "Project content localization body is required when the project body is set",
+            );
+        }
+
+        return {
+            languageCode: localization.languageCode,
+            projectTitle: localization.projectTitle.trim(),
+            subtitle,
+            body: sanitizedBody.body ?? null,
+            bannerPath: normalizeOptionalString(localization.bannerPath),
+            bannerIsFullPath: localization.bannerIsFullPath,
+        };
+    });
+}
+
+function assertCompleteManualProjectContentLocalizations({
+    targetLanguageCodes,
+    localizations,
+    sourceSubtitleRequired,
+    sourceBodyRequired,
+}: {
+    targetLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+    localizations: readonly SanitizedProjectContentLocalization[];
+    sourceSubtitleRequired: boolean;
+    sourceBodyRequired: boolean;
+}): void {
+    const localizationsByLanguageCode = new Map(
+        localizations.map((localization) => [
+            localization.languageCode,
+            localization,
+        ]),
+    );
+
+    for (const languageCode of targetLanguageCodes) {
+        const localization = localizationsByLanguageCode.get(languageCode);
+        if (
+            localization === undefined ||
+            localization.projectTitle.trim() === "" ||
+            (sourceSubtitleRequired && localization.subtitle === null) ||
+            (sourceBodyRequired && localization.body === null)
+        ) {
+            throw httpErrors.badRequest(
+                "Complete project content localization is required for every active target language when dynamic translation is off",
+            );
+        }
+    }
+}
+
+function projectBodyRequiresLocalization(
+    bodyPlainText: string | null | undefined,
+): boolean {
+    return normalizeOptionalString(bodyPlainText ?? undefined) !== null;
+}
+
+function projectSubtitleRequiresLocalization(
+    subtitle: string | null | undefined,
+): boolean {
+    return normalizeOptionalString(subtitle ?? undefined) !== null;
+}
+
+async function hasCompleteStoredManualProjectContentLocalizations({
+    db,
+    projectContentId,
+    targetLanguageCodes,
+    sourceSubtitleRequired,
+    sourceBodyRequired,
+}: {
+    db: ProjectDatabase;
+    projectContentId: number;
+    targetLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+    sourceSubtitleRequired: boolean;
+    sourceBodyRequired: boolean;
+}): Promise<boolean> {
+    if (targetLanguageCodes.length === 0) {
+        return true;
+    }
+
+    const rows = await db
+        .select({
+            languageCode: projectContentTranslationTable.displayLanguageCode,
+            title: projectContentTranslationTable.translatedTitle,
+            subtitle: projectContentTranslationTable.translatedSubtitle,
+            body: projectContentTranslationTable.translatedBody,
+        })
+        .from(projectContentTranslationTable)
+        .where(
+            and(
+                eq(
+                    projectContentTranslationTable.projectContentId,
+                    projectContentId,
+                ),
+                eq(projectContentTranslationTable.sourceKind, "manual"),
+                isNull(projectContentTranslationTable.deletedAt),
+                inArray(
+                    projectContentTranslationTable.displayLanguageCode,
+                    targetLanguageCodes,
+                ),
+            ),
+        );
+    const rowsByLanguageCode = new Map(
+        rows.map((row) => [row.languageCode, row]),
+    );
+
+    return targetLanguageCodes.every((languageCode) => {
+        const row = rowsByLanguageCode.get(languageCode);
+        return (
+            row !== undefined &&
+            row.title.trim() !== "" &&
+            (!sourceSubtitleRequired ||
+                projectSubtitleRequiresLocalization(row.subtitle)) &&
+            (!sourceBodyRequired ||
+                projectBodyRequiresLocalization(htmlToCountedText(row.body ?? "")))
+        );
+    });
+}
+
+async function syncProjectContentLocalizations({
+    db,
+    projectContentId,
+    localizations,
+    targetLanguageCodes,
+    sourceLanguageMetadata,
+    now,
+}: {
+    db: ProjectDatabase;
+    projectContentId: number;
+    localizations: readonly SanitizedProjectContentLocalization[];
+    targetLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+    sourceLanguageMetadata: ContentLanguageMetadata;
+    now: Date;
+}): Promise<void> {
+    const providedLanguageCodeSet = new Set(
+        localizations.map((localization) => localization.languageCode),
+    );
+    const omittedTargetLanguageCodes = targetLanguageCodes.filter(
+        (languageCode) => !providedLanguageCodeSet.has(languageCode),
+    );
+    if (omittedTargetLanguageCodes.length > 0) {
+        await db
+            .update(projectContentTranslationTable)
+            .set({ deletedAt: now, updatedAt: now })
+            .where(
+                and(
+                    eq(
+                        projectContentTranslationTable.projectContentId,
+                        projectContentId,
+                    ),
+                    eq(projectContentTranslationTable.sourceKind, "manual"),
+                    inArray(
+                        projectContentTranslationTable.displayLanguageCode,
+                        omittedTargetLanguageCodes,
+                    ),
+                    isNull(projectContentTranslationTable.deletedAt),
+                ),
+            );
+    }
+
+    for (const localization of localizations) {
+        await db
+            .insert(projectContentTranslationTable)
+            .values({
+                projectContentId,
+                displayLanguageCode: localization.languageCode,
+                translatedTitle: localization.projectTitle,
+                translatedSubtitle: localization.subtitle,
+                translatedBody: localization.body,
+                sourceKind: "manual",
+                ...contentLanguageMetadataUpdateValues(sourceLanguageMetadata),
+            })
+            .onConflictDoUpdate({
+                target: [
+                    projectContentTranslationTable.projectContentId,
+                    projectContentTranslationTable.displayLanguageCode,
+                ],
+                targetWhere: isNull(projectContentTranslationTable.deletedAt),
+                set: {
+                    translatedTitle: localization.projectTitle,
+                    translatedSubtitle: localization.subtitle,
+                    translatedBody: localization.body,
+                    sourceKind: "manual",
+                    deletedAt: null,
+                    ...contentLanguageMetadataUpdateValues(
+                        sourceLanguageMetadata,
+                    ),
+                    updatedAt: now,
+                },
+            });
+
+        await db
+            .update(contentTranslationWorkTable)
+            .set({
+                status: "completed",
+                leaseOwner: null,
+                leaseToken: null,
+                leaseExpiresAt: null,
+                lastErrorCode: null,
+                lastErrorMessage: null,
+                completedAt: now,
+                failedAt: null,
+                updatedAt: now,
+            })
+            .where(
+                and(
+                    eq(contentTranslationWorkTable.sourceKind, "project"),
+                    eq(
+                        contentTranslationWorkTable.projectContentId,
+                        projectContentId,
+                    ),
+                    eq(
+                        contentTranslationWorkTable.displayLanguageCode,
+                        localization.languageCode,
+                    ),
+                ),
+            );
+    }
+}
+
+async function deleteMachineProjectContentTranslations({
+    db,
+    projectContentId,
+    now,
+}: {
+    db: ProjectDatabase;
+    projectContentId: number;
+    now: Date;
+}): Promise<void> {
+    await db
+        .update(projectContentTranslationTable)
+        .set({ deletedAt: now, updatedAt: now })
+        .where(
+            and(
+                eq(projectContentTranslationTable.projectContentId, projectContentId),
+                eq(projectContentTranslationTable.sourceKind, "machine"),
+                isNull(projectContentTranslationTable.deletedAt),
+            ),
+        );
+}
+
+async function syncProjectBannerLocalizations({
+    db,
+    projectContentId,
+    localizations,
+    targetLanguageCodes,
+    now,
+}: {
+    db: ProjectDatabase;
+    projectContentId: number;
+    localizations: readonly SanitizedProjectContentLocalization[];
+    targetLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+    now: Date;
+}): Promise<void> {
+    const requestedRows = buildProjectBannerLocalizationRows({
+        projectContentId,
+        localizations,
+    });
+    const requestedRowsByLanguageCode = new Map(
+        requestedRows.map((row) => [row.languageCode, row]),
+    );
+    const activeRows =
+        targetLanguageCodes.length === 0
+            ? []
+            : await db
+                  .select({
+                      id: projectContentBannerLocalizationTable.id,
+                      languageCode:
+                          projectContentBannerLocalizationTable.languageCode,
+                  })
+                  .from(projectContentBannerLocalizationTable)
+                  .where(
+                      and(
+                          eq(
+                              projectContentBannerLocalizationTable.projectContentId,
+                              projectContentId,
+                          ),
+                          inArray(
+                              projectContentBannerLocalizationTable.languageCode,
+                              targetLanguageCodes,
+                          ),
+                          isNull(projectContentBannerLocalizationTable.deletedAt),
+                      ),
+                  );
+    const activeRowsByLanguageCode = new Map(
+        activeRows.map((row) => [row.languageCode, row]),
+    );
+
+    for (const activeRow of activeRows) {
+        if (!requestedRowsByLanguageCode.has(activeRow.languageCode)) {
+            await db
+                .update(projectContentBannerLocalizationTable)
+                .set({ deletedAt: now, updatedAt: now })
+                .where(
+                    eq(projectContentBannerLocalizationTable.id, activeRow.id),
+                );
+        }
+    }
+
+    for (const requestedRow of requestedRows) {
+        const activeRow = activeRowsByLanguageCode.get(
+            requestedRow.languageCode,
+        );
+        if (activeRow === undefined) {
+            await db
+                .insert(projectContentBannerLocalizationTable)
+                .values(requestedRow);
+            continue;
+        }
+
+        await db
+            .update(projectContentBannerLocalizationTable)
+            .set({
+                bannerPath: requestedRow.bannerPath,
+                bannerIsFullPath: requestedRow.bannerIsFullPath,
+                deletedAt: null,
+                updatedAt: now,
+            })
+            .where(eq(projectContentBannerLocalizationTable.id, activeRow.id));
+    }
+}
+
+async function resolveProjectContentLanguageMetadata({
+    projectTitle,
+    bodyPlainText,
+    googleCloudCredentials,
+    useGoogleLanguageDetection,
+}: {
+    projectTitle: string;
+    bodyPlainText: string;
+    googleCloudCredentials: GoogleCloudCredentials | undefined;
+    useGoogleLanguageDetection: boolean;
+}): Promise<ContentLanguageMetadata> {
+    return await resolveContentLanguageMetadata({
+        text: buildConversationLanguageDetectionCorpus({
+            conversationTitle: projectTitle,
+            bodyPlainText,
+        }),
+        googleText: buildGoogleConversationLanguageDetectionCorpus({
+            conversationTitle: projectTitle,
+            bodyPlainText,
+        }),
+        googleCloudCredentials,
+        useGoogleLanguageDetection,
+    });
+}
+
+function projectLanguageSettingsUseDynamicTranslationFeature({
+    languageSettings,
+}: {
+    languageSettings: {
+        dynamicTranslationEnabled: boolean;
+        targetLanguageCodes: readonly string[];
+    };
+}): boolean {
+    return (
+        languageSettings.dynamicTranslationEnabled ||
+        languageSettings.targetLanguageCodes.length > 0
+    );
+}
+
+async function canUseDynamicTranslationForProjectOwnerSlugs({
+    db,
+    ownerOrganizationSlugs,
+    organizationsBySlug,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    ownerOrganizationSlugs: string[];
+    organizationsBySlug: Map<string, OrganizationRecord>;
+    now: Date;
+}): Promise<boolean> {
+    const ownerOrganizationIds = ownerOrganizationSlugs.map((slug) =>
+        getOrganizationId({ organizationsBySlug, slug }),
+    );
+    return await hasActiveDynamicTranslationEntitlementForOrganizations({
+        db,
+        organizationIds: ownerOrganizationIds,
+        now,
+    });
 }
 
 function getNextSortOrder({
@@ -280,7 +794,9 @@ function buildAttributions({
                     description: localization.description,
                     imagePath: normalizeOptionalString(localization.imagePath),
                     isFullImagePath: localization.isFullImagePath,
-                    websiteUrl: normalizeOptionalString(localization.websiteUrl),
+                    websiteUrl: normalizeOptionalString(
+                        localization.websiteUrl,
+                    ),
                 }),
             ),
         });
@@ -338,29 +854,62 @@ export async function createProject({
         return organizationLookup;
     }
 
+    if (
+        projectLanguageSettingsUseDynamicTranslationFeature({
+            languageSettings: data.languageSettings,
+        }) &&
+        !(await canUseDynamicTranslationForProjectOwnerSlugs({
+            db,
+            ownerOrganizationSlugs,
+            organizationsBySlug: organizationLookup.organizationsBySlug,
+            now: new Date(),
+        }))
+    ) {
+        return {
+            success: false,
+            reason: "dynamic_translation_entitlement_required",
+        };
+    }
+
     const attributions = buildAttributions({
         requestedAttributions: data.attributions,
         organizationsBySlug: organizationLookup.organizationsBySlug,
     });
 
-    const bodyPlainText = data.bodyPlainText ?? htmlToCountedText(data.body ?? "");
-    const projectLanguageMetadata = await resolveContentLanguageMetadata({
-        text: buildConversationLanguageDetectionCorpus({
-            conversationTitle: data.projectTitle,
+    const sanitizedProjectBody = sanitizeProjectBody(data.body);
+    const bodyPlainText = sanitizedProjectBody.bodyPlainText;
+    const projectLanguageMetadata = await resolveProjectContentLanguageMetadata(
+        {
+            projectTitle: data.projectTitle,
             bodyPlainText,
-        }),
-        googleText: buildGoogleConversationLanguageDetectionCorpus({
-            conversationTitle: data.projectTitle,
-            bodyPlainText,
-        }),
-        googleCloudCredentials,
-        useGoogleLanguageDetection: data.translationSetting.dynamicTranslationEnabled,
-    });
-    const normalizedSetting = normalizeTranslationLanguageSetting({
-        setting: data.translationSetting,
+            googleCloudCredentials,
+            useGoogleLanguageDetection:
+                data.languageSettings.dynamicTranslationEnabled,
+        },
+    );
+    const normalizedLanguageSettings = normalizeProjectLanguageSettings({
+        languageSettings: data.languageSettings,
         canUseDynamicTranslation: true,
         sourceLanguageCode: projectLanguageMetadata.sourceLanguageCode,
     });
+    const sourceSubtitleRequired = projectSubtitleRequiresLocalization(
+        data.subtitle,
+    );
+    const sourceBodyRequired = projectBodyRequiresLocalization(bodyPlainText);
+    const contentLocalizations = sanitizeProjectContentLocalizations({
+        localizations: data.contentLocalizations,
+        targetLanguageCodes: normalizedLanguageSettings.targetLanguageCodes,
+        localizedSubtitleRequired: sourceSubtitleRequired,
+        localizedBodyRequired: sourceBodyRequired,
+    });
+    if (!normalizedLanguageSettings.dynamicTranslationEnabled) {
+        assertCompleteManualProjectContentLocalizations({
+            targetLanguageCodes: normalizedLanguageSettings.targetLanguageCodes,
+            localizations: contentLocalizations,
+            sourceSubtitleRequired,
+            sourceBodyRequired,
+        });
+    }
 
     try {
         return await db.transaction(async (tx) => {
@@ -373,12 +922,14 @@ export async function createProject({
                     autoProvisionedForOrganizationId: null,
                     currentContentId: null,
                     dynamicTranslationEnabled:
-                        normalizedSetting.dynamicTranslationEnabled,
+                        normalizedLanguageSettings.dynamicTranslationEnabled,
                 })
                 .returning({ projectId: projectTable.id });
             const insertedProject = insertedProjects.at(0);
             if (insertedProject === undefined) {
-                throw httpErrors.internalServerError("Failed to create project");
+                throw httpErrors.internalServerError(
+                    "Failed to create project",
+                );
             }
 
             const insertedContents = await tx
@@ -387,11 +938,13 @@ export async function createProject({
                     projectId: insertedProject.projectId,
                     title: data.projectTitle,
                     subtitle: normalizeOptionalString(data.subtitle),
-                    body: normalizeOptionalString(data.body),
+                    body: sanitizedProjectBody.body ?? null,
                     bodyPlainText,
-                    heroImagePath: normalizeOptionalString(data.heroImagePath),
-                    heroImageIsFullPath: data.heroImageIsFullPath,
-                    ...contentLanguageMetadataUpdateValues(projectLanguageMetadata),
+                    bannerPath: normalizeOptionalString(data.bannerPath),
+                    bannerIsFullPath: data.bannerIsFullPath,
+                    ...contentLanguageMetadataUpdateValues(
+                        projectLanguageMetadata,
+                    ),
                 })
                 .returning({ contentId: projectContentTable.id });
             const insertedContent = insertedContents.at(0);
@@ -400,6 +953,23 @@ export async function createProject({
                     "Failed to create project content",
                 );
             }
+
+            await syncProjectBannerLocalizations({
+                db: tx,
+                projectContentId: insertedContent.contentId,
+                localizations: contentLocalizations,
+                targetLanguageCodes: normalizedLanguageSettings.targetLanguageCodes,
+                now: new Date(),
+            });
+
+            await syncProjectContentLocalizations({
+                db: tx,
+                projectContentId: insertedContent.contentId,
+                localizations: contentLocalizations,
+                targetLanguageCodes: normalizedLanguageSettings.targetLanguageCodes,
+                sourceLanguageMetadata: projectLanguageMetadata,
+                now: new Date(),
+            });
 
             await tx
                 .update(projectTable)
@@ -410,18 +980,21 @@ export async function createProject({
                 ownerOrganizationSlugs.map((organizationSlug) => ({
                     projectId: insertedProject.projectId,
                     organizationId: getOrganizationId({
-                        organizationsBySlug: organizationLookup.organizationsBySlug,
+                        organizationsBySlug:
+                            organizationLookup.organizationsBySlug,
                         slug: organizationSlug,
                     }),
                 })),
             );
 
-            if (normalizedSetting.additionalLanguageCodes.length > 0) {
+            if (normalizedLanguageSettings.targetLanguageCodes.length > 0) {
                 await tx.insert(projectTranslationTargetLanguageTable).values(
-                    normalizedSetting.additionalLanguageCodes.map((languageCode) => ({
-                        projectId: insertedProject.projectId,
-                        languageCode,
-                    })),
+                    normalizedLanguageSettings.targetLanguageCodes.map(
+                        (languageCode) => ({
+                            projectId: insertedProject.projectId,
+                            languageCode,
+                        }),
+                    ),
                 );
             }
 
@@ -436,13 +1009,15 @@ export async function createProject({
                 });
 
                 if (attribution.source === "organization") {
-                    await tx.insert(projectOrganizationAttributionTable).values({
-                        projectId: insertedProject.projectId,
-                        role: attribution.role,
-                        sortOrder,
-                        organizationId: attribution.organizationId,
-                        externalOrganizationId: null,
-                    });
+                    await tx
+                        .insert(projectOrganizationAttributionTable)
+                        .values({
+                            projectId: insertedProject.projectId,
+                            role: attribution.role,
+                            sortOrder,
+                            organizationId: attribution.organizationId,
+                            externalOrganizationId: null,
+                        });
                     continue;
                 }
 
@@ -469,32 +1044,36 @@ export async function createProject({
                     );
                 }
 
-                await tx.insert(projectExternalOrganizationLocalizationTable).values({
-                    externalOrganizationId:
-                        insertedExternalOrganization.externalOrganizationId,
-                    languageCode: attribution.defaultLanguageCode,
-                    displayName: attribution.displayName,
-                    description: attribution.description ?? "",
-                    websiteUrl: attribution.websiteUrl,
-                    imagePath: attribution.imagePath,
-                    isFullImagePath: attribution.isFullImagePath,
-                });
-
-                const additionalLocalizations = attribution.additionalLocalizations
-                    .filter(
-                        (localization) =>
-                            localization.languageCode !== attribution.defaultLanguageCode,
-                    )
-                    .map((localization) => ({
+                await tx
+                    .insert(projectExternalOrganizationLocalizationTable)
+                    .values({
                         externalOrganizationId:
                             insertedExternalOrganization.externalOrganizationId,
-                        languageCode: localization.languageCode,
-                        displayName: localization.displayName,
-                        description: localization.description,
-                        websiteUrl: localization.websiteUrl,
-                        imagePath: localization.imagePath,
-                        isFullImagePath: localization.isFullImagePath,
-                    }));
+                        languageCode: attribution.defaultLanguageCode,
+                        displayName: attribution.displayName,
+                        description: attribution.description ?? "",
+                        websiteUrl: attribution.websiteUrl,
+                        imagePath: attribution.imagePath,
+                        isFullImagePath: attribution.isFullImagePath,
+                    });
+
+                const additionalLocalizations =
+                    attribution.additionalLocalizations
+                        .filter(
+                            (localization) =>
+                                localization.languageCode !==
+                                attribution.defaultLanguageCode,
+                        )
+                        .map((localization) => ({
+                            externalOrganizationId:
+                                insertedExternalOrganization.externalOrganizationId,
+                            languageCode: localization.languageCode,
+                            displayName: localization.displayName,
+                            description: localization.description,
+                            websiteUrl: localization.websiteUrl,
+                            imagePath: localization.imagePath,
+                            isFullImagePath: localization.isFullImagePath,
+                        }));
                 if (additionalLocalizations.length > 0) {
                     await tx
                         .insert(projectExternalOrganizationLocalizationTable)
@@ -550,19 +1129,33 @@ export async function createProject({
 
 export async function getAllProjects({
     db,
+    projectSlug,
 }: {
     db: PostgresJsDatabase;
+    projectSlug?: string;
 }): Promise<GetAllProjectsResponse> {
+    const projectWhereClause =
+        projectSlug === undefined
+            ? and(
+                  eq(projectTable.directoryVisibility, "listed"),
+                  isNull(projectTable.deletedAt),
+              )
+            : and(
+                  eq(projectTable.directoryVisibility, "listed"),
+                  isNull(projectTable.deletedAt),
+                  eq(projectTable.slug, projectSlug),
+              );
     const projectRows = await db
         .select({
             projectId: projectTable.id,
+            projectContentId: projectContentTable.id,
             projectSlug: projectTable.slug,
             projectTitle: projectTable.title,
             subtitle: projectContentTable.subtitle,
             body: projectContentTable.body,
             bodyPlainText: projectContentTable.bodyPlainText,
-            heroImagePath: projectContentTable.heroImagePath,
-            heroImageIsFullPath: projectContentTable.heroImageIsFullPath,
+            bannerPath: projectContentTable.bannerPath,
+            bannerIsFullPath: projectContentTable.bannerIsFullPath,
             dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
         })
         .from(projectTable)
@@ -570,30 +1163,32 @@ export async function getAllProjects({
             projectContentTable,
             eq(projectContentTable.id, projectTable.currentContentId),
         )
-        .where(
-            and(
-                eq(projectTable.directoryVisibility, "listed"),
-                isNull(projectTable.deletedAt),
-            ),
-        );
+        .where(projectWhereClause);
 
     const projectIds = projectRows.map((project) => project.projectId);
+    const projectContentIds = projectRows.flatMap((project) =>
+        project.projectContentId === null ? [] : [project.projectContentId],
+    );
     const targetLanguageRows =
         projectIds.length === 0
             ? []
             : await db
                   .select({
-                      projectId: projectTranslationTargetLanguageTable.projectId,
+                      projectId:
+                          projectTranslationTargetLanguageTable.projectId,
                       languageCode:
                           projectTranslationTargetLanguageTable.languageCode,
                   })
                   .from(projectTranslationTargetLanguageTable)
                   .where(
-                      inArray(
-                          projectTranslationTargetLanguageTable.projectId,
-                          projectIds,
+                      and(
+                          inArray(
+                              projectTranslationTargetLanguageTable.projectId,
+                              projectIds,
+                          ),
+                          isNull(projectTranslationTargetLanguageTable.deletedAt),
                       ),
-                   );
+                  );
 
     const ownerRows =
         projectIds.length === 0
@@ -612,7 +1207,67 @@ export async function getAllProjects({
                       ),
                   )
                   .where(
-                      inArray(projectOrganizationOwnershipTable.projectId, projectIds),
+                      and(
+                          inArray(
+                              projectOrganizationOwnershipTable.projectId,
+                              projectIds,
+                          ),
+                          isNull(projectOrganizationOwnershipTable.deletedAt),
+                      ),
+                  );
+
+    const bannerLocalizationRows =
+        projectContentIds.length === 0
+            ? []
+            : await db
+                  .select({
+                      projectContentId:
+                          projectContentBannerLocalizationTable.projectContentId,
+                      languageCode:
+                          projectContentBannerLocalizationTable.languageCode,
+                      bannerPath:
+                          projectContentBannerLocalizationTable.bannerPath,
+                      bannerIsFullPath:
+                          projectContentBannerLocalizationTable.bannerIsFullPath,
+                  })
+                  .from(projectContentBannerLocalizationTable)
+                  .where(
+                      and(
+                          inArray(
+                              projectContentBannerLocalizationTable.projectContentId,
+                              projectContentIds,
+                          ),
+                          isNull(
+                              projectContentBannerLocalizationTable.deletedAt,
+                          ),
+                      ),
+                  );
+
+    const contentLocalizationRows =
+        projectContentIds.length === 0
+            ? []
+            : await db
+                  .select({
+                      projectContentId:
+                          projectContentTranslationTable.projectContentId,
+                      languageCode:
+                          projectContentTranslationTable.displayLanguageCode,
+                      projectTitle:
+                          projectContentTranslationTable.translatedTitle,
+                      subtitle:
+                          projectContentTranslationTable.translatedSubtitle,
+                      body: projectContentTranslationTable.translatedBody,
+                      sourceKind: projectContentTranslationTable.sourceKind,
+                  })
+                  .from(projectContentTranslationTable)
+                  .where(
+                      and(
+                          inArray(
+                              projectContentTranslationTable.projectContentId,
+                              projectContentIds,
+                          ),
+                          isNull(projectContentTranslationTable.deletedAt),
+                      ),
                   );
 
     const attributionRows =
@@ -624,7 +1279,8 @@ export async function getAllProjects({
                       role: projectOrganizationAttributionTable.role,
                       sortOrder: projectOrganizationAttributionTable.sortOrder,
                       organizationSlug: organizationTable.slug,
-                      externalOrganizationId: projectExternalOrganizationTable.id,
+                      externalOrganizationId:
+                          projectExternalOrganizationTable.id,
                       defaultLanguageCode:
                           projectExternalOrganizationTable.defaultLanguageCode,
                       displayName: projectExternalOrganizationTable.displayName,
@@ -650,7 +1306,13 @@ export async function getAllProjects({
                       ),
                   )
                   .where(
-                      inArray(projectOrganizationAttributionTable.projectId, projectIds),
+                      and(
+                          inArray(
+                              projectOrganizationAttributionTable.projectId,
+                              projectIds,
+                          ),
+                          isNull(projectOrganizationAttributionTable.deletedAt),
+                      ),
                   );
 
     const externalOrganizationIds = attributionRows.flatMap((attribution) =>
@@ -673,15 +1335,21 @@ export async function getAllProjects({
                           projectExternalOrganizationLocalizationTable.description,
                       websiteUrl:
                           projectExternalOrganizationLocalizationTable.websiteUrl,
-                      imagePath: projectExternalOrganizationLocalizationTable.imagePath,
+                      imagePath:
+                          projectExternalOrganizationLocalizationTable.imagePath,
                       isFullImagePath:
                           projectExternalOrganizationLocalizationTable.isFullImagePath,
                   })
                   .from(projectExternalOrganizationLocalizationTable)
                   .where(
-                      inArray(
-                          projectExternalOrganizationLocalizationTable.externalOrganizationId,
-                          externalOrganizationIds,
+                      and(
+                          inArray(
+                              projectExternalOrganizationLocalizationTable.externalOrganizationId,
+                              externalOrganizationIds,
+                          ),
+                          isNull(
+                              projectExternalOrganizationLocalizationTable.deletedAt,
+                          ),
                       ),
                   );
 
@@ -699,21 +1367,114 @@ export async function getAllProjects({
                   .from(projectContactTable)
                   .leftJoin(
                       organizationTable,
-                      eq(organizationTable.id, projectContactTable.organizationId),
+                      eq(
+                          organizationTable.id,
+                          projectContactTable.organizationId,
+                      ),
                   )
-                  .where(inArray(projectContactTable.projectId, projectIds));
+                  .where(
+                      and(
+                          inArray(projectContactTable.projectId, projectIds),
+                          isNull(projectContactTable.deletedAt),
+                      ),
+                  );
 
     const additionalLanguagesByProjectId = new Map<
         number,
-        GetAllProjectsResponse["projectList"][number]["additionalLanguageCodes"]
+        GetAllProjectsResponse["projectList"][number]["languageSettings"]["targetLanguageCodes"]
     >();
     for (const targetLanguage of targetLanguageRows) {
-        const additionalLanguageCodes =
+        const targetLanguageCodes =
             additionalLanguagesByProjectId.get(targetLanguage.projectId) ?? [];
-        additionalLanguageCodes.push(targetLanguage.languageCode);
+        targetLanguageCodes.push(targetLanguage.languageCode);
         additionalLanguagesByProjectId.set(
             targetLanguage.projectId,
-            additionalLanguageCodes,
+            targetLanguageCodes,
+        );
+    }
+    const activeLanguageCodesByProjectContentId = new Map<
+        number,
+        Set<SupportedDisplayLanguageCodes>
+    >();
+    for (const project of projectRows) {
+        if (project.projectContentId === null) {
+            continue;
+        }
+
+        activeLanguageCodesByProjectContentId.set(
+            project.projectContentId,
+            new Set(additionalLanguagesByProjectId.get(project.projectId) ?? []),
+        );
+    }
+
+    const bannerLocalizationsByProjectContentId = new Map<
+        number,
+        {
+            languageCode: SupportedDisplayLanguageCodes;
+            bannerPath: string;
+            bannerIsFullPath: boolean;
+        }[]
+    >();
+    for (const localization of bannerLocalizationRows) {
+        const bannerLocalizations =
+            bannerLocalizationsByProjectContentId.get(
+                localization.projectContentId,
+            ) ?? [];
+        bannerLocalizations.push({
+            languageCode: localization.languageCode,
+            bannerPath: localization.bannerPath,
+            bannerIsFullPath: localization.bannerIsFullPath,
+        });
+        bannerLocalizationsByProjectContentId.set(
+            localization.projectContentId,
+            bannerLocalizations,
+        );
+    }
+
+    const contentLocalizationsByProjectContentId = new Map<
+        number,
+        GetAllProjectsResponse["projectList"][number]["contentLocalizations"]
+    >();
+    const machineContentLocalizationsByProjectContentId = new Map<
+        number,
+        GetAllProjectsResponse["projectList"][number]["machineContentLocalizations"]
+    >();
+    for (const localization of contentLocalizationRows) {
+        if (
+            activeLanguageCodesByProjectContentId
+                .get(localization.projectContentId)
+                ?.has(localization.languageCode) !== true
+        ) {
+            continue;
+        }
+
+        const contentLocalizationsBySourceKind =
+            localization.sourceKind === "manual"
+                ? contentLocalizationsByProjectContentId
+                : machineContentLocalizationsByProjectContentId;
+        const contentLocalizations =
+            contentLocalizationsBySourceKind.get(localization.projectContentId) ??
+            [];
+        const bannerLocalization = bannerLocalizationsByProjectContentId
+            .get(localization.projectContentId)
+            ?.find(
+                (banner) => banner.languageCode === localization.languageCode,
+            );
+        contentLocalizations.push({
+            languageCode: localization.languageCode,
+            projectTitle: localization.projectTitle,
+            subtitle: localization.subtitle ?? undefined,
+            body: localization.body ?? undefined,
+            bodyPlainText:
+                localization.body === null
+                    ? undefined
+                    : htmlToCountedText(localization.body),
+            bannerPath: bannerLocalization?.bannerPath,
+            bannerIsFullPath: bannerLocalization?.bannerIsFullPath ?? false,
+        });
+        contentLocalizationsBySourceKind.set(
+            localization.projectContentId,
+            contentLocalizations,
         );
     }
 
@@ -757,7 +1518,8 @@ export async function getAllProjects({
     for (const attribution of attributionRows.toSorted(
         (first, second) => first.sortOrder - second.sortOrder,
     )) {
-        const attributions = attributionsByProjectId.get(attribution.projectId) ?? [];
+        const attributions =
+            attributionsByProjectId.get(attribution.projectId) ?? [];
         if (attribution.organizationSlug !== null) {
             attributions.push({
                 source: "organization",
@@ -775,7 +1537,8 @@ export async function getAllProjects({
                 ) ?? []
             ).filter(
                 (localization) =>
-                    localization.languageCode !== attribution.defaultLanguageCode,
+                    localization.languageCode !==
+                    attribution.defaultLanguageCode,
             );
             attributions.push({
                 source: "external",
@@ -813,15 +1576,61 @@ export async function getAllProjects({
             subtitle: project.subtitle ?? undefined,
             body: project.body ?? undefined,
             bodyPlainText: project.bodyPlainText ?? undefined,
-            heroImagePath: project.heroImagePath ?? undefined,
-            heroImageIsFullPath: project.heroImageIsFullPath ?? false,
-            dynamicTranslationEnabled: project.dynamicTranslationEnabled,
-            additionalLanguageCodes:
-                additionalLanguagesByProjectId.get(project.projectId) ?? [],
+            bannerPath: project.bannerPath ?? undefined,
+            bannerIsFullPath: project.bannerIsFullPath ?? false,
+            contentLocalizations:
+                project.projectContentId === null
+                    ? []
+                    : (contentLocalizationsByProjectContentId.get(
+                          project.projectContentId,
+                      ) ?? []),
+            machineContentLocalizations:
+                project.projectContentId === null
+                    ? []
+                    : (machineContentLocalizationsByProjectContentId.get(
+                          project.projectContentId,
+                      ) ?? []),
+            languageSettings: {
+                dynamicTranslationEnabled: project.dynamicTranslationEnabled,
+                targetLanguageCodes:
+                    additionalLanguagesByProjectId.get(project.projectId) ?? [],
+            },
             attributions: attributionsByProjectId.get(project.projectId) ?? [],
             contact: contactsByProjectId.get(project.projectId),
         })),
     };
+}
+
+export async function getProjectOptions({
+    db,
+}: {
+    db: PostgresJsDatabase;
+}): Promise<GetProjectOptionsResponse> {
+    const projectList: AdminProjectOption[] = await db
+        .select({
+            projectSlug: projectTable.slug,
+            projectTitle: projectTable.title,
+        })
+        .from(projectTable)
+        .where(
+            and(
+                eq(projectTable.directoryVisibility, "listed"),
+                isNull(projectTable.deletedAt),
+            ),
+        );
+
+    return { projectList };
+}
+
+export async function getProjectDetails({
+    db,
+    projectSlug,
+}: {
+    db: PostgresJsDatabase;
+    projectSlug: string;
+}): Promise<GetProjectDetailsResponse> {
+    const response = await getAllProjects({ db, projectSlug });
+    return { project: response.projectList.at(0) };
 }
 
 export async function updateProjectSlug({
@@ -878,7 +1687,10 @@ export async function archiveProject({
             updatedAt: now,
         })
         .where(
-            and(eq(projectTable.slug, projectSlug), isNull(projectTable.deletedAt)),
+            and(
+                eq(projectTable.slug, projectSlug),
+                isNull(projectTable.deletedAt),
+            ),
         )
         .returning({ projectId: projectTable.id });
     if (updatedProjects.length === 0) {
@@ -899,8 +1711,21 @@ export async function updateProject({
         .select({
             projectId: projectTable.id,
             currentContentId: projectTable.currentContentId,
+            dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
+            currentTitle: projectContentTable.title,
+            currentBody: projectContentTable.body,
+            currentBodyPlainText: projectContentTable.bodyPlainText,
+            sourceLanguageCode: projectContentTable.sourceLanguageCode,
+            sourceRawLanguageCode: projectContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider: projectContentTable.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                projectContentTable.sourceLanguageConfidence,
         })
         .from(projectTable)
+        .leftJoin(
+            projectContentTable,
+            eq(projectContentTable.id, projectTable.currentContentId),
+        )
         .where(
             and(
                 eq(projectTable.slug, data.currentProjectSlug),
@@ -936,28 +1761,82 @@ export async function updateProject({
         return organizationLookup;
     }
 
+    if (
+        projectLanguageSettingsUseDynamicTranslationFeature({
+            languageSettings: data.languageSettings,
+        }) &&
+        !(await canUseDynamicTranslationForProjectOwnerSlugs({
+            db,
+            ownerOrganizationSlugs,
+            organizationsBySlug: organizationLookup.organizationsBySlug,
+            now: new Date(),
+        }))
+    ) {
+        return {
+            success: false,
+            reason: "dynamic_translation_entitlement_required",
+        };
+    }
+
     const attributions = buildAttributions({
         requestedAttributions: data.attributions,
         organizationsBySlug: organizationLookup.organizationsBySlug,
     });
-    const bodyPlainText = data.bodyPlainText ?? htmlToCountedText(data.body ?? "");
-    const projectLanguageMetadata = await resolveContentLanguageMetadata({
-        text: buildConversationLanguageDetectionCorpus({
-            conversationTitle: data.projectTitle,
-            bodyPlainText,
-        }),
-        googleText: buildGoogleConversationLanguageDetectionCorpus({
-            conversationTitle: data.projectTitle,
-            bodyPlainText,
-        }),
-        googleCloudCredentials,
-        useGoogleLanguageDetection: data.translationSetting.dynamicTranslationEnabled,
-    });
-    const normalizedSetting = normalizeTranslationLanguageSetting({
-        setting: data.translationSetting,
+    const sanitizedProjectBody = sanitizeProjectBody(data.body);
+    const bodyPlainText = sanitizedProjectBody.bodyPlainText;
+    const currentBodyPlainText =
+        project.currentBodyPlainText ??
+        htmlToCountedText(project.currentBody ?? "");
+    const languageTextChanged =
+        project.currentContentId === null ||
+        project.currentTitle !== data.projectTitle ||
+        currentBodyPlainText !== bodyPlainText;
+    const shouldRefreshLanguageMetadata =
+        languageTextChanged ||
+        (data.languageSettings.dynamicTranslationEnabled &&
+            !project.dynamicTranslationEnabled);
+    const projectLanguageMetadata = shouldRefreshLanguageMetadata
+        ? await resolveProjectContentLanguageMetadata({
+              projectTitle: data.projectTitle,
+              bodyPlainText,
+              googleCloudCredentials,
+              useGoogleLanguageDetection:
+                  data.languageSettings.dynamicTranslationEnabled,
+          })
+        : undefined;
+    const finalSourceLanguageCode =
+        projectLanguageMetadata?.sourceLanguageCode ??
+        project.sourceLanguageCode;
+    const normalizedLanguageSettings = normalizeProjectLanguageSettings({
+        languageSettings: data.languageSettings,
         canUseDynamicTranslation: true,
-        sourceLanguageCode: projectLanguageMetadata.sourceLanguageCode,
+        sourceLanguageCode: finalSourceLanguageCode,
     });
+    const sourceSubtitleRequired = projectSubtitleRequiresLocalization(
+        data.subtitle,
+    );
+    const sourceBodyRequired = projectBodyRequiresLocalization(bodyPlainText);
+    const contentLocalizations = sanitizeProjectContentLocalizations({
+        localizations: data.contentLocalizations,
+        targetLanguageCodes: normalizedLanguageSettings.targetLanguageCodes,
+        localizedSubtitleRequired: sourceSubtitleRequired,
+        localizedBodyRequired: sourceBodyRequired,
+    });
+    if (!normalizedLanguageSettings.dynamicTranslationEnabled) {
+        assertCompleteManualProjectContentLocalizations({
+            targetLanguageCodes: normalizedLanguageSettings.targetLanguageCodes,
+            localizations: contentLocalizations,
+            sourceSubtitleRequired,
+            sourceBodyRequired,
+        });
+    }
+    const sourceLanguageMetadata: ContentLanguageMetadata =
+        projectLanguageMetadata ?? {
+            sourceLanguageCode: project.sourceLanguageCode,
+            sourceRawLanguageCode: project.sourceRawLanguageCode,
+            sourceLanguageProvider: project.sourceLanguageProvider,
+            sourceLanguageConfidence: project.sourceLanguageConfidence,
+        };
 
     try {
         await db.transaction(async (tx) => {
@@ -968,7 +1847,7 @@ export async function updateProject({
                     slug: data.projectSlug,
                     title: data.projectTitle,
                     dynamicTranslationEnabled:
-                        data.translationSetting.dynamicTranslationEnabled,
+                        normalizedLanguageSettings.dynamicTranslationEnabled,
                     updatedAt: now,
                 })
                 .where(eq(projectTable.id, project.projectId))
@@ -984,12 +1863,13 @@ export async function updateProject({
                         projectId: project.projectId,
                         title: data.projectTitle,
                         subtitle: normalizeOptionalString(data.subtitle),
-                        body: normalizeOptionalString(data.body),
+                        body: sanitizedProjectBody.body ?? null,
                         bodyPlainText,
-                        heroImagePath: normalizeOptionalString(data.heroImagePath),
-                        heroImageIsFullPath: data.heroImageIsFullPath,
+                        bannerPath: normalizeOptionalString(data.bannerPath),
+                        bannerIsFullPath: data.bannerIsFullPath,
                         ...contentLanguageMetadataUpdateValues(
-                            projectLanguageMetadata,
+                            projectLanguageMetadata ??
+                                UNKNOWN_CONTENT_LANGUAGE_METADATA,
                         ),
                     })
                     .returning({ contentId: projectContentTable.id });
@@ -1003,49 +1883,118 @@ export async function updateProject({
                     .update(projectTable)
                     .set({ currentContentId: insertedContent.contentId })
                     .where(eq(projectTable.id, project.projectId));
+
+                await syncProjectBannerLocalizations({
+                    db: tx,
+                    projectContentId: insertedContent.contentId,
+                    localizations: contentLocalizations,
+                    targetLanguageCodes:
+                        normalizedLanguageSettings.targetLanguageCodes,
+                    now,
+                });
+
+                await syncProjectContentLocalizations({
+                    db: tx,
+                    projectContentId: insertedContent.contentId,
+                    localizations: contentLocalizations,
+                    targetLanguageCodes:
+                        normalizedLanguageSettings.targetLanguageCodes,
+                    sourceLanguageMetadata:
+                        projectLanguageMetadata ??
+                        UNKNOWN_CONTENT_LANGUAGE_METADATA,
+                    now,
+                });
             } else {
                 await tx
                     .update(projectContentTable)
                     .set({
                         title: data.projectTitle,
                         subtitle: normalizeOptionalString(data.subtitle),
-                        body: normalizeOptionalString(data.body),
+                        body: sanitizedProjectBody.body ?? null,
                         bodyPlainText,
-                        heroImagePath: normalizeOptionalString(data.heroImagePath),
-                        heroImageIsFullPath: data.heroImageIsFullPath,
-                        ...contentLanguageMetadataUpdateValues(
-                            projectLanguageMetadata,
-                        ),
+                        bannerPath: normalizeOptionalString(data.bannerPath),
+                        bannerIsFullPath: data.bannerIsFullPath,
+                        ...(projectLanguageMetadata === undefined
+                            ? {}
+                            : contentLanguageMetadataUpdateValues(
+                                  projectLanguageMetadata,
+                              )),
                     })
-                    .where(eq(projectContentTable.id, project.currentContentId));
+                    .where(
+                        eq(projectContentTable.id, project.currentContentId),
+                    );
+
+                if (languageTextChanged) {
+                    await deleteMachineProjectContentTranslations({
+                        db: tx,
+                        projectContentId: project.currentContentId,
+                        now,
+                    });
+                }
+
+                await syncProjectBannerLocalizations({
+                    db: tx,
+                    projectContentId: project.currentContentId,
+                    localizations: contentLocalizations,
+                    targetLanguageCodes:
+                        normalizedLanguageSettings.targetLanguageCodes,
+                    now,
+                });
+
+                await syncProjectContentLocalizations({
+                    db: tx,
+                    projectContentId: project.currentContentId,
+                    localizations: contentLocalizations,
+                    targetLanguageCodes:
+                        normalizedLanguageSettings.targetLanguageCodes,
+                    sourceLanguageMetadata,
+                    now,
+                });
             }
 
             await tx
-                .delete(projectOrganizationOwnershipTable)
+                .update(projectOrganizationOwnershipTable)
+                .set({ deletedAt: now })
                 .where(
-                    eq(projectOrganizationOwnershipTable.projectId, project.projectId),
+                    and(
+                        eq(
+                            projectOrganizationOwnershipTable.projectId,
+                            project.projectId,
+                        ),
+                        isNull(projectOrganizationOwnershipTable.deletedAt),
+                    ),
                 );
             await tx.insert(projectOrganizationOwnershipTable).values(
                 ownerOrganizationSlugs.map((organizationSlug) => ({
                     projectId: project.projectId,
                     organizationId: getOrganizationId({
-                        organizationsBySlug: organizationLookup.organizationsBySlug,
+                        organizationsBySlug:
+                            organizationLookup.organizationsBySlug,
                         slug: organizationSlug,
                     }),
                 })),
             );
 
             await tx
-                .delete(projectTranslationTargetLanguageTable)
+                .update(projectTranslationTargetLanguageTable)
+                .set({ deletedAt: now })
                 .where(
-                    eq(projectTranslationTargetLanguageTable.projectId, project.projectId),
+                    and(
+                        eq(
+                            projectTranslationTargetLanguageTable.projectId,
+                            project.projectId,
+                        ),
+                        isNull(projectTranslationTargetLanguageTable.deletedAt),
+                    ),
                 );
-            if (normalizedSetting.additionalLanguageCodes.length > 0) {
+            if (normalizedLanguageSettings.targetLanguageCodes.length > 0) {
                 await tx.insert(projectTranslationTargetLanguageTable).values(
-                    normalizedSetting.additionalLanguageCodes.map((languageCode) => ({
-                        projectId: project.projectId,
-                        languageCode,
-                    })),
+                    normalizedLanguageSettings.targetLanguageCodes.map(
+                        (languageCode) => ({
+                            projectId: project.projectId,
+                            languageCode,
+                        }),
+                    ),
                 );
             }
 
@@ -1053,31 +2002,55 @@ export async function updateProject({
                 .select({ id: projectExternalOrganizationTable.id })
                 .from(projectExternalOrganizationTable)
                 .where(
-                    eq(projectExternalOrganizationTable.projectId, project.projectId),
+                    and(
+                        eq(
+                            projectExternalOrganizationTable.projectId,
+                            project.projectId,
+                        ),
+                        isNull(projectExternalOrganizationTable.deletedAt),
+                    ),
                 );
-            const existingExternalOrganizationIds = existingExternalOrganizationRows.map(
-                (externalOrganization) => externalOrganization.id,
-            );
+            const existingExternalOrganizationIds =
+                existingExternalOrganizationRows.map(
+                    (externalOrganization) => externalOrganization.id,
+                );
             await tx
-                .delete(projectOrganizationAttributionTable)
+                .update(projectOrganizationAttributionTable)
+                .set({ deletedAt: now })
                 .where(
-                    eq(projectOrganizationAttributionTable.projectId, project.projectId),
+                    and(
+                        eq(
+                            projectOrganizationAttributionTable.projectId,
+                            project.projectId,
+                        ),
+                        isNull(projectOrganizationAttributionTable.deletedAt),
+                    ),
                 );
             if (existingExternalOrganizationIds.length > 0) {
                 await tx
-                    .delete(projectExternalOrganizationLocalizationTable)
+                    .update(projectExternalOrganizationLocalizationTable)
+                    .set({ deletedAt: now, updatedAt: now })
                     .where(
-                        inArray(
-                            projectExternalOrganizationLocalizationTable.externalOrganizationId,
-                            existingExternalOrganizationIds,
+                        and(
+                            inArray(
+                                projectExternalOrganizationLocalizationTable.externalOrganizationId,
+                                existingExternalOrganizationIds,
+                            ),
+                            isNull(
+                                projectExternalOrganizationLocalizationTable.deletedAt,
+                            ),
                         ),
                     );
                 await tx
-                    .delete(projectExternalOrganizationTable)
+                    .update(projectExternalOrganizationTable)
+                    .set({ deletedAt: now, updatedAt: now })
                     .where(
-                        inArray(
-                            projectExternalOrganizationTable.id,
-                            existingExternalOrganizationIds,
+                        and(
+                            inArray(
+                                projectExternalOrganizationTable.id,
+                                existingExternalOrganizationIds,
+                            ),
+                            isNull(projectExternalOrganizationTable.deletedAt),
                         ),
                     );
             }
@@ -1093,13 +2066,15 @@ export async function updateProject({
                 });
 
                 if (attribution.source === "organization") {
-                    await tx.insert(projectOrganizationAttributionTable).values({
-                        projectId: project.projectId,
-                        role: attribution.role,
-                        sortOrder,
-                        organizationId: attribution.organizationId,
-                        externalOrganizationId: null,
-                    });
+                    await tx
+                        .insert(projectOrganizationAttributionTable)
+                        .values({
+                            projectId: project.projectId,
+                            role: attribution.role,
+                            sortOrder,
+                            organizationId: attribution.organizationId,
+                            externalOrganizationId: null,
+                        });
                     continue;
                 }
 
@@ -1126,32 +2101,36 @@ export async function updateProject({
                     );
                 }
 
-                await tx.insert(projectExternalOrganizationLocalizationTable).values({
-                    externalOrganizationId:
-                        insertedExternalOrganization.externalOrganizationId,
-                    languageCode: attribution.defaultLanguageCode,
-                    displayName: attribution.displayName,
-                    description: attribution.description ?? "",
-                    websiteUrl: attribution.websiteUrl,
-                    imagePath: attribution.imagePath,
-                    isFullImagePath: attribution.isFullImagePath,
-                });
-
-                const additionalLocalizations = attribution.additionalLocalizations
-                    .filter(
-                        (localization) =>
-                            localization.languageCode !== attribution.defaultLanguageCode,
-                    )
-                    .map((localization) => ({
+                await tx
+                    .insert(projectExternalOrganizationLocalizationTable)
+                    .values({
                         externalOrganizationId:
                             insertedExternalOrganization.externalOrganizationId,
-                        languageCode: localization.languageCode,
-                        displayName: localization.displayName,
-                        description: localization.description,
-                        websiteUrl: localization.websiteUrl,
-                        imagePath: localization.imagePath,
-                        isFullImagePath: localization.isFullImagePath,
-                    }));
+                        languageCode: attribution.defaultLanguageCode,
+                        displayName: attribution.displayName,
+                        description: attribution.description ?? "",
+                        websiteUrl: attribution.websiteUrl,
+                        imagePath: attribution.imagePath,
+                        isFullImagePath: attribution.isFullImagePath,
+                    });
+
+                const additionalLocalizations =
+                    attribution.additionalLocalizations
+                        .filter(
+                            (localization) =>
+                                localization.languageCode !==
+                                attribution.defaultLanguageCode,
+                        )
+                        .map((localization) => ({
+                            externalOrganizationId:
+                                insertedExternalOrganization.externalOrganizationId,
+                            languageCode: localization.languageCode,
+                            displayName: localization.displayName,
+                            description: localization.description,
+                            websiteUrl: localization.websiteUrl,
+                            imagePath: localization.imagePath,
+                            isFullImagePath: localization.isFullImagePath,
+                        }));
                 if (additionalLocalizations.length > 0) {
                     await tx
                         .insert(projectExternalOrganizationLocalizationTable)
@@ -1170,8 +2149,14 @@ export async function updateProject({
             }
 
             await tx
-                .delete(projectContactTable)
-                .where(eq(projectContactTable.projectId, project.projectId));
+                .update(projectContactTable)
+                .set({ deletedAt: now, updatedAt: now })
+                .where(
+                    and(
+                        eq(projectContactTable.projectId, project.projectId),
+                        isNull(projectContactTable.deletedAt),
+                    ),
+                );
             if (data.contact !== undefined) {
                 await tx.insert(projectContactTable).values({
                     projectId: project.projectId,
@@ -1208,15 +2193,15 @@ export async function updateProject({
     };
 }
 
-export async function updateProjectLanguageSetting({
+export async function updateProjectLanguageSettings({
     db,
     data,
     googleCloudCredentials,
 }: {
     db: PostgresJsDatabase;
-    data: UpdateProjectLanguageSettingRequest;
+    data: UpdateProjectLanguageSettingsRequest;
     googleCloudCredentials: GoogleCloudCredentials | undefined;
-}): Promise<UpdateProjectLanguageSettingResponse & { projectId: number }> {
+}): Promise<UpdateProjectLanguageSettingsServiceResponse> {
     const projectRows = await db
         .select({ projectId: projectTable.id })
         .from(projectTable)
@@ -1229,28 +2214,44 @@ export async function updateProjectLanguageSetting({
         .limit(1);
     const project = projectRows.at(0);
     if (project === undefined) {
-        throw httpErrors.notFound("Project not found");
+        return { success: false, reason: "project_not_found" };
     }
 
-    await db.transaction(async (tx) => {
-        const now = new Date();
-        await tx
-            .update(projectTable)
-            .set({
-                dynamicTranslationEnabled: data.setting.dynamicTranslationEnabled,
-                updatedAt: now,
-            })
-            .where(eq(projectTable.id, project.projectId));
+    const ownershipRows = await db
+        .select({
+            organizationId: projectOrganizationOwnershipTable.organizationId,
+        })
+        .from(projectOrganizationOwnershipTable)
+        .where(
+            and(
+                eq(projectOrganizationOwnershipTable.projectId, project.projectId),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
+            ),
+        );
 
-        await tx
-            .delete(projectTranslationTargetLanguageTable)
-            .where(
-                eq(projectTranslationTargetLanguageTable.projectId, project.projectId),
-            );
+    if (
+        projectLanguageSettingsUseDynamicTranslationFeature({
+            languageSettings: data.languageSettings,
+        }) &&
+        !(await hasActiveDynamicTranslationEntitlementForOrganizations({
+            db,
+            organizationIds: ownershipRows.map((row) => row.organizationId),
+            now: new Date(),
+        }))
+    ) {
+        return {
+            success: false,
+            reason: "dynamic_translation_entitlement_required",
+        };
+    }
+
+    const languageSettingsUpdated = await db.transaction(async (tx) => {
+        const now = new Date();
         const currentContentRows = await tx
             .select({
                 contentId: projectContentTable.id,
                 title: projectContentTable.title,
+                subtitle: projectContentTable.subtitle,
                 body: projectContentTable.body,
                 bodyPlainText: projectContentTable.bodyPlainText,
                 sourceLanguageCode: projectContentTable.sourceLanguageCode,
@@ -1263,49 +2264,108 @@ export async function updateProjectLanguageSetting({
             .where(eq(projectTable.id, project.projectId))
             .limit(1);
         const currentContent = currentContentRows.at(0);
-        let finalSourceLanguageCode = currentContent?.sourceLanguageCode ?? null;
+        let finalSourceLanguageCode =
+            currentContent?.sourceLanguageCode ?? null;
+        let sourceLanguageMetadata: ContentLanguageMetadata | undefined;
 
         if (
             currentContent !== undefined &&
-            data.setting.dynamicTranslationEnabled
+            data.languageSettings.dynamicTranslationEnabled
         ) {
             const bodyPlainText =
                 currentContent.bodyPlainText ??
                 htmlToCountedText(currentContent.body ?? "");
-            const sourceLanguageMetadata = await resolveContentLanguageMetadata({
-                text: buildConversationLanguageDetectionCorpus({
-                    conversationTitle: currentContent.title,
-                    bodyPlainText,
-                }),
-                googleText: buildGoogleConversationLanguageDetectionCorpus({
-                    conversationTitle: currentContent.title,
-                    bodyPlainText,
-                }),
+            sourceLanguageMetadata = await resolveProjectContentLanguageMetadata({
+                projectTitle: currentContent.title,
+                bodyPlainText,
                 googleCloudCredentials,
                 useGoogleLanguageDetection: true,
             });
             finalSourceLanguageCode = sourceLanguageMetadata.sourceLanguageCode;
-            await tx
-                .update(projectContentTable)
-                .set(contentLanguageMetadataUpdateValues(sourceLanguageMetadata))
-                .where(eq(projectContentTable.id, currentContent.contentId));
         }
 
-        const normalizedSetting = normalizeTranslationLanguageSetting({
-            setting: data.setting,
+        const normalizedLanguageSettings = normalizeProjectLanguageSettings({
+            languageSettings: data.languageSettings,
             canUseDynamicTranslation: true,
             sourceLanguageCode: finalSourceLanguageCode,
         });
 
-        if (normalizedSetting.additionalLanguageCodes.length > 0) {
+        if (!normalizedLanguageSettings.dynamicTranslationEnabled) {
+            if (currentContent === undefined) {
+                return false;
+            }
+
+            const bodyPlainText =
+                currentContent.bodyPlainText ??
+                htmlToCountedText(currentContent.body ?? "");
+            if (
+                !(await hasCompleteStoredManualProjectContentLocalizations({
+                    db: tx,
+                    projectContentId: currentContent.contentId,
+                    targetLanguageCodes:
+                        normalizedLanguageSettings.targetLanguageCodes,
+                    sourceSubtitleRequired: projectSubtitleRequiresLocalization(
+                        currentContent.subtitle,
+                    ),
+                    sourceBodyRequired:
+                        projectBodyRequiresLocalization(bodyPlainText),
+                }))
+            ) {
+                return false;
+            }
+        }
+
+        await tx
+            .update(projectTable)
+            .set({
+                dynamicTranslationEnabled:
+                    normalizedLanguageSettings.dynamicTranslationEnabled,
+                updatedAt: now,
+            })
+            .where(eq(projectTable.id, project.projectId));
+
+        if (sourceLanguageMetadata !== undefined && currentContent !== undefined) {
+            await tx
+                .update(projectContentTable)
+                .set(
+                    contentLanguageMetadataUpdateValues(sourceLanguageMetadata),
+                )
+                .where(eq(projectContentTable.id, currentContent.contentId));
+        }
+
+        await tx
+            .update(projectTranslationTargetLanguageTable)
+            .set({ deletedAt: now })
+            .where(
+                and(
+                    eq(
+                        projectTranslationTargetLanguageTable.projectId,
+                        project.projectId,
+                    ),
+                    isNull(projectTranslationTargetLanguageTable.deletedAt),
+                ),
+            );
+
+        if (normalizedLanguageSettings.targetLanguageCodes.length > 0) {
             await tx.insert(projectTranslationTargetLanguageTable).values(
-                normalizedSetting.additionalLanguageCodes.map((languageCode) => ({
-                    projectId: project.projectId,
-                    languageCode,
-                })),
+                normalizedLanguageSettings.targetLanguageCodes.map(
+                    (languageCode) => ({
+                        projectId: project.projectId,
+                        languageCode,
+                    }),
+                ),
             );
         }
+
+        return true;
     });
+
+    if (!languageSettingsUpdated) {
+        return {
+            success: false,
+            reason: "missing_manual_project_content_localization",
+        };
+    }
 
     return { success: true, projectId: project.projectId };
 }
@@ -1324,6 +2384,7 @@ export async function updateProjectExternalOrganizationLocalization({
     const websiteUrl = data.websiteUrl ?? null;
 
     await db.transaction(async (tx) => {
+        const now = new Date();
         await tx
             .insert(projectExternalOrganizationLocalizationTable)
             .values({
@@ -1340,13 +2401,17 @@ export async function updateProjectExternalOrganizationLocalization({
                     projectExternalOrganizationLocalizationTable.externalOrganizationId,
                     projectExternalOrganizationLocalizationTable.languageCode,
                 ],
+                targetWhere: isNull(
+                    projectExternalOrganizationLocalizationTable.deletedAt,
+                ),
                 set: {
                     displayName: data.displayName,
                     description: data.description,
                     websiteUrl,
                     imagePath,
                     isFullImagePath: data.isFullImagePath,
-                    updatedAt: new Date(),
+                    deletedAt: null,
+                    updatedAt: now,
                 },
             });
 
@@ -1360,12 +2425,15 @@ export async function updateProjectExternalOrganizationLocalization({
                     websiteUrl,
                     imagePath,
                     isFullImagePath: data.isFullImagePath,
-                    updatedAt: new Date(),
+                    updatedAt: now,
                 })
                 .where(
-                    eq(
-                        projectExternalOrganizationTable.id,
-                        data.externalOrganizationId,
+                    and(
+                        eq(
+                            projectExternalOrganizationTable.id,
+                            data.externalOrganizationId,
+                        ),
+                        isNull(projectExternalOrganizationTable.deletedAt),
                     ),
                 );
         }

@@ -13,8 +13,19 @@ export interface AdministratorProjectTranslations {
   ownerOrganizationsLabel: string;
   subtitleLabel: string;
   bodyLabel: string;
-  heroImagePathLabel: string;
-  heroImageIsFullPathLabel: string;
+  bannerPathLabel: string;
+  bannerIsFullPathLabel: string;
+  contentLocalizationsTitle: string;
+  contentLocalizationsDescription: string;
+  localizationLanguageLabel: string;
+  addLocalizationButton: string;
+  updateLocalizationButton: string;
+  editLocalizationButton: string;
+  noLocalizationLanguagesMessage: string;
+  machineTranslationPreviewTitle: string;
+  machineTranslationPreviewDescription: string;
+  useMachineTranslationButton: string;
+  machineTranslationIncomplete: string;
   attributionsTitle: string;
   attributionRoleLabel: string;
   attributionSourceLabel: string;
@@ -47,9 +58,15 @@ export interface AdministratorProjectTranslations {
   manageTitle: string;
   manageDescription: string;
   selectProjectLabel: string;
+  projectLinkLabel: string;
+  copyProjectLinkLabel: string;
+  copyProjectLinkFailed: string;
   noProjectsMessage: string;
   projectLanguageSettingsLabel: string;
   projectLanguageSettingsDescription: string;
+  projectLanguageEntitlementLoadingDescription: string;
+  projectLanguageEntitlementRequiredDescription: string;
+  autoLanguageLabel: string;
   dynamicTranslationEnabledLabel: string;
   dynamicTranslationDisabledLabel: string;
   saveLanguageSettingsButton: string;
@@ -59,13 +76,18 @@ export interface AdministratorProjectTranslations {
   slugWarningTitle: string;
   slugWarningDescription: string;
   confirmSlugChangeButton: string;
-  archiveProjectButton: string;
-  archiveProjectTitle: string;
-  archiveProjectDescription: string;
-  confirmArchiveProjectButton: string;
+  deleteProjectButton: string;
+  deleteProjectTitle: string;
+  deleteProjectDescription: string;
+  confirmDeleteProjectButton: string;
   cancelButton: string;
   requiredSuffix: string;
   optionalSuffix: string;
+  dangerZoneTitle: string;
+  changeSlugDangerTitle: string;
+  changeSlugDangerDescription: string;
+  deleteDangerTitle: string;
+  deleteDangerDescription: string;
 }
 
 const en: AdministratorProjectTranslations = {
@@ -82,8 +104,22 @@ const en: AdministratorProjectTranslations = {
   ownerOrganizationsLabel: "Owner organizations",
   subtitleLabel: "Subtitle",
   bodyLabel: "Body",
-  heroImagePathLabel: "Hero image path",
-  heroImageIsFullPathLabel: "Hero image path is a full URL",
+  bannerPathLabel: "Project banner path",
+  bannerIsFullPathLabel: "Project banner path is a full URL",
+  contentLocalizationsTitle: "Localized project content",
+  contentLocalizationsDescription:
+    "Add manual title, body, and optional banner overrides for the additional project languages configured above.",
+  localizationLanguageLabel: "Language",
+  addLocalizationButton: "Add localized content",
+  updateLocalizationButton: "Update localized content",
+  editLocalizationButton: "Edit",
+  noLocalizationLanguagesMessage:
+    "Choose additional project languages before adding localized content.",
+  machineTranslationPreviewTitle: "Machine translation available",
+  machineTranslationPreviewDescription:
+    "Use this as a manual draft if it is good enough or needs small edits. Saving the project will approve it as manual content.",
+  useMachineTranslationButton: "Use as manual draft",
+  machineTranslationIncomplete: "Incomplete translation",
   attributionsTitle: "Public organization attributions",
   attributionRoleLabel: "Role",
   attributionSourceLabel: "Source",
@@ -121,10 +157,18 @@ const en: AdministratorProjectTranslations = {
   manageDescription:
     "Edit project slug and project-level language settings. Each section saves separately.",
   selectProjectLabel: "Project",
+  projectLinkLabel: "Project link",
+  copyProjectLinkLabel: "Copy project link",
+  copyProjectLinkFailed: "Failed to copy project link",
   noProjectsMessage: "No projects to manage yet. Create a project first.",
   projectLanguageSettingsLabel: "Project languages",
   projectLanguageSettingsDescription:
     "Configure dynamic translation and additional target languages.",
+  projectLanguageEntitlementLoadingDescription:
+    "Checking owner organization dynamic translation access...",
+  projectLanguageEntitlementRequiredDescription:
+    "Select at least one owner organization with dynamic translation entitlement to configure project languages.",
+  autoLanguageLabel: "Auto",
   dynamicTranslationEnabledLabel: "Dynamic translation on",
   dynamicTranslationDisabledLabel: "Dynamic translation off",
   saveLanguageSettingsButton: "Save language settings",
@@ -135,14 +179,19 @@ const en: AdministratorProjectTranslations = {
   slugWarningDescription:
     "Changing this slug can break links that were already visited or shared. Only continue if you are sure.",
   confirmSlugChangeButton: "Change slug",
-  archiveProjectButton: "Archive project",
-  archiveProjectTitle: "Archive project?",
-  archiveProjectDescription:
-    "Archiving hides this project from admin pickers and public project lists. Existing historical content is kept.",
-  confirmArchiveProjectButton: "Confirm archive",
+  deleteProjectButton: "Delete project",
+  deleteProjectTitle: "Delete project?",
+  deleteProjectDescription: "This will delete this project.",
+  confirmDeleteProjectButton: "Confirm delete",
   cancelButton: "Cancel",
   requiredSuffix: "required",
   optionalSuffix: "optional",
+  dangerZoneTitle: "Danger zone",
+  changeSlugDangerTitle: "Change project slug",
+  changeSlugDangerDescription:
+    "Changing this slug can break public links that were already visited or shared.",
+  deleteDangerTitle: "Delete this project",
+  deleteDangerDescription: "Delete this project.",
 };
 
 export const administratorProjectTranslations: Record<

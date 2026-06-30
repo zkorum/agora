@@ -1,0 +1,8 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="112" fill="#FFFFFF"/>
+  <path d="M256 72C331.1 72 394.7 116.6 421.3 179.8C386.4 155.6 329 139.9 256 139.9C183 139.9 125.6 155.6 90.7 179.8C117.3 116.6 180.9 72 256 72Z" fill="#F28A20"/>
+  <path d="M92 217.9C125.8 196.1 183.6 182 256 182C328.4 182 386.2 196.1 420 217.9C414.7 239 404.9 258.2 391.7 274.6C356.9 260.5 311.2 252.3 256 252.3C200.8 252.3 155.1 260.5 120.3 274.6C107.1 258.2 97.3 239 92 217.9Z" fill="#F28A20"/>
+  <path d="M153.5 308.3C181.4 299.3 215.7 294.1 256 294.1C296.3 294.1 330.6 299.3 358.5 308.3C330.8 330.6 295.1 344 256 344C216.9 344 181.2 330.6 153.5 308.3Z" fill="#25426F"/>
+  <text x="256" y="411" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="43" font-weight="700" fill="#25426F">Граждандык</text>
+  <text x="256" y="462" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="48" font-weight="700" fill="#25426F">союз</text>
+</svg>

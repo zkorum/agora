@@ -103,7 +103,10 @@
             }"
             @click="emit('selectLive')"
           >
-            <span class="checkpoint-timeline__dot" />
+            <ZKLiveStatusDot
+              class="checkpoint-timeline__dot"
+              :active="isLivePulseActive"
+            />
             <span class="checkpoint-timeline__label">
               {{ props.nowLabel }}
             </span>
@@ -128,6 +131,7 @@
 
 <script setup lang="ts">
 import { useQuasar } from "quasar";
+import ZKLiveStatusDot from "src/components/ui-library/ZKLiveStatusDot.vue";
 import { getHorizontalScrollMax } from "src/composables/ui/horizontalDragScrollLogic";
 import { useHorizontalDragScroll } from "src/composables/ui/useHorizontalDragScroll";
 import type { AnalysisCheckpoint } from "src/shared/types/dto";
@@ -582,8 +586,10 @@ onDeactivated(saveTimelineScrollPosition);
 </script>
 
 <style lang="scss" scoped>
+$checkpoint-live-color: #24966d;
+
 .checkpoint-timeline {
-  --checkpoint-live-pulse-headroom: 1rem;
+  --checkpoint-live-pulse-headroom: 1.35rem;
   --checkpoint-scroller-top-padding: calc(
     0.25rem + var(--checkpoint-live-pulse-headroom)
   );
@@ -783,91 +789,32 @@ onDeactivated(saveTimelineScrollPosition);
   min-width: 3rem;
 
   .checkpoint-timeline__dot {
-    border-color: #24966d;
+    border-color: $checkpoint-live-color;
   }
 
   &.checkpoint-timeline__marker--selected {
     color: #137a55;
 
     .checkpoint-timeline__dot {
-      border-color: #24966d;
-      background: #24966d;
-      box-shadow: 0 0 0 4px rgb(36 150 109 / 14%);
+      border-color: $checkpoint-live-color;
+      background: $checkpoint-live-color;
+      box-shadow: 0 0 0 4px rgba($checkpoint-live-color, 0.14);
     }
   }
 }
 
 .checkpoint-timeline__marker--live-active {
-  .checkpoint-timeline__dot {
-    animation: checkpoint-live-dot-beat 2s ease-in-out infinite;
-    box-shadow:
-      0 0 0 4px rgb(36 150 109 / 15%),
-      0 0 12px rgb(36 150 109 / 24%);
-  }
-
-  .checkpoint-timeline__dot::before,
-  .checkpoint-timeline__dot::after {
-    content: "";
-    position: absolute;
-    border: 2px solid rgb(36 150 109 / 34%);
-    border-radius: inherit;
-    animation: checkpoint-live-pulse 2s ease-out infinite;
-  }
-
-  .checkpoint-timeline__dot::before {
-    inset: -0.42rem;
-  }
-
-  .checkpoint-timeline__dot::after {
-    inset: -0.72rem;
-    animation-delay: 0.5s;
-  }
-
   .checkpoint-timeline__label {
     color: #0f6c4b;
     font-weight: 700;
-    text-shadow: 0 0 9px rgb(36 150 109 / 18%);
-  }
-}
-
-@keyframes checkpoint-live-dot-beat {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-
-  45% {
-    transform: scale(1.08);
-  }
-}
-
-@keyframes checkpoint-live-pulse {
-  0% {
-    opacity: 0.8;
-    transform: scale(0.6);
-  }
-
-  70%,
-  100% {
-    opacity: 0;
-    transform: scale(1.35);
+    text-shadow: 0 0 9px rgba($checkpoint-live-color, 0.18);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .checkpoint-timeline__marker--live-active {
-    .checkpoint-timeline__dot {
-      animation: none;
-    }
-
     .checkpoint-timeline__label {
       text-shadow: none;
-    }
-
-    .checkpoint-timeline__dot::before,
-    .checkpoint-timeline__dot::after {
-      animation: none;
-      opacity: 0;
     }
   }
 }

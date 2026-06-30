@@ -485,6 +485,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/project/[projectSlug]': RouteRecordInfo<
+      '/project/[projectSlug]',
+      '/project/:projectSlug',
+      { projectSlug: ParamValue<true> },
+      { projectSlug: ParamValue<false> },
+      | never
+    >,
     '/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]': RouteRecordInfo<
       '/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]',
       '/reports/:reportType/:conversationSlugId/:opinionSlugId?',
@@ -1061,6 +1068,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/onboarding/step4-username/index.vue': {
       routes:
         | '/onboarding/step4-username/'
+      views:
+        | never
+    }
+    'src/pages/project/[projectSlug].vue': {
+      routes:
+        | '/project/[projectSlug]'
       views:
         | never
     }

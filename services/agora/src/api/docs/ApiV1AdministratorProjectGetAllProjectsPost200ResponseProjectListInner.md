@@ -11,10 +11,11 @@ Name | Type | Description | Notes
 **subtitle** | **string** |  | [optional] [default to undefined]
 **body** | **string** |  | [optional] [default to undefined]
 **bodyPlainText** | **string** |  | [optional] [default to undefined]
-**heroImagePath** | **string** |  | [optional] [default to undefined]
-**heroImageIsFullPath** | **boolean** |  | [default to undefined]
-**dynamicTranslationEnabled** | **boolean** |  | [default to undefined]
-**additionalLanguageCodes** | **Array&lt;string&gt;** |  | [default to undefined]
+**bannerPath** | **string** |  | [optional] [default to undefined]
+**bannerIsFullPath** | **boolean** |  | [default to undefined]
+**contentLocalizations** | [**Array&lt;ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInner&gt;**](ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInner.md) |  | [default to undefined]
+**machineContentLocalizations** | [**Array&lt;ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInner&gt;**](ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInner.md) |  | [default to undefined]
+**languageSettings** | [**ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerLanguageSettings**](ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerLanguageSettings.md) |  | [default to undefined]
 **attributions** | [**Array&lt;ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInner&gt;**](ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInner.md) |  | [default to undefined]
 **contact** | [**ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact**](ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact.md) |  | [optional] [default to undefined]
 
@@ -30,10 +31,11 @@ const instance: ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectLis
     subtitle,
     body,
     bodyPlainText,
-    heroImagePath,
-    heroImageIsFullPath,
-    dynamicTranslationEnabled,
-    additionalLanguageCodes,
+    bannerPath,
+    bannerIsFullPath,
+    contentLocalizations,
+    machineContentLocalizations,
+    languageSettings,
     attributions,
     contact,
 };

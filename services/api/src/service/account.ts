@@ -12,7 +12,7 @@ import {
     projectOrganizationOwnershipTable,
 } from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/util.js";
 import { logoutAllDevicesForUser } from "./auth.js";
 import { httpErrors } from "@fastify/sensible";
@@ -702,9 +702,12 @@ export async function deleteUserAccount({ db, userId }: DeleteAccountProps) {
             .from(conversationTable)
             .innerJoin(
                 projectOrganizationOwnershipTable,
-                eq(
-                    projectOrganizationOwnershipTable.projectId,
-                    conversationTable.projectId,
+                and(
+                    eq(
+                        projectOrganizationOwnershipTable.projectId,
+                        conversationTable.projectId,
+                    ),
+                    isNull(projectOrganizationOwnershipTable.deletedAt),
                 ),
             )
             .innerJoin(
@@ -714,7 +717,12 @@ export async function deleteUserAccount({ db, userId }: DeleteAccountProps) {
                     projectOrganizationOwnershipTable.organizationId,
                 ),
             )
-            .where(eq(organizationMembershipTable.userId, userId));
+            .where(
+                and(
+                    eq(organizationMembershipTable.userId, userId),
+                    isNull(organizationMembershipTable.deletedAt),
+                ),
+            );
         log.info(
             `[Account] Found ${String(userConversations.length)} conversations`,
         );

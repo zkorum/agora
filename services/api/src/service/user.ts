@@ -27,6 +27,7 @@ import {
     desc,
     inArray,
     isNotNull,
+    isNull,
 } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
@@ -147,7 +148,10 @@ export async function getUserComments({
             )
             .leftJoin(
                 opinionModerationTable,
-                eq(opinionModerationTable.opinionId, opinionTable.id),
+                and(
+                    eq(opinionModerationTable.opinionId, opinionTable.id),
+                    isNull(opinionModerationTable.deletedAt),
+                ),
             )
             .where(
                 lastCursor !== undefined
@@ -254,9 +258,12 @@ async function getOwnedActiveConversationCount({
         .from(conversationTable)
         .innerJoin(
             projectOrganizationOwnershipTable,
-            eq(
-                projectOrganizationOwnershipTable.projectId,
-                conversationTable.projectId,
+            and(
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    conversationTable.projectId,
+                ),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
             ),
         )
         .innerJoin(
@@ -269,6 +276,7 @@ async function getOwnedActiveConversationCount({
         .where(
             and(
                 eq(organizationMembershipTable.userId, userId),
+                isNull(organizationMembershipTable.deletedAt),
                 eq(conversationTable.isImporting, false),
                 isNotNull(conversationTable.currentContentId),
             ),

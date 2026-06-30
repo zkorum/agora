@@ -179,7 +179,10 @@ export async function isUserPartOfOrganization({
         .from(userTable)
         .innerJoin(
             organizationMembershipTable,
-            eq(userTable.id, organizationMembershipTable.userId),
+            and(
+                eq(userTable.id, organizationMembershipTable.userId),
+                isNull(organizationMembershipTable.deletedAt),
+            ),
         )
         .innerJoin(
             organizationTable,
@@ -223,6 +226,7 @@ export async function isUserPartOfOrganizationById({
             and(
                 eq(organizationMembershipTable.userId, userId),
                 eq(organizationMembershipTable.organizationId, organizationId),
+                isNull(organizationMembershipTable.deletedAt),
                 isNull(organizationTable.deletedAt),
             ),
         )

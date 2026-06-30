@@ -1,28 +1,50 @@
 <template>
-  <div class="project-page-view">
+  <div class="project-page-view" :dir="projectTextDirection">
     <main>
-      <section class="project-page-view__hero" :class="`project-page-view__hero--${project.heroVariant}`">
-        <div class="project-page-view__hero-grid"></div>
-        <div class="project-page-view__hero-controls">
-          <BackButton :fallback-route="{ name: '/dev/component-testing' }" />
+      <section
+        class="project-page-view__banner"
+        :class="[
+          `project-page-view__banner--${project.bannerVariant}`,
+          {
+            'project-page-view__banner--with-image':
+              selectedBannerImageUrl !== undefined,
+          },
+        ]"
+      >
+        <img
+          v-if="selectedBannerImageUrl !== undefined"
+          :key="selectedBannerImageUrl"
+          class="project-page-view__banner-image"
+          :src="selectedBannerImageUrl"
+          :alt="t('bannerImageAlt', { title: project.title })"
+        />
+        <div class="project-page-view__banner-grid"></div>
+        <div
+          class="project-page-view__banner-controls"
+          :class="{
+            'project-page-view__banner-controls--without-language':
+              !hasMultipleLanguageOptions,
+          }"
+        >
+          <ProjectLanguageSelect
+            v-if="hasMultipleLanguageOptions"
+            v-model:selected-language="selectedLanguage"
+            class="project-page-view__language"
+            :language-options="languageOptions"
+            :text-direction="projectTextDirection"
+          />
 
-          <div class="project-page-view__hero-actions">
-            <div class="project-page-view__consultation-pill" :class="consultationStatusClass">
-              <span></span>
-              {{ consultationStatusLabel }}
-            </div>
-
-            <ZKSearchableBottomSheetSelect
-              v-model="selectedLanguage"
-              class="project-page-view__language"
-              variant="pill"
-              label="Language"
-              dialog-title="Your display language"
-              dialog-subtitle="Choose the language used in the Agora interface."
-              search-placeholder="Search languages"
-              search-mode="always"
-              :options="languageOptions"
+          <div
+            v-if="consultationStatus !== 'none'"
+            class="project-page-view__consultation-pill"
+            :class="consultationStatusClass"
+          >
+            <ZKLiveStatusDot
+              class="project-page-view__consultation-dot"
+              :active="consultationStatus === 'live'"
+              tone="positive"
             />
+            {{ consultationStatusLabel }}
           </div>
         </div>
       </section>
@@ -30,68 +52,169 @@
       <div class="project-page-view__shell">
         <section class="project-page-view__intro">
           <h1>{{ project.title }}</h1>
-          <p v-if="project.subtitle !== undefined" class="project-page-view__subtitle">
+          <p
+            v-if="project.subtitle !== undefined"
+            class="project-page-view__subtitle"
+          >
             {{ project.subtitle }}
           </p>
-          <p v-if="project.bodyPlainText !== undefined" class="project-page-view__body">
-            {{ project.bodyPlainText }}
-          </p>
+          <ZKPlainTextContent
+            v-if="project.bodyPlainText !== undefined"
+            class="project-page-view__body"
+            :plain-text="project.bodyPlainText"
+            :compact-mode="false"
+            :enable-links="true"
+            :collapsed-line-count="4"
+            :desktop-collapsed-line-count="4"
+          />
 
           <div class="project-page-view__stats">
             <span v-if="project.participantCount >= 2">
               <q-icon name="mdi-account-outline" size="1rem" />
-              {{ formatNumber(project.participantCount) }} participants have joined
+              {{
+                t("participantsJoined", {
+                  count: formatNumber(project.participantCount),
+                })
+              }}
             </span>
             <span>
               <q-icon name="mdi-format-list-bulleted" size="1rem" />
-              {{ formatNumber(project.activityCount) }} activities
+              {{
+                t("activitiesCount", {
+                  count: formatNumber(project.activityCount),
+                })
+              }}
             </span>
             <span>
               <q-icon name="mdi-check-circle-outline" size="1rem" />
-              {{ formatNumber(project.voteCount) }} votes
+              {{ t("votesCount", { count: formatNumber(project.voteCount) }) }}
             </span>
           </div>
         </section>
 
         <div class="project-page-view__content-grid">
-          <section class="project-page-view__activities" aria-labelledby="project-activities-title">
+          <section
+            class="project-page-view__activities"
+            aria-labelledby="project-activities-title"
+          >
             <div class="project-page-view__section-heading">
               <div>
-                <p>{{ formatNumber(project.activityCount) }} activities</p>
-                <h2 id="project-activities-title" class="visually-hidden">Activities</h2>
+                <p>
+                  {{
+                    t("activitiesCount", {
+                      count: formatNumber(project.activityCount),
+                    })
+                  }}
+                </p>
+                <h2 id="project-activities-title" class="visually-hidden">
+                  {{ t("activitiesTitle") }}
+                </h2>
               </div>
+
+              <span
+                v-if="activities.length > 0"
+                class="project-page-view__list-progress"
+              >
+                {{
+                  t("showingActivities", {
+                    visible: formatNumber(activities.length),
+                    total: formatNumber(activityCount),
+                  })
+                }}
+              </span>
             </div>
 
-            <div class="project-page-view__activity-list">
-              <ProjectActivityCard
-                v-for="activity in project.activities"
-                :key="activity.slug"
-                :activity="activity"
-              />
-            </div>
+            <q-infinite-scroll
+              :key="activityListKey"
+              :offset="1200"
+              :disable="!canLoadMoreActivities"
+              @load="onActivitiesLoad"
+            >
+              <div
+                v-if="activities.length > 0"
+                class="project-page-view__activity-list"
+              >
+                <ProjectActivityCard
+                  v-for="activity in activities"
+                  :key="activity.slug"
+                  :activity="activity"
+                  :language-code="selectedLanguageValue"
+                  :text-direction="projectTextDirection"
+                />
+              </div>
+
+              <div
+                v-if="activities.length === 0"
+                class="project-page-view__empty-activities"
+              >
+                <q-icon name="mdi-forum-outline" size="2rem" />
+                <span>{{ t("emptyActivities") }}</span>
+              </div>
+
+              <div
+                v-if="activities.length > 0 && !canLoadMoreActivities"
+                class="project-page-view__list-complete"
+              >
+                <q-icon name="mdi-check" size="1.15rem" />
+                <span>{{ t("allActivitiesLoaded") }}</span>
+              </div>
+            </q-infinite-scroll>
           </section>
 
-          <aside class="project-page-view__aside" aria-label="Project details">
-            <section class="project-page-view__info-section">
-              <h2 class="project-page-view__aside-title">Who is behind this</h2>
+          <aside
+            class="project-page-view__aside"
+            :aria-label="t('projectDetailsAriaLabel')"
+          >
+            <section
+              class="project-page-view__info-section project-page-view__info-section--attributions"
+            >
+              <h2 class="project-page-view__aside-title">
+                {{ t("behindThisTitle") }}
+              </h2>
               <ProjectAttributionSection
-                title="Project Owners"
-                :entries="projectOwnerAttributions"
+                :title="t('sponsorsTitle')"
+                :entries="sponsorAttributions"
+                :language-code="selectedLanguageValue"
               />
-              <ProjectAttributionSection title="Sponsors" :entries="sponsorAttributions" />
-              <ProjectAttributionSection title="Partners" :entries="partnerAttributions" />
+              <ProjectAttributionSection
+                :title="t('projectOwnersTitle')"
+                :entries="projectOwnerAttributions"
+                :language-code="selectedLanguageValue"
+              />
+              <ProjectAttributionSection
+                :title="t('partnersTitle')"
+                :entries="partnerAttributions"
+                :language-code="selectedLanguageValue"
+              />
             </section>
 
-            <section v-if="project.contact !== undefined" class="project-page-view__info-section">
-              <h2 class="project-page-view__aside-title">Project contact</h2>
-              <ProjectContactCard :contact="project.contact" />
+            <section
+              v-if="project.contact !== undefined"
+              class="project-page-view__info-section project-page-view__info-section--contact"
+            >
+              <h2 class="project-page-view__aside-title">
+                {{ t("projectContactTitle") }}
+              </h2>
+              <ProjectContactCard
+                :contact="project.contact"
+                :language-code="selectedLanguageValue"
+              />
             </section>
           </aside>
         </div>
 
         <footer class="project-page-view__footer">
-          <span>Powered by <strong>Agora Citizen Network</strong></span>
-          <span>Project content is owned by the Project Owners.</span>
+          <span class="project-page-view__footer-line">
+            <span>{{ t("poweredBy") }}</span>
+            <SpaLink
+              to="/"
+              class="project-page-view__brand-link"
+              :aria-label="t('homeAriaLabel')"
+            >
+              <ZKStyledText text="Agora Citizen Network" :add-gradient="true" />
+            </SpaLink>
+          </span>
+          <span>{{ t("contentOwnedByProjectOwners") }}</span>
         </footer>
       </div>
     </main>
@@ -99,46 +222,145 @@
 </template>
 
 <script setup lang="ts">
-import BackButton from "src/components/navigation/buttons/BackButton.vue";
-import ZKSearchableBottomSheetSelect from "src/components/ui-library/ZKSearchableBottomSheetSelect.vue";
-import { computed, ref } from "vue";
+import SpaLink from "src/components/ui-library/SpaLink.vue";
+import ZKLiveStatusDot from "src/components/ui-library/ZKLiveStatusDot.vue";
+import ZKPlainTextContent from "src/components/ui-library/ZKPlainTextContent.vue";
+import ZKStyledText from "src/components/ui-library/ZKStyledText.vue";
+import { getLanguageTextDirection } from "src/shared/languages";
+import { computed } from "vue";
 
 import ProjectActivityCard from "./ProjectActivityCard.vue";
 import ProjectAttributionSection from "./ProjectAttributionSection.vue";
 import ProjectContactCard from "./ProjectContactCard.vue";
-import type { ProjectAttribution, ProjectLanguageOption, ProjectPageData } from "./projectPageTypes";
+import ProjectLanguageSelect from "./ProjectLanguageSelect.vue";
+import {
+  formatProjectPageNumber,
+  type ProjectPageTranslations,
+  translateProjectPageText,
+} from "./projectPageI18n";
+import type {
+  ProjectActivity,
+  ProjectAttribution,
+  ProjectLanguageOption,
+  ProjectPageData,
+} from "./projectPageTypes";
+
+type ConsultationStatus = "none" | "live" | "closed";
 
 const props = defineProps<{
   project: ProjectPageData;
+  activities: readonly ProjectActivity[];
+  activityCount: number;
+  canLoadMoreActivities: boolean;
+  isLoadingMoreActivities: boolean;
   languageOptions: readonly ProjectLanguageOption[];
   initialLanguage: string;
 }>();
+const emit = defineEmits<{
+  loadMoreActivities: [done: () => void];
+}>();
 
-const selectedLanguage = ref<string | readonly string[]>(props.initialLanguage);
+const selectedLanguage = defineModel<string | readonly string[]>(
+  "selectedLanguage",
+  {
+    required: true,
+  }
+);
 
-const projectOwnerAttributions = computed(() => filterAttributions("project_owner"));
+const selectedLanguageValue = computed(() => {
+  if (Array.isArray(selectedLanguage.value)) {
+    return selectedLanguage.value.at(0) ?? props.initialLanguage;
+  }
+
+  return selectedLanguage.value;
+});
+
+const projectTextDirection = computed(() =>
+  getLanguageTextDirection(selectedLanguageValue.value)
+);
+
+const selectedBannerImageUrl = computed(() => {
+  return props.project.bannerImageUrl;
+});
+
+const projectOwnerAttributions = computed(() =>
+  filterAttributions("project_owner")
+);
 const sponsorAttributions = computed(() => filterAttributions("sponsor"));
 const partnerAttributions = computed(() => filterAttributions("partner"));
-const hasOpenActivity = computed(() =>
-  props.project.activities.some(
-    (activity) => activity.kind === "conversation" && !activity.isClosed
-  )
-);
-const consultationStatusLabel = computed(() =>
-  hasOpenActivity.value ? "Live consultation" : "Closed consultation"
-);
+const consultationStatus = computed<ConsultationStatus>(() => {
+  if (props.activities.length === 0) {
+    return "none";
+  }
+
+  if (
+    props.activities.some(
+      (activity) => activity.kind === "conversation" && !activity.isClosed
+    )
+  ) {
+    return "live";
+  }
+
+  return "closed";
+});
+const consultationStatusLabel = computed(() => {
+  if (consultationStatus.value === "none") return "";
+
+  return consultationStatus.value === "live"
+    ? t("liveConsultation")
+    : t("closedConsultation");
+});
 const consultationStatusClass = computed(() => ({
-  "project-page-view__consultation-pill--closed": !hasOpenActivity.value,
+  "project-page-view__consultation-pill--closed":
+    consultationStatus.value === "closed",
 }));
+const canLoadMoreActivities = computed(
+  () => props.canLoadMoreActivities && !props.isLoadingMoreActivities
+);
+const hasMultipleLanguageOptions = computed(() => props.languageOptions.length > 1);
+const activityListKey = computed(() => {
+  const firstActivity = props.activities.at(0);
+  const lastActivity = props.activities.at(-1);
 
-const numberFormatter = new Intl.NumberFormat();
+  return [
+    props.project.slug,
+    props.activities.length,
+    firstActivity?.slug ?? "none",
+    lastActivity?.slug ?? "none",
+  ].join(":");
+});
 
-function filterAttributions(role: ProjectAttribution["role"]): readonly ProjectAttribution[] {
+function t(
+  key: keyof ProjectPageTranslations,
+  params?: Readonly<Record<string, string | number>>
+): string {
+  return translateProjectPageText({
+    languageCode: selectedLanguageValue.value,
+    key,
+    params,
+  });
+}
+
+function filterAttributions(
+  role: ProjectAttribution["role"]
+): readonly ProjectAttribution[] {
   return props.project.attributions.filter((entry) => entry.role === role);
 }
 
 function formatNumber(value: number): string {
-  return numberFormatter.format(value);
+  return formatProjectPageNumber({
+    languageCode: selectedLanguageValue.value,
+    value,
+  });
+}
+
+function onActivitiesLoad(_index: number, done: () => void): void {
+  if (!props.canLoadMoreActivities || props.isLoadingMoreActivities) {
+    done();
+    return;
+  }
+
+  emit("loadMoreActivities", done);
 }
 </script>
 
@@ -146,7 +368,11 @@ function formatNumber(value: number): string {
 .project-page-view {
   min-height: 100dvh;
   background:
-    radial-gradient(circle at 1px 1px, rgba($ink-darkest, 0.035) 1px, transparent 0),
+    radial-gradient(
+      circle at 1px 1px,
+      rgba($ink-darkest, 0.035) 1px,
+      transparent 0
+    ),
     $app-background-color;
   background-size: 24px 24px;
   color: $ink-darker;
@@ -160,62 +386,74 @@ main {
   padding-bottom: 3rem;
 }
 
-.project-page-view__hero {
+.project-page-view__banner {
   position: relative;
-  height: clamp(12rem, 25vw, 17rem);
+  height: clamp(12.5rem, 25vw, 17rem);
   overflow: hidden;
   background: linear-gradient(135deg, #1d4f9f, #6b4eff);
 }
 
-.project-page-view__hero--purple {
+.project-page-view__banner--purple {
   background: linear-gradient(135deg, #5538ee, #d8639a);
 }
 
-.project-page-view__hero--green {
+.project-page-view__banner--green {
   background: linear-gradient(135deg, #177a41, #4f92f6);
 }
 
-.project-page-view__hero-grid {
+.project-page-view__banner-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.project-page-view__banner-grid {
   position: absolute;
   inset: 0;
   background:
     radial-gradient(circle at 20% 20%, rgba(white, 0.22), transparent 26%),
     radial-gradient(circle at 72% 26%, rgba(white, 0.2), transparent 22%),
-    linear-gradient(180deg, rgba($ink-darkest, 0.08), rgba($app-background-color, 0.88));
+    linear-gradient(
+      180deg,
+      rgba($ink-darkest, 0.08),
+      rgba($app-background-color, 0.88)
+    );
 }
 
-.project-page-view__hero-controls {
+.project-page-view__banner--with-image {
+  background: $app-background-color;
+
+  .project-page-view__banner-grid {
+    background: linear-gradient(
+      180deg,
+      rgba($ink-darkest, 0.02),
+      rgba($app-background-color, 0.16)
+    );
+  }
+}
+
+.project-page-view__banner-controls {
   position: relative;
   z-index: 1;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
   width: min(72rem, calc(100% - 2rem));
   margin: 0 auto;
   padding-top: 0.85rem;
-
-  :deep(.zk-icon-button) {
-    min-width: 2.75rem;
-    min-height: 2.75rem;
-    padding: 0.55rem;
-    border-radius: 14px;
-    background: rgba(white, 0.92);
-    box-shadow: 0 0.25rem 1rem rgba(10, 7, 20, 0.08);
-  }
 }
 
-.project-page-view__hero-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.55rem;
+.project-page-view__banner-controls--without-language {
+  justify-content: flex-end;
 }
 
 .project-page-view__consultation-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.7rem;
   padding: 0.48rem 0.75rem;
   border-radius: 999px;
   background: rgba($ink-base, 0.78);
@@ -224,19 +462,19 @@ main {
   font-weight: var(--font-weight-bold);
   line-height: 1;
   box-shadow: 0 0.25rem 1rem rgba(10, 7, 20, 0.14);
-
-  span {
-    width: 0.6rem;
-    height: 0.6rem;
-    border-radius: 50%;
-    background: #46d17f;
-    box-shadow: 0 0 0 0 rgba(#46d17f, 0.6);
-  }
+  white-space: nowrap;
 }
 
-.project-page-view__consultation-pill--closed span {
-  background: $sky-dark;
-  box-shadow: none;
+.project-page-view__consultation-dot {
+  flex: none;
+  width: 0.6rem;
+  height: 0.6rem;
+}
+
+.project-page-view__consultation-pill--closed {
+  .project-page-view__consultation-dot {
+    background: $sky-dark;
+  }
 }
 
 .project-page-view__shell {
@@ -246,7 +484,7 @@ main {
 }
 
 .project-page-view__intro {
-  max-width: 48rem;
+  max-width: 64rem;
   padding: clamp(1rem, 2.4vw, 1.6rem) 0 0;
 }
 
@@ -281,8 +519,11 @@ h1 {
   max-width: 42rem;
   margin: 1rem 0 0;
   color: $ink-light;
-  font-size: 1rem;
-  line-height: 1.65;
+
+  :deep(.textBreak) {
+    font-size: 1rem;
+    line-height: 1.65;
+  }
 }
 
 .project-page-view__stats {
@@ -326,6 +567,13 @@ h1 {
   margin-bottom: 1rem;
 }
 
+.project-page-view__list-progress {
+  color: $ink-light;
+  font-size: 0.85rem;
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}
+
 h2 {
   margin: 0.25rem 0 0;
   color: $ink-darkest;
@@ -352,13 +600,53 @@ h2 {
   gap: 1rem;
 }
 
+.project-page-view__empty-activities,
+.project-page-view__list-complete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  color: $sky-dark;
+  font-size: 0.86rem;
+  font-weight: var(--font-weight-semibold);
+  text-align: center;
+}
+
+.project-page-view__empty-activities {
+  min-height: 12rem;
+  flex-direction: column;
+  padding: 1.25rem;
+  border: 1px dashed $sky-light;
+  border-radius: 20px;
+  background: rgba(white, 0.62);
+}
+
+.project-page-view__list-complete {
+  padding: 1.15rem 0 0.25rem;
+}
+
 .project-page-view__aside {
   position: sticky;
   top: 5.2rem;
+  gap: 2.35rem;
 }
 
 .project-page-view__info-section {
-  gap: 1.1rem;
+  gap: 0;
+}
+
+.project-page-view__info-section--attributions {
+  .project-page-view__aside-title + .project-attribution-section {
+    margin-top: 0.9rem;
+  }
+
+  .project-attribution-section + .project-attribution-section {
+    margin-top: 1.15rem;
+  }
+}
+
+.project-page-view__info-section--contact {
+  gap: 0.65rem;
 }
 
 .project-page-view__aside-title {
@@ -371,16 +659,30 @@ h2 {
 
 .project-page-view__footer {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 0.35rem 1rem;
+  gap: 0.35rem;
   padding: 2.5rem 0 0;
   color: $sky-dark;
   font-size: 0.82rem;
   text-align: center;
+}
 
-  strong {
-    color: $ink-light;
+.project-page-view__footer-line {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.project-page-view__brand-link {
+  display: inline-block;
+  font-weight: var(--font-weight-bold);
+  transition: transform 0.15s ease-out;
+
+  &:active {
+    transform: scale(0.98);
   }
 }
 
@@ -395,7 +697,7 @@ h2 {
 }
 
 @media (max-width: 520px) {
-  .project-page-view__hero-controls {
+  .project-page-view__banner-controls {
     width: calc(100% - 1.2rem);
     padding-top: 0.7rem;
   }

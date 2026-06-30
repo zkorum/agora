@@ -1,7 +1,7 @@
 import { userMutePreferenceTable, userTable } from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonUser } from "./common.js";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
 import type { GetMutedUsersResponse } from "@/shared/types/dto.js";
@@ -26,7 +26,12 @@ export async function getUserMutePreferences({
             userTable,
             eq(userTable.id, userMutePreferenceTable.targetUserId),
         )
-        .where(eq(userMutePreferenceTable.sourceUserId, userId));
+        .where(
+            and(
+                eq(userMutePreferenceTable.sourceUserId, userId),
+                isNull(userMutePreferenceTable.deletedAt),
+            ),
+        );
 
     const userMuteItemList: GetMutedUsersResponse = [];
     userMutePreferenceTableResponse.forEach((userMuteItem) => {
@@ -71,6 +76,7 @@ export async function muteUserByUsername({
             and(
                 eq(userMutePreferenceTable.sourceUserId, sourceUserId),
                 eq(userMutePreferenceTable.targetUserId, targetUserId),
+                isNull(userMutePreferenceTable.deletedAt),
             ),
         );
     const isUserAlreadyMuted =
@@ -89,7 +95,8 @@ export async function muteUserByUsername({
         } else {
             if (isUserAlreadyMuted) {
                 await db
-                    .delete(userMutePreferenceTable)
+                    .update(userMutePreferenceTable)
+                    .set({ deletedAt: new Date() })
                     .where(
                         and(
                             eq(
@@ -100,6 +107,7 @@ export async function muteUserByUsername({
                                 userMutePreferenceTable.targetUserId,
                                 targetUserId,
                             ),
+                            isNull(userMutePreferenceTable.deletedAt),
                         ),
                     )
                     .returning();

@@ -98,6 +98,7 @@ async function getOrCreateMembership({
             and(
                 eq(organizationMembershipTable.userId, userId),
                 eq(organizationMembershipTable.organizationId, organizationId),
+                isNull(organizationMembershipTable.deletedAt),
             ),
         )
         .limit(1);
@@ -272,8 +273,8 @@ export async function getOrCreateDefaultProjectForOrganization({
             subtitle: null,
             body: null,
             bodyPlainText: "",
-            heroImagePath: null,
-            heroImageIsFullPath: false,
+            bannerPath: null,
+            bannerIsFullPath: false,
         })
         .returning({ contentId: projectContentTable.id });
     const insertedContent = insertedContentRows.at(0);
@@ -341,6 +342,7 @@ export async function resolveConversationCreateTarget({
                 eq(organizationTable.slug, postAsOrganizationSlug),
                 isNull(organizationTable.deletedAt),
                 eq(organizationMembershipTable.userId, userId),
+                isNull(organizationMembershipTable.deletedAt),
             ),
         )
         .limit(1);
@@ -400,14 +402,18 @@ export async function hasProjectCapability({
         )
         .innerJoin(
             projectOrganizationOwnershipTable,
-            eq(
-                projectOrganizationOwnershipTable.organizationId,
-                organizationMembershipTable.organizationId,
+            and(
+                eq(
+                    projectOrganizationOwnershipTable.organizationId,
+                    organizationMembershipTable.organizationId,
+                ),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
             ),
         )
         .where(
             and(
                 eq(organizationMembershipTable.userId, userId),
+                isNull(organizationMembershipTable.deletedAt),
                 isNull(organizationTable.deletedAt),
                 eq(projectOrganizationOwnershipTable.projectId, projectId),
                 eq(
@@ -480,14 +486,18 @@ export async function getProjectIdsWithCapability({
         )
         .innerJoin(
             projectOrganizationOwnershipTable,
-            eq(
-                projectOrganizationOwnershipTable.organizationId,
-                organizationMembershipTable.organizationId,
+            and(
+                eq(
+                    projectOrganizationOwnershipTable.organizationId,
+                    organizationMembershipTable.organizationId,
+                ),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
             ),
         )
         .where(
             and(
                 eq(organizationMembershipTable.userId, userId),
+                isNull(organizationMembershipTable.deletedAt),
                 isNull(organizationTable.deletedAt),
                 eq(
                     organizationMembershipAllProjectCapabilityTable.capability,
@@ -560,6 +570,7 @@ export async function isPremiumFeatureEnabledForProject({
         .where(
             and(
                 eq(projectOrganizationOwnershipTable.projectId, projectId),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
                 eq(premiumFeatureEntitlementTable.feature, feature),
                 lte(premiumFeatureEntitlementTable.startsAt, now),
                 isNull(premiumFeatureEntitlementTable.revokedAt),

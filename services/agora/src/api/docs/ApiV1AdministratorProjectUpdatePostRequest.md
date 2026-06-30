@@ -11,9 +11,10 @@ Name | Type | Description | Notes
 **subtitle** | **string** |  | [optional] [default to undefined]
 **body** | **string** |  | [optional] [default to undefined]
 **bodyPlainText** | **string** |  | [optional] [default to undefined]
-**heroImagePath** | **string** |  | [optional] [default to undefined]
-**heroImageIsFullPath** | **boolean** |  | [optional] [default to false]
-**translationSetting** | [**ApiV1AdministratorProjectCreatePostRequestTranslationSetting**](ApiV1AdministratorProjectCreatePostRequestTranslationSetting.md) |  | [optional] [default to undefined]
+**bannerPath** | **string** |  | [optional] [default to undefined]
+**bannerIsFullPath** | **boolean** |  | [optional] [default to false]
+**contentLocalizations** | [**Array&lt;ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInner&gt;**](ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInner.md) |  | [optional] [default to undefined]
+**languageSettings** | [**ApiV1AdministratorProjectCreatePostRequestLanguageSettings**](ApiV1AdministratorProjectCreatePostRequestLanguageSettings.md) |  | [optional] [default to undefined]
 **attributions** | [**Array&lt;ApiV1AdministratorProjectCreatePostRequestAttributionsInner&gt;**](ApiV1AdministratorProjectCreatePostRequestAttributionsInner.md) |  | [optional] [default to undefined]
 **contact** | [**ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact**](ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact.md) |  | [optional] [default to undefined]
 **currentProjectSlug** | **string** |  | [default to undefined]
@@ -30,9 +31,10 @@ const instance: ApiV1AdministratorProjectUpdatePostRequest = {
     subtitle,
     body,
     bodyPlainText,
-    heroImagePath,
-    heroImageIsFullPath,
-    translationSetting,
+    bannerPath,
+    bannerIsFullPath,
+    contentLocalizations,
+    languageSettings,
     attributions,
     contact,
     currentProjectSlug,

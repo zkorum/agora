@@ -19,7 +19,7 @@ import type {
     NotificationItem,
 } from "@/shared/types/zod.js";
 import { zodNotificationItem } from "@/shared/types/zod.js";
-import { and, desc, eq, inArray, lt, or, type SQL } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lt, or, type SQL } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
@@ -871,12 +871,20 @@ export async function getNotificationRecipients({
         .from(projectOrganizationOwnershipTable)
         .innerJoin(
             organizationMembershipTable,
-            eq(
-                organizationMembershipTable.organizationId,
-                projectOrganizationOwnershipTable.organizationId,
+            and(
+                eq(
+                    organizationMembershipTable.organizationId,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                isNull(organizationMembershipTable.deletedAt),
             ),
         )
-        .where(eq(projectOrganizationOwnershipTable.projectId, projectId));
+        .where(
+            and(
+                eq(projectOrganizationOwnershipTable.projectId, projectId),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
+            ),
+        );
 
     for (const member of orgMembers) {
         recipientSet.add(member.userId);

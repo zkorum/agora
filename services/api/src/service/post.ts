@@ -61,7 +61,7 @@ import {
     contentLanguageMetadataUpdateValues,
     resolveContentLanguageMetadata,
 } from "./contentLanguageMetadata.js";
-import { normalizeTranslationLanguageSetting } from "./translationLanguageSetting.js";
+import { normalizeConversationMultilingualSettings } from "./translationLanguageSetting.js";
 
 const MAX_CONVERSATION_SEED_ITEMS = 50;
 
@@ -213,8 +213,8 @@ export async function createNewPost({
         googleCloudCredentials,
         useGoogleLanguageDetection: multilingualSetting.dynamicTranslationEnabled,
     });
-    const normalizedMultilingualSetting = normalizeTranslationLanguageSetting({
-        setting: multilingualSetting,
+    const normalizedMultilingualSetting = normalizeConversationMultilingualSettings({
+        multilingualSettings: multilingualSetting,
         canUseDynamicTranslation: true,
         sourceLanguageCode: conversationSourceLanguageMetadata.sourceLanguageCode,
     });

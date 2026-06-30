@@ -6,7 +6,7 @@ import type {
 import { httpErrors } from "@fastify/sensible";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { ZodTopicObject } from "@/shared/types/zod.js";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 interface MapTopicCodeToIdProps {
     db: PostgresJsDatabase;
@@ -120,11 +120,13 @@ export async function userUnfollowTopicByCode({
     });
 
     const deletedTopicFollow = await db
-        .delete(followedTopicTable)
+        .update(followedTopicTable)
+        .set({ deletedAt: new Date() })
         .where(
             and(
                 eq(followedTopicTable.topicId, topicId),
                 eq(followedTopicTable.userId, userId),
+                isNull(followedTopicTable.deletedAt),
             ),
         )
         .returning();
@@ -151,7 +153,12 @@ export async function getUserFollowedTopics({
         })
         .from(followedTopicTable)
         .innerJoin(topicTable, eq(topicTable.id, followedTopicTable.topicId))
-        .where(eq(followedTopicTable.userId, userId));
+        .where(
+            and(
+                eq(followedTopicTable.userId, userId),
+                isNull(followedTopicTable.deletedAt),
+            ),
+        );
 
     const topicCodeList: string[] = [];
 

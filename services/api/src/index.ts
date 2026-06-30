@@ -45,6 +45,7 @@ import * as authService from "@/service/auth.js";
 import * as authUtilService from "@/service/authUtil.js";
 import * as csvImportService from "@/service/csvImport.js";
 import * as feedService from "@/service/feed.js";
+import * as projectPageService from "@/service/projectPage.js";
 import * as postService from "@/service/post.js";
 import * as postEditService from "@/service/postEdit.js";
 import { checkConversationParticipation } from "@/service/participationGate.js";
@@ -173,6 +174,8 @@ import {
     createOrganization,
     archiveOrganization,
     getAllOrganizations,
+    getOrganizationDetails,
+    getOrganizationOptions,
     getOrganizationMembers,
     getOrganizationsByUsername,
     removeUserOrganizationMapping,
@@ -183,9 +186,11 @@ import {
     archiveProject,
     createProject,
     getAllProjects,
+    getProjectDetails,
+    getProjectOptions,
     updateProject,
     updateProjectExternalOrganizationLocalization,
-    updateProjectLanguageSetting,
+    updateProjectLanguageSettings,
     updateProjectSlug,
 } from "./service/administrator/project.js";
 import type {
@@ -219,7 +224,9 @@ import {
 } from "./shared-backend/schema.js";
 import { and, eq, isNull } from "drizzle-orm";
 
-type ContentTranslationResponse = z.infer<typeof Dto.contentTranslationResponse>;
+type ContentTranslationResponse = z.infer<
+    typeof Dto.contentTranslationResponse
+>;
 import {
     initializeGoogleCloudCredentials,
     type GoogleCloudCredentials,
@@ -482,9 +489,12 @@ async function assertMaxdiffGitHubAllowedForConversation({
         .from(conversationTable)
         .innerJoin(
             projectOrganizationOwnershipTable,
-            eq(
-                projectOrganizationOwnershipTable.projectId,
-                conversationTable.projectId,
+            and(
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    conversationTable.projectId,
+                ),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
             ),
         )
         .innerJoin(
@@ -534,9 +544,12 @@ async function getContentTranslationAvailabilityForConversation({
         )
         .leftJoin(
             conversationTranslationTargetLanguageTable,
-            eq(
-                conversationTranslationTargetLanguageTable.conversationId,
-                conversationTable.id,
+            and(
+                eq(
+                    conversationTranslationTargetLanguageTable.conversationId,
+                    conversationTable.id,
+                ),
+                isNull(conversationTranslationTargetLanguageTable.deletedAt),
             ),
         )
         .where(eq(conversationTable.slugId, conversationSlugId));
@@ -556,12 +569,13 @@ async function getContentTranslationAvailabilityForConversation({
     const parsedSourceLanguageCode = ZodSupportedDisplayLanguageCodes.safeParse(
         firstRow.sourceLanguageCode,
     );
-    const configuredTargetLanguageCodes = new Set<SupportedDisplayLanguageCodes>([
-        ...(parsedSourceLanguageCode.success
-            ? [parsedSourceLanguageCode.data]
-            : []),
-        ...multilingualSetting.additionalLanguageCodes,
-    ]);
+    const configuredTargetLanguageCodes =
+        new Set<SupportedDisplayLanguageCodes>([
+            ...(parsedSourceLanguageCode.success
+                ? [parsedSourceLanguageCode.data]
+                : []),
+            ...multilingualSetting.additionalLanguageCodes,
+        ]);
     const translationAllowed =
         multilingualSetting.dynamicTranslationEnabled &&
         configuredTargetLanguageCodes.has(targetLanguageCode);
@@ -1591,6 +1605,73 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
+        url: `/api/${apiVersion}/project/page/fetch`,
+        schema: {
+            body: Dto.fetchProjectPageRequest,
+            response: {
+                200: Dto.fetchProjectPageResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+            return await projectPageService.fetchProjectPage({
+                db,
+                baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                userId: deviceStatus.isKnown ? deviceStatus.userId : undefined,
+                request: request.body,
+                currentDisplayLanguage: getRequestDisplayLanguage({ request }),
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/project/page/activities/fetch`,
+        schema: {
+            body: Dto.fetchProjectPageActivitiesRequest,
+            response: {
+                200: Dto.fetchProjectPageActivitiesResponse,
+            },
+        },
+        handler: async (request) => {
+            await verifyUcanOptionalAuth(db, request);
+            return await projectPageService.fetchProjectPageActivities({
+                db,
+                baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                request: request.body,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/project/page/display-language/update`,
+        schema: {
+            body: Dto.updateProjectPageDisplayLanguageRequest,
+            response: {
+                200: Dto.updateProjectPageDisplayLanguageResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+            return await projectPageService.updateProjectPageDisplayLanguage({
+                db,
+                userId: deviceStatus.userId,
+                projectSlug: request.body.projectSlug,
+                languageCode: request.body.languageCode,
+                currentDisplayLanguage: getRequestDisplayLanguage({ request }),
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
         url: `/api/${apiVersion}/moderation/conversation/create`,
         schema: {
             body: Dto.moderateReportPostRequest,
@@ -1950,9 +2031,10 @@ server.after(() => {
                         autoProvisionedDefaultLanguage:
                             getAutoProvisionedDefaultLanguage({
                                 storedUserDisplayLanguage: undefined,
-                                currentDisplayLanguage: getRequestDisplayLanguage({
-                                    request,
-                                }),
+                                currentDisplayLanguage:
+                                    getRequestDisplayLanguage({
+                                        request,
+                                    }),
                             }),
                     },
                 );
@@ -2423,7 +2505,9 @@ server.after(() => {
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
-            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const headerDisplayLanguage = getRequestDisplayLanguage({
+                request,
+            });
             const languagePreferences = deviceStatus.isLoggedIn
                 ? await getLanguagePreferences({
                       db,
@@ -2608,7 +2692,9 @@ server.after(() => {
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
-            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const headerDisplayLanguage = getRequestDisplayLanguage({
+                request,
+            });
             const languagePreferences = deviceStatus.isLoggedIn
                 ? await getLanguagePreferences({
                       db,
@@ -2662,7 +2748,9 @@ server.after(() => {
                     "User is not a site moderator",
                 );
             }
-            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const headerDisplayLanguage = getRequestDisplayLanguage({
+                request,
+            });
             const languagePreferences = await getLanguagePreferences({
                 db,
                 userId: deviceStatus.userId,
@@ -2780,7 +2868,9 @@ server.after(() => {
                         isRegistered: true,
                     },
                 });
-            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const headerDisplayLanguage = getRequestDisplayLanguage({
+                request,
+            });
             const autoProvisionedDefaultLanguage =
                 getAutoProvisionedDefaultLanguage({
                     storedUserDisplayLanguage: undefined,
@@ -2940,10 +3030,13 @@ server.after(() => {
                 db,
                 userId: deviceStatus.userId,
                 postAsOrganizationSlug: request.body.postAsOrganization,
-                autoProvisionedDefaultLanguage: getAutoProvisionedDefaultLanguage({
-                    storedUserDisplayLanguage: undefined,
-                    currentDisplayLanguage: getRequestDisplayLanguage({ request }),
-                }),
+                autoProvisionedDefaultLanguage:
+                    getAutoProvisionedDefaultLanguage({
+                        storedUserDisplayLanguage: undefined,
+                        currentDisplayLanguage: getRequestDisplayLanguage({
+                            request,
+                        }),
+                    }),
             });
 
             const premiumFeatures =
@@ -3123,10 +3216,13 @@ server.after(() => {
                 db,
                 userId: deviceStatus.userId,
                 postAsOrganizationSlug: parsedFields.postAsOrganization,
-                autoProvisionedDefaultLanguage: getAutoProvisionedDefaultLanguage({
-                    storedUserDisplayLanguage: undefined,
-                    currentDisplayLanguage: getRequestDisplayLanguage({ request }),
-                }),
+                autoProvisionedDefaultLanguage:
+                    getAutoProvisionedDefaultLanguage({
+                        storedUserDisplayLanguage: undefined,
+                        currentDisplayLanguage: getRequestDisplayLanguage({
+                            request,
+                        }),
+                    }),
             });
 
             const premiumFeatures =
@@ -3241,7 +3337,9 @@ server.after(() => {
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
-            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const headerDisplayLanguage = getRequestDisplayLanguage({
+                request,
+            });
             const languagePreferences = deviceStatus.isLoggedIn
                 ? await getLanguagePreferences({
                       db,
@@ -3268,30 +3366,38 @@ server.after(() => {
                     targetLanguageCode: languagePreferences.displayLanguage,
                 });
             const localizedContent =
-                await contentTranslationService.requestConversationContentTranslation({
-                    db,
-                    valkey: queueValkeyRef.current,
-                    queueScript: contentTranslationQueueScript,
-                    conversationSlugId: request.body.conversationSlugId,
-                    targetLanguageCode: languagePreferences.displayLanguage,
-                    requestMode: "read_existing",
-                    now: nowZeroMs(),
-                    log,
-                    beforeQueueTranslationWork: () => Promise.resolve(),
-                });
+                await contentTranslationService.requestConversationContentTranslation(
+                    {
+                        db,
+                        valkey: queueValkeyRef.current,
+                        queueScript: contentTranslationQueueScript,
+                        conversationSlugId: request.body.conversationSlugId,
+                        targetLanguageCode: languagePreferences.displayLanguage,
+                        requestMode: "read_existing",
+                        now: nowZeroMs(),
+                        log,
+                        beforeQueueTranslationWork: () => Promise.resolve(),
+                    },
+                );
             if (localizedContent === undefined) {
-                throw server.httpErrors.notFound("Conversation content not found");
+                throw server.httpErrors.notFound(
+                    "Conversation content not found",
+                );
             }
 
             const response: GetConversationResponse = {
                 conversationData: postItem,
                 displayContent:
-                    conversationContentService.toInitialConversationDisplayContent({
-                        content: localizedContent.content,
-                        translationAllowed: availability.isAllowed,
-                        displayLanguage: languagePreferences.displayLanguage,
-                        spokenLanguages: languagePreferences.spokenLanguages,
-                    }),
+                    conversationContentService.toInitialConversationDisplayContent(
+                        {
+                            content: localizedContent.content,
+                            translationAllowed: availability.isAllowed,
+                            displayLanguage:
+                                languagePreferences.displayLanguage,
+                            spokenLanguages:
+                                languagePreferences.spokenLanguages,
+                        },
+                    ),
             };
             return response;
         },
@@ -3389,7 +3495,9 @@ server.after(() => {
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
-            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const headerDisplayLanguage = getRequestDisplayLanguage({
+                request,
+            });
             const languagePreferences = deviceStatus.isLoggedIn
                 ? await getLanguagePreferences({
                       db,
@@ -3423,7 +3531,8 @@ server.after(() => {
                                   {
                                       db,
                                       valkey: queueValkeyRef.current,
-                                      queueScript: contentTranslationQueueScript,
+                                      queueScript:
+                                          contentTranslationQueueScript,
                                       conversationSlugId:
                                           request.body.conversationSlugId,
                                       questionSlugId: question.questionSlugId,
@@ -3450,8 +3559,10 @@ server.after(() => {
                                 {
                                     content: localizedContent.content,
                                     translationAllowed: availability.isAllowed,
-                                    displayLanguage: languagePreferences.displayLanguage,
-                                    spokenLanguages: languagePreferences.spokenLanguages,
+                                    displayLanguage:
+                                        languagePreferences.displayLanguage,
+                                    spokenLanguages:
+                                        languagePreferences.spokenLanguages,
                                 },
                             ),
                     };
@@ -3905,6 +4016,38 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
+        url: `/api/${apiVersion}/administrator/project/get-project-options`,
+        schema: {
+            response: {
+                200: Dto.getProjectOptionsResponse,
+            },
+        },
+        handler: async (request) => {
+            await requireSiteOrgAdmin(request);
+            return await getProjectOptions({ db });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/project/get-project-details`,
+        schema: {
+            body: Dto.getProjectDetailsRequest,
+            response: {
+                200: Dto.getProjectDetailsResponse,
+            },
+        },
+        handler: async (request) => {
+            await requireSiteOrgAdmin(request);
+            return await getProjectDetails({
+                db,
+                projectSlug: request.body.projectSlug,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
         url: `/api/${apiVersion}/administrator/project/create`,
         schema: {
             body: Dto.createProjectRequest,
@@ -3919,17 +4062,24 @@ server.after(() => {
                 data: request.body,
                 googleCloudCredentials,
             });
-            if (result.success && request.body.translationSetting.dynamicTranslationEnabled) {
-                await contentTranslationService.scheduleEagerContentTranslationForProject(
-                    {
-                        db,
-                        valkey: queueValkeyRef.current,
-                        queueScript: contentTranslationQueueScript,
-                        projectId: result.projectId,
-                        now: new Date(),
-                        log,
-                    },
-                );
+            if (result.success) {
+                try {
+                    await contentTranslationService.scheduleEagerContentTranslationForProject(
+                        {
+                            db,
+                            valkey: queueValkeyRef.current,
+                            queueScript: contentTranslationQueueScript,
+                            projectId: result.projectId,
+                            now: nowZeroMs(),
+                            log,
+                        },
+                    );
+                } catch (error: unknown) {
+                    log.error(
+                        error,
+                        `[ContentTranslation] Failed to schedule eager work for projectId=${String(result.projectId)}`,
+                    );
+                }
             }
             return result;
         },
@@ -3937,30 +4087,39 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/administrator/project/language-setting/update`,
+        url: `/api/${apiVersion}/administrator/project/language-settings/update`,
         schema: {
-            body: Dto.updateProjectLanguageSettingRequest,
+            body: Dto.updateProjectLanguageSettingsRequest,
             response: {
-                200: Dto.updateProjectLanguageSettingResponse,
+                200: Dto.updateProjectLanguageSettingsResponse,
             },
         },
         handler: async (request) => {
             await requireSiteOrgAdmin(request);
-            const result = await updateProjectLanguageSetting({
+            const result = await updateProjectLanguageSettings({
                 db,
                 data: request.body,
                 googleCloudCredentials,
             });
-            if (request.body.setting.dynamicTranslationEnabled) {
+            if (!result.success) {
+                return result;
+            }
+
+            try {
                 await contentTranslationService.scheduleEagerContentTranslationForProject(
                     {
                         db,
                         valkey: queueValkeyRef.current,
                         queueScript: contentTranslationQueueScript,
                         projectId: result.projectId,
-                        now: new Date(),
+                        now: nowZeroMs(),
                         log,
                     },
+                );
+            } catch (error: unknown) {
+                log.error(
+                    error,
+                    `[ContentTranslation] Failed to schedule eager work for projectId=${String(result.projectId)}`,
                 );
             }
             return { success: true as const };
@@ -4002,17 +4161,24 @@ server.after(() => {
                 data: request.body,
                 googleCloudCredentials,
             });
-            if (result.success && request.body.translationSetting.dynamicTranslationEnabled) {
-                await contentTranslationService.scheduleEagerContentTranslationForProject(
-                    {
-                        db,
-                        valkey: queueValkeyRef.current,
-                        queueScript: contentTranslationQueueScript,
-                        projectId: result.projectId,
-                        now: new Date(),
-                        log,
-                    },
-                );
+            if (result.success) {
+                try {
+                    await contentTranslationService.scheduleEagerContentTranslationForProject(
+                        {
+                            db,
+                            valkey: queueValkeyRef.current,
+                            queueScript: contentTranslationQueueScript,
+                            projectId: result.projectId,
+                            now: nowZeroMs(),
+                            log,
+                        },
+                    );
+                } catch (error: unknown) {
+                    log.error(
+                        error,
+                        `[ContentTranslation] Failed to schedule eager work for projectId=${String(result.projectId)}`,
+                    );
+                }
             }
             return result;
         },
@@ -4235,6 +4401,39 @@ server.after(() => {
             return await getAllOrganizations({
                 db: db,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/get-organization-options`,
+        schema: {
+            response: {
+                200: Dto.getOrganizationOptionsResponse,
+            },
+        },
+        handler: async (request) => {
+            await requireSiteOrgAdmin(request);
+            return await getOrganizationOptions({ db });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/get-organization-details`,
+        schema: {
+            body: Dto.getOrganizationDetailsRequest,
+            response: {
+                200: Dto.getOrganizationDetailsResponse,
+            },
+        },
+        handler: async (request) => {
+            await requireSiteOrgAdmin(request);
+            return await getOrganizationDetails({
+                db,
+                baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                organizationSlug: request.body.organizationSlug,
             });
         },
     });
@@ -4760,7 +4959,9 @@ server.after(() => {
                           userAgent,
                       })
                   ).userId;
-            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const headerDisplayLanguage = getRequestDisplayLanguage({
+                request,
+            });
             const languagePreferences = deviceStatus.isLoggedIn
                 ? await getLanguagePreferences({
                       db,
@@ -4781,80 +4982,89 @@ server.after(() => {
                 });
             const queueValkey = queueValkeyRef.current;
             const content =
-                await contentTranslationService.requestConversationContentTranslation({
-                    db,
-                    valkey: queueValkey,
-                    queueScript: contentTranslationQueueScript,
-                    conversationSlugId: request.body.conversationSlugId,
-                    contentId: request.body.contentId,
-                    targetLanguageCode: languagePreferences.displayLanguage,
-                    requestMode:
-                        request.body.mode === "translated" && availability.isAllowed
-                            ? request.body.requestMode
-                            : "read_existing",
-                    now,
-                    log,
-                    beforeQueueTranslationWork: async () => {
-                        if (queueValkey === undefined) {
-                            throw server.httpErrors.serviceUnavailable(
-                                "Content translation rate limiter is unavailable",
-                            );
-                        }
-                        let rateLimit: Awaited<
-                            ReturnType<
-                                typeof consumeContentTranslationUserRateLimit
-                            >
-                        >;
-                        try {
-                            rateLimit =
-                                await consumeContentTranslationUserRateLimit({
-                                    valkey: queueValkey,
-                                    script: contentTranslationUserRateLimitScript,
-                                    userId: requesterUserId,
-                                    maxRequests:
-                                        CONTENT_TRANSLATION_USER_RATE_LIMIT_MAX,
-                                    windowMs:
-                                        CONTENT_TRANSLATION_USER_RATE_LIMIT_WINDOW_MS,
-                                });
-                        } catch (error) {
-                            log.error(
-                                error,
-                                "[ConversationContent] User rate limiter failed",
-                            );
-                            throw server.httpErrors.serviceUnavailable(
-                                "Content translation rate limiter is unavailable",
-                            );
-                        }
-                        if (!rateLimit.isAllowed) {
-                            log.info(
-                                {
-                                    requesterUserId,
-                                    retryAfterMs: rateLimit.retryAfterMs,
-                                    conversationSlugId:
-                                        request.body.conversationSlugId,
-                                    targetLanguageCode:
-                                        languagePreferences.displayLanguage,
-                                },
-                                "[ConversationContent] User rate limit exceeded",
-                            );
-                            throw server.httpErrors.createError(
-                                429,
-                                `Content translation rate limit exceeded. Retry after ${String(Math.ceil(rateLimit.retryAfterMs / 1000))}s`,
-                            );
-                        }
+                await contentTranslationService.requestConversationContentTranslation(
+                    {
+                        db,
+                        valkey: queueValkey,
+                        queueScript: contentTranslationQueueScript,
+                        conversationSlugId: request.body.conversationSlugId,
+                        contentId: request.body.contentId,
+                        targetLanguageCode: languagePreferences.displayLanguage,
+                        requestMode:
+                            request.body.mode === "translated" &&
+                            availability.isAllowed
+                                ? request.body.requestMode
+                                : "read_existing",
+                        now,
+                        log,
+                        beforeQueueTranslationWork: async () => {
+                            if (queueValkey === undefined) {
+                                throw server.httpErrors.serviceUnavailable(
+                                    "Content translation rate limiter is unavailable",
+                                );
+                            }
+                            let rateLimit: Awaited<
+                                ReturnType<
+                                    typeof consumeContentTranslationUserRateLimit
+                                >
+                            >;
+                            try {
+                                rateLimit =
+                                    await consumeContentTranslationUserRateLimit(
+                                        {
+                                            valkey: queueValkey,
+                                            script: contentTranslationUserRateLimitScript,
+                                            userId: requesterUserId,
+                                            maxRequests:
+                                                CONTENT_TRANSLATION_USER_RATE_LIMIT_MAX,
+                                            windowMs:
+                                                CONTENT_TRANSLATION_USER_RATE_LIMIT_WINDOW_MS,
+                                        },
+                                    );
+                            } catch (error) {
+                                log.error(
+                                    error,
+                                    "[ConversationContent] User rate limiter failed",
+                                );
+                                throw server.httpErrors.serviceUnavailable(
+                                    "Content translation rate limiter is unavailable",
+                                );
+                            }
+                            if (!rateLimit.isAllowed) {
+                                log.info(
+                                    {
+                                        requesterUserId,
+                                        retryAfterMs: rateLimit.retryAfterMs,
+                                        conversationSlugId:
+                                            request.body.conversationSlugId,
+                                        targetLanguageCode:
+                                            languagePreferences.displayLanguage,
+                                    },
+                                    "[ConversationContent] User rate limit exceeded",
+                                );
+                                throw server.httpErrors.createError(
+                                    429,
+                                    `Content translation rate limit exceeded. Retry after ${String(Math.ceil(rateLimit.retryAfterMs / 1000))}s`,
+                                );
+                            }
+                        },
                     },
-                });
+                );
             if (content === undefined) {
-                throw server.httpErrors.notFound("Conversation content not found");
+                throw server.httpErrors.notFound(
+                    "Conversation content not found",
+                );
             }
 
-            return conversationContentService.toConversationContentFetchResponse({
-                content: content.content,
-                mode: request.body.mode,
-                translationAllowed: availability.isAllowed,
-                displayLanguage: languagePreferences.displayLanguage,
-                spokenLanguages: languagePreferences.spokenLanguages,
-            });
+            return conversationContentService.toConversationContentFetchResponse(
+                {
+                    content: content.content,
+                    mode: request.body.mode,
+                    translationAllowed: availability.isAllowed,
+                    displayLanguage: languagePreferences.displayLanguage,
+                    spokenLanguages: languagePreferences.spokenLanguages,
+                },
+            );
         },
     });
 

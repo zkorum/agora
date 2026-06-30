@@ -7,6 +7,7 @@
       `zk-drawer-select--${variant}`,
       { 'zk-drawer-select--disabled': disable },
     ]"
+    :dir="textDirectionAttribute"
     :disabled="disable"
     @click="showDialog = true"
   >
@@ -29,9 +30,13 @@
     <ZKBottomDialogContainer
       :title="dialogTitle ?? label"
       :subtitle="dialogSubtitle"
+      :dir="textDirectionAttribute"
     >
       <template v-if="showBackButton" #leadingAction>
-        <ZKBottomDialogBackButton @click="goBack" />
+        <ZKBottomDialogBackButton
+          :text-direction="resolvedTextDirection"
+          @click="goBack"
+        />
       </template>
 
       <div
@@ -89,6 +94,7 @@
 import { useQuasar } from "quasar";
 import ZKBottomDialogBackButton from "src/components/ui-library/ZKBottomDialogBackButton.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import type { LanguageTextDirection } from "src/shared/languages";
 import { computed, ref, watch } from "vue";
 
 interface ZKSearchableBottomSheetSelectOption<TValue extends string> {
@@ -119,6 +125,7 @@ const props = withDefaults(
     showBackButton?: boolean;
     disable?: boolean;
     variant?: "list" | "pill";
+    textDirection?: LanguageTextDirection;
   }>(),
   {
     placeholder: undefined,
@@ -136,6 +143,7 @@ const props = withDefaults(
     showBackButton: false,
     disable: false,
     variant: "list",
+    textDirection: undefined,
   }
 );
 
@@ -152,12 +160,19 @@ const showDialog = defineModel<boolean>("showDialog", { default: false });
 const $q = useQuasar();
 const searchQuery = ref("");
 
+const resolvedTextDirection = computed<LanguageTextDirection>(() => {
+  return props.textDirection ?? ($q.lang.rtl ? "rtl" : "ltr");
+});
+const textDirectionAttribute = computed(() => props.textDirection);
+
 const chevronIcon = computed(() => {
   if (props.variant === "pill") {
     return "mdi-chevron-down";
   }
 
-  return $q.lang.rtl ? "mdi-chevron-left" : "mdi-chevron-right";
+  return resolvedTextDirection.value === "rtl"
+    ? "mdi-chevron-left"
+    : "mdi-chevron-right";
 });
 
 const selectedValues = computed<readonly TValue[]>(() => {

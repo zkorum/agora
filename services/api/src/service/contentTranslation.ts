@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import type { Script } from "@valkey/valkey-glide";
 import type { BaseLogger } from "pino";
@@ -255,6 +255,7 @@ async function ensureTranslationWork({
                 lastErrorCode: null,
                 lastErrorMessage: null,
                 requestedAt: now,
+                completedAt: completedTranslationExists ? now : null,
                 failedAt: null,
                 updatedAt: now,
             })
@@ -321,6 +322,74 @@ async function ensureTranslationWork({
         "[ContentTranslation] Created translation work row",
     );
     return { workId: inserted.id, shouldQueue: true };
+}
+
+async function markExistingTranslationWorkCompleted({
+    db,
+    input,
+    now,
+    log,
+}: {
+    db: PostgresDatabase;
+    input: TranslationWorkInput;
+    now: Date;
+    log: Pick<BaseLogger, "info">;
+}): Promise<void> {
+    const sourceWhere =
+        input.sourceKind === "project"
+            ? eq(contentTranslationWorkTable.projectContentId, input.projectContentId)
+            : input.sourceKind === "conversation"
+            ? eq(contentTranslationWorkTable.conversationContentId, input.sourceContentId)
+            : input.sourceKind === "opinion"
+              ? eq(contentTranslationWorkTable.opinionContentId, input.sourceContentId)
+              : and(
+                    eq(
+                        contentTranslationWorkTable.surveyQuestionContentId,
+                        input.surveyQuestionContentId,
+                    ),
+                    eq(
+                        contentTranslationWorkTable.surveyQuestionOptionContentIds,
+                        input.surveyQuestionOptionContentIds,
+                    ),
+                );
+
+    const updatedRows = await db
+        .update(contentTranslationWorkTable)
+        .set({
+            status: "completed",
+            leaseOwner: null,
+            leaseToken: null,
+            leaseExpiresAt: null,
+            lastErrorCode: null,
+            lastErrorMessage: null,
+            completedAt: now,
+            failedAt: null,
+            updatedAt: now,
+        })
+        .where(
+            and(
+                eq(contentTranslationWorkTable.sourceKind, input.sourceKind),
+                sourceWhere,
+                eq(
+                    contentTranslationWorkTable.displayLanguageCode,
+                    input.targetLanguageCode,
+                ),
+            ),
+        )
+        .returning({ id: contentTranslationWorkTable.id });
+    const updated = updatedRows.at(0);
+    if (updated === undefined) {
+        return;
+    }
+
+    log.info(
+        {
+            workId: updated.id,
+            sourceKind: input.sourceKind,
+            targetLanguageCode: input.targetLanguageCode,
+        },
+        "[ContentTranslation] Completed existing translation work row",
+    );
 }
 
 async function queueTranslationWork({
@@ -782,6 +851,7 @@ async function fetchConfiguredTargetLanguageCodes({
             and(
                 eq(conversationTable.slugId, conversationSlugId),
                 eq(conversationTable.dynamicTranslationEnabled, true),
+                isNull(conversationTranslationTargetLanguageTable.deletedAt),
             ),
         )
         .orderBy(asc(conversationTranslationTargetLanguageTable.id));
@@ -817,6 +887,7 @@ async function fetchConfiguredProjectTargetLanguageCodes({
             and(
                 eq(projectTable.id, projectId),
                 eq(projectTable.dynamicTranslationEnabled, true),
+                isNull(projectTranslationTargetLanguageTable.deletedAt),
             ),
         )
         .orderBy(asc(projectTranslationTargetLanguageTable.id));
@@ -873,6 +944,7 @@ async function hasProjectContentTranslation({
     const rows = await db
         .select({
             sourceLanguageCode: projectContentTranslationTable.sourceLanguageCode,
+            sourceKind: projectContentTranslationTable.sourceKind,
         })
         .from(projectContentTranslationTable)
         .where(
@@ -882,10 +954,14 @@ async function hasProjectContentTranslation({
                     projectContentTranslationTable.displayLanguageCode,
                     targetLanguageCode,
                 ),
+                isNull(projectContentTranslationTable.deletedAt),
             ),
         )
         .limit(1);
     const row = rows.at(0);
+    if (row?.sourceKind === "manual") {
+        return true;
+    }
     return (
         row !== undefined &&
         translationSourceMatchesCurrentSource({
@@ -1227,17 +1303,33 @@ export async function scheduleEagerContentTranslationForProject({
     }
 
     for (const targetLanguageCode of targetLanguageCodes) {
+        const input = {
+            conversationId: null,
+            sourceKind: "project" as const,
+            projectContentId: source.contentId,
+            targetLanguageCode,
+        };
+        const translationExists = await hasProjectContentTranslation({
+            db,
+            source,
+            targetLanguageCode,
+        });
         if (
             !shouldTranslateContent({
                 sourceLanguageCode: source.sourceLanguageCode,
                 targetLanguageCode,
-            }) ||
-            (await hasProjectContentTranslation({
-                db,
-                source,
-                targetLanguageCode,
-            }))
+            })
         ) {
+            continue;
+        }
+
+        if (translationExists) {
+            await markExistingTranslationWorkCompleted({
+                db,
+                input,
+                now,
+                log,
+            });
             continue;
         }
 
@@ -1245,13 +1337,8 @@ export async function scheduleEagerContentTranslationForProject({
             db,
             valkey,
             queueScript,
-            input: {
-                conversationId: null,
-                sourceKind: "project",
-                projectContentId: source.contentId,
-                targetLanguageCode,
-            },
-            translationExists: false,
+            input,
+            translationExists,
             now,
             log,
         });

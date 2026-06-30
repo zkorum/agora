@@ -5,6 +5,7 @@ export interface AdministratorOrganizationTranslations {
   createTitle: string;
   createDescription: string;
   existingTitle: string;
+  loadingOrganizationsMessage: string;
   noOrganizationsMessage: string;
   selectOrganizationLabel: string;
   editTitle: string;
@@ -23,10 +24,10 @@ export interface AdministratorOrganizationTranslations {
   websiteUrlLabel: string;
   createButton: string;
   saveButton: string;
-  archiveButton: string;
-  confirmArchiveButton: string;
+  deleteButton: string;
+  confirmDeleteButton: string;
   cancelButton: string;
-  archiveConfirmMessage: string;
+  deleteConfirmMessage: string;
   addMemberTitle: string;
   membershipDescription: string;
   usernameLabel: string;
@@ -40,6 +41,11 @@ export interface AdministratorOrganizationTranslations {
   defaultLanguageBadge: string;
   localizationReadyBadge: string;
   localizationMissingBadge: string;
+  dangerZoneTitle: string;
+  changeSlugDangerTitle: string;
+  changeSlugDangerDescription: string;
+  deleteDangerTitle: string;
+  deleteDangerDescription: string;
 }
 
 const en: AdministratorOrganizationTranslations = {
@@ -50,6 +56,7 @@ const en: AdministratorOrganizationTranslations = {
   createDescription:
     "Create the default organization profile first. Add translations from the Manage tab after creation.",
   existingTitle: "Manage existing organizations",
+  loadingOrganizationsMessage: "Loading organizations...",
   noOrganizationsMessage: "No active organizations are registered.",
   selectOrganizationLabel: "Organization",
   editTitle: "Edit organization",
@@ -71,14 +78,12 @@ const en: AdministratorOrganizationTranslations = {
   websiteUrlLabel: "Website URL",
   createButton: "Create organization",
   saveButton: "Save changes",
-  archiveButton: "Archive organization",
-  confirmArchiveButton: "Confirm archive",
+  deleteButton: "Delete organization",
+  confirmDeleteButton: "Confirm delete",
   cancelButton: "Cancel",
-  archiveConfirmMessage:
-    "Archiving hides this organization and removes it from admin/member pickers. Existing historical content is kept.",
+  deleteConfirmMessage: "This will delete this organization.",
   addMemberTitle: "Memberships",
-  membershipDescription:
-    "Add one username to the selected organization.",
+  membershipDescription: "Add one username to the selected organization.",
   usernameLabel: "Username",
   addUserButton: "Add user",
   removeUserButton: "Remove user",
@@ -92,6 +97,12 @@ const en: AdministratorOrganizationTranslations = {
   defaultLanguageBadge: "Default",
   localizationReadyBadge: "Saved",
   localizationMissingBadge: "Missing",
+  dangerZoneTitle: "Danger zone",
+  changeSlugDangerTitle: "Change organization URL slug",
+  changeSlugDangerDescription:
+    "Changing this slug can break public links that were already visited or shared.",
+  deleteDangerTitle: "Delete this organization",
+  deleteDangerDescription: "Delete this organization.",
 };
 
 export const administratorOrganizationTranslations = {

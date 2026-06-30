@@ -4,19 +4,23 @@
       <AdminSectionHeader
         :title="t('existingTitle')"
         :description="
-          organizationList.length === 0 ? t('noOrganizationsMessage') : undefined
+          isLoadingOrganizations
+            ? t('loadingOrganizationsMessage')
+            : organizationList.length === 0
+              ? t('noOrganizationsMessage')
+              : undefined
         "
       />
 
-      <q-select
+      <ZKSelect
         v-if="organizationList.length > 0"
-        :model-value="selectedOrganizationSlug"
-        outlined
+        v-model="selectedOrganizationSlugSelectModel"
+        class="headerSelect"
         :options="organizationOptions"
         :label="t('selectOrganizationLabel')"
-        emit-value
-        map-options
-        @update:model-value="setSelectedOrganizationSlug"
+        :loading="isLoadingOrganizations"
+        :disable="isLoadingOrganizations"
+        searchable
       />
     </ZKCard>
 
@@ -37,28 +41,6 @@
           </q-badge>
         </div>
 
-        <form class="section" @submit.prevent="requestSlugUpdate">
-          <div class="formGrid">
-            <q-input
-              :model-value="selectedOrganizationSlugDraft"
-              outlined
-              :label="t('slugLabel')"
-              autocomplete="off"
-              data-1p-ignore
-              @update:model-value="setSelectedOrganizationSlugDraft"
-            />
-          </div>
-          <ZKButton
-            button-type="largeButton"
-            :label="t('saveSlugButton')"
-            type="submit"
-            color="primary"
-            outline
-            :loading="isSavingSlug"
-            :disable="!canSaveOrganizationSlug"
-          />
-        </form>
-
         <q-select
           :model-value="selectedLanguageCode"
           outlined
@@ -73,7 +55,10 @@
           {{ t("localizationMissingHint") }}
         </q-banner>
 
-        <form class="section" @submit.prevent="submitUpdateOrganization">
+        <form
+          class="section localizationSection"
+          @submit.prevent="submitUpdateOrganization"
+        >
           <div class="formGrid">
             <q-input
               :model-value="editForm.displayName"
@@ -194,74 +179,88 @@
         </div>
       </ZKCard>
 
-      <ZKCard padding="1rem" class="cardBackground">
-        <div class="dangerSection">
-          <ZKButton
-            button-type="largeButton"
-            :label="t('archiveButton')"
+      <ZKCard padding="0" class="cardBackground dangerZoneCard">
+        <div class="dangerZoneTitle">{{ t("dangerZoneTitle") }}</div>
+
+        <form class="dangerZoneRow" @submit.prevent="requestSlugUpdate">
+          <div class="dangerZoneContent">
+            <div class="dangerZoneRowTitle">
+              {{ t("changeSlugDangerTitle") }}
+            </div>
+            <div class="dangerZoneDescription">
+              {{ t("changeSlugDangerDescription") }}
+            </div>
+            <q-input
+              :model-value="selectedOrganizationSlugDraft"
+              class="dangerZoneInput"
+              outlined
+              dense
+              :label="t('slugLabel')"
+              autocomplete="off"
+              data-1p-ignore
+              @update:model-value="setSelectedOrganizationSlugDraft"
+            />
+          </div>
+          <q-btn
+            class="dangerZoneAction"
+            type="submit"
             color="negative"
-            :loading="isArchiving"
-            @click="archiveButtonClicked"
+            outline
+            no-caps
+            :label="t('saveSlugButton')"
+            :loading="isSavingSlug"
+            :disable="!canSaveOrganizationSlug"
+          />
+        </form>
+
+        <div class="dangerZoneRow">
+          <div class="dangerZoneContent">
+            <div class="dangerZoneRowTitle">{{ t("deleteDangerTitle") }}</div>
+            <div class="dangerZoneDescription">
+              {{ t("deleteDangerDescription") }}
+            </div>
+          </div>
+          <q-btn
+            class="dangerZoneAction"
+            color="negative"
+            outline
+            no-caps
+            :label="t('deleteButton')"
+            :loading="isDeleting"
+            @click="deleteButtonClicked"
           />
         </div>
       </ZKCard>
     </template>
   </div>
 
-  <q-dialog v-model="showArchiveConfirmDialog">
-    <q-card class="archiveDialog">
-      <q-card-section>
-        <div class="dialogTitle">{{ t("archiveButton") }}</div>
-        <p>{{ t("archiveConfirmMessage") }}</p>
-      </q-card-section>
-      <q-card-actions align="right">
-        <q-btn
-          flat
-          no-caps
-          :label="t('cancelButton')"
-          @click="showArchiveConfirmDialog = false"
-        />
-        <q-btn
-          color="negative"
-          no-caps
-          :label="t('confirmArchiveButton')"
-          :loading="isArchiving"
-          @click="confirmArchiveOrganization"
-        />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+  <ZKConfirmDialog
+    v-model="showDeleteConfirmDialog"
+    :title="t('deleteButton')"
+    :message="t('deleteConfirmMessage')"
+    :confirm-text="t('confirmDeleteButton')"
+    :cancel-text="t('cancelButton')"
+    variant="destructive"
+    @confirm="confirmDeleteOrganization"
+  />
 
-  <q-dialog v-model="showSlugConfirmDialog">
-    <q-card class="archiveDialog">
-      <q-card-section>
-        <div class="dialogTitle">{{ t("slugWarningTitle") }}</div>
-        <p>{{ t("slugWarningDescription") }}</p>
-      </q-card-section>
-      <q-card-actions align="right">
-        <q-btn
-          flat
-          no-caps
-          :label="t('cancelButton')"
-          @click="showSlugConfirmDialog = false"
-        />
-        <q-btn
-          color="primary"
-          no-caps
-          :label="t('confirmSlugChangeButton')"
-          :loading="isSavingSlug"
-          :disable="!canSaveOrganizationSlug"
-          @click="confirmSlugUpdate"
-        />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+  <ZKConfirmDialog
+    v-model="showSlugConfirmDialog"
+    :title="t('slugWarningTitle')"
+    :message="t('slugWarningDescription')"
+    :confirm-text="t('confirmSlugChangeButton')"
+    :cancel-text="t('cancelButton')"
+    variant="destructive"
+    @confirm="confirmSlugUpdate"
+  />
 </template>
 
 <script setup lang="ts">
 import AdminSectionHeader from "src/components/administrator/AdminSectionHeader.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
+import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
+import ZKSelect from "src/components/ui-library/ZKSelect.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   type AdministratorOrganizationTranslations,
@@ -280,6 +279,7 @@ import {
 } from "src/pages/settings/account/administrator/organization/organizationAdminForm";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import {
+  type AdminOrganizationOption,
   type AdminOrganizationProperties,
   Dto,
   type OrganizationMember,
@@ -289,16 +289,19 @@ import { useBackendAdministratorOrganizationApi } from "src/utils/api/administra
 import { computed, reactive, ref, watch } from "vue";
 
 type EditTextField = "displayName" | "description" | "imagePath" | "websiteUrl";
+type ZKSelectModel = string | string[] | null;
 
 const props = defineProps<{
-  organizationList: AdminOrganizationProperties[];
+  organizationList: AdminOrganizationOption[];
   selectedOrganizationSlug: string | undefined;
+  selectedOrganization: AdminOrganizationProperties | undefined;
+  isLoadingOrganizations: boolean;
 }>();
 
 const emit = defineEmits<{
   "update:selectedOrganizationSlug": [organizationSlug: string | undefined];
-  archived: [];
-  saved: [];
+  deleted: [];
+  saved: [options?: { refreshSelectedDetails?: boolean }];
 }>();
 
 const { t } = useComponentI18n<AdministratorOrganizationTranslations>(
@@ -307,7 +310,7 @@ const { t } = useComponentI18n<AdministratorOrganizationTranslations>(
 const languageStore = useLanguageStore();
 const {
   addUserOrganizationMapping,
-  archiveOrganization,
+  deleteOrganization,
   getOrganizationMembers,
   removeUserOrganizationMapping,
   updateOrganizationLocalization,
@@ -322,13 +325,13 @@ const memberUsername = ref("");
 const organizationMembers = ref<OrganizationMember[]>([]);
 const hasLoadedMembers = ref(false);
 const removingMemberUsername = ref<string | undefined>(undefined);
-const showArchiveConfirmDialog = ref(false);
+const showDeleteConfirmDialog = ref(false);
 const showSlugConfirmDialog = ref(false);
 const isSaving = ref(false);
 const isSavingSlug = ref(false);
 const isAddingMember = ref(false);
 const isLoadingMembers = ref(false);
-const isArchiving = ref(false);
+const isDeleting = ref(false);
 
 const editForm = reactive<OrganizationLocalizationFormState>({
   displayName: "",
@@ -338,11 +341,7 @@ const editForm = reactive<OrganizationLocalizationFormState>({
   setAsDefault: false,
 });
 
-const selectedOrganization = computed(() =>
-  props.organizationList.find(
-    (organization) => organization.slug === props.selectedOrganizationSlug
-  )
-);
+const selectedOrganization = computed(() => props.selectedOrganization);
 
 const organizationOptions = computed<Array<SelectOption<string>>>(() =>
   props.organizationList.map((organization) => ({
@@ -351,12 +350,22 @@ const organizationOptions = computed<Array<SelectOption<string>>>(() =>
   }))
 );
 
+const selectedOrganizationSlugSelectModel = computed<ZKSelectModel>({
+  get: () => props.selectedOrganizationSlug ?? null,
+  set: (value) => {
+    const organizationSlug =
+      typeof value === "string" && value.length > 0 ? value : undefined;
+    setSelectedOrganizationSlug(organizationSlug);
+  },
+});
+
 const localizedLanguageOptions = computed(
   (): Array<SelectOption<SupportedDisplayLanguageCodes>> => {
     const organization = selectedOrganization.value;
     const localizedLanguageCodes = new Set(
-      organization?.localizations.map((localization) => localization.languageCode) ??
-        []
+      organization?.localizations.map(
+        (localization) => localization.languageCode
+      ) ?? []
     );
 
     return displayLanguageOptions.map((option) => ({
@@ -371,7 +380,9 @@ const localizedLanguageOptions = computed(
 );
 
 const selectedLanguageIsDefault = computed(
-  () => selectedLanguageCode.value === selectedOrganization.value?.defaultLanguageCode
+  () =>
+    selectedLanguageCode.value ===
+    selectedOrganization.value?.defaultLanguageCode
 );
 
 const selectedLanguageHasLocalization = computed(() => {
@@ -386,21 +397,19 @@ const selectedLanguageHasLocalization = computed(() => {
   });
 });
 
-const canSaveOrganization = computed(
-  () => {
-    const organization = selectedOrganization.value;
-    return (
-      organization !== undefined &&
-      isOrganizationLocalizationDirty.value &&
-      isUpdateOrganizationLocalizationFormValid({
-        organizationSlug: organization.slug,
-        languageCode: selectedLanguageCode.value,
-        form: editForm,
-        isDefaultLanguage: selectedLanguageIsDefault.value,
-      })
-    );
-  }
-);
+const canSaveOrganization = computed(() => {
+  const organization = selectedOrganization.value;
+  return (
+    organization !== undefined &&
+    isOrganizationLocalizationDirty.value &&
+    isUpdateOrganizationLocalizationFormValid({
+      organizationSlug: organization.slug,
+      languageCode: selectedLanguageCode.value,
+      form: editForm,
+      isDefaultLanguage: selectedLanguageIsDefault.value,
+    })
+  );
+});
 
 const isOrganizationLocalizationDirty = computed(() => {
   const organization = selectedOrganization.value;
@@ -437,6 +446,16 @@ const canSaveOrganizationSlug = computed(() => {
 });
 
 watch(
+  () => props.selectedOrganizationSlug,
+  () => {
+    organizationMembers.value = [];
+    hasLoadedMembers.value = false;
+    showSlugConfirmDialog.value = false;
+  },
+  { immediate: true }
+);
+
+watch(
   selectedOrganization,
   (organization) => {
     if (organization === undefined) {
@@ -445,9 +464,6 @@ watch(
 
     selectedLanguageCode.value = organization.defaultLanguageCode;
     selectedOrganizationSlugDraft.value = organization.slug;
-    organizationMembers.value = [];
-    hasLoadedMembers.value = false;
-    showSlugConfirmDialog.value = false;
   },
   { immediate: true }
 );
@@ -460,10 +476,11 @@ watch(
   { immediate: true }
 );
 
-function setSelectedOrganizationSlug(value: unknown): void {
-  const slug = inputToString(value);
-  emit("update:selectedOrganizationSlug", slug.length === 0 ? undefined : slug);
-  showArchiveConfirmDialog.value = false;
+function setSelectedOrganizationSlug(
+  organizationSlug: string | undefined
+): void {
+  emit("update:selectedOrganizationSlug", organizationSlug);
+  showDeleteConfirmDialog.value = false;
   showSlugConfirmDialog.value = false;
 }
 
@@ -520,7 +537,11 @@ function populateEditForm(): void {
 
 async function submitUpdateOrganization(): Promise<void> {
   const organization = selectedOrganization.value;
-  if (organization === undefined || !canSaveOrganization.value || isSaving.value) {
+  if (
+    organization === undefined ||
+    !canSaveOrganization.value ||
+    isSaving.value
+  ) {
     return;
   }
 
@@ -569,7 +590,7 @@ async function confirmSlugUpdate(): Promise<void> {
   if (success) {
     showSlugConfirmDialog.value = false;
     emit("update:selectedOrganizationSlug", newOrganizationSlug);
-    emit("saved");
+    emit("saved", { refreshSelectedDetails: false });
   }
 }
 
@@ -614,7 +635,10 @@ async function fetchMembers(): Promise<void> {
 
 async function removeFetchedMember(username: string): Promise<void> {
   const organization = selectedOrganization.value;
-  if (organization === undefined || removingMemberUsername.value !== undefined) {
+  if (
+    organization === undefined ||
+    removingMemberUsername.value !== undefined
+  ) {
     return;
   }
 
@@ -630,28 +654,30 @@ async function removeFetchedMember(username: string): Promise<void> {
   }
 }
 
-function archiveButtonClicked(): void {
+function deleteButtonClicked(): void {
   const organization = selectedOrganization.value;
-  if (organization === undefined || isArchiving.value) {
+  if (organization === undefined || isDeleting.value) {
     return;
   }
 
-  showArchiveConfirmDialog.value = true;
+  showDeleteConfirmDialog.value = true;
 }
 
-async function confirmArchiveOrganization(): Promise<void> {
+async function confirmDeleteOrganization(): Promise<void> {
   const organization = selectedOrganization.value;
-  if (organization === undefined || isArchiving.value) {
+  if (organization === undefined || isDeleting.value) {
     return;
   }
 
-  isArchiving.value = true;
-  const success = await archiveOrganization({ organizationName: organization.slug });
-  isArchiving.value = false;
+  isDeleting.value = true;
+  const success = await deleteOrganization({
+    organizationName: organization.slug,
+  });
+  isDeleting.value = false;
 
   if (success) {
-    showArchiveConfirmDialog.value = false;
-    emit("archived");
+    showDeleteConfirmDialog.value = false;
+    emit("deleted");
   }
 }
 </script>
@@ -673,11 +699,23 @@ async function confirmArchiveOrganization(): Promise<void> {
   gap: 1rem;
 }
 
+.headerSelect {
+  margin-top: 1rem;
+}
+
+.localizationSection {
+  margin-top: 1rem;
+}
+
 .badgeRow,
 .actionRow {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.badgeRow {
+  margin-top: 1rem;
 }
 
 .row-list {
@@ -722,31 +760,56 @@ async function confirmArchiveOrganization(): Promise<void> {
   background: #f5f7fb;
 }
 
-.dangerSection {
+.dangerZoneCard {
+  margin-top: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba($negative, 0.35);
+}
+
+.dangerZoneTitle {
+  padding: 1rem 1rem 0.75rem;
+  color: $negative;
+  font-size: 1.15rem;
+  font-weight: var(--font-weight-semibold);
+}
+
+.dangerZoneRow {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-top: 1px solid rgba($negative, 0.22);
 }
 
-.dangerSection p {
-  margin: 0;
-  color: #7f1d1d;
-  line-height: 1.4;
+.dangerZoneContent {
+  min-width: 0;
+  flex: 1;
 }
 
-.archiveDialog {
-  width: min(26rem, calc(100vw - 2rem));
+.dangerZoneRowTitle {
+  font-weight: var(--font-weight-semibold);
 }
 
-.dialogTitle {
-  margin-bottom: 0.5rem;
-  font-size: 1.1rem;
-  font-weight: 700;
+.dangerZoneDescription {
+  margin-top: 0.25rem;
+  color: $color-text-weak;
+  line-height: 1.35;
 }
 
-.archiveDialog p {
-  margin: 0;
-  color: #5f6368;
-  line-height: 1.4;
+.dangerZoneInput {
+  max-width: 28rem;
+  margin-top: 0.75rem;
+}
+
+.dangerZoneAction {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 600px) {
+  .dangerZoneRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 </style>

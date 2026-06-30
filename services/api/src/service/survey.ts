@@ -294,7 +294,10 @@ async function hasParticipantAnalysisInput({
         .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
         .leftJoin(
             opinionModerationTable,
-            eq(opinionModerationTable.opinionId, opinionTable.id),
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
+            ),
         )
         .where(
             and(

@@ -89,16 +89,16 @@ export const zodConversationLanguageSettingInput = z.discriminatedUnion(
             .strict(),
     ],
 );
-export const zodProjectTranslationLanguageSetting = z
+export const zodProjectLanguageSettings = z
     .object({
         dynamicTranslationEnabled: z.boolean(),
-        additionalLanguageCodes: z
+        targetLanguageCodes: z
             .array(ZodSupportedDisplayLanguageCodes)
             .max(2)
             .refine(
                 (languageCodes) =>
                     new Set(languageCodes).size === languageCodes.length,
-                "Additional languages must be unique",
+                "Target languages must be unique",
             ),
     })
     .strict();
@@ -1985,9 +1985,7 @@ export type ConversationLanguageSettingInput = z.infer<
 export type ConversationLanguageSettingOutput = z.infer<
     typeof zodConversationLanguageSettingOutput
 >;
-export type ProjectTranslationLanguageSetting = z.infer<
-    typeof zodProjectTranslationLanguageSetting
->;
+export type ProjectLanguageSettings = z.infer<typeof zodProjectLanguageSettings>;
 export type ConversationMultilingualSetting = z.infer<
     typeof zodConversationMultilingualSetting
 >;

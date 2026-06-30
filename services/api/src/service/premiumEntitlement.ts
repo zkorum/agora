@@ -219,9 +219,12 @@ async function getCandidateEntitlements({
         .from(organizationMembershipTable)
         .innerJoin(
             projectOrganizationOwnershipTable,
-            eq(
-                projectOrganizationOwnershipTable.organizationId,
-                organizationMembershipTable.organizationId,
+            and(
+                eq(
+                    projectOrganizationOwnershipTable.organizationId,
+                    organizationMembershipTable.organizationId,
+                ),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
             ),
         )
         .innerJoin(
@@ -234,6 +237,7 @@ async function getCandidateEntitlements({
         .where(
             and(
                 eq(organizationMembershipTable.userId, subject.userId),
+                isNull(organizationMembershipTable.deletedAt),
                 eq(projectOrganizationOwnershipTable.projectId, subject.projectId),
                 inArray(premiumFeatureEntitlementTable.feature, features),
                 lte(premiumFeatureEntitlementTable.startsAt, now),
@@ -282,6 +286,61 @@ export async function hasPremiumAnalysisVariantsAccess({
     });
 }
 
+export async function getOrganizationIdsWithActiveDynamicTranslationEntitlement({
+    db,
+    organizationIds,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    organizationIds: number[];
+    now: Date;
+}): Promise<Set<number>> {
+    if (organizationIds.length === 0) {
+        return new Set();
+    }
+
+    const rows = await db
+        .select({
+            organizationId: premiumFeatureEntitlementTable.organizationId,
+        })
+        .from(premiumFeatureEntitlementTable)
+        .where(
+            and(
+                inArray(premiumFeatureEntitlementTable.organizationId, organizationIds),
+                eq(
+                    premiumFeatureEntitlementTable.feature,
+                    PREMIUM_DYNAMIC_TRANSLATION_FEATURE,
+                ),
+                lte(premiumFeatureEntitlementTable.startsAt, now),
+                isNull(premiumFeatureEntitlementTable.revokedAt),
+                or(
+                    isNull(premiumFeatureEntitlementTable.expiresAt),
+                    gt(premiumFeatureEntitlementTable.expiresAt, now),
+                ),
+            ),
+        );
+
+    return new Set(rows.map((row) => row.organizationId));
+}
+
+export async function hasActiveDynamicTranslationEntitlementForOrganizations({
+    db,
+    organizationIds,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    organizationIds: number[];
+    now: Date;
+}): Promise<boolean> {
+    const entitledOrganizationIds =
+        await getOrganizationIdsWithActiveDynamicTranslationEntitlement({
+            db,
+            organizationIds,
+            now,
+        });
+    return entitledOrganizationIds.size > 0;
+}
+
 async function refreshPremiumAnalysisForSubject({
     db,
     subject,
@@ -296,9 +355,12 @@ async function refreshPremiumAnalysisForSubject({
         .from(conversationTable)
         .innerJoin(
             projectOrganizationOwnershipTable,
-            eq(
-                projectOrganizationOwnershipTable.projectId,
-                conversationTable.projectId,
+            and(
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    conversationTable.projectId,
+                ),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
             ),
         );
 
@@ -320,9 +382,12 @@ async function refreshPremiumAnalysisForSubject({
             : await baseQuery
                   .innerJoin(
                       organizationMembershipTable,
-                      eq(
-                          organizationMembershipTable.organizationId,
-                          projectOrganizationOwnershipTable.organizationId,
+                      and(
+                          eq(
+                              organizationMembershipTable.organizationId,
+                              projectOrganizationOwnershipTable.organizationId,
+                          ),
+                          isNull(organizationMembershipTable.deletedAt),
                       ),
                   )
                   .where(
@@ -503,9 +568,12 @@ export async function getPremiumFeaturesInConversation({
         .from(conversationTable)
         .leftJoin(
             conversationTranslationTargetLanguageTable,
-            eq(
-                conversationTranslationTargetLanguageTable.conversationId,
-                conversationTable.id,
+            and(
+                eq(
+                    conversationTranslationTargetLanguageTable.conversationId,
+                    conversationTable.id,
+                ),
+                isNull(conversationTranslationTargetLanguageTable.deletedAt),
             ),
         )
         .where(eq(conversationTable.id, conversation.conversationId));
@@ -574,9 +642,12 @@ async function clearPreferredOpinionGroupCountForSubject({
                   .from(conversationTable)
                   .innerJoin(
                       projectOrganizationOwnershipTable,
-                      eq(
-                          projectOrganizationOwnershipTable.projectId,
-                          conversationTable.projectId,
+                      and(
+                          eq(
+                              projectOrganizationOwnershipTable.projectId,
+                              conversationTable.projectId,
+                          ),
+                          isNull(projectOrganizationOwnershipTable.deletedAt),
                       ),
                   )
                   .where(

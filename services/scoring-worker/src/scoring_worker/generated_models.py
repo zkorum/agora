@@ -331,6 +331,7 @@ class ProjectOrganizationOwnership(Base):
     project_id: Mapped[int] = mapped_column(Integer)
     organization_id: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class Project(Base):

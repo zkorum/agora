@@ -1,7 +1,19 @@
 <template>
   <section class="project-contact-card">
     <div class="project-contact-card__header">
-      <div class="project-contact-card__avatar">{{ initials }}</div>
+      <div
+        class="project-contact-card__avatar"
+        :class="{
+          'project-contact-card__avatar--image': contact.imageUrl !== undefined,
+        }"
+      >
+        <img
+          v-if="contact.imageUrl !== undefined"
+          :src="contact.imageUrl"
+          :alt="t('contactImageAlt', { name: contact.name })"
+        />
+        <template v-else>{{ initials }}</template>
+      </div>
       <div>
         <h3>{{ contact.name }}</h3>
         <p>{{ subtitle }}</p>
@@ -9,25 +21,29 @@
     </div>
 
     <div class="project-contact-card__actions">
-      <a
-        v-if="contact.email !== undefined"
-        class="project-contact-card__button"
-        :href="`mailto:${contact.email}`"
-      >
-        <q-icon name="mdi-email-outline" size="1rem" />
-        Email contact
-      </a>
+      <ProjectActionButton
+        v-if="safeEmailHref !== undefined"
+        :label="t('emailContactLabel')"
+        icon-name="mdi-email-outline"
+        :href="safeEmailHref"
+        :external="false"
+        variant="outline"
+        :block="true"
+        :accessible-label="t('emailContactAriaLabel', { name: contact.name })"
+        :interactive="true"
+      />
 
-      <a
-        v-if="contact.websiteUrl !== undefined"
-        class="project-contact-card__button"
-        :href="contact.websiteUrl"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <q-icon name="mdi-open-in-new" size="1rem" />
-        Contact page
-      </a>
+      <ProjectActionButton
+        v-if="safeWebsiteHref !== undefined"
+        :label="t('contactPageLabel')"
+        icon-name="mdi-open-in-new"
+        :href="safeWebsiteHref"
+        :external="true"
+        variant="outline"
+        :block="true"
+        :accessible-label="t('contactPageAriaLabel', { name: contact.name })"
+        :interactive="true"
+      />
     </div>
   </section>
 </template>
@@ -35,10 +51,20 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
+import ProjectActionButton from "./ProjectActionButton.vue";
+import {
+  type ProjectPageTranslations,
+  translateProjectPageText,
+} from "./projectPageI18n";
 import type { ProjectContact } from "./projectPageTypes";
+import {
+  getSafeProjectHref,
+  getSafeProjectWebHref,
+} from "./projectUrlSafety";
 
 const props = defineProps<{
   contact: ProjectContact;
+  languageCode: string;
 }>();
 
 const subtitle = computed(() => {
@@ -56,13 +82,35 @@ const initials = computed(() => {
     .join("")
     .toUpperCase();
 });
+
+const safeEmailHref = computed(() =>
+  props.contact.email === undefined
+    ? undefined
+    : getSafeProjectHref(`mailto:${props.contact.email}`)
+);
+const safeWebsiteHref = computed(() =>
+  props.contact.websiteUrl === undefined
+    ? undefined
+    : getSafeProjectWebHref(props.contact.websiteUrl)
+);
+
+function t(
+  key: keyof ProjectPageTranslations,
+  params?: Readonly<Record<string, string | number>>
+): string {
+  return translateProjectPageText({
+    languageCode: props.languageCode,
+    key,
+    params,
+  });
+}
 </script>
 
 <style scoped lang="scss">
 .project-contact-card {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  gap: 0.65rem;
 }
 
 .project-contact-card__header {
@@ -81,6 +129,18 @@ const initials = computed(() => {
   background: $primary-lightest;
   color: $primary-dark;
   font-weight: var(--font-weight-bold);
+}
+
+.project-contact-card__avatar--image {
+  padding: 0.35rem;
+  border: 1px solid $sky-lighter;
+  background: white;
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
 }
 
 h3,
@@ -104,23 +164,6 @@ p {
 
 .project-contact-card__actions {
   display: grid;
-  gap: 0.55rem;
-}
-
-.project-contact-card__button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  min-height: 2.7rem;
-  padding: 0.65rem 0.85rem;
-  border: 1px solid rgba($primary, 0.24);
-  border-radius: 0.85rem;
-  background: rgba(white, 0.46);
-  color: $primary;
-  font-size: 0.9rem;
-  font-weight: var(--font-weight-bold);
-  text-align: center;
-  text-decoration: none;
+  gap: 0.85rem;
 }
 </style>

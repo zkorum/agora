@@ -4,12 +4,22 @@ import {
     type SupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
 
-export interface TranslationLanguageSettingInput {
+export interface ProjectLanguageSettingsInput {
+    dynamicTranslationEnabled: boolean;
+    targetLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+}
+
+export interface ProjectLanguageSettings {
+    dynamicTranslationEnabled: boolean;
+    targetLanguageCodes: SupportedDisplayLanguageCodes[];
+}
+
+export interface ConversationMultilingualSettingsInput {
     dynamicTranslationEnabled: boolean;
     additionalLanguageCodes: readonly SupportedDisplayLanguageCodes[];
 }
 
-export interface TranslationLanguageSetting {
+export interface ConversationMultilingualSettings {
     dynamicTranslationEnabled: boolean;
     additionalLanguageCodes: SupportedDisplayLanguageCodes[];
 }
@@ -25,33 +35,60 @@ export function sourceLanguageToDisplayLanguage({
     return parseSupportedDisplayLanguageOrUndefined(sourceLanguageCode) ?? null;
 }
 
-export function normalizeTranslationLanguageSetting({
-    setting,
+export function normalizeProjectLanguageSettings({
+    languageSettings,
     canUseDynamicTranslation,
     sourceLanguageCode,
 }: {
-    setting: TranslationLanguageSettingInput;
+    languageSettings: ProjectLanguageSettingsInput;
     canUseDynamicTranslation: boolean;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
-}): TranslationLanguageSetting {
+}): ProjectLanguageSettings {
     if (!canUseDynamicTranslation) {
         return {
             dynamicTranslationEnabled: false,
-            additionalLanguageCodes: [],
+            targetLanguageCodes: [],
         };
     }
 
     const sourceDisplayLanguageCode = sourceLanguageToDisplayLanguage({
         sourceLanguageCode,
     });
-    const additionalLanguageCodes = Array.from(
-        new Set(setting.additionalLanguageCodes),
+    const targetLanguageCodes = Array.from(
+        new Set(languageSettings.targetLanguageCodes),
     )
         .filter((languageCode) => languageCode !== sourceDisplayLanguageCode)
         .slice(0, 2);
 
     return {
-        dynamicTranslationEnabled: setting.dynamicTranslationEnabled,
-        additionalLanguageCodes,
+        dynamicTranslationEnabled: languageSettings.dynamicTranslationEnabled,
+        targetLanguageCodes,
+    };
+}
+
+export function normalizeConversationMultilingualSettings({
+    multilingualSettings,
+    canUseDynamicTranslation,
+    sourceLanguageCode,
+}: {
+    multilingualSettings: ConversationMultilingualSettingsInput;
+    canUseDynamicTranslation: boolean;
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+}): ConversationMultilingualSettings {
+    const normalizedProjectLanguageSettings = normalizeProjectLanguageSettings({
+        languageSettings: {
+            dynamicTranslationEnabled:
+                multilingualSettings.dynamicTranslationEnabled,
+            targetLanguageCodes: multilingualSettings.additionalLanguageCodes,
+        },
+        canUseDynamicTranslation,
+        sourceLanguageCode,
+    });
+
+    return {
+        dynamicTranslationEnabled:
+            normalizedProjectLanguageSettings.dynamicTranslationEnabled,
+        additionalLanguageCodes:
+            normalizedProjectLanguageSettings.targetLanguageCodes,
     };
 }

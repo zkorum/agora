@@ -1,57 +1,25 @@
+import type {
+  ProjectPageActivity,
+  ProjectPageAttribution,
+  ProjectPageContact,
+  ProjectPageLanguageOption as SharedProjectPageLanguageOption,
+  ProjectPageProject,
+} from "src/shared/types/dto";
+
 export type ProjectActivityKind = "conversation" | "vote";
+
+export type ProjectActionButtonVariant = "primary" | "outline" | "muted";
 
 export type ProjectAttributionRole = "project_owner" | "sponsor" | "partner";
 
-export interface ProjectLanguageOption {
-  label: string;
-  value: string;
-  caption?: string;
-  searchText?: string;
-  shortLabel?: string;
-}
+export type ProjectLanguageOption = SharedProjectPageLanguageOption;
 
-export interface ProjectActivityStats {
-  opinionCount: number;
-  participantCount: number;
-  voteCount: number;
-}
+export type ProjectActivityStats = ProjectPageActivity["stats"];
 
-export interface ProjectActivity {
-  slug: string;
-  kind: ProjectActivityKind;
-  isClosed: boolean;
-  title: string;
-  bodyPlainText: string;
-  stats: ProjectActivityStats;
-}
+export type ProjectActivity = ProjectPageActivity;
 
-export interface ProjectAttribution {
-  role: ProjectAttributionRole;
-  displayName: string;
-  description: string | undefined;
-  websiteUrl: string | undefined;
-  initials: string;
-  accentColor: string;
-}
+export type ProjectAttribution = ProjectPageAttribution;
 
-export interface ProjectContact {
-  name: string;
-  roleLabel: string | undefined;
-  affiliationName: string | undefined;
-  email: string | undefined;
-  websiteUrl: string | undefined;
-}
+export type ProjectContact = ProjectPageContact;
 
-export interface ProjectPageData {
-  slug: string;
-  title: string;
-  subtitle: string | undefined;
-  bodyPlainText: string | undefined;
-  heroVariant: "blue" | "purple" | "green";
-  participantCount: number;
-  voteCount: number;
-  activityCount: number;
-  activities: readonly ProjectActivity[];
-  attributions: readonly ProjectAttribution[];
-  contact: ProjectContact | undefined;
-}
+export type ProjectPageData = ProjectPageProject;

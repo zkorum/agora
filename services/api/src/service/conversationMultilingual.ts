@@ -1,4 +1,4 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import {
     conversationTable,
@@ -38,9 +38,12 @@ export async function getConversationMultilingualSetting({
         })
         .from(conversationTranslationTargetLanguageTable)
         .where(
-            eq(
-                conversationTranslationTargetLanguageTable.conversationId,
-                conversationId,
+            and(
+                eq(
+                    conversationTranslationTargetLanguageTable.conversationId,
+                    conversationId,
+                ),
+                isNull(conversationTranslationTargetLanguageTable.deletedAt),
             ),
         );
 
@@ -79,9 +82,12 @@ export async function getConversationMultilingualSettingsByConversationId({
         .from(conversationTable)
         .leftJoin(
             conversationTranslationTargetLanguageTable,
-            eq(
-                conversationTranslationTargetLanguageTable.conversationId,
-                conversationTable.id,
+            and(
+                eq(
+                    conversationTranslationTargetLanguageTable.conversationId,
+                    conversationTable.id,
+                ),
+                isNull(conversationTranslationTargetLanguageTable.deletedAt),
             ),
         )
         .where(inArray(conversationTable.id, uniqueConversationIds));
@@ -124,11 +130,15 @@ export async function upsertConversationMultilingualSetting({
         .where(eq(conversationTable.id, conversationId));
 
     await db
-        .delete(conversationTranslationTargetLanguageTable)
+        .update(conversationTranslationTargetLanguageTable)
+        .set({ deletedAt: now })
         .where(
-            eq(
-                conversationTranslationTargetLanguageTable.conversationId,
-                conversationId,
+            and(
+                eq(
+                    conversationTranslationTargetLanguageTable.conversationId,
+                    conversationId,
+                ),
+                isNull(conversationTranslationTargetLanguageTable.deletedAt),
             ),
         );
 

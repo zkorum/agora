@@ -1,43 +1,86 @@
 <template>
   <SpaLink
-    :to="{ name: '/conversation/[postSlugId]/', params: { postSlugId: activity.slug } }"
+    :to="{
+      name: '/conversation/[postSlugId]/',
+      params: { postSlugId: activity.slug },
+    }"
     class="project-activity-card"
   >
     <article>
       <div class="activity-card__topline">
-        <span class="activity-card__type" :class="`activity-card__type--${activity.kind}`">
+        <span
+          class="activity-card__type"
+          :class="`activity-card__type--${activity.kind}`"
+        >
           <q-icon :name="activityTypeIcon" size="1rem" />
           {{ activityTypeLabel }}
         </span>
 
-        <span class="activity-card__status" :class="statusClass">
-          {{ activity.isClosed ? "Closed" : "Open" }}
+        <span
+          class="activity-card__status"
+          :class="
+            activity.isClosed
+              ? 'activity-card__status--closed'
+              : 'activity-card__status--open'
+          "
+        >
+          {{ activity.isClosed ? t("closedStatus") : t("openStatus") }}
         </span>
       </div>
 
       <h3>{{ activity.title }}</h3>
-      <p class="activity-card__body">{{ activity.bodyPlainText }}</p>
+      <ZKPlainTextContent
+        class="activity-card__body"
+        :plain-text="activity.bodyPlainText"
+        :compact-mode="true"
+        :enable-links="false"
+        :compact-line-count="3"
+      />
 
       <div class="activity-card__footer">
-        <div class="activity-card__stats" aria-label="Activity statistics">
+        <div
+          class="activity-card__stats"
+          :aria-label="t('activityStatisticsAriaLabel')"
+        >
           <span>
             <q-icon name="mdi-message-text-outline" size="1rem" />
-            {{ formatNumber(activity.stats.opinionCount) }} statements
+            {{
+              t("statementsCount", {
+                count: formatNumber(activity.stats.opinionCount),
+              })
+            }}
           </span>
           <span>
             <q-icon name="mdi-account-outline" size="1rem" />
-            {{ formatNumber(activity.stats.participantCount) }} participants
+            {{
+              t("participantsCount", {
+                count: formatNumber(activity.stats.participantCount),
+              })
+            }}
           </span>
           <span>
             <q-icon name="mdi-check-circle-outline" size="1rem" />
-            {{ formatNumber(activity.stats.voteCount) }} votes
+            {{
+              t("votesCount", { count: formatNumber(activity.stats.voteCount) })
+            }}
           </span>
         </div>
 
-        <span class="activity-card__open" :class="{ 'activity-card__open--closed': activity.isClosed }">
-          {{ actionLabel }}
-          <q-icon name="mdi-arrow-right" size="1rem" />
-        </span>
+        <ProjectActionButton
+          :label="actionLabel"
+          :icon-name="actionIconName"
+          :href="undefined"
+          :external="false"
+          :variant="actionVariant"
+          :block="true"
+          :accessible-label="
+            t('activityActionAriaLabel', {
+              action: actionLabel,
+              title: activity.title,
+            })
+          "
+          :interactive="false"
+        />
       </div>
     </article>
   </SpaLink>
@@ -45,45 +88,84 @@
 
 <script setup lang="ts">
 import SpaLink from "src/components/ui-library/SpaLink.vue";
+import ZKPlainTextContent from "src/components/ui-library/ZKPlainTextContent.vue";
+import type { LanguageTextDirection } from "src/shared/languages";
 import { computed } from "vue";
 
-import type { ProjectActivity } from "./projectPageTypes";
+import ProjectActionButton from "./ProjectActionButton.vue";
+import {
+  formatProjectPageNumber,
+  type ProjectPageTranslations,
+  translateProjectPageText,
+} from "./projectPageI18n";
+import type {
+  ProjectActionButtonVariant,
+  ProjectActivity,
+} from "./projectPageTypes";
 
 const props = defineProps<{
   activity: ProjectActivity;
+  languageCode: string;
+  textDirection: LanguageTextDirection;
 }>();
 
 const activityTypeLabel = computed(() =>
-  props.activity.kind === "conversation" ? "Conversation" : "Vote"
+  props.activity.kind === "conversation" ? t("conversationType") : t("voteType")
 );
 
 const activityTypeIcon = computed(() =>
   props.activity.kind === "conversation" ? "mdi-forum-outline" : "mdi-poll"
 );
 
-const statusClass = computed(() => ({
-  "activity-card__status--closed": props.activity.isClosed,
-  "activity-card__status--open": !props.activity.isClosed,
-}));
-
 const actionLabel = computed(() => {
   if (props.activity.isClosed) {
-    return "View";
+    return t("viewAction");
   }
 
-  return props.activity.kind === "conversation" ? "Join" : "Vote";
+  return props.activity.kind === "conversation"
+    ? t("joinAction")
+    : t("voteAction");
 });
 
-const numberFormatter = new Intl.NumberFormat();
+const actionIconName = computed(() =>
+  props.textDirection === "rtl" ? "mdi-arrow-left" : "mdi-arrow-right"
+);
+
+const actionVariant = computed<ProjectActionButtonVariant>(() =>
+  props.activity.isClosed ? "muted" : "primary"
+);
+
+function t(
+  key: keyof ProjectPageTranslations,
+  params?: Readonly<Record<string, string | number>>
+): string {
+  return translateProjectPageText({
+    languageCode: props.languageCode,
+    key,
+    params,
+  });
+}
 
 function formatNumber(value: number): string {
-  return numberFormatter.format(value);
+  return formatProjectPageNumber({ languageCode: props.languageCode, value });
 }
 </script>
 
 <style scoped lang="scss">
 .project-activity-card {
   display: block;
+  border-radius: 20px;
+
+  &:focus-visible {
+    outline: none;
+
+    article {
+      border-color: rgba($primary, 0.5);
+      box-shadow:
+        0 0.75rem 2rem rgba(10, 7, 20, 0.09),
+        0 0 0 3px rgba($primary, 0.16);
+    }
+  }
 }
 
 article {
@@ -98,15 +180,20 @@ article {
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease,
-    transform 160ms ease;
+    transform 100ms ease;
+}
 
-  @media (hover: hover) {
-    &:hover {
-      border-color: rgba($primary, 0.38);
-      box-shadow: 0 0.8rem 2rem rgba(10, 7, 20, 0.08);
-      transform: translateY(-1px);
-    }
+@media (hover: hover) and (pointer: fine) {
+  .project-activity-card:hover article {
+    border-color: rgba($primary, 0.38);
+    box-shadow: 0 0.8rem 2rem rgba(10, 7, 20, 0.08);
+    transform: translateY(-1px);
   }
+}
+
+.project-activity-card:active article {
+  box-shadow: 0 0.18rem 0.55rem rgba(10, 7, 20, 0.04);
+  transform: translateY(1px) scale(0.99);
 }
 
 .activity-card__topline {
@@ -159,15 +246,10 @@ h3 {
 }
 
 .activity-card__body {
-  display: -webkit-box;
-  min-height: 3.9em;
   margin: 0;
-  overflow: hidden;
   color: $ink-light;
   font-size: 0.95rem;
   line-height: 1.5;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
 }
 
 .activity-card__footer {
@@ -194,36 +276,16 @@ h3 {
   }
 }
 
-.activity-card__open {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  min-width: 7.5rem;
-  min-height: 2.8rem;
-  padding: 0.7rem 1rem;
-  border-radius: 0.9rem;
-  background: $gradient-hero;
-  color: white;
-  font-size: 0.9rem;
-  font-weight: var(--font-weight-bold);
-  box-shadow: 0 0.45rem 1.15rem rgba($primary, 0.25);
-}
-
-.activity-card__open--closed {
-  background: $app-background-color;
-  color: $ink-light;
-  box-shadow: none;
-}
-
 @media (min-width: 920px) {
   .activity-card__footer {
     align-items: stretch;
     flex-direction: column;
   }
+}
 
-  .activity-card__open {
-    width: 100%;
+@media (prefers-reduced-motion: reduce) {
+  article {
+    transition: none;
   }
 }
 </style>

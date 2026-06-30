@@ -26,6 +26,7 @@ from content_translation_worker.generated_models import (
     Project,
     ProjectContent,
     ProjectContentTranslation,
+    ProjectContentTranslationSourceKind,
     RealtimeEventOutbox,
     RealtimeEventOutboxTopic,
     SpokenLanguageCode,
@@ -1112,14 +1113,20 @@ def _has_fresh_project_translation(
     source: ProjectSource,
 ) -> bool:
     row = session.execute(
-        select(ProjectContentTranslation.source_language_code).where(
+        select(
+            ProjectContentTranslation.source_language_code,
+            ProjectContentTranslation.source_kind,
+        ).where(
             and_(
                 ProjectContentTranslation.project_content_id == source.content_id,
                 ProjectContentTranslation.display_language_code
                 == claim.display_language_code,
+                ProjectContentTranslation.deleted_at.is_(None),
             )
         )
     ).first()
+    if row is not None and row.source_kind == ProjectContentTranslationSourceKind.manual:
+        return True
     return row is not None and _translation_source_matches_current_source(
         translation_source_language_code=row.source_language_code,
         current_source_language_code=source.source_language_code,
@@ -1418,6 +1425,7 @@ def _translate_project_source(
                 subtitle_result.translated_text if subtitle_result is not None else None
             ),
             translated_body=translated_body,
+            source_kind=ProjectContentTranslationSourceKind.machine,
             source_language_code=source_metadata.source_language_code,
             source_raw_language_code=source_metadata.source_raw_language_code,
             source_language_provider=source_metadata.source_language_provider,
@@ -1431,6 +1439,7 @@ def _translate_project_source(
                     ProjectContentTranslation.project_content_id,
                     ProjectContentTranslation.display_language_code,
                 ],
+                index_where=ProjectContentTranslation.deleted_at.is_(None),
                 set_={
                     "translated_title": title_result.translated_text,
                     "translated_subtitle": (
@@ -1439,12 +1448,17 @@ def _translate_project_source(
                         else None
                     ),
                     "translated_body": translated_body,
+                    "source_kind": ProjectContentTranslationSourceKind.machine,
                     "source_language_code": source_metadata.source_language_code,
                     "source_raw_language_code": source_metadata.source_raw_language_code,
                     "source_language_provider": source_metadata.source_language_provider,
                     "source_language_confidence": source_metadata.source_language_confidence,
                     "updated_at": func.now(),
                 },
+                where=(
+                    ProjectContentTranslation.source_kind
+                    != ProjectContentTranslationSourceKind.manual
+                ),
             )
         )
 

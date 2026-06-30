@@ -1,10 +1,13 @@
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   AdminProject,
+  AdminProjectOption,
   CreateProjectFailureReason,
   CreateProjectRequest,
   DeleteProjectRequest,
-  UpdateProjectLanguageSettingRequest,
+  GetProjectDetailsRequest,
+  UpdateProjectLanguageSettingsFailureReason,
+  UpdateProjectLanguageSettingsRequest,
   UpdateProjectRequest,
   UpdateProjectSlugRequest,
 } from "src/shared/types/dto";
@@ -27,6 +30,19 @@ const failureTranslationKeys: Record<
   organization_not_listed: "organizationNotListed",
   project_slug_already_exists: "projectSlugAlreadyExists",
   project_conflict: "projectConflict",
+  dynamic_translation_entitlement_required:
+    "dynamicTranslationEntitlementRequired",
+};
+
+const updateProjectLanguageSettingsFailureTranslationKeys: Record<
+  UpdateProjectLanguageSettingsFailureReason,
+  keyof AdministratorProjectApiTranslations
+> = {
+  project_not_found: "projectNotFound",
+  dynamic_translation_entitlement_required:
+    "dynamicTranslationEntitlementRequired",
+  missing_manual_project_content_localization:
+    "missingManualProjectContentLocalization",
 };
 
 export function useBackendAdministratorProjectApi() {
@@ -36,7 +52,9 @@ export function useBackendAdministratorProjectApi() {
     administratorProjectApiTranslations
   );
 
-  async function createProject(request: CreateProjectRequest): Promise<boolean> {
+  async function createProject(
+    request: CreateProjectRequest
+  ): Promise<boolean> {
     try {
       const params = Dto.createProjectRequest.parse(request);
       const url = "/api/v1/administrator/project/create";
@@ -72,9 +90,9 @@ export function useBackendAdministratorProjectApi() {
     }
   }
 
-  async function getAllProjects(): Promise<AdminProject[]> {
+  async function getProjectOptions(): Promise<AdminProjectOption[]> {
     try {
-      const url = "/api/v1/administrator/project/get-all-projects";
+      const url = "/api/v1/administrator/project/get-project-options";
       const options = { method: "POST" };
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await api.post(
@@ -87,7 +105,7 @@ export function useBackendAdministratorProjectApi() {
         }
       );
 
-      const data = Dto.getAllProjectsResponse.parse(response.data);
+      const data = Dto.getProjectOptionsResponse.parse(response.data);
       return data.projectList;
     } catch (error) {
       console.error(error);
@@ -96,12 +114,12 @@ export function useBackendAdministratorProjectApi() {
     }
   }
 
-  async function updateProjectLanguageSetting(
-    request: UpdateProjectLanguageSettingRequest
-  ): Promise<boolean> {
+  async function getProjectDetails(
+    request: GetProjectDetailsRequest
+  ): Promise<AdminProject | undefined> {
     try {
-      const params = Dto.updateProjectLanguageSettingRequest.parse(request);
-      const url = "/api/v1/administrator/project/language-setting/update";
+      const params = Dto.getProjectDetailsRequest.parse(request);
+      const url = "/api/v1/administrator/project/get-project-details";
       const options = { method: "POST" };
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await api.post(url, params, {
@@ -110,12 +128,44 @@ export function useBackendAdministratorProjectApi() {
         },
       });
 
-      Dto.updateProjectLanguageSettingResponse.parse(response.data);
-      showNotifyMessage(t("updatedProjectLanguageSetting"));
-      return true;
+      const data = Dto.getProjectDetailsResponse.parse(response.data);
+      return data.project;
     } catch (error) {
       console.error(error);
-      showNotifyMessage(t("failedToUpdateProjectLanguageSetting"));
+      showNotifyMessage(t("failedToFetchProjects"));
+      return undefined;
+    }
+  }
+
+  async function updateProjectLanguageSettings(
+    request: UpdateProjectLanguageSettingsRequest
+  ): Promise<boolean> {
+    try {
+      const params = Dto.updateProjectLanguageSettingsRequest.parse(request);
+      const url = "/api/v1/administrator/project/language-settings/update";
+      const options = { method: "POST" };
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await api.post(url, params, {
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
+
+      const data = Dto.updateProjectLanguageSettingsResponse.parse(
+        response.data
+      );
+      if (data.success) {
+        showNotifyMessage(t("updatedProjectLanguageSettings"));
+        return true;
+      }
+
+      showNotifyMessage(
+        t(updateProjectLanguageSettingsFailureTranslationKeys[data.reason])
+      );
+      return false;
+    } catch (error) {
+      console.error(error);
+      showNotifyMessage(t("failedToUpdateProjectLanguageSettings"));
       return false;
     }
   }
@@ -155,7 +205,9 @@ export function useBackendAdministratorProjectApi() {
     }
   }
 
-  async function archiveProject(request: DeleteProjectRequest): Promise<boolean> {
+  async function deleteProject(
+    request: DeleteProjectRequest
+  ): Promise<boolean> {
     try {
       const params = Dto.deleteProjectRequest.parse(request);
       const url = "/api/v1/administrator/project/delete-project";
@@ -166,16 +218,18 @@ export function useBackendAdministratorProjectApi() {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
-      showNotifyMessage(t("archivedProject"));
+      showNotifyMessage(t("deletedProject"));
       return true;
     } catch (error) {
       console.error(error);
-      showNotifyMessage(t("failedToArchiveProject"));
+      showNotifyMessage(t("failedToDeleteProject"));
       return false;
     }
   }
 
-  async function updateProject(request: UpdateProjectRequest): Promise<string | undefined> {
+  async function updateProject(
+    request: UpdateProjectRequest
+  ): Promise<string | undefined> {
     try {
       const params = Dto.updateProjectRequest.parse(request);
       const url = "/api/v1/administrator/project/update";
@@ -210,11 +264,12 @@ export function useBackendAdministratorProjectApi() {
   }
 
   return {
-    archiveProject,
+    deleteProject,
     createProject,
-    getAllProjects,
+    getProjectDetails,
+    getProjectOptions,
     updateProject,
-    updateProjectLanguageSetting,
+    updateProjectLanguageSettings,
     updateProjectSlug,
   };
 }

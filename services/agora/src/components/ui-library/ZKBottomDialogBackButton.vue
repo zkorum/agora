@@ -12,7 +12,12 @@
 
 <script setup lang="ts">
 import { useQuasar } from "quasar";
+import type { LanguageTextDirection } from "src/shared/languages";
 import { computed } from "vue";
+
+const props = defineProps<{
+  textDirection?: LanguageTextDirection;
+}>();
 
 const emit = defineEmits<{
   click: [];
@@ -20,8 +25,14 @@ const emit = defineEmits<{
 
 const $q = useQuasar();
 
+const resolvedTextDirection = computed<LanguageTextDirection>(() => {
+  return props.textDirection ?? ($q.lang.rtl ? "rtl" : "ltr");
+});
+
 const backIcon = computed(() =>
-  $q.lang.rtl ? "mdi-chevron-right" : "mdi-chevron-left"
+  resolvedTextDirection.value === "rtl"
+    ? "mdi-chevron-right"
+    : "mdi-chevron-left"
 );
 </script>
 

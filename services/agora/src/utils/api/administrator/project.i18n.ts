@@ -6,17 +6,19 @@ export interface AdministratorProjectApiTranslations {
   failedToFetchProjects: string;
   updatedProject: string;
   failedToUpdateProject: string;
-  updatedProjectLanguageSetting: string;
-  failedToUpdateProjectLanguageSetting: string;
+  updatedProjectLanguageSettings: string;
+  failedToUpdateProjectLanguageSettings: string;
   updatedProjectSlug: string;
   failedToUpdateProjectSlug: string;
-  archivedProject: string;
-  failedToArchiveProject: string;
+  deletedProject: string;
+  failedToDeleteProject: string;
   projectNotFound: string;
   unknownOrganizationSlug: string;
   organizationNotListed: string;
   projectSlugAlreadyExists: string;
   projectConflict: string;
+  dynamicTranslationEntitlementRequired: string;
+  missingManualProjectContentLocalization: string;
 }
 
 const en: AdministratorProjectApiTranslations = {
@@ -25,17 +27,22 @@ const en: AdministratorProjectApiTranslations = {
   failedToFetchProjects: "Failed to fetch projects",
   updatedProject: "Updated project",
   failedToUpdateProject: "Failed to update project",
-  updatedProjectLanguageSetting: "Updated project language settings",
-  failedToUpdateProjectLanguageSetting: "Failed to update project language settings",
+  updatedProjectLanguageSettings: "Updated project language settings",
+  failedToUpdateProjectLanguageSettings:
+    "Failed to update project language settings",
   updatedProjectSlug: "Updated project slug",
   failedToUpdateProjectSlug: "Failed to update project slug",
-  archivedProject: "Archived project",
-  failedToArchiveProject: "Failed to archive project",
+  deletedProject: "Deleted project",
+  failedToDeleteProject: "Failed to delete project",
   projectNotFound: "Project not found",
   unknownOrganizationSlug: "Unknown organization slug: {organizationSlugs}",
   organizationNotListed: "Organization must be listed: {organizationSlugs}",
   projectSlugAlreadyExists: "A project with this slug already exists",
   projectConflict: "Project data conflicts with an existing record",
+  dynamicTranslationEntitlementRequired:
+    "At least one project owner organization must have the dynamic translation entitlement",
+  missingManualProjectContentLocalization:
+    "Manual project content is required for every active target language when dynamic translation is off",
 };
 
 export const administratorProjectApiTranslations: Record<

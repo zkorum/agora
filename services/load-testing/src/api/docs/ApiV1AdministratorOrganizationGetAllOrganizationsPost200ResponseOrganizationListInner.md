@@ -12,6 +12,7 @@ Name | Type | Description | Notes
 **description** | **string** |  | [default to undefined]
 **defaultLanguageCode** | **string** |  | [default to undefined]
 **localizations** | [**Array&lt;ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInner&gt;**](ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInner.md) |  | [default to undefined]
+**canUseDynamicTranslation** | **boolean** |  | [default to undefined]
 
 ## Example
 
@@ -26,6 +27,7 @@ const instance: ApiV1AdministratorOrganizationGetAllOrganizationsPost200Response
     description,
     defaultLanguageCode,
     localizations,
+    canUseDynamicTranslation,
 };
 ```
 

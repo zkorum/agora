@@ -11,7 +11,9 @@ All URIs are relative to *http://localhost*
 |[**apiV1AdministratorOrganizationDeleteOrganizationPost**](#apiv1administratororganizationdeleteorganizationpost) | **POST** /api/v1/administrator/organization/delete-organization | |
 |[**apiV1AdministratorOrganizationGetAllOrganizationsPost**](#apiv1administratororganizationgetallorganizationspost) | **POST** /api/v1/administrator/organization/get-all-organizations | |
 |[**apiV1AdministratorOrganizationGetMembersPost**](#apiv1administratororganizationgetmemberspost) | **POST** /api/v1/administrator/organization/get-members | |
+|[**apiV1AdministratorOrganizationGetOrganizationDetailsPost**](#apiv1administratororganizationgetorganizationdetailspost) | **POST** /api/v1/administrator/organization/get-organization-details | |
 |[**apiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost**](#apiv1administratororganizationgetorganizationnamesbyusernamepost) | **POST** /api/v1/administrator/organization/get-organization-names-by-username | |
+|[**apiV1AdministratorOrganizationGetOrganizationOptionsPost**](#apiv1administratororganizationgetorganizationoptionspost) | **POST** /api/v1/administrator/organization/get-organization-options | |
 |[**apiV1AdministratorOrganizationLocalizationUpdatePost**](#apiv1administratororganizationlocalizationupdatepost) | **POST** /api/v1/administrator/organization/localization/update | |
 |[**apiV1AdministratorOrganizationRemoveUserOrganizationMappingPost**](#apiv1administratororganizationremoveuserorganizationmappingpost) | **POST** /api/v1/administrator/organization/remove-user-organization-mapping | |
 |[**apiV1AdministratorOrganizationSlugUpdatePost**](#apiv1administratororganizationslugupdatepost) | **POST** /api/v1/administrator/organization/slug/update | |
@@ -23,7 +25,9 @@ All URIs are relative to *http://localhost*
 |[**apiV1AdministratorProjectDeleteProjectPost**](#apiv1administratorprojectdeleteprojectpost) | **POST** /api/v1/administrator/project/delete-project | |
 |[**apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePost**](#apiv1administratorprojectexternalorganizationlocalizationupdatepost) | **POST** /api/v1/administrator/project/external-organization/localization/update | |
 |[**apiV1AdministratorProjectGetAllProjectsPost**](#apiv1administratorprojectgetallprojectspost) | **POST** /api/v1/administrator/project/get-all-projects | |
-|[**apiV1AdministratorProjectLanguageSettingUpdatePost**](#apiv1administratorprojectlanguagesettingupdatepost) | **POST** /api/v1/administrator/project/language-setting/update | |
+|[**apiV1AdministratorProjectGetProjectDetailsPost**](#apiv1administratorprojectgetprojectdetailspost) | **POST** /api/v1/administrator/project/get-project-details | |
+|[**apiV1AdministratorProjectGetProjectOptionsPost**](#apiv1administratorprojectgetprojectoptionspost) | **POST** /api/v1/administrator/project/get-project-options | |
+|[**apiV1AdministratorProjectLanguageSettingsUpdatePost**](#apiv1administratorprojectlanguagesettingsupdatepost) | **POST** /api/v1/administrator/project/language-settings/update | |
 |[**apiV1AdministratorProjectSlugUpdatePost**](#apiv1administratorprojectslugupdatepost) | **POST** /api/v1/administrator/project/slug/update | |
 |[**apiV1AdministratorProjectUpdatePost**](#apiv1administratorprojectupdatepost) | **POST** /api/v1/administrator/project/update | |
 |[**apiV1AuthAuthenticatePost**](#apiv1authauthenticatepost) | **POST** /api/v1/auth/authenticate | |
@@ -84,6 +88,9 @@ All URIs are relative to *http://localhost*
 |[**apiV1OpinionFetchCommentStatsByConversationPost**](#apiv1opinionfetchcommentstatsbyconversationpost) | **POST** /api/v1/opinion/fetch-comment-stats-by-conversation | |
 |[**apiV1OpinionFetchHiddenByConversationPost**](#apiv1opinionfetchhiddenbyconversationpost) | **POST** /api/v1/opinion/fetch-hidden-by-conversation | |
 |[**apiV1PremiumFeatureAccessCheckPost**](#apiv1premiumfeatureaccesscheckpost) | **POST** /api/v1/premium-feature/access/check | |
+|[**apiV1ProjectPageActivitiesFetchPost**](#apiv1projectpageactivitiesfetchpost) | **POST** /api/v1/project/page/activities/fetch | |
+|[**apiV1ProjectPageDisplayLanguageUpdatePost**](#apiv1projectpagedisplaylanguageupdatepost) | **POST** /api/v1/project/page/display-language/update | |
+|[**apiV1ProjectPageFetchPost**](#apiv1projectpagefetchpost) | **POST** /api/v1/project/page/fetch | |
 |[**apiV1RealtimeStreamGet**](#apiv1realtimestreamget) | **GET** /api/v1/realtime/stream | |
 |[**apiV1ReportConversationCreatePost**](#apiv1reportconversationcreatepost) | **POST** /api/v1/report/conversation/create | |
 |[**apiV1ReportConversationFetchPost**](#apiv1reportconversationfetchpost) | **POST** /api/v1/report/conversation/fetch | |
@@ -453,6 +460,57 @@ const { status, data } = await apiInstance.apiV1AdministratorOrganizationGetMemb
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **apiV1AdministratorOrganizationGetOrganizationDetailsPost**
+> ApiV1AdministratorOrganizationGetOrganizationDetailsPost200Response apiV1AdministratorOrganizationGetOrganizationDetailsPost(apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1AdministratorOrganizationGetOrganizationDetailsPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest: ApiV1AdministratorOrganizationGetOrganizationDetailsPostRequest; //
+
+const { status, data } = await apiInstance.apiV1AdministratorOrganizationGetOrganizationDetailsPost(
+    apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest** | **ApiV1AdministratorOrganizationGetOrganizationDetailsPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1AdministratorOrganizationGetOrganizationDetailsPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **apiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost**
 > ApiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost200Response apiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost(apiV1UserUsernameUpdatePostRequest)
 
@@ -494,6 +552,49 @@ const { status, data } = await apiInstance.apiV1AdministratorOrganizationGetOrga
 ### HTTP request headers
 
  - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1AdministratorOrganizationGetOrganizationOptionsPost**
+> ApiV1AdministratorOrganizationGetOrganizationOptionsPost200Response apiV1AdministratorOrganizationGetOrganizationOptionsPost()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+const { status, data } = await apiInstance.apiV1AdministratorOrganizationGetOrganizationOptionsPost();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**ApiV1AdministratorOrganizationGetOrganizationOptionsPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
  - **Accept**: application/json
 
 
@@ -912,7 +1013,7 @@ const { status, data } = await apiInstance.apiV1AdministratorProjectCreatePost(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1AdministratorProjectDeleteProjectPost**
-> apiV1AdministratorProjectDeleteProjectPost(apiV1AdministratorProjectDeleteProjectPostRequest)
+> apiV1AdministratorProjectDeleteProjectPost(apiV1AdministratorProjectGetProjectDetailsPostRequest)
 
 
 ### Example
@@ -921,16 +1022,16 @@ const { status, data } = await apiInstance.apiV1AdministratorProjectCreatePost(
 import {
     DefaultApi,
     Configuration,
-    ApiV1AdministratorProjectDeleteProjectPostRequest
+    ApiV1AdministratorProjectGetProjectDetailsPostRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-let apiV1AdministratorProjectDeleteProjectPostRequest: ApiV1AdministratorProjectDeleteProjectPostRequest; //
+let apiV1AdministratorProjectGetProjectDetailsPostRequest: ApiV1AdministratorProjectGetProjectDetailsPostRequest; //
 
 const { status, data } = await apiInstance.apiV1AdministratorProjectDeleteProjectPost(
-    apiV1AdministratorProjectDeleteProjectPostRequest
+    apiV1AdministratorProjectGetProjectDetailsPostRequest
 );
 ```
 
@@ -938,7 +1039,7 @@ const { status, data } = await apiInstance.apiV1AdministratorProjectDeleteProjec
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **apiV1AdministratorProjectDeleteProjectPostRequest** | **ApiV1AdministratorProjectDeleteProjectPostRequest**|  | |
+| **apiV1AdministratorProjectGetProjectDetailsPostRequest** | **ApiV1AdministratorProjectGetProjectDetailsPostRequest**|  | |
 
 
 ### Return type
@@ -1056,8 +1157,8 @@ This endpoint does not have any parameters.
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **apiV1AdministratorProjectLanguageSettingUpdatePost**
-> ApiV1ConversationClosePost200ResponseOneOf apiV1AdministratorProjectLanguageSettingUpdatePost(apiV1AdministratorProjectLanguageSettingUpdatePostRequest)
+# **apiV1AdministratorProjectGetProjectDetailsPost**
+> ApiV1AdministratorProjectGetProjectDetailsPost200Response apiV1AdministratorProjectGetProjectDetailsPost(apiV1AdministratorProjectGetProjectDetailsPostRequest)
 
 
 ### Example
@@ -1066,16 +1167,16 @@ This endpoint does not have any parameters.
 import {
     DefaultApi,
     Configuration,
-    ApiV1AdministratorProjectLanguageSettingUpdatePostRequest
+    ApiV1AdministratorProjectGetProjectDetailsPostRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-let apiV1AdministratorProjectLanguageSettingUpdatePostRequest: ApiV1AdministratorProjectLanguageSettingUpdatePostRequest; //
+let apiV1AdministratorProjectGetProjectDetailsPostRequest: ApiV1AdministratorProjectGetProjectDetailsPostRequest; //
 
-const { status, data } = await apiInstance.apiV1AdministratorProjectLanguageSettingUpdatePost(
-    apiV1AdministratorProjectLanguageSettingUpdatePostRequest
+const { status, data } = await apiInstance.apiV1AdministratorProjectGetProjectDetailsPost(
+    apiV1AdministratorProjectGetProjectDetailsPostRequest
 );
 ```
 
@@ -1083,12 +1184,106 @@ const { status, data } = await apiInstance.apiV1AdministratorProjectLanguageSett
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **apiV1AdministratorProjectLanguageSettingUpdatePostRequest** | **ApiV1AdministratorProjectLanguageSettingUpdatePostRequest**|  | |
+| **apiV1AdministratorProjectGetProjectDetailsPostRequest** | **ApiV1AdministratorProjectGetProjectDetailsPostRequest**|  | |
 
 
 ### Return type
 
-**ApiV1ConversationClosePost200ResponseOneOf**
+**ApiV1AdministratorProjectGetProjectDetailsPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1AdministratorProjectGetProjectOptionsPost**
+> ApiV1AdministratorProjectGetProjectOptionsPost200Response apiV1AdministratorProjectGetProjectOptionsPost()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+const { status, data } = await apiInstance.apiV1AdministratorProjectGetProjectOptionsPost();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**ApiV1AdministratorProjectGetProjectOptionsPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1AdministratorProjectLanguageSettingsUpdatePost**
+> ApiV1AdministratorProjectLanguageSettingsUpdatePost200Response apiV1AdministratorProjectLanguageSettingsUpdatePost(apiV1AdministratorProjectLanguageSettingsUpdatePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1AdministratorProjectLanguageSettingsUpdatePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1AdministratorProjectLanguageSettingsUpdatePostRequest: ApiV1AdministratorProjectLanguageSettingsUpdatePostRequest; //
+
+const { status, data } = await apiInstance.apiV1AdministratorProjectLanguageSettingsUpdatePost(
+    apiV1AdministratorProjectLanguageSettingsUpdatePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1AdministratorProjectLanguageSettingsUpdatePostRequest** | **ApiV1AdministratorProjectLanguageSettingsUpdatePostRequest**|  | |
+
+
+### Return type
+
+**ApiV1AdministratorProjectLanguageSettingsUpdatePost200Response**
 
 ### Authorization
 
@@ -4085,6 +4280,159 @@ const { status, data } = await apiInstance.apiV1PremiumFeatureAccessCheckPost(
 ### Return type
 
 **ApiV1PremiumFeatureAccessCheckPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1ProjectPageActivitiesFetchPost**
+> ApiV1ProjectPageActivitiesFetchPost200Response apiV1ProjectPageActivitiesFetchPost(apiV1ProjectPageActivitiesFetchPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ProjectPageActivitiesFetchPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ProjectPageActivitiesFetchPostRequest: ApiV1ProjectPageActivitiesFetchPostRequest; //
+
+const { status, data } = await apiInstance.apiV1ProjectPageActivitiesFetchPost(
+    apiV1ProjectPageActivitiesFetchPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ProjectPageActivitiesFetchPostRequest** | **ApiV1ProjectPageActivitiesFetchPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1ProjectPageActivitiesFetchPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1ProjectPageDisplayLanguageUpdatePost**
+> ApiV1ProjectPageDisplayLanguageUpdatePost200Response apiV1ProjectPageDisplayLanguageUpdatePost(apiV1ProjectPageDisplayLanguageUpdatePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ProjectPageDisplayLanguageUpdatePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ProjectPageDisplayLanguageUpdatePostRequest: ApiV1ProjectPageDisplayLanguageUpdatePostRequest; //
+
+const { status, data } = await apiInstance.apiV1ProjectPageDisplayLanguageUpdatePost(
+    apiV1ProjectPageDisplayLanguageUpdatePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ProjectPageDisplayLanguageUpdatePostRequest** | **ApiV1ProjectPageDisplayLanguageUpdatePostRequest**|  | |
+
+
+### Return type
+
+**ApiV1ProjectPageDisplayLanguageUpdatePost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1ProjectPageFetchPost**
+> ApiV1ProjectPageFetchPost200Response apiV1ProjectPageFetchPost(apiV1ProjectPageFetchPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ProjectPageFetchPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ProjectPageFetchPostRequest: ApiV1ProjectPageFetchPostRequest; //
+
+const { status, data } = await apiInstance.apiV1ProjectPageFetchPost(
+    apiV1ProjectPageFetchPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ProjectPageFetchPostRequest** | **ApiV1ProjectPageFetchPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1ProjectPageFetchPost200Response**
 
 ### Authorization
 
