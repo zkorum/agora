@@ -1,21 +1,20 @@
 <template>
-  <ZKHtmlContent
-    :html-body="htmlBody"
+  <ZKContentDisclosure
     :compact-mode="compactMode"
-    :enable-links="enableLinks"
-    :content-role="contentRole"
-    :collapsible="collapsible"
+    :disclosure-enabled="isDisclosureEnabled"
     :collapsed-line-count="collapsedLineCount"
     :desktop-collapsed-line-count="desktopCollapsedLineCount"
     :compact-line-count="compactLineCount"
-  />
+    :refresh-key="plainText"
+  >
+    {{ plainText }}
+  </ZKContentDisclosure>
 </template>
 
 <script setup lang="ts">
-import { plainTextToSafeHtml } from "src/utils/html/plainText";
 import { computed } from "vue";
 
-import ZKHtmlContent from "./ZKHtmlContent.vue";
+import ZKContentDisclosure from "./ZKContentDisclosure.vue";
 
 type PlainTextContentRole = "body" | "title";
 
@@ -23,7 +22,6 @@ const props = withDefaults(
   defineProps<{
     plainText: string;
     compactMode: boolean;
-    enableLinks: boolean;
     contentRole?: PlainTextContentRole;
     collapsible?: boolean;
     collapsedLineCount?: number;
@@ -39,7 +37,7 @@ const props = withDefaults(
   }
 );
 
-const htmlBody = computed(() =>
-  plainTextToSafeHtml({ plainText: props.plainText })
+const isDisclosureEnabled = computed(
+  () => props.collapsible && props.contentRole === "body" && !props.compactMode
 );
 </script>

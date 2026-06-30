@@ -442,7 +442,7 @@ def claim_content_translation_work_batch(
             ContentTranslationWork.id.asc(),
         )
         .limit(batch_size)
-        .with_for_update(skip_locked=True)
+        .with_for_update(of=ContentTranslationWork, skip_locked=True)
     )
 
     claims: list[ClaimedContentTranslationWork] = []

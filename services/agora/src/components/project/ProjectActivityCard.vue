@@ -33,7 +33,6 @@
         class="activity-card__body"
         :plain-text="activity.bodyPlainText"
         :compact-mode="true"
-        :enable-links="false"
         :compact-line-count="3"
       />
 

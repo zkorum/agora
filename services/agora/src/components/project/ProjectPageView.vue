@@ -63,13 +63,12 @@
             class="project-page-view__body"
             :plain-text="project.bodyPlainText"
             :compact-mode="false"
-            :enable-links="true"
             :collapsed-line-count="4"
             :desktop-collapsed-line-count="4"
           />
 
           <div class="project-page-view__stats">
-            <span v-if="project.participantCount >= 2">
+            <span>
               <q-icon name="mdi-account-outline" size="1rem" />
               {{
                 t("participantsJoined", {
@@ -110,18 +109,6 @@
                   {{ t("activitiesTitle") }}
                 </h2>
               </div>
-
-              <span
-                v-if="activities.length > 0"
-                class="project-page-view__list-progress"
-              >
-                {{
-                  t("showingActivities", {
-                    visible: formatNumber(activities.length),
-                    total: formatNumber(activityCount),
-                  })
-                }}
-              </span>
             </div>
 
             <q-infinite-scroll
@@ -250,7 +237,6 @@ type ConsultationStatus = "none" | "live" | "closed";
 const props = defineProps<{
   project: ProjectPageData;
   activities: readonly ProjectActivity[];
-  activityCount: number;
   canLoadMoreActivities: boolean;
   isLoadingMoreActivities: boolean;
   languageOptions: readonly ProjectLanguageOption[];
@@ -560,18 +546,7 @@ h1 {
 }
 
 .project-page-view__section-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 1rem;
   margin-bottom: 1rem;
-}
-
-.project-page-view__list-progress {
-  color: $ink-light;
-  font-size: 0.85rem;
-  font-weight: var(--font-weight-semibold);
-  white-space: nowrap;
 }
 
 h2 {

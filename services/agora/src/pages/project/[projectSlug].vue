@@ -13,7 +13,6 @@
     v-model:selected-language="selectedLanguage"
     :project="projectPageData.project"
     :activities="activities"
-    :activity-count="projectPageData.project.activityCount"
     :can-load-more-activities="nextActivityCursor !== undefined"
     :is-loading-more-activities="isLoadingMoreActivities"
     :language-options="projectPageData.languageOptions"
@@ -47,7 +46,9 @@ const activityPageSize = 12;
 const route = useRoute();
 const { fetchProjectPage, fetchProjectPageActivities, updateProjectPageDisplayLanguage } =
   useBackendProjectPageApi();
-const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
+const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(
+  useAuthenticationStore()
+);
 
 const projectSlug = computed(() => getSingleRouteParam(route.params.projectSlug));
 const selectedLanguage = ref<string | readonly string[]>("");
@@ -85,7 +86,7 @@ const projectPageQuery = useQuery({
       },
       authenticated: isGuestOrLoggedIn.value,
     }),
-  enabled: computed(() => projectSlug.value !== ""),
+  enabled: computed(() => projectSlug.value !== "" && isAuthInitialized.value),
   retry: false,
 });
 const projectPageData = computed(() => projectPageQuery.data.value);
