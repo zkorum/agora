@@ -68,7 +68,7 @@
           />
 
           <div class="project-page-view__stats">
-            <span v-if="project.participantCount >= 2">
+            <span>
               <q-icon name="mdi-account-outline" size="1rem" />
               {{
                 t("participantsJoined", {
