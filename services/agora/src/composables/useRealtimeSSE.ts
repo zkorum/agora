@@ -1170,7 +1170,10 @@ export function useRealtimeSSE({
         if (previousData === undefined) {
           return previousData;
         }
-        if (previousData.effectiveProjectDisplayLanguage !== data.targetLanguageCode) {
+        if (
+          previousData.project.machineTranslation?.targetLanguageCode !==
+          data.targetLanguageCode
+        ) {
           return previousData;
         }
         return {
@@ -1209,7 +1212,7 @@ export function useRealtimeSSE({
         if (previousData === undefined || machineTranslation === undefined) {
           return previousData;
         }
-        if (previousData.effectiveProjectDisplayLanguage !== data.targetLanguageCode) {
+        if (machineTranslation.targetLanguageCode !== data.targetLanguageCode) {
           return previousData;
         }
         return {

@@ -3,8 +3,10 @@ import { Lang, type QuasarLanguage } from "quasar";
 import en from "src/i18n/en";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import {
+  getDisplayLanguageFallbackChain,
   getLanguageTextDirection,
   parseDisplayLanguage,
+  ZodSupportedDisplayLanguageCodes,
 } from "src/shared/languages";
 import { nextTick } from "vue";
 import type { I18n } from "vue-i18n";
@@ -157,15 +159,14 @@ export default defineBoot(async ({ app }) => {
   const defaultLocale =
     (storedLocale as MessageLanguages) || detectBrowserLanguage();
 
-  const fallbackLocale = {
-    "zh-Hant": ["zh-Hans", "en"],
-    "zh-Hans": ["zh-Hant", "en"],
-    fa: ["ar", "en"],
-    he: ["en"],
-    ky: ["ru", "en"],
-    ru: ["en"],
-    default: ["en"],
-  };
+  const fallbackLocale = Object.fromEntries(
+    ZodSupportedDisplayLanguageCodes.options.map((languageCode) => [
+      languageCode,
+      getDisplayLanguageFallbackChain({ languageCode }).filter(
+        (fallbackLanguageCode) => fallbackLanguageCode !== languageCode
+      ),
+    ])
+  );
 
   // Await Quasar lang pack so $q.lang.rtl is set before first render.
   // This prevents QPageContainer/QDrawer from applying padding on the wrong side.

@@ -8,6 +8,7 @@ export interface ProjectPageTranslations {
   languageLabel: string;
   languageDialogTitle: string;
   languageSearchPlaceholder: string;
+  languageSupportedByProject: string;
   bannerImageAlt: string;
   liveConsultation: string;
   closedConsultation: string;
@@ -54,6 +55,7 @@ export const projectPageTranslations: Readonly<
     languageLabel: "Language",
     languageDialogTitle: "Display language",
     languageSearchPlaceholder: "Search languages",
+    languageSupportedByProject: "Supported by this project",
     bannerImageAlt: "{title} banner",
     liveConsultation: "Live consultation",
     closedConsultation: "Closed consultation",
@@ -95,6 +97,7 @@ export const projectPageTranslations: Readonly<
     languageLabel: "Тил",
     languageDialogTitle: "Көрсөтүү тили",
     languageSearchPlaceholder: "Тилдерди издөө",
+    languageSupportedByProject: "Бул долбоор колдойт",
     bannerImageAlt: "{title} баннери",
     liveConsultation: "Жандуу консультация",
     closedConsultation: "Жабылган консультация",
@@ -135,6 +138,7 @@ export const projectPageTranslations: Readonly<
     languageLabel: "Язык",
     languageDialogTitle: "Язык отображения",
     languageSearchPlaceholder: "Поиск языков",
+    languageSupportedByProject: "Поддерживается этим проектом",
     bannerImageAlt: "Баннер: {title}",
     liveConsultation: "Живая консультация",
     closedConsultation: "Закрытая консультация",

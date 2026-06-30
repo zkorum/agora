@@ -1834,22 +1834,6 @@
                                         "maxLength": 65,
                                         "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                                     },
-                                    "selectedLanguageCode": {
-                                        "type": "string",
-                                        "enum": [
-                                            "en",
-                                            "es",
-                                            "fr",
-                                            "zh-Hant",
-                                            "zh-Hans",
-                                            "ja",
-                                            "ar",
-                                            "fa",
-                                            "he",
-                                            "ky",
-                                            "ru"
-                                        ]
-                                    },
                                     "activityLimit": {
                                         "default": 12,
                                         "type": "integer",
@@ -2231,6 +2215,9 @@
                                                         "type": "string",
                                                         "minLength": 1
                                                     },
+                                                    "projectSupported": {
+                                                        "type": "boolean"
+                                                    },
                                                     "searchText": {
                                                         "type": "string",
                                                         "minLength": 1
@@ -2246,38 +2233,6 @@
                                                 ],
                                                 "additionalProperties": false
                                             }
-                                        },
-                                        "selectedProjectDisplayLanguage": {
-                                            "type": "string",
-                                            "enum": [
-                                                "en",
-                                                "es",
-                                                "fr",
-                                                "zh-Hant",
-                                                "zh-Hans",
-                                                "ja",
-                                                "ar",
-                                                "fa",
-                                                "he",
-                                                "ky",
-                                                "ru"
-                                            ]
-                                        },
-                                        "effectiveProjectDisplayLanguage": {
-                                            "type": "string",
-                                            "enum": [
-                                                "en",
-                                                "es",
-                                                "fr",
-                                                "zh-Hant",
-                                                "zh-Hans",
-                                                "ja",
-                                                "ar",
-                                                "fa",
-                                                "he",
-                                                "ky",
-                                                "ru"
-                                            ]
                                         },
                                         "nextActivityCursor": {
                                             "type": "object",
@@ -2310,8 +2265,7 @@
                                     "required": [
                                         "project",
                                         "activities",
-                                        "languageOptions",
-                                        "effectiveProjectDisplayLanguage"
+                                        "languageOptions"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -2334,22 +2288,6 @@
                                         "type": "string",
                                         "maxLength": 65,
                                         "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-                                    },
-                                    "displayLanguageCode": {
-                                        "type": "string",
-                                        "enum": [
-                                            "en",
-                                            "es",
-                                            "fr",
-                                            "zh-Hant",
-                                            "zh-Hans",
-                                            "ja",
-                                            "ar",
-                                            "fa",
-                                            "he",
-                                            "ky",
-                                            "ru"
-                                        ]
                                     },
                                     "activityLimit": {
                                         "default": 12,
@@ -2383,8 +2321,7 @@
                                     }
                                 },
                                 "required": [
-                                    "projectSlug",
-                                    "displayLanguageCode"
+                                    "projectSlug"
                                 ],
                                 "additionalProperties": false
                             }
@@ -2495,99 +2432,6 @@
                                     },
                                     "required": [
                                         "activities"
-                                    ],
-                                    "additionalProperties": false
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/project/page/display-language/update": {
-            "post": {
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "projectSlug": {
-                                        "type": "string",
-                                        "maxLength": 65,
-                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-                                    },
-                                    "languageCode": {
-                                        "type": "string",
-                                        "enum": [
-                                            "en",
-                                            "es",
-                                            "fr",
-                                            "zh-Hant",
-                                            "zh-Hans",
-                                            "ja",
-                                            "ar",
-                                            "fa",
-                                            "he",
-                                            "ky",
-                                            "ru"
-                                        ]
-                                    }
-                                },
-                                "required": [
-                                    "projectSlug",
-                                    "languageCode"
-                                ],
-                                "additionalProperties": false
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Default Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "selectedProjectDisplayLanguage": {
-                                            "type": "string",
-                                            "enum": [
-                                                "en",
-                                                "es",
-                                                "fr",
-                                                "zh-Hant",
-                                                "zh-Hans",
-                                                "ja",
-                                                "ar",
-                                                "fa",
-                                                "he",
-                                                "ky",
-                                                "ru"
-                                            ]
-                                        },
-                                        "effectiveProjectDisplayLanguage": {
-                                            "type": "string",
-                                            "enum": [
-                                                "en",
-                                                "es",
-                                                "fr",
-                                                "zh-Hant",
-                                                "zh-Hans",
-                                                "ja",
-                                                "ar",
-                                                "fa",
-                                                "he",
-                                                "ky",
-                                                "ru"
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "selectedProjectDisplayLanguage",
-                                        "effectiveProjectDisplayLanguage"
                                     ],
                                     "additionalProperties": false
                                 }

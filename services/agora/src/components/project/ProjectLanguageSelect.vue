@@ -52,6 +52,7 @@ function toDisplayLanguageOption(
   return {
     label: option.label,
     value: option.value,
+    caption: option.projectSupported ? t("languageSupportedByProject") : undefined,
     searchText: option.searchText,
     shortLabel: option.shortLabel,
   };

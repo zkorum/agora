@@ -2,80 +2,47 @@ import { describe, expect, it } from "vitest";
 import {
     getAutoProvisionedDefaultLanguage,
     getImplicitDefaultDisplayLanguage,
-    resolveEffectiveProjectDisplayLanguage,
     resolveOrganizationLocalizationRow,
 } from "./projectLanguage.js";
+import { resolvePreferredContentLanguage } from "./contentLanguagePreference.js";
 
-describe("resolveEffectiveProjectDisplayLanguage", () => {
-    it("uses stored project language when supported", () => {
+describe("resolvePreferredContentLanguage", () => {
+    it("uses the first configured language from the display fallback chain", () => {
         expect(
-            resolveEffectiveProjectDisplayLanguage({
-                projectSupportedDisplayLanguages: {
-                    defaultLanguageCode: "ky",
-                    additionalLanguageCodes: ["ru"],
-                },
-                storedProjectDisplayLanguage: "ru",
-                storedUserDisplayLanguage: "en",
-                currentDisplayLanguage: "fr",
-            }).effectiveProjectDisplayLanguage,
+            resolvePreferredContentLanguage({
+                displayLanguage: "ky",
+                defaultContentLanguage: "en",
+                configuredContentLanguages: ["ru", "en"],
+            }).preferredContentLanguage,
         ).toBe("ru");
     });
 
-    it("uses current display language for first visit without storing a project preference", () => {
+    it("falls back between Chinese scripts before using English", () => {
         expect(
-            resolveEffectiveProjectDisplayLanguage({
-                projectSupportedDisplayLanguages: {
-                    defaultLanguageCode: "ky",
-                    additionalLanguageCodes: ["ru"],
-                },
-                storedProjectDisplayLanguage: undefined,
-                storedUserDisplayLanguage: undefined,
-                currentDisplayLanguage: "ru",
-            }),
-        ).toEqual({
-            selectedProjectDisplayLanguage: undefined,
-            effectiveProjectDisplayLanguage: "ru",
-        });
-    });
-
-    it("falls back to project default when user language candidates are unsupported", () => {
-        expect(
-            resolveEffectiveProjectDisplayLanguage({
-                projectSupportedDisplayLanguages: {
-                    defaultLanguageCode: "ky",
-                    additionalLanguageCodes: ["ru"],
-                },
-                storedProjectDisplayLanguage: "en",
-                storedUserDisplayLanguage: "fr",
-                currentDisplayLanguage: "ja",
-            }).effectiveProjectDisplayLanguage,
-        ).toBe("ky");
-    });
-
-    it("falls back between Chinese scripts before using project default", () => {
-        expect(
-            resolveEffectiveProjectDisplayLanguage({
-                projectSupportedDisplayLanguages: {
-                    defaultLanguageCode: "en",
-                    additionalLanguageCodes: ["zh-Hans"],
-                },
-                storedProjectDisplayLanguage: undefined,
-                storedUserDisplayLanguage: undefined,
-                currentDisplayLanguage: "zh-Hant",
-            }).effectiveProjectDisplayLanguage,
+            resolvePreferredContentLanguage({
+                displayLanguage: "zh-Hant",
+                defaultContentLanguage: "en",
+                configuredContentLanguages: ["zh-Hans", "en"],
+            }).preferredContentLanguage,
         ).toBe("zh-Hans");
 
         expect(
-            resolveEffectiveProjectDisplayLanguage({
-                projectSupportedDisplayLanguages: {
-                    defaultLanguageCode: "en",
-                    additionalLanguageCodes: ["zh-Hant"],
-                },
-                storedProjectDisplayLanguage: undefined,
-                storedUserDisplayLanguage: undefined,
-                currentDisplayLanguage: "zh-Hans",
-            }).effectiveProjectDisplayLanguage,
+            resolvePreferredContentLanguage({
+                displayLanguage: "zh-Hans",
+                defaultContentLanguage: "en",
+                configuredContentLanguages: ["zh-Hant", "en"],
+            }).preferredContentLanguage,
         ).toBe("zh-Hant");
+    });
+
+    it("uses the content default when no display fallback is configured", () => {
+        expect(
+            resolvePreferredContentLanguage({
+                displayLanguage: "fr",
+                defaultContentLanguage: "ky",
+                configuredContentLanguages: ["ky", "ru"],
+            }).preferredContentLanguage,
+        ).toBe("ky");
     });
 });
 

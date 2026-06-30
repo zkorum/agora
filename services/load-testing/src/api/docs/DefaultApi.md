@@ -90,7 +90,6 @@ All URIs are relative to *http://localhost*
 |[**apiV1PremiumFeatureAccessCheckPost**](#apiv1premiumfeatureaccesscheckpost) | **POST** /api/v1/premium-feature/access/check | |
 |[**apiV1ProjectCreateOptionsListPost**](#apiv1projectcreateoptionslistpost) | **POST** /api/v1/project/create-options/list | |
 |[**apiV1ProjectPageActivitiesFetchPost**](#apiv1projectpageactivitiesfetchpost) | **POST** /api/v1/project/page/activities/fetch | |
-|[**apiV1ProjectPageDisplayLanguageUpdatePost**](#apiv1projectpagedisplaylanguageupdatepost) | **POST** /api/v1/project/page/display-language/update | |
 |[**apiV1ProjectPageFetchPost**](#apiv1projectpagefetchpost) | **POST** /api/v1/project/page/fetch | |
 |[**apiV1RealtimeStreamGet**](#apiv1realtimestreamget) | **GET** /api/v1/realtime/stream | |
 |[**apiV1ReportConversationCreatePost**](#apiv1reportconversationcreatepost) | **POST** /api/v1/report/conversation/create | |
@@ -4351,7 +4350,7 @@ const { status, data } = await apiInstance.apiV1ProjectCreateOptionsListPost(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1ProjectPageActivitiesFetchPost**
-> ApiV1ProjectPageActivitiesFetchPost200Response apiV1ProjectPageActivitiesFetchPost(apiV1ProjectPageActivitiesFetchPostRequest)
+> ApiV1ProjectPageActivitiesFetchPost200Response apiV1ProjectPageActivitiesFetchPost(apiV1ProjectPageFetchPostRequest)
 
 
 ### Example
@@ -4360,16 +4359,16 @@ const { status, data } = await apiInstance.apiV1ProjectCreateOptionsListPost(
 import {
     DefaultApi,
     Configuration,
-    ApiV1ProjectPageActivitiesFetchPostRequest
+    ApiV1ProjectPageFetchPostRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-let apiV1ProjectPageActivitiesFetchPostRequest: ApiV1ProjectPageActivitiesFetchPostRequest; //
+let apiV1ProjectPageFetchPostRequest: ApiV1ProjectPageFetchPostRequest; //
 
 const { status, data } = await apiInstance.apiV1ProjectPageActivitiesFetchPost(
-    apiV1ProjectPageActivitiesFetchPostRequest
+    apiV1ProjectPageFetchPostRequest
 );
 ```
 
@@ -4377,63 +4376,12 @@ const { status, data } = await apiInstance.apiV1ProjectPageActivitiesFetchPost(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **apiV1ProjectPageActivitiesFetchPostRequest** | **ApiV1ProjectPageActivitiesFetchPostRequest**|  | |
+| **apiV1ProjectPageFetchPostRequest** | **ApiV1ProjectPageFetchPostRequest**|  | |
 
 
 ### Return type
 
 **ApiV1ProjectPageActivitiesFetchPost200Response**
-
-### Authorization
-
-[BearerAuth](../README.md#BearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: application/json
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | Default Response |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **apiV1ProjectPageDisplayLanguageUpdatePost**
-> ApiV1ProjectPageDisplayLanguageUpdatePost200Response apiV1ProjectPageDisplayLanguageUpdatePost(apiV1ProjectPageDisplayLanguageUpdatePostRequest)
-
-
-### Example
-
-```typescript
-import {
-    DefaultApi,
-    Configuration,
-    ApiV1ProjectPageDisplayLanguageUpdatePostRequest
-} from './api';
-
-const configuration = new Configuration();
-const apiInstance = new DefaultApi(configuration);
-
-let apiV1ProjectPageDisplayLanguageUpdatePostRequest: ApiV1ProjectPageDisplayLanguageUpdatePostRequest; //
-
-const { status, data } = await apiInstance.apiV1ProjectPageDisplayLanguageUpdatePost(
-    apiV1ProjectPageDisplayLanguageUpdatePostRequest
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **apiV1ProjectPageDisplayLanguageUpdatePostRequest** | **ApiV1ProjectPageDisplayLanguageUpdatePostRequest**|  | |
-
-
-### Return type
-
-**ApiV1ProjectPageDisplayLanguageUpdatePost200Response**
 
 ### Authorization
 

@@ -131,6 +131,7 @@ interface OpinionDisplayCounts {
 
 interface OpinionDisplayContentPreferences {
     displayLanguage: SupportedDisplayLanguageCodes;
+    targetLanguage: SupportedDisplayLanguageCodes;
     spokenLanguages: SupportedSpokenLanguageCodes[];
     translationAllowed: boolean;
 }
@@ -550,7 +551,7 @@ export async function fetchOpinionsByPostId({
                 ),
                 eq(
                     opinionContentTranslationTable.displayLanguageCode,
-                    displayContentPreferences.displayLanguage,
+                    displayContentPreferences.targetLanguage,
                 ),
             ),
         )
@@ -665,7 +666,7 @@ export async function fetchOpinionsByPostId({
                                   sourceLanguageConfidence:
                                       opinionResponse.translationSourceLanguageConfidence,
                               },
-                    targetLanguageCode: displayContentPreferences.displayLanguage,
+                    targetLanguageCode: displayContentPreferences.targetLanguage,
                 }),
                 translationAllowed: displayContentPreferences.translationAllowed,
                 displayLanguage: displayContentPreferences.displayLanguage,

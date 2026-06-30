@@ -17,7 +17,7 @@
     :is-loading-more-activities="isLoadingMoreActivities"
     :is-requesting-project-translation="isRequestingProjectTranslation"
     :language-options="projectPageData.languageOptions"
-    :initial-language="projectPageData.effectiveProjectDisplayLanguage"
+    :initial-language="displayLanguage"
     @load-more-activities="loadMoreActivities"
     @request-project-translation="requestProjectTranslation"
   />
@@ -39,6 +39,7 @@ import type {
   ProjectPageActivityCursor,
 } from "src/shared/types/dto";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useLanguageStore } from "src/stores/language";
 import {
   type ContentTranslationResponse,
   useBackendContentTranslationApi,
@@ -52,21 +53,22 @@ const activityPageSize = 12;
 
 const route = useRoute();
 const queryClient = useQueryClient();
-const { fetchProjectPage, fetchProjectPageActivities, updateProjectPageDisplayLanguage } =
-  useBackendProjectPageApi();
+const { fetchProjectPage, fetchProjectPageActivities } = useBackendProjectPageApi();
 const { requestContentTranslation } = useBackendContentTranslationApi();
 const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(
   useAuthenticationStore()
 );
+const languageStore = useLanguageStore();
+const { displayLanguage } = storeToRefs(languageStore);
+const { changeDisplayLanguage } = languageStore;
 
 const projectSlug = computed(() => getSingleRouteParam(route.params.projectSlug));
-const selectedLanguage = ref<string | readonly string[]>("");
-const persistedSelectedLanguage = ref<SupportedDisplayLanguageCodes | undefined>();
+const selectedLanguage = ref<string | readonly string[]>(displayLanguage.value);
 const activities = ref<ProjectPageActivity[]>([]);
 const nextActivityCursor = ref<ProjectPageActivityCursor | undefined>();
 const isLoadingMoreActivities = ref(false);
 const isRequestingProjectTranslation = ref(false);
-const isApplyingServerLanguage = ref(false);
+const isApplyingStoreLanguage = ref(false);
 
 const selectedLanguageValue = computed(() => {
   if (Array.isArray(selectedLanguage.value)) {
@@ -76,13 +78,10 @@ const selectedLanguageValue = computed(() => {
   return selectedLanguage.value;
 });
 
-const selectedProjectDisplayLanguage = computed(
-  (): SupportedDisplayLanguageCodes | undefined => persistedSelectedLanguage.value
-);
 const projectPageQueryKey = computed(() => [
   "projectPage",
   projectSlug.value,
-  selectedProjectDisplayLanguage.value ?? "auto",
+  displayLanguage.value,
   isGuestOrLoggedIn.value,
 ]);
 
@@ -92,7 +91,6 @@ const projectPageQuery = useQuery({
     await fetchProjectPage({
       request: {
         projectSlug: projectSlug.value,
-        selectedLanguageCode: selectedProjectDisplayLanguage.value,
         activityLimit: activityPageSize,
       },
       authenticated: isGuestOrLoggedIn.value,
@@ -110,23 +108,24 @@ watch(
     }
     activities.value = data.activities;
     nextActivityCursor.value = data.nextActivityCursor;
-    isApplyingServerLanguage.value = true;
-    selectedLanguage.value = data.effectiveProjectDisplayLanguage;
-    queueMicrotask(() => {
-      isApplyingServerLanguage.value = false;
-    });
-    persistedSelectedLanguage.value = data.selectedProjectDisplayLanguage;
   },
   { immediate: true },
 );
 
+watch(displayLanguage, (languageCode) => {
+  isApplyingStoreLanguage.value = true;
+  selectedLanguage.value = languageCode;
+  queueMicrotask(() => {
+    isApplyingStoreLanguage.value = false;
+  });
+});
+
 watch(selectedLanguageValue, async (languageCode, previousLanguageCode) => {
   if (
-    isApplyingServerLanguage.value ||
+    isApplyingStoreLanguage.value ||
     languageCode === "" ||
     previousLanguageCode === undefined ||
-    languageCode === previousLanguageCode ||
-    projectPageData.value === undefined
+    languageCode === previousLanguageCode
   ) {
     return;
   }
@@ -137,21 +136,7 @@ watch(selectedLanguageValue, async (languageCode, previousLanguageCode) => {
     return;
   }
 
-  if (isGuestOrLoggedIn.value) {
-    const result = await updateProjectPageDisplayLanguage({
-      projectSlug: projectSlug.value,
-      languageCode: selectedDisplayLanguage.data,
-    });
-    persistedSelectedLanguage.value = result.selectedProjectDisplayLanguage;
-    isApplyingServerLanguage.value = true;
-    selectedLanguage.value = result.effectiveProjectDisplayLanguage;
-    queueMicrotask(() => {
-      isApplyingServerLanguage.value = false;
-    });
-    return;
-  }
-
-  persistedSelectedLanguage.value = selectedDisplayLanguage.data;
+  await changeDisplayLanguage({ newLanguage: selectedDisplayLanguage.data });
 });
 
 async function loadMoreActivities(done: () => void): Promise<void> {
@@ -167,7 +152,6 @@ async function loadMoreActivities(done: () => void): Promise<void> {
     const response = await fetchProjectPageActivities({
       request: {
         projectSlug: projectSlug.value,
-        displayLanguageCode: data.effectiveProjectDisplayLanguage,
         activityLimit: activityPageSize,
         activityCursor: cursor,
       },
