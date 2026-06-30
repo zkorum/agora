@@ -28,7 +28,6 @@ import {
     enqueueContentTranslationWork,
 } from "@/shared-backend/contentTranslationQueue.js";
 import {
-    shouldSkipTranslation,
     translationSourceMatchesCurrentSource,
 } from "@/shared-backend/translate.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
@@ -51,7 +50,10 @@ import {
     shouldQueueTranslationWork,
 } from "./contentTranslationContent.js";
 import type { ContentTranslationRequestMode } from "./contentTranslationContent.js";
-import { getConfiguredTranslationDisplayLanguageCodes } from "./translationLanguageSetting.js";
+import {
+    getConfiguredTranslationDisplayLanguageCodes,
+    shouldTranslateContent,
+} from "./translationLanguageSetting.js";
 
 interface RequestContentTranslationParams {
     db: PostgresDatabase;
@@ -800,19 +802,6 @@ async function hasSurveyQuestionTranslation({
     });
 }
 
-function shouldTranslateContent({
-    sourceLanguageCode,
-    targetLanguageCode,
-}: {
-    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
-    targetLanguageCode: SupportedDisplayLanguageCodes;
-}): boolean {
-    return !shouldSkipTranslation({
-        sourceLanguageCode: sourceLanguageCode ?? undefined,
-        targetLanguageCode,
-    });
-}
-
 function shouldTranslateSurveyQuestionSource({
     source,
     targetLanguageCode,
@@ -823,11 +812,13 @@ function shouldTranslateSurveyQuestionSource({
     return (
         shouldTranslateContent({
             sourceLanguageCode: source.sourceLanguageCode,
+            sourceRawLanguageCode: source.sourceRawLanguageCode,
             targetLanguageCode,
         }) ||
         source.options.some((option) =>
             shouldTranslateContent({
                 sourceLanguageCode: option.sourceLanguageCode,
+                sourceRawLanguageCode: option.sourceRawLanguageCode,
                 targetLanguageCode,
             }),
         )
@@ -1230,6 +1221,7 @@ export async function scheduleEagerContentTranslationForConversation({
         if (
             shouldTranslateContent({
                 sourceLanguageCode: conversationSource.sourceLanguageCode,
+                sourceRawLanguageCode: conversationSource.sourceRawLanguageCode,
                 targetLanguageCode,
             }) &&
             !(await hasConversationTranslation({
@@ -1291,6 +1283,7 @@ export async function scheduleEagerContentTranslationForConversation({
             if (
                 !shouldTranslateContent({
                     sourceLanguageCode: source.sourceLanguageCode,
+                    sourceRawLanguageCode: source.sourceRawLanguageCode,
                     targetLanguageCode,
                 }) ||
                 (await hasOpinionTranslation({
@@ -1362,6 +1355,7 @@ export async function scheduleEagerContentTranslationForProject({
         if (
             !shouldTranslateContent({
                 sourceLanguageCode: source.sourceLanguageCode,
+                sourceRawLanguageCode: source.sourceRawLanguageCode,
                 targetLanguageCode,
             })
         ) {
@@ -1865,6 +1859,7 @@ export async function requestContentTranslation({
         });
         const skipTranslation = !shouldTranslateContent({
             sourceLanguageCode: source.sourceLanguageCode,
+            sourceRawLanguageCode: source.sourceRawLanguageCode,
             targetLanguageCode,
         });
         const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
@@ -1969,6 +1964,7 @@ export async function requestContentTranslation({
         });
         const skipTranslation = !shouldTranslateContent({
             sourceLanguageCode: source.sourceLanguageCode,
+            sourceRawLanguageCode: source.sourceRawLanguageCode,
             targetLanguageCode,
         });
         const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
@@ -2019,6 +2015,7 @@ export async function requestContentTranslation({
     });
     const skipTranslation = !shouldTranslateContent({
         sourceLanguageCode: source.sourceLanguageCode,
+        sourceRawLanguageCode: source.sourceRawLanguageCode,
         targetLanguageCode,
     });
     const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
@@ -2083,6 +2080,7 @@ export async function requestConversationContentTranslation({
     });
     const skipTranslation = !shouldTranslateContent({
         sourceLanguageCode: source.sourceLanguageCode,
+        sourceRawLanguageCode: source.sourceRawLanguageCode,
         targetLanguageCode,
     });
     const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;

@@ -3,6 +3,7 @@ import {
     type SupportedDisplayLanguageCodes,
     type SupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
+import { shouldSkipTranslation } from "@/shared-backend/translate.js";
 
 export interface ProjectLanguageSettingsInput {
     dynamicTranslationEnabled: boolean;
@@ -60,6 +61,21 @@ export function getConfiguredTranslationDisplayLanguageCodes({
             ? targetLanguageCodes
             : [sourceDisplayLanguageCode, ...targetLanguageCodes],
     );
+}
+
+export function shouldTranslateContent({
+    sourceLanguageCode,
+    sourceRawLanguageCode,
+    targetLanguageCode,
+}: {
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+}): boolean {
+    return !shouldSkipTranslation({
+        sourceLanguageCode: sourceLanguageCode ?? sourceRawLanguageCode ?? undefined,
+        targetLanguageCode,
+    });
 }
 
 export function normalizeProjectLanguageSettings({

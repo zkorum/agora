@@ -4,6 +4,7 @@ import {
     normalizeConversationMultilingualSettings,
     normalizeInheritedConversationMultilingualSettings,
     normalizeProjectLanguageSettings,
+    shouldTranslateContent,
 } from "../src/service/translationLanguageSetting.js";
 
 describe("translation language settings", () => {
@@ -23,6 +24,23 @@ describe("translation language settings", () => {
         });
 
         expect(languageCodes).toEqual(new Set(["en", "fr"]));
+    });
+
+    it("skips translation only for same-language source and target pairs", () => {
+        expect(
+            shouldTranslateContent({
+                sourceLanguageCode: "fr",
+                sourceRawLanguageCode: "fr",
+                targetLanguageCode: "fr",
+            }),
+        ).toBe(false);
+        expect(
+            shouldTranslateContent({
+                sourceLanguageCode: "fr",
+                sourceRawLanguageCode: "fr",
+                targetLanguageCode: "en",
+            }),
+        ).toBe(true);
     });
 
     it("preserves project target languages even when they match detected source", () => {

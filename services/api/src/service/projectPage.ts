@@ -53,10 +53,7 @@ import type {
 } from "@/shared/types/dto.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
 import { htmlToCountedText } from "@/shared-app-api/html.js";
-import {
-    shouldSkipTranslation,
-    translationSourceMatchesCurrentSource,
-} from "@/shared-backend/translate.js";
+import { translationSourceMatchesCurrentSource } from "@/shared-backend/translate.js";
 import { getSourceLanguageLabel } from "./contentTranslationContent.js";
 import {
     getImplicitDefaultDisplayLanguage,
@@ -69,6 +66,7 @@ import {
 } from "./contentLanguagePreference.js";
 import {
     getConfiguredTranslationDisplayLanguageCodes,
+    shouldTranslateContent,
     sourceLanguageToDisplayLanguage,
 } from "./translationLanguageSetting.js";
 
@@ -214,19 +212,6 @@ function getLanguageCandidateSet({
         ...getDisplayLanguageFallbackChain({ languageCode: effectiveLanguageCode }),
         defaultLanguageCode,
     ]);
-}
-
-function shouldTranslateContent({
-    sourceLanguageCode,
-    targetLanguageCode,
-}: {
-    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
-    targetLanguageCode: SupportedDisplayLanguageCodes;
-}): boolean {
-    return !shouldSkipTranslation({
-        sourceLanguageCode: sourceLanguageCode ?? undefined,
-        targetLanguageCode,
-    });
 }
 
 async function fetchProjectBaseBySlug({
@@ -393,6 +378,7 @@ async function fetchResolvedProjectContent({
         configuredTargetLanguageCodes.has(effectiveLanguageCode) &&
         shouldTranslateContent({
             sourceLanguageCode: project.sourceLanguageCode,
+            sourceRawLanguageCode: null,
             targetLanguageCode: effectiveLanguageCode,
         });
     if (canUseMachineTranslation) {
