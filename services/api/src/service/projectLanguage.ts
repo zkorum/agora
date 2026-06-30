@@ -4,16 +4,6 @@ import {
     type SupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
 
-export interface ProjectDisplayLanguageResolution {
-    selectedProjectDisplayLanguage: SupportedDisplayLanguageCodes | undefined;
-    effectiveProjectDisplayLanguage: SupportedDisplayLanguageCodes;
-}
-
-export interface ProjectSupportedDisplayLanguages {
-    defaultLanguageCode: SupportedDisplayLanguageCodes;
-    additionalLanguageCodes: readonly SupportedDisplayLanguageCodes[];
-}
-
 export interface OrganizationLocalizationRow {
     languageCode: SupportedDisplayLanguageCodes;
     displayName: string;
@@ -39,50 +29,6 @@ export function getAutoProvisionedDefaultLanguage({
         currentDisplayLanguage ??
         getImplicitDefaultDisplayLanguage()
     );
-}
-
-export function resolveEffectiveProjectDisplayLanguage({
-    projectSupportedDisplayLanguages,
-    storedProjectDisplayLanguage,
-    storedUserDisplayLanguage,
-    currentDisplayLanguage,
-}: {
-    projectSupportedDisplayLanguages: ProjectSupportedDisplayLanguages;
-    storedProjectDisplayLanguage: SupportedDisplayLanguageCodes | undefined;
-    storedUserDisplayLanguage: SupportedDisplayLanguageCodes | undefined;
-    currentDisplayLanguage: SupportedDisplayLanguageCodes | undefined;
-}): ProjectDisplayLanguageResolution {
-    const supportedLanguageCodes = new Set<SupportedDisplayLanguageCodes>([
-        projectSupportedDisplayLanguages.defaultLanguageCode,
-        ...projectSupportedDisplayLanguages.additionalLanguageCodes,
-    ]);
-
-    const candidates = [
-        storedProjectDisplayLanguage,
-        storedUserDisplayLanguage,
-        currentDisplayLanguage,
-    ];
-    for (const candidate of candidates) {
-        if (candidate === undefined) {
-            continue;
-        }
-        for (const fallbackLanguageCode of getDisplayLanguageFallbackChain({
-            languageCode: candidate,
-        })) {
-            if (supportedLanguageCodes.has(fallbackLanguageCode)) {
-                return {
-                    selectedProjectDisplayLanguage: storedProjectDisplayLanguage,
-                    effectiveProjectDisplayLanguage: fallbackLanguageCode,
-                };
-            }
-        }
-    }
-
-    return {
-        selectedProjectDisplayLanguage: storedProjectDisplayLanguage,
-        effectiveProjectDisplayLanguage:
-            projectSupportedDisplayLanguages.defaultLanguageCode,
-    };
 }
 
 export function resolveOrganizationLocalizationRow({

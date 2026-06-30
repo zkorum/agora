@@ -1289,40 +1289,6 @@ export const projectTranslationTargetLanguageTable = pgTable(
 );
 
 /** @service api */
-export const projectParticipantDisplayLanguageTable = pgTable(
-    "project_participant_display_language",
-    {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        projectId: integer("project_id")
-            .references(() => projectTable.id)
-            .notNull(),
-        userId: uuid("user_id")
-            .references(() => userTable.id, { onDelete: "cascade" })
-            .notNull(),
-        languageCode: displayLanguageCodeEnum("language_code").notNull(),
-        createdAt: timestamp("created_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-        updatedAt: timestamp("updated_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-    },
-    (table) => [
-        unique("project_participant_display_language_unique").on(
-            table.projectId,
-            table.userId,
-        ),
-        index("project_participant_display_language_user_idx").on(table.userId),
-    ],
-);
-
-/** @service api */
 export const projectExternalOrganizationTable = pgTable(
     "project_external_organization",
     {

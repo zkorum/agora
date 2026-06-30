@@ -70,7 +70,10 @@ import {
     getProjectLanguageSettings,
     resolveConversationCreateTargetResult,
 } from "@/service/projectAccess.js";
-import { normalizeInheritedConversationMultilingualSettings } from "@/service/translationLanguageSetting.js";
+import {
+    getConfiguredTranslationDisplayLanguageCodes,
+    normalizeInheritedConversationMultilingualSettings,
+} from "@/service/translationLanguageSetting.js";
 
 import {
     httpMethodToAbility,
@@ -215,10 +218,12 @@ import {
     getLanguagePreferences,
     updateLanguagePreferences,
 } from "./service/language.js";
+import { resolvePreferredContentLanguageFromSettings } from "./service/contentLanguagePreference.js";
 import { getAutoProvisionedDefaultLanguage } from "./service/projectLanguage.js";
 import {
     ZodSupportedDisplayLanguageCodes,
     type SupportedDisplayLanguageCodes,
+    type SupportedSpokenLanguageCodes,
 } from "./shared/languages.js";
 import { createDb } from "./shared-backend/db.js";
 import {
@@ -227,7 +232,10 @@ import {
     conversationTranslationTargetLanguageTable,
     deviceTable,
     organizationTable,
+    projectContentTable,
     projectOrganizationOwnershipTable,
+    projectTable,
+    projectTranslationTargetLanguageTable,
 } from "./shared-backend/schema.js";
 import { and, eq, isNull } from "drizzle-orm";
 
@@ -535,6 +543,7 @@ async function getContentTranslationAvailabilityForConversation({
 }): Promise<{
     isAllowed: boolean;
     multilingualSetting: ConversationMultilingualSetting;
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
 }> {
     const rows = await db
         .select({
@@ -573,16 +582,115 @@ async function getContentTranslationAvailabilityForConversation({
             row.targetLanguageCode === null ? [] : [row.targetLanguageCode],
         ),
     };
-    const parsedSourceLanguageCode = ZodSupportedDisplayLanguageCodes.safeParse(
-        firstRow.sourceLanguageCode,
-    );
     const configuredTargetLanguageCodes =
-        new Set<SupportedDisplayLanguageCodes>([
-            ...(parsedSourceLanguageCode.success
-                ? [parsedSourceLanguageCode.data]
-                : []),
-            ...multilingualSetting.additionalLanguageCodes,
-        ]);
+        getConfiguredTranslationDisplayLanguageCodes({
+            sourceLanguageCode: firstRow.sourceLanguageCode,
+            targetLanguageCodes: multilingualSetting.additionalLanguageCodes,
+        });
+    const translationAllowed =
+        multilingualSetting.dynamicTranslationEnabled &&
+        configuredTargetLanguageCodes.has(targetLanguageCode);
+    return {
+        isAllowed: translationAllowed,
+        multilingualSetting,
+        sourceLanguageCode: firstRow.sourceLanguageCode,
+    };
+}
+
+async function getPreferredContentTranslationAvailabilityForConversation({
+    conversationSlugId,
+    displayLanguage,
+}: {
+    conversationSlugId: string;
+    displayLanguage: SupportedDisplayLanguageCodes;
+}): Promise<{
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+    isAllowed: boolean;
+}> {
+    const displayLanguageAvailability =
+        await getContentTranslationAvailabilityForConversation({
+            conversationSlugId,
+            targetLanguageCode: displayLanguage,
+        });
+    const { preferredContentLanguage } =
+        resolvePreferredContentLanguageFromSettings({
+            displayLanguage,
+            sourceLanguageCode: displayLanguageAvailability.sourceLanguageCode,
+            targetLanguageCodes:
+                displayLanguageAvailability.multilingualSetting.additionalLanguageCodes,
+            fallbackContentLanguage: displayLanguage,
+        });
+
+    if (preferredContentLanguage === displayLanguage) {
+        return {
+            targetLanguageCode: preferredContentLanguage,
+            isAllowed: displayLanguageAvailability.isAllowed,
+        };
+    }
+
+    const preferredAvailability =
+        await getContentTranslationAvailabilityForConversation({
+            conversationSlugId,
+            targetLanguageCode: preferredContentLanguage,
+        });
+    return {
+        targetLanguageCode: preferredContentLanguage,
+        isAllowed: preferredAvailability.isAllowed,
+    };
+}
+
+async function getContentTranslationAvailabilityForProject({
+    projectSlug,
+    targetLanguageCode,
+}: {
+    projectSlug: string;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+}): Promise<{
+    isAllowed: boolean;
+    multilingualSetting: ConversationMultilingualSetting;
+}> {
+    const rows = await db
+        .select({
+            dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
+            sourceLanguageCode: projectContentTable.sourceLanguageCode,
+            targetLanguageCode: projectTranslationTargetLanguageTable.languageCode,
+        })
+        .from(projectTable)
+        .innerJoin(
+            projectContentTable,
+            eq(projectContentTable.id, projectTable.currentContentId),
+        )
+        .leftJoin(
+            projectTranslationTargetLanguageTable,
+            and(
+                eq(projectTranslationTargetLanguageTable.projectId, projectTable.id),
+                isNull(projectTranslationTargetLanguageTable.deletedAt),
+            ),
+        )
+        .where(
+            and(
+                eq(projectTable.slug, projectSlug),
+                eq(projectTable.directoryVisibility, "listed"),
+                isNull(projectTable.deletedAt),
+                isNull(projectContentTable.deletedAt),
+            ),
+        );
+
+    const firstRow = rows.at(0);
+    if (firstRow === undefined) {
+        throw server.httpErrors.notFound("Content translation subject not found");
+    }
+    const multilingualSetting: ConversationMultilingualSetting = {
+        dynamicTranslationEnabled: firstRow.dynamicTranslationEnabled,
+        additionalLanguageCodes: rows.flatMap((row) =>
+            row.targetLanguageCode === null ? [] : [row.targetLanguageCode],
+        ),
+    };
+    const configuredTargetLanguageCodes =
+        getConfiguredTranslationDisplayLanguageCodes({
+            sourceLanguageCode: firstRow.sourceLanguageCode,
+            targetLanguageCodes: multilingualSetting.additionalLanguageCodes,
+        });
     const translationAllowed =
         multilingualSetting.dynamicTranslationEnabled &&
         configuredTargetLanguageCodes.has(targetLanguageCode);
@@ -1670,37 +1778,12 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            await verifyUcanOptionalAuth(db, request);
+            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
             return await projectPageService.fetchProjectPageActivities({
                 db,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                userId: deviceStatus.isKnown ? deviceStatus.userId : undefined,
                 request: request.body,
-            });
-        },
-    });
-
-    server.withTypeProvider<ZodTypeProvider>().route({
-        method: "POST",
-        url: `/api/${apiVersion}/project/page/display-language/update`,
-        schema: {
-            body: Dto.updateProjectPageDisplayLanguageRequest,
-            response: {
-                200: Dto.updateProjectPageDisplayLanguageResponse,
-            },
-        },
-        handler: async (request) => {
-            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
-                db,
-                request,
-                {
-                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-                },
-            );
-            return await projectPageService.updateProjectPageDisplayLanguage({
-                db,
-                userId: deviceStatus.userId,
-                projectSlug: request.body.projectSlug,
-                languageCode: request.body.languageCode,
                 currentDisplayLanguage: getRequestDisplayLanguage({ request }),
             });
         },
@@ -2556,10 +2639,10 @@ server.after(() => {
                       displayLanguage: headerDisplayLanguage,
                       spokenLanguages: [headerDisplayLanguage],
                   };
-            const availability =
-                await getContentTranslationAvailabilityForConversation({
+            const preferredContentTranslation =
+                await getPreferredContentTranslationAvailabilityForConversation({
                     conversationSlugId: request.body.conversationSlugId,
-                    targetLanguageCode: languagePreferences.displayLanguage,
+                    displayLanguage: languagePreferences.displayLanguage,
                 });
             const opinionItemsPerSlugId = await fetchOpinionsByPostSlugId({
                 db: db,
@@ -2571,8 +2654,9 @@ server.after(() => {
                 limit: 3000,
                 displayContentPreferences: {
                     displayLanguage: languagePreferences.displayLanguage,
+                    targetLanguage: preferredContentTranslation.targetLanguageCode,
                     spokenLanguages: languagePreferences.spokenLanguages,
-                    translationAllowed: availability.isAllowed,
+                    translationAllowed: preferredContentTranslation.isAllowed,
                 },
             });
             return Array.from(opinionItemsPerSlugId.values());
@@ -2794,10 +2878,10 @@ server.after(() => {
                     currentDisplayLanguage: headerDisplayLanguage,
                 },
             });
-            const availability =
-                await getContentTranslationAvailabilityForConversation({
+            const preferredContentTranslation =
+                await getPreferredContentTranslationAvailabilityForConversation({
                     conversationSlugId: request.body.conversationSlugId,
-                    targetLanguageCode: languagePreferences.displayLanguage,
+                    displayLanguage: languagePreferences.displayLanguage,
                 });
             const opinionItemsPerSlugId = await fetchOpinionsByPostSlugId({
                 db: db,
@@ -2806,8 +2890,9 @@ server.after(() => {
                 limit: 3000,
                 displayContentPreferences: {
                     displayLanguage: languagePreferences.displayLanguage,
+                    targetLanguage: preferredContentTranslation.targetLanguageCode,
                     spokenLanguages: languagePreferences.spokenLanguages,
-                    translationAllowed: availability.isAllowed,
+                    translationAllowed: preferredContentTranslation.isAllowed,
                 },
             });
             return Array.from(opinionItemsPerSlugId.values());
@@ -3474,10 +3559,10 @@ server.after(() => {
                     : undefined,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
             });
-            const availability =
-                await getContentTranslationAvailabilityForConversation({
+            const preferredContentTranslation =
+                await getPreferredContentTranslationAvailabilityForConversation({
                     conversationSlugId: request.body.conversationSlugId,
-                    targetLanguageCode: languagePreferences.displayLanguage,
+                    displayLanguage: languagePreferences.displayLanguage,
                 });
             const localizedContent =
                 await contentTranslationService.requestConversationContentTranslation(
@@ -3486,7 +3571,8 @@ server.after(() => {
                         valkey: queueValkeyRef.current,
                         queueScript: contentTranslationQueueScript,
                         conversationSlugId: request.body.conversationSlugId,
-                        targetLanguageCode: languagePreferences.displayLanguage,
+                        targetLanguageCode:
+                            preferredContentTranslation.targetLanguageCode,
                         requestMode: "read_existing",
                         now: nowZeroMs(),
                         log,
@@ -3505,7 +3591,8 @@ server.after(() => {
                     conversationContentService.toInitialConversationDisplayContent(
                         {
                             content: localizedContent.content,
-                            translationAllowed: availability.isAllowed,
+                            translationAllowed:
+                                preferredContentTranslation.isAllowed,
                             displayLanguage:
                                 languagePreferences.displayLanguage,
                             spokenLanguages:
@@ -3631,10 +3718,10 @@ server.after(() => {
                     ? deviceStatus.userId
                     : undefined,
             });
-            const availability =
-                await getContentTranslationAvailabilityForConversation({
+            const preferredContentTranslation =
+                await getPreferredContentTranslationAvailabilityForConversation({
                     conversationSlugId: request.body.conversationSlugId,
-                    targetLanguageCode: languagePreferences.displayLanguage,
+                    displayLanguage: languagePreferences.displayLanguage,
                 });
             const questions = await Promise.all(
                 surveyForm.questions.map(async (question) => {
@@ -3651,7 +3738,7 @@ server.after(() => {
                                           request.body.conversationSlugId,
                                       questionSlugId: question.questionSlugId,
                                       targetLanguageCode:
-                                          languagePreferences.displayLanguage,
+                                          preferredContentTranslation.targetLanguageCode,
                                       requestMode: "read_existing",
                                       now: nowZeroMs(),
                                       log,
@@ -3672,7 +3759,8 @@ server.after(() => {
                             conversationContentService.toSurveyQuestionDisplayContent(
                                 {
                                     content: localizedContent.content,
-                                    translationAllowed: availability.isAllowed,
+                                    translationAllowed:
+                                        preferredContentTranslation.isAllowed,
                                     displayLanguage:
                                         languagePreferences.displayLanguage,
                                     spokenLanguages:
@@ -5089,10 +5177,10 @@ server.after(() => {
                       spokenLanguages: [headerDisplayLanguage],
                   };
 
-            const availability =
-                await getContentTranslationAvailabilityForConversation({
+            const preferredContentTranslation =
+                await getPreferredContentTranslationAvailabilityForConversation({
                     conversationSlugId: request.body.conversationSlugId,
-                    targetLanguageCode: languagePreferences.displayLanguage,
+                    displayLanguage: languagePreferences.displayLanguage,
                 });
             const queueValkey = queueValkeyRef.current;
             const content =
@@ -5103,10 +5191,11 @@ server.after(() => {
                         queueScript: contentTranslationQueueScript,
                         conversationSlugId: request.body.conversationSlugId,
                         contentId: request.body.contentId,
-                        targetLanguageCode: languagePreferences.displayLanguage,
+                        targetLanguageCode:
+                            preferredContentTranslation.targetLanguageCode,
                         requestMode:
                             request.body.mode === "translated" &&
-                            availability.isAllowed
+                            preferredContentTranslation.isAllowed
                                 ? request.body.requestMode
                                 : "read_existing",
                         now,
@@ -5152,7 +5241,7 @@ server.after(() => {
                                         conversationSlugId:
                                             request.body.conversationSlugId,
                                         targetLanguageCode:
-                                            languagePreferences.displayLanguage,
+                                            preferredContentTranslation.targetLanguageCode,
                                     },
                                     "[ConversationContent] User rate limit exceeded",
                                 );
@@ -5174,7 +5263,7 @@ server.after(() => {
                 {
                     content: content.content,
                     mode: request.body.mode,
-                    translationAllowed: availability.isAllowed,
+                    translationAllowed: preferredContentTranslation.isAllowed,
                     displayLanguage: languagePreferences.displayLanguage,
                     spokenLanguages: languagePreferences.spokenLanguages,
                 },
@@ -5225,13 +5314,18 @@ server.after(() => {
             const queueValkey = queueValkeyRef.current;
 
             const availability =
-                await getContentTranslationAvailabilityForConversation({
-                    conversationSlugId: request.body.subject.conversationSlugId,
-                    targetLanguageCode: request.body.targetLanguageCode,
-                });
+                request.body.subject.kind === "project"
+                    ? await getContentTranslationAvailabilityForProject({
+                          projectSlug: request.body.subject.projectSlug,
+                          targetLanguageCode: request.body.targetLanguageCode,
+                      })
+                    : await getContentTranslationAvailabilityForConversation({
+                          conversationSlugId: request.body.subject.conversationSlugId,
+                          targetLanguageCode: request.body.targetLanguageCode,
+                      });
             log.info(
                 {
-                    conversationSlugId: request.body.subject.conversationSlugId,
+                    subject: request.body.subject,
                     targetLanguageCode: request.body.targetLanguageCode,
                     isAllowed: availability.isAllowed,
                     multilingualSetting: availability.multilingualSetting,

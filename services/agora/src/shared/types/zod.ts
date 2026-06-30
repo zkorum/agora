@@ -310,6 +310,12 @@ export const zodContentTranslationSubject = z.discriminatedUnion("kind", [
             questionSlugId: zodSlugId,
         })
         .strict(),
+    z
+        .object({
+            kind: z.literal("project"),
+            projectSlug: zodProjectSlug,
+        })
+        .strict(),
 ]);
 export const zodContentTranslationSourceLanguage = z.discriminatedUnion("kind", [
     z
@@ -453,6 +459,17 @@ const zodTranslatedConversationContentVariant = z
 export const zodLocalizedConversationContent = createZodLocalizedContent(
     zodConversationContentVariant,
     zodTranslatedConversationContentVariant,
+);
+export const zodProjectContentVariant = z
+    .object({
+        title: zodConversationTitle,
+        subtitle: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
+        bodyHtml: zodConversationBodyOutput.optional(),
+    })
+    .strict();
+export const zodLocalizedProjectContent = createZodLocalizedContent(
+    zodProjectContentVariant,
+    zodProjectContentVariant,
 );
 export const zodConversationDisplayedContent = createZodDisplayedContent(
     zodConversationContentVariant,
@@ -1868,6 +1885,8 @@ export type ConversationContentVariant = z.infer<
 export type LocalizedConversationContent = z.infer<
     typeof zodLocalizedConversationContent
 >;
+export type ProjectContentVariant = z.infer<typeof zodProjectContentVariant>;
+export type LocalizedProjectContent = z.infer<typeof zodLocalizedProjectContent>;
 export type CommentContent = z.infer<typeof zodOpinionContentOutput>;
 export type OpinionContentVariant = z.infer<typeof zodOpinionContentVariant>;
 export type LocalizedOpinionContent = z.infer<

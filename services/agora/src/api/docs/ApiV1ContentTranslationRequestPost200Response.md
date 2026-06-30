@@ -6,8 +6,8 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **boolean** |  | [default to undefined]
-**subject** | [**ApiV1ContentTranslationRequestPostRequestSubjectOneOf2**](ApiV1ContentTranslationRequestPostRequestSubjectOneOf2.md) |  | [default to undefined]
-**content** | [**ApiV1ContentTranslationRequestPost200ResponseAnyOf2Content**](ApiV1ContentTranslationRequestPost200ResponseAnyOf2Content.md) |  | [default to undefined]
+**subject** | [**ApiV1ContentTranslationRequestPostRequestSubjectOneOf3**](ApiV1ContentTranslationRequestPostRequestSubjectOneOf3.md) |  | [default to undefined]
+**content** | [**ApiV1ContentTranslationRequestPost200ResponseAnyOf3Content**](ApiV1ContentTranslationRequestPost200ResponseAnyOf3Content.md) |  | [default to undefined]
 **reason** | **string** |  | [default to undefined]
 **multilingualSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting.md) |  | [default to undefined]
 **blockedReason** | **string** |  | [default to undefined]

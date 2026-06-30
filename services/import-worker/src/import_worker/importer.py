@@ -271,13 +271,25 @@ def _timestamp_from_polis(value: int | float | None) -> datetime | None:
     return datetime.fromtimestamp(value / 1000, UTC).replace(tzinfo=None)
 
 
-def _display_language_code_or_none(language_code: str | None) -> str | None:
+def _display_language_code_or_none(language_code: str | None) -> DisplayLanguageCode | None:
     if language_code is None:
         return None
     try:
-        return DisplayLanguageCode(language_code).value
+        return DisplayLanguageCode(language_code)
     except ValueError:
         return None
+
+
+def configured_translation_display_language_codes(
+    *,
+    source_language_code: str | None,
+    target_language_codes: set[DisplayLanguageCode],
+) -> set[DisplayLanguageCode]:
+    language_codes = set(target_language_codes)
+    source_display_language_code = _display_language_code_or_none(source_language_code)
+    if source_display_language_code is not None:
+        language_codes.add(source_display_language_code)
+    return language_codes
 
 
 def _build_imported_polis_conversation(
@@ -463,7 +475,8 @@ def _create_conversation(
         target_languages = [
             language_code
             for language_code in target_languages
-            if language_code.value != source_display_language_code
+            if source_display_language_code is None
+            or language_code.value != source_display_language_code.value
         ]
     if target_languages:
         session.execute(
@@ -803,29 +816,30 @@ def _create_content_translation_work(
 ) -> ContentTranslationQueueSchedule | None:
     target_rows = session.execute(
         select(
+            Conversation.dynamic_translation_enabled,
             ConversationTranslationTargetLanguage.language_code.label(
                 "target_language_code",
             ),
         )
         .select_from(Conversation)
-        .join(
+        .outerjoin(
             ConversationTranslationTargetLanguage,
             ConversationTranslationTargetLanguage.conversation_id == Conversation.id,
         )
-        .where(
-            and_(
-                Conversation.id == conversation_ids.conversation_id,
-                Conversation.dynamic_translation_enabled.is_(True),
-            ),
-        )
+        .where(Conversation.id == conversation_ids.conversation_id)
         .order_by(ConversationTranslationTargetLanguage.id.asc()),
     ).all()
-    target_language_codes: list[DisplayLanguageCode] = []
-    seen_target_language_codes: set[DisplayLanguageCode] = set()
-    for row in target_rows:
-        if row.target_language_code not in seen_target_language_codes:
-            target_language_codes.append(row.target_language_code)
-            seen_target_language_codes.add(row.target_language_code)
+    first_target_row = target_rows[0] if target_rows else None
+    if first_target_row is None or not first_target_row.dynamic_translation_enabled:
+        return None
+    target_language_codes = configured_translation_display_language_codes(
+        source_language_code=conversation_ids.conversation_source_language_code,
+        target_language_codes={
+            row.target_language_code
+            for row in target_rows
+            if row.target_language_code is not None
+        },
+    )
     if not target_language_codes:
         return None
 
@@ -834,7 +848,7 @@ def _create_content_translation_work(
     for language_code in target_language_codes:
         if (
             conversation_ids.conversation_source_language_code is None
-            or language_code != conversation_ids.conversation_source_language_code
+            or language_code.value != conversation_ids.conversation_source_language_code
         ):
             work_values.append(
                 {
@@ -855,7 +869,7 @@ def _create_content_translation_work(
         for seed_opinion_source in opinions.seed_opinion_content_sources:
             if (
                 seed_opinion_source.source_language_code is not None
-                and language_code == seed_opinion_source.source_language_code
+                and language_code.value == seed_opinion_source.source_language_code
             ):
                 continue
             work_values.append(

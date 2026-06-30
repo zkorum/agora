@@ -31,6 +31,11 @@ import { isNetworkOffline } from "./composables/useNetworkStatus";
 import { useRealtimeSSE } from "./composables/useRealtimeSSE";
 import { useZupassVerification } from "./composables/zupass/useZupassVerification";
 import PersistentLayout from "./layouts/PersistentLayout.vue";
+import { ZodSupportedDisplayLanguageCodes } from "./shared/languages";
+import {
+  buildContentTranslationTopic,
+  buildProjectContentTranslationTopic,
+} from "./shared/types/dto";
 import { useLanguageStore } from "./stores/language";
 import { useBackendAuthApi } from "./utils/api/auth";
 import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
@@ -63,14 +68,42 @@ const realtimeConversationSlugId = computed(() => {
 
   return getSingleRouteParam(route.params.postSlugId) || undefined;
 });
-const realtimeTopics = computed(() => {
-  if (realtimeConversationSlugId.value === undefined) {
-    return [];
+const realtimeProjectSlug = computed(() => {
+  if (String(route.name ?? "") !== "/project/[projectSlug]") {
+    return undefined;
   }
 
-  return [
-    `translation:conversation:${realtimeConversationSlugId.value}:target:${languageStore.displayLanguage}`,
-  ];
+  if (!("projectSlug" in route.params)) {
+    return undefined;
+  }
+
+  return getSingleRouteParam(route.params.projectSlug) || undefined;
+});
+const realtimeTopics = computed(() => {
+  const topics: string[] = [];
+  if (realtimeConversationSlugId.value !== undefined) {
+    topics.push(
+      buildContentTranslationTopic({
+        conversationSlugId: realtimeConversationSlugId.value,
+        targetLanguageCode: languageStore.displayLanguage,
+      })
+    );
+  }
+
+  const projectSlug = realtimeProjectSlug.value;
+  if (projectSlug !== undefined) {
+    topics.push(
+      ...ZodSupportedDisplayLanguageCodes.options.map(
+        (languageCode) =>
+          buildProjectContentTranslationTopic({
+            projectSlug,
+            targetLanguageCode: languageCode,
+          })
+      )
+    );
+  }
+
+  return topics;
 });
 
 // Initialize SSE for real-time events after auth initialization.

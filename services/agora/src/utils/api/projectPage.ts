@@ -3,8 +3,6 @@ import type {
   FetchProjectPageActivitiesResponse,
   FetchProjectPageRequest,
   FetchProjectPageResponse,
-  UpdateProjectPageDisplayLanguageRequest,
-  UpdateProjectPageDisplayLanguageResponse,
 } from "src/shared/types/dto";
 import { Dto } from "src/shared/types/dto";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
@@ -68,23 +66,8 @@ export function useBackendProjectPageApi() {
     return Dto.fetchProjectPageActivitiesResponse.parse(response.data);
   }
 
-  async function updateProjectPageDisplayLanguage(
-    request: UpdateProjectPageDisplayLanguageRequest
-  ): Promise<UpdateProjectPageDisplayLanguageResponse> {
-    const params = Dto.updateProjectPageDisplayLanguageRequest.parse(request);
-    const url = "/api/v1/project/page/display-language/update";
-    const encodedUcan = await buildEncodedUcan(url, { method: "POST" });
-    const response = await api.post(url, params, {
-      headers: {
-        ...buildAuthorizationHeader(encodedUcan),
-      },
-    });
-    return Dto.updateProjectPageDisplayLanguageResponse.parse(response.data);
-  }
-
   return {
     fetchProjectPage,
     fetchProjectPageActivities,
-    updateProjectPageDisplayLanguage,
   };
 }

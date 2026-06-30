@@ -8,6 +8,7 @@ Name | Type | Description | Notes
 **label** | **string** |  | [default to undefined]
 **value** | **string** |  | [default to undefined]
 **caption** | **string** |  | [optional] [default to undefined]
+**projectSupported** | **boolean** |  | [optional] [default to undefined]
 **searchText** | **string** |  | [optional] [default to undefined]
 **shortLabel** | **string** |  | [optional] [default to undefined]
 
@@ -20,6 +21,7 @@ const instance: ApiV1ProjectPageFetchPost200ResponseLanguageOptionsInner = {
     label,
     value,
     caption,
+    projectSupported,
     searchText,
     shortLabel,
 };

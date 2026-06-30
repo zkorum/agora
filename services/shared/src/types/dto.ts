@@ -70,9 +70,11 @@ import {
     zodContentTranslationSubject,
     zodLocalizedConversationContent,
     zodLocalizedOpinionContent,
+    zodLocalizedProjectContent,
     zodLocalizedSurveyQuestionContent,
     zodLocalizedContentDisplayMode,
     zodConversationDisplayedContent,
+    zodProjectContentVariant,
     zodSurveyQuestionDisplayedContent,
     zodProjectOrganizationAttributionRole,
     zodProjectSlug,
@@ -198,10 +200,24 @@ const zodContentTranslationSurveyQuestionResponse = z
     })
     .strict();
 
+const zodContentTranslationProjectResponse = z
+    .object({
+        success: z.literal(true),
+        subject: z
+            .object({
+                kind: z.literal("project"),
+                projectSlug: zodProjectSlug,
+            })
+            .strict(),
+        content: zodLocalizedProjectContent,
+    })
+    .strict();
+
 const zodContentTranslationResponse = z.union([
     zodContentTranslationConversationResponse,
     zodContentTranslationOpinionResponse,
     zodContentTranslationSurveyQuestionResponse,
+    zodContentTranslationProjectResponse,
     z
         .object({
             success: z.literal(false),
@@ -303,6 +319,14 @@ const zodConversationLanguageSettingsSource = z.enum([
     "conversation_override",
     "project_inherited",
 ]);
+const zodConversationCreateProjectOption = z
+    .object({
+        projectSlug: zodProjectSlug,
+        projectTitle: zodProjectTitle,
+        defaultLanguageCode: ZodSupportedDisplayLanguageCodes,
+        languageSettings: zodProjectLanguageSettings,
+    })
+    .strict();
 const zodProjectContentLocalization = z
     .object({
         languageCode: ZodSupportedDisplayLanguageCodes,
@@ -374,6 +398,7 @@ const zodProjectPageLanguageOption = z
         label: z.string().trim().min(1),
         value: ZodSupportedDisplayLanguageCodes,
         caption: z.string().trim().min(1).optional(),
+        projectSupported: z.boolean().optional(),
         searchText: z.string().trim().min(1).optional(),
         shortLabel: z.string().trim().min(1).optional(),
     })
@@ -415,12 +440,23 @@ const zodProjectPageContact = z
         websiteUrl: z.url().optional(),
     })
     .strict();
+const zodProjectPageMachineTranslation = z
+    .object({
+        targetLanguageCode: ZodSupportedDisplayLanguageCodes,
+        sourceLanguageCode: z.string().nullable().optional(),
+        sourceLanguageLabel: z.string().min(1).optional(),
+        status: z.enum(["not_requested", "pending", "running", "failed", "completed"]),
+        translatedContent: zodProjectContentVariant.optional(),
+    })
+    .strict();
 const zodProjectPageProject = z
     .object({
         slug: zodProjectSlug,
         title: zodProjectTitle,
         subtitle: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
-        bodyPlainText: zodConversationBodyPlainTextInput.optional(),
+        bodyHtml: zodConversationBodyOutput.optional(),
+        originalContent: zodProjectContentVariant,
+        machineTranslation: zodProjectPageMachineTranslation.optional(),
         bannerVariant: z.enum(["blue", "purple", "green"]),
         bannerImageUrl: z.url().optional(),
         participantCount: z.number().int().nonnegative(),
@@ -984,6 +1020,8 @@ export class Dto {
                 conversationBody: zodConversationBodyOutput,
                 languageSetting: zodConversationLanguageSettingOutput,
                 multilingualSetting: zodConversationMultilingualSetting,
+                languageSettingsSource: zodConversationLanguageSettingsSource,
+                projectLanguageProject: zodConversationCreateProjectOption.optional(),
                 isIndexed: z.boolean(),
                 participationMode: zodParticipationMode,
                 requiresEventTicket: zodEventSlug.optional(),
@@ -1014,6 +1052,9 @@ export class Dto {
             participationMode: zodParticipationMode,
             languageSetting: zodConversationLanguageSettingInput,
             multilingualSetting: zodConversationMultilingualSetting,
+            languageSettingsSource: zodConversationLanguageSettingsSource.default(
+                "conversation_override",
+            ),
             requiresEventTicket: zodEventSlug.optional(),
             aiLabelingEnabled: z.boolean().optional(),
             preferredOpinionGroupCount:
@@ -1777,14 +1818,7 @@ export class Dto {
             ),
         })
         .strict();
-    static conversationCreateProjectOption = z
-        .object({
-            projectSlug: zodProjectSlug,
-            projectTitle: zodProjectTitle,
-            defaultLanguageCode: ZodSupportedDisplayLanguageCodes,
-            languageSettings: zodProjectLanguageSettings,
-        })
-        .strict();
+    static conversationCreateProjectOption = zodConversationCreateProjectOption;
     static getConversationCreateProjectOptionsResponse = z.discriminatedUnion(
         "success",
         [
@@ -1815,7 +1849,6 @@ export class Dto {
     static fetchProjectPageRequest = z
         .object({
             projectSlug: zodProjectSlug,
-            selectedLanguageCode: ZodSupportedDisplayLanguageCodes.optional(),
             activityLimit: z.number().int().min(1).max(50).default(12),
             activityCursor: zodProjectPageActivityCursor.optional(),
         })
@@ -1825,16 +1858,12 @@ export class Dto {
             project: zodProjectPageProject,
             activities: z.array(zodProjectPageActivity),
             languageOptions: z.array(zodProjectPageLanguageOption),
-            selectedProjectDisplayLanguage:
-                ZodSupportedDisplayLanguageCodes.optional(),
-            effectiveProjectDisplayLanguage: ZodSupportedDisplayLanguageCodes,
             nextActivityCursor: zodProjectPageActivityCursor.optional(),
         })
         .strict();
     static fetchProjectPageActivitiesRequest = z
         .object({
             projectSlug: zodProjectSlug,
-            displayLanguageCode: ZodSupportedDisplayLanguageCodes,
             activityLimit: z.number().int().min(1).max(50).default(12),
             activityCursor: zodProjectPageActivityCursor.optional(),
         })
@@ -1843,18 +1872,6 @@ export class Dto {
         .object({
             activities: z.array(zodProjectPageActivity),
             nextActivityCursor: zodProjectPageActivityCursor.optional(),
-        })
-        .strict();
-    static updateProjectPageDisplayLanguageRequest = z
-        .object({
-            projectSlug: zodProjectSlug,
-            languageCode: ZodSupportedDisplayLanguageCodes,
-        })
-        .strict();
-    static updateProjectPageDisplayLanguageResponse = z
-        .object({
-            selectedProjectDisplayLanguage: ZodSupportedDisplayLanguageCodes,
-            effectiveProjectDisplayLanguage: ZodSupportedDisplayLanguageCodes,
         })
         .strict();
     static premiumFeatureEntitlementSubjectRequest = z
@@ -2534,12 +2551,6 @@ export type FetchProjectPageActivitiesRequest = z.infer<
 >;
 export type FetchProjectPageActivitiesResponse = z.infer<
     typeof Dto.fetchProjectPageActivitiesResponse
->;
-export type UpdateProjectPageDisplayLanguageRequest = z.infer<
-    typeof Dto.updateProjectPageDisplayLanguageRequest
->;
-export type UpdateProjectPageDisplayLanguageResponse = z.infer<
-    typeof Dto.updateProjectPageDisplayLanguageResponse
 >;
 export type CreateProjectFailureReason = z.infer<
     typeof zodCreateProjectFailureReason

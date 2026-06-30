@@ -8,8 +8,19 @@ import type {
     SSEEventDataByType,
     SSEEventType,
 } from "@/shared/types/dto.js";
+import {
+    buildContentTranslationTopic,
+    buildProjectContentTranslationTopic,
+    buildRealtimeConversationTopic,
+} from "@/shared/types/dto.js";
 import { log } from "@/app.js";
 import { z } from "zod";
+
+export {
+    buildContentTranslationTopic,
+    buildProjectContentTranslationTopic,
+    buildRealtimeConversationTopic,
+};
 
 const zodRealtimeStreamQuery = z
     .object({
@@ -23,24 +34,6 @@ const zodRealtimeStreamQuery = z
 export interface RealtimeSubscriptionRequest {
     conversationSlugId: string | undefined;
     topics: string[];
-}
-
-export function buildRealtimeConversationTopic({
-    conversationSlugId,
-}: {
-    conversationSlugId: string;
-}): string {
-    return `conversation:${conversationSlugId}`;
-}
-
-export function buildContentTranslationTopic({
-    conversationSlugId,
-    targetLanguageCode,
-}: {
-    conversationSlugId: string;
-    targetLanguageCode: string;
-}): string {
-    return `translation:conversation:${conversationSlugId}:target:${targetLanguageCode}`;
 }
 
 export function parseRealtimeSubscriptionRequest(

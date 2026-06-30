@@ -8,7 +8,9 @@ Name | Type | Description | Notes
 **slug** | **string** |  | [default to undefined]
 **title** | **string** |  | [default to undefined]
 **subtitle** | **string** |  | [optional] [default to undefined]
-**bodyPlainText** | **string** |  | [optional] [default to undefined]
+**bodyHtml** | **string** |  | [optional] [default to undefined]
+**originalContent** | [**ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent**](ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent.md) |  | [default to undefined]
+**machineTranslation** | [**ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslation**](ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslation.md) |  | [optional] [default to undefined]
 **bannerVariant** | **string** |  | [default to undefined]
 **bannerImageUrl** | **string** |  | [optional] [default to undefined]
 **participantCount** | **number** |  | [default to undefined]
@@ -26,7 +28,9 @@ const instance: ApiV1ProjectPageFetchPost200ResponseProject = {
     slug,
     title,
     subtitle,
-    bodyPlainText,
+    bodyHtml,
+    originalContent,
+    machineTranslation,
     bannerVariant,
     bannerImageUrl,
     participantCount,

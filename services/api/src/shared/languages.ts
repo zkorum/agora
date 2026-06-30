@@ -263,11 +263,17 @@ export function getDisplayLanguageFallbackChain({
 }): SupportedDisplayLanguageCodes[] {
     switch (languageCode) {
         case "zh-Hant":
-            return ["zh-Hant", "zh-Hans"];
+            return ["zh-Hant", "zh-Hans", "en"];
         case "zh-Hans":
-            return ["zh-Hans", "zh-Hant"];
+            return ["zh-Hans", "zh-Hant", "en"];
+        case "fa":
+            return ["fa", "ar", "en"];
+        case "ky":
+            return ["ky", "ru", "en"];
+        case "en":
+            return ["en"];
         default:
-            return [languageCode];
+            return [languageCode, "en"];
     }
 }
 

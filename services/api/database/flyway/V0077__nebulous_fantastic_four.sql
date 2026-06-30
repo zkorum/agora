@@ -1,0 +1,1 @@
+DROP TABLE "project_participant_display_language" CASCADE;

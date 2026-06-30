@@ -51,11 +51,24 @@
         :can-remove-event-ticket="canRemoveEventTicket"
         :can-use-analysis-variants-preference="canUseAnalysisVariantsPreference"
         :can-use-dynamic-translation="canUseDynamicTranslation"
+        :hide-language-setting="currentProjectLanguageProject !== undefined"
         :detected-language-code="visibleDetectedLanguageCode"
         :detected-source-language-code="visibleDetectedSourceLanguageCode"
         :detected-raw-language-code="visibleDetectedRawLanguageCode"
         :auto-detection-status="visibleAutoDetectionStatus"
-      />
+      >
+        <template #extra-controls>
+          <CreateConversationProjectLanguageSettings
+            v-if="currentProjectLanguageProject !== undefined"
+            v-model:selected-project-slug="selectedProjectSlug"
+            v-model:inherit-project-languages="inheritProjectLanguages"
+            v-model:override-language-setting="languageSetting"
+            v-model:override-multilingual-setting="multilingualSetting"
+            :project-list="[currentProjectLanguageProject]"
+            :allow-project-selection="false"
+          />
+        </template>
+      </NewConversationControlBar>
 
       <ZKCard
         v-if="showPremiumEditRestrictedBanner"
@@ -127,6 +140,7 @@ import Button from "primevue/button";
 import Editor from "src/components/editor/Editor.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import CreateConversationProjectLanguageSettings from "src/components/newConversation/CreateConversationProjectLanguageSettings.vue";
 import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
@@ -139,14 +153,19 @@ import {
   type ValidationErrorField,
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { MAX_LENGTH_CONVERSATION_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
-import type { GetConversationForEditResponse } from "src/shared/types/dto";
+import type {
+  ConversationLanguageSettingsSource,
+  GetConversationForEditResponse,
+} from "src/shared/types/dto";
 import type {
   ConversationLanguageSettingInput,
   ConversationLanguageSettingOutput,
   ConversationMultilingualSetting,
   ParticipationMode,
   PreferredOpinionGroupCount,
+  ProjectLanguageSettings,
   SurveyConfig,
 } from "src/shared/types/zod";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
@@ -193,6 +212,12 @@ type EditPermissions = Extract<
   GetConversationForEditResponse,
   { success: true }
 >["editPermissions"];
+type CurrentProjectLanguageProject = {
+  slug: string;
+  title: string;
+  defaultLanguageCode: SupportedDisplayLanguageCodes;
+  languageSettings: ProjectLanguageSettings;
+};
 const editPermissions = ref<EditPermissions | null>(null);
 const detectedLanguageCode = ref<
   ConversationLanguageSettingOutput["detectedLanguageCode"]
@@ -218,6 +243,9 @@ const originalState = ref<{
   requiresEventTicket: string | undefined;
   languageSetting: ConversationLanguageSettingInput;
   multilingualSetting: ConversationMultilingualSetting;
+  selectedProjectSlug: string | undefined;
+  inheritProjectLanguages: boolean;
+  languageSettingsSource: ConversationLanguageSettingsSource;
   aiLabelingEnabled: boolean;
   preferredOpinionGroupCount: PreferredOpinionGroupCount;
   surveyConfig: SurveyConfig | null;
@@ -232,6 +260,9 @@ const originalState = ref<{
     additionalLanguageCodes: [],
     dynamicTranslationEnabled: false,
   },
+  selectedProjectSlug: undefined,
+  inheritProjectLanguages: false,
+  languageSettingsSource: "conversation_override",
   aiLabelingEnabled: true,
   preferredOpinionGroupCount: null,
   surveyConfig: null,
@@ -320,6 +351,15 @@ const hasUnsavedChanges = computed(() => {
     return true;
   }
 
+  if (
+    selectedProjectSlug.value !== originalState.value.selectedProjectSlug ||
+    inheritProjectLanguages.value !== originalState.value.inheritProjectLanguages ||
+    effectiveLanguageSettingsSource.value !==
+      originalState.value.languageSettingsSource
+  ) {
+    return true;
+  }
+
   if (aiLabelingEnabled.value !== originalState.value.aiLabelingEnabled) {
     return true;
   }
@@ -341,6 +381,8 @@ const {
   contentPlainText,
   languageSetting,
   multilingualSetting,
+  selectedProjectSlug,
+  inheritProjectLanguages,
   isPrivate,
   participationMode,
   requiresEventTicket,
@@ -357,6 +399,17 @@ const {
   updateContent,
   initializeFromData,
 } = useConversationDraft({ syncToStore: false });
+
+const currentProjectLanguageProject = ref<
+  CurrentProjectLanguageProject | undefined
+>(undefined);
+
+const effectiveLanguageSettingsSource = computed<ConversationLanguageSettingsSource>(
+  () =>
+    selectedProjectSlug.value !== undefined && inheritProjectLanguages.value
+      ? "project_inherited"
+      : "conversation_override"
+);
 
 const canShowStoredAutoDetection = computed(() => {
   return (
@@ -452,6 +505,7 @@ async function performSave(): Promise<void> {
       conversationBodyPlainText: contentPlainText.value,
       languageSetting: languageSetting.value,
       multilingualSetting: multilingualSetting.value,
+      languageSettingsSource: effectiveLanguageSettingsSource.value,
       isIndexed: !isPrivate.value,
       participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
@@ -586,7 +640,10 @@ onMounted(async () => {
       contentPlainText: "",
       languageSetting: loadedLanguageSetting,
       multilingualSetting: response.multilingualSetting,
-      inheritProjectLanguages: false,
+      selectedProjectSlug: response.projectLanguageProject?.projectSlug,
+      inheritProjectLanguages:
+        response.languageSettingsSource === "project_inherited" &&
+        response.projectLanguageProject !== undefined,
       isPrivate: !response.isIndexed,
       participationMode: response.participationMode,
       requiresEventTicket: response.requiresEventTicket,
@@ -595,6 +652,15 @@ onMounted(async () => {
       surveyConfig: response.surveyConfig ?? null,
     });
     editPermissions.value = response.editPermissions;
+    currentProjectLanguageProject.value =
+      response.projectLanguageProject === undefined
+        ? undefined
+        : {
+            slug: response.projectLanguageProject.projectSlug,
+            title: response.projectLanguageProject.projectTitle,
+            defaultLanguageCode: response.projectLanguageProject.defaultLanguageCode,
+            languageSettings: response.projectLanguageProject.languageSettings,
+          };
 
     // Store original state for change detection
     originalState.value = {
@@ -605,6 +671,11 @@ onMounted(async () => {
       requiresEventTicket: response.requiresEventTicket,
       languageSetting: loadedLanguageSetting,
       multilingualSetting: response.multilingualSetting,
+      selectedProjectSlug: response.projectLanguageProject?.projectSlug,
+      inheritProjectLanguages:
+        response.languageSettingsSource === "project_inherited" &&
+        response.projectLanguageProject !== undefined,
+      languageSettingsSource: response.languageSettingsSource,
       aiLabelingEnabled: response.aiLabelingEnabled,
       preferredOpinionGroupCount: response.preferredOpinionGroupCount,
       surveyConfig: response.surveyConfig ?? null,

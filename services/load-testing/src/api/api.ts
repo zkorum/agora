@@ -1266,8 +1266,8 @@ export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1Rari
 
 export interface ApiV1ContentTranslationRequestPost200Response {
     'success': boolean;
-    'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf2;
-    'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf2Content;
+    'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf3;
+    'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf3Content;
     'reason': ApiV1ContentTranslationRequestPost200ResponseReasonEnum;
     'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting;
     'blockedReason': ApiV1ContentTranslationRequestPost200ResponseBlockedReasonEnum;
@@ -1480,28 +1480,119 @@ export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOf
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3 {
     'success': boolean;
-    'reason': ApiV1ContentTranslationRequestPost200ResponseAnyOf3ReasonEnum;
-    'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting;
+    'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf3;
+    'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf3Content;
+}
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3Content {
+    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentKindEnum;
+    'sourceVersion': string;
+    'initialMode': ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentInitialModeEnum;
+    'variants': ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2Variants;
+    'translation': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Translation;
 }
 
-export const ApiV1ContentTranslationRequestPost200ResponseAnyOf3ReasonEnum = {
-    ContentTranslationNotEnabled: 'content_translation_not_enabled',
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentKindEnum = {
+    Translatable: 'translatable',
 } as const;
 
-export type ApiV1ContentTranslationRequestPost200ResponseAnyOf3ReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ReasonEnum];
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentKindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentKindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentKindEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentInitialModeEnum = {
+    Translated: 'translated',
+} as const;
 
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentInitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentInitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentInitialModeEnum];
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf {
+    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOfKindEnum;
+    'sourceVersion': string;
+    'initialMode': ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOfInitialModeEnum;
+    'variants': ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOfVariants;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOfKindEnum = {
+    OriginalOnly: 'original_only',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOfKindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOfKindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOfKindEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOfInitialModeEnum = {
+    Original: 'original',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOfInitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOfInitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOfInitialModeEnum];
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1 {
+    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1KindEnum;
+    'sourceVersion': string;
+    'initialMode': ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1InitialModeEnum;
+    'translation': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1Translation;
+    'variants': ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1Variants;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1KindEnum = {
+    Translatable: 'translatable',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1KindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1KindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1KindEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1InitialModeEnum = {
+    Original: 'original',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1InitialModeEnum];
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1Variants {
+    'original': ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent;
+    'translated'?: ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent;
+}
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2 {
+    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2KindEnum;
+    'sourceVersion': string;
+    'initialMode': ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2InitialModeEnum;
+    'translation': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Translation;
+    'variants': ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2Variants;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2KindEnum = {
+    Translatable: 'translatable',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2KindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2KindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2KindEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2InitialModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2InitialModeEnum];
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2Variants {
+    'original'?: ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent;
+    'translated': ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent;
+}
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOfVariants {
+    'original': ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent;
+}
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4 {
     'success': boolean;
     'reason': ApiV1ContentTranslationRequestPost200ResponseAnyOf4ReasonEnum;
-    'blockedReason': ApiV1ContentTranslationRequestPost200ResponseAnyOf4BlockedReasonEnum;
+    'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting;
 }
 
 export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4ReasonEnum = {
-    ParticipationBlocked: 'participation_blocked',
+    ContentTranslationNotEnabled: 'content_translation_not_enabled',
 } as const;
 
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOf4ReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ReasonEnum];
-export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4BlockedReasonEnum = {
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf5 {
+    'success': boolean;
+    'reason': ApiV1ContentTranslationRequestPost200ResponseAnyOf5ReasonEnum;
+    'blockedReason': ApiV1ContentTranslationRequestPost200ResponseAnyOf5BlockedReasonEnum;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf5ReasonEnum = {
+    ParticipationBlocked: 'participation_blocked',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf5ReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ReasonEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf5BlockedReasonEnum = {
     ConversationLocked: 'conversation_locked',
     ConversationClosed: 'conversation_closed',
     EventTicketRequired: 'event_ticket_required',
@@ -1512,7 +1603,7 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4BlockedReasonEnu
     SurveyOutdated: 'survey_outdated',
 } as const;
 
-export type ApiV1ContentTranslationRequestPost200ResponseAnyOf4BlockedReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4BlockedReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4BlockedReasonEnum];
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf5BlockedReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5BlockedReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5BlockedReasonEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContent {
     'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentKindEnum;
@@ -2152,7 +2243,7 @@ export type ApiV1ContentTranslationRequestPostRequestRequestModeEnum = typeof Ap
 /**
  * @type ApiV1ContentTranslationRequestPostRequestSubject
  */
-export type ApiV1ContentTranslationRequestPostRequestSubject = ApiV1ContentTranslationRequestPostRequestSubjectOneOf | ApiV1ContentTranslationRequestPostRequestSubjectOneOf1 | ApiV1ContentTranslationRequestPostRequestSubjectOneOf2;
+export type ApiV1ContentTranslationRequestPostRequestSubject = ApiV1ContentTranslationRequestPostRequestSubjectOneOf | ApiV1ContentTranslationRequestPostRequestSubjectOneOf1 | ApiV1ContentTranslationRequestPostRequestSubjectOneOf2 | ApiV1ContentTranslationRequestPostRequestSubjectOneOf3;
 
 export interface ApiV1ContentTranslationRequestPostRequestSubjectOneOf {
     'kind': ApiV1ContentTranslationRequestPostRequestSubjectOneOfKindEnum;
@@ -2188,6 +2279,17 @@ export const ApiV1ContentTranslationRequestPostRequestSubjectOneOf2KindEnum = {
 } as const;
 
 export type ApiV1ContentTranslationRequestPostRequestSubjectOneOf2KindEnum = typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf2KindEnum[keyof typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf2KindEnum];
+
+export interface ApiV1ContentTranslationRequestPostRequestSubjectOneOf3 {
+    'kind': ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum;
+    'projectSlug': string;
+}
+
+export const ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum = {
+    Project: 'project',
+} as const;
+
+export type ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum = typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum[keyof typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum];
 
 /**
  * @type ApiV1ConversationClosePost200Response
@@ -3127,6 +3229,8 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOf {
     'conversationBody'?: string;
     'languageSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSetting;
     'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting;
+    'languageSettingsSource': ApiV1ConversationGetForEditPost200ResponseOneOfLanguageSettingsSourceEnum;
+    'projectLanguageProject'?: ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInner;
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum;
     'requiresEventTicket'?: ApiV1ConversationGetForEditPost200ResponseOneOfRequiresEventTicketEnum;
@@ -3140,6 +3244,12 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOf {
     'editPermissions': ApiV1ConversationGetForEditPost200ResponseOneOfEditPermissions;
 }
 
+export const ApiV1ConversationGetForEditPost200ResponseOneOfLanguageSettingsSourceEnum = {
+    ConversationOverride: 'conversation_override',
+    ProjectInherited: 'project_inherited',
+} as const;
+
+export type ApiV1ConversationGetForEditPost200ResponseOneOfLanguageSettingsSourceEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfLanguageSettingsSourceEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfLanguageSettingsSourceEnum];
 export const ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum = {
     AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
@@ -3536,6 +3646,7 @@ export interface ApiV1ConversationUpdatePostRequest {
     'participationMode': ApiV1ConversationUpdatePostRequestParticipationModeEnum;
     'languageSetting': ApiV1ConversationCreatePostRequestLanguageSetting;
     'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting;
+    'languageSettingsSource'?: ApiV1ConversationUpdatePostRequestLanguageSettingsSourceEnum;
     'requiresEventTicket'?: ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum;
     'aiLabelingEnabled'?: boolean;
     'preferredOpinionGroupCount'?: number | null;
@@ -3550,6 +3661,12 @@ export const ApiV1ConversationUpdatePostRequestParticipationModeEnum = {
 } as const;
 
 export type ApiV1ConversationUpdatePostRequestParticipationModeEnum = typeof ApiV1ConversationUpdatePostRequestParticipationModeEnum[keyof typeof ApiV1ConversationUpdatePostRequestParticipationModeEnum];
+export const ApiV1ConversationUpdatePostRequestLanguageSettingsSourceEnum = {
+    ConversationOverride: 'conversation_override',
+    ProjectInherited: 'project_inherited',
+} as const;
+
+export type ApiV1ConversationUpdatePostRequestLanguageSettingsSourceEnum = typeof ApiV1ConversationUpdatePostRequestLanguageSettingsSourceEnum[keyof typeof ApiV1ConversationUpdatePostRequestLanguageSettingsSourceEnum];
 export const ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum = {
     Devconnect2025: 'devconnect-2025',
 } as const;
@@ -4878,126 +4995,12 @@ export interface ApiV1ProjectPageActivitiesFetchPost200Response {
     'activities': Array<ApiV1ProjectPageFetchPost200ResponseActivitiesInner>;
     'nextActivityCursor'?: ApiV1ProjectPageFetchPost200ResponseNextActivityCursor;
 }
-export interface ApiV1ProjectPageActivitiesFetchPostRequest {
-    'projectSlug': string;
-    'displayLanguageCode': ApiV1ProjectPageActivitiesFetchPostRequestDisplayLanguageCodeEnum;
-    'activityLimit'?: number;
-    'activityCursor'?: ApiV1ProjectPageFetchPostRequestActivityCursor;
-}
-
-export const ApiV1ProjectPageActivitiesFetchPostRequestDisplayLanguageCodeEnum = {
-    En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
-    Ar: 'ar',
-    Fa: 'fa',
-    He: 'he',
-    Ky: 'ky',
-    Ru: 'ru',
-} as const;
-
-export type ApiV1ProjectPageActivitiesFetchPostRequestDisplayLanguageCodeEnum = typeof ApiV1ProjectPageActivitiesFetchPostRequestDisplayLanguageCodeEnum[keyof typeof ApiV1ProjectPageActivitiesFetchPostRequestDisplayLanguageCodeEnum];
-
-export interface ApiV1ProjectPageDisplayLanguageUpdatePost200Response {
-    'selectedProjectDisplayLanguage': ApiV1ProjectPageDisplayLanguageUpdatePost200ResponseSelectedProjectDisplayLanguageEnum;
-    'effectiveProjectDisplayLanguage': ApiV1ProjectPageDisplayLanguageUpdatePost200ResponseEffectiveProjectDisplayLanguageEnum;
-}
-
-export const ApiV1ProjectPageDisplayLanguageUpdatePost200ResponseSelectedProjectDisplayLanguageEnum = {
-    En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
-    Ar: 'ar',
-    Fa: 'fa',
-    He: 'he',
-    Ky: 'ky',
-    Ru: 'ru',
-} as const;
-
-export type ApiV1ProjectPageDisplayLanguageUpdatePost200ResponseSelectedProjectDisplayLanguageEnum = typeof ApiV1ProjectPageDisplayLanguageUpdatePost200ResponseSelectedProjectDisplayLanguageEnum[keyof typeof ApiV1ProjectPageDisplayLanguageUpdatePost200ResponseSelectedProjectDisplayLanguageEnum];
-export const ApiV1ProjectPageDisplayLanguageUpdatePost200ResponseEffectiveProjectDisplayLanguageEnum = {
-    En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
-    Ar: 'ar',
-    Fa: 'fa',
-    He: 'he',
-    Ky: 'ky',
-    Ru: 'ru',
-} as const;
-
-export type ApiV1ProjectPageDisplayLanguageUpdatePost200ResponseEffectiveProjectDisplayLanguageEnum = typeof ApiV1ProjectPageDisplayLanguageUpdatePost200ResponseEffectiveProjectDisplayLanguageEnum[keyof typeof ApiV1ProjectPageDisplayLanguageUpdatePost200ResponseEffectiveProjectDisplayLanguageEnum];
-
-export interface ApiV1ProjectPageDisplayLanguageUpdatePostRequest {
-    'projectSlug': string;
-    'languageCode': ApiV1ProjectPageDisplayLanguageUpdatePostRequestLanguageCodeEnum;
-}
-
-export const ApiV1ProjectPageDisplayLanguageUpdatePostRequestLanguageCodeEnum = {
-    En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
-    Ar: 'ar',
-    Fa: 'fa',
-    He: 'he',
-    Ky: 'ky',
-    Ru: 'ru',
-} as const;
-
-export type ApiV1ProjectPageDisplayLanguageUpdatePostRequestLanguageCodeEnum = typeof ApiV1ProjectPageDisplayLanguageUpdatePostRequestLanguageCodeEnum[keyof typeof ApiV1ProjectPageDisplayLanguageUpdatePostRequestLanguageCodeEnum];
-
 export interface ApiV1ProjectPageFetchPost200Response {
     'project': ApiV1ProjectPageFetchPost200ResponseProject;
     'activities': Array<ApiV1ProjectPageFetchPost200ResponseActivitiesInner>;
     'languageOptions': Array<ApiV1ProjectPageFetchPost200ResponseLanguageOptionsInner>;
-    'selectedProjectDisplayLanguage'?: ApiV1ProjectPageFetchPost200ResponseSelectedProjectDisplayLanguageEnum;
-    'effectiveProjectDisplayLanguage': ApiV1ProjectPageFetchPost200ResponseEffectiveProjectDisplayLanguageEnum;
     'nextActivityCursor'?: ApiV1ProjectPageFetchPost200ResponseNextActivityCursor;
 }
-
-export const ApiV1ProjectPageFetchPost200ResponseSelectedProjectDisplayLanguageEnum = {
-    En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
-    Ar: 'ar',
-    Fa: 'fa',
-    He: 'he',
-    Ky: 'ky',
-    Ru: 'ru',
-} as const;
-
-export type ApiV1ProjectPageFetchPost200ResponseSelectedProjectDisplayLanguageEnum = typeof ApiV1ProjectPageFetchPost200ResponseSelectedProjectDisplayLanguageEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseSelectedProjectDisplayLanguageEnum];
-export const ApiV1ProjectPageFetchPost200ResponseEffectiveProjectDisplayLanguageEnum = {
-    En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
-    Ar: 'ar',
-    Fa: 'fa',
-    He: 'he',
-    Ky: 'ky',
-    Ru: 'ru',
-} as const;
-
-export type ApiV1ProjectPageFetchPost200ResponseEffectiveProjectDisplayLanguageEnum = typeof ApiV1ProjectPageFetchPost200ResponseEffectiveProjectDisplayLanguageEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseEffectiveProjectDisplayLanguageEnum];
-
 export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInner {
     'slug': string;
     'kind': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerKindEnum;
@@ -5023,6 +5026,7 @@ export interface ApiV1ProjectPageFetchPost200ResponseLanguageOptionsInner {
     'label': string;
     'value': ApiV1ProjectPageFetchPost200ResponseLanguageOptionsInnerValueEnum;
     'caption'?: string;
+    'projectSupported'?: boolean;
     'searchText'?: string;
     'shortLabel'?: string;
 }
@@ -5060,7 +5064,9 @@ export interface ApiV1ProjectPageFetchPost200ResponseProject {
     'slug': string;
     'title': string;
     'subtitle'?: string;
-    'bodyPlainText'?: string;
+    'bodyHtml'?: string;
+    'originalContent': ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent;
+    'machineTranslation'?: ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslation;
     'bannerVariant': ApiV1ProjectPageFetchPost200ResponseProjectBannerVariantEnum;
     'bannerImageUrl'?: string;
     'participantCount': number;
@@ -5104,14 +5110,15 @@ export interface ApiV1ProjectPageFetchPost200ResponseProjectContact {
     'email'?: string;
     'websiteUrl'?: string;
 }
-export interface ApiV1ProjectPageFetchPostRequest {
-    'projectSlug': string;
-    'selectedLanguageCode'?: ApiV1ProjectPageFetchPostRequestSelectedLanguageCodeEnum;
-    'activityLimit'?: number;
-    'activityCursor'?: ApiV1ProjectPageFetchPostRequestActivityCursor;
+export interface ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslation {
+    'targetLanguageCode': ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationTargetLanguageCodeEnum;
+    'sourceLanguageCode'?: string | null;
+    'sourceLanguageLabel'?: string;
+    'status': ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationStatusEnum;
+    'translatedContent'?: ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent;
 }
 
-export const ApiV1ProjectPageFetchPostRequestSelectedLanguageCodeEnum = {
+export const ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationTargetLanguageCodeEnum = {
     En: 'en',
     Es: 'es',
     Fr: 'fr',
@@ -5125,8 +5132,27 @@ export const ApiV1ProjectPageFetchPostRequestSelectedLanguageCodeEnum = {
     Ru: 'ru',
 } as const;
 
-export type ApiV1ProjectPageFetchPostRequestSelectedLanguageCodeEnum = typeof ApiV1ProjectPageFetchPostRequestSelectedLanguageCodeEnum[keyof typeof ApiV1ProjectPageFetchPostRequestSelectedLanguageCodeEnum];
+export type ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationTargetLanguageCodeEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationTargetLanguageCodeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationTargetLanguageCodeEnum];
+export const ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationStatusEnum = {
+    NotRequested: 'not_requested',
+    Pending: 'pending',
+    Running: 'running',
+    Failed: 'failed',
+    Completed: 'completed',
+} as const;
 
+export type ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationStatusEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationStatusEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationStatusEnum];
+
+export interface ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent {
+    'title': string;
+    'subtitle'?: string;
+    'bodyHtml'?: string;
+}
+export interface ApiV1ProjectPageFetchPostRequest {
+    'projectSlug': string;
+    'activityLimit'?: number;
+    'activityCursor'?: ApiV1ProjectPageFetchPostRequestActivityCursor;
+}
 export interface ApiV1ProjectPageFetchPostRequestActivityCursor {
     'status': ApiV1ProjectPageFetchPostRequestActivityCursorStatusEnum;
     'createdAt': any;
@@ -9178,13 +9204,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          *
-         * @param {ApiV1ProjectPageActivitiesFetchPostRequest} apiV1ProjectPageActivitiesFetchPostRequest
+         * @param {ApiV1ProjectPageFetchPostRequest} apiV1ProjectPageFetchPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ProjectPageActivitiesFetchPost: async (apiV1ProjectPageActivitiesFetchPostRequest: ApiV1ProjectPageActivitiesFetchPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ProjectPageActivitiesFetchPostRequest' is not null or undefined
-            assertParamExists('apiV1ProjectPageActivitiesFetchPost', 'apiV1ProjectPageActivitiesFetchPostRequest', apiV1ProjectPageActivitiesFetchPostRequest)
+        apiV1ProjectPageActivitiesFetchPost: async (apiV1ProjectPageFetchPostRequest: ApiV1ProjectPageFetchPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ProjectPageFetchPostRequest' is not null or undefined
+            assertParamExists('apiV1ProjectPageActivitiesFetchPost', 'apiV1ProjectPageFetchPostRequest', apiV1ProjectPageFetchPostRequest)
             const localVarPath = `/api/v1/project/page/activities/fetch`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -9207,45 +9233,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ProjectPageActivitiesFetchPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         *
-         * @param {ApiV1ProjectPageDisplayLanguageUpdatePostRequest} apiV1ProjectPageDisplayLanguageUpdatePostRequest
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1ProjectPageDisplayLanguageUpdatePost: async (apiV1ProjectPageDisplayLanguageUpdatePostRequest: ApiV1ProjectPageDisplayLanguageUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ProjectPageDisplayLanguageUpdatePostRequest' is not null or undefined
-            assertParamExists('apiV1ProjectPageDisplayLanguageUpdatePost', 'apiV1ProjectPageDisplayLanguageUpdatePostRequest', apiV1ProjectPageDisplayLanguageUpdatePostRequest)
-            const localVarPath = `/api/v1/project/page/display-language/update`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ProjectPageDisplayLanguageUpdatePostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ProjectPageFetchPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -11296,26 +11284,14 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          *
-         * @param {ApiV1ProjectPageActivitiesFetchPostRequest} apiV1ProjectPageActivitiesFetchPostRequest
+         * @param {ApiV1ProjectPageFetchPostRequest} apiV1ProjectPageFetchPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ProjectPageActivitiesFetchPost(apiV1ProjectPageActivitiesFetchPostRequest: ApiV1ProjectPageActivitiesFetchPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ProjectPageActivitiesFetchPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ProjectPageActivitiesFetchPost(apiV1ProjectPageActivitiesFetchPostRequest, options);
+        async apiV1ProjectPageActivitiesFetchPost(apiV1ProjectPageFetchPostRequest: ApiV1ProjectPageFetchPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ProjectPageActivitiesFetchPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ProjectPageActivitiesFetchPost(apiV1ProjectPageFetchPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ProjectPageActivitiesFetchPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         *
-         * @param {ApiV1ProjectPageDisplayLanguageUpdatePostRequest} apiV1ProjectPageDisplayLanguageUpdatePostRequest
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1ProjectPageDisplayLanguageUpdatePost(apiV1ProjectPageDisplayLanguageUpdatePostRequest: ApiV1ProjectPageDisplayLanguageUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ProjectPageDisplayLanguageUpdatePost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ProjectPageDisplayLanguageUpdatePost(apiV1ProjectPageDisplayLanguageUpdatePostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ProjectPageDisplayLanguageUpdatePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -12411,21 +12387,12 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          *
-         * @param {ApiV1ProjectPageActivitiesFetchPostRequest} apiV1ProjectPageActivitiesFetchPostRequest
+         * @param {ApiV1ProjectPageFetchPostRequest} apiV1ProjectPageFetchPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ProjectPageActivitiesFetchPost(apiV1ProjectPageActivitiesFetchPostRequest: ApiV1ProjectPageActivitiesFetchPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ProjectPageActivitiesFetchPost200Response> {
-            return localVarFp.apiV1ProjectPageActivitiesFetchPost(apiV1ProjectPageActivitiesFetchPostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         *
-         * @param {ApiV1ProjectPageDisplayLanguageUpdatePostRequest} apiV1ProjectPageDisplayLanguageUpdatePostRequest
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1ProjectPageDisplayLanguageUpdatePost(apiV1ProjectPageDisplayLanguageUpdatePostRequest: ApiV1ProjectPageDisplayLanguageUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ProjectPageDisplayLanguageUpdatePost200Response> {
-            return localVarFp.apiV1ProjectPageDisplayLanguageUpdatePost(apiV1ProjectPageDisplayLanguageUpdatePostRequest, options).then((request) => request(axios, basePath));
+        apiV1ProjectPageActivitiesFetchPost(apiV1ProjectPageFetchPostRequest: ApiV1ProjectPageFetchPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ProjectPageActivitiesFetchPost200Response> {
+            return localVarFp.apiV1ProjectPageActivitiesFetchPost(apiV1ProjectPageFetchPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          *
@@ -13519,22 +13486,12 @@ export class DefaultApi extends BaseAPI {
 
     /**
      *
-     * @param {ApiV1ProjectPageActivitiesFetchPostRequest} apiV1ProjectPageActivitiesFetchPostRequest
+     * @param {ApiV1ProjectPageFetchPostRequest} apiV1ProjectPageFetchPostRequest
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1ProjectPageActivitiesFetchPost(apiV1ProjectPageActivitiesFetchPostRequest: ApiV1ProjectPageActivitiesFetchPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1ProjectPageActivitiesFetchPost(apiV1ProjectPageActivitiesFetchPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     *
-     * @param {ApiV1ProjectPageDisplayLanguageUpdatePostRequest} apiV1ProjectPageDisplayLanguageUpdatePostRequest
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiV1ProjectPageDisplayLanguageUpdatePost(apiV1ProjectPageDisplayLanguageUpdatePostRequest: ApiV1ProjectPageDisplayLanguageUpdatePostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1ProjectPageDisplayLanguageUpdatePost(apiV1ProjectPageDisplayLanguageUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1ProjectPageActivitiesFetchPost(apiV1ProjectPageFetchPostRequest: ApiV1ProjectPageFetchPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ProjectPageActivitiesFetchPost(apiV1ProjectPageFetchPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

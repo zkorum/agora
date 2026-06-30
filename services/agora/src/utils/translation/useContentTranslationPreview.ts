@@ -46,21 +46,27 @@ function isSameContentTranslationSubject({
   left: ContentTranslationSubject;
   right: ContentTranslationSubject;
 }): boolean {
-  if (
-    left.kind !== right.kind ||
-    left.conversationSlugId !== right.conversationSlugId
-  ) {
+  if (left.kind !== right.kind) {
     return false;
   }
 
   if (left.kind === "conversation" && right.kind === "conversation") {
-    return true;
+    return left.conversationSlugId === right.conversationSlugId;
   }
   if (left.kind === "opinion" && right.kind === "opinion") {
-    return left.opinionSlugId === right.opinionSlugId;
+    return (
+      left.conversationSlugId === right.conversationSlugId &&
+      left.opinionSlugId === right.opinionSlugId
+    );
   }
   if (left.kind === "survey_question" && right.kind === "survey_question") {
-    return left.questionSlugId === right.questionSlugId;
+    return (
+      left.conversationSlugId === right.conversationSlugId &&
+      left.questionSlugId === right.questionSlugId
+    );
+  }
+  if (left.kind === "project" && right.kind === "project") {
+    return left.projectSlug === right.projectSlug;
   }
 
   return false;
@@ -261,17 +267,19 @@ function useContentTranslationController({
       return;
     }
     const currentSubject = toValue(subject);
-    updateConversationQueryCache({
-      queryClient,
-      conversationSlugId: currentSubject.conversationSlugId,
-      updateConversation: (conversation) => ({
-        ...conversation,
-        metadata: {
-          ...conversation.metadata,
-          multilingualSetting: response.multilingualSetting,
-        },
-      }),
-    });
+    if ("conversationSlugId" in currentSubject) {
+      updateConversationQueryCache({
+        queryClient,
+        conversationSlugId: currentSubject.conversationSlugId,
+        updateConversation: (conversation) => ({
+          ...conversation,
+          metadata: {
+            ...conversation.metadata,
+            multilingualSetting: response.multilingualSetting,
+          },
+        }),
+      });
+    }
     resetToOriginal();
     showNotifyMessage(t("translationNotEnabled"));
   }
