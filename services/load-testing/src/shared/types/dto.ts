@@ -404,6 +404,21 @@ const zodProjectPageLanguageOption = z
         shortLabel: z.string().trim().min(1).optional(),
     })
     .strict();
+const zodProjectPageActivityContentVariant = z
+    .object({
+        title: zodConversationTitle,
+        bodyPlainText: zodConversationBodyPlainTextInput.default(""),
+    })
+    .strict();
+const zodProjectPageActivityMachineTranslation = z
+    .object({
+        targetLanguageCode: ZodSupportedDisplayLanguageCodes,
+        sourceLanguageCode: ZodSupportedSpokenLanguageCodes.nullable().optional(),
+        sourceLanguageLabel: z.string().min(1).optional(),
+        status: z.enum(["not_requested", "pending", "running", "failed", "completed"]),
+        translatedContent: zodProjectPageActivityContentVariant.optional(),
+    })
+    .strict();
 const zodProjectPageActivity = z
     .object({
         slug: zodSlugId,
@@ -411,6 +426,10 @@ const zodProjectPageActivity = z
         isClosed: z.boolean(),
         title: zodConversationTitle,
         bodyPlainText: zodConversationBodyPlainTextInput.default(""),
+        originalContent: zodProjectPageActivityContentVariant,
+        sourceLanguageCode: ZodSupportedSpokenLanguageCodes.nullable().optional(),
+        dynamicTranslationEnabled: z.boolean(),
+        machineTranslation: zodProjectPageActivityMachineTranslation.optional(),
         stats: z
             .object({
                 opinionCount: z.number().int().nonnegative(),

@@ -52,6 +52,7 @@ import type {
     ProjectPageProject,
 } from "@/shared/types/dto.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
+import { htmlToCountedText } from "@/shared-app-api/html.js";
 import {
     shouldSkipTranslation,
     translationSourceMatchesCurrentSource,
@@ -111,6 +112,7 @@ interface ProjectActivityRow {
     title: string;
     bodyPlainText: string | null;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    dynamicTranslationEnabled: boolean;
     status: ProjectActivityStatus;
 }
 
@@ -652,6 +654,7 @@ async function fetchProjectActivityRowsByStatus({
             title: conversationContentTable.title,
             bodyPlainText: conversationContentTable.bodyPlainText,
             sourceLanguageCode: conversationContentTable.sourceLanguageCode,
+            dynamicTranslationEnabled: conversationTable.dynamicTranslationEnabled,
         })
         .from(conversationTable)
         .innerJoin(
@@ -678,6 +681,7 @@ async function fetchProjectActivityRowsByStatus({
         title: row.title,
         bodyPlainText: row.bodyPlainText,
         sourceLanguageCode: row.sourceLanguageCode,
+        dynamicTranslationEnabled: row.dynamicTranslationEnabled,
         status,
     }));
 }
@@ -845,6 +849,10 @@ async function fetchProjectActivities({
     const activities: ProjectPageActivity[] = pageRows.map((row) => {
         const counts = countsByConversationId.get(row.conversationId);
         const translation = translationsByContentId.get(row.conversationContentId);
+        const originalContent = {
+            title: row.title,
+            bodyPlainText: row.bodyPlainText ?? "",
+        };
         const freshTranslation =
             translation !== undefined &&
             translationSourceMatchesCurrentSource({
@@ -853,13 +861,39 @@ async function fetchProjectActivities({
             })
                 ? translation
                 : undefined;
+        const translatedBodyPlainText =
+            freshTranslation?.translatedBody === null ||
+            freshTranslation?.translatedBody === undefined
+                ? ""
+                : htmlToCountedText(freshTranslation.translatedBody);
+        const translatedContent =
+            freshTranslation === undefined
+                ? undefined
+                : {
+                      title: freshTranslation.translatedTitle,
+                      bodyPlainText: translatedBodyPlainText,
+                  };
         return {
             slug: row.slug,
             kind: row.conversationType === "maxdiff" ? "vote" : "conversation",
             isClosed: row.isClosed,
-            title: freshTranslation?.translatedTitle ?? row.title,
-            bodyPlainText:
-                freshTranslation?.translatedBody ?? row.bodyPlainText ?? "",
+            title: translatedContent?.title ?? row.title,
+            bodyPlainText: translatedContent?.bodyPlainText ?? row.bodyPlainText ?? "",
+            originalContent,
+            sourceLanguageCode: row.sourceLanguageCode,
+            dynamicTranslationEnabled: row.dynamicTranslationEnabled,
+            machineTranslation:
+                freshTranslation === undefined || translatedContent === undefined
+                    ? undefined
+                    : {
+                          targetLanguageCode: freshTranslation.displayLanguageCode,
+                          sourceLanguageCode: freshTranslation.sourceLanguageCode,
+                          sourceLanguageLabel: getSourceLanguageLabel(
+                              freshTranslation.sourceLanguageCode,
+                          ),
+                          status: "completed",
+                          translatedContent,
+                      },
             stats: {
                 opinionCount: counts?.opinionCount ?? 0,
                 participantCount: counts?.participantCount ?? 0,

@@ -114,7 +114,15 @@ type DevAttributionKey =
 type DevProjectAttribution = ProjectPageData["attributions"][number] & {
   devKey?: DevAttributionKey;
 };
-type BaseDevActivity = Omit<ProjectActivity, "bodyPlainText" | "title">;
+type BaseDevActivity = Omit<
+  ProjectActivity,
+  | "bodyPlainText"
+  | "dynamicTranslationEnabled"
+  | "machineTranslation"
+  | "originalContent"
+  | "sourceLanguageCode"
+  | "title"
+>;
 type BaseDevProjectData = Omit<
   ProjectPageData,
   "activityCount" | "attributions" | "contact" | "participantCount" | "voteCount"
@@ -605,14 +613,21 @@ const activities = computed<readonly ProjectActivity[]>(() => {
   const activitiesWithBodyLength = hasLongActivityBodies({
     scenario: bodyLengthScenario.value,
   })
-    ? localizedActivities.map((activity, activityIndex) => ({
-        ...activity,
-        bodyPlainText: createLongActivityBody({
+    ? localizedActivities.map((activity, activityIndex) => {
+        const bodyPlainText = createLongActivityBody({
           activity,
           activityIndex,
           language: selectedProjectLanguage.value,
-        }),
-      }))
+        });
+        return {
+          ...activity,
+          bodyPlainText,
+          originalContent: {
+            ...activity.originalContent,
+            bodyPlainText,
+          },
+        };
+      })
     : localizedActivities;
 
   if (activityStatusScenario.value === "closed") {
@@ -742,6 +757,20 @@ function localizeActivity({
           roundNumber,
         })}`
       : localization.bodyPlainText,
+    originalContent: {
+      title: useGeneratedActivityLabels
+        ? `${localization.title} ${activityNumber.toString()}`
+        : localization.title,
+      bodyPlainText: useGeneratedActivityLabels
+        ? `${localization.bodyPlainText} ${localizedGeneratedActivitySuffix({
+            language,
+            roundNumber,
+          })}`
+        : localization.bodyPlainText,
+    },
+    sourceLanguageCode: language,
+    dynamicTranslationEnabled: false,
+    machineTranslation: undefined,
   };
 }
 
