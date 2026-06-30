@@ -50,6 +50,7 @@ import {
     shouldQueueTranslationWork,
 } from "./contentTranslationContent.js";
 import type { ContentTranslationRequestMode } from "./contentTranslationContent.js";
+import { getConfiguredTranslationDisplayLanguageCodes } from "./translationLanguageSetting.js";
 
 interface RequestContentTranslationParams {
     db: PostgresDatabase;
@@ -96,6 +97,7 @@ interface ScheduleEagerProjectContentTranslationParams {
 interface ConversationContentSource {
     conversationId: number;
     conversationSlugId: string;
+    dynamicTranslationEnabled: boolean;
     contentId: number;
     publicId: string;
     title: string;
@@ -147,6 +149,7 @@ interface SurveyQuestionContentSource {
 
 interface ProjectContentSource {
     projectId: number;
+    dynamicTranslationEnabled: boolean;
     contentId: number;
     title: string;
     subtitle: string | null;
@@ -485,6 +488,7 @@ async function fetchConversationSource({
         .select({
             conversationId: conversationTable.id,
             conversationSlugId: conversationTable.slugId,
+            dynamicTranslationEnabled: conversationTable.dynamicTranslationEnabled,
             contentId: conversationContentTable.id,
             publicId: conversationContentTable.publicId,
             title: conversationContentTable.title,
@@ -828,7 +832,7 @@ function shouldTranslateSurveyQuestionSource({
     );
 }
 
-async function fetchConfiguredTargetLanguageCodes({
+async function fetchConfiguredAdditionalTargetLanguageCodes({
     db,
     conversationSlugId,
 }: {
@@ -856,18 +860,10 @@ async function fetchConfiguredTargetLanguageCodes({
         )
         .orderBy(asc(conversationTranslationTargetLanguageTable.id));
 
-    const targetLanguageCodes: SupportedDisplayLanguageCodes[] = [];
-    const seenTargetLanguageCodes = new Set<SupportedDisplayLanguageCodes>();
-    for (const row of rows) {
-        if (!seenTargetLanguageCodes.has(row.languageCode)) {
-            targetLanguageCodes.push(row.languageCode);
-            seenTargetLanguageCodes.add(row.languageCode);
-        }
-    }
-    return targetLanguageCodes;
+    return rows.map((row) => row.languageCode);
 }
 
-async function fetchConfiguredProjectTargetLanguageCodes({
+async function fetchConfiguredAdditionalProjectTargetLanguageCodes({
     db,
     projectId,
 }: {
@@ -892,15 +888,7 @@ async function fetchConfiguredProjectTargetLanguageCodes({
         )
         .orderBy(asc(projectTranslationTargetLanguageTable.id));
 
-    const targetLanguageCodes: SupportedDisplayLanguageCodes[] = [];
-    const seenTargetLanguageCodes = new Set<SupportedDisplayLanguageCodes>();
-    for (const row of rows) {
-        if (!seenTargetLanguageCodes.has(row.languageCode)) {
-            targetLanguageCodes.push(row.languageCode);
-            seenTargetLanguageCodes.add(row.languageCode);
-        }
-    }
-    return targetLanguageCodes;
+    return rows.map((row) => row.languageCode);
 }
 
 async function fetchProjectContentSource({
@@ -913,6 +901,7 @@ async function fetchProjectContentSource({
     const rows = await db
         .select({
             projectId: projectTable.id,
+            dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
             contentId: projectContentTable.id,
             title: projectContentTable.title,
             subtitle: projectContentTable.subtitle,
@@ -1162,14 +1151,6 @@ export async function scheduleEagerContentTranslationForConversation({
     now,
     log,
 }: ScheduleEagerContentTranslationParams): Promise<void> {
-    const targetLanguageCodes = await fetchConfiguredTargetLanguageCodes({
-        db,
-        conversationSlugId,
-    });
-    if (targetLanguageCodes.length === 0) {
-        return;
-    }
-
     const conversationSource = await fetchConversationSource({
         db,
         conversationSlugId,
@@ -1177,6 +1158,22 @@ export async function scheduleEagerContentTranslationForConversation({
     if (conversationSource === undefined) {
         return;
     }
+    if (!conversationSource.dynamicTranslationEnabled) {
+        return;
+    }
+    const additionalTargetLanguageCodes =
+        await fetchConfiguredAdditionalTargetLanguageCodes({
+            db,
+            conversationSlugId,
+        });
+    const targetLanguageCodes = getConfiguredTranslationDisplayLanguageCodes({
+        sourceLanguageCode: conversationSource.sourceLanguageCode,
+        targetLanguageCodes: additionalTargetLanguageCodes,
+    });
+    if (targetLanguageCodes.size === 0) {
+        return;
+    }
+
     const surveySources = await fetchCurrentSurveyQuestionSources({
         db,
         conversationId: conversationSource.conversationId,
@@ -1289,16 +1286,23 @@ export async function scheduleEagerContentTranslationForProject({
     now,
     log,
 }: ScheduleEagerProjectContentTranslationParams): Promise<void> {
-    const targetLanguageCodes = await fetchConfiguredProjectTargetLanguageCodes({
-        db,
-        projectId,
-    });
-    if (targetLanguageCodes.length === 0) {
-        return;
-    }
-
     const source = await fetchProjectContentSource({ db, projectId });
     if (source === undefined) {
+        return;
+    }
+    if (!source.dynamicTranslationEnabled) {
+        return;
+    }
+    const additionalTargetLanguageCodes =
+        await fetchConfiguredAdditionalProjectTargetLanguageCodes({
+            db,
+            projectId,
+        });
+    const targetLanguageCodes = getConfiguredTranslationDisplayLanguageCodes({
+        sourceLanguageCode: source.sourceLanguageCode,
+        targetLanguageCodes: additionalTargetLanguageCodes,
+    });
+    if (targetLanguageCodes.size === 0) {
         return;
     }
 

@@ -70,7 +70,10 @@ import {
     getProjectLanguageSettings,
     resolveConversationCreateTargetResult,
 } from "@/service/projectAccess.js";
-import { normalizeInheritedConversationMultilingualSettings } from "@/service/translationLanguageSetting.js";
+import {
+    getConfiguredTranslationDisplayLanguageCodes,
+    normalizeInheritedConversationMultilingualSettings,
+} from "@/service/translationLanguageSetting.js";
 
 import {
     httpMethodToAbility,
@@ -573,16 +576,11 @@ async function getContentTranslationAvailabilityForConversation({
             row.targetLanguageCode === null ? [] : [row.targetLanguageCode],
         ),
     };
-    const parsedSourceLanguageCode = ZodSupportedDisplayLanguageCodes.safeParse(
-        firstRow.sourceLanguageCode,
-    );
     const configuredTargetLanguageCodes =
-        new Set<SupportedDisplayLanguageCodes>([
-            ...(parsedSourceLanguageCode.success
-                ? [parsedSourceLanguageCode.data]
-                : []),
-            ...multilingualSetting.additionalLanguageCodes,
-        ]);
+        getConfiguredTranslationDisplayLanguageCodes({
+            sourceLanguageCode: firstRow.sourceLanguageCode,
+            targetLanguageCodes: multilingualSetting.additionalLanguageCodes,
+        });
     const translationAllowed =
         multilingualSetting.dynamicTranslationEnabled &&
         configuredTargetLanguageCodes.has(targetLanguageCode);

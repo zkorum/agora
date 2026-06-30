@@ -40,6 +40,23 @@ export function sourceLanguageToDisplayLanguage({
     return parseSupportedDisplayLanguageOrUndefined(sourceLanguageCode) ?? null;
 }
 
+export function getConfiguredTranslationDisplayLanguageCodes({
+    sourceLanguageCode,
+    targetLanguageCodes,
+}: {
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    targetLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+}): ReadonlySet<SupportedDisplayLanguageCodes> {
+    const sourceDisplayLanguageCode = sourceLanguageToDisplayLanguage({
+        sourceLanguageCode,
+    });
+    return new Set(
+        sourceDisplayLanguageCode === null
+            ? targetLanguageCodes
+            : [sourceDisplayLanguageCode, ...targetLanguageCodes],
+    );
+}
+
 export function normalizeProjectLanguageSettings({
     languageSettings,
     canUseDynamicTranslation,
