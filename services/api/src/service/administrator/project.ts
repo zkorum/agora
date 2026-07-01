@@ -608,23 +608,30 @@ async function syncProjectBannerLocalizations({
 
 async function resolveProjectContentLanguageMetadata({
     projectTitle,
+    subtitle,
     bodyPlainText,
     googleCloudCredentials,
     useGoogleLanguageDetection,
 }: {
     projectTitle: string;
+    subtitle: string | null | undefined;
     bodyPlainText: string;
     googleCloudCredentials: GoogleCloudCredentials | undefined;
     useGoogleLanguageDetection: boolean;
 }): Promise<ContentLanguageMetadata> {
+    const projectBodyPlainText = [subtitle ?? "", bodyPlainText]
+        .map((text) => text.trim())
+        .filter((text) => text.length > 0)
+        .join("\n\n");
+
     return await resolveContentLanguageMetadata({
         text: buildConversationLanguageDetectionCorpus({
             conversationTitle: projectTitle,
-            bodyPlainText,
+            bodyPlainText: projectBodyPlainText,
         }),
         googleText: buildGoogleConversationLanguageDetectionCorpus({
             conversationTitle: projectTitle,
-            bodyPlainText,
+            bodyPlainText: projectBodyPlainText,
         }),
         googleCloudCredentials,
         useGoogleLanguageDetection,
@@ -902,6 +909,7 @@ export async function createProject({
     const projectLanguageMetadata = await resolveProjectContentLanguageMetadata(
         {
             projectTitle: data.projectTitle,
+            subtitle: data.subtitle,
             bodyPlainText,
             googleCloudCredentials,
             useGoogleLanguageDetection:
@@ -911,7 +919,6 @@ export async function createProject({
     const normalizedLanguageSettings = normalizeProjectLanguageSettings({
         languageSettings: data.languageSettings,
         canUseDynamicTranslation: true,
-        sourceLanguageCode: projectLanguageMetadata.sourceLanguageCode,
     });
     const sourceSubtitleRequired = projectSubtitleRequiresLocalization(
         data.subtitle,
@@ -1846,19 +1853,16 @@ export async function updateProject({
     const projectLanguageMetadata = shouldRefreshLanguageMetadata
         ? await resolveProjectContentLanguageMetadata({
               projectTitle: data.projectTitle,
+              subtitle: data.subtitle,
               bodyPlainText,
               googleCloudCredentials,
               useGoogleLanguageDetection:
                   data.languageSettings.dynamicTranslationEnabled,
           })
         : undefined;
-    const finalSourceLanguageCode =
-        projectLanguageMetadata?.sourceLanguageCode ??
-        project.sourceLanguageCode;
     const normalizedLanguageSettings = normalizeProjectLanguageSettings({
         languageSettings: data.languageSettings,
         canUseDynamicTranslation: true,
-        sourceLanguageCode: finalSourceLanguageCode,
     });
     const sourceSubtitleRequired = projectSubtitleRequiresLocalization(
         data.subtitle,
@@ -2312,8 +2316,6 @@ export async function updateProjectLanguageSettings({
             .where(eq(projectTable.id, project.projectId))
             .limit(1);
         const currentContent = currentContentRows.at(0);
-        let finalSourceLanguageCode =
-            currentContent?.sourceLanguageCode ?? null;
         let sourceLanguageMetadata: ContentLanguageMetadata | undefined;
 
         if (
@@ -2325,17 +2327,16 @@ export async function updateProjectLanguageSettings({
                 htmlToCountedText(currentContent.body ?? "");
             sourceLanguageMetadata = await resolveProjectContentLanguageMetadata({
                 projectTitle: currentContent.title,
+                subtitle: currentContent.subtitle,
                 bodyPlainText,
                 googleCloudCredentials,
                 useGoogleLanguageDetection: true,
             });
-            finalSourceLanguageCode = sourceLanguageMetadata.sourceLanguageCode;
         }
 
         const normalizedLanguageSettings = normalizeProjectLanguageSettings({
             languageSettings: data.languageSettings,
             canUseDynamicTranslation: true,
-            sourceLanguageCode: finalSourceLanguageCode,
         });
 
         if (!normalizedLanguageSettings.dynamicTranslationEnabled) {

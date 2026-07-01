@@ -13,7 +13,6 @@ import {
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
 import type {
-  ConversationLanguageSettingInput,
   ConversationMultilingualSetting,
   ConversationType,
   EventSlug,
@@ -39,7 +38,6 @@ import type {
   ValidationState,
 } from "./conversationDraft.types";
 import {
-  areConversationLanguageSettingsEqual,
   areConversationMultilingualSettingsEqual,
   createEmptyDraft,
 } from "./conversationDraft.utils";
@@ -54,7 +52,6 @@ export interface UseConversationDraftReturn {
   title: Ref<string>;
   content: Ref<string>;
   contentPlainText: Ref<string>;
-  languageSetting: Ref<ConversationLanguageSettingInput>;
   multilingualSetting: Ref<ConversationMultilingualSetting>;
   selectedProjectSlug: Ref<string | undefined>;
   inheritProjectLanguages: Ref<boolean>;
@@ -131,9 +128,6 @@ export function useConversationDraft(
   const title = ref(initialDraft.title);
   const content = ref(initialDraft.content);
   const contentPlainText = ref(initialDraft.contentPlainText);
-  const languageSetting = ref<ConversationLanguageSettingInput>(
-    initialDraft.languageSetting
-  );
   const multilingualSetting = ref<ConversationMultilingualSetting>(
     initialDraft.multilingualSetting
   );
@@ -177,7 +171,6 @@ export function useConversationDraft(
       title: title.value,
       content: content.value,
       contentPlainText: contentPlainText.value,
-      languageSetting: languageSetting.value,
       multilingualSetting: multilingualSetting.value,
       selectedProjectSlug: selectedProjectSlug.value,
       inheritProjectLanguages: inheritProjectLanguages.value,
@@ -201,7 +194,6 @@ export function useConversationDraft(
         store.conversationDraft.title = newSnapshot.title;
         store.conversationDraft.content = newSnapshot.content;
         store.conversationDraft.contentPlainText = newSnapshot.contentPlainText;
-        store.conversationDraft.languageSetting = newSnapshot.languageSetting;
         store.conversationDraft.multilingualSetting =
           newSnapshot.multilingualSetting;
         store.conversationDraft.selectedProjectSlug = newSnapshot.selectedProjectSlug;
@@ -440,11 +432,6 @@ export function useConversationDraft(
       content.value !== emptyDraft.content ||
       contentPlainText.value !== emptyDraft.contentPlainText;
 
-    const hasLanguageSettingChanges =
-      !areConversationLanguageSettingsEqual({
-        left: languageSetting.value,
-        right: emptyDraft.languageSetting,
-      });
     const hasMultilingualSettingChanges =
       !areConversationMultilingualSettingsEqual({
         left: multilingualSetting.value,
@@ -496,7 +483,6 @@ export function useConversationDraft(
 
     return (
       hasContentChanges ||
-      hasLanguageSettingChanges ||
       hasMultilingualSettingChanges ||
       hasProjectSelectionChanges ||
       hasSeedOpinionsChanges ||
@@ -527,7 +513,6 @@ export function useConversationDraft(
     title.value = emptyDraft.title;
     content.value = emptyDraft.content;
     contentPlainText.value = emptyDraft.contentPlainText;
-    languageSetting.value = emptyDraft.languageSetting;
     multilingualSetting.value = emptyDraft.multilingualSetting;
     selectedProjectSlug.value = emptyDraft.selectedProjectSlug;
     inheritProjectLanguages.value = emptyDraft.inheritProjectLanguages;
@@ -557,7 +542,6 @@ export function useConversationDraft(
     title.value = data.title;
     content.value = data.content;
     contentPlainText.value = data.contentPlainText;
-    languageSetting.value = data.languageSetting;
     multilingualSetting.value = data.multilingualSetting;
     selectedProjectSlug.value = data.selectedProjectSlug;
     inheritProjectLanguages.value = data.inheritProjectLanguages;
@@ -578,7 +562,6 @@ export function useConversationDraft(
       title: title.value,
       content: content.value,
       contentPlainText: contentPlainText.value,
-      languageSetting: languageSetting.value,
       multilingualSetting: multilingualSetting.value,
       selectedProjectSlug: selectedProjectSlug.value,
       inheritProjectLanguages: inheritProjectLanguages.value,
@@ -615,7 +598,6 @@ export function useConversationDraft(
     title,
     content,
     contentPlainText,
-    languageSetting,
     multilingualSetting,
     selectedProjectSlug,
     inheritProjectLanguages,

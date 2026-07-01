@@ -4,6 +4,7 @@ import {
   SupportedSpokenLanguageMetadataList,
 } from "src/shared/languages";
 import type {
+  ContentLanguageMetadataOutput,
   ContentTranslationSourceLanguage,
   ConversationLanguageSettingOutput,
   ConversationMultilingualSetting,
@@ -74,11 +75,18 @@ export function getLanguageDisplayName({
 }
 
 export function getConversationLanguageSettingSourceLanguageCode({
+  contentLanguageMetadata,
   languageSetting,
 }: {
-  languageSetting: ConversationLanguageSettingOutput;
+  contentLanguageMetadata?: ContentLanguageMetadataOutput;
+  languageSetting?: ConversationLanguageSettingOutput;
 }): string | null {
-  return languageSetting.detectedSourceLanguageCode ?? languageSetting.languageCode;
+  return (
+    contentLanguageMetadata?.detectedSourceLanguageCode ??
+    languageSetting?.detectedSourceLanguageCode ??
+    languageSetting?.languageCode ??
+    null
+  );
 }
 
 export function getContentTranslationSourceLanguageLabel({
@@ -177,17 +185,20 @@ export function resolveContentTranslationState({
 }
 
 export function getSupportedContentTranslationTargetLanguageCodes({
+  contentLanguageMetadata,
   languageSetting,
   multilingualSetting,
 }: {
-  languageSetting: ConversationLanguageSettingOutput;
+  contentLanguageMetadata?: ContentLanguageMetadataOutput;
+  languageSetting?: ConversationLanguageSettingOutput;
   multilingualSetting: ConversationMultilingualSetting;
 }): SupportedDisplayLanguageCodes[] {
   const supportedLanguageCodes = new Set<SupportedDisplayLanguageCodes>();
   const primaryLanguageCode =
-    languageSetting.mode === "manual"
+    contentLanguageMetadata?.detectedDisplayLanguageCode ??
+    (languageSetting?.mode === "manual"
       ? languageSetting.languageCode
-      : languageSetting.detectedLanguageCode;
+      : (languageSetting?.detectedLanguageCode ?? null));
   if (primaryLanguageCode !== null) {
     supportedLanguageCodes.add(primaryLanguageCode);
   }

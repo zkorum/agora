@@ -100,6 +100,12 @@ function captureHeaderReveal(reveal: boolean) {
   width: 100%;
   height: 100%;
   background-color: $app-background-color;
+
+  :deep(.q-scrollarea__content) {
+    inline-size: 100%;
+    max-inline-size: 100%;
+    overflow: hidden;
+  }
 }
 
 #page-header {

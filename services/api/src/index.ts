@@ -549,6 +549,8 @@ async function getContentTranslationAvailabilityForConversation({
         .select({
             dynamicTranslationEnabled:
                 conversationTable.dynamicTranslationEnabled,
+            languageSettingsSource: conversationTable.languageSettingsSource,
+            projectId: conversationTable.projectId,
             sourceLanguageCode: conversationContentTable.sourceLanguageCode,
             targetLanguageCode:
                 conversationTranslationTargetLanguageTable.languageCode,
@@ -576,12 +578,20 @@ async function getContentTranslationAvailabilityForConversation({
             "Content translation subject not found",
         );
     }
-    const multilingualSetting: ConversationMultilingualSetting = {
-        dynamicTranslationEnabled: firstRow.dynamicTranslationEnabled,
-        additionalLanguageCodes: rows.flatMap((row) =>
-            row.targetLanguageCode === null ? [] : [row.targetLanguageCode],
-        ),
-    };
+    const multilingualSetting: ConversationMultilingualSetting =
+        firstRow.languageSettingsSource === "project_inherited"
+            ? normalizeInheritedConversationMultilingualSettings({
+                  languageSettings: await getProjectLanguageSettings({
+                      db,
+                      projectId: firstRow.projectId,
+                  }),
+              })
+            : {
+                  dynamicTranslationEnabled: firstRow.dynamicTranslationEnabled,
+                  additionalLanguageCodes: rows.flatMap((row) =>
+                      row.targetLanguageCode === null ? [] : [row.targetLanguageCode],
+                  ),
+              };
     const configuredTargetLanguageCodes =
         getConfiguredTranslationDisplayLanguageCodes({
             sourceLanguageCode: firstRow.sourceLanguageCode,
@@ -1757,11 +1767,9 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
             return await projectPageService.fetchProjectPage({
                 db,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
-                userId: deviceStatus.isKnown ? deviceStatus.userId : undefined,
                 request: request.body,
                 currentDisplayLanguage: getRequestDisplayLanguage({ request }),
             });
@@ -1778,11 +1786,8 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
             return await projectPageService.fetchProjectPageActivities({
                 db,
-                baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
-                userId: deviceStatus.isKnown ? deviceStatus.userId : undefined,
                 request: request.body,
                 currentDisplayLanguage: getRequestDisplayLanguage({ request }),
             });
@@ -3080,7 +3085,6 @@ server.after(() => {
                     request.body.preferredOpinionGroupCount,
                 externalSourceConfig: request.body.externalSourceConfig ?? null,
                 surveyConfig: request.body.surveyConfig ?? null,
-                languageSetting: request.body.languageSetting,
                 multilingualSetting: request.body.multilingualSetting,
                 googleCloudCredentials,
             });
@@ -3239,7 +3243,6 @@ server.after(() => {
                     aiLabelingEnabled: request.body.aiLabelingEnabled,
                     preferredOpinionGroupCount:
                         request.body.preferredOpinionGroupCount,
-                    languageSetting: request.body.languageSetting,
                     multilingualSetting: importMultilingualSetting,
                     languageSettingsSource: request.body.languageSettingsSource,
                 },
@@ -3454,7 +3457,6 @@ server.after(() => {
                         aiLabelingEnabled: parsedFields.aiLabelingEnabled,
                         preferredOpinionGroupCount:
                             parsedFields.preferredOpinionGroupCount,
-                        languageSetting: parsedFields.languageSetting,
                         multilingualSetting: importMultilingualSetting,
                         languageSettingsSource: parsedFields.languageSettingsSource,
                     },

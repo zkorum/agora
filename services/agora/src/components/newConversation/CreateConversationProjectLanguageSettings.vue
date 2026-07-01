@@ -140,7 +140,6 @@ import ZKSelect from "src/components/ui-library/ZKSelect.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { type SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
-  ConversationLanguageSettingInput,
   ConversationMultilingualSetting,
   ProjectLanguageSettings,
 } from "src/shared/types/zod";
@@ -180,10 +179,6 @@ const selectedProjectSlug = defineModel<string | undefined>(
 const inheritProjectLanguages = defineModel<boolean>("inheritProjectLanguages", {
   required: true,
 });
-const overrideLanguageSetting = defineModel<ConversationLanguageSettingInput>(
-  "overrideLanguageSetting",
-  { required: true }
-);
 const overrideMultilingualSetting =
   defineModel<ConversationMultilingualSetting>("overrideMultilingualSetting", {
     required: true,
@@ -430,7 +425,6 @@ function copySelectedProjectSettingsToOverride(): void {
     return;
   }
 
-  overrideLanguageSetting.value = { mode: "auto" };
   overrideMultilingualSetting.value = projectLanguageSettingsToOverride(
     project.languageSettings
   );

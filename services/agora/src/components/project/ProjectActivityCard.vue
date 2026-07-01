@@ -28,10 +28,18 @@
         </span>
       </div>
 
-      <h3>{{ activity.title }}</h3>
+      <ContentTranslationControl
+        v-if="activityTranslationControl !== undefined"
+        v-model="activityTranslationMode"
+        class="activity-card__translation-control"
+        :source-language-label="activityTranslationControl.sourceLanguageLabel"
+        :translation-status="activityTranslationControl.status"
+      />
+
+      <h3>{{ displayedActivityContent.title }}</h3>
       <ZKPlainTextContent
         class="activity-card__body"
-        :plain-text="activity.bodyPlainText"
+        :plain-text="displayedActivityContent.bodyPlainText"
         :compact-mode="true"
         :compact-line-count="3"
       />
@@ -45,7 +53,7 @@
             <q-icon name="mdi-message-text-outline" size="1rem" />
             {{
               t("statementsCount", {
-                count: formatNumber(activity.stats.opinionCount),
+                count: activity.stats.opinionCount,
               })
             }}
           </span>
@@ -53,15 +61,13 @@
             <q-icon name="mdi-account-outline" size="1rem" />
             {{
               t("participantsCount", {
-                count: formatNumber(activity.stats.participantCount),
+                count: activity.stats.participantCount,
               })
             }}
           </span>
           <span>
             <q-icon name="mdi-check-circle-outline" size="1rem" />
-            {{
-              t("votesCount", { count: formatNumber(activity.stats.voteCount) })
-            }}
+            {{ t("votesCount", { count: activity.stats.voteCount }) }}
           </span>
         </div>
 
@@ -86,14 +92,21 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
+import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
 import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKPlainTextContent from "src/components/ui-library/ZKPlainTextContent.vue";
 import type { LanguageTextDirection } from "src/shared/languages";
-import { computed } from "vue";
+import type { LocalizedContentTranslationStatus } from "src/shared/types/zod";
+import { useLanguageStore } from "src/stores/language";
+import {
+  type ContentTranslationDisplayMode,
+  resolveContentTranslationState,
+} from "src/utils/translation/contentTranslation";
+import { computed, ref, watch } from "vue";
 
 import ProjectActionButton from "./ProjectActionButton.vue";
 import {
-  formatProjectPageNumber,
   type ProjectPageTranslations,
   translateProjectPageText,
 } from "./projectPageI18n";
@@ -107,6 +120,11 @@ const props = defineProps<{
   languageCode: string;
   textDirection: LanguageTextDirection;
 }>();
+
+const { spokenLanguages } = storeToRefs(useLanguageStore());
+const activityTranslationModePreference = ref<
+  ContentTranslationDisplayMode | undefined
+>();
 
 const activityTypeLabel = computed(() =>
   props.activity.kind === "conversation" ? t("conversationType") : t("voteType")
@@ -134,6 +152,97 @@ const actionVariant = computed<ProjectActionButtonVariant>(() =>
   props.activity.isClosed ? "muted" : "primary"
 );
 
+const activityMachineTranslation = computed(() => {
+  const machineTranslation = props.activity.machineTranslation;
+  if (
+    machineTranslation === undefined ||
+    machineTranslation.targetLanguageCode !== props.languageCode
+  ) {
+    return undefined;
+  }
+
+  return machineTranslation;
+});
+
+const activityTranslationInitialMode = computed<ContentTranslationDisplayMode>(
+  () => {
+    const machineTranslation = activityMachineTranslation.value;
+    if (
+      machineTranslation?.status !== "completed" ||
+      machineTranslation.translatedContent === undefined
+    ) {
+      return "original";
+    }
+
+    return resolveContentTranslationState({
+      dynamicTranslationEnabled: true,
+      sourceLanguageCode: machineTranslation.sourceLanguageCode,
+      displayLanguage: machineTranslation.targetLanguageCode,
+      spokenLanguages: spokenLanguages.value,
+      supportedTargetLanguageCodes: [machineTranslation.targetLanguageCode],
+      hasTranslatedContent: true,
+    }).initialMode;
+  }
+);
+
+const activityTranslationMode = computed<ContentTranslationDisplayMode>({
+  get: () =>
+    activityTranslationModePreference.value ?? activityTranslationInitialMode.value,
+  set: (mode) => {
+    const machineTranslation = activityMachineTranslation.value;
+    if (
+      mode === "translated" &&
+      (machineTranslation?.status !== "completed" ||
+        machineTranslation.translatedContent === undefined)
+    ) {
+      return;
+    }
+    activityTranslationModePreference.value = mode;
+  },
+});
+
+const activityTranslationControl = computed<
+  | {
+      sourceLanguageLabel: string | undefined;
+      status: LocalizedContentTranslationStatus;
+    }
+  | undefined
+>(() => {
+  const machineTranslation = activityMachineTranslation.value;
+  if (machineTranslation === undefined) {
+    return undefined;
+  }
+
+  return {
+    sourceLanguageLabel: machineTranslation.sourceLanguageLabel,
+    status: machineTranslation.status,
+  };
+});
+
+const displayedActivityContent = computed(() => {
+  const machineTranslation = activityMachineTranslation.value;
+  if (
+    activityTranslationMode.value === "translated" &&
+    machineTranslation?.status === "completed" &&
+    machineTranslation.translatedContent !== undefined
+  ) {
+    return machineTranslation.translatedContent;
+  }
+
+  return props.activity.originalContent;
+});
+
+watch(
+  () => [
+    props.activity.slug,
+    props.activity.machineTranslation?.targetLanguageCode,
+    props.activity.machineTranslation?.status,
+  ],
+  () => {
+    activityTranslationModePreference.value = undefined;
+  }
+);
+
 function t(
   key: keyof ProjectPageTranslations,
   params?: Readonly<Record<string, string | number>>
@@ -143,10 +252,6 @@ function t(
     key,
     params,
   });
-}
-
-function formatNumber(value: number): string {
-  return formatProjectPageNumber({ languageCode: props.languageCode, value });
 }
 </script>
 
@@ -233,6 +338,10 @@ article {
 .activity-card__status--closed {
   background: $sky-lighter;
   color: $ink-light;
+}
+
+.activity-card__translation-control {
+  margin-bottom: -0.25rem;
 }
 
 h3 {

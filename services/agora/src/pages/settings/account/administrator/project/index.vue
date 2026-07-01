@@ -671,14 +671,12 @@
 
     <ConversationLanguageSettingDialog
       v-model:show-dialog="showCreateLanguageSettingDialog"
-      v-model:language-setting="createLanguageSetting"
       v-model:multilingual-setting="createMultilingualSetting"
       :can-use-dynamic-translation="createCanUseDynamicTranslation === true"
     />
 
     <ConversationLanguageSettingDialog
       v-model:show-dialog="showManageLanguageSettingDialog"
-      v-model:language-setting="manageLanguageSetting"
       v-model:multilingual-setting="manageMultilingualSetting"
       :can-use-dynamic-translation="manageCanUseDynamicTranslation === true"
     />
@@ -733,10 +731,7 @@ import type {
   CreateProjectRequest,
   UpdateProjectRequest,
 } from "src/shared/types/dto";
-import type {
-  ConversationLanguageSettingInput,
-  ConversationMultilingualSetting,
-} from "src/shared/types/zod";
+import type { ConversationMultilingualSetting } from "src/shared/types/zod";
 import {
   zodProjectOrganizationAttributionRole,
   zodProjectSlug,
@@ -868,12 +863,6 @@ const showCreateLanguageSettingDialog = ref(false);
 const showManageLanguageSettingDialog = ref(false);
 const showProjectSlugConfirmDialog = ref(false);
 const showProjectDeleteConfirmDialog = ref(false);
-const createLanguageSetting = ref<ConversationLanguageSettingInput>({
-  mode: "auto",
-});
-const manageLanguageSetting = ref<ConversationLanguageSettingInput>({
-  mode: "auto",
-});
 const createMultilingualSetting = ref<ConversationMultilingualSetting>({
   additionalLanguageCodes: [],
   dynamicTranslationEnabled: false,
@@ -1362,7 +1351,6 @@ watch(selectedProject, (project) => {
   manageContactEmail.value = project.contact?.email ?? "";
   manageContactOrganizationSlug.value =
     project.contact?.organizationSlug ?? null;
-  manageLanguageSetting.value = { mode: "auto" };
   manageMultilingualSetting.value = {
     additionalLanguageCodes: [...project.languageSettings.targetLanguageCodes],
     dynamicTranslationEnabled:
@@ -1910,7 +1898,6 @@ function resetForm(): void {
   contactRole.value = "";
   contactEmail.value = "";
   contactOrganizationSlug.value = null;
-  createLanguageSetting.value = { mode: "auto" };
   createMultilingualSetting.value = {
     additionalLanguageCodes: [],
     dynamicTranslationEnabled: false,

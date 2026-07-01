@@ -1,10 +1,12 @@
 <template>
-  <PageLoadingSpinner v-if="projectPageQuery.isPending.value && projectPageData === undefined" />
+  <PageLoadingSpinner
+    v-if="projectPageQuery.isPending.value && projectPageData === undefined"
+  />
 
   <ErrorRetryBlock
     v-else-if="projectPageQuery.isError.value && projectPageData === undefined"
-    title="Project could not be loaded"
-    retry-label="Retry"
+    :title="t('loadErrorTitle')"
+    :retry-label="t('retryAction')"
     @retry="projectPageQuery.refetch()"
   />
 
@@ -26,6 +28,10 @@
 <script setup lang="ts">
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
+import {
+  type ProjectPageTranslations,
+  translateProjectPageText,
+} from "src/components/project/projectPageI18n";
 import ProjectPageView from "src/components/project/ProjectPageView.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
@@ -53,7 +59,8 @@ const activityPageSize = 12;
 
 const route = useRoute();
 const queryClient = useQueryClient();
-const { fetchProjectPage, fetchProjectPageActivities } = useBackendProjectPageApi();
+const { fetchProjectPage, fetchProjectPageActivities } =
+  useBackendProjectPageApi();
 const { requestContentTranslation } = useBackendContentTranslationApi();
 const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(
   useAuthenticationStore()
@@ -62,7 +69,9 @@ const languageStore = useLanguageStore();
 const { displayLanguage } = storeToRefs(languageStore);
 const { changeDisplayLanguage } = languageStore;
 
-const projectSlug = computed(() => getSingleRouteParam(route.params.projectSlug));
+const projectSlug = computed(() =>
+  getSingleRouteParam(route.params.projectSlug)
+);
 const selectedLanguage = ref<string | readonly string[]>(displayLanguage.value);
 const activities = ref<ProjectPageActivity[]>([]);
 const nextActivityCursor = ref<ProjectPageActivityCursor | undefined>();
@@ -109,7 +118,7 @@ watch(
     activities.value = data.activities;
     nextActivityCursor.value = data.nextActivityCursor;
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 watch(displayLanguage, (languageCode) => {
@@ -142,7 +151,11 @@ watch(selectedLanguageValue, async (languageCode, previousLanguageCode) => {
 async function loadMoreActivities(done: () => void): Promise<void> {
   const cursor = nextActivityCursor.value;
   const data = projectPageData.value;
-  if (cursor === undefined || data === undefined || isLoadingMoreActivities.value) {
+  if (
+    cursor === undefined ||
+    data === undefined ||
+    isLoadingMoreActivities.value
+  ) {
     done();
     return;
   }
@@ -246,5 +259,12 @@ function isProjectContentTranslationResponse(
   response: ContentTranslationResponse
 ): response is ProjectContentTranslationResponse {
   return response.success && response.subject.kind === "project";
+}
+
+function t(key: keyof ProjectPageTranslations): string {
+  return translateProjectPageText({
+    languageCode: displayLanguage.value,
+    key,
+  });
 }
 </script>

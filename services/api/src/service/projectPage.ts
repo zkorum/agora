@@ -31,7 +31,6 @@ import {
     projectOrganizationAttributionTable,
     projectTable,
     projectTranslationTargetLanguageTable,
-    userDisplayLanguageTable,
 } from "@/shared-backend/schema.js";
 import {
     getDisplayLanguageFallbackChain,
@@ -53,10 +52,8 @@ import type {
     ProjectPageProject,
 } from "@/shared/types/dto.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
-import {
-    shouldSkipTranslation,
-    translationSourceMatchesCurrentSource,
-} from "@/shared-backend/translate.js";
+import { htmlToCountedText } from "@/shared-app-api/html.js";
+import { translationSourceMatchesCurrentSource } from "@/shared-backend/translate.js";
 import { getSourceLanguageLabel } from "./contentTranslationContent.js";
 import {
     getImplicitDefaultDisplayLanguage,
@@ -69,16 +66,13 @@ import {
 } from "./contentLanguagePreference.js";
 import {
     getConfiguredTranslationDisplayLanguageCodes,
+    shouldTranslateContent,
     sourceLanguageToDisplayLanguage,
 } from "./translationLanguageSetting.js";
 
 interface ProjectPageServiceParams {
     db: PostgresJsDatabase;
     baseImageServiceUrl: string;
-}
-
-interface AuthenticatedProjectPageParams extends ProjectPageServiceParams {
-    userId: string | undefined;
 }
 
 interface ProjectBaseRow {
@@ -116,6 +110,7 @@ interface ProjectActivityRow {
     title: string;
     bodyPlainText: string | null;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    dynamicTranslationEnabled: boolean;
     status: ProjectActivityStatus;
 }
 
@@ -191,7 +186,7 @@ function languageOptionFor({
         searchText: [metadata?.name, metadata?.englishName, languageCode]
             .filter((value): value is string => value !== undefined)
             .join(" "),
-        shortLabel: languageCode.toUpperCase(),
+        shortLabel: metadata?.name ?? languageCode,
     };
 }
 
@@ -217,19 +212,6 @@ function getLanguageCandidateSet({
         ...getDisplayLanguageFallbackChain({ languageCode: effectiveLanguageCode }),
         defaultLanguageCode,
     ]);
-}
-
-function shouldTranslateContent({
-    sourceLanguageCode,
-    targetLanguageCode,
-}: {
-    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
-    targetLanguageCode: SupportedDisplayLanguageCodes;
-}): boolean {
-    return !shouldSkipTranslation({
-        sourceLanguageCode: sourceLanguageCode ?? undefined,
-        targetLanguageCode,
-    });
 }
 
 async function fetchProjectBaseBySlug({
@@ -293,40 +275,30 @@ async function fetchProjectTargetLanguages({
     return rows.map((row) => row.languageCode);
 }
 
-async function fetchStoredUserDisplayLanguage({
-    db,
-    userId,
-}: {
-    db: PostgresJsDatabase;
-    userId: string | undefined;
-}): Promise<SupportedDisplayLanguageCodes | undefined> {
-    if (userId === undefined) {
-        return undefined;
-    }
-    const rows = await db
-        .select({ languageCode: userDisplayLanguageTable.languageCode })
-        .from(userDisplayLanguageTable)
-        .where(eq(userDisplayLanguageTable.userId, userId))
-        .limit(1);
-    return rows.at(0)?.languageCode;
-}
-
 function buildProjectPageLanguageOptions({
     projectSupportedLanguageCodes,
 }: {
     projectSupportedLanguageCodes: readonly SupportedDisplayLanguageCodes[];
 }): ProjectPageLanguageOption[] {
-    const projectSupportedLanguageSet = new Set(projectSupportedLanguageCodes);
-    const remainingLanguageCodes = ZodSupportedDisplayLanguageCodes.options.filter(
-        (languageCode) => !projectSupportedLanguageSet.has(languageCode),
+    const dedupedProjectSupportedLanguageCodes = Array.from(
+        new Set(projectSupportedLanguageCodes),
     );
+    const projectSupportedLanguageSet = new Set(
+        dedupedProjectSupportedLanguageCodes,
+    );
+    const remainingLanguageCodes =
+        ZodSupportedDisplayLanguageCodes.options.filter(
+            (languageCode) => !projectSupportedLanguageSet.has(languageCode),
+        );
 
-    return [...projectSupportedLanguageCodes, ...remainingLanguageCodes].map(
-        (languageCode) =>
-            languageOptionFor({
-                languageCode,
-                isProjectSupported: projectSupportedLanguageSet.has(languageCode),
-            }),
+    return [
+        ...dedupedProjectSupportedLanguageCodes,
+        ...remainingLanguageCodes,
+    ].map((languageCode) =>
+        languageOptionFor({
+            languageCode,
+            isProjectSupported: projectSupportedLanguageSet.has(languageCode),
+        }),
     );
 }
 
@@ -406,6 +378,7 @@ async function fetchResolvedProjectContent({
         configuredTargetLanguageCodes.has(effectiveLanguageCode) &&
         shouldTranslateContent({
             sourceLanguageCode: project.sourceLanguageCode,
+            sourceRawLanguageCode: null,
             targetLanguageCode: effectiveLanguageCode,
         });
     if (canUseMachineTranslation) {
@@ -667,6 +640,7 @@ async function fetchProjectActivityRowsByStatus({
             title: conversationContentTable.title,
             bodyPlainText: conversationContentTable.bodyPlainText,
             sourceLanguageCode: conversationContentTable.sourceLanguageCode,
+            dynamicTranslationEnabled: conversationTable.dynamicTranslationEnabled,
         })
         .from(conversationTable)
         .innerJoin(
@@ -693,6 +667,7 @@ async function fetchProjectActivityRowsByStatus({
         title: row.title,
         bodyPlainText: row.bodyPlainText,
         sourceLanguageCode: row.sourceLanguageCode,
+        dynamicTranslationEnabled: row.dynamicTranslationEnabled,
         status,
     }));
 }
@@ -860,6 +835,10 @@ async function fetchProjectActivities({
     const activities: ProjectPageActivity[] = pageRows.map((row) => {
         const counts = countsByConversationId.get(row.conversationId);
         const translation = translationsByContentId.get(row.conversationContentId);
+        const originalContent = {
+            title: row.title,
+            bodyPlainText: row.bodyPlainText ?? "",
+        };
         const freshTranslation =
             translation !== undefined &&
             translationSourceMatchesCurrentSource({
@@ -868,13 +847,39 @@ async function fetchProjectActivities({
             })
                 ? translation
                 : undefined;
+        const translatedBodyPlainText =
+            freshTranslation?.translatedBody === null ||
+            freshTranslation?.translatedBody === undefined
+                ? ""
+                : htmlToCountedText(freshTranslation.translatedBody);
+        const translatedContent =
+            freshTranslation === undefined
+                ? undefined
+                : {
+                      title: freshTranslation.translatedTitle,
+                      bodyPlainText: translatedBodyPlainText,
+                  };
         return {
             slug: row.slug,
             kind: row.conversationType === "maxdiff" ? "vote" : "conversation",
             isClosed: row.isClosed,
-            title: freshTranslation?.translatedTitle ?? row.title,
-            bodyPlainText:
-                freshTranslation?.translatedBody ?? row.bodyPlainText ?? "",
+            title: translatedContent?.title ?? row.title,
+            bodyPlainText: translatedContent?.bodyPlainText ?? row.bodyPlainText ?? "",
+            originalContent,
+            sourceLanguageCode: row.sourceLanguageCode,
+            dynamicTranslationEnabled: row.dynamicTranslationEnabled,
+            machineTranslation:
+                freshTranslation === undefined || translatedContent === undefined
+                    ? undefined
+                    : {
+                          targetLanguageCode: freshTranslation.displayLanguageCode,
+                          sourceLanguageCode: freshTranslation.sourceLanguageCode,
+                          sourceLanguageLabel: getSourceLanguageLabel(
+                              freshTranslation.sourceLanguageCode,
+                          ),
+                          status: "completed",
+                          translatedContent,
+                      },
             stats: {
                 opinionCount: counts?.opinionCount ?? 0,
                 participantCount: counts?.participantCount ?? 0,
@@ -1203,10 +1208,9 @@ async function fetchProjectContact({
 async function buildProjectPagePayload({
     db,
     baseImageServiceUrl,
-    userId,
     request,
     currentDisplayLanguage,
-}: AuthenticatedProjectPageParams & {
+}: ProjectPageServiceParams & {
     request: FetchProjectPageRequest;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }): Promise<FetchProjectPageResponse> {
@@ -1221,11 +1225,7 @@ async function buildProjectPagePayload({
         db,
         projectId: project.projectId,
     });
-    const storedUserDisplayLanguage = await fetchStoredUserDisplayLanguage({
-        db,
-        userId,
-    });
-    const displayLanguage = storedUserDisplayLanguage ?? currentDisplayLanguage;
+    const displayLanguage = currentDisplayLanguage;
     const { preferredContentLanguage } = resolvePreferredContentLanguage({
         displayLanguage,
         defaultContentLanguage: defaultLanguageCode,
@@ -1301,17 +1301,15 @@ async function buildProjectPagePayload({
 export async function fetchProjectPage({
     db,
     baseImageServiceUrl,
-    userId,
     request,
     currentDisplayLanguage,
-}: AuthenticatedProjectPageParams & {
+}: ProjectPageServiceParams & {
     request: FetchProjectPageRequest;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }): Promise<FetchProjectPageResponse> {
     return await buildProjectPagePayload({
         db,
         baseImageServiceUrl,
-        userId,
         request,
         currentDisplayLanguage,
     });
@@ -1319,10 +1317,10 @@ export async function fetchProjectPage({
 
 export async function fetchProjectPageActivities({
     db,
-    userId,
     currentDisplayLanguage,
     request,
-}: AuthenticatedProjectPageParams & {
+}: {
+    db: PostgresJsDatabase;
     request: FetchProjectPageActivitiesRequest;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }): Promise<FetchProjectPageActivitiesResponse> {
@@ -1330,14 +1328,10 @@ export async function fetchProjectPageActivities({
         db,
         projectSlug: request.projectSlug,
     });
-    const storedUserDisplayLanguage = await fetchStoredUserDisplayLanguage({
-        db,
-        userId,
-    });
     return await fetchProjectActivities({
         db,
         projectId: project.projectId,
-        displayLanguage: storedUserDisplayLanguage ?? currentDisplayLanguage,
+        displayLanguage: currentDisplayLanguage,
         activityLimit: request.activityLimit,
         activityCursor: request.activityCursor,
     });

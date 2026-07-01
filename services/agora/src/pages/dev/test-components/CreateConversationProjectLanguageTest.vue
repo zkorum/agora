@@ -32,7 +32,6 @@
         <CreateConversationProjectLanguageSettings
           v-model:selected-project-slug="selectedProjectSlug"
           v-model:inherit-project-languages="inheritProjectLanguages"
-          v-model:override-language-setting="overrideLanguageSetting"
           v-model:override-multilingual-setting="overrideMultilingualSetting"
           :project-list="projects"
         />
@@ -57,7 +56,6 @@ import Card from "primevue/card";
 import CreateConversationProjectLanguageSettings from "src/components/newConversation/CreateConversationProjectLanguageSettings.vue";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
-  ConversationLanguageSettingInput,
   ConversationMultilingualSetting,
   ProjectLanguageSettings,
 } from "src/shared/types/zod";
@@ -154,9 +152,6 @@ const hiddenProjectsScenario: DevProject[] = [
 const projects = ref<DevProject[]>(visibleProjectsScenario);
 const selectedProjectSlug = ref<string | undefined>(undefined);
 const inheritProjectLanguages = ref(false);
-const overrideLanguageSetting = ref<ConversationLanguageSettingInput>({
-  mode: "auto",
-});
 const overrideMultilingualSetting = ref<ConversationMultilingualSetting>({
   additionalLanguageCodes: ["fr"],
   dynamicTranslationEnabled: true,

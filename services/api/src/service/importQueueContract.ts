@@ -1,8 +1,4 @@
-import {
-    zodConversationLanguageSettingInput,
-    zodEventSlug,
-    zodParticipationMode,
-} from "@/shared/types/zod.js";
+import { zodEventSlug, zodParticipationMode } from "@/shared/types/zod.js";
 import { ZodSupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { z } from "zod";
 import type { CsvFiles } from "./csvImport.js";
@@ -27,9 +23,6 @@ const zodImportFormData = withJsonSchemaId(
                 .max(6)
                 .nullable()
                 .optional(),
-            languageSetting: zodConversationLanguageSettingInput.default({
-                mode: "auto",
-            }),
             multilingualSetting: z
                 .object({
                     additionalLanguageCodes: z

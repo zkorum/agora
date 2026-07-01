@@ -8,7 +8,6 @@
  */
 
 import type {
-  ConversationLanguageSettingInput,
   ConversationMultilingualSetting,
   ConversationType,
   EventSlug,
@@ -59,8 +58,6 @@ export interface ConversationDraft {
   content: string;
   /** The visible plain text emitted by the rich-text editor for the body */
   contentPlainText: string;
-  /** Conversation source-language setting used for LLM descriptions. */
-  languageSetting: ConversationLanguageSettingInput;
   /** Additional target languages and Dynamic Translation activation. */
   multilingualSetting: ConversationMultilingualSetting;
   /** Listed project selected for this conversation; undefined means the hidden default project. */
@@ -180,7 +177,6 @@ export interface ConversationFormState {
   title: string;
   content: string;
   contentPlainText: string;
-  languageSetting: ConversationLanguageSettingInput;
   multilingualSetting: ConversationMultilingualSetting;
   selectedProjectSlug?: string;
   inheritProjectLanguages: boolean;

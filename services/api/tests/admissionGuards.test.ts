@@ -170,7 +170,6 @@ describe("Admission guards", () => {
                     isIndexed: true,
                     aiLabelingEnabled: true,
                     preferredOpinionGroupCount: null,
-                    languageSetting: { mode: "auto" },
                     multilingualSetting: {
                         additionalLanguageCodes: [],
                         dynamicTranslationEnabled: false,

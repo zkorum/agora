@@ -33,7 +33,6 @@
         v-model:external-source-config="externalSourceConfig"
         v-model:title="title"
         v-model:content="content"
-        v-model:language-setting="languageSetting"
         v-model:multilingual-setting="multilingualSetting"
         v-model:ai-labeling-enabled="aiLabelingEnabled"
         v-model:preferred-opinion-group-count="preferredOpinionGroupCount"
@@ -44,7 +43,6 @@
             v-if="projectLanguageProjects.length > 0"
             v-model:selected-project-slug="selectedProjectSlug"
             v-model:inherit-project-languages="inheritProjectLanguages"
-            v-model:override-language-setting="languageSetting"
             v-model:override-multilingual-setting="multilingualSetting"
             :project-list="projectLanguageProjects"
           />
@@ -241,7 +239,6 @@ const {
   title,
   content,
   contentPlainText,
-  languageSetting,
   multilingualSetting,
   selectedProjectSlug,
   inheritProjectLanguages,
@@ -505,7 +502,6 @@ async function handleImportSubmission(): Promise<void> {
         postAsOrganizationName: conversationDraft.value.postAs.organizationName,
         isIndexed: !conversationDraft.value.isPrivate,
         participationMode: conversationDraft.value.participationMode,
-        languageSetting: conversationDraft.value.languageSetting,
         multilingualSetting: conversationDraft.value.multilingualSetting,
         requiresEventTicket: conversationDraft.value.requiresEventTicket,
         aiLabelingEnabled: conversationDraft.value.aiLabelingEnabled,
@@ -543,7 +539,6 @@ async function handleImportSubmission(): Promise<void> {
       postAsOrganizationName: conversationDraft.value.postAs.organizationName,
       isIndexed: !conversationDraft.value.isPrivate,
       participationMode: conversationDraft.value.participationMode,
-      languageSetting: conversationDraft.value.languageSetting,
       multilingualSetting: conversationDraft.value.multilingualSetting,
       requiresEventTicket: conversationDraft.value.requiresEventTicket,
       aiLabelingEnabled: conversationDraft.value.aiLabelingEnabled,

@@ -71,6 +71,7 @@ const emit = defineEmits<{
 
 const supportedTargetLanguageCodes = computed(() =>
   getSupportedContentTranslationTargetLanguageCodes({
+    contentLanguageMetadata: props.conversationData.metadata.contentLanguageMetadata,
     languageSetting: props.conversationData.metadata.languageSetting,
     multilingualSetting: props.conversationData.metadata.multilingualSetting,
   })

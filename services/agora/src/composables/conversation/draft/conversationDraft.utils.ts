@@ -3,47 +3,9 @@
  * Extracted to avoid duplication between composable and store
  */
 
-import type {
-  ConversationLanguageSettingInput,
-  ConversationLanguageSettingOutput,
-  ConversationMultilingualSetting,
-} from "src/shared/types/zod";
+import type { ConversationMultilingualSetting } from "src/shared/types/zod";
 
 import type { ConversationDraft } from "./conversationDraft.types";
-
-export function areConversationLanguageSettingsEqual({
-  left,
-  right,
-}: {
-  left: ConversationLanguageSettingInput;
-  right: ConversationLanguageSettingInput;
-}): boolean {
-  if (left.mode !== right.mode) {
-    return false;
-  }
-
-  if (left.mode === "auto" || right.mode === "auto") {
-    return true;
-  }
-
-  return left.languageCode === right.languageCode;
-}
-
-export function conversationLanguageSettingInputFromOutput({
-  output,
-}: {
-  output: ConversationLanguageSettingOutput;
-}): ConversationLanguageSettingInput {
-  if (output.mode === "auto") {
-    return { mode: "auto" };
-  }
-
-  if (output.languageCode === null) {
-    throw new Error("Manual conversation language setting is missing languageCode");
-  }
-
-  return { mode: "manual", languageCode: output.languageCode };
-}
 
 export function areConversationMultilingualSettingsEqual({
   left,
@@ -75,7 +37,6 @@ export function createEmptyDraft(): ConversationDraft {
     title: "",
     content: "",
     contentPlainText: "",
-    languageSetting: { mode: "auto" },
     multilingualSetting: {
       additionalLanguageCodes: [],
       dynamicTranslationEnabled: false,

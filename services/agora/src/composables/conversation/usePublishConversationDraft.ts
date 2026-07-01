@@ -72,7 +72,6 @@ export function usePublishConversationDraft() {
           conversationDraft.inheritProjectLanguages
             ? "project_inherited"
             : "conversation_override",
-        languageSetting: conversationDraft.languageSetting,
         multilingualSetting: conversationDraft.multilingualSetting,
         postAsOrganizationName: conversationDraft.postAs.postAsOrganization
           ? conversationDraft.postAs.organizationName

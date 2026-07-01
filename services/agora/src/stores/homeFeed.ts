@@ -57,6 +57,13 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       moderation: {
         status: "unmoderated",
       },
+      contentLanguageMetadata: {
+        detectedDisplayLanguageCode: null,
+        detectedSourceLanguageCode: null,
+        detectedRawLanguageCode: null,
+        detectionConfidence: null,
+        autoDetectionStatus: "not_attempted",
+      },
       languageSetting: {
         mode: "auto",
         languageCode: null,

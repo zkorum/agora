@@ -2364,8 +2364,7 @@ export interface ApiV1ConversationCreatePostRequest {
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationCreatePostRequestParticipationModeEnum;
     'conversationType': ApiV1ConversationCreatePostRequestConversationTypeEnum;
-    'languageSetting': ApiV1ConversationCreatePostRequestLanguageSetting;
-    'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting;
+    'multilingualSetting': ApiV1ConversationCreatePostRequestMultilingualSetting;
     'seedOpinionList': Array<string>;
     'requiresEventTicket'?: ApiV1ConversationCreatePostRequestRequiresEventTicketEnum;
     'aiLabelingEnabled'?: boolean;
@@ -2412,32 +2411,12 @@ export const ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnu
 
 export type ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum = typeof ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum];
 
-/**
- * @type ApiV1ConversationCreatePostRequestLanguageSetting
- */
-export type ApiV1ConversationCreatePostRequestLanguageSetting = ApiV1ConversationCreatePostRequestLanguageSettingOneOf | ApiV1ConversationCreatePostRequestLanguageSettingOneOf1;
-
-export interface ApiV1ConversationCreatePostRequestLanguageSettingOneOf {
-    'mode': ApiV1ConversationCreatePostRequestLanguageSettingOneOfModeEnum;
+export interface ApiV1ConversationCreatePostRequestMultilingualSetting {
+    'additionalLanguageCodes': Array<ApiV1ConversationCreatePostRequestMultilingualSettingAdditionalLanguageCodesEnum>;
+    'dynamicTranslationEnabled': boolean;
 }
 
-export const ApiV1ConversationCreatePostRequestLanguageSettingOneOfModeEnum = {
-    Auto: 'auto',
-} as const;
-
-export type ApiV1ConversationCreatePostRequestLanguageSettingOneOfModeEnum = typeof ApiV1ConversationCreatePostRequestLanguageSettingOneOfModeEnum[keyof typeof ApiV1ConversationCreatePostRequestLanguageSettingOneOfModeEnum];
-
-export interface ApiV1ConversationCreatePostRequestLanguageSettingOneOf1 {
-    'mode': ApiV1ConversationCreatePostRequestLanguageSettingOneOf1ModeEnum;
-    'languageCode': ApiV1ConversationCreatePostRequestLanguageSettingOneOf1LanguageCodeEnum;
-}
-
-export const ApiV1ConversationCreatePostRequestLanguageSettingOneOf1ModeEnum = {
-    Manual: 'manual',
-} as const;
-
-export type ApiV1ConversationCreatePostRequestLanguageSettingOneOf1ModeEnum = typeof ApiV1ConversationCreatePostRequestLanguageSettingOneOf1ModeEnum[keyof typeof ApiV1ConversationCreatePostRequestLanguageSettingOneOf1ModeEnum];
-export const ApiV1ConversationCreatePostRequestLanguageSettingOneOf1LanguageCodeEnum = {
+export const ApiV1ConversationCreatePostRequestMultilingualSettingAdditionalLanguageCodesEnum = {
     En: 'en',
     Es: 'es',
     Fr: 'fr',
@@ -2451,7 +2430,7 @@ export const ApiV1ConversationCreatePostRequestLanguageSettingOneOf1LanguageCode
     Ru: 'ru',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestLanguageSettingOneOf1LanguageCodeEnum = typeof ApiV1ConversationCreatePostRequestLanguageSettingOneOf1LanguageCodeEnum[keyof typeof ApiV1ConversationCreatePostRequestLanguageSettingOneOf1LanguageCodeEnum];
+export type ApiV1ConversationCreatePostRequestMultilingualSettingAdditionalLanguageCodesEnum = typeof ApiV1ConversationCreatePostRequestMultilingualSettingAdditionalLanguageCodesEnum[keyof typeof ApiV1ConversationCreatePostRequestMultilingualSettingAdditionalLanguageCodesEnum];
 
 export interface ApiV1ConversationCreatePostRequestSurveyConfig {
     'isOptional'?: boolean;
@@ -2874,6 +2853,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
     'isIndexed': boolean;
     'aiLabelingEnabled': boolean;
     'preferredOpinionGroupCount': number | null;
+    'contentLanguageMetadata': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadata;
     'languageSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSetting;
     'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting;
     'isClosed': boolean;
@@ -2904,6 +2884,178 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum];
+
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadata {
+    'detectedDisplayLanguageCode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedDisplayLanguageCodeEnum | null;
+    'detectedSourceLanguageCode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedSourceLanguageCodeEnum | null;
+    'detectedRawLanguageCode': string | null;
+    'detectionConfidence': number | null;
+    'autoDetectionStatus': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataAutoDetectionStatusEnum;
+}
+
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedDisplayLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedDisplayLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedDisplayLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedDisplayLanguageCodeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedSourceLanguageCodeEnum = {
+    Af: 'af',
+    Ak: 'ak',
+    Am: 'am',
+    Ar: 'ar',
+    As: 'as',
+    Ay: 'ay',
+    Az: 'az',
+    Be: 'be',
+    Bg: 'bg',
+    Bho: 'bho',
+    Bm: 'bm',
+    Bn: 'bn',
+    Bs: 'bs',
+    Ca: 'ca',
+    Ceb: 'ceb',
+    Ckb: 'ckb',
+    Co: 'co',
+    Cs: 'cs',
+    Cy: 'cy',
+    Da: 'da',
+    De: 'de',
+    Doi: 'doi',
+    Dv: 'dv',
+    Ee: 'ee',
+    El: 'el',
+    En: 'en',
+    Eo: 'eo',
+    Es: 'es',
+    Et: 'et',
+    Eu: 'eu',
+    Fa: 'fa',
+    Fi: 'fi',
+    Fil: 'fil',
+    Fr: 'fr',
+    Fy: 'fy',
+    Ga: 'ga',
+    Gd: 'gd',
+    Gl: 'gl',
+    Gn: 'gn',
+    Gom: 'gom',
+    Gu: 'gu',
+    Ha: 'ha',
+    Haw: 'haw',
+    He: 'he',
+    Hi: 'hi',
+    Hmn: 'hmn',
+    Hr: 'hr',
+    Ht: 'ht',
+    Hu: 'hu',
+    Hy: 'hy',
+    Id: 'id',
+    Ig: 'ig',
+    Ilo: 'ilo',
+    Is: 'is',
+    It: 'it',
+    Ja: 'ja',
+    Jv: 'jv',
+    Ka: 'ka',
+    Kk: 'kk',
+    Km: 'km',
+    Kn: 'kn',
+    Ko: 'ko',
+    Kri: 'kri',
+    Ku: 'ku',
+    Ky: 'ky',
+    La: 'la',
+    Lb: 'lb',
+    Lg: 'lg',
+    Ln: 'ln',
+    Lo: 'lo',
+    Lt: 'lt',
+    Lus: 'lus',
+    Lv: 'lv',
+    Mai: 'mai',
+    Mg: 'mg',
+    Mi: 'mi',
+    Mk: 'mk',
+    Ml: 'ml',
+    Mn: 'mn',
+    MniMtei: 'mni-Mtei',
+    Mr: 'mr',
+    Ms: 'ms',
+    Mt: 'mt',
+    My: 'my',
+    Nb: 'nb',
+    Ne: 'ne',
+    Nl: 'nl',
+    Nn: 'nn',
+    No: 'no',
+    Nso: 'nso',
+    Ny: 'ny',
+    Om: 'om',
+    Or: 'or',
+    Pa: 'pa',
+    Pl: 'pl',
+    Ps: 'ps',
+    Pt: 'pt',
+    Qu: 'qu',
+    Ro: 'ro',
+    Ru: 'ru',
+    Rw: 'rw',
+    Sa: 'sa',
+    Sd: 'sd',
+    Si: 'si',
+    Sk: 'sk',
+    Sl: 'sl',
+    Sm: 'sm',
+    Sn: 'sn',
+    So: 'so',
+    Sq: 'sq',
+    Sr: 'sr',
+    St: 'st',
+    Su: 'su',
+    Sv: 'sv',
+    Sw: 'sw',
+    Ta: 'ta',
+    Te: 'te',
+    Tg: 'tg',
+    Th: 'th',
+    Ti: 'ti',
+    Tk: 'tk',
+    Tn: 'tn',
+    Tr: 'tr',
+    Ts: 'ts',
+    Tt: 'tt',
+    Ug: 'ug',
+    Uk: 'uk',
+    Ur: 'ur',
+    Uz: 'uz',
+    Vi: 'vi',
+    Xh: 'xh',
+    Yi: 'yi',
+    Yo: 'yo',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Zu: 'zu',
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedSourceLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedSourceLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedSourceLanguageCodeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataAutoDetectionStatusEnum = {
+    NotAttempted: 'not_attempted',
+    Detected: 'detected',
+    RetryableUnknown: 'retryable_unknown',
+    StableUnknown: 'stable_unknown',
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataAutoDetectionStatusEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataAutoDetectionStatusEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataAutoDetectionStatusEnum];
 
 export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfig {
     'sourceType': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum;
@@ -3227,6 +3379,7 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOf {
     'conversationSlugId': string;
     'conversationTitle': string;
     'conversationBody'?: string;
+    'contentLanguageMetadata': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadata;
     'languageSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSetting;
     'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting;
     'languageSettingsSource': ApiV1ConversationGetForEditPost200ResponseOneOfLanguageSettingsSourceEnum;
@@ -3487,7 +3640,6 @@ export interface ApiV1ConversationImportPostRequest {
     'postAsOrganization': string;
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationImportPostRequestParticipationModeEnum;
-    'languageSetting'?: ApiV1ConversationImportPostRequestLanguageSetting;
     'multilingualSetting'?: ApiV1ConversationImportPostRequestMultilingualSetting;
     'requiresEventTicket'?: ApiV1ConversationImportPostRequestRequiresEventTicketEnum;
     'aiLabelingEnabled'?: boolean;
@@ -3513,11 +3665,6 @@ export const ApiV1ConversationImportPostRequestRequiresEventTicketEnum = {
 } as const;
 
 export type ApiV1ConversationImportPostRequestRequiresEventTicketEnum = typeof ApiV1ConversationImportPostRequestRequiresEventTicketEnum[keyof typeof ApiV1ConversationImportPostRequestRequiresEventTicketEnum];
-
-/**
- * @type ApiV1ConversationImportPostRequestLanguageSetting
- */
-export type ApiV1ConversationImportPostRequestLanguageSetting = ApiV1ConversationCreatePostRequestLanguageSettingOneOf | ApiV1ConversationCreatePostRequestLanguageSettingOneOf1;
 
 export interface ApiV1ConversationImportPostRequestMultilingualSetting {
     'additionalLanguageCodes': Array<ApiV1ConversationImportPostRequestMultilingualSettingAdditionalLanguageCodesEnum>;
@@ -3644,8 +3791,7 @@ export interface ApiV1ConversationUpdatePostRequest {
     'conversationBodyPlainText': string;
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationUpdatePostRequestParticipationModeEnum;
-    'languageSetting': ApiV1ConversationCreatePostRequestLanguageSetting;
-    'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting;
+    'multilingualSetting': ApiV1ConversationCreatePostRequestMultilingualSetting;
     'languageSettingsSource'?: ApiV1ConversationUpdatePostRequestLanguageSettingsSourceEnum;
     'requiresEventTicket'?: ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum;
     'aiLabelingEnabled'?: boolean;
@@ -5007,6 +5153,10 @@ export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInner {
     'isClosed': boolean;
     'title': string;
     'bodyPlainText': string;
+    'originalContent': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOriginalContent;
+    'sourceLanguageCode'?: ApiV1ProjectPageFetchPost200ResponseActivitiesInnerSourceLanguageCodeEnum | null;
+    'dynamicTranslationEnabled': boolean;
+    'machineTranslation'?: ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslation;
     'stats': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerStats;
 }
 
@@ -5016,7 +5166,324 @@ export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerKindEnum = {
 } as const;
 
 export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerKindEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerKindEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerKindEnum];
+export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerSourceLanguageCodeEnum = {
+    Af: 'af',
+    Ak: 'ak',
+    Am: 'am',
+    Ar: 'ar',
+    As: 'as',
+    Ay: 'ay',
+    Az: 'az',
+    Be: 'be',
+    Bg: 'bg',
+    Bho: 'bho',
+    Bm: 'bm',
+    Bn: 'bn',
+    Bs: 'bs',
+    Ca: 'ca',
+    Ceb: 'ceb',
+    Ckb: 'ckb',
+    Co: 'co',
+    Cs: 'cs',
+    Cy: 'cy',
+    Da: 'da',
+    De: 'de',
+    Doi: 'doi',
+    Dv: 'dv',
+    Ee: 'ee',
+    El: 'el',
+    En: 'en',
+    Eo: 'eo',
+    Es: 'es',
+    Et: 'et',
+    Eu: 'eu',
+    Fa: 'fa',
+    Fi: 'fi',
+    Fil: 'fil',
+    Fr: 'fr',
+    Fy: 'fy',
+    Ga: 'ga',
+    Gd: 'gd',
+    Gl: 'gl',
+    Gn: 'gn',
+    Gom: 'gom',
+    Gu: 'gu',
+    Ha: 'ha',
+    Haw: 'haw',
+    He: 'he',
+    Hi: 'hi',
+    Hmn: 'hmn',
+    Hr: 'hr',
+    Ht: 'ht',
+    Hu: 'hu',
+    Hy: 'hy',
+    Id: 'id',
+    Ig: 'ig',
+    Ilo: 'ilo',
+    Is: 'is',
+    It: 'it',
+    Ja: 'ja',
+    Jv: 'jv',
+    Ka: 'ka',
+    Kk: 'kk',
+    Km: 'km',
+    Kn: 'kn',
+    Ko: 'ko',
+    Kri: 'kri',
+    Ku: 'ku',
+    Ky: 'ky',
+    La: 'la',
+    Lb: 'lb',
+    Lg: 'lg',
+    Ln: 'ln',
+    Lo: 'lo',
+    Lt: 'lt',
+    Lus: 'lus',
+    Lv: 'lv',
+    Mai: 'mai',
+    Mg: 'mg',
+    Mi: 'mi',
+    Mk: 'mk',
+    Ml: 'ml',
+    Mn: 'mn',
+    MniMtei: 'mni-Mtei',
+    Mr: 'mr',
+    Ms: 'ms',
+    Mt: 'mt',
+    My: 'my',
+    Nb: 'nb',
+    Ne: 'ne',
+    Nl: 'nl',
+    Nn: 'nn',
+    No: 'no',
+    Nso: 'nso',
+    Ny: 'ny',
+    Om: 'om',
+    Or: 'or',
+    Pa: 'pa',
+    Pl: 'pl',
+    Ps: 'ps',
+    Pt: 'pt',
+    Qu: 'qu',
+    Ro: 'ro',
+    Ru: 'ru',
+    Rw: 'rw',
+    Sa: 'sa',
+    Sd: 'sd',
+    Si: 'si',
+    Sk: 'sk',
+    Sl: 'sl',
+    Sm: 'sm',
+    Sn: 'sn',
+    So: 'so',
+    Sq: 'sq',
+    Sr: 'sr',
+    St: 'st',
+    Su: 'su',
+    Sv: 'sv',
+    Sw: 'sw',
+    Ta: 'ta',
+    Te: 'te',
+    Tg: 'tg',
+    Th: 'th',
+    Ti: 'ti',
+    Tk: 'tk',
+    Tn: 'tn',
+    Tr: 'tr',
+    Ts: 'ts',
+    Tt: 'tt',
+    Ug: 'ug',
+    Uk: 'uk',
+    Ur: 'ur',
+    Uz: 'uz',
+    Vi: 'vi',
+    Xh: 'xh',
+    Yi: 'yi',
+    Yo: 'yo',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Zu: 'zu',
+} as const;
 
+export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerSourceLanguageCodeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerSourceLanguageCodeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerSourceLanguageCodeEnum];
+
+export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslation {
+    'targetLanguageCode': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationTargetLanguageCodeEnum;
+    'sourceLanguageCode'?: ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationSourceLanguageCodeEnum | null;
+    'sourceLanguageLabel'?: string;
+    'status': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationStatusEnum;
+    'translatedContent'?: ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOriginalContent;
+}
+
+export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationTargetLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationTargetLanguageCodeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationTargetLanguageCodeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationTargetLanguageCodeEnum];
+export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationSourceLanguageCodeEnum = {
+    Af: 'af',
+    Ak: 'ak',
+    Am: 'am',
+    Ar: 'ar',
+    As: 'as',
+    Ay: 'ay',
+    Az: 'az',
+    Be: 'be',
+    Bg: 'bg',
+    Bho: 'bho',
+    Bm: 'bm',
+    Bn: 'bn',
+    Bs: 'bs',
+    Ca: 'ca',
+    Ceb: 'ceb',
+    Ckb: 'ckb',
+    Co: 'co',
+    Cs: 'cs',
+    Cy: 'cy',
+    Da: 'da',
+    De: 'de',
+    Doi: 'doi',
+    Dv: 'dv',
+    Ee: 'ee',
+    El: 'el',
+    En: 'en',
+    Eo: 'eo',
+    Es: 'es',
+    Et: 'et',
+    Eu: 'eu',
+    Fa: 'fa',
+    Fi: 'fi',
+    Fil: 'fil',
+    Fr: 'fr',
+    Fy: 'fy',
+    Ga: 'ga',
+    Gd: 'gd',
+    Gl: 'gl',
+    Gn: 'gn',
+    Gom: 'gom',
+    Gu: 'gu',
+    Ha: 'ha',
+    Haw: 'haw',
+    He: 'he',
+    Hi: 'hi',
+    Hmn: 'hmn',
+    Hr: 'hr',
+    Ht: 'ht',
+    Hu: 'hu',
+    Hy: 'hy',
+    Id: 'id',
+    Ig: 'ig',
+    Ilo: 'ilo',
+    Is: 'is',
+    It: 'it',
+    Ja: 'ja',
+    Jv: 'jv',
+    Ka: 'ka',
+    Kk: 'kk',
+    Km: 'km',
+    Kn: 'kn',
+    Ko: 'ko',
+    Kri: 'kri',
+    Ku: 'ku',
+    Ky: 'ky',
+    La: 'la',
+    Lb: 'lb',
+    Lg: 'lg',
+    Ln: 'ln',
+    Lo: 'lo',
+    Lt: 'lt',
+    Lus: 'lus',
+    Lv: 'lv',
+    Mai: 'mai',
+    Mg: 'mg',
+    Mi: 'mi',
+    Mk: 'mk',
+    Ml: 'ml',
+    Mn: 'mn',
+    MniMtei: 'mni-Mtei',
+    Mr: 'mr',
+    Ms: 'ms',
+    Mt: 'mt',
+    My: 'my',
+    Nb: 'nb',
+    Ne: 'ne',
+    Nl: 'nl',
+    Nn: 'nn',
+    No: 'no',
+    Nso: 'nso',
+    Ny: 'ny',
+    Om: 'om',
+    Or: 'or',
+    Pa: 'pa',
+    Pl: 'pl',
+    Ps: 'ps',
+    Pt: 'pt',
+    Qu: 'qu',
+    Ro: 'ro',
+    Ru: 'ru',
+    Rw: 'rw',
+    Sa: 'sa',
+    Sd: 'sd',
+    Si: 'si',
+    Sk: 'sk',
+    Sl: 'sl',
+    Sm: 'sm',
+    Sn: 'sn',
+    So: 'so',
+    Sq: 'sq',
+    Sr: 'sr',
+    St: 'st',
+    Su: 'su',
+    Sv: 'sv',
+    Sw: 'sw',
+    Ta: 'ta',
+    Te: 'te',
+    Tg: 'tg',
+    Th: 'th',
+    Ti: 'ti',
+    Tk: 'tk',
+    Tn: 'tn',
+    Tr: 'tr',
+    Ts: 'ts',
+    Tt: 'tt',
+    Ug: 'ug',
+    Uk: 'uk',
+    Ur: 'ur',
+    Uz: 'uz',
+    Vi: 'vi',
+    Xh: 'xh',
+    Yi: 'yi',
+    Yo: 'yo',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Zu: 'zu',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationSourceLanguageCodeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationSourceLanguageCodeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationSourceLanguageCodeEnum];
+export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationStatusEnum = {
+    NotRequested: 'not_requested',
+    Pending: 'pending',
+    Running: 'running',
+    Failed: 'failed',
+    Completed: 'completed',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationStatusEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationStatusEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationStatusEnum];
+
+export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOriginalContent {
+    'title': string;
+    'bodyPlainText': string;
+}
 export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerStats {
     'opinionCount': number;
     'participantCount': number;

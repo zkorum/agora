@@ -9,7 +9,6 @@ import type {
   ConversationImportType,
 } from "src/composables/conversation/draft/conversationDraft.types";
 import {
-  areConversationLanguageSettingsEqual,
   areConversationMultilingualSettingsEqual,
   createEmptyDraft,
 } from "src/composables/conversation/draft/conversationDraft.utils";
@@ -108,11 +107,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       current.content !== emptyDraft.content ||
       current.contentPlainText !== emptyDraft.contentPlainText;
 
-    const hasLanguageSettingChanges = !areConversationLanguageSettingsEqual({
-      left: current.languageSetting,
-      right: emptyDraft.languageSetting,
-    });
-
     const hasMultilingualSettingChanges =
       !areConversationMultilingualSettingsEqual({
         left: current.multilingualSetting,
@@ -165,7 +159,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
 
     return (
       hasContentChanges ||
-      hasLanguageSettingChanges ||
       hasMultilingualSettingChanges ||
       hasProjectSelectionChanges ||
       hasSeedOpinionsChanges ||

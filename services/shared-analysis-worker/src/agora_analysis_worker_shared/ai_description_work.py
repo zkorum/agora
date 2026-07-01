@@ -1744,7 +1744,6 @@ def eager_translation_target_locales_by_candidate(
     for candidate in candidates:
         target_locales: set[str] = set()
         if (
-            candidate.language_settings_source != "project_inherited" and
             candidate.language_code is not None
             and candidate.language_code in supported_codes
         ):

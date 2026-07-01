@@ -40,7 +40,6 @@
         v-model:external-source-config="externalSourceConfig"
         v-model:title="title"
         v-model:content="content"
-        v-model:language-setting="languageSetting"
         v-model:multilingual-setting="multilingualSetting"
         v-model:conversation-type="conversationType"
         v-model:ai-labeling-enabled="aiLabelingEnabled"
@@ -62,7 +61,6 @@
             v-if="currentProjectLanguageProject !== undefined"
             v-model:selected-project-slug="selectedProjectSlug"
             v-model:inherit-project-languages="inheritProjectLanguages"
-            v-model:override-language-setting="languageSetting"
             v-model:override-multilingual-setting="multilingualSetting"
             :project-list="[currentProjectLanguageProject]"
             :allow-project-selection="false"
@@ -146,9 +144,7 @@ import NewConversationLayout from "src/components/newConversation/NewConversatio
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import {
-  areConversationLanguageSettingsEqual,
   areConversationMultilingualSettingsEqual,
-  conversationLanguageSettingInputFromOutput,
   useConversationDraft,
   type ValidationErrorField,
 } from "src/composables/conversation/draft";
@@ -160,8 +156,7 @@ import type {
   GetConversationForEditResponse,
 } from "src/shared/types/dto";
 import type {
-  ConversationLanguageSettingInput,
-  ConversationLanguageSettingOutput,
+  ContentLanguageMetadataOutput,
   ConversationMultilingualSetting,
   ParticipationMode,
   PreferredOpinionGroupCount,
@@ -220,16 +215,16 @@ type CurrentProjectLanguageProject = {
 };
 const editPermissions = ref<EditPermissions | null>(null);
 const detectedLanguageCode = ref<
-  ConversationLanguageSettingOutput["detectedLanguageCode"]
+  ContentLanguageMetadataOutput["detectedDisplayLanguageCode"]
 >(null);
 const detectedSourceLanguageCode = ref<
-  ConversationLanguageSettingOutput["detectedSourceLanguageCode"]
+  ContentLanguageMetadataOutput["detectedSourceLanguageCode"]
 >(null);
 const detectedRawLanguageCode = ref<
-  ConversationLanguageSettingOutput["detectedRawLanguageCode"]
+  ContentLanguageMetadataOutput["detectedRawLanguageCode"]
 >(null);
 const autoDetectionStatus = ref<
-  ConversationLanguageSettingOutput["autoDetectionStatus"]
+  ContentLanguageMetadataOutput["autoDetectionStatus"]
 >("not_attempted");
 
 const titleInputRef = ref<HTMLDivElement>();
@@ -241,7 +236,6 @@ const originalState = ref<{
   isPrivate: boolean;
   participationMode: ParticipationMode;
   requiresEventTicket: string | undefined;
-  languageSetting: ConversationLanguageSettingInput;
   multilingualSetting: ConversationMultilingualSetting;
   selectedProjectSlug: string | undefined;
   inheritProjectLanguages: boolean;
@@ -255,7 +249,6 @@ const originalState = ref<{
   isPrivate: false,
   participationMode: "account_required",
   requiresEventTicket: undefined,
-  languageSetting: { mode: "auto" },
   multilingualSetting: {
     additionalLanguageCodes: [],
     dynamicTranslationEnabled: false,
@@ -334,15 +327,6 @@ const hasUnsavedChanges = computed(() => {
   }
 
   if (
-    !areConversationLanguageSettingsEqual({
-      left: languageSetting.value,
-      right: originalState.value.languageSetting,
-    })
-  ) {
-    return true;
-  }
-
-  if (
     !areConversationMultilingualSettingsEqual({
       left: multilingualSetting.value,
       right: originalState.value.multilingualSetting,
@@ -379,7 +363,6 @@ const {
   title,
   content,
   contentPlainText,
-  languageSetting,
   multilingualSetting,
   selectedProjectSlug,
   inheritProjectLanguages,
@@ -413,7 +396,6 @@ const effectiveLanguageSettingsSource = computed<ConversationLanguageSettingsSou
 
 const canShowStoredAutoDetection = computed(() => {
   return (
-    originalState.value.languageSetting.mode === "auto" &&
     title.value === originalState.value.title &&
     content.value === originalState.value.content
   );
@@ -432,17 +414,7 @@ const visibleAutoDetectionStatus = computed(() =>
   canShowStoredAutoDetection.value ? autoDetectionStatus.value : undefined
 );
 
-const canRetryUnknownAutoDetection = computed(() => {
-  return (
-    canShowStoredAutoDetection.value &&
-    languageSetting.value.mode === "auto" &&
-    autoDetectionStatus.value === "retryable_unknown"
-  );
-});
-
-const canSave = computed(
-  () => hasUnsavedChanges.value || canRetryUnknownAutoDetection.value
-);
+const canSave = computed(() => hasUnsavedChanges.value);
 
 const isSaveButtonDisabled = computed(() => {
   return (
@@ -503,7 +475,6 @@ async function performSave(): Promise<void> {
       conversationTitle: title.value,
       conversationBody: content.value,
       conversationBodyPlainText: contentPlainText.value,
-      languageSetting: languageSetting.value,
       multilingualSetting: multilingualSetting.value,
       languageSettingsSource: effectiveLanguageSettingsSource.value,
       isIndexed: !isPrivate.value,
@@ -625,20 +596,18 @@ onMounted(async () => {
       return;
     }
 
-    const loadedLanguageSetting = conversationLanguageSettingInputFromOutput({
-      output: response.languageSetting,
-    });
-    detectedLanguageCode.value = response.languageSetting.detectedLanguageCode;
+    detectedLanguageCode.value =
+      response.contentLanguageMetadata.detectedDisplayLanguageCode;
     detectedSourceLanguageCode.value =
-      response.languageSetting.detectedSourceLanguageCode;
-    detectedRawLanguageCode.value = response.languageSetting.detectedRawLanguageCode;
-    autoDetectionStatus.value = response.languageSetting.autoDetectionStatus;
+      response.contentLanguageMetadata.detectedSourceLanguageCode;
+    detectedRawLanguageCode.value =
+      response.contentLanguageMetadata.detectedRawLanguageCode;
+    autoDetectionStatus.value = response.contentLanguageMetadata.autoDetectionStatus;
 
     initializeFromData({
       title: response.conversationTitle,
       content: response.conversationBody ?? "",
       contentPlainText: "",
-      languageSetting: loadedLanguageSetting,
       multilingualSetting: response.multilingualSetting,
       selectedProjectSlug: response.projectLanguageProject?.projectSlug,
       inheritProjectLanguages:
@@ -669,7 +638,6 @@ onMounted(async () => {
       isPrivate: !response.isIndexed,
       participationMode: response.participationMode,
       requiresEventTicket: response.requiresEventTicket,
-      languageSetting: loadedLanguageSetting,
       multilingualSetting: response.multilingualSetting,
       selectedProjectSlug: response.projectLanguageProject?.projectSlug,
       inheritProjectLanguages:

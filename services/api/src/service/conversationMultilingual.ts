@@ -126,6 +126,8 @@ export async function upsertConversationMultilingualSetting({
     setting: PersistedConversationMultilingualSetting;
     now: Date;
 }): Promise<void> {
+    // These rows are the effective configured target-language snapshot for a conversation.
+    // Project-inherited settings are materialized here so workers do not need project joins.
     await db
         .update(conversationTable)
         .set({

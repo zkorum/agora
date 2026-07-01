@@ -11,7 +11,6 @@ Name | Type | Description | Notes
 **postAsOrganization** | **string** |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
-**languageSetting** | [**ApiV1ConversationImportPostRequestLanguageSetting**](ApiV1ConversationImportPostRequestLanguageSetting.md) |  | [optional] [default to undefined]
 **multilingualSetting** | [**ApiV1ConversationImportPostRequestMultilingualSetting**](ApiV1ConversationImportPostRequestMultilingualSetting.md) |  | [optional] [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
 **aiLabelingEnabled** | **boolean** |  | [optional] [default to true]
@@ -29,7 +28,6 @@ const instance: ApiV1ConversationImportPostRequest = {
     postAsOrganization,
     isIndexed,
     participationMode,
-    languageSetting,
     multilingualSetting,
     requiresEventTicket,
     aiLabelingEnabled,

@@ -21,7 +21,6 @@ import type {
 } from "src/shared/types/dto";
 import { Dto } from "src/shared/types/dto";
 import type {
-  ConversationLanguageSettingInput,
   ConversationMultilingualSetting,
   ConversationType,
   EventSlug,
@@ -204,7 +203,6 @@ export function useBackendPostApi() {
     postBodyPlainText: string;
     projectSlug?: string;
     languageSettingsSource: ConversationLanguageSettingsSource;
-    languageSetting: ConversationLanguageSettingInput;
     multilingualSetting: ConversationMultilingualSetting;
     postAsOrganizationName: string;
     isIndexed: boolean;
@@ -249,7 +247,6 @@ export function useBackendPostApi() {
     postAsOrganizationName: string;
     isIndexed: boolean;
     participationMode: ParticipationMode;
-    languageSetting: ConversationLanguageSettingInput;
     multilingualSetting: ConversationMultilingualSetting;
     requiresEventTicket?: EventSlug;
     aiLabelingEnabled: boolean;
@@ -269,7 +266,6 @@ export function useBackendPostApi() {
     postAsOrganizationName: string;
     isIndexed: boolean;
     participationMode: ParticipationMode;
-    languageSetting: ConversationLanguageSettingInput;
     multilingualSetting: ConversationMultilingualSetting;
     requiresEventTicket?: EventSlug;
     aiLabelingEnabled: boolean;
@@ -292,7 +288,6 @@ export function useBackendPostApi() {
     formData.append("postAsOrganization", params.postAsOrganizationName);
     formData.append("isIndexed", String(params.isIndexed));
     formData.append("participationMode", params.participationMode);
-    formData.append("languageSetting", JSON.stringify(params.languageSetting));
     formData.append(
       "multilingualSetting",
       JSON.stringify(params.multilingualSetting)
@@ -340,7 +335,6 @@ export function useBackendPostApi() {
     postAsOrganizationName,
     isIndexed,
     participationMode,
-    languageSetting,
     multilingualSetting,
     requiresEventTicket,
     aiLabelingEnabled,
@@ -354,7 +348,6 @@ export function useBackendPostApi() {
         postAsOrganization: postAsOrganizationName,
         isIndexed,
         participationMode,
-        languageSetting,
         multilingualSetting,
         requiresEventTicket,
         aiLabelingEnabled,
@@ -388,7 +381,6 @@ export function useBackendPostApi() {
     postBodyPlainText,
     projectSlug,
     languageSettingsSource,
-    languageSetting,
     multilingualSetting,
     postAsOrganizationName,
     isIndexed,
@@ -408,7 +400,6 @@ export function useBackendPostApi() {
         conversationBodyPlainText: postBodyPlainText,
         projectSlug,
         languageSettingsSource,
-        languageSetting,
         multilingualSetting,
         isIndexed: isIndexed,
         participationMode: participationMode,

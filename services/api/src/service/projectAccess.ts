@@ -19,7 +19,7 @@ import {
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import type { GetConversationCreateProjectOptionsResponse } from "@/shared/types/dto.js";
 import type { PremiumFeature } from "@/shared/types/zod.js";
-import type { ProjectLanguageSettingsInput } from "@/service/translationLanguageSetting.js";
+import type { InheritableProjectLanguageSettingsInput } from "@/service/translationLanguageSetting.js";
 import {
     type AllProjectCapability,
     getProjectIdsWithCapabilityFromGrants,
@@ -646,10 +646,17 @@ export async function getProjectLanguageSettings({
 }: {
     db: PostgresDatabase;
     projectId: number;
-}): Promise<ProjectLanguageSettingsInput> {
+}): Promise<InheritableProjectLanguageSettingsInput> {
     const projectRows = await db
-        .select({ dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled })
+        .select({
+            dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
+            sourceLanguageCode: projectContentTable.sourceLanguageCode,
+        })
         .from(projectTable)
+        .leftJoin(
+            projectContentTable,
+            eq(projectContentTable.id, projectTable.currentContentId),
+        )
         .where(and(eq(projectTable.id, projectId), isNull(projectTable.deletedAt)))
         .limit(1);
     const project = projectRows.at(0);
@@ -669,6 +676,10 @@ export async function getProjectLanguageSettings({
 
     return {
         dynamicTranslationEnabled: project.dynamicTranslationEnabled,
+        defaultLanguageCode:
+            sourceLanguageToDisplayLanguage({
+                sourceLanguageCode: project.sourceLanguageCode,
+            }) ?? getImplicitDefaultDisplayLanguage(),
         targetLanguageCodes: targetLanguageRows.map((row) => row.languageCode),
     };
 }
