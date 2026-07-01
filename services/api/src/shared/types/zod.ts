@@ -78,18 +78,6 @@ export const zodAutoLanguageDetectionStatus = z.enum([
     "retryable_unknown",
     "stable_unknown",
 ]);
-export const zodConversationLanguageSettingInput = z.discriminatedUnion(
-    "mode",
-    [
-        z.object({ mode: z.literal("auto") }).strict(),
-        z
-            .object({
-                mode: z.literal("manual"),
-                languageCode: ZodSupportedDisplayLanguageCodes,
-            })
-            .strict(),
-    ],
-);
 export const zodProjectLanguageSettings = z
     .object({
         dynamicTranslationEnabled: z.boolean(),
@@ -114,11 +102,33 @@ export const zodConversationLanguageSettingOutput = z
         autoDetectionStatus: zodAutoLanguageDetectionStatus,
     })
     .strict();
+export const zodContentLanguageMetadataOutput = z
+    .object({
+        detectedDisplayLanguageCode: ZodSupportedDisplayLanguageCodes.nullable(),
+        detectedSourceLanguageCode: ZodDetectedSourceLanguageCode.nullable(),
+        detectedRawLanguageCode: z.string().nullable(),
+        detectionConfidence: z.number().nullable(),
+        autoDetectionStatus: zodAutoLanguageDetectionStatus,
+    })
+    .strict();
 export const zodConversationMultilingualSetting = z
     .object({
         additionalLanguageCodes: z
             .array(ZodSupportedDisplayLanguageCodes)
             .max(2)
+            .refine(
+                (languageCodes) =>
+                    new Set(languageCodes).size === languageCodes.length,
+                "Additional languages must be unique",
+            ),
+        dynamicTranslationEnabled: z.boolean(),
+    })
+    .strict();
+export const zodConversationEffectiveMultilingualSetting = z
+    .object({
+        additionalLanguageCodes: z
+            .array(ZodSupportedDisplayLanguageCodes)
+            .max(4)
             .refine(
                 (languageCodes) =>
                     new Set(languageCodes).size === languageCodes.length,
@@ -1146,8 +1156,9 @@ export const zodConversationMetadata = z
         isIndexed: z.boolean(),
         aiLabelingEnabled: z.boolean(),
         preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
+        contentLanguageMetadata: zodContentLanguageMetadataOutput,
         languageSetting: zodConversationLanguageSettingOutput,
-        multilingualSetting: zodConversationMultilingualSetting,
+        multilingualSetting: zodConversationEffectiveMultilingualSetting,
         isClosed: z.boolean(),
         isEdited: z.boolean(),
         organization: zodOrganization.optional(),
@@ -1179,8 +1190,9 @@ export const zodConversationMetadataWithId = z
         isIndexed: z.boolean(),
         aiLabelingEnabled: z.boolean(),
         preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
+        contentLanguageMetadata: zodContentLanguageMetadataOutput,
         languageSetting: zodConversationLanguageSettingOutput,
-        multilingualSetting: zodConversationMultilingualSetting,
+        multilingualSetting: zodConversationEffectiveMultilingualSetting,
         isClosed: z.boolean(),
         isEdited: z.boolean(),
         organization: zodOrganization.optional(),
@@ -1999,15 +2011,18 @@ export type PolisClusters = z.infer<typeof zodPolisClusters>;
 export type PolisClustersMetadata = z.infer<typeof zodPolisClustersMetadata>;
 export type ClusterMetadata = z.infer<typeof zodClusterMetadata>;
 export type ParticipationMode = z.infer<typeof zodParticipationMode>;
-export type ConversationLanguageSettingInput = z.infer<
-    typeof zodConversationLanguageSettingInput
->;
 export type ConversationLanguageSettingOutput = z.infer<
     typeof zodConversationLanguageSettingOutput
+>;
+export type ContentLanguageMetadataOutput = z.infer<
+    typeof zodContentLanguageMetadataOutput
 >;
 export type ProjectLanguageSettings = z.infer<typeof zodProjectLanguageSettings>;
 export type ConversationMultilingualSetting = z.infer<
     typeof zodConversationMultilingualSetting
+>;
+export type ConversationEffectiveMultilingualSetting = z.infer<
+    typeof zodConversationEffectiveMultilingualSetting
 >;
 export type EventSlug = z.infer<typeof zodEventSlug>;
 export type ExportStatus = z.infer<typeof zodExportStatus>;

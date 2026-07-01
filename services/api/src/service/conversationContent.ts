@@ -13,6 +13,7 @@ import type {
     LocalizedOpinionContent,
     LocalizedSurveyQuestionContent,
 } from "@/shared/types/zod.js";
+import { getLanguageComparisonKey } from "@/shared-backend/translate.js";
 
 type ConversationContentMode = ConversationContentFetchRequest["mode"];
 type TranslationControl = NonNullable<
@@ -37,13 +38,6 @@ type TranslatableLocalizedContent = Extract<
     DisplayableLocalizedContent,
     { kind: "translatable" }
 >;
-
-function getLanguageComparisonKey(languageCode: string): string {
-    if (languageCode === "zh-Hans" || languageCode === "zh-Hant") {
-        return languageCode;
-    }
-    return languageCode.split("-")[0]?.toLowerCase() ?? languageCode.toLowerCase();
-}
 
 function getSourceLanguageLabel({
     content,
@@ -72,13 +66,15 @@ function getSourceLanguageKey({
 }): string | undefined {
     const sourceLanguage = content.translation.sourceLanguage;
     if (sourceLanguage.kind === "recognized") {
-        return getLanguageComparisonKey(sourceLanguage.languageCode);
+        return getLanguageComparisonKey({ languageCode: sourceLanguage.languageCode });
     }
     if (content.translation.sourceLanguageCode != null) {
-        return getLanguageComparisonKey(content.translation.sourceLanguageCode);
+        return getLanguageComparisonKey({
+            languageCode: content.translation.sourceLanguageCode,
+        });
     }
     if (sourceLanguage.kind === "raw") {
-        return getLanguageComparisonKey(sourceLanguage.rawLanguageCode);
+        return getLanguageComparisonKey({ languageCode: sourceLanguage.rawLanguageCode });
     }
     return undefined;
 }
@@ -93,9 +89,9 @@ function viewerUnderstandsSourceLanguage({
     spokenLanguages: SupportedSpokenLanguageCodes[];
 }): boolean {
     const understoodLanguageKeys = new Set<string>([
-        getLanguageComparisonKey(displayLanguage),
+        getLanguageComparisonKey({ languageCode: displayLanguage }),
         ...spokenLanguages.map((languageCode) =>
-            getLanguageComparisonKey(languageCode),
+            getLanguageComparisonKey({ languageCode }),
         ),
     ]);
     return understoodLanguageKeys.has(sourceLanguageKey);
@@ -108,7 +104,9 @@ function sourceMatchesDisplayLanguage({
     sourceLanguageKey: string;
     displayLanguage: SupportedDisplayLanguageCodes;
 }): boolean {
-    return sourceLanguageKey === getLanguageComparisonKey(displayLanguage);
+    return (
+        sourceLanguageKey === getLanguageComparisonKey({ languageCode: displayLanguage })
+    );
 }
 
 function canTranslateForDisplayLanguage({

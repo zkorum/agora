@@ -24,6 +24,7 @@ Name | Type | Description | Notes
 **isIndexed** | **boolean** |  | [default to undefined]
 **aiLabelingEnabled** | **boolean** |  | [default to undefined]
 **preferredOpinionGroupCount** | **number** |  | [default to undefined]
+**contentLanguageMetadata** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadata**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadata.md) |  | [default to undefined]
 **languageSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSetting.md) |  | [default to undefined]
 **multilingualSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting.md) |  | [default to undefined]
 **isClosed** | **boolean** |  | [default to undefined]
@@ -59,6 +60,7 @@ const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListI
     isIndexed,
     aiLabelingEnabled,
     preferredOpinionGroupCount,
+    contentLanguageMetadata,
     languageSetting,
     multilingualSetting,
     isClosed,

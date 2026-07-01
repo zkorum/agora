@@ -75,6 +75,7 @@ const manifest: AnalysisFrameManifestWithFrame = {
 function conversationMetadata(
   overrides: Partial<ConversationMetadata> = {}
 ): ConversationMetadata {
+  const { contentLanguageMetadata, ...restOverrides } = overrides;
   return {
     conversationSlugId: "conversation-1",
     conversationViewSnapshotId: 12,
@@ -97,6 +98,13 @@ function conversationMetadata(
     isClosed: false,
     isEdited: false,
     moderation: { status: "unmoderated" },
+    contentLanguageMetadata: contentLanguageMetadata ?? {
+      detectedDisplayLanguageCode: null,
+      detectedSourceLanguageCode: null,
+      detectedRawLanguageCode: null,
+      detectionConfidence: null,
+      autoDetectionStatus: "not_attempted",
+    },
     languageSetting: {
       mode: "auto",
       languageCode: null,
@@ -111,7 +119,7 @@ function conversationMetadata(
       dynamicTranslationEnabled: false,
     },
     externalSourceConfig: null,
-    ...overrides,
+    ...restOverrides,
   };
 }
 

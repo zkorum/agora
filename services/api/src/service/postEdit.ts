@@ -44,6 +44,7 @@ import { queueConversationSettingsUpdatedEvent } from "@/service/realtimeEventOu
 import {
     buildConversationLanguageDetectionCorpus,
     buildGoogleConversationLanguageDetectionCorpus,
+    conversationContentSourceMetadataToContentLanguageMetadataOutput,
     conversationContentSourceMetadataToLanguageSettingOutput,
 } from "@/service/conversationLanguage.js";
 import {
@@ -220,6 +221,12 @@ export async function getConversationForEdit({
         conversationSlugId: conversation.conversationSlugId,
         conversationTitle: conversation.conversationTitle,
         conversationBody: toUnionUndefined(conversation.conversationBody),
+        contentLanguageMetadata:
+            conversationContentSourceMetadataToContentLanguageMetadataOutput({
+                sourceLanguageCode: conversation.sourceLanguageCode,
+                sourceRawLanguageCode: conversation.sourceRawLanguageCode,
+                sourceLanguageConfidence: conversation.sourceLanguageConfidence,
+            }),
         languageSetting: conversationContentSourceMetadataToLanguageSettingOutput({
             sourceLanguageCode: conversation.sourceLanguageCode,
             sourceRawLanguageCode: conversation.sourceRawLanguageCode,

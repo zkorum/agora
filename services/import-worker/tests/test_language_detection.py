@@ -68,7 +68,6 @@ def _build_import_request(*, dynamic_translation_enabled: bool) -> ImportRequest
             "formData": {
                 "participationMode": "guest",
                 "isIndexed": True,
-                "languageSetting": {"mode": "auto"},
                 "multilingualSetting": {
                     "additionalLanguageCodes": ["fr"],
                     "dynamicTranslationEnabled": dynamic_translation_enabled,

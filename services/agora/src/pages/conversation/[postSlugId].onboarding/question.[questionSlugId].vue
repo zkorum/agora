@@ -273,17 +273,21 @@ const supportedTargetLanguageCodes = computed(() => {
   }
 
   return getSupportedContentTranslationTargetLanguageCodes({
+    contentLanguageMetadata: conversationData.value.metadata.contentLanguageMetadata,
     languageSetting: conversationData.value.metadata.languageSetting,
     multilingualSetting: conversationData.value.metadata.multilingualSetting,
   });
 });
 const conversationSourceLanguageCode = computed(() => {
-  const languageSetting = conversationData.value?.metadata.languageSetting;
-  if (languageSetting === undefined) {
+  const metadata = conversationData.value?.metadata;
+  if (metadata === undefined) {
     return undefined;
   }
 
-  return getConversationLanguageSettingSourceLanguageCode({ languageSetting });
+  return getConversationLanguageSettingSourceLanguageCode({
+    contentLanguageMetadata: metadata.contentLanguageMetadata,
+    languageSetting: metadata.languageSetting,
+  });
 });
 const hasRequestedSurveyQuestionTranslation = ref(false);
 

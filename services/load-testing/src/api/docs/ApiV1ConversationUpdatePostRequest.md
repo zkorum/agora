@@ -11,8 +11,7 @@ Name | Type | Description | Notes
 **conversationBodyPlainText** | **string** |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
-**languageSetting** | [**ApiV1ConversationCreatePostRequestLanguageSetting**](ApiV1ConversationCreatePostRequestLanguageSetting.md) |  | [default to undefined]
-**multilingualSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting.md) |  | [default to undefined]
+**multilingualSetting** | [**ApiV1ConversationCreatePostRequestMultilingualSetting**](ApiV1ConversationCreatePostRequestMultilingualSetting.md) |  | [default to undefined]
 **languageSettingsSource** | **string** |  | [optional] [default to LanguageSettingsSourceEnum_ConversationOverride]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
 **aiLabelingEnabled** | **boolean** |  | [optional] [default to undefined]
@@ -31,7 +30,6 @@ const instance: ApiV1ConversationUpdatePostRequest = {
     conversationBodyPlainText,
     isIndexed,
     participationMode,
-    languageSetting,
     multilingualSetting,
     languageSettingsSource,
     requiresEventTicket,

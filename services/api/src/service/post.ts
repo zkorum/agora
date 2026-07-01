@@ -56,7 +56,6 @@ import {
     buildConversationLanguageDetectionCorpus,
 } from "@/service/conversationLanguage.js";
 import { upsertConversationMultilingualSetting } from "@/service/conversationMultilingual.js";
-import type { ConversationLanguageSettingInput } from "@/shared/types/zod.js";
 import {
     buildContentBlockLanguageDetectionCorpus,
     buildSurveyLanguageDetectionCorpus,
@@ -92,7 +91,6 @@ interface CreateNewPostProps {
     preferredOpinionGroupCount: PreferredOpinionGroupCount;
     externalSourceConfig?: ExternalSourceConfig | null;
     surveyConfig?: SurveyConfig | null;
-    languageSetting: ConversationLanguageSettingInput;
     multilingualSetting: ConversationMultilingualSetting;
     googleCloudCredentials?: GoogleCloudCredentials;
     importUrl?: string;

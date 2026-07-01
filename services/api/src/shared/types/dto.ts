@@ -49,8 +49,9 @@ import {
     zodRichTextValidationFailureReason,
     zodMaxdiffComparison,
     zodConversationType,
-    zodConversationLanguageSettingInput,
+    zodConversationEffectiveMultilingualSetting,
     zodConversationLanguageSettingOutput,
+    zodContentLanguageMetadataOutput,
     zodConversationMultilingualSetting,
     zodProjectLanguageSettings,
     zodConversationViewSnapshotCheckpointReason,
@@ -223,7 +224,7 @@ const zodContentTranslationResponse = z.union([
         .object({
             success: z.literal(false),
             reason: z.literal("content_translation_not_enabled"),
-            multilingualSetting: zodConversationMultilingualSetting,
+            multilingualSetting: zodConversationEffectiveMultilingualSetting,
         })
         .strict(),
     z
@@ -743,7 +744,6 @@ export class Dto {
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
             conversationType: zodConversationType,
-            languageSetting: zodConversationLanguageSettingInput,
             multilingualSetting: zodConversationMultilingualSetting,
             seedOpinionList: z.array(zodOpinionContentInput).max(50),
             requiresEventTicket: zodEventSlug.optional(),
@@ -781,9 +781,6 @@ export class Dto {
             ),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
-            languageSetting: zodConversationLanguageSettingInput.default({
-                mode: "auto",
-            }),
             multilingualSetting: zodConversationMultilingualSetting.default({
                 additionalLanguageCodes: [],
                 dynamicTranslationEnabled: false,
@@ -850,19 +847,6 @@ export class Dto {
                 if (val === "false" || val === false) return "guest";
                 return val; // Already a valid participation mode string
             }, zodParticipationMode),
-            languageSetting: z.preprocess(
-                (val) => {
-                    if (val === "" || val === undefined || val === null) {
-                        return { mode: "auto" };
-                    }
-                    if (typeof val === "string") {
-                        const parsed: unknown = JSON.parse(val);
-                        return parsed;
-                    }
-                    return val;
-                },
-                zodConversationLanguageSettingInput.default({ mode: "auto" }),
-            ),
             multilingualSetting: z.preprocess(
                 (val) => {
                     if (val === "" || val === undefined || val === null) {
@@ -1038,8 +1022,9 @@ export class Dto {
                 conversationSlugId: zodSlugId,
                 conversationTitle: zodConversationTitle,
                 conversationBody: zodConversationBodyOutput,
+                contentLanguageMetadata: zodContentLanguageMetadataOutput,
                 languageSetting: zodConversationLanguageSettingOutput,
-                multilingualSetting: zodConversationMultilingualSetting,
+                multilingualSetting: zodConversationEffectiveMultilingualSetting,
                 languageSettingsSource: zodConversationLanguageSettingsSource,
                 projectLanguageProject: zodConversationCreateProjectOption.optional(),
                 isIndexed: z.boolean(),
@@ -1070,7 +1055,6 @@ export class Dto {
             conversationBodyPlainText: zodConversationBodyPlainTextInput,
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
-            languageSetting: zodConversationLanguageSettingInput,
             multilingualSetting: zodConversationMultilingualSetting,
             languageSettingsSource: zodConversationLanguageSettingsSource.default(
                 "conversation_override",

@@ -14,8 +14,7 @@ Name | Type | Description | Notes
 **isIndexed** | **boolean** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
 **conversationType** | **string** |  | [default to undefined]
-**languageSetting** | [**ApiV1ConversationCreatePostRequestLanguageSetting**](ApiV1ConversationCreatePostRequestLanguageSetting.md) |  | [default to undefined]
-**multilingualSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting.md) |  | [default to undefined]
+**multilingualSetting** | [**ApiV1ConversationCreatePostRequestMultilingualSetting**](ApiV1ConversationCreatePostRequestMultilingualSetting.md) |  | [default to undefined]
 **seedOpinionList** | **Array&lt;string&gt;** |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
 **aiLabelingEnabled** | **boolean** |  | [optional] [default to true]
@@ -38,7 +37,6 @@ const instance: ApiV1ConversationCreatePostRequest = {
     isIndexed,
     participationMode,
     conversationType,
-    languageSetting,
     multilingualSetting,
     seedOpinionList,
     requiresEventTicket,

@@ -40,7 +40,6 @@
 
   <ConversationLanguageSettingDialog
     v-model:show-dialog="showDialog"
-    v-model:language-setting="languageSetting"
     v-model:multilingual-setting="multilingualSetting"
     :can-use-dynamic-translation="canUseDynamicTranslation"
     :detected-language-code="detectedLanguageCode"
@@ -60,7 +59,6 @@ import type {
 } from "src/shared/languages";
 import type {
   AutoLanguageDetectionStatus,
-  ConversationLanguageSettingInput,
   ConversationMultilingualSetting,
 } from "src/shared/types/zod";
 import { ref } from "vue";
@@ -152,7 +150,6 @@ const scenarios: Scenario[] = [
 ];
 
 const showDialog = ref(false);
-const languageSetting = ref<ConversationLanguageSettingInput>({ mode: "auto" });
 const multilingualSetting = ref<ConversationMultilingualSetting>({
   dynamicTranslationEnabled: true,
   additionalLanguageCodes: ["fr", "ar"],
@@ -170,7 +167,6 @@ const autoDetectionStatus = ref<AutoLanguageDetectionStatus | undefined>(
 );
 
 function openScenario(scenario: Scenario): void {
-  languageSetting.value = { mode: "auto" };
   multilingualSetting.value = {
     dynamicTranslationEnabled:
       scenario.multilingualSetting.dynamicTranslationEnabled,

@@ -15,6 +15,7 @@ import {
     opinionGroupVariantTable,
     opinionTable,
     opinionContentTranslationTable,
+    conversationContentTable,
     conversationTable,
     conversationTranslationTargetLanguageTable,
     conversationViewSnapshotCheckpointReasonTable,
@@ -110,6 +111,11 @@ import { getConversationMultilingualSetting } from "./conversationMultilingual.j
 import { buildTranslationMetadata } from "./contentTranslationContent.js";
 import { translationSourceMatchesCurrentSource } from "@/shared-backend/translate.js";
 import * as conversationContentService from "./conversationContent.js";
+import { getProjectLanguageSettings } from "./projectAccess.js";
+import {
+    getConfiguredTranslationDisplayLanguageCodes,
+    normalizeInheritedConversationMultilingualSettings,
+} from "./translationLanguageSetting.js";
 
 interface PrimaryReplicaDb extends PostgresJsDatabase {
     $primary: PostgresJsDatabase;
@@ -782,8 +788,12 @@ export async function fetchOpinionsByOpinionSlugIdList({
         .select({
             opinionId: opinionTable.id,
             conversationId: opinionTable.conversationId,
+            projectId: conversationTable.projectId,
+            languageSettingsSource: conversationTable.languageSettingsSource,
             dynamicTranslationEnabled:
                 conversationTable.dynamicTranslationEnabled,
+            conversationSourceLanguageCode:
+                conversationContentTable.sourceLanguageCode,
             configuredTargetLanguageCode:
                 conversationTranslationTargetLanguageTable.languageCode,
             opinionContentId: opinionContentTable.id,
@@ -817,6 +827,10 @@ export async function fetchOpinionsByOpinionSlugIdList({
         .innerJoin(
             conversationTable,
             eq(conversationTable.id, opinionTable.conversationId),
+        )
+        .innerJoin(
+            conversationContentTable,
+            eq(conversationContentTable.id, conversationTable.currentContentId),
         )
         .innerJoin(
             opinionContentTable,
@@ -866,6 +880,10 @@ export async function fetchOpinionsByOpinionSlugIdList({
         );
 
     const opinionItemList: DisplayedOpinionItem[] = [];
+    const inheritedSettingsByProjectId = new Map<
+        number,
+        ReturnType<typeof normalizeInheritedConversationMultilingualSettings>
+    >();
     for (const commentResponse of results) {
         const counts = await fetchOpinionDisplayCounts({
             db,
@@ -879,19 +897,40 @@ export async function fetchOpinionsByOpinionSlugIdList({
             commentResponse.moderationCreatedAt,
             commentResponse.moderationUpdatedAt,
         );
-        const parsedSourceDisplayLanguage =
-            ZodSupportedDisplayLanguageCodes.safeParse(
-                commentResponse.sourceLanguageCode,
+        let targetLanguageCodes: SupportedDisplayLanguageCodes[];
+        if (commentResponse.languageSettingsSource === "project_inherited") {
+            let inheritedSetting = inheritedSettingsByProjectId.get(
+                commentResponse.projectId,
             );
-        const sourceMatchesDisplayLanguage =
-            parsedSourceDisplayLanguage.success &&
-            parsedSourceDisplayLanguage.data ===
-                displayContentViewerPreferences.displayLanguage;
+            if (inheritedSetting === undefined) {
+                inheritedSetting = normalizeInheritedConversationMultilingualSettings({
+                    languageSettings: await getProjectLanguageSettings({
+                        db,
+                        projectId: commentResponse.projectId,
+                    }),
+                });
+                inheritedSettingsByProjectId.set(
+                    commentResponse.projectId,
+                    inheritedSetting,
+                );
+            }
+            targetLanguageCodes = inheritedSetting.additionalLanguageCodes;
+        } else {
+            targetLanguageCodes =
+                commentResponse.configuredTargetLanguageCode === null
+                    ? []
+                    : [commentResponse.configuredTargetLanguageCode];
+        }
+        const configuredTargetLanguageCodes =
+            getConfiguredTranslationDisplayLanguageCodes({
+                sourceLanguageCode: commentResponse.conversationSourceLanguageCode,
+                targetLanguageCodes,
+            });
         const translationAllowed =
             commentResponse.dynamicTranslationEnabled &&
-            (sourceMatchesDisplayLanguage ||
-                commentResponse.configuredTargetLanguageCode ===
-                    displayContentViewerPreferences.displayLanguage);
+            configuredTargetLanguageCodes.has(
+                displayContentViewerPreferences.displayLanguage,
+            );
 
         opinionItemList.push({
             opinion: commentResponse.comment,

@@ -64,7 +64,6 @@ import {
 } from "src/shared/languages";
 import type {
   AutoLanguageDetectionStatus,
-  ConversationLanguageSettingInput,
   ConversationMultilingualSetting,
 } from "src/shared/types/zod";
 import { computed, ref, watch } from "vue";
@@ -99,10 +98,6 @@ const props = withDefaults(
 );
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
-const languageSetting = defineModel<ConversationLanguageSettingInput>(
-  "languageSetting",
-  { required: true }
-);
 const multilingualSetting = defineModel<ConversationMultilingualSetting>(
   "multilingualSetting",
   { required: true }
@@ -305,15 +300,6 @@ watch(
   { immediate: true }
 );
 
-watch(
-  () => languageSetting.value.mode,
-  (mode) => {
-    if (mode !== "auto") {
-      languageSetting.value = { mode: "auto" };
-    }
-  },
-  { immediate: true }
-);
 </script>
 
 <style scoped lang="scss">

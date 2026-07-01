@@ -74,7 +74,6 @@
 
   <ConversationLanguageSettingDialog
     v-model:show-dialog="showLanguageSettingDialog"
-    v-model:language-setting="languageSetting"
     v-model:multilingual-setting="multilingualSetting"
     :can-use-dynamic-translation="canUseDynamicTranslation"
     :detected-language-code="props.detectedLanguageCode"
@@ -121,7 +120,6 @@ import {
 } from "src/shared/languages";
 import type {
   AutoLanguageDetectionStatus,
-  ConversationLanguageSettingInput,
   ConversationMultilingualSetting,
   ConversationType,
   EventSlug,
@@ -225,10 +223,6 @@ const aiLabelingEnabled = defineModel<boolean>("aiLabelingEnabled", {
 });
 const preferredOpinionGroupCount = defineModel<PreferredOpinionGroupCount>(
   "preferredOpinionGroupCount",
-  { required: true }
-);
-const languageSetting = defineModel<ConversationLanguageSettingInput>(
-  "languageSetting",
   { required: true }
 );
 const multilingualSetting = defineModel<ConversationMultilingualSetting>(

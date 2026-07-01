@@ -36,6 +36,18 @@ const DISPLAY_LANGUAGE_TO_GOOGLE_CODE: Partial<Record<string, string>> = {
     "zh-Hant": "zh-TW",
 };
 
+const LANGUAGE_NAME_TO_COMPARISON_CODE: ReadonlyMap<string, string> = new Map([
+    ["arabic", "ar"],
+    ["english", "en"],
+    ["french", "fr"],
+    ["hebrew", "he"],
+    ["japanese", "ja"],
+    ["persian", "fa"],
+    ["russian", "ru"],
+    ["spanish", "es"],
+    ["chinese", "zh-CN"],
+]);
+
 function canonicalizeLanguageCode({
     languageCode,
 }: {
@@ -110,11 +122,18 @@ function normalizeTargetLanguageCodeForGoogle({
     });
 }
 
-function getLanguageComparisonKey({
+export function getLanguageComparisonKey({
     languageCode,
 }: {
     languageCode: string;
 }): string {
+    const languageNameCode = LANGUAGE_NAME_TO_COMPARISON_CODE.get(
+        languageCode.trim().toLowerCase(),
+    );
+    if (languageNameCode !== undefined) {
+        return languageNameCode;
+    }
+
     const normalizedLanguageCode = normalizeSourceLanguageCodeForGoogle({
         sourceLanguageCode: languageCode,
     });

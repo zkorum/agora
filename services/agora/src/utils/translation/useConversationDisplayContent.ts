@@ -91,6 +91,7 @@ export function useConversationDisplayContent({
     const sourceLanguageLabel = getContentTranslationSourceLanguageLabel({
       sourceLanguage: undefined,
       fallbackLanguageCode: getConversationLanguageSettingSourceLanguageCode({
+        contentLanguageMetadata: conversation.metadata.contentLanguageMetadata,
         languageSetting: conversation.metadata.languageSetting,
       }),
       fallbackLabel: translationControl.sourceLanguageLabel,

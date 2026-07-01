@@ -42,6 +42,7 @@ import { getConversationEngagementScore } from "./recommendationSystem.js";
 import { log } from "@/app.js";
 import { alias } from "drizzle-orm/pg-core";
 import {
+    conversationContentSourceMetadataToContentLanguageMetadataOutput,
     conversationContentSourceMetadataToLanguageSettingOutput,
 } from "./conversationLanguage.js";
 import {
@@ -443,6 +444,13 @@ export function useCommonPost() {
                 isIndexed: postItem.isIndexed,
                 aiLabelingEnabled: postItem.aiLabelingEnabled,
                 preferredOpinionGroupCount: postItem.preferredOpinionGroupCount,
+                contentLanguageMetadata:
+                    conversationContentSourceMetadataToContentLanguageMetadataOutput({
+                        sourceLanguageCode: postItem.sourceLanguageCode,
+                        sourceRawLanguageCode: postItem.sourceRawLanguageCode,
+                        sourceLanguageConfidence:
+                            postItem.sourceLanguageConfidence,
+                    }),
                 languageSetting:
                     conversationContentSourceMetadataToLanguageSettingOutput({
                         sourceLanguageCode: postItem.sourceLanguageCode,
