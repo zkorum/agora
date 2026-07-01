@@ -8,7 +8,6 @@ import {
   getContentTranslationSourceLanguageLabel,
   getConversationLanguageSettingSourceLanguageCode,
   getLanguageDisplayName,
-  getSupportedContentTranslationTargetLanguageCodes,
   resolveContentTranslationState,
 } from "./contentTranslation";
 
@@ -218,67 +217,5 @@ describe("getConversationLanguageSettingSourceLanguageCode", () => {
         },
       })
     ).toBe("fr");
-  });
-});
-
-describe("getSupportedContentTranslationTargetLanguageCodes", () => {
-  it("uses a manual primary language as the main target", () => {
-    expect(
-      getSupportedContentTranslationTargetLanguageCodes({
-        languageSetting: {
-          mode: "manual",
-          languageCode: "fr",
-          detectedLanguageCode: "ja",
-          detectedSourceLanguageCode: "ja",
-          detectedRawLanguageCode: "ja",
-          detectionConfidence: 0.98,
-          autoDetectionStatus: "detected",
-        },
-        multilingualSetting: {
-          dynamicTranslationEnabled: true,
-          additionalLanguageCodes: ["en"],
-        },
-      })
-    ).toEqual(["fr", "en"]);
-  });
-
-  it("uses a detected auto language as the main target", () => {
-    expect(
-      getSupportedContentTranslationTargetLanguageCodes({
-        languageSetting: {
-          mode: "auto",
-          languageCode: null,
-          detectedLanguageCode: "ja",
-          detectedSourceLanguageCode: "ja",
-          detectedRawLanguageCode: "ja",
-          detectionConfidence: 0.98,
-          autoDetectionStatus: "detected",
-        },
-        multilingualSetting: {
-          dynamicTranslationEnabled: true,
-          additionalLanguageCodes: ["en"],
-        },
-      })
-    ).toEqual(["ja", "en"]);
-  });
-
-  it("ignores an unknown auto main language", () => {
-    expect(
-      getSupportedContentTranslationTargetLanguageCodes({
-        languageSetting: {
-          mode: "auto",
-          languageCode: null,
-          detectedLanguageCode: null,
-          detectedSourceLanguageCode: null,
-          detectedRawLanguageCode: null,
-          detectionConfidence: null,
-          autoDetectionStatus: "stable_unknown",
-        },
-        multilingualSetting: {
-          dynamicTranslationEnabled: true,
-          additionalLanguageCodes: ["en"],
-        },
-      })
-    ).toEqual(["en"]);
   });
 });

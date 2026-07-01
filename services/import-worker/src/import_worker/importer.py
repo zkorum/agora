@@ -280,16 +280,21 @@ def _display_language_code_or_none(language_code: str | None) -> DisplayLanguage
         return None
 
 
-def configured_translation_display_language_codes(
+def import_translation_target_language_codes(
     *,
-    source_language_code: str | None,
-    target_language_codes: set[DisplayLanguageCode],
-) -> set[DisplayLanguageCode]:
-    language_codes = set(target_language_codes)
-    source_display_language_code = _display_language_code_or_none(source_language_code)
-    if source_display_language_code is not None:
-        language_codes.add(source_display_language_code)
-    return language_codes
+    detected_language_code: str | None,
+    manual_language_codes: Iterable[DisplayLanguageCode],
+    effective_language_codes: Iterable[DisplayLanguageCode],
+    policy_source: str,
+) -> list[DisplayLanguageCode]:
+    if policy_source == "project_inherited":
+        return list(dict.fromkeys(effective_language_codes))[:3]
+
+    target_languages = list(manual_language_codes)
+    detected_display_language_code = _display_language_code_or_none(detected_language_code)
+    if detected_display_language_code is not None:
+        target_languages = [detected_display_language_code, *target_languages]
+    return list(dict.fromkeys(target_languages))[:3]
 
 
 def _build_imported_polis_conversation(
@@ -406,6 +411,7 @@ def _create_conversation(
     content_language_hints: list[SourceLanguageHint] = []
     conversation_slug_id = generate_random_slug_id()
     import_url = request.polis_url if request.type == "url" else None
+    language_target_policy = request.form_data.language_target_policy
 
     conversation_row = session.execute(
         sqlalchemy_insert(Conversation)
@@ -431,10 +437,8 @@ def _create_conversation(
             import_created_at=_timestamp_from_polis(imported.conversation_data.created),
             import_author=imported.conversation_data.ownername,
             import_method=request.type,
-            dynamic_translation_enabled=(
-                request.form_data.multilingual_setting.dynamic_translation_enabled
-            ),
-            language_settings_source=request.form_data.language_settings_source.value,
+            dynamic_translation_enabled=language_target_policy.dynamic_translation_enabled,
+            language_settings_source=language_target_policy.source,
         )
         .returning(Conversation.id),
     ).first()
@@ -465,26 +469,31 @@ def _create_conversation(
         .where(Conversation.id == conversation_id)
         .values(current_content_id=conversation_content_id),
     )
-    source_display_language_code = _display_language_code_or_none(
-        content_source_language_code
-    )
-    target_languages = list(
-        request.form_data.multilingual_setting.additional_language_codes
-    )
-    if request.form_data.language_settings_source.value == "conversation_override":
-        target_languages = [
-            language_code
-            for language_code in target_languages
-            if source_display_language_code is None
-            or language_code.value != source_display_language_code.value
+    manual_language_codes: list[DisplayLanguageCode] = []
+    effective_language_codes: list[DisplayLanguageCode] = []
+    if language_target_policy.source == "conversation_override":
+        manual_language_codes = [
+            DisplayLanguageCode(language_code.value)
+            for language_code in language_target_policy.manual_target_language_codes
         ]
+    else:
+        effective_language_codes = [
+            DisplayLanguageCode(language_code.value)
+            for language_code in language_target_policy.effective_target_language_codes
+        ]
+    target_languages = import_translation_target_language_codes(
+        detected_language_code=content_source_language_code,
+        manual_language_codes=manual_language_codes,
+        effective_language_codes=effective_language_codes,
+        policy_source=language_target_policy.source,
+    )
     if target_languages:
         session.execute(
             sqlalchemy_insert(ConversationTranslationTargetLanguage),
             [
                 {
                     "conversation_id": conversation_id,
-                    "language_code": DisplayLanguageCode(language_code.value),
+                    "language_code": language_code,
                     "created_at": now,
                 }
                 for language_code in target_languages
@@ -832,14 +841,11 @@ def _create_content_translation_work(
     first_target_row = target_rows[0] if target_rows else None
     if first_target_row is None or not first_target_row.dynamic_translation_enabled:
         return None
-    target_language_codes = configured_translation_display_language_codes(
-        source_language_code=conversation_ids.conversation_source_language_code,
-        target_language_codes={
-            row.target_language_code
-            for row in target_rows
-            if row.target_language_code is not None
-        },
-    )
+    target_language_codes = {
+        row.target_language_code
+        for row in target_rows
+        if row.target_language_code is not None
+    }
     if not target_language_codes:
         return None
 
@@ -1239,7 +1245,7 @@ def google_detector_for_import(
     request: ImportRequest,
     google_detector: GoogleLanguageDetector | None,
 ) -> GoogleLanguageDetector | None:
-    if request.form_data.multilingual_setting.dynamic_translation_enabled:
+    if request.form_data.language_target_policy.dynamic_translation_enabled:
         return google_detector
     return None
 

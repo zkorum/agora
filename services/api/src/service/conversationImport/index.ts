@@ -8,22 +8,33 @@
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import type { ImportBuffer } from "../importBuffer.js";
 import type {
-    ConversationLanguageSettingsSource,
     GetConversationImportStatusResponse,
     GetActiveImportResponse,
 } from "@/shared/types/dto.js";
 import type {
-    ConversationMultilingualSetting,
     EventSlug,
     ParticipationMode,
     PreferredOpinionGroupCount,
 } from "@/shared/types/zod.js";
+import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import type { RealtimeSSEManager } from "../realtimeSSE.js";
 import * as database from "./database.js";
 import { CSV_UPLOAD_FIELD_NAMES } from "@/shared-app-api/csvUpload.js";
 import type { CsvFiles } from "@/service/csvImport.js";
 import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
+
+type ImportLanguageTargetPolicy =
+    | {
+          source: "conversation_override";
+          dynamicTranslationEnabled: boolean;
+          manualTargetLanguageCodes: SupportedDisplayLanguageCodes[];
+      }
+    | {
+          source: "project_inherited";
+          dynamicTranslationEnabled: boolean;
+          effectiveTargetLanguageCodes: SupportedDisplayLanguageCodes[];
+      };
 
 interface RequestConversationImportParams {
     db: PostgresDatabase;
@@ -36,8 +47,7 @@ interface RequestConversationImportParams {
         requiresEventTicket?: EventSlug;
         aiLabelingEnabled: boolean;
         preferredOpinionGroupCount: PreferredOpinionGroupCount;
-        multilingualSetting: ConversationMultilingualSetting;
-        languageSettingsSource: ConversationLanguageSettingsSource;
+        languageTargetPolicy: ImportLanguageTargetPolicy;
     };
     didWrite: string;
     importBuffer: ImportBuffer;
@@ -171,8 +181,7 @@ interface RequestUrlImportParams {
         requiresEventTicket?: EventSlug;
         aiLabelingEnabled: boolean;
         preferredOpinionGroupCount: PreferredOpinionGroupCount;
-        multilingualSetting: ConversationMultilingualSetting;
-        languageSettingsSource: ConversationLanguageSettingsSource;
+        languageTargetPolicy: ImportLanguageTargetPolicy;
     };
     didWrite: string;
     importBuffer: ImportBuffer;

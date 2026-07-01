@@ -24,7 +24,7 @@ class PreferredOpinionGroupCount(RootModel[int]):
     root: int = Field(..., ge=2, le=6)
 
 
-class AdditionalLanguageCode(StrEnum):
+class ManualTargetLanguageCode(StrEnum):
     en = "en"
     es = "es"
     fr = "fr"
@@ -38,20 +38,28 @@ class AdditionalLanguageCode(StrEnum):
     ru = "ru"
 
 
-class MultilingualSetting(BaseModel):
+class LanguageTargetPolicy(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
         validate_by_name=True,
     )
-    additional_language_codes: list[AdditionalLanguageCode] = Field(
-        ..., alias="additionalLanguageCodes", max_length=3
-    )
+    source: Literal["conversation_override"]
     dynamic_translation_enabled: bool = Field(..., alias="dynamicTranslationEnabled")
+    manual_target_language_codes: list[ManualTargetLanguageCode] = Field(
+        ..., alias="manualTargetLanguageCodes", max_length=2
+    )
 
 
-class LanguageSettingsSource(StrEnum):
-    conversation_override = "conversation_override"
-    project_inherited = "project_inherited"
+class LanguageTargetPolicy1(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        validate_by_name=True,
+    )
+    source: Literal["project_inherited"]
+    dynamic_translation_enabled: bool = Field(..., alias="dynamicTranslationEnabled")
+    effective_target_language_codes: list[ManualTargetLanguageCode] = Field(
+        ..., alias="effectiveTargetLanguageCodes", max_length=3
+    )
 
 
 class ImportFormData(BaseModel):
@@ -66,12 +74,9 @@ class ImportFormData(BaseModel):
     preferred_opinion_group_count: PreferredOpinionGroupCount | None = Field(
         None, alias="preferredOpinionGroupCount"
     )
-    multilingual_setting: MultilingualSetting = Field(
-        {"additionalLanguageCodes": [], "dynamicTranslationEnabled": False},
-        alias="multilingualSetting",
-        validate_default=True,
+    language_target_policy: LanguageTargetPolicy | LanguageTargetPolicy1 = Field(
+        ..., alias="languageTargetPolicy"
     )
-    language_settings_source: LanguageSettingsSource = Field(..., alias="languageSettingsSource")
 
 
 class CsvFiles(BaseModel):

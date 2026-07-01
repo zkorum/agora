@@ -20,7 +20,6 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
-import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
   DisplayedOpinionItem,
   EventSlug,
@@ -49,8 +48,6 @@ const props = defineProps<{
   surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
-  dynamicTranslationEnabled: boolean;
-  supportedTargetLanguageCodes: SupportedDisplayLanguageCodes[];
 }>();
 
 const emit = defineEmits<{
@@ -69,11 +66,8 @@ const hasRequestedTranslation = ref(false);
 const { preview: requestedTranslationPreview, setMode: setRequestedTranslationMode } =
   useOpinionContentTranslationPreview({
     subject: translationSubject,
-    dynamicTranslationEnabled: computed(
-      () => props.dynamicTranslationEnabled && hasRequestedTranslation.value
-    ),
+    enabled: computed(() => hasRequestedTranslation.value),
     sourceLanguageCode: computed(() => props.commentItem.sourceLanguageCode),
-    supportedTargetLanguageCodes: computed(() => props.supportedTargetLanguageCodes),
   });
 
 const initialTranslationPreview = computed<

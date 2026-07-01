@@ -195,7 +195,6 @@ import {
   type ContentTranslationDisplayMode,
   getContentTranslationSourceLanguageLabel,
   getConversationLanguageSettingSourceLanguageCode,
-  getSupportedContentTranslationTargetLanguageCodes,
 } from "src/utils/translation/contentTranslation";
 import {
   type SurveyQuestionContentTranslationPreview,
@@ -267,17 +266,6 @@ const surveyQuestionTranslationSubject = computed(() => ({
   conversationSlugId: conversationSlugId.value,
   questionSlugId: routeQuestionSlugId.value,
 }));
-const supportedTargetLanguageCodes = computed(() => {
-  if (conversationData.value === undefined) {
-    return [];
-  }
-
-  return getSupportedContentTranslationTargetLanguageCodes({
-    contentLanguageMetadata: conversationData.value.metadata.contentLanguageMetadata,
-    languageSetting: conversationData.value.metadata.languageSetting,
-    multilingualSetting: conversationData.value.metadata.multilingualSetting,
-  });
-});
 const conversationSourceLanguageCode = computed(() => {
   const metadata = conversationData.value?.metadata;
   if (metadata === undefined) {
@@ -296,14 +284,10 @@ const {
   setMode: setSurveyQuestionTranslationMode,
 } = useSurveyQuestionContentTranslationPreview({
   subject: surveyQuestionTranslationSubject,
-  dynamicTranslationEnabled: computed(
-    () =>
-      hasRequestedSurveyQuestionTranslation.value &&
-      question.value !== undefined &&
-      conversationData.value?.metadata.multilingualSetting.dynamicTranslationEnabled === true
+  enabled: computed(
+    () => hasRequestedSurveyQuestionTranslation.value && question.value !== undefined
   ),
   sourceLanguageCode: conversationSourceLanguageCode,
-  supportedTargetLanguageCodes,
 });
 
 const backendSurveyQuestionTranslationPreview = computed<

@@ -2,7 +2,6 @@ import { useQueryClient } from "@tanstack/vue-query";
 import { isAxiosError } from "axios";
 import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type { SSEContentTranslationUpdatedData } from "src/shared/types/sse";
 import type {
   ContentTranslationSubject,
@@ -25,7 +24,6 @@ import {
   type ContentTranslationDisplayMode,
   getContentTranslationSourceLanguageLabel,
   getLanguageDisplayName,
-  resolveContentTranslationState,
 } from "./contentTranslation";
 import { subscribeToContentTranslationFailed } from "./contentTranslationEvents";
 import {
@@ -112,14 +110,12 @@ interface ContentTranslationController {
 
 function useContentTranslationController({
   subject,
-  dynamicTranslationEnabled,
   sourceLanguageCode,
-  supportedTargetLanguageCodes,
+  enabled,
 }: {
   subject: MaybeRefOrGetter<ContentTranslationSubject>;
-  dynamicTranslationEnabled: MaybeRefOrGetter<boolean>;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
-  supportedTargetLanguageCodes: MaybeRefOrGetter<SupportedDisplayLanguageCodes[]>;
+  enabled: MaybeRefOrGetter<boolean>;
 }): ContentTranslationController & {
   query: ReturnType<typeof useContentTranslationQuery>;
 } {
@@ -137,16 +133,6 @@ function useContentTranslationController({
   );
   let waitTimeout: ReturnType<typeof setTimeout> | undefined;
 
-  const resolvedState = computed(() =>
-    resolveContentTranslationState({
-      dynamicTranslationEnabled: toValue(dynamicTranslationEnabled),
-      sourceLanguageCode: toValue(sourceLanguageCode),
-      displayLanguage: displayLanguage.value,
-      spokenLanguages: spokenLanguages.value,
-      supportedTargetLanguageCodes: toValue(supportedTargetLanguageCodes),
-      hasTranslatedContent: true,
-    })
-  );
   const requestMode = computed<ContentTranslationRequestMode>(() =>
     hasRequestedTranslation.value ? "queue_if_missing" : "read_existing"
   );
@@ -155,13 +141,12 @@ function useContentTranslationController({
     subject,
     targetLanguageCode: displayLanguage,
     requestMode,
-    enabled: computed(() => resolvedState.value.isAvailable),
+    enabled: computed(() => toValue(enabled)),
   });
 
   const isLoadingInitialTranslation = computed(() => {
     return (
       modePreference.value === undefined &&
-      resolvedState.value.initialMode === "translated" &&
       query.isPending.value
     );
   });
@@ -204,7 +189,7 @@ function useContentTranslationController({
   });
 
   const mode = computed<ContentTranslationDisplayMode>(() => {
-    const preferredMode = modePreference.value ?? resolvedState.value.initialMode;
+    const preferredMode = modePreference.value ?? "original";
     if (
       preferredMode === "translated" &&
       translationStatus.value === "completed" &&
@@ -363,7 +348,7 @@ function useContentTranslationController({
     mode,
     sourceLanguageLabel,
     translationStatus,
-    isAvailable: computed(() => resolvedState.value.isAvailable),
+    isAvailable: computed(() => toValue(enabled)),
     isLoadingInitialTranslation,
     setMode,
     query,
@@ -372,22 +357,19 @@ function useContentTranslationController({
 
 export function useConversationContentTranslationPreview({
   subject,
-  dynamicTranslationEnabled,
   sourceLanguageCode,
-  supportedTargetLanguageCodes,
+  enabled,
 }: {
   subject: MaybeRefOrGetter<
     Extract<ContentTranslationSubject, { kind: "conversation" }>
   >;
-  dynamicTranslationEnabled: MaybeRefOrGetter<boolean>;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
-  supportedTargetLanguageCodes: MaybeRefOrGetter<SupportedDisplayLanguageCodes[]>;
+  enabled: MaybeRefOrGetter<boolean>;
 }) {
   const controller = useContentTranslationController({
     subject,
-    dynamicTranslationEnabled,
     sourceLanguageCode,
-    supportedTargetLanguageCodes,
+    enabled,
   });
 
   const preview = computed<ConversationContentTranslationPreview | undefined>(
@@ -428,22 +410,19 @@ export function useConversationContentTranslationPreview({
 
 export function useOpinionContentTranslationPreview({
   subject,
-  dynamicTranslationEnabled,
   sourceLanguageCode,
-  supportedTargetLanguageCodes,
+  enabled,
 }: {
   subject: MaybeRefOrGetter<
     Extract<ContentTranslationSubject, { kind: "opinion" }>
   >;
-  dynamicTranslationEnabled: MaybeRefOrGetter<boolean>;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
-  supportedTargetLanguageCodes: MaybeRefOrGetter<SupportedDisplayLanguageCodes[]>;
+  enabled: MaybeRefOrGetter<boolean>;
 }) {
   const controller = useContentTranslationController({
     subject,
-    dynamicTranslationEnabled,
     sourceLanguageCode,
-    supportedTargetLanguageCodes,
+    enabled,
   });
 
   const preview = computed<OpinionContentTranslationPreview | undefined>(() => {
@@ -479,22 +458,19 @@ export function useOpinionContentTranslationPreview({
 
 export function useSurveyQuestionContentTranslationPreview({
   subject,
-  dynamicTranslationEnabled,
   sourceLanguageCode,
-  supportedTargetLanguageCodes,
+  enabled,
 }: {
   subject: MaybeRefOrGetter<
     Extract<ContentTranslationSubject, { kind: "survey_question" }>
   >;
-  dynamicTranslationEnabled: MaybeRefOrGetter<boolean>;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
-  supportedTargetLanguageCodes: MaybeRefOrGetter<SupportedDisplayLanguageCodes[]>;
+  enabled: MaybeRefOrGetter<boolean>;
 }) {
   const controller = useContentTranslationController({
     subject,
-    dynamicTranslationEnabled,
     sourceLanguageCode,
-    supportedTargetLanguageCodes,
+    enabled,
   });
 
   const preview = computed<SurveyQuestionContentTranslationPreview | undefined>(

@@ -12,10 +12,6 @@
       :survey-gate="conversationData.interaction.surveyGate"
       :on-view-analysis="props.onViewAnalysis"
       :is-voting-disabled="isVotingDisabled"
-      :dynamic-translation-enabled="
-        conversationData.metadata.multilingualSetting.dynamicTranslationEnabled
-      "
-      :supported-target-language-codes="supportedTargetLanguageCodes"
       :preloaded-queries="{
         commentsDiscoverQuery,
         commentsNewQuery,
@@ -42,7 +38,6 @@ import {
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
-import { getSupportedContentTranslationTargetLanguageCodes } from "src/utils/translation/contentTranslation";
 import {
   computed,
   inject,
@@ -68,14 +63,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   "update:commentFilter": [filter: CommentFilterOptions];
 }>();
-
-const supportedTargetLanguageCodes = computed(() =>
-  getSupportedContentTranslationTargetLanguageCodes({
-    contentLanguageMetadata: props.conversationData.metadata.contentLanguageMetadata,
-    languageSetting: props.conversationData.metadata.languageSetting,
-    multilingualSetting: props.conversationData.metadata.multilingualSetting,
-  })
-);
 
 const setCurrentTabLoading = inject<(loading: boolean) => void>(
   "setCurrentTabLoading",

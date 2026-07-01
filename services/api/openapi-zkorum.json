@@ -12714,7 +12714,7 @@
                                                     "type": "object",
                                                     "properties": {
                                                         "additionalLanguageCodes": {
-                                                            "maxItems": 4,
+                                                            "maxItems": 2,
                                                             "type": "array",
                                                             "items": {
                                                                 "type": "string",

@@ -19,6 +19,7 @@ import {
     scheduleAnalysisUpdate,
 } from "@/shared-backend/analysisScheduler.js";
 import {
+    conversationContentTable,
     conversationTable,
     conversationTranslationTargetLanguageTable,
     organizationMembershipTable,
@@ -44,10 +45,16 @@ import {
 } from "@/shared/types/zod.js";
 import { log } from "@/app.js";
 import {
+    getProjectLanguageSettings,
     getOrCreatePersonalOrganization,
     resolveConversationCreateTarget,
 } from "./projectAccess.js";
 import { getAutoProvisionedDefaultLanguage } from "./projectLanguage.js";
+import {
+    getManualMultilingualSettingsFromEffectiveTargets,
+    getManualMultilingualSettingsFromProjectLanguageSettings,
+    sourceLanguageToDisplayLanguage,
+} from "./translationLanguageSetting.js";
 
 type PremiumFeatureEntitlementUpdateValues = Partial<
     typeof premiumFeatureEntitlementTable.$inferInsert
@@ -564,11 +571,19 @@ export async function getPremiumFeaturesInConversation({
 
     const translationRows = await db
         .select({
+            projectId: conversationTable.projectId,
             dynamicTranslationEnabled:
                 conversationTable.dynamicTranslationEnabled,
-            languageId: conversationTranslationTargetLanguageTable.id,
+            languageSettingsSource: conversationTable.languageSettingsSource,
+            sourceLanguageCode: conversationContentTable.sourceLanguageCode,
+            targetLanguageCode:
+                conversationTranslationTargetLanguageTable.languageCode,
         })
         .from(conversationTable)
+        .leftJoin(
+            conversationContentTable,
+            eq(conversationContentTable.id, conversationTable.currentContentId),
+        )
         .leftJoin(
             conversationTranslationTargetLanguageTable,
             and(
@@ -580,13 +595,38 @@ export async function getPremiumFeaturesInConversation({
             ),
         )
         .where(eq(conversationTable.id, conversation.conversationId));
+    const translationContext = translationRows.at(0);
 
-    if (
-        translationRows.some(
-            (row) => row.dynamicTranslationEnabled || row.languageId !== null,
-        )
-    ) {
-        features.push(PREMIUM_DYNAMIC_TRANSLATION_FEATURE);
+    if (translationContext !== undefined) {
+        const premiumMultilingualSetting =
+            translationContext.languageSettingsSource === "project_inherited"
+                ? getManualMultilingualSettingsFromProjectLanguageSettings({
+                      languageSettings: await getProjectLanguageSettings({
+                          db,
+                          projectId: translationContext.projectId,
+                      }),
+                  })
+                : getManualMultilingualSettingsFromEffectiveTargets({
+                      effectiveMultilingualSettings: {
+                          dynamicTranslationEnabled:
+                              translationContext.dynamicTranslationEnabled,
+                          additionalLanguageCodes: translationRows.flatMap((row) =>
+                              row.targetLanguageCode === null
+                                  ? []
+                                  : [row.targetLanguageCode],
+                          ),
+                      },
+                      detectedTargetLanguageCode: sourceLanguageToDisplayLanguage({
+                          sourceLanguageCode: translationContext.sourceLanguageCode,
+                      }),
+                  });
+
+        if (
+            premiumMultilingualSetting.dynamicTranslationEnabled ||
+            premiumMultilingualSetting.additionalLanguageCodes.length > 0
+        ) {
+            features.push(PREMIUM_DYNAMIC_TRANSLATION_FEATURE);
+        }
     }
 
     return uniqueSortedFeatures(features);

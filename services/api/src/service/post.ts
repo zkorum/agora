@@ -63,9 +63,18 @@ import {
     resolveContentLanguageMetadata,
 } from "./contentLanguageMetadata.js";
 import {
+    getConversationOverrideTranslationTargetLanguagePolicy,
+    getProjectTranslationTargetLanguagePolicy,
     normalizeConversationMultilingualSettings,
     normalizeInheritedConversationMultilingualSettings,
+    sourceLanguageToDisplayLanguage,
 } from "./translationLanguageSetting.js";
+import {
+    createEagerContentTranslationWorkForCreatedConversation,
+    type ConversationContentSource,
+    type OpinionContentSource,
+    type SurveyQuestionContentSource,
+} from "./contentTranslation.js";
 
 const MAX_CONVERSATION_SEED_ITEMS = 50;
 
@@ -101,6 +110,16 @@ interface CreateNewPostProps {
     importMethod?: "url" | "csv";
 }
 
+export interface CreatedConversationEagerContentTranslation {
+    workIds: number[];
+}
+
+type CreateNewPostResponse =
+    | Exclude<CreateNewConversationResponse, { success: true }>
+    | (Extract<CreateNewConversationResponse, { success: true }> & {
+          eagerContentTranslation: CreatedConversationEagerContentTranslation;
+      });
+
 export async function createNewPost({
     db,
     conversationTitle,
@@ -131,7 +150,7 @@ export async function createNewPost({
     importCreatedAt,
     importAuthor,
     importMethod,
-}: CreateNewPostProps): Promise<CreateNewConversationResponse> {
+}: CreateNewPostProps): Promise<CreateNewPostResponse> {
     if (seedOpinionList.length > MAX_CONVERSATION_SEED_ITEMS) {
         throw httpErrors.badRequest(
             `A conversation can have at most ${String(MAX_CONVERSATION_SEED_ITEMS)} seed items`,
@@ -243,6 +262,20 @@ export async function createNewPost({
                   multilingualSettings: multilingualSetting,
                   canUseDynamicTranslation: true,
               });
+    const targetLanguagePolicy =
+        inheritedProjectLanguageSettings !== undefined
+            ? getProjectTranslationTargetLanguagePolicy({
+                  languageSettings: inheritedProjectLanguageSettings,
+              })
+            : getConversationOverrideTranslationTargetLanguagePolicy({
+                  multilingualSettings: normalizedMultilingualSetting,
+                  detectedTargetLanguageCode: sourceLanguageToDisplayLanguage({
+                      sourceLanguageCode:
+                          conversationSourceLanguageMetadata.sourceLanguageCode,
+                  }),
+              });
+
+    let eagerContentTranslationWorkIds: number[] | undefined;
 
     await db.transaction(async (tx) => {
         const now = new Date();
@@ -288,10 +321,13 @@ export async function createNewPost({
             })
             .returning({
                 conversationContentId: conversationContentTable.id,
+                publicId: conversationContentTable.publicId,
             });
 
         const insertedConversationContentId =
             conversationContentTableResponse[0].conversationContentId;
+        const conversationContentPublicId =
+            conversationContentTableResponse[0].publicId;
 
         await tx
             .update(conversationTable)
@@ -303,9 +339,34 @@ export async function createNewPost({
         await upsertConversationMultilingualSetting({
             db: tx,
             conversationId: insertedConversationId,
-            setting: normalizedMultilingualSetting,
+            setting: {
+                dynamicTranslationEnabled: targetLanguagePolicy.dynamicTranslationEnabled,
+                additionalLanguageCodes:
+                    targetLanguagePolicy.effectiveTargetLanguageCodes,
+            },
             now,
         });
+
+        const conversationSource: ConversationContentSource = {
+            conversationId: insertedConversationId,
+            conversationSlugId,
+            projectId: target.projectId,
+            languageSettingsSource,
+            dynamicTranslationEnabled: targetLanguagePolicy.dynamicTranslationEnabled,
+            contentId: insertedConversationContentId,
+            publicId: conversationContentPublicId,
+            title: conversationTitle,
+            body: conversationBody,
+            sourceLanguageCode: conversationSourceLanguageMetadata.sourceLanguageCode,
+            sourceRawLanguageCode:
+                conversationSourceLanguageMetadata.sourceRawLanguageCode,
+            sourceLanguageProvider:
+                conversationSourceLanguageMetadata.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                conversationSourceLanguageMetadata.sourceLanguageConfidence,
+        };
+        const seedOpinionSources: OpinionContentSource[] = [];
+        let surveySources: SurveyQuestionContentSource[] = [];
 
         if (seedOpinionList.length > 0) {
             if (conversationType === "maxdiff") {
@@ -347,6 +408,9 @@ export async function createNewPost({
                         googleCloudCredentials,
                         useGoogleLanguageDetection:
                             normalizedMultilingualSetting.dynamicTranslationEnabled,
+                        onCreatedOpinionSource: (source) => {
+                            seedOpinionSources.push(source);
+                        },
                         conversationMetadata: {
                             conversationId: insertedConversationId,
                             conversationContentId:
@@ -369,8 +433,9 @@ export async function createNewPost({
         }
 
         if (surveyConfig !== undefined) {
-            await setSurveyConfigForConversation({
+            const surveyUpdateEffect = await setSurveyConfigForConversation({
                 db: tx,
+                conversationSlugId,
                 conversationId: insertedConversationId,
                 surveyConfig: surveyConfig ?? null,
                 now,
@@ -379,7 +444,19 @@ export async function createNewPost({
                     normalizedMultilingualSetting.dynamicTranslationEnabled,
                 sourceLanguageMetadata: conversationSourceLanguageMetadata,
             });
+            surveySources = surveyUpdateEffect.currentQuestionSources;
         }
+
+        eagerContentTranslationWorkIds =
+            await createEagerContentTranslationWorkForCreatedConversation({
+                db: tx,
+                conversationSource,
+                targetLanguagePolicy,
+                surveySources,
+                seedOpinionSources,
+                now,
+                log,
+            });
 
         // Create the initial coherent display state even before analysis exists.
         // There is no dedicated "created" enum yet, so reuse the content-update reason.
@@ -392,9 +469,17 @@ export async function createNewPost({
         return undefined;
     });
 
+    const createdEagerContentTranslationWorkIds = eagerContentTranslationWorkIds;
+    if (createdEagerContentTranslationWorkIds === undefined) {
+        throw httpErrors.internalServerError(
+            "Failed to create eager content translation work rows",
+        );
+    }
+
     return {
         success: true,
         conversationSlugId: conversationSlugId,
+        eagerContentTranslation: { workIds: createdEagerContentTranslationWorkIds },
     };
 }
 

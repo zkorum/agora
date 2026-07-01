@@ -3381,7 +3381,7 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOf {
     'conversationBody'?: string;
     'contentLanguageMetadata': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadata;
     'languageSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSetting;
-    'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting;
+    'multilingualSetting': ApiV1ConversationCreatePostRequestMultilingualSetting;
     'languageSettingsSource': ApiV1ConversationGetForEditPost200ResponseOneOfLanguageSettingsSourceEnum;
     'projectLanguageProject'?: ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInner;
     'isIndexed': boolean;

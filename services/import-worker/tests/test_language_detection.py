@@ -68,11 +68,11 @@ def _build_import_request(*, dynamic_translation_enabled: bool) -> ImportRequest
             "formData": {
                 "participationMode": "guest",
                 "isIndexed": True,
-                "multilingualSetting": {
-                    "additionalLanguageCodes": ["fr"],
+                "languageTargetPolicy": {
+                    "source": "conversation_override",
                     "dynamicTranslationEnabled": dynamic_translation_enabled,
+                    "manualTargetLanguageCodes": ["fr"],
                 },
-                "languageSettingsSource": "conversation_override",
             },
             "didWrite": "did:key:test",
             "type": "url",

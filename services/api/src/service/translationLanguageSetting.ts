@@ -35,6 +35,13 @@ export interface InheritedConversationMultilingualSettings {
     additionalLanguageCodes: SupportedDisplayLanguageCodes[];
 }
 
+export interface TranslationTargetLanguagePolicy {
+    dynamicTranslationEnabled: boolean;
+    detectedTargetLanguageCode: SupportedDisplayLanguageCodes | null;
+    manualTargetLanguageCodes: SupportedDisplayLanguageCodes[];
+    effectiveTargetLanguageCodes: SupportedDisplayLanguageCodes[];
+}
+
 export function sourceLanguageToDisplayLanguage({
     sourceLanguageCode,
 }: {
@@ -46,21 +53,87 @@ export function sourceLanguageToDisplayLanguage({
     return parseSupportedDisplayLanguageOrUndefined(sourceLanguageCode) ?? null;
 }
 
-export function getConfiguredTranslationDisplayLanguageCodes({
-    sourceLanguageCode,
-    targetLanguageCodes,
+function uniqueDisplayLanguageCodes(
+    languageCodes: readonly SupportedDisplayLanguageCodes[],
+): SupportedDisplayLanguageCodes[] {
+    return Array.from(new Set(languageCodes));
+}
+
+export function getEffectiveTargetLanguageCodes({
+    detectedTargetLanguageCode,
+    manualTargetLanguageCodes,
 }: {
-    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
-    targetLanguageCodes: readonly SupportedDisplayLanguageCodes[];
-}): ReadonlySet<SupportedDisplayLanguageCodes> {
-    const sourceDisplayLanguageCode = sourceLanguageToDisplayLanguage({
-        sourceLanguageCode,
-    });
-    return new Set(
-        sourceDisplayLanguageCode === null
-            ? targetLanguageCodes
-            : [sourceDisplayLanguageCode, ...targetLanguageCodes],
-    );
+    detectedTargetLanguageCode: SupportedDisplayLanguageCodes | null;
+    manualTargetLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+}): SupportedDisplayLanguageCodes[] {
+    return uniqueDisplayLanguageCodes([
+        ...(detectedTargetLanguageCode === null ? [] : [detectedTargetLanguageCode]),
+        ...manualTargetLanguageCodes,
+    ]).slice(0, 3);
+}
+
+export function buildTranslationTargetLanguagePolicy({
+    dynamicTranslationEnabled,
+    detectedTargetLanguageCode,
+    manualTargetLanguageCodes,
+}: {
+    dynamicTranslationEnabled: boolean;
+    detectedTargetLanguageCode: SupportedDisplayLanguageCodes | null;
+    manualTargetLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+}): TranslationTargetLanguagePolicy {
+    const normalizedManualTargetLanguageCodes = uniqueDisplayLanguageCodes(
+        manualTargetLanguageCodes,
+    ).slice(0, 2);
+    return {
+        dynamicTranslationEnabled,
+        detectedTargetLanguageCode,
+        manualTargetLanguageCodes: normalizedManualTargetLanguageCodes,
+        effectiveTargetLanguageCodes: getEffectiveTargetLanguageCodes({
+            detectedTargetLanguageCode,
+            manualTargetLanguageCodes: normalizedManualTargetLanguageCodes,
+        }),
+    };
+}
+
+export function isConfiguredTranslationTargetLanguage({
+    policy,
+    targetLanguageCode,
+}: {
+    policy: TranslationTargetLanguagePolicy;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+}): boolean {
+    return policy.effectiveTargetLanguageCodes.includes(targetLanguageCode);
+}
+
+export function getManualMultilingualSettingsFromEffectiveTargets({
+    effectiveMultilingualSettings,
+    detectedTargetLanguageCode,
+}: {
+    effectiveMultilingualSettings: ConversationMultilingualSettingsInput;
+    detectedTargetLanguageCode: SupportedDisplayLanguageCodes | null;
+}): ConversationMultilingualSettings {
+    return {
+        dynamicTranslationEnabled:
+            effectiveMultilingualSettings.dynamicTranslationEnabled,
+        additionalLanguageCodes: uniqueDisplayLanguageCodes(
+            effectiveMultilingualSettings.additionalLanguageCodes.filter(
+                (languageCode) => languageCode !== detectedTargetLanguageCode,
+            ),
+        ).slice(0, 2),
+    };
+}
+
+export function getManualMultilingualSettingsFromProjectLanguageSettings({
+    languageSettings,
+}: {
+    languageSettings: InheritableProjectLanguageSettingsInput;
+}): ConversationMultilingualSettings {
+    return {
+        dynamicTranslationEnabled: languageSettings.dynamicTranslationEnabled,
+        additionalLanguageCodes: uniqueDisplayLanguageCodes(
+            languageSettings.targetLanguageCodes,
+        ).slice(0, 2),
+    };
 }
 
 export function shouldTranslateContent({
@@ -92,8 +165,8 @@ export function normalizeProjectLanguageSettings({
         };
     }
 
-    const targetLanguageCodes = Array.from(
-        new Set(languageSettings.targetLanguageCodes),
+    const targetLanguageCodes = uniqueDisplayLanguageCodes(
+        languageSettings.targetLanguageCodes,
     ).slice(0, 2);
 
     return {
@@ -131,17 +204,36 @@ export function normalizeInheritedConversationMultilingualSettings({
 }: {
     languageSettings: InheritableProjectLanguageSettingsInput;
 }): InheritedConversationMultilingualSettings {
+    const policy = getProjectTranslationTargetLanguagePolicy({ languageSettings });
     return {
         dynamicTranslationEnabled: languageSettings.dynamicTranslationEnabled,
-        additionalLanguageCodes: Array.from(
-            new Set(
-                languageSettings.dynamicTranslationEnabled
-                    ? [
-                          languageSettings.defaultLanguageCode,
-                          ...languageSettings.targetLanguageCodes,
-                      ]
-                    : languageSettings.targetLanguageCodes,
-            ),
-        ),
+        // Legacy read shape. New code should use the explicit policy helpers instead.
+        additionalLanguageCodes: policy.effectiveTargetLanguageCodes,
     };
+}
+
+export function getProjectTranslationTargetLanguagePolicy({
+    languageSettings,
+}: {
+    languageSettings: InheritableProjectLanguageSettingsInput;
+}): TranslationTargetLanguagePolicy {
+    return buildTranslationTargetLanguagePolicy({
+        dynamicTranslationEnabled: languageSettings.dynamicTranslationEnabled,
+        detectedTargetLanguageCode: languageSettings.defaultLanguageCode,
+        manualTargetLanguageCodes: languageSettings.targetLanguageCodes,
+    });
+}
+
+export function getConversationOverrideTranslationTargetLanguagePolicy({
+    multilingualSettings,
+    detectedTargetLanguageCode,
+}: {
+    multilingualSettings: ConversationMultilingualSettings;
+    detectedTargetLanguageCode: SupportedDisplayLanguageCodes | null;
+}): TranslationTargetLanguagePolicy {
+    return buildTranslationTargetLanguagePolicy({
+        dynamicTranslationEnabled: multilingualSettings.dynamicTranslationEnabled,
+        detectedTargetLanguageCode,
+        manualTargetLanguageCodes: multilingualSettings.additionalLanguageCodes,
+    });
 }

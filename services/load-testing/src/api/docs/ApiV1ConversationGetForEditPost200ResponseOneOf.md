@@ -11,7 +11,7 @@ Name | Type | Description | Notes
 **conversationBody** | **string** |  | [optional] [default to undefined]
 **contentLanguageMetadata** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadata**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadata.md) |  | [default to undefined]
 **languageSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSetting.md) |  | [default to undefined]
-**multilingualSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting.md) |  | [default to undefined]
+**multilingualSetting** | [**ApiV1ConversationCreatePostRequestMultilingualSetting**](ApiV1ConversationCreatePostRequestMultilingualSetting.md) |  | [default to undefined]
 **languageSettingsSource** | **string** |  | [default to undefined]
 **projectLanguageProject** | [**ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInner**](ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInner.md) |  | [optional] [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]

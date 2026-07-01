@@ -111,8 +111,8 @@
     v-model:multilingual-setting="languagePickerMultilingualSetting"
     :can-edit-languages="true"
     :show-auto-language="true"
-    :auto-language-caption="tLanguage('detectedLanguageAfterPublishing')"
-    :detected-language-code="undefined"
+    :auto-language-caption="overrideAutoLanguageCaption"
+    :detected-language-code="props.detectedLanguageCode"
     @back="goBackFromOverrideLanguagePicker"
   />
 </template>
@@ -168,8 +168,9 @@ const props = withDefaults(
   defineProps<{
     projectList: CreateConversationProjectLanguageProject[];
     allowProjectSelection?: boolean;
+    detectedLanguageCode?: SupportedDisplayLanguageCodes | null;
   }>(),
-  { allowProjectSelection: true }
+  { allowProjectSelection: true, detectedLanguageCode: undefined }
 );
 
 const selectedProjectSlug = defineModel<string | undefined>(
@@ -284,6 +285,20 @@ const overrideLanguageSummary = computed(() =>
     languageTranslateSuffix: tControl("languageTranslateSuffix"),
   })
 );
+
+const overrideAutoLanguageCaption = computed(() => {
+  const detectedLanguageCode = props.detectedLanguageCode;
+  if (detectedLanguageCode === null || detectedLanguageCode === undefined) {
+    return tLanguage("detectedLanguageAfterPublishing");
+  }
+
+  return tLanguage("autoDetectDetectedDescription", {
+    language: getLanguageLabel({
+      languageCode: detectedLanguageCode,
+      locale: locale.value,
+    }),
+  });
+});
 
 const projectDynamicTranslationSummary = computed(() => {
   const project = selectedProject.value;
@@ -426,7 +441,7 @@ function copySelectedProjectSettingsToOverride(): void {
   }
 
   overrideMultilingualSetting.value = projectLanguageSettingsToOverride(
-    project.languageSettings
+    project
   );
 }
 
@@ -473,11 +488,20 @@ function getInheritedProjectLanguageCodes({
   ];
 }
 
-function projectLanguageSettingsToOverride(
-  languageSettings: ProjectLanguageSettings
-): ConversationMultilingualSetting {
+function projectLanguageSettingsToOverride({
+  defaultLanguageCode,
+  languageSettings,
+}: CreateConversationProjectLanguageProject): ConversationMultilingualSetting {
+  const detectedLanguageCode = props.detectedLanguageCode;
+  const additionalLanguageCodes = getInheritedProjectLanguageCodes({
+    defaultLanguageCode,
+    languageSettings,
+  })
+    .filter((languageCode) => languageCode !== detectedLanguageCode)
+    .slice(0, 2);
+
   return {
-    additionalLanguageCodes: languageSettings.targetLanguageCodes.slice(0, 2),
+    additionalLanguageCodes,
     dynamicTranslationEnabled: languageSettings.dynamicTranslationEnabled,
   };
 }

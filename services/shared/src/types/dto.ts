@@ -1023,7 +1023,7 @@ export class Dto {
                 conversationBody: zodConversationBodyOutput,
                 contentLanguageMetadata: zodContentLanguageMetadataOutput,
                 languageSetting: zodConversationLanguageSettingOutput,
-                multilingualSetting: zodConversationEffectiveMultilingualSetting,
+                multilingualSetting: zodConversationMultilingualSetting,
                 languageSettingsSource: zodConversationLanguageSettingsSource,
                 projectLanguageProject: zodConversationCreateProjectOption.optional(),
                 isIndexed: z.boolean(),

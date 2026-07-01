@@ -64,7 +64,6 @@ from agora_analysis_worker_shared.generated_models import (
     PremiumFeatureEntitlement,
     ProjectOrganizationOwnership,
     RealtimeEventOutbox,
-    SpokenLanguageCode,
 )
 from agora_analysis_worker_shared.generated_shared_types import (
     SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES,
@@ -76,23 +75,6 @@ POSTGRES_INSERT_BIND_PARAM_LIMIT = 60_000
 DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE = 4
 FIRST_PASS_MAX_EXISTING_ATTEMPT_COUNT = 1
 SUPPORTED_EAGER_TRANSLATION_TARGET_LANGUAGE_CODES = set(
-    SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES
-)
-
-
-def _matching_display_and_spoken_language_codes(
-    display_language_codes: tuple[DisplayLanguageCode, ...],
-) -> tuple[tuple[DisplayLanguageCode, SpokenLanguageCode], ...]:
-    spoken_language_code_by_value = {code.value: code for code in SpokenLanguageCode}
-    pairs: list[tuple[DisplayLanguageCode, SpokenLanguageCode]] = []
-    for display_language_code in display_language_codes:
-        spoken_language_code = spoken_language_code_by_value.get(display_language_code.value)
-        if spoken_language_code is not None:
-            pairs.append((display_language_code, spoken_language_code))
-    return tuple(pairs)
-
-
-SUPPORTED_EAGER_TRANSLATION_LANGUAGE_PAIRS = _matching_display_and_spoken_language_codes(
     SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES
 )
 
@@ -279,7 +261,6 @@ class CandidateLocaleRequestRow:
 class EagerDescriptionCandidateRow:
     conversation_id: int
     candidate_id: int
-    language_code: str | None
     language_settings_source: str
 
 
@@ -298,7 +279,6 @@ class EagerCandidateOptionRow:
     group_count: int
     preferred_group_count: int | None
     selection_score: float
-    language_code: str | None
     language_settings_source: str
 
 
@@ -1743,11 +1723,6 @@ def eager_translation_target_locales_by_candidate(
     target_locales_by_candidate_id: dict[int, tuple[str, ...]] = {}
     for candidate in candidates:
         target_locales: set[str] = set()
-        if (
-            candidate.language_code is not None
-            and candidate.language_code in supported_codes
-        ):
-            target_locales.add(candidate.language_code)
         target_locales.update(
             additional_locales_by_conversation_id.get(candidate.conversation_id, set())
         )
@@ -2058,7 +2033,6 @@ def _select_eager_candidates(
         candidates_by_id[selected_row.candidate_id] = EagerDescriptionCandidateRow(
             conversation_id=selected_row.conversation_id,
             candidate_id=selected_row.candidate_id,
-            language_code=selected_row.language_code,
             language_settings_source=selected_row.language_settings_source,
         )
 
@@ -2092,7 +2066,6 @@ def _fetch_eager_description_candidates(
             OpinionGroupVariant.group_count,
             Conversation.preferred_opinion_group_count,
             Conversation.language_settings_source,
-            ConversationContent.source_language_code.label("language_code"),
             OpinionGroupCandidateAssessment.selection_score,
         )
         .join(
@@ -2108,10 +2081,6 @@ def _fetch_eager_description_candidates(
             OpinionGroupCandidateAssessment.candidate_id == OpinionGroupCandidate.id,
         )
         .join(Conversation, Conversation.id == AnalysisSnapshotResult.conversation_id)
-        .join(
-            ConversationContent,
-            ConversationContent.id == Conversation.current_content_id,
-        )
         .join(
             ConversationViewSnapshot,
             and_(
@@ -2161,7 +2130,6 @@ def _fetch_eager_description_candidates(
                 group_count=row.group_count,
                 preferred_group_count=row.preferred_opinion_group_count,
                 selection_score=row.selection_score,
-                language_code=row.language_code,
                 language_settings_source=row.language_settings_source,
             )
             for row in rows
@@ -2507,23 +2475,7 @@ def _translation_work_candidate_relevance_conditions(
         ),
     )
 
-    eager_detected_language_candidate = and_(
-        effective_preferred_candidate,
-        or_(
-            false(),
-            *(
-                and_(
-                    OpinionGroupDescriptionTranslationWork.locale
-                    == display_language_code,
-                    ConversationContent.source_language_code == spoken_language_code,
-                )
-                for display_language_code, spoken_language_code in (
-                    SUPPORTED_EAGER_TRANSLATION_LANGUAGE_PAIRS
-                )
-            ),
-        ),
-    )
-    eager_additional_language_candidate = and_(
+    eager_target_language_candidate = and_(
         effective_preferred_candidate,
         OpinionGroupDescriptionTranslationWork.locale.in_(
             sorted(SUPPORTED_EAGER_TRANSLATION_TARGET_LANGUAGE_CODES)
@@ -2554,10 +2506,7 @@ def _translation_work_candidate_relevance_conditions(
     )
     return _TranslationWorkCandidateRelevance(
         eager_condition=and_(
-            or_(
-                eager_detected_language_candidate,
-                eager_additional_language_candidate,
-            ),
+            eager_target_language_candidate,
             eager_snapshot_filter,
         ),
         explicit_locale_request_condition=and_(

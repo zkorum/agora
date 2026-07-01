@@ -65,7 +65,8 @@ import {
     resolvePreferredContentLanguageFromSettings,
 } from "./contentLanguagePreference.js";
 import {
-    getConfiguredTranslationDisplayLanguageCodes,
+    getProjectTranslationTargetLanguagePolicy,
+    isConfiguredTranslationTargetLanguage,
     shouldTranslateContent,
     sourceLanguageToDisplayLanguage,
 } from "./translationLanguageSetting.js";
@@ -369,13 +370,21 @@ async function fetchResolvedProjectContent({
         }
     }
 
-    const configuredTargetLanguageCodes = getConfiguredTranslationDisplayLanguageCodes({
-        sourceLanguageCode: project.sourceLanguageCode,
-        targetLanguageCodes: additionalLanguageCodes,
+    const targetLanguagePolicy = getProjectTranslationTargetLanguagePolicy({
+        languageSettings: {
+            dynamicTranslationEnabled: project.dynamicTranslationEnabled,
+            defaultLanguageCode: getProjectDefaultDisplayLanguage({
+                sourceLanguageCode: project.sourceLanguageCode,
+            }),
+            targetLanguageCodes: additionalLanguageCodes,
+        },
     });
     const canUseMachineTranslation =
-        project.dynamicTranslationEnabled &&
-        configuredTargetLanguageCodes.has(effectiveLanguageCode) &&
+        targetLanguagePolicy.dynamicTranslationEnabled &&
+        isConfiguredTranslationTargetLanguage({
+            policy: targetLanguagePolicy,
+            targetLanguageCode: effectiveLanguageCode,
+        }) &&
         shouldTranslateContent({
             sourceLanguageCode: project.sourceLanguageCode,
             sourceRawLanguageCode: null,
