@@ -92,6 +92,7 @@ import {
     fetchCommentStatsByConversationSlugId,
     fetchOpinionsByPostSlugId,
     fetchOpinionsByOpinionSlugIdList,
+    isPersonalNonSeedOpinionAuthoredByUser,
     postNewOpinion,
 } from "./service/comment.js";
 import {
@@ -2673,6 +2674,9 @@ server.after(() => {
                     targetLanguage: preferredContentTranslation.targetLanguageCode,
                     spokenLanguages: languagePreferences.spokenLanguages,
                     translationAllowed: preferredContentTranslation.isAllowed,
+                    viewerUserId: deviceStatus.isKnown
+                        ? deviceStatus.userId
+                        : undefined,
                 },
             });
             return Array.from(opinionItemsPerSlugId.values());
@@ -2847,6 +2851,9 @@ server.after(() => {
                 db: db,
                 opinionSlugIdList: request.body.opinionSlugIdList,
                 displayContentViewerPreferences: {
+                    viewerUserId: deviceStatus.isKnown
+                        ? deviceStatus.userId
+                        : undefined,
                     displayLanguage: languagePreferences.displayLanguage,
                     spokenLanguages: languagePreferences.spokenLanguages,
                 },
@@ -2909,6 +2916,7 @@ server.after(() => {
                     targetLanguage: preferredContentTranslation.targetLanguageCode,
                     spokenLanguages: languagePreferences.spokenLanguages,
                     translationAllowed: preferredContentTranslation.isAllowed,
+                    viewerUserId: deviceStatus.userId,
                 },
             });
             return Array.from(opinionItemsPerSlugId.values());
@@ -5413,6 +5421,23 @@ server.after(() => {
                 "[ContentTranslation] Availability checked",
             );
             if (!availability.isAllowed) {
+                const productFailureResponse = {
+                    success: false,
+                    reason: "content_translation_not_enabled",
+                    multilingualSetting: availability.multilingualSetting,
+                } satisfies ContentTranslationResponse;
+                return productFailureResponse;
+            }
+
+            if (
+                request.body.subject.kind === "opinion" &&
+                (await isPersonalNonSeedOpinionAuthoredByUser({
+                    db,
+                    conversationSlugId: request.body.subject.conversationSlugId,
+                    opinionSlugId: request.body.subject.opinionSlugId,
+                    userId: requesterUserId,
+                }))
+            ) {
                 const productFailureResponse = {
                     success: false,
                     reason: "content_translation_not_enabled",

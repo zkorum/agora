@@ -144,9 +144,11 @@ interface OpinionDisplayContentPreferences {
     targetLanguage: SupportedDisplayLanguageCodes;
     spokenLanguages: SupportedSpokenLanguageCodes[];
     translationAllowed: boolean;
+    viewerUserId: string | undefined;
 }
 
 interface OpinionDisplayContentViewerPreferences {
+    viewerUserId: string | undefined;
     displayLanguage: SupportedDisplayLanguageCodes;
     spokenLanguages: SupportedSpokenLanguageCodes[];
 }
@@ -239,6 +241,49 @@ function buildLocalizedOpinionContent({
             original,
         },
     };
+}
+
+export function isPersonalNonSeedOpinionByViewer({
+    opinionAuthorId,
+    viewerUserId,
+    isSeed,
+}: {
+    opinionAuthorId: string;
+    viewerUserId: string | undefined;
+    isSeed: boolean;
+}): boolean {
+    return !isSeed && opinionAuthorId === viewerUserId;
+}
+
+export async function isPersonalNonSeedOpinionAuthoredByUser({
+    db,
+    conversationSlugId,
+    opinionSlugId,
+    userId,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    opinionSlugId: string;
+    userId: string;
+}): Promise<boolean> {
+    const rows = await db
+        .select({ isSeed: opinionTable.isSeed })
+        .from(opinionTable)
+        .innerJoin(
+            conversationTable,
+            eq(conversationTable.id, opinionTable.conversationId),
+        )
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(opinionTable.slugId, opinionSlugId),
+                eq(opinionTable.authorId, userId),
+                isNotNull(opinionTable.currentContentId),
+            ),
+        )
+        .limit(1);
+    const row = rows.at(0);
+    return row !== undefined && !row.isSeed;
 }
 
 function shouldTryPrimaryFallback({
@@ -678,7 +723,13 @@ export async function fetchOpinionsByPostId({
                               },
                     targetLanguageCode: displayContentPreferences.targetLanguage,
                 }),
-                translationAllowed: displayContentPreferences.translationAllowed,
+                translationAllowed:
+                    displayContentPreferences.translationAllowed &&
+                    !isPersonalNonSeedOpinionByViewer({
+                        opinionAuthorId: opinionResponse.authorId,
+                        viewerUserId: displayContentPreferences.viewerUserId,
+                        isSeed: opinionResponse.isSeed,
+                    }),
                 displayLanguage: displayContentPreferences.displayLanguage,
                 spokenLanguages: displayContentPreferences.spokenLanguages,
             }),
@@ -796,6 +847,7 @@ export async function fetchOpinionsByOpinionSlugIdList({
             languageSettingsSource: conversationTable.languageSettingsSource,
             dynamicTranslationEnabled:
                 conversationTable.dynamicTranslationEnabled,
+            authorId: opinionTable.authorId,
             conversationSourceLanguageCode:
                 conversationContentTable.sourceLanguageCode,
             configuredTargetLanguageCode:
@@ -984,7 +1036,13 @@ export async function fetchOpinionsByOpinionSlugIdList({
                     targetLanguageCode:
                         displayContentViewerPreferences.displayLanguage,
                 }),
-                translationAllowed,
+                translationAllowed:
+                    translationAllowed &&
+                    !isPersonalNonSeedOpinionByViewer({
+                        opinionAuthorId: commentResponse.authorId,
+                        viewerUserId: displayContentViewerPreferences.viewerUserId,
+                        isSeed: commentResponse.isSeed,
+                    }),
                 displayLanguage: displayContentViewerPreferences.displayLanguage,
                 spokenLanguages: displayContentViewerPreferences.spokenLanguages,
             }),
