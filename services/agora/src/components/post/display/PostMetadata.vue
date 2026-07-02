@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="container">
-      <div>
+      <div v-if="props.showIdentityCard">
         <UserIdentityCard
           :author-verified="authorVerified"
           :created-at="createdAt"
@@ -128,7 +128,7 @@ import {
   postMetadataTranslations,
 } from "./PostMetadata.i18n";
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   authorVerified: boolean;
   posterUserName: string;
   authorUsername: string;
@@ -142,7 +142,12 @@ const props = defineProps<{
   conversationTitle: string;
   conversationType: string;
   externalSourceConfig: ExternalSourceConfig | null;
-}>();
+  showIdentityCard?: boolean;
+  projectSlug?: string;
+}>(), {
+  showIdentityCard: true,
+  projectSlug: undefined,
+});
 
 const emit = defineEmits<{
   openModerationHistory: [];
@@ -192,6 +197,17 @@ function reportContentCallback() {
 }
 
 async function openUserReportsCallback() {
+  if (props.projectSlug !== undefined) {
+    openRegularAppRouteInNewTab({
+      name: "/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]",
+      params: {
+        reportType: "conversation",
+        conversationSlugId: props.postSlugId,
+      },
+    });
+    return;
+  }
+
   await router.push({
     name: "/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]",
     params: {
@@ -209,6 +225,14 @@ async function muteUserCallback() {
 }
 
 async function moderatePostCallback() {
+  if (props.projectSlug !== undefined) {
+    openRegularAppRouteInNewTab({
+      name: "/moderate/conversation/[conversationSlugId]/",
+      params: { conversationSlugId: props.postSlugId },
+    });
+    return;
+  }
+
   await router.push({
     name: "/moderate/conversation/[conversationSlugId]/",
     params: { conversationSlugId: props.postSlugId },
@@ -221,6 +245,11 @@ async function moderationHistoryCallback() {
     isEmbeddedMode()
   ) {
     emit("openModerationHistory");
+  } else if (props.projectSlug !== undefined) {
+    await router.push({
+      path: `/project/${props.projectSlug}/conversation/${props.postSlugId}`,
+      query: { filter: "moderated" },
+    });
   } else {
     await router.push({
       name: "/conversation/[postSlugId]/",
@@ -237,6 +266,14 @@ async function copyEmbedLinkCallback() {
 }
 
 async function exportConversationCallback() {
+  if (props.projectSlug !== undefined) {
+    openRegularAppRouteInNewTab({
+      name: "/conversation/[conversationSlugId]/export",
+      params: { conversationSlugId: props.postSlugId },
+    });
+    return;
+  }
+
   await router.push({
     name: "/conversation/[conversationSlugId]/export",
     params: { conversationSlugId: props.postSlugId },
@@ -244,6 +281,15 @@ async function exportConversationCallback() {
 }
 
 async function editConversationCallback() {
+  if (props.projectSlug !== undefined) {
+    openRegularAppRouteInNewTab({
+      name: "/conversation/[conversationSlugId]/edit/",
+      params: { conversationSlugId: props.postSlugId },
+      query: { returnTo: route.fullPath },
+    });
+    return;
+  }
+
   await router.push({
     name: "/conversation/[conversationSlugId]/edit/",
     params: { conversationSlugId: props.postSlugId },
@@ -336,6 +382,27 @@ function clickedMoreIcon() {
       conversationDeletedCallback,
     },
   );
+
+  if (props.projectSlug !== undefined) {
+    postActions.dialogState.value.actions = postActions.dialogState.value.actions.map(
+      (action) =>
+        regularAppToolActionIds.has(action.id)
+          ? { ...action, trailingIcon: "mdi-open-in-new" }
+          : action,
+    );
+  }
+}
+
+const regularAppToolActionIds = new Set([
+  "edit",
+  "exportConversation",
+  "moderate",
+  "userReports",
+]);
+
+function openRegularAppRouteInNewTab(to: Parameters<typeof router.resolve>[0]): void {
+  const resolved = router.resolve(to);
+  window.open(resolved.href, "_blank", "noopener,noreferrer");
 }
 
 /**

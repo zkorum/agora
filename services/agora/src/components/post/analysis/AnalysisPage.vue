@@ -102,11 +102,7 @@
               <div class="analysis-actions">
                 <SpaLink
                   v-if="showReportButton"
-                  :to="{
-                    name: '/conversation/[conversationSlugId]/report',
-                    params: { conversationSlugId: props.conversationSlugId },
-                    query: reportRouteQuery,
-                  }"
+                  :to="effectiveReportRoute"
                   class="report-button"
                   :title="t('generateReport')"
                   :aria-label="t('generateReport')"
@@ -447,6 +443,7 @@ const props = defineProps<{
   surveyGate: SurveyGateSummary | undefined;
   aiLabelingEnabled: boolean;
   showReportButton: boolean;
+  reportRouteOverride?: RouteLocationRaw;
   isLiveAnalysisPaused: boolean;
   isConversationClosed: boolean;
   navigateToDiscoverTab: () => void;
@@ -1042,6 +1039,13 @@ const reportRouteQuery = computed(() =>
     checkpointViewSnapshotId: selectedRouteCheckpoint.value,
   })
 );
+const reportRoute = computed<RouteLocationRaw>(() => ({
+  path: `/conversation/${props.conversationSlugId}/report`,
+  query: reportRouteQuery.value,
+}));
+const effectiveReportRoute = computed(
+  () => props.reportRouteOverride ?? reportRoute.value
+);
 
 watch(
   () => ({
@@ -1600,6 +1604,7 @@ defineExpose({
   align-items: flex-start;
   justify-content: space-between;
   gap: 2rem;
+  container-type: inline-size;
 }
 
 .analysis-actions {
@@ -1681,7 +1686,10 @@ defineExpose({
     color: #6b4eff;
   }
 
-  @media (max-width: $breakpoint-xs-max) {
+}
+
+@container (max-width: 34rem) {
+  .report-button {
     display: none;
   }
 }

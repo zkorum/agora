@@ -9,6 +9,7 @@ export interface BaseContentAction {
   label: string;
   description?: string;
   icon: string;
+  trailingIcon?: string;
   variant?: "default" | "destructive" | "warning" | "positive";
 }
 

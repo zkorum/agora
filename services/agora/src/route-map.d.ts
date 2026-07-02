@@ -310,6 +310,20 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dev/project-conversation-layout': RouteRecordInfo<
+      '/dev/project-conversation-layout',
+      '/dev/project-conversation-layout',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/dev/project-conversation-report-layout': RouteRecordInfo<
+      '/dev/project-conversation-report-layout',
+      '/dev/project-conversation-report-layout',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/dev/project-page': RouteRecordInfo<
       '/dev/project-page',
       '/dev/project-page',
@@ -918,6 +932,18 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dev/opinion-group-visualization.vue': {
       routes:
         | '/dev/opinion-group-visualization'
+      views:
+        | never
+    }
+    'src/pages/dev/project-conversation-layout.vue': {
+      routes:
+        | '/dev/project-conversation-layout'
+      views:
+        | never
+    }
+    'src/pages/dev/project-conversation-report-layout.vue': {
+      routes:
+        | '/dev/project-conversation-report-layout'
       views:
         | never
     }
