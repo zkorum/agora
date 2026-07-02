@@ -61,6 +61,10 @@ import {
 } from "./contentLanguageMetadata.js";
 import { getImplicitDefaultDisplayLanguage } from "./projectLanguage.js";
 import {
+    getManualMultilingualSettingsFromEffectiveTargets,
+    getManualMultilingualSettingsFromProjectLanguageSettings,
+    getConversationOverrideTranslationTargetLanguagePolicy,
+    getProjectTranslationTargetLanguagePolicy,
     normalizeConversationMultilingualSettings,
     normalizeInheritedConversationMultilingualSettings,
     sourceLanguageToDisplayLanguage,
@@ -203,6 +207,19 @@ export async function getConversationForEdit({
                   },
               }
             : undefined;
+    const editMultilingualSetting =
+        conversation.languageSettingsSource === "conversation_override"
+            ? getManualMultilingualSettingsFromEffectiveTargets({
+                  effectiveMultilingualSettings: multilingualSetting,
+                  detectedTargetLanguageCode: sourceLanguageToDisplayLanguage({
+                      sourceLanguageCode: conversation.sourceLanguageCode,
+                  }),
+              })
+            : {
+                  dynamicTranslationEnabled:
+                      projectLanguageSettings.dynamicTranslationEnabled,
+                  additionalLanguageCodes: [],
+              };
 
     const editPermissions = await buildConversationEditPermissions({
         db,
@@ -232,7 +249,7 @@ export async function getConversationForEdit({
             sourceRawLanguageCode: conversation.sourceRawLanguageCode,
             sourceLanguageConfidence: conversation.sourceLanguageConfidence,
         }),
-        multilingualSetting,
+        multilingualSetting: editMultilingualSetting,
         languageSettingsSource: conversation.languageSettingsSource,
         projectLanguageProject,
         isIndexed: conversation.isIndexed,
@@ -451,6 +468,12 @@ export async function updateConversation({
                 : normalizeInheritedConversationMultilingualSettings({
                       languageSettings: inheritedProjectLanguageSettings,
                   });
+        const premiumMultilingualSetting =
+            inheritedProjectLanguageSettings === undefined
+                ? multilingualSetting
+                : getManualMultilingualSettingsFromProjectLanguageSettings({
+                      languageSettings: inheritedProjectLanguageSettings,
+                  });
         const subject = getPremiumEntitlementSubjectForConversation({
             conversation: { projectId: conversation.projectId, userId },
         });
@@ -466,8 +489,8 @@ export async function updateConversation({
             restrictedDynamicTranslationFeatures.length === 0;
         if (
             restrictedDynamicTranslationFeatures.length > 0 &&
-            (requestedMultilingualSetting.dynamicTranslationEnabled ||
-                requestedMultilingualSetting.additionalLanguageCodes.length > 0)
+            (premiumMultilingualSetting.dynamicTranslationEnabled ||
+                premiumMultilingualSetting.additionalLanguageCodes.length > 0)
         ) {
             return {
                 success: false,
@@ -669,6 +692,7 @@ export async function updateConversation({
                 await getBlockSourceLanguageMetadata();
             await setSurveyConfigForConversation({
                 db: tx,
+                conversationSlugId: data.conversationSlugId,
                 conversationId,
                 surveyConfig: surveyConfig ?? null,
                 now,
@@ -699,10 +723,29 @@ export async function updateConversation({
                       canUseDynamicTranslation,
                   })
                 : requestedMultilingualSetting;
+        const targetLanguagePolicy =
+            inheritedProjectLanguageSettings === undefined
+                ? getConversationOverrideTranslationTargetLanguagePolicy({
+                      multilingualSettings: effectiveMultilingualSetting,
+                      detectedTargetLanguageCode: sourceLanguageToDisplayLanguage({
+                          sourceLanguageCode:
+                              contentChanged || surveyConfig !== undefined
+                                  ? (await getBlockSourceLanguageMetadata())
+                                        .sourceLanguageCode
+                                  : conversation.currentSourceLanguageCode,
+                      }),
+                  })
+                : getProjectTranslationTargetLanguagePolicy({
+                      languageSettings: inheritedProjectLanguageSettings,
+                  });
         await upsertConversationMultilingualSetting({
             db: tx,
             conversationId,
-            setting: effectiveMultilingualSetting,
+            setting: {
+                dynamicTranslationEnabled: targetLanguagePolicy.dynamicTranslationEnabled,
+                additionalLanguageCodes:
+                    targetLanguagePolicy.effectiveTargetLanguageCodes,
+            },
             now,
         });
 

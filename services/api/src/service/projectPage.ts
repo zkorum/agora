@@ -42,6 +42,8 @@ import {
 import type {
     FetchProjectPageActivitiesRequest,
     FetchProjectPageActivitiesResponse,
+    FetchProjectConversationPageRequest,
+    FetchProjectConversationPageResponse,
     FetchProjectPageRequest,
     FetchProjectPageResponse,
     ProjectPageActivity,
@@ -65,7 +67,8 @@ import {
     resolvePreferredContentLanguageFromSettings,
 } from "./contentLanguagePreference.js";
 import {
-    getConfiguredTranslationDisplayLanguageCodes,
+    getProjectTranslationTargetLanguagePolicy,
+    isConfiguredTranslationTargetLanguage,
     shouldTranslateContent,
     sourceLanguageToDisplayLanguage,
 } from "./translationLanguageSetting.js";
@@ -73,6 +76,11 @@ import {
 interface ProjectPageServiceParams {
     db: PostgresJsDatabase;
     baseImageServiceUrl: string;
+}
+
+interface ProjectShellPayload {
+    project: ProjectPageProject;
+    languageOptions: ProjectPageLanguageOption[];
 }
 
 interface ProjectBaseRow {
@@ -369,13 +377,21 @@ async function fetchResolvedProjectContent({
         }
     }
 
-    const configuredTargetLanguageCodes = getConfiguredTranslationDisplayLanguageCodes({
-        sourceLanguageCode: project.sourceLanguageCode,
-        targetLanguageCodes: additionalLanguageCodes,
+    const targetLanguagePolicy = getProjectTranslationTargetLanguagePolicy({
+        languageSettings: {
+            dynamicTranslationEnabled: project.dynamicTranslationEnabled,
+            defaultLanguageCode: getProjectDefaultDisplayLanguage({
+                sourceLanguageCode: project.sourceLanguageCode,
+            }),
+            targetLanguageCodes: additionalLanguageCodes,
+        },
     });
     const canUseMachineTranslation =
-        project.dynamicTranslationEnabled &&
-        configuredTargetLanguageCodes.has(effectiveLanguageCode) &&
+        targetLanguagePolicy.dynamicTranslationEnabled &&
+        isConfiguredTranslationTargetLanguage({
+            policy: targetLanguagePolicy,
+            targetLanguageCode: effectiveLanguageCode,
+        }) &&
         shouldTranslateContent({
             sourceLanguageCode: project.sourceLanguageCode,
             sourceRawLanguageCode: null,
@@ -897,6 +913,31 @@ async function fetchProjectActivities({
     };
 }
 
+async function assertVisibleProjectConversation({
+    db,
+    projectId,
+    conversationSlugId,
+}: {
+    db: PostgresJsDatabase;
+    projectId: number;
+    conversationSlugId: string;
+}): Promise<void> {
+    const rows = await db
+        .select({ conversationId: conversationTable.id })
+        .from(conversationTable)
+        .where(
+            and(
+                getVisibleProjectConversationWhereClause({ projectId }),
+                eq(conversationTable.slugId, conversationSlugId),
+            ),
+        )
+        .limit(1);
+
+    if (rows.at(0) === undefined) {
+        throw httpErrors.notFound("Project conversation not found");
+    }
+}
+
 async function fetchProjectAggregateCounts({
     db,
     projectId,
@@ -1205,19 +1246,15 @@ async function fetchProjectContact({
     };
 }
 
-async function buildProjectPagePayload({
+async function buildProjectShellPayload({
     db,
     baseImageServiceUrl,
-    request,
+    project,
     currentDisplayLanguage,
 }: ProjectPageServiceParams & {
-    request: FetchProjectPageRequest;
+    project: ProjectBaseRow;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
-}): Promise<FetchProjectPageResponse> {
-    const project = await fetchProjectBaseBySlug({
-        db,
-        projectSlug: request.projectSlug,
-    });
+}): Promise<ProjectShellPayload> {
     const defaultLanguageCode = getProjectDefaultDisplayLanguage({
         sourceLanguageCode: project.sourceLanguageCode,
     });
@@ -1235,7 +1272,7 @@ async function buildProjectPagePayload({
         effectiveLanguageCode: preferredContentLanguage,
         defaultLanguageCode,
     });
-    const [content, bannerImageUrl, aggregateCounts, attributions, contact, activityPage] =
+    const [content, bannerImageUrl, aggregateCounts, attributions, contact] =
         await Promise.all([
             fetchResolvedProjectContent({
                 db,
@@ -1264,13 +1301,6 @@ async function buildProjectPagePayload({
                 projectId: project.projectId,
                 baseImageServiceUrl,
             }),
-            fetchProjectActivities({
-                db,
-                projectId: project.projectId,
-                displayLanguage,
-                activityLimit: request.activityLimit,
-                activityCursor: request.activityCursor,
-            }),
         ]);
     const projectPayload: ProjectPageProject = {
         slug: project.projectSlug,
@@ -1290,10 +1320,44 @@ async function buildProjectPagePayload({
     const supportedLanguageCodes = [defaultLanguageCode, ...additionalLanguageCodes];
     return {
         project: projectPayload,
-        activities: activityPage.activities,
         languageOptions: buildProjectPageLanguageOptions({
             projectSupportedLanguageCodes: supportedLanguageCodes,
         }),
+    };
+}
+
+async function buildProjectPagePayload({
+    db,
+    baseImageServiceUrl,
+    request,
+    currentDisplayLanguage,
+}: ProjectPageServiceParams & {
+    request: FetchProjectPageRequest;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
+}): Promise<FetchProjectPageResponse> {
+    const project = await fetchProjectBaseBySlug({
+        db,
+        projectSlug: request.projectSlug,
+    });
+    const [projectShellPayload, activityPage] = await Promise.all([
+        buildProjectShellPayload({
+            db,
+            baseImageServiceUrl,
+            project,
+            currentDisplayLanguage,
+        }),
+        fetchProjectActivities({
+            db,
+            projectId: project.projectId,
+            displayLanguage: currentDisplayLanguage,
+            activityLimit: request.activityLimit,
+            activityCursor: request.activityCursor,
+        }),
+    ]);
+
+    return {
+        ...projectShellPayload,
+        activities: activityPage.activities,
         nextActivityCursor: activityPage.nextActivityCursor,
     };
 }
@@ -1334,5 +1398,33 @@ export async function fetchProjectPageActivities({
         displayLanguage: currentDisplayLanguage,
         activityLimit: request.activityLimit,
         activityCursor: request.activityCursor,
+    });
+}
+
+export async function fetchProjectConversationPage({
+    db,
+    baseImageServiceUrl,
+    request,
+    currentDisplayLanguage,
+}: ProjectPageServiceParams & {
+    request: FetchProjectConversationPageRequest;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
+}): Promise<FetchProjectConversationPageResponse> {
+    const project = await fetchProjectBaseBySlug({
+        db,
+        projectSlug: request.projectSlug,
+    });
+
+    await assertVisibleProjectConversation({
+        db,
+        projectId: project.projectId,
+        conversationSlugId: request.conversationSlugId,
+    });
+
+    return await buildProjectShellPayload({
+        db,
+        baseImageServiceUrl,
+        project,
+        currentDisplayLanguage,
     });
 }

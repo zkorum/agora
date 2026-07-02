@@ -7,7 +7,6 @@ import type {
   ContentLanguageMetadataOutput,
   ContentTranslationSourceLanguage,
   ConversationLanguageSettingOutput,
-  ConversationMultilingualSetting,
   LocalizedContentTranslationStatus,
 } from "src/shared/types/zod";
 
@@ -182,30 +181,4 @@ export function resolveContentTranslationState({
     sourceLanguageLabel,
     translationStatus: "completed",
   };
-}
-
-export function getSupportedContentTranslationTargetLanguageCodes({
-  contentLanguageMetadata,
-  languageSetting,
-  multilingualSetting,
-}: {
-  contentLanguageMetadata?: ContentLanguageMetadataOutput;
-  languageSetting?: ConversationLanguageSettingOutput;
-  multilingualSetting: ConversationMultilingualSetting;
-}): SupportedDisplayLanguageCodes[] {
-  const supportedLanguageCodes = new Set<SupportedDisplayLanguageCodes>();
-  const primaryLanguageCode =
-    contentLanguageMetadata?.detectedDisplayLanguageCode ??
-    (languageSetting?.mode === "manual"
-      ? languageSetting.languageCode
-      : (languageSetting?.detectedLanguageCode ?? null));
-  if (primaryLanguageCode !== null) {
-    supportedLanguageCodes.add(primaryLanguageCode);
-  }
-
-  for (const languageCode of multilingualSetting.additionalLanguageCodes) {
-    supportedLanguageCodes.add(languageCode);
-  }
-
-  return [...supportedLanguageCodes];
 }

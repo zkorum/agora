@@ -78,6 +78,7 @@
                   true
                 "
                 :enable-route-navigation="true"
+                :conversation-route-context="normalConversationRouteContext"
               />
             </div>
 
@@ -117,6 +118,7 @@
                     :comment-filter="commentFilter"
                     :on-view-analysis="onViewAnalysis"
                     :navigate-to-discover-tab="navigateToDiscoverTab"
+                    :conversation-route-context="normalConversationRouteContext"
                     v-bind="analysisRouteProps"
                     @analysis-live-pause-stats="setAnalysisLivePauseStats"
                     @update:comment-filter="
@@ -194,6 +196,10 @@ import {
   isBackToConversationCommentTab,
   navigateBackOrReplace,
 } from "src/utils/nav/historyBack";
+import {
+  getConversationPath,
+  normalConversationRouteContext,
+} from "src/utils/router/conversationRouteContext";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -233,7 +239,7 @@ const conversationConfig: ConversationParentConfig = {
     "/conversation/[postSlugId]/",
     "/conversation/[postSlugId]",
   ],
-  routePrefix: "/conversation/{id}",
+  routeContext: normalConversationRouteContext,
 };
 
 const {
@@ -388,11 +394,10 @@ function handleBack(event: MouseEvent): void {
     const slugId = conversationData.value?.metadata.conversationSlugId;
     if (slugId === undefined) return;
 
-    const fallbackRoute = `/conversation/${slugId}/`;
-    const conversationPathPrefix = conversationConfig.routePrefix.replace(
-      "{id}",
-      slugId
-    );
+    const fallbackRoute = getConversationPath({ conversationSlugId: slugId });
+    const conversationPathPrefix = fallbackRoute.endsWith("/")
+      ? fallbackRoute.slice(0, -1)
+      : fallbackRoute;
     void navigateBackOrReplace({
       router,
       fallbackRoute,

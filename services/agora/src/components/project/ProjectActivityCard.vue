@@ -1,8 +1,8 @@
 <template>
   <SpaLink
     :to="{
-      name: '/conversation/[postSlugId]/',
-      params: { postSlugId: activity.slug },
+      name: '/project/[projectSlug]/conversation/[postSlugId]/',
+      params: { projectSlug, postSlugId: activity.slug },
     }"
     class="project-activity-card"
   >
@@ -117,6 +117,7 @@ import type {
 
 const props = defineProps<{
   activity: ProjectActivity;
+  projectSlug: string;
   languageCode: string;
   textDirection: LanguageTextDirection;
 }>();

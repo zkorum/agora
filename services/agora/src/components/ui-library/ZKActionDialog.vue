@@ -31,6 +31,12 @@
                       {{ action.description }}
                     </div>
                   </div>
+                  <q-icon
+                    v-if="action.trailingIcon !== undefined"
+                    :name="action.trailingIcon"
+                    size="20px"
+                    class="action-trailing-icon"
+                  />
                 </div>
               </template>
             </div>
@@ -194,6 +200,11 @@ watch(showDialog, (newValue) => {
 .action-icon {
   flex-shrink: 0;
   color: $color-text-weak;
+}
+
+.action-trailing-icon {
+  flex-shrink: 0;
+  color: $primary;
 }
 
 .action-content {

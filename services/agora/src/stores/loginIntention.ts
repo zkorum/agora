@@ -1,5 +1,10 @@
 import { defineStore } from "pinia";
 import type { EventSlug } from "src/shared/types/zod";
+import {
+  type ConversationRouteContext,
+  getConversationCommentRoute,
+  normalConversationRouteContext,
+} from "src/utils/router/conversationRouteContext";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -9,7 +14,7 @@ import { useOnboardingPreferencesStore } from "./onboarding/preferences";
 interface VotingIntention {
   enabled: boolean;
   conversationSlugId: string;
-  isEmbedView: boolean;
+  routeContext: ConversationRouteContext;
   eventSlug?: EventSlug;
 }
 
@@ -17,7 +22,7 @@ interface OpinionAgreementIntention {
   enabled: boolean;
   conversationSlugId: string;
   opinionSlugId: string;
-  isEmbedView: boolean;
+  routeContext: ConversationRouteContext;
   eventSlug?: EventSlug;
 }
 
@@ -29,6 +34,7 @@ interface NewOpinionIntention {
   enabled: boolean;
   conversationSlugId: string;
   opinionBody: string;
+  routeContext: ConversationRouteContext;
   eventSlug?: EventSlug;
 }
 
@@ -36,19 +42,13 @@ interface ReportUserContentIntention {
   enabled: boolean;
   conversationSlugId: string;
   opinionSlugId: string;
-  isEmbedView: boolean;
+  routeContext: ConversationRouteContext;
   eventSlug?: EventSlug;
-}
-
-interface SurveyIntention {
-  enabled: boolean;
-  conversationSlugId: string;
 }
 
 export type PossibleIntentions =
   | "none"
   | "voting"
-  | "survey"
   | "agreement"
   | "newConversation"
   | "newOpinion"
@@ -66,7 +66,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   let votingIntention: VotingIntention = {
     enabled: false,
     conversationSlugId: "",
-    isEmbedView: false,
+    routeContext: normalConversationRouteContext,
     eventSlug: undefined,
   };
 
@@ -74,7 +74,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     enabled: false,
     conversationSlugId: "",
     opinionSlugId: "",
-    isEmbedView: false,
+    routeContext: normalConversationRouteContext,
     eventSlug: undefined,
   };
 
@@ -86,6 +86,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     enabled: false,
     conversationSlugId: "",
     opinionBody: "",
+    routeContext: normalConversationRouteContext,
     eventSlug: undefined,
   };
 
@@ -93,24 +94,19 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     enabled: false,
     conversationSlugId: "",
     opinionSlugId: "",
-    isEmbedView: false,
+    routeContext: normalConversationRouteContext,
     eventSlug: undefined,
-  };
-
-  let surveyIntention: SurveyIntention = {
-    enabled: false,
-    conversationSlugId: "",
   };
 
   function createVotingIntention(
     conversationSlugId: string,
-    isEmbedView: boolean,
+    routeContext: ConversationRouteContext,
     eventSlug?: EventSlug
   ) {
     votingIntention = {
       enabled: true,
       conversationSlugId: conversationSlugId,
-      isEmbedView: isEmbedView,
+      routeContext,
       eventSlug: eventSlug,
     };
   }
@@ -118,14 +114,14 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   function createOpinionAgreementIntention(
     conversationSlugId: string,
     opinionSlugId: string,
-    isEmbedView: boolean,
+    routeContext: ConversationRouteContext,
     eventSlug?: EventSlug
   ) {
     opinionAgreementIntention = {
       enabled: true,
       conversationSlugId: conversationSlugId,
       opinionSlugId: opinionSlugId,
-      isEmbedView: isEmbedView,
+      routeContext,
       eventSlug: eventSlug,
     };
   }
@@ -139,12 +135,14 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   function createNewOpinionIntention(
     conversationSlugId: string,
     opinionBody: string,
+    routeContext: ConversationRouteContext,
     eventSlug?: EventSlug
   ) {
     newOpinionIntention = {
       enabled: true,
       conversationSlugId: conversationSlugId,
       opinionBody: opinionBody,
+      routeContext,
       eventSlug: eventSlug,
     };
   }
@@ -152,22 +150,15 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   function createReportUserContentIntention(
     conversationSlugId: string,
     opinionSlugId: string,
-    isEmbedView: boolean,
+    routeContext: ConversationRouteContext,
     eventSlug?: EventSlug
   ) {
     reportUserContentIntention = {
       enabled: true,
       conversationSlugId: conversationSlugId,
       opinionSlugId: opinionSlugId,
-      isEmbedView: isEmbedView,
+      routeContext,
       eventSlug: eventSlug,
-    };
-  }
-
-  function createSurveyIntention(conversationSlugId: string) {
-    surveyIntention = {
-      enabled: true,
-      conversationSlugId,
     };
   }
 
@@ -193,45 +184,41 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         await router.replace({ name: "/" });
         break;
       case "agreement":
-        await router.replace({
-          name: opinionAgreementIntention.isEmbedView
-            ? "/conversation/[postSlugId].embed/"
-            : "/conversation/[postSlugId]/",
-          params: { postSlugId: opinionAgreementIntention.conversationSlugId },
-          query: { opinion: opinionAgreementIntention.opinionSlugId },
-        });
+        await router.replace(
+          getConversationCommentRoute({
+            conversationSlugId: opinionAgreementIntention.conversationSlugId,
+            routeContext: opinionAgreementIntention.routeContext,
+            query: { opinion: opinionAgreementIntention.opinionSlugId },
+          })
+        );
         break;
       case "newConversation":
         await router.replace({ name: "/conversation/new/create/" });
         break;
       case "newOpinion":
-        await router.replace({
-          name: "/conversation/[postSlugId]/",
-          params: { postSlugId: newOpinionIntention.conversationSlugId },
-        });
+        await router.replace(
+          getConversationCommentRoute({
+            conversationSlugId: newOpinionIntention.conversationSlugId,
+            routeContext: newOpinionIntention.routeContext,
+          })
+        );
         break;
       case "voting":
-        await router.replace({
-          name: votingIntention.isEmbedView
-            ? "/conversation/[postSlugId].embed/"
-            : "/conversation/[postSlugId]/",
-          params: { postSlugId: votingIntention.conversationSlugId },
-        });
-        break;
-      case "survey":
-        await router.replace({
-          path: `/conversation/${surveyIntention.conversationSlugId}/onboarding/`,
-        });
-        surveyIntention.enabled = false;
+        await router.replace(
+          getConversationCommentRoute({
+            conversationSlugId: votingIntention.conversationSlugId,
+            routeContext: votingIntention.routeContext,
+          })
+        );
         break;
       case "reportUserContent":
-        await router.replace({
-          name: reportUserContentIntention.isEmbedView
-            ? "/conversation/[postSlugId].embed/"
-            : "/conversation/[postSlugId]/",
-          params: { postSlugId: reportUserContentIntention.conversationSlugId },
-          query: { opinion: reportUserContentIntention.opinionSlugId },
-        });
+        await router.replace(
+          getConversationCommentRoute({
+            conversationSlugId: reportUserContentIntention.conversationSlugId,
+            routeContext: reportUserContentIntention.routeContext,
+            query: { opinion: reportUserContentIntention.opinionSlugId },
+          })
+        );
         break;
       case "settings":
         await router.replace({ name: "/settings/" });
@@ -268,6 +255,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         enabled: false,
         conversationSlugId: "",
         opinionBody: "",
+        routeContext: normalConversationRouteContext,
         eventSlug: undefined,
       };
     }
@@ -301,7 +289,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         enabled: false,
         conversationSlugId: "",
         opinionSlugId: "",
-        isEmbedView: false,
+        routeContext: normalConversationRouteContext,
         eventSlug: undefined,
       };
     }
@@ -317,7 +305,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
       return {
         enabled: false,
         conversationSlugId: "",
-        isEmbedView: false,
+        routeContext: normalConversationRouteContext,
         eventSlug: undefined,
       };
     }
@@ -336,7 +324,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         enabled: false,
         conversationSlugId: "",
         opinionSlugId: "",
-        isEmbedView: false,
+        routeContext: normalConversationRouteContext,
         eventSlug: undefined,
       };
     }
@@ -362,7 +350,6 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     createNewConversationIntention,
     createNewOpinionIntention,
     createReportUserContentIntention,
-    createSurveyIntention,
     routeUserAfterLogin,
     clearNewOpinionIntention,
     clearNewConversationIntention,

@@ -5,30 +5,28 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
+import { useConversationOnboardingRoute } from "src/composables/conversation/useConversationOnboardingRoute";
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
-import { getSingleRouteParam } from "src/utils/router/params";
 import { computed, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 
 import { resolveVerifyRouteDecision } from "./verifyRouteLogic";
 
 const router = useRouter();
-const route = useRoute();
+const { route, routeConversationSlugId, routeContext } =
+  useConversationOnboardingRoute();
 const { onboardingMode, credentialUpgradeTarget } = storeToRefs(
   onboardingFlowStore()
 );
 const conversationOnboardingStore = useConversationOnboardingStore();
 const { exitToConversation } = useConversationOnboardingExit();
 
-const routeConversationSlugId = computed(() => {
-  return getSingleRouteParam(route.params.postSlugId);
-});
-
 if (conversationOnboardingStore.conversationSlugId !== routeConversationSlugId.value) {
   conversationOnboardingStore.startManualEntry({
     conversationSlugId: routeConversationSlugId.value,
+    routeContext: routeContext.value,
   });
 }
 
@@ -43,7 +41,8 @@ const {
 } = useConversationSurveyState({ conversationSlugId: routeConversationSlugId });
 
 const isExactVerifyRoute = computed(() => {
-  return route.name === "/conversation/[postSlugId].onboarding/verify";
+  const routeName = String(route.name ?? "");
+  return routeName === "/conversation/[postSlugId].onboarding/verify";
 });
 
 watch(
@@ -80,6 +79,7 @@ watch(
       surveyStatus: statusData,
       surveyForm: formData,
       requirementState: requirements,
+      routeContext: routeContext.value,
     });
 
     if (decision.onboardingMode !== null) {
@@ -95,6 +95,7 @@ watch(
     if (decision.navigation.kind === "exitToConversation") {
       void exitToConversation({
         conversationSlugId: conversationSlugId.value,
+        routeContext: routeContext.value,
       });
       return;
     }

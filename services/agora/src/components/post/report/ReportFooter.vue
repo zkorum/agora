@@ -41,7 +41,7 @@ const formatGeneratedAt = useLocalizedDateTimeFormatter({
 const { getConversationUrl } = useConversationUrl();
 
 const conversationUrl = computed(() =>
-  getConversationUrl(props.conversationSlugId),
+  getConversationUrl({ conversationSlugId: props.conversationSlugId }),
 );
 
 const formattedNow = computed(() =>

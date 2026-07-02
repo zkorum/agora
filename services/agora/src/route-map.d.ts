@@ -310,6 +310,20 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dev/project-conversation-layout': RouteRecordInfo<
+      '/dev/project-conversation-layout',
+      '/dev/project-conversation-layout',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/dev/project-conversation-report-layout': RouteRecordInfo<
+      '/dev/project-conversation-report-layout',
+      '/dev/project-conversation-report-layout',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/dev/project-page': RouteRecordInfo<
       '/dev/project-page',
       '/dev/project-page',
@@ -490,6 +504,39 @@ declare module 'vue-router/auto-routes' {
       '/project/:projectSlug',
       { projectSlug: ParamValue<true> },
       { projectSlug: ParamValue<false> },
+      | '/project/[projectSlug]/conversation/[postSlugId]'
+      | '/project/[projectSlug]/conversation/[postSlugId]/'
+      | '/project/[projectSlug]/conversation/[postSlugId]/analysis'
+      | '/project/[projectSlug]/conversation/[postSlugId]/report'
+    >,
+    '/project/[projectSlug]/conversation/[postSlugId]': RouteRecordInfo<
+      '/project/[projectSlug]/conversation/[postSlugId]',
+      '/project/:projectSlug/conversation/:postSlugId',
+      { projectSlug: ParamValue<true>, postSlugId: ParamValue<true> },
+      { projectSlug: ParamValue<false>, postSlugId: ParamValue<false> },
+      | '/project/[projectSlug]/conversation/[postSlugId]/'
+      | '/project/[projectSlug]/conversation/[postSlugId]/analysis'
+      | '/project/[projectSlug]/conversation/[postSlugId]/report'
+    >,
+    '/project/[projectSlug]/conversation/[postSlugId]/': RouteRecordInfo<
+      '/project/[projectSlug]/conversation/[postSlugId]/',
+      '/project/:projectSlug/conversation/:postSlugId',
+      { projectSlug: ParamValue<true>, postSlugId: ParamValue<true> },
+      { projectSlug: ParamValue<false>, postSlugId: ParamValue<false> },
+      | never
+    >,
+    '/project/[projectSlug]/conversation/[postSlugId]/analysis': RouteRecordInfo<
+      '/project/[projectSlug]/conversation/[postSlugId]/analysis',
+      '/project/:projectSlug/conversation/:postSlugId/analysis',
+      { projectSlug: ParamValue<true>, postSlugId: ParamValue<true> },
+      { projectSlug: ParamValue<false>, postSlugId: ParamValue<false> },
+      | never
+    >,
+    '/project/[projectSlug]/conversation/[postSlugId]/report': RouteRecordInfo<
+      '/project/[projectSlug]/conversation/[postSlugId]/report',
+      '/project/:projectSlug/conversation/:postSlugId/report',
+      { projectSlug: ParamValue<true>, postSlugId: ParamValue<true> },
+      { projectSlug: ParamValue<false>, postSlugId: ParamValue<false> },
       | never
     >,
     '/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]': RouteRecordInfo<
@@ -921,6 +968,18 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/dev/project-conversation-layout.vue': {
+      routes:
+        | '/dev/project-conversation-layout'
+      views:
+        | never
+    }
+    'src/pages/dev/project-conversation-report-layout.vue': {
+      routes:
+        | '/dev/project-conversation-report-layout'
+      views:
+        | never
+    }
     'src/pages/dev/project-page.vue': {
       routes:
         | '/dev/project-page'
@@ -1074,6 +1133,37 @@ declare module 'vue-router/auto-routes' {
     'src/pages/project/[projectSlug].vue': {
       routes:
         | '/project/[projectSlug]'
+        | '/project/[projectSlug]/conversation/[postSlugId]'
+        | '/project/[projectSlug]/conversation/[postSlugId]/'
+        | '/project/[projectSlug]/conversation/[postSlugId]/analysis'
+        | '/project/[projectSlug]/conversation/[postSlugId]/report'
+      views:
+        | 'default'
+    }
+    'src/pages/project/[projectSlug]/conversation/[postSlugId].vue': {
+      routes:
+        | '/project/[projectSlug]/conversation/[postSlugId]'
+        | '/project/[projectSlug]/conversation/[postSlugId]/'
+        | '/project/[projectSlug]/conversation/[postSlugId]/analysis'
+        | '/project/[projectSlug]/conversation/[postSlugId]/report'
+      views:
+        | 'default'
+    }
+    'src/pages/project/[projectSlug]/conversation/[postSlugId]/index.vue': {
+      routes:
+        | '/project/[projectSlug]/conversation/[postSlugId]/'
+      views:
+        | never
+    }
+    'src/pages/project/[projectSlug]/conversation/[postSlugId]/analysis.vue': {
+      routes:
+        | '/project/[projectSlug]/conversation/[postSlugId]/analysis'
+      views:
+        | never
+    }
+    'src/pages/project/[projectSlug]/conversation/[postSlugId]/report.vue': {
+      routes:
+        | '/project/[projectSlug]/conversation/[postSlugId]/report'
       views:
         | never
     }

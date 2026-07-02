@@ -23,27 +23,37 @@ const zodImportFormData = withJsonSchemaId(
                 .max(6)
                 .nullable()
                 .optional(),
-            multilingualSetting: z
-                .object({
-                    additionalLanguageCodes: z
-                        .array(ZodSupportedDisplayLanguageCodes)
-                        .max(3)
-                        .refine(
-                            (languageCodes) =>
-                                new Set(languageCodes).size ===
-                                languageCodes.length,
-                            "Additional languages must be unique",
-                        ),
-                    dynamicTranslationEnabled: z.boolean(),
-                })
-                .strict()
-                .default({
-                    additionalLanguageCodes: [],
-                    dynamicTranslationEnabled: false,
-                }),
-            languageSettingsSource: z.enum([
-                "conversation_override",
-                "project_inherited",
+            languageTargetPolicy: z.discriminatedUnion("source", [
+                z
+                    .object({
+                        source: z.literal("conversation_override"),
+                        dynamicTranslationEnabled: z.boolean(),
+                        manualTargetLanguageCodes: z
+                            .array(ZodSupportedDisplayLanguageCodes)
+                            .max(2)
+                            .refine(
+                                (languageCodes) =>
+                                    new Set(languageCodes).size ===
+                                    languageCodes.length,
+                                "Manual target languages must be unique",
+                            ),
+                    })
+                    .strict(),
+                z
+                    .object({
+                        source: z.literal("project_inherited"),
+                        dynamicTranslationEnabled: z.boolean(),
+                        effectiveTargetLanguageCodes: z
+                            .array(ZodSupportedDisplayLanguageCodes)
+                            .max(3)
+                            .refine(
+                                (languageCodes) =>
+                                    new Set(languageCodes).size ===
+                                    languageCodes.length,
+                                "Effective target languages must be unique",
+                            ),
+                    })
+                    .strict(),
             ]),
         })
         .strict(),

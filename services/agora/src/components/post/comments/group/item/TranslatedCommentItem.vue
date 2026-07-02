@@ -11,6 +11,7 @@
     :on-view-analysis="onViewAnalysis"
     :is-voting-disabled="isVotingDisabled"
     :content-translation="translationPreview"
+    :conversation-route-context="conversationRouteContext"
     @update:content-translation-mode="setTranslationMode"
     @deleted="emit('deleted', $event)"
     @muted-comment="emit('mutedComment')"
@@ -20,7 +21,6 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
-import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
   DisplayedOpinionItem,
   EventSlug,
@@ -28,6 +28,7 @@ import type {
   SurveyGateSummary,
 } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
+import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import type { ContentTranslationDisplayMode } from "src/utils/translation/contentTranslation";
 import { getContentTranslationSourceLanguageLabel } from "src/utils/translation/contentTranslation";
 import {
@@ -49,8 +50,7 @@ const props = defineProps<{
   surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
-  dynamicTranslationEnabled: boolean;
-  supportedTargetLanguageCodes: SupportedDisplayLanguageCodes[];
+  conversationRouteContext: ConversationRouteContext;
 }>();
 
 const emit = defineEmits<{
@@ -69,11 +69,8 @@ const hasRequestedTranslation = ref(false);
 const { preview: requestedTranslationPreview, setMode: setRequestedTranslationMode } =
   useOpinionContentTranslationPreview({
     subject: translationSubject,
-    dynamicTranslationEnabled: computed(
-      () => props.dynamicTranslationEnabled && hasRequestedTranslation.value
-    ),
+    enabled: computed(() => hasRequestedTranslation.value),
     sourceLanguageCode: computed(() => props.commentItem.sourceLanguageCode),
-    supportedTargetLanguageCodes: computed(() => props.supportedTargetLanguageCodes),
   });
 
 const initialTranslationPreview = computed<

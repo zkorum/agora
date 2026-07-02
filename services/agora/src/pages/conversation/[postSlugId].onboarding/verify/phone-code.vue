@@ -47,6 +47,7 @@ import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import PhoneOtpForm from "src/components/verification/PhoneOtpForm.vue";
 import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
+import { useConversationOnboardingRoute } from "src/composables/conversation/useConversationOnboardingRoute";
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
@@ -56,23 +57,19 @@ import {
 } from "src/pages/verify/phone-code/index.i18n";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
-import { getSingleRouteParam } from "src/utils/router/params";
+import { getConversationSurveyVerifyPhonePath } from "src/utils/survey/navigation";
 import { computed, ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 
 const { t } = useComponentI18n<VerifyPhoneCodeTranslations>(
   verifyPhoneCodeTranslations
 );
 
 const router = useRouter();
-const route = useRoute();
+const { routeConversationSlugId, routeContext } = useConversationOnboardingRoute();
 const conversationOnboardingStore = useConversationOnboardingStore();
 const { credentialUpgradeTarget } = storeToRefs(onboardingFlowStore());
 const { exitToConversation } = useConversationOnboardingExit();
-
-const routeConversationSlugId = computed(() => {
-  return getSingleRouteParam(route.params.postSlugId);
-});
 
 if (
   conversationOnboardingStore.conversationSlugId !==
@@ -80,6 +77,7 @@ if (
 ) {
   conversationOnboardingStore.startManualEntry({
     conversationSlugId: routeConversationSlugId.value,
+    routeContext: routeContext.value,
   });
 }
 
@@ -104,8 +102,10 @@ function onSubmit() {
 
 async function changePhoneNumber() {
   await router.replace({
-    name: "/conversation/[postSlugId].onboarding/verify/phone",
-    params: { postSlugId: conversationSlugId.value },
+    path: getConversationSurveyVerifyPhonePath({
+      conversationSlugId: conversationSlugId.value,
+      routeContext: routeContext.value,
+    }),
   });
 }
 
@@ -113,6 +113,7 @@ async function handleBackToConversation(): Promise<void> {
   credentialUpgradeTarget.value = null;
   await exitToConversation({
     conversationSlugId: conversationSlugId.value,
+    routeContext: routeContext.value,
   });
 }
 </script>

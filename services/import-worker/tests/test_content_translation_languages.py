@@ -1,24 +1,47 @@
 from import_worker.generated_models import DisplayLanguageCode
-from import_worker.importer import configured_translation_display_language_codes
+from import_worker.importer import import_translation_target_language_codes
 
 
-def test_configured_translation_languages_include_source_display_language() -> None:
-    language_codes = configured_translation_display_language_codes(
-        source_language_code="en",
-        target_language_codes={DisplayLanguageCode.ky, DisplayLanguageCode.ru},
+def test_import_translation_targets_include_detected_language_for_override() -> None:
+    language_codes = import_translation_target_language_codes(
+        detected_language_code="en",
+        manual_language_codes=[DisplayLanguageCode.ky, DisplayLanguageCode.ru],
+        effective_language_codes=[],
+        policy_source="conversation_override",
     )
 
-    assert language_codes == {
+    assert language_codes == [
         DisplayLanguageCode.en,
         DisplayLanguageCode.ky,
         DisplayLanguageCode.ru,
-    }
+    ]
 
 
-def test_configured_translation_languages_deduplicate_source_language() -> None:
-    language_codes = configured_translation_display_language_codes(
-        source_language_code="en",
-        target_language_codes={DisplayLanguageCode.en, DisplayLanguageCode.fr},
+def test_import_translation_targets_do_not_include_detected_language_for_inherited() -> None:
+    language_codes = import_translation_target_language_codes(
+        detected_language_code="en",
+        manual_language_codes=[DisplayLanguageCode.ky, DisplayLanguageCode.ru],
+        effective_language_codes=[DisplayLanguageCode.fr, DisplayLanguageCode.es],
+        policy_source="project_inherited",
     )
 
-    assert language_codes == {DisplayLanguageCode.en, DisplayLanguageCode.fr}
+    assert language_codes == [DisplayLanguageCode.fr, DisplayLanguageCode.es]
+
+
+def test_import_translation_targets_deduplicate_and_cap_effective_targets() -> None:
+    language_codes = import_translation_target_language_codes(
+        detected_language_code="en",
+        manual_language_codes=[
+            DisplayLanguageCode.en,
+            DisplayLanguageCode.fr,
+            DisplayLanguageCode.ky,
+        ],
+        effective_language_codes=[],
+        policy_source="conversation_override",
+    )
+
+    assert language_codes == [
+        DisplayLanguageCode.en,
+        DisplayLanguageCode.fr,
+        DisplayLanguageCode.ky,
+    ]

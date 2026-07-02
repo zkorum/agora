@@ -23,8 +23,7 @@
               :survey-gate="props.surveyGate"
               :on-view-analysis="props.onViewAnalysis"
               :is-voting-disabled="props.isVotingDisabled"
-              :dynamic-translation-enabled="props.dynamicTranslationEnabled"
-              :supported-target-language-codes="props.supportedTargetLanguageCodes"
+              :conversation-route-context="props.conversationRouteContext"
               @deleted="(opinionSlugId) => handleOpinionDeleted(opinionSlugId)"
               @muted-comment="handleOpinionMuted()"
             />
@@ -56,7 +55,6 @@ import { useOpinionPagination } from "src/composables/opinion/useOpinionPaginati
 import { useOpinionVoting } from "src/composables/opinion/useOpinionVoting";
 import { useTargetOpinion } from "src/composables/opinion/useTargetOpinion";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
   DisplayedOpinionItem,
   EventSlug,
@@ -68,6 +66,7 @@ import { useUserStore } from "src/stores/user";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
+import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import { useNotify } from "src/utils/ui/notify";
 import {
   computed,
@@ -94,8 +93,7 @@ const props = defineProps<{
   surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
-  dynamicTranslationEnabled: boolean;
-  supportedTargetLanguageCodes: SupportedDisplayLanguageCodes[];
+  conversationRouteContext: ConversationRouteContext;
   preloadedQueries: {
     commentsDiscoverQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;
     commentsNewQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;

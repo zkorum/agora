@@ -51,8 +51,7 @@
         :survey-gate="props.surveyGate"
         :on-view-analysis="props.onViewAnalysis"
         :is-voting-disabled="props.isVotingDisabled"
-        :dynamic-translation-enabled="props.dynamicTranslationEnabled"
-        :supported-target-language-codes="props.supportedTargetLanguageCodes"
+        :conversation-route-context="props.conversationRouteContext"
         @deleted="deletedComment(commentItem.opinionSlugId)"
         @muted-comment="mutedComment()"
       />
@@ -67,7 +66,6 @@ import {
   localizedDateTimeFormatOptions,
   useLocalizedDateTimeFormatter,
 } from "src/composables/ui/useLocalizedDateTime";
-import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
   DisplayedOpinionItem,
   EventSlug,
@@ -75,6 +73,7 @@ import type {
   ParticipationMode,
   SurveyGateSummary,
 } from "src/shared/types/zod";
+import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import { computed, nextTick } from "vue";
 
 import TranslatedCommentItem from "./item/TranslatedCommentItem.vue";
@@ -91,8 +90,7 @@ const props = defineProps<{
   surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
-  dynamicTranslationEnabled: boolean;
-  supportedTargetLanguageCodes: SupportedDisplayLanguageCodes[];
+  conversationRouteContext: ConversationRouteContext;
 }>();
 
 const emit = defineEmits<{

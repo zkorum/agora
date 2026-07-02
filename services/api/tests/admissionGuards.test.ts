@@ -170,11 +170,11 @@ describe("Admission guards", () => {
                     isIndexed: true,
                     aiLabelingEnabled: true,
                     preferredOpinionGroupCount: null,
-                    multilingualSetting: {
-                        additionalLanguageCodes: [],
+                    languageTargetPolicy: {
+                        source: "conversation_override",
                         dynamicTranslationEnabled: false,
+                        manualTargetLanguageCodes: [],
                     },
-                    languageSettingsSource: "conversation_override",
                 },
                 didWrite: "did:test:queue",
                 importBuffer,

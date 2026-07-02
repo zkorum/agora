@@ -64,6 +64,7 @@
             v-model:override-multilingual-setting="multilingualSetting"
             :project-list="[currentProjectLanguageProject]"
             :allow-project-selection="false"
+            :detected-language-code="visibleDetectedLanguageCode"
           />
         </template>
       </NewConversationControlBar>

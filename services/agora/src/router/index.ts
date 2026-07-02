@@ -1,5 +1,7 @@
 import { isChunkLoadError, reloadForChunkError } from "src/utils/error/chunkError";
 import { useRouterGuard } from "src/utils/router/guard";
+import { getSingleRouteParam } from "src/utils/router/params";
+import { getConversationSurveyOnboardingPath } from "src/utils/survey/navigation";
 import {
   createMemoryHistory,
   createRouter,
@@ -7,6 +9,7 @@ import {
   createWebHistory,
   type RouteLocationNormalized,
   type RouteLocationNormalizedLoaded,
+  type RouteRecordRaw,
 } from "vue-router";
 import { type RouteNamedMap, routes } from "vue-router/auto-routes";
 import { z } from "zod";
@@ -22,7 +25,102 @@ const conversationTabRouteNames: ReadonlySet<string> = new Set<
   "/conversation/[postSlugId]/analysis",
   "/conversation/[postSlugId].embed/",
   "/conversation/[postSlugId].embed/analysis",
+  "/project/[projectSlug]/conversation/[postSlugId]/",
+  "/project/[projectSlug]/conversation/[postSlugId]/analysis",
 ]);
+
+const projectOnboardingRouteAliases = {
+  "/conversation/[postSlugId].onboarding":
+    "/project/:projectSlug/conversation/:postSlugId/onboarding",
+  "/conversation/[postSlugId].onboarding/":
+    "/project/:projectSlug/conversation/:postSlugId/onboarding/",
+  "/conversation/[postSlugId].onboarding/complete":
+    "/project/:projectSlug/conversation/:postSlugId/onboarding/complete",
+  "/conversation/[postSlugId].onboarding/question.[questionSlugId]":
+    "/project/:projectSlug/conversation/:postSlugId/onboarding/question/:questionSlugId",
+  "/conversation/[postSlugId].onboarding/summary":
+    "/project/:projectSlug/conversation/:postSlugId/onboarding/summary",
+  "/conversation/[postSlugId].onboarding/verify":
+    "/project/:projectSlug/conversation/:postSlugId/onboarding/verify",
+  "/conversation/[postSlugId].onboarding/verify/email":
+    "/project/:projectSlug/conversation/:postSlugId/onboarding/verify/email",
+  "/conversation/[postSlugId].onboarding/verify/email-code":
+    "/project/:projectSlug/conversation/:postSlugId/onboarding/verify/email-code",
+  "/conversation/[postSlugId].onboarding/verify/hard":
+    "/project/:projectSlug/conversation/:postSlugId/onboarding/verify/hard",
+  "/conversation/[postSlugId].onboarding/verify/identity":
+    "/project/:projectSlug/conversation/:postSlugId/onboarding/verify/identity",
+  "/conversation/[postSlugId].onboarding/verify/passport":
+    "/project/:projectSlug/conversation/:postSlugId/onboarding/verify/passport",
+  "/conversation/[postSlugId].onboarding/verify/phone":
+    "/project/:projectSlug/conversation/:postSlugId/onboarding/verify/phone",
+  "/conversation/[postSlugId].onboarding/verify/phone-code":
+    "/project/:projectSlug/conversation/:postSlugId/onboarding/verify/phone-code",
+  "/conversation/[postSlugId].onboarding/verify/ticket":
+    "/project/:projectSlug/conversation/:postSlugId/onboarding/verify/ticket",
+} satisfies Partial<Record<keyof RouteNamedMap, string>>;
+
+function getProjectOnboardingAlias({
+  routeName,
+}: {
+  routeName: unknown;
+}): string | undefined {
+  if (typeof routeName !== "string") {
+    return undefined;
+  }
+
+  for (const [name, alias] of Object.entries(projectOnboardingRouteAliases)) {
+    if (routeName === name) {
+      return alias;
+    }
+  }
+
+  return undefined;
+}
+
+function mergeRouteAliases({
+  existingAlias,
+  nextAlias,
+}: {
+  existingAlias: string | string[] | undefined;
+  nextAlias: string;
+}): string | string[] {
+  if (existingAlias === undefined) {
+    return nextAlias;
+  }
+
+  if (Array.isArray(existingAlias)) {
+    return existingAlias.includes(nextAlias)
+      ? existingAlias
+      : [...existingAlias, nextAlias];
+  }
+
+  if (existingAlias === nextAlias) {
+    return existingAlias;
+  }
+
+  return [existingAlias, nextAlias];
+}
+
+function addProjectOnboardingAliases({
+  routeRecords,
+}: {
+  routeRecords: readonly RouteRecordRaw[];
+}): void {
+  for (const routeRecord of routeRecords) {
+    const alias = getProjectOnboardingAlias({ routeName: routeRecord.name });
+    if (alias !== undefined) {
+      routeRecord.alias = mergeRouteAliases({
+        existingAlias: routeRecord.alias,
+        nextAlias: alias,
+      });
+    }
+
+    if (routeRecord.children !== undefined) {
+      addProjectOnboardingAliases({ routeRecords: routeRecord.children });
+    }
+  }
+}
 
 function isConversationTabSwitch({
   to,
@@ -52,7 +150,13 @@ function isConversationTabSwitch({
     return false;
   }
 
-  return toParams.postSlugId === fromParams.postSlugId;
+  const toProjectSlug = "projectSlug" in toParams ? toParams.projectSlug : undefined;
+  const fromProjectSlug = "projectSlug" in fromParams ? fromParams.projectSlug : undefined;
+
+  return (
+    toParams.postSlugId === fromParams.postSlugId &&
+    toProjectSlug === fromProjectSlug
+  );
 }
 
 /*
@@ -66,6 +170,7 @@ function isConversationTabSwitch({
 
 export default defineRouter(function (/* { store, ssrContext } */) {
   const { conversationGuard, loggedInGuard } = useRouterGuard();
+  addProjectOnboardingAliases({ routeRecords: routes });
 
   const createHistory = process.env.SERVER
     ? createMemoryHistory
@@ -127,8 +232,35 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     }
 
     if (to.name === "/conversation/[postSlugId].onboarding") {
+      if ("projectSlug" in to.params) {
+        return {
+          path: getConversationSurveyOnboardingPath({
+            conversationSlugId: getSingleRouteParam(
+              "postSlugId" in to.params ? to.params.postSlugId : undefined
+            ),
+            routeContext: {
+              kind: "project",
+              projectSlug: getSingleRouteParam(
+                "projectSlug" in to.params ? to.params.projectSlug : undefined
+              ),
+            },
+          }),
+          query: to.query,
+          hash: to.hash,
+        };
+      }
+
       return {
         name: "/conversation/[postSlugId].onboarding/",
+        params: to.params,
+        query: to.query,
+        hash: to.hash,
+      };
+    }
+
+    if (to.name === "/project/[projectSlug]/conversation/[postSlugId]") {
+      return {
+        name: "/project/[projectSlug]/conversation/[postSlugId]/",
         params: to.params,
         query: to.query,
         hash: to.hash,

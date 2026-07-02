@@ -17,10 +17,12 @@
       :survey-gate="conversationData.interaction.surveyGate"
       :ai-labeling-enabled="conversationData.metadata.aiLabelingEnabled"
       :show-report-button="showReportButton"
+      :report-route-override="props.reportRouteOverride"
       :is-live-analysis-paused="isLiveAnalysisPaused"
       :is-conversation-closed="conversationData.metadata.isClosed"
       :navigate-to-discover-tab="props.navigateToDiscoverTab"
       :conversation-scroll-context="props.conversationScrollContext"
+      :conversation-route-context="props.conversationRouteContext"
       @update:live-analysis-paused="setLiveAnalysisPaused"
       @live-pause-stats="emit('analysisLivePauseStats', $event)"
     />
@@ -44,6 +46,10 @@ import {
 } from "src/utils/api/comment/useCommentQueries";
 import { useSurveyResultsAggregatedQuery } from "src/utils/api/survey/useSurveyQueries";
 import {
+  type ConversationRouteContext,
+  normalConversationRouteContext,
+} from "src/utils/router/conversationRouteContext";
+import {
   computed,
   inject,
   onActivated,
@@ -53,6 +59,7 @@ import {
   ref,
   watch,
 } from "vue";
+import type { RouteLocationRaw } from "vue-router";
 import { useRoute } from "vue-router";
 
 import AnalysisPage from "./analysis/AnalysisPage.vue";
@@ -62,11 +69,15 @@ const props = withDefaults(
     conversationData: ExtendedConversation;
     hasConversationData: boolean;
     showReportButton?: boolean;
+    reportRouteOverride?: RouteLocationRaw;
     navigateToDiscoverTab: () => void;
     conversationScrollContext: ConversationScrollContext;
+    conversationRouteContext?: ConversationRouteContext;
   }>(),
   {
     showReportButton: true,
+    reportRouteOverride: undefined,
+    conversationRouteContext: () => normalConversationRouteContext,
   }
 );
 

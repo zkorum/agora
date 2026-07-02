@@ -4,7 +4,7 @@ import {
     type SupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
 import {
-    getConfiguredTranslationDisplayLanguageCodes,
+    getEffectiveTargetLanguageCodes,
     sourceLanguageToDisplayLanguage,
 } from "./translationLanguageSetting.js";
 
@@ -58,12 +58,10 @@ export function resolvePreferredContentLanguageFromSettings({
         sourceLanguageCode,
     });
     const defaultContentLanguage = sourceDisplayLanguage ?? fallbackContentLanguage;
-    const configuredContentLanguages = Array.from(
-        getConfiguredTranslationDisplayLanguageCodes({
-            sourceLanguageCode,
-            targetLanguageCodes,
-        }),
-    );
+    const configuredContentLanguages = getEffectiveTargetLanguageCodes({
+        detectedTargetLanguageCode: defaultContentLanguage,
+        manualTargetLanguageCodes: targetLanguageCodes,
+    });
 
     return resolvePreferredContentLanguage({
         displayLanguage,

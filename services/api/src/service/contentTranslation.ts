@@ -32,7 +32,6 @@ import {
 } from "@/shared-backend/translate.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
 import type {
-    ConversationMultilingualSetting,
     LanguageDetectionProvider,
     ContentTranslationSubject,
     LocalizedConversationContent,
@@ -52,11 +51,14 @@ import {
 } from "./contentTranslationContent.js";
 import type { ContentTranslationRequestMode } from "./contentTranslationContent.js";
 import {
-    getConfiguredTranslationDisplayLanguageCodes,
-    normalizeInheritedConversationMultilingualSettings,
+    getConversationOverrideTranslationTargetLanguagePolicy,
+    getProjectTranslationTargetLanguagePolicy,
+    sourceLanguageToDisplayLanguage,
     shouldTranslateContent,
+    type TranslationTargetLanguagePolicy,
 } from "./translationLanguageSetting.js";
 import { getProjectLanguageSettings } from "./projectAccess.js";
+import { getImplicitDefaultDisplayLanguage } from "./projectLanguage.js";
 
 interface RequestContentTranslationParams {
     db: PostgresDatabase;
@@ -100,7 +102,25 @@ interface ScheduleEagerProjectContentTranslationParams {
     log: Pick<BaseLogger, "info" | "error">;
 }
 
-interface ConversationContentSource {
+interface ScheduleEagerCreatedConversationContentTranslationParams {
+    db: PostgresDatabase;
+    conversationSource: ConversationContentSource;
+    targetLanguagePolicy: TranslationTargetLanguagePolicy;
+    surveySources: SurveyQuestionContentSource[];
+    seedOpinionSources: OpinionContentSource[];
+    now: Date;
+    log: Pick<BaseLogger, "info">;
+}
+
+interface EnqueueEagerContentTranslationWorkParams {
+    valkey: Valkey | undefined;
+    queueScript: Script;
+    workIds: number[];
+    now: Date;
+    log: Pick<BaseLogger, "info" | "error">;
+}
+
+export interface ConversationContentSource {
     conversationId: number;
     conversationSlugId: string;
     projectId: number;
@@ -116,7 +136,7 @@ interface ConversationContentSource {
     sourceLanguageConfidence: number | null;
 }
 
-interface OpinionContentSource {
+export interface OpinionContentSource {
     conversationId: number;
     conversationSlugId: string;
     opinionSlugId: string;
@@ -129,7 +149,7 @@ interface OpinionContentSource {
     sourceLanguageConfidence: number | null;
 }
 
-interface SurveyQuestionOptionContentSource {
+export interface SurveyQuestionOptionContentSource {
     optionSlugId: string;
     contentId: number;
     publicId: string;
@@ -140,7 +160,7 @@ interface SurveyQuestionOptionContentSource {
     sourceLanguageConfidence: number | null;
 }
 
-interface SurveyQuestionContentSource {
+export interface SurveyQuestionContentSource {
     conversationId: number;
     conversationSlugId: string;
     questionSlugId: string;
@@ -870,7 +890,7 @@ function shouldTranslateSurveyQuestionSource({
     );
 }
 
-async function fetchConfiguredAdditionalTargetLanguageCodes({
+async function fetchMaterializedConversationTargetLanguageCodes({
     db,
     conversationSlugId,
 }: {
@@ -901,15 +921,15 @@ async function fetchConfiguredAdditionalTargetLanguageCodes({
     return rows.map((row) => row.languageCode);
 }
 
-async function resolveEffectiveConversationMultilingualSetting({
+async function resolveConversationTranslationTargetLanguagePolicy({
     db,
     source,
 }: {
     db: PostgresDatabase;
     source: ConversationContentSource;
-}): Promise<ConversationMultilingualSetting> {
+}): Promise<TranslationTargetLanguagePolicy> {
     if (source.languageSettingsSource === "project_inherited") {
-        return normalizeInheritedConversationMultilingualSettings({
+        return getProjectTranslationTargetLanguagePolicy({
             languageSettings: await getProjectLanguageSettings({
                 db,
                 projectId: source.projectId,
@@ -917,16 +937,29 @@ async function resolveEffectiveConversationMultilingualSetting({
         });
     }
 
-    return {
-        dynamicTranslationEnabled: source.dynamicTranslationEnabled,
-        additionalLanguageCodes: await fetchConfiguredAdditionalTargetLanguageCodes({
-            db,
-            conversationSlugId: source.conversationSlugId,
-        }),
-    };
+    const materializedTargetLanguageCodes = Array.from(
+        new Set(
+            await fetchMaterializedConversationTargetLanguageCodes({
+                db,
+                conversationSlugId: source.conversationSlugId,
+            }),
+        ),
+    ).slice(0, 3);
+    const detectedTargetLanguageCode = sourceLanguageToDisplayLanguage({
+        sourceLanguageCode: source.sourceLanguageCode,
+    });
+    return getConversationOverrideTranslationTargetLanguagePolicy({
+        multilingualSettings: {
+            dynamicTranslationEnabled: source.dynamicTranslationEnabled,
+            additionalLanguageCodes: materializedTargetLanguageCodes.filter(
+                (languageCode) => languageCode !== detectedTargetLanguageCode,
+            ),
+        },
+        detectedTargetLanguageCode,
+    });
 }
 
-async function fetchConfiguredAdditionalProjectTargetLanguageCodes({
+async function fetchConfiguredManualProjectTargetLanguageCodes({
     db,
     projectId,
 }: {
@@ -1216,33 +1249,41 @@ async function fetchCurrentSurveyQuestionSources({
     return [...sources.values()];
 }
 
-async function ensureAndQueueEagerTranslationWork({
+async function ensureEagerTranslationWork({
     db,
-    valkey,
-    queueScript,
     input,
     translationExists,
     now,
     log,
 }: {
     db: PostgresDatabase;
-    valkey: Valkey | undefined;
-    queueScript: Script;
     input: TranslationWorkInput;
     translationExists: boolean;
     now: Date;
-    log: Pick<BaseLogger, "info" | "error">;
-}): Promise<void> {
-    await queueMissingTranslationWork({
+    log: Pick<BaseLogger, "info">;
+}): Promise<number | undefined> {
+    const ensuredWork = await ensureTranslationWork({
         db,
-        valkey,
-        queueScript,
         input,
         translationExists,
         now,
         log,
         priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.eagerVisible,
     });
+    if (!ensuredWork.shouldQueue) {
+        log.info(
+            {
+                workId: ensuredWork.workId,
+                ...getTranslationWorkLogFields(input),
+                queueMode: getContentTranslationQueueMode(
+                    CONTENT_TRANSLATION_QUEUE_PRIORITIES.eagerVisible,
+                ),
+            },
+            "[ContentTranslation] Translation work already completed",
+        );
+        return undefined;
+    }
+    return ensuredWork.workId;
 }
 
 export async function scheduleEagerContentTranslationForConversation({
@@ -1264,42 +1305,11 @@ export async function scheduleEagerContentTranslationForConversation({
         );
         return;
     }
-    const effectiveMultilingualSetting =
-        await resolveEffectiveConversationMultilingualSetting({
+    const targetLanguagePolicy =
+        await resolveConversationTranslationTargetLanguagePolicy({
             db,
             source: conversationSource,
         });
-    if (!effectiveMultilingualSetting.dynamicTranslationEnabled) {
-        log.info(
-            {
-                conversationSlugId,
-                conversationId: conversationSource.conversationId,
-                languageSettingsSource: conversationSource.languageSettingsSource,
-            },
-            "[ContentTranslation] Skipped eager scheduling: dynamic translation disabled",
-        );
-        return;
-    }
-    const targetLanguageCodes = getConfiguredTranslationDisplayLanguageCodes({
-        sourceLanguageCode: conversationSource.sourceLanguageCode,
-        targetLanguageCodes: effectiveMultilingualSetting.additionalLanguageCodes,
-    });
-    if (targetLanguageCodes.size === 0) {
-        log.info(
-            {
-                conversationSlugId,
-                conversationId: conversationSource.conversationId,
-                languageSettingsSource: conversationSource.languageSettingsSource,
-                sourceLanguageCode: conversationSource.sourceLanguageCode,
-                sourceRawLanguageCode: conversationSource.sourceRawLanguageCode,
-                configuredTargetLanguageCodes:
-                    effectiveMultilingualSetting.additionalLanguageCodes,
-            },
-            "[ContentTranslation] Skipped eager scheduling: no target languages",
-        );
-        return;
-    }
-
     const surveySources = await fetchCurrentSurveyQuestionSources({
         db,
         conversationId: conversationSource.conversationId,
@@ -1311,6 +1321,89 @@ export async function scheduleEagerContentTranslationForConversation({
         conversationSlugId,
     });
 
+    const workIds = await createEagerContentTranslationWorkForConversationSources({
+        db,
+        conversationSource,
+        targetLanguagePolicy,
+        surveySources,
+        seedOpinionSources,
+        now,
+        log,
+        checkExistingTranslations: true,
+    });
+    await enqueueEagerContentTranslationWork({
+        valkey,
+        queueScript,
+        workIds,
+        now,
+        log,
+    });
+}
+
+export async function createEagerContentTranslationWorkForCreatedConversation({
+    db,
+    conversationSource,
+    targetLanguagePolicy,
+    surveySources,
+    seedOpinionSources,
+    now,
+    log,
+}: ScheduleEagerCreatedConversationContentTranslationParams): Promise<number[]> {
+    return await createEagerContentTranslationWorkForConversationSources({
+        db,
+        conversationSource,
+        targetLanguagePolicy,
+        surveySources,
+        seedOpinionSources,
+        now,
+        log,
+        checkExistingTranslations: false,
+    });
+}
+
+async function createEagerContentTranslationWorkForConversationSources({
+    db,
+    conversationSource,
+    targetLanguagePolicy,
+    surveySources,
+    seedOpinionSources,
+    now,
+    log,
+    checkExistingTranslations,
+}: ScheduleEagerCreatedConversationContentTranslationParams & {
+    checkExistingTranslations: boolean;
+}): Promise<number[]> {
+    const conversationSlugId = conversationSource.conversationSlugId;
+    if (!targetLanguagePolicy.dynamicTranslationEnabled) {
+        log.info(
+            {
+                conversationSlugId,
+                conversationId: conversationSource.conversationId,
+                languageSettingsSource: conversationSource.languageSettingsSource,
+            },
+            "[ContentTranslation] Skipped eager scheduling: dynamic translation disabled",
+        );
+        return [];
+    }
+    const targetLanguageCodes = targetLanguagePolicy.effectiveTargetLanguageCodes;
+    if (targetLanguageCodes.length === 0) {
+        log.info(
+            {
+                conversationSlugId,
+                conversationId: conversationSource.conversationId,
+                languageSettingsSource: conversationSource.languageSettingsSource,
+                sourceLanguageCode: conversationSource.sourceLanguageCode,
+                sourceRawLanguageCode: conversationSource.sourceRawLanguageCode,
+                detectedTargetLanguageCode:
+                    targetLanguagePolicy.detectedTargetLanguageCode,
+                manualTargetLanguageCodes:
+                    targetLanguagePolicy.manualTargetLanguageCodes,
+            },
+            "[ContentTranslation] Skipped eager scheduling: no target languages",
+        );
+        return [];
+    }
+
     log.info(
         {
             conversationSlugId,
@@ -1319,14 +1412,16 @@ export async function scheduleEagerContentTranslationForConversation({
             languageSettingsSource: conversationSource.languageSettingsSource,
             sourceLanguageCode: conversationSource.sourceLanguageCode,
             sourceRawLanguageCode: conversationSource.sourceRawLanguageCode,
-            configuredTargetLanguageCodes:
-                effectiveMultilingualSetting.additionalLanguageCodes,
-            effectiveTargetLanguageCodes: Array.from(targetLanguageCodes),
+            detectedTargetLanguageCode: targetLanguagePolicy.detectedTargetLanguageCode,
+            manualTargetLanguageCodes: targetLanguagePolicy.manualTargetLanguageCodes,
+            effectiveTargetLanguageCodes: targetLanguageCodes,
             surveyQuestionCount: surveySources.length,
             seedOpinionCount: seedOpinionSources.length,
         },
         "[ContentTranslation] Scheduling eager conversation content translations",
     );
+
+    const workIds: number[] = [];
 
     for (const targetLanguageCode of targetLanguageCodes) {
         const shouldTranslateConversation = shouldTranslateContent({
@@ -1335,17 +1430,16 @@ export async function scheduleEagerContentTranslationForConversation({
             targetLanguageCode,
         });
         const conversationTranslationExists = shouldTranslateConversation
-            ? await hasConversationTranslation({
+            ? checkExistingTranslations &&
+              (await hasConversationTranslation({
                   db,
                   source: conversationSource,
                   targetLanguageCode,
-              })
+              }))
             : false;
         if (shouldTranslateConversation && !conversationTranslationExists) {
-            await ensureAndQueueEagerTranslationWork({
+            const workId = await ensureEagerTranslationWork({
                 db,
-                valkey,
-                queueScript,
                 input: {
                     conversationId: conversationSource.conversationId,
                     sourceKind: "conversation",
@@ -1356,6 +1450,9 @@ export async function scheduleEagerContentTranslationForConversation({
                 now,
                 log,
             });
+            if (workId !== undefined) {
+                workIds.push(workId);
+            }
         } else {
             log.info(
                 {
@@ -1380,11 +1477,12 @@ export async function scheduleEagerContentTranslationForConversation({
                 targetLanguageCode,
             });
             const surveyQuestionTranslationExists = shouldTranslateSurveyQuestion
-                ? await hasSurveyQuestionTranslation({
+                ? checkExistingTranslations &&
+                  (await hasSurveyQuestionTranslation({
                       db,
                       source,
                       targetLanguageCode,
-                  })
+                  }))
                 : false;
             if (
                 !shouldTranslateSurveyQuestion ||
@@ -1410,10 +1508,8 @@ export async function scheduleEagerContentTranslationForConversation({
                 );
                 continue;
             }
-            await ensureAndQueueEagerTranslationWork({
+            const workId = await ensureEagerTranslationWork({
                 db,
-                valkey,
-                queueScript,
                 input: {
                     conversationId: source.conversationId,
                     sourceKind: "survey_question",
@@ -1427,6 +1523,9 @@ export async function scheduleEagerContentTranslationForConversation({
                 now,
                 log,
             });
+            if (workId !== undefined) {
+                workIds.push(workId);
+            }
         }
 
         for (const source of seedOpinionSources) {
@@ -1436,11 +1535,12 @@ export async function scheduleEagerContentTranslationForConversation({
                 targetLanguageCode,
             });
             const opinionTranslationExists = shouldTranslateOpinion
-                ? await hasOpinionTranslation({
+                ? checkExistingTranslations &&
+                  (await hasOpinionTranslation({
                       db,
                       source,
                       targetLanguageCode,
-                  })
+                  }))
                 : false;
             if (!shouldTranslateOpinion || opinionTranslationExists) {
                 log.info(
@@ -1461,10 +1561,8 @@ export async function scheduleEagerContentTranslationForConversation({
                 );
                 continue;
             }
-            await ensureAndQueueEagerTranslationWork({
+            const workId = await ensureEagerTranslationWork({
                 db,
-                valkey,
-                queueScript,
                 input: {
                     conversationId: source.conversationId,
                     sourceKind: "opinion",
@@ -1475,7 +1573,41 @@ export async function scheduleEagerContentTranslationForConversation({
                 now,
                 log,
             });
+            if (workId !== undefined) {
+                workIds.push(workId);
+            }
         }
+    }
+
+    return workIds;
+}
+
+export async function enqueueEagerContentTranslationWork({
+    valkey,
+    queueScript,
+    workIds,
+    now,
+    log,
+}: EnqueueEagerContentTranslationWorkParams): Promise<void> {
+    for (const workId of workIds) {
+        await queueTranslationWork({
+            valkey,
+            queueScript,
+            workId,
+            now,
+            log,
+            priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.eagerVisible,
+        });
+        log.info(
+            {
+                workId,
+                priorityRank: CONTENT_TRANSLATION_QUEUE_PRIORITIES.eagerVisible,
+                queueMode: getContentTranslationQueueMode(
+                    CONTENT_TRANSLATION_QUEUE_PRIORITIES.eagerVisible,
+                ),
+            },
+            "[ContentTranslation] Queued translation work",
+        );
     }
 }
 
@@ -1494,16 +1626,23 @@ export async function scheduleEagerContentTranslationForProject({
     if (!source.dynamicTranslationEnabled) {
         return;
     }
-    const additionalTargetLanguageCodes =
-        await fetchConfiguredAdditionalProjectTargetLanguageCodes({
+    const manualTargetLanguageCodes =
+        await fetchConfiguredManualProjectTargetLanguageCodes({
             db,
             projectId,
         });
-    const targetLanguageCodes = getConfiguredTranslationDisplayLanguageCodes({
-        sourceLanguageCode: source.sourceLanguageCode,
-        targetLanguageCodes: additionalTargetLanguageCodes,
+    const targetLanguagePolicy = getProjectTranslationTargetLanguagePolicy({
+        languageSettings: {
+            dynamicTranslationEnabled: source.dynamicTranslationEnabled,
+            defaultLanguageCode:
+                sourceLanguageToDisplayLanguage({
+                    sourceLanguageCode: source.sourceLanguageCode,
+                }) ?? getImplicitDefaultDisplayLanguage(),
+            targetLanguageCodes: manualTargetLanguageCodes,
+        },
     });
-    if (targetLanguageCodes.size === 0) {
+    const targetLanguageCodes = targetLanguagePolicy.effectiveTargetLanguageCodes;
+    if (targetLanguageCodes.length === 0) {
         return;
     }
 
@@ -1539,7 +1678,7 @@ export async function scheduleEagerContentTranslationForProject({
             continue;
         }
 
-        await ensureAndQueueEagerTranslationWork({
+        await queueMissingTranslationWork({
             db,
             valkey,
             queueScript,
@@ -1547,6 +1686,7 @@ export async function scheduleEagerContentTranslationForProject({
             translationExists,
             now,
             log,
+            priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.eagerVisible,
         });
     }
 }

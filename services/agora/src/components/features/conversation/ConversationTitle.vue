@@ -1,18 +1,18 @@
 <template>
   <div class="title-section">
     <ConversationChip
-      v-if="isPrivate"
+      v-if="showChips && isPrivate"
       :label="t('privateLabel')"
       background-color="#333"
     />
     <ConversationChip
-      v-if="conversationType === 'maxdiff'"
+      v-if="showChips && conversationType === 'maxdiff'"
       :label="t('prioritizationLabel')"
       background-color="var(--q-primary)"
       icon="mdi-sort-numeric-ascending"
     />
     <ConversationChip
-      v-if="externalSourceConfig !== null"
+      v-if="showChips && externalSourceConfig !== null"
       label="GitHub"
       background-color="#24292f"
       icon="mdi-github"
@@ -33,13 +33,16 @@ import {
   conversationTitleTranslations,
 } from "./ConversationTitle.i18n";
 
-defineProps<{
+withDefaults(defineProps<{
   isPrivate: boolean;
   title: string;
   size: "medium" | "large";
   conversationType: ConversationType;
   externalSourceConfig: ExternalSourceConfig | null;
-}>();
+  showChips?: boolean;
+}>(), {
+  showChips: true,
+});
 
 const { t } = useComponentI18n<ConversationTitleTranslations>(
   conversationTitleTranslations,

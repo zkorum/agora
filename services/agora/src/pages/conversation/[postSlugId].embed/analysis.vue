@@ -5,6 +5,8 @@
     :show-report-button="false"
     :navigate-to-discover-tab="props.navigateToDiscoverTab"
     :conversation-scroll-context="props.conversationScrollContext"
+    :conversation-route-context="props.conversationRouteContext"
+    :report-route-override="undefined"
   />
 </template>
 
@@ -12,12 +14,14 @@
 import ConversationAnalysisTab from "src/components/post/ConversationAnalysisTab.vue";
 import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
 import type { ExtendedConversation } from "src/shared/types/zod";
+import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 
 const props = defineProps<{
   conversationData: ExtendedConversation;
   hasConversationData: boolean;
   navigateToDiscoverTab: () => void;
   conversationScrollContext: ConversationScrollContext;
+  conversationRouteContext: ConversationRouteContext;
 }>();
 
 </script>

@@ -71,8 +71,12 @@ import {
     resolveConversationCreateTargetResult,
 } from "@/service/projectAccess.js";
 import {
-    getConfiguredTranslationDisplayLanguageCodes,
+    getConversationOverrideTranslationTargetLanguagePolicy,
+    getManualMultilingualSettingsFromProjectLanguageSettings,
+    getProjectTranslationTargetLanguagePolicy,
+    isConfiguredTranslationTargetLanguage,
     normalizeInheritedConversationMultilingualSettings,
+    sourceLanguageToDisplayLanguage,
 } from "@/service/translationLanguageSetting.js";
 
 import {
@@ -88,6 +92,7 @@ import {
     fetchCommentStatsByConversationSlugId,
     fetchOpinionsByPostSlugId,
     fetchOpinionsByOpinionSlugIdList,
+    isPersonalNonSeedOpinionAuthoredByUser,
     postNewOpinion,
 } from "./service/comment.js";
 import {
@@ -218,8 +223,7 @@ import {
     getLanguagePreferences,
     updateLanguagePreferences,
 } from "./service/language.js";
-import { resolvePreferredContentLanguageFromSettings } from "./service/contentLanguagePreference.js";
-import { getAutoProvisionedDefaultLanguage } from "./service/projectLanguage.js";
+import { getAutoProvisionedDefaultLanguage, getImplicitDefaultDisplayLanguage } from "./service/projectLanguage.js";
 import {
     ZodSupportedDisplayLanguageCodes,
     type SupportedDisplayLanguageCodes,
@@ -592,14 +596,35 @@ async function getContentTranslationAvailabilityForConversation({
                       row.targetLanguageCode === null ? [] : [row.targetLanguageCode],
                   ),
               };
-    const configuredTargetLanguageCodes =
-        getConfiguredTranslationDisplayLanguageCodes({
-            sourceLanguageCode: firstRow.sourceLanguageCode,
-            targetLanguageCodes: multilingualSetting.additionalLanguageCodes,
-        });
+    const detectedTargetLanguageCode = sourceLanguageToDisplayLanguage({
+        sourceLanguageCode: firstRow.sourceLanguageCode,
+    });
+    const targetLanguagePolicy =
+        firstRow.languageSettingsSource === "project_inherited"
+            ? getProjectTranslationTargetLanguagePolicy({
+                  languageSettings: await getProjectLanguageSettings({
+                      db,
+                      projectId: firstRow.projectId,
+                  }),
+              })
+            : getConversationOverrideTranslationTargetLanguagePolicy({
+                  multilingualSettings: {
+                      dynamicTranslationEnabled:
+                          multilingualSetting.dynamicTranslationEnabled,
+                      additionalLanguageCodes:
+                          multilingualSetting.additionalLanguageCodes.filter(
+                              (languageCode) =>
+                                  languageCode !== detectedTargetLanguageCode,
+                          ),
+                  },
+                  detectedTargetLanguageCode,
+              });
     const translationAllowed =
-        multilingualSetting.dynamicTranslationEnabled &&
-        configuredTargetLanguageCodes.has(targetLanguageCode);
+        targetLanguagePolicy.dynamicTranslationEnabled &&
+        isConfiguredTranslationTargetLanguage({
+            policy: targetLanguagePolicy,
+            targetLanguageCode,
+        });
     return {
         isAllowed: translationAllowed,
         multilingualSetting,
@@ -622,30 +647,9 @@ async function getPreferredContentTranslationAvailabilityForConversation({
             conversationSlugId,
             targetLanguageCode: displayLanguage,
         });
-    const { preferredContentLanguage } =
-        resolvePreferredContentLanguageFromSettings({
-            displayLanguage,
-            sourceLanguageCode: displayLanguageAvailability.sourceLanguageCode,
-            targetLanguageCodes:
-                displayLanguageAvailability.multilingualSetting.additionalLanguageCodes,
-            fallbackContentLanguage: displayLanguage,
-        });
-
-    if (preferredContentLanguage === displayLanguage) {
-        return {
-            targetLanguageCode: preferredContentLanguage,
-            isAllowed: displayLanguageAvailability.isAllowed,
-        };
-    }
-
-    const preferredAvailability =
-        await getContentTranslationAvailabilityForConversation({
-            conversationSlugId,
-            targetLanguageCode: preferredContentLanguage,
-        });
     return {
-        targetLanguageCode: preferredContentLanguage,
-        isAllowed: preferredAvailability.isAllowed,
+        targetLanguageCode: displayLanguage,
+        isAllowed: displayLanguageAvailability.isAllowed,
     };
 }
 
@@ -696,14 +700,22 @@ async function getContentTranslationAvailabilityForProject({
             row.targetLanguageCode === null ? [] : [row.targetLanguageCode],
         ),
     };
-    const configuredTargetLanguageCodes =
-        getConfiguredTranslationDisplayLanguageCodes({
-            sourceLanguageCode: firstRow.sourceLanguageCode,
+    const targetLanguagePolicy = getProjectTranslationTargetLanguagePolicy({
+        languageSettings: {
+            dynamicTranslationEnabled: firstRow.dynamicTranslationEnabled,
+            defaultLanguageCode:
+                sourceLanguageToDisplayLanguage({
+                    sourceLanguageCode: firstRow.sourceLanguageCode,
+                }) ?? getImplicitDefaultDisplayLanguage(),
             targetLanguageCodes: multilingualSetting.additionalLanguageCodes,
-        });
+        },
+    });
     const translationAllowed =
-        multilingualSetting.dynamicTranslationEnabled &&
-        configuredTargetLanguageCodes.has(targetLanguageCode);
+        targetLanguagePolicy.dynamicTranslationEnabled &&
+        isConfiguredTranslationTargetLanguage({
+            policy: targetLanguagePolicy,
+            targetLanguageCode,
+        });
     return { isAllowed: translationAllowed, multilingualSetting };
 }
 
@@ -1796,6 +1808,25 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
+        url: `/api/${apiVersion}/project/conversation/fetch`,
+        schema: {
+            body: Dto.fetchProjectConversationPageRequest,
+            response: {
+                200: Dto.fetchProjectConversationPageResponse,
+            },
+        },
+        handler: async (request) => {
+            return await projectPageService.fetchProjectConversationPage({
+                db,
+                baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                request: request.body,
+                currentDisplayLanguage: getRequestDisplayLanguage({ request }),
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
         url: `/api/${apiVersion}/moderation/conversation/create`,
         schema: {
             body: Dto.moderateReportPostRequest,
@@ -2662,6 +2693,9 @@ server.after(() => {
                     targetLanguage: preferredContentTranslation.targetLanguageCode,
                     spokenLanguages: languagePreferences.spokenLanguages,
                     translationAllowed: preferredContentTranslation.isAllowed,
+                    viewerUserId: deviceStatus.isKnown
+                        ? deviceStatus.userId
+                        : undefined,
                 },
             });
             return Array.from(opinionItemsPerSlugId.values());
@@ -2836,6 +2870,9 @@ server.after(() => {
                 db: db,
                 opinionSlugIdList: request.body.opinionSlugIdList,
                 displayContentViewerPreferences: {
+                    viewerUserId: deviceStatus.isKnown
+                        ? deviceStatus.userId
+                        : undefined,
                     displayLanguage: languagePreferences.displayLanguage,
                     spokenLanguages: languagePreferences.spokenLanguages,
                 },
@@ -2898,6 +2935,7 @@ server.after(() => {
                     targetLanguage: preferredContentTranslation.targetLanguageCode,
                     spokenLanguages: languagePreferences.spokenLanguages,
                     translationAllowed: preferredContentTranslation.isAllowed,
+                    viewerUserId: deviceStatus.userId,
                 },
             });
             return Array.from(opinionItemsPerSlugId.values());
@@ -3023,22 +3061,26 @@ server.after(() => {
                     "Project language inheritance requires a selected project",
                 );
             }
-            const effectiveMultilingualSetting =
+            const projectLanguageSettings =
                 request.body.languageSettingsSource === "project_inherited"
-                    ? normalizeInheritedConversationMultilingualSettings({
-                          languageSettings: await getProjectLanguageSettings({
-                              db,
-                              projectId: createTargetResult.target.projectId,
-                          }),
+                    ? await getProjectLanguageSettings({
+                          db,
+                          projectId: createTargetResult.target.projectId,
                       })
-                    : request.body.multilingualSetting;
+                    : undefined;
+            const premiumMultilingualSetting =
+                projectLanguageSettings === undefined
+                    ? request.body.multilingualSetting
+                    : getManualMultilingualSettingsFromProjectLanguageSettings({
+                          languageSettings: projectLanguageSettings,
+                      });
             const premiumFeatures =
                 premiumEntitlementService.getPremiumFeaturesFromCreateRequest({
                     requiresEventTicket: request.body.requiresEventTicket,
                     hasSurvey,
                     preferredOpinionGroupCount:
                         request.body.preferredOpinionGroupCount,
-                    multilingualSetting: effectiveMultilingualSetting,
+                    multilingualSetting: premiumMultilingualSetting,
                 });
 
             if (request.body.externalSourceConfig != null) {
@@ -3094,13 +3136,14 @@ server.after(() => {
                 return;
             }
 
+            const { eagerContentTranslation, ...response } = createResult;
+
             try {
-                await contentTranslationService.scheduleEagerContentTranslationForConversation(
+                await contentTranslationService.enqueueEagerContentTranslationWork(
                     {
-                        db,
                         valkey: queueValkeyRef.current,
                         queueScript: contentTranslationQueueScript,
-                        conversationSlugId: createResult.conversationSlugId,
+                        workIds: eagerContentTranslation.workIds,
                         now: nowZeroMs(),
                         log,
                     },
@@ -3119,7 +3162,7 @@ server.after(() => {
                 excludeUserId: deviceStatus.userId,
             });
 
-            reply.send(createResult);
+            reply.send(response);
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({
@@ -3199,15 +3242,47 @@ server.after(() => {
                     "Project language inheritance requires a selected project",
                 );
             }
-            const importMultilingualSetting =
+            const projectLanguageSettings =
                 request.body.languageSettingsSource === "project_inherited"
-                    ? normalizeInheritedConversationMultilingualSettings({
-                          languageSettings: await getProjectLanguageSettings({
-                              db,
-                              projectId: createTargetResult.target.projectId,
-                          }),
+                    ? await getProjectLanguageSettings({
+                          db,
+                          projectId: createTargetResult.target.projectId,
                       })
-                    : request.body.multilingualSetting;
+                    : undefined;
+            const premiumMultilingualSetting =
+                projectLanguageSettings === undefined
+                    ? request.body.multilingualSetting
+                    : getManualMultilingualSettingsFromProjectLanguageSettings({
+                          languageSettings: projectLanguageSettings,
+                      });
+            const importMultilingualSetting =
+                projectLanguageSettings === undefined
+                    ? request.body.multilingualSetting
+                    : normalizeInheritedConversationMultilingualSettings({
+                          languageSettings: projectLanguageSettings,
+                      });
+            const importEffectiveTargetLanguageCodes =
+                projectLanguageSettings === undefined
+                    ? []
+                    : importMultilingualSetting.additionalLanguageCodes;
+            const languageTargetPolicy =
+                projectLanguageSettings === undefined
+                    ? {
+                          source: "conversation_override" as const,
+                          dynamicTranslationEnabled:
+                              request.body.multilingualSetting
+                                  .dynamicTranslationEnabled,
+                          manualTargetLanguageCodes:
+                              request.body.multilingualSetting
+                                  .additionalLanguageCodes,
+                      }
+                    : {
+                          source: "project_inherited" as const,
+                          dynamicTranslationEnabled:
+                              importMultilingualSetting.dynamicTranslationEnabled,
+                          effectiveTargetLanguageCodes:
+                              importEffectiveTargetLanguageCodes,
+                      };
 
             const premiumFeatures =
                 premiumEntitlementService.getPremiumFeaturesFromCreateRequest({
@@ -3215,7 +3290,7 @@ server.after(() => {
                     hasSurvey: false,
                     preferredOpinionGroupCount:
                         request.body.preferredOpinionGroupCount,
-                    multilingualSetting: importMultilingualSetting,
+                    multilingualSetting: premiumMultilingualSetting,
                 });
             if (premiumFeatures.length > 0) {
                 await premiumEntitlementService.requirePremiumAccess({
@@ -3243,8 +3318,7 @@ server.after(() => {
                     aiLabelingEnabled: request.body.aiLabelingEnabled,
                     preferredOpinionGroupCount:
                         request.body.preferredOpinionGroupCount,
-                    multilingualSetting: importMultilingualSetting,
-                    languageSettingsSource: request.body.languageSettingsSource,
+                    languageTargetPolicy,
                 },
                 didWrite,
                 importBuffer,
@@ -3412,15 +3486,47 @@ server.after(() => {
                     "Project language inheritance requires a selected project",
                 );
             }
-            const importMultilingualSetting =
+            const projectLanguageSettings =
                 parsedFields.languageSettingsSource === "project_inherited"
-                    ? normalizeInheritedConversationMultilingualSettings({
-                          languageSettings: await getProjectLanguageSettings({
-                              db,
-                              projectId: createTargetResult.target.projectId,
-                          }),
+                    ? await getProjectLanguageSettings({
+                          db,
+                          projectId: createTargetResult.target.projectId,
                       })
-                    : parsedFields.multilingualSetting;
+                    : undefined;
+            const premiumMultilingualSetting =
+                projectLanguageSettings === undefined
+                    ? parsedFields.multilingualSetting
+                    : getManualMultilingualSettingsFromProjectLanguageSettings({
+                          languageSettings: projectLanguageSettings,
+                      });
+            const importMultilingualSetting =
+                projectLanguageSettings === undefined
+                    ? parsedFields.multilingualSetting
+                    : normalizeInheritedConversationMultilingualSettings({
+                          languageSettings: projectLanguageSettings,
+                      });
+            const importEffectiveTargetLanguageCodes =
+                projectLanguageSettings === undefined
+                    ? []
+                    : importMultilingualSetting.additionalLanguageCodes;
+            const languageTargetPolicy =
+                projectLanguageSettings === undefined
+                    ? {
+                          source: "conversation_override" as const,
+                          dynamicTranslationEnabled:
+                              parsedFields.multilingualSetting
+                                  .dynamicTranslationEnabled,
+                          manualTargetLanguageCodes:
+                              parsedFields.multilingualSetting
+                                  .additionalLanguageCodes,
+                      }
+                    : {
+                          source: "project_inherited" as const,
+                          dynamicTranslationEnabled:
+                              importMultilingualSetting.dynamicTranslationEnabled,
+                          effectiveTargetLanguageCodes:
+                              importEffectiveTargetLanguageCodes,
+                      };
 
             const premiumFeatures =
                 premiumEntitlementService.getPremiumFeaturesFromCreateRequest({
@@ -3428,7 +3534,7 @@ server.after(() => {
                     hasSurvey: false,
                     preferredOpinionGroupCount:
                         parsedFields.preferredOpinionGroupCount,
-                    multilingualSetting: importMultilingualSetting,
+                    multilingualSetting: premiumMultilingualSetting,
                 });
             if (premiumFeatures.length > 0) {
                 await premiumEntitlementService.requirePremiumAccess({
@@ -3457,8 +3563,7 @@ server.after(() => {
                         aiLabelingEnabled: parsedFields.aiLabelingEnabled,
                         preferredOpinionGroupCount:
                             parsedFields.preferredOpinionGroupCount,
-                        multilingualSetting: importMultilingualSetting,
-                        languageSettingsSource: parsedFields.languageSettingsSource,
+                        languageTargetPolicy,
                     },
                     didWrite,
                     importBuffer,
@@ -5335,6 +5440,23 @@ server.after(() => {
                 "[ContentTranslation] Availability checked",
             );
             if (!availability.isAllowed) {
+                const productFailureResponse = {
+                    success: false,
+                    reason: "content_translation_not_enabled",
+                    multilingualSetting: availability.multilingualSetting,
+                } satisfies ContentTranslationResponse;
+                return productFailureResponse;
+            }
+
+            if (
+                request.body.subject.kind === "opinion" &&
+                (await isPersonalNonSeedOpinionAuthoredByUser({
+                    db,
+                    conversationSlugId: request.body.subject.conversationSlugId,
+                    opinionSlugId: request.body.subject.opinionSlugId,
+                    userId: requesterUserId,
+                }))
+            ) {
                 const productFailureResponse = {
                     success: false,
                     reason: "content_translation_not_enabled",

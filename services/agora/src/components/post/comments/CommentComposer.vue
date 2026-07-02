@@ -105,6 +105,12 @@ import {
   type RouteGuardDestination,
   useRouteGuard,
 } from "src/utils/component/routing/routeGuard";
+import {
+  type ConversationRouteContext,
+  isConversationOnboardingRoutePath,
+  isConversationRoutePath,
+  normalConversationRouteContext,
+} from "src/utils/router/conversationRouteContext";
 import { useNotify } from "src/utils/ui/notify";
 import {
   computed,
@@ -136,6 +142,7 @@ const props = defineProps<{
   requiresEventTicket?: EventSlug;
   surveyGate?: SurveyGateSummary;
   isComposerDisabled: boolean;
+  conversationRouteContext?: ConversationRouteContext;
 }>();
 
 const emit = defineEmits<{
@@ -152,30 +159,15 @@ const emit = defineEmits<{
   ];
 }>();
 
+const conversationRouteContext = computed(
+  () => props.conversationRouteContext ?? normalConversationRouteContext
+);
+
 const Editor = defineAsyncComponent(
   () => import("src/components/editor/Editor.vue")
 );
 
 type RouteName = keyof RouteNamedMap;
-type ConversationTabRouteName = Extract<
-  RouteName,
-  | "/conversation/[postSlugId]"
-  | "/conversation/[postSlugId]/"
-  | "/conversation/[postSlugId]/analysis"
-  | "/conversation/[postSlugId].embed"
-  | "/conversation/[postSlugId].embed/"
-  | "/conversation/[postSlugId].embed/analysis"
->;
-type ConversationOnboardingRouteName = Extract<
-  RouteName,
-  `/conversation/[postSlugId].onboarding${string}`
->;
-type VerificationRouteName = Extract<RouteName, `/verify/${string}`>;
-type DraftAutoSaveRouteName =
-  | "/welcome/"
-  | "/conversation/[conversationSlugId]/report"
-  | ConversationOnboardingRouteName
-  | VerificationRouteName;
 
 const sameConversationTabRouteNames = [
   "/conversation/[postSlugId]",
@@ -184,11 +176,15 @@ const sameConversationTabRouteNames = [
   "/conversation/[postSlugId].embed",
   "/conversation/[postSlugId].embed/",
   "/conversation/[postSlugId].embed/analysis",
-] satisfies readonly ConversationTabRouteName[];
+  "/project/[projectSlug]/conversation/[postSlugId]",
+  "/project/[projectSlug]/conversation/[postSlugId]/",
+  "/project/[projectSlug]/conversation/[postSlugId]/analysis",
+] satisfies readonly RouteName[];
 
 const draftAutoSaveRouteNames = [
   "/welcome/",
   "/conversation/[conversationSlugId]/report",
+  "/project/[projectSlug]/conversation/[postSlugId]/report",
   "/verify/email/",
   "/verify/email-code/",
   "/verify/hard/",
@@ -210,7 +206,7 @@ const draftAutoSaveRouteNames = [
   "/conversation/[postSlugId].onboarding/verify/phone",
   "/conversation/[postSlugId].onboarding/verify/phone-code",
   "/conversation/[postSlugId].onboarding/verify/ticket",
-] satisfies readonly DraftAutoSaveRouteName[];
+] satisfies readonly RouteName[];
 
 const route = useRoute();
 
@@ -266,11 +262,10 @@ const needsLogin = computed(() => {
 
 const hideComposerForRoute = computed(() => {
   const routePath = route.path;
-
-  const isConversationRoute = routePath.startsWith("/conversation/");
-  const isConversationOnboardingRoute = routePath.includes("/onboarding");
-
-  return !isConversationRoute || isConversationOnboardingRoute;
+  return (
+    !isConversationRoutePath(routePath) ||
+    isConversationOnboardingRoutePath(routePath)
+  );
 });
 
 const characterCount = ref(0);
@@ -455,6 +450,7 @@ function onLoginCallback() {
   createNewOpinionIntention(
     props.postSlugId,
     opinionBody.value,
+    conversationRouteContext.value,
     props.requiresEventTicket
   );
 

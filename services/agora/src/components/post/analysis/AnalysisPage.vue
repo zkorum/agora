@@ -102,11 +102,7 @@
               <div class="analysis-actions">
                 <SpaLink
                   v-if="showReportButton"
-                  :to="{
-                    name: '/conversation/[conversationSlugId]/report',
-                    params: { conversationSlugId: props.conversationSlugId },
-                    query: reportRouteQuery,
-                  }"
+                  :to="effectiveReportRoute"
                   class="report-button"
                   :title="t('generateReport')"
                   :aria-label="t('generateReport')"
@@ -411,6 +407,11 @@ import {
   shortcutItemSchema,
 } from "src/utils/component/analysis/shortcutBar";
 import { getDisplayPolisClusters } from "src/utils/component/opinion";
+import {
+  type ConversationRouteContext,
+  getConversationReportPath,
+  normalConversationRouteContext,
+} from "src/utils/router/conversationRouteContext";
 import { computed, nextTick, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 import { useRoute, useRouter } from "vue-router";
@@ -432,26 +433,34 @@ import {
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 import SurveyTab from "./surveyTab/SurveyTab.vue";
 
-const props = defineProps<{
-  conversationSlugId: string;
-  conversationAuthorUsername: string;
-  conversationOrganizationName: string;
-  analysisQuery: UseQueryReturnType<AnalysisData, Error>;
-  analysisCheckpointsQuery: UseQueryReturnType<
-    FetchAnalysisCheckpointsResponse,
-    Error
-  >;
-  liveConversationViewSnapshotId: number | undefined;
-  surveyQuery: UseQueryReturnType<SurveyResultsAggregatedResponse, Error>;
-  hasSurvey: boolean;
-  surveyGate: SurveyGateSummary | undefined;
-  aiLabelingEnabled: boolean;
-  showReportButton: boolean;
-  isLiveAnalysisPaused: boolean;
-  isConversationClosed: boolean;
-  navigateToDiscoverTab: () => void;
-  conversationScrollContext: ConversationScrollContext;
-}>();
+const props = withDefaults(
+  defineProps<{
+    conversationSlugId: string;
+    conversationAuthorUsername: string;
+    conversationOrganizationName: string;
+    analysisQuery: UseQueryReturnType<AnalysisData, Error>;
+    analysisCheckpointsQuery: UseQueryReturnType<
+      FetchAnalysisCheckpointsResponse,
+      Error
+    >;
+    liveConversationViewSnapshotId: number | undefined;
+    surveyQuery: UseQueryReturnType<SurveyResultsAggregatedResponse, Error>;
+    hasSurvey: boolean;
+    surveyGate: SurveyGateSummary | undefined;
+    aiLabelingEnabled: boolean;
+    showReportButton: boolean;
+    reportRouteOverride?: RouteLocationRaw;
+    isLiveAnalysisPaused: boolean;
+    isConversationClosed: boolean;
+    navigateToDiscoverTab: () => void;
+    conversationScrollContext: ConversationScrollContext;
+    conversationRouteContext?: ConversationRouteContext;
+  }>(),
+  {
+    reportRouteOverride: undefined,
+    conversationRouteContext: () => normalConversationRouteContext,
+  }
+);
 
 const emit = defineEmits<{
   "update:liveAnalysisPaused": [paused: boolean];
@@ -1042,6 +1051,16 @@ const reportRouteQuery = computed(() =>
     checkpointViewSnapshotId: selectedRouteCheckpoint.value,
   })
 );
+const reportRoute = computed<RouteLocationRaw>(() => ({
+  path: getConversationReportPath({
+    conversationSlugId: props.conversationSlugId,
+    routeContext: props.conversationRouteContext,
+  }),
+  query: reportRouteQuery.value,
+}));
+const effectiveReportRoute = computed(
+  () => props.reportRouteOverride ?? reportRoute.value
+);
 
 watch(
   () => ({
@@ -1600,6 +1619,7 @@ defineExpose({
   align-items: flex-start;
   justify-content: space-between;
   gap: 2rem;
+  container-type: inline-size;
 }
 
 .analysis-actions {
@@ -1681,7 +1701,10 @@ defineExpose({
     color: #6b4eff;
   }
 
-  @media (max-width: $breakpoint-xs-max) {
+}
+
+@container (max-width: 34rem) {
+  .report-button {
     display: none;
   }
 }

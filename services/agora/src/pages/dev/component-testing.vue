@@ -26,6 +26,28 @@
       </p>
     </SpaLink>
 
+    <SpaLink to="/dev/project-conversation-layout" class="route-card">
+      <div class="route-card-header">
+        <i class="pi pi-comments section-icon"></i>
+        <span>Project conversation layout</span>
+      </div>
+      <p class="route-card-description">
+        Open a view-only project-scoped conversation layout using the reusable
+        project shell, existing conversation action bar, and statement list.
+      </p>
+    </SpaLink>
+
+    <SpaLink to="/dev/project-conversation-report-layout" class="route-card">
+      <div class="route-card-header">
+        <i class="pi pi-chart-bar section-icon"></i>
+        <span>Project conversation report</span>
+      </div>
+      <p class="route-card-description">
+        Open a project-scoped report layout preview with mocked report data and
+        the reusable project conversation shell.
+      </p>
+    </SpaLink>
+
     <AnalysisVariantLoadingTest />
     <CreateConversationProjectLanguageTest />
     <ConversationLanguageSettingDialogTest />

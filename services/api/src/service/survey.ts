@@ -97,6 +97,7 @@ import {
     buildGoogleConversationLanguageDetectionCorpus,
 } from "./conversationLanguage.js";
 import { getConversationMultilingualSetting } from "./conversationMultilingual.js";
+import type { SurveyQuestionContentSource } from "./contentTranslation.js";
 
 interface ConversationAccessContext {
     conversationId: number;
@@ -113,6 +114,7 @@ interface SurveyConfigUpdateEffect {
     previousRequiresSurvey: boolean;
     nextRequiresSurvey: boolean;
     didRequiredQuestionSemanticChange: boolean;
+    currentQuestionSources: SurveyQuestionContentSource[];
 }
 
 async function resolveSurveyBlockLanguageMetadata({
@@ -1339,6 +1341,7 @@ async function softDeleteSurveyResponseAnswers({
 
 async function insertSurveyQuestion({
     db,
+    conversationSlugId,
     surveyConfigId,
     conversationId,
     question,
@@ -1346,12 +1349,13 @@ async function insertSurveyQuestion({
     sourceLanguageMetadata,
 }: {
     db: PostgresJsDatabase;
+    conversationSlugId?: string;
     surveyConfigId: number;
     conversationId: number;
     question: SurveyQuestionConfig;
     now: Date;
     sourceLanguageMetadata: ContentLanguageMetadata;
-}): Promise<void> {
+}): Promise<SurveyQuestionContentSource> {
     const questionSlugId = question.questionSlugId ?? generateRandomSlugId();
     const insertedQuestions = await db
         .insert(surveyQuestionTable)
@@ -1387,7 +1391,10 @@ async function insertSurveyQuestion({
             ...contentLanguageMetadataUpdateValues(sourceLanguageMetadata),
             createdAt: now,
         })
-        .returning({ id: surveyQuestionContentTable.id });
+        .returning({
+            id: surveyQuestionContentTable.id,
+            publicId: surveyQuestionContentTable.publicId,
+        });
 
     await db
         .update(surveyQuestionTable)
@@ -1395,6 +1402,7 @@ async function insertSurveyQuestion({
         .where(eq(surveyQuestionTable.id, surveyQuestionId));
 
     const options = getSurveyQuestionConfigOptions({ question });
+    const optionSources: SurveyQuestionContentSource["options"] = [];
     for (const option of options) {
         const optionSlugId = option.optionSlugId ?? generateRandomSlugId();
         const insertedOptions = await db
@@ -1418,13 +1426,43 @@ async function insertSurveyQuestion({
                 ...contentLanguageMetadataUpdateValues(sourceLanguageMetadata),
                 createdAt: now,
             })
-            .returning({ id: surveyQuestionOptionContentTable.id });
+            .returning({
+                id: surveyQuestionOptionContentTable.id,
+                publicId: surveyQuestionOptionContentTable.publicId,
+            });
 
         await db
             .update(surveyQuestionOptionTable)
             .set({ currentContentId: insertedOptionContent[0].id })
             .where(eq(surveyQuestionOptionTable.id, surveyQuestionOptionId));
+
+        optionSources.push({
+            optionSlugId,
+            contentId: insertedOptionContent[0].id,
+            publicId: insertedOptionContent[0].publicId,
+            optionText: option.optionText,
+            sourceLanguageCode: sourceLanguageMetadata.sourceLanguageCode,
+            sourceRawLanguageCode: sourceLanguageMetadata.sourceRawLanguageCode,
+            sourceLanguageProvider: sourceLanguageMetadata.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                sourceLanguageMetadata.sourceLanguageConfidence,
+        });
     }
+
+    return {
+        conversationId,
+        conversationSlugId: conversationSlugId ?? "",
+        questionSlugId,
+        questionId: surveyQuestionId,
+        contentId: insertedContent[0].id,
+        publicId: insertedContent[0].publicId,
+        questionText: question.questionText,
+        sourceLanguageCode: sourceLanguageMetadata.sourceLanguageCode,
+        sourceRawLanguageCode: sourceLanguageMetadata.sourceRawLanguageCode,
+        sourceLanguageProvider: sourceLanguageMetadata.sourceLanguageProvider,
+        sourceLanguageConfidence: sourceLanguageMetadata.sourceLanguageConfidence,
+        options: optionSources,
+    };
 }
 
 function constraintsAreEqual({
@@ -1794,6 +1832,7 @@ async function replaceSurveyConfigById({
 
 export async function setSurveyConfigForConversation({
     db,
+    conversationSlugId,
     conversationId,
     surveyConfig,
     now,
@@ -1802,6 +1841,7 @@ export async function setSurveyConfigForConversation({
     sourceLanguageMetadata,
 }: {
     db: PostgresJsDatabase;
+    conversationSlugId: string;
     conversationId: number;
     surveyConfig: SurveyConfig | null;
     now: Date;
@@ -1850,6 +1890,7 @@ export async function setSurveyConfigForConversation({
             previousRequiresSurvey,
             nextRequiresSurvey,
             didRequiredQuestionSemanticChange: previousRequiresSurvey,
+            currentQuestionSources: [],
         };
     }
 
@@ -1876,20 +1917,23 @@ export async function setSurveyConfigForConversation({
             })
             .returning({ id: surveyConfigTable.id });
 
+        const currentQuestionSources: SurveyQuestionContentSource[] = [];
         for (const question of normalizedSurveyConfig.questions) {
-            await insertSurveyQuestion({
+            currentQuestionSources.push(await insertSurveyQuestion({
                 db,
+                conversationSlugId,
                 surveyConfigId: insertedSurveyConfig[0].id,
                 conversationId,
                 question,
                 now,
                 sourceLanguageMetadata: surveySourceLanguageMetadata,
-            });
+            }));
         }
         return {
             previousRequiresSurvey,
             nextRequiresSurvey,
             didRequiredQuestionSemanticChange: nextRequiresSurvey,
+            currentQuestionSources,
         };
     }
 
@@ -1905,6 +1949,7 @@ export async function setSurveyConfigForConversation({
         previousRequiresSurvey,
         nextRequiresSurvey,
         didRequiredQuestionSemanticChange: didSemanticChange,
+        currentQuestionSources: [],
     };
 }
 
@@ -2939,6 +2984,7 @@ export async function updateSurveyConfigByAuthor({
     const surveyConfigUpdateEffect = await db.transaction(async (tx) => {
         return await setSurveyConfigForConversation({
             db: tx,
+            conversationSlugId,
             conversationId: conversation.conversationId,
             surveyConfig,
             now,
@@ -3003,6 +3049,7 @@ export async function deleteSurveyConfigByAuthor({
     const surveyConfigUpdateEffect = await db.transaction(async (tx) => {
         return await setSurveyConfigForConversation({
             db: tx,
+            conversationSlugId,
             conversationId: conversation.conversationId,
             surveyConfig: null,
             now,

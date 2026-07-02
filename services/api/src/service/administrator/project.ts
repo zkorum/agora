@@ -3,12 +3,15 @@ import {
     and,
     eq,
     inArray,
+    isNotNull,
     isNull,
     type TablesRelationalConfig,
 } from "drizzle-orm";
 import type { PgQueryResultHKT, PgTransaction } from "drizzle-orm/pg-core";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
+    conversationTable,
+    conversationTranslationTargetLanguageTable,
     contentTranslationWorkTable,
     organizationTable,
     projectContentBannerLocalizationTable,
@@ -55,7 +58,12 @@ import {
     buildGoogleConversationLanguageDetectionCorpus,
 } from "../conversationLanguage.js";
 import { hasActiveDynamicTranslationEntitlementForOrganizations } from "../premiumEntitlement.js";
-import { normalizeProjectLanguageSettings } from "../translationLanguageSetting.js";
+import { getImplicitDefaultDisplayLanguage } from "../projectLanguage.js";
+import {
+    getProjectTranslationTargetLanguagePolicy,
+    normalizeProjectLanguageSettings,
+    sourceLanguageToDisplayLanguage,
+} from "../translationLanguageSetting.js";
 
 type ProjectOrganizationAttributionRole =
     CreateProjectAttributionRequest["role"];
@@ -649,6 +657,69 @@ function projectLanguageSettingsUseDynamicTranslationFeature({
     return (
         languageSettings.dynamicTranslationEnabled ||
         languageSettings.targetLanguageCodes.length > 0
+    );
+}
+
+async function refreshInheritedConversationLanguageSettings({
+    db,
+    projectId,
+    dynamicTranslationEnabled,
+    targetLanguageCodes,
+    now,
+}: {
+    db: ProjectDatabase;
+    projectId: number;
+    dynamicTranslationEnabled: boolean;
+    targetLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+    now: Date;
+}): Promise<void> {
+    const inheritedConversationRows = await db
+        .select({ conversationId: conversationTable.id })
+        .from(conversationTable)
+        .where(
+            and(
+                eq(conversationTable.projectId, projectId),
+                eq(conversationTable.languageSettingsSource, "project_inherited"),
+                isNotNull(conversationTable.currentContentId),
+            ),
+        );
+    const conversationIds = inheritedConversationRows.map(
+        (row) => row.conversationId,
+    );
+    if (conversationIds.length === 0) {
+        return;
+    }
+
+    await db
+        .update(conversationTable)
+        .set({ dynamicTranslationEnabled, updatedAt: now })
+        .where(inArray(conversationTable.id, conversationIds));
+
+    await db
+        .update(conversationTranslationTargetLanguageTable)
+        .set({ deletedAt: now })
+        .where(
+            and(
+                inArray(
+                    conversationTranslationTargetLanguageTable.conversationId,
+                    conversationIds,
+                ),
+                isNull(conversationTranslationTargetLanguageTable.deletedAt),
+            ),
+        );
+
+    if (targetLanguageCodes.length === 0) {
+        return;
+    }
+
+    await db.insert(conversationTranslationTargetLanguageTable).values(
+        conversationIds.flatMap((conversationId) =>
+            targetLanguageCodes.map((languageCode) => ({
+                conversationId,
+                languageCode,
+                createdAt: now,
+            })),
+        ),
     );
 }
 
@@ -2405,6 +2476,31 @@ export async function updateProjectLanguageSettings({
                 ),
             );
         }
+
+        const defaultLanguageCode =
+            sourceLanguageToDisplayLanguage({
+                sourceLanguageCode:
+                    sourceLanguageMetadata?.sourceLanguageCode ??
+                    currentContent?.sourceLanguageCode ??
+                    null,
+            }) ?? getImplicitDefaultDisplayLanguage();
+        const inheritedTargetLanguagePolicy = getProjectTranslationTargetLanguagePolicy({
+            languageSettings: {
+                dynamicTranslationEnabled:
+                    normalizedLanguageSettings.dynamicTranslationEnabled,
+                defaultLanguageCode,
+                targetLanguageCodes: normalizedLanguageSettings.targetLanguageCodes,
+            },
+        });
+        await refreshInheritedConversationLanguageSettings({
+            db: tx,
+            projectId: project.projectId,
+            dynamicTranslationEnabled:
+                inheritedTargetLanguagePolicy.dynamicTranslationEnabled,
+            targetLanguageCodes:
+                inheritedTargetLanguagePolicy.effectiveTargetLanguageCodes,
+            now,
+        });
 
         return true;
     });

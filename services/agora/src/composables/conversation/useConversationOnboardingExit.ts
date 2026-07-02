@@ -4,6 +4,7 @@ import {
   getHistoryPosition,
   navigateToHistoryPositionOrReplace,
 } from "src/utils/nav/historyBack";
+import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import { getConversationPath } from "src/utils/survey/navigation";
 import { useRouter } from "vue-router";
 
@@ -14,8 +15,10 @@ export function useConversationOnboardingExit() {
 
   async function exitToConversation({
     conversationSlugId,
+    routeContext,
   }: {
     conversationSlugId: string;
+    routeContext?: ConversationRouteContext;
   }): Promise<void> {
     if (loginIntentionStore.activeUserIntention !== "none") {
       conversationOnboardingStore.clearForConversation({ conversationSlugId });
@@ -28,7 +31,10 @@ export function useConversationOnboardingExit() {
     const fallbackPath =
       hasCurrentOnboardingState && conversationOnboardingStore.returnTarget !== null
         ? conversationOnboardingStore.returnTarget
-        : getConversationPath({ conversationSlugId });
+        : getConversationPath({
+            conversationSlugId,
+            routeContext: routeContext ?? conversationOnboardingStore.routeContext,
+          });
     const targetHistoryPosition = hasCurrentOnboardingState
       ? conversationOnboardingStore.returnHistoryPosition
       : null;

@@ -135,6 +135,7 @@
                   v-for="activity in activities"
                   :key="activity.slug"
                   :activity="activity"
+                  :project-slug="project.slug"
                   :language-code="selectedLanguageValue"
                   :text-direction="projectTextDirection"
                 />
@@ -200,19 +201,7 @@
           </aside>
         </div>
 
-        <footer class="project-page-view__footer">
-          <span class="project-page-view__footer-line">
-            <span>{{ t("poweredBy") }}</span>
-            <SpaLink
-              to="/"
-              class="project-page-view__brand-link"
-              :aria-label="t('homeAriaLabel')"
-            >
-              <ZKStyledText text="Agora Citizen Network" :add-gradient="true" />
-            </SpaLink>
-          </span>
-          <span>{{ t("contentOwnedByProjectOwners") }}</span>
-        </footer>
+        <ProjectPageFooter :language-code="selectedLanguageValue" />
       </div>
     </main>
   </div>
@@ -221,10 +210,8 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
-import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import ZKLiveStatusDot from "src/components/ui-library/ZKLiveStatusDot.vue";
-import ZKStyledText from "src/components/ui-library/ZKStyledText.vue";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { getLanguageTextDirection } from "src/shared/languages";
 import type { LocalizedContentTranslationStatus } from "src/shared/types/zod";
@@ -240,6 +227,7 @@ import ProjectActivityCard from "./ProjectActivityCard.vue";
 import ProjectAttributionSection from "./ProjectAttributionSection.vue";
 import ProjectContactCard from "./ProjectContactCard.vue";
 import ProjectLanguageSelect from "./ProjectLanguageSelect.vue";
+import ProjectPageFooter from "./ProjectPageFooter.vue";
 import {
   type ProjectPageTranslations,
   translateProjectPageText,
@@ -758,35 +746,6 @@ h2 {
   font-size: 1rem;
   font-weight: var(--font-weight-semibold);
   letter-spacing: -0.01em;
-}
-
-.project-page-view__footer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 2.5rem 0 0;
-  color: $sky-dark;
-  font-size: 0.82rem;
-  text-align: center;
-}
-
-.project-page-view__footer-line {
-  display: inline-flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.25rem;
-}
-
-.project-page-view__brand-link {
-  display: inline-block;
-  font-weight: var(--font-weight-bold);
-  transition: transform 0.15s ease-out;
-
-  &:active {
-    transform: scale(0.98);
-  }
 }
 
 @media (max-width: 860px) {

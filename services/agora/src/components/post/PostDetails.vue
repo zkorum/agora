@@ -32,6 +32,7 @@
             conversationData.interaction.surveyGate?.hasSurvey === true
           "
           :enable-route-navigation="true"
+          :conversation-route-context="conversationRouteContext"
         />
 
         <AnalysisPage
@@ -60,6 +61,7 @@
           :is-conversation-closed="conversationData.metadata.isClosed"
           :navigate-to-discover-tab="navigateToDiscoverTab"
           :conversation-scroll-context="conversationScrollContext"
+          :conversation-route-context="conversationRouteContext"
           @update:live-analysis-paused="setLiveAnalysisPaused"
         />
 
@@ -78,10 +80,7 @@
           :survey-gate="conversationData.interaction.surveyGate"
           :on-view-analysis="viewAnalysisTab"
           :is-voting-disabled="isVotingDisabled"
-          :dynamic-translation-enabled="
-            conversationData.metadata.multilingualSetting.dynamicTranslationEnabled
-          "
-          :supported-target-language-codes="supportedTargetLanguageCodes"
+          :conversation-route-context="conversationRouteContext"
           :preloaded-queries="{
             commentsDiscoverQuery,
             commentsNewQuery,
@@ -100,6 +99,7 @@
         :requires-event-ticket="conversationData.metadata.requiresEventTicket"
         :survey-gate="conversationData.interaction.surveyGate"
         :is-composer-disabled="isVotingDisabled"
+        :conversation-route-context="conversationRouteContext"
         @submitted-comment="submittedComment"
       />
     </FloatingBottomContainer>
@@ -129,7 +129,7 @@ import {
   getScrollTop,
   scrollTo,
 } from "src/utils/html/scroll";
-import { getSupportedContentTranslationTargetLanguageCodes } from "src/utils/translation/contentTranslation";
+import { getConversationRouteContextFromRoute } from "src/utils/router/conversationRouteContext";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
@@ -155,14 +155,6 @@ const emit = defineEmits<{
 const currentTab = ref<"comment" | "analysis">("comment");
 const route = useRoute();
 
-const supportedTargetLanguageCodes = computed(() =>
-  getSupportedContentTranslationTargetLanguageCodes({
-    contentLanguageMetadata: props.conversationData.metadata.contentLanguageMetadata,
-    languageSetting: props.conversationData.metadata.languageSetting,
-    multilingualSetting: props.conversationData.metadata.multilingualSetting,
-  })
-);
-
 const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
 const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
 const isLiveAnalysisPaused = ref(false);
@@ -183,6 +175,13 @@ const conversationScrollContext = computed<ConversationScrollContext>(() => ({
     scrollTo({ top, behavior, scrollContainer: null });
   },
 }));
+
+const conversationRouteContext = computed(() =>
+  getConversationRouteContextFromRoute({
+    name: route.name,
+    params: route.params,
+  })
+);
 
 const {
   invalidateAnalysis,

@@ -59,6 +59,7 @@ import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import EmailInputForm from "src/components/verification/EmailInputForm.vue";
 import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
+import { useConversationOnboardingRoute } from "src/composables/conversation/useConversationOnboardingRoute";
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useEmailSubmit } from "src/composables/verification/useEmailSubmit";
@@ -72,15 +73,15 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
-import { getSingleRouteParam } from "src/utils/router/params";
 import {
   getConversationSurveyOnboardingPath,
+  getConversationSurveyVerifyEmailCodePath,
   getConversationSurveyVerifyHardPath,
   getConversationSurveyVerifyPath,
 } from "src/utils/survey/navigation";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, onMounted, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 
 import {
   type ConversationSurveyOnboardingTranslations,
@@ -88,7 +89,7 @@ import {
 } from "../index.i18n";
 
 const router = useRouter();
-const route = useRoute();
+const { routeConversationSlugId, routeContext } = useConversationOnboardingRoute();
 const conversationOnboardingStore = useConversationOnboardingStore();
 const { isLoggedIn, isAuthInitialized, credentials } = storeToRefs(
   useAuthenticationStore()
@@ -106,16 +107,13 @@ const { t: tCommon } =
     conversationSurveyOnboardingTranslations
   );
 
-const routeConversationSlugId = computed(() => {
-  return getSingleRouteParam(route.params.postSlugId);
-});
-
 if (
   conversationOnboardingStore.conversationSlugId !==
   routeConversationSlugId.value
 ) {
   conversationOnboardingStore.startManualEntry({
     conversationSlugId: routeConversationSlugId.value,
+    routeContext: routeContext.value,
   });
 }
 
@@ -142,19 +140,23 @@ const backPath = computed(() => {
   ) {
     return getConversationSurveyVerifyHardPath({
       conversationSlugId: conversationSlugId.value,
+      routeContext: routeContext.value,
     });
   }
 
   return getConversationSurveyOnboardingPath({
     conversationSlugId: conversationSlugId.value,
+    routeContext: routeContext.value,
   });
 });
 
 const { isLoading, submitEmail, nextCodeWaitSeconds } = useEmailSubmit({
   onNavigateToOtp: () =>
     router.replace({
-      name: "/conversation/[postSlugId].onboarding/verify/email-code",
-      params: { postSlugId: conversationSlugId.value },
+      path: getConversationSurveyVerifyEmailCodePath({
+        conversationSlugId: conversationSlugId.value,
+        routeContext: routeContext.value,
+      }),
     }),
   onAlreadyHasCredential: () => {
     showNotifyMessage(t("alreadyHasEmail"));
@@ -177,6 +179,7 @@ watch(
       void router.replace({
         path: getConversationSurveyVerifyPath({
           conversationSlugId: conversationSlugId.value,
+          routeContext: routeContext.value,
         }),
       });
     }
@@ -220,6 +223,7 @@ async function handleBackToConversation(): Promise<void> {
   credentialUpgradeTarget.value = null;
   await exitToConversation({
     conversationSlugId: conversationSlugId.value,
+    routeContext: routeContext.value,
   });
 }
 </script>

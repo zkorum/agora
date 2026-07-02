@@ -47,14 +47,18 @@ import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
+import { useConversationOnboardingRoute } from "src/composables/conversation/useConversationOnboardingRoute";
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
-import { getSingleRouteParam } from "src/utils/router/params";
+import {
+  getConversationSurveyCompletePath,
+  getConversationSurveyVerifyPath,
+} from "src/utils/survey/navigation";
 import { computed, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 
 import {
   type ConversationSurveyOnboardingTranslations,
@@ -62,7 +66,7 @@ import {
 } from "./index.i18n";
 
 const router = useRouter();
-const route = useRoute();
+const { routeConversationSlugId, routeContext } = useConversationOnboardingRoute();
 const conversationOnboardingStore = useConversationOnboardingStore();
 const { credentialUpgradeTarget } = storeToRefs(onboardingFlowStore());
 const { exitToConversation } = useConversationOnboardingExit();
@@ -70,16 +74,13 @@ const { t } = useComponentI18n<ConversationSurveyOnboardingTranslations>(
   conversationSurveyOnboardingTranslations
 );
 
-const routeConversationSlugId = computed(() => {
-  return getSingleRouteParam(route.params.postSlugId);
-});
-
 if (
   conversationOnboardingStore.conversationSlugId !==
   routeConversationSlugId.value
 ) {
   conversationOnboardingStore.startManualEntry({
     conversationSlugId: routeConversationSlugId.value,
+    routeContext: routeContext.value,
   });
 }
 
@@ -112,8 +113,11 @@ watch(
   isInitialLoading,
   (loading) => {
     if (!loading && conversationOnboardingStore.justCompletedSurvey) {
-      void router.replace({
-        path: `/conversation/${conversationSlugId.value}/onboarding/complete`,
+        void router.replace({
+        path: getConversationSurveyCompletePath({
+          conversationSlugId: conversationSlugId.value,
+          routeContext: routeContext.value,
+        }),
       });
     }
   },
@@ -124,6 +128,7 @@ async function handleBackToConversation(): Promise<void> {
   credentialUpgradeTarget.value = null;
   await exitToConversation({
     conversationSlugId: conversationSlugId.value,
+    routeContext: routeContext.value,
   });
 }
 
@@ -141,8 +146,10 @@ async function handlePrimaryAction(): Promise<void> {
 
   try {
     await router.push({
-      name: "/conversation/[postSlugId].onboarding/verify",
-      params: { postSlugId: conversationSlugId.value },
+      path: getConversationSurveyVerifyPath({
+        conversationSlugId: conversationSlugId.value,
+        routeContext: routeContext.value,
+      }),
     });
   } finally {
     isActing.value = false;

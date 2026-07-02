@@ -32,6 +32,7 @@
           :conversation-type="loadedConversationData.metadata.conversationType"
           :has-survey="loadedConversationData.interaction.surveyGate?.hasSurvey === true"
           :enable-route-navigation="true"
+          :conversation-route-context="conversationRouteContext"
         />
         </div>
 
@@ -49,6 +50,7 @@
                 :on-view-analysis="onViewAnalysis"
                 :navigate-to-discover-tab="navigateToDiscoverTab"
                 :conversation-scroll-context="conversationScrollContext"
+                :conversation-route-context="conversationRouteContext"
                 @update:comment-filter="
                   (filter: CommentFilterOptions) => { commentFilter = filter }
                 "
@@ -88,10 +90,12 @@ import { useTabScrollRestoration } from "src/composables/conversation/useTabScro
 import { useStickyObserver } from "src/composables/ui/useStickyObserver";
 import EmbedLayout from "src/layouts/EmbedLayout.vue";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
+import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import { computed, ref } from "vue";
 
 const embedLayoutRef = ref<{ containerElement: HTMLElement | null } | null>(null);
 const scrollContainer = computed(() => embedLayoutRef.value?.containerElement ?? null);
+const conversationRouteContext: ConversationRouteContext = { kind: "embed" };
 
 const { sentinelElement, headerHeight } = useStickyObserver();
 
@@ -119,7 +123,7 @@ const {
     "/conversation/[postSlugId].embed/",
     "/conversation/[postSlugId].embed",
   ],
-  routePrefix: "/conversation/{id}/embed",
+  routeContext: conversationRouteContext,
   scrollContainer,
 });
 

@@ -11,6 +11,7 @@ import { useConversationOnboardingStore } from "src/stores/conversationOnboardin
 import { useUserStore } from "src/stores/user";
 import { useSurveyStatusQuery } from "src/utils/api/survey/useSurveyQueries";
 import { getHistoryPosition } from "src/utils/nav/historyBack";
+import { getConversationRouteContextFromRoute } from "src/utils/router/conversationRouteContext";
 import { deriveSurveyRequirementState } from "src/utils/survey/requirements";
 import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from "vue";
 import { useRoute } from "vue-router";
@@ -121,6 +122,10 @@ export function useParticipationGate({
       returnTarget: route.fullPath,
       returnHistoryPosition: getHistoryPosition({
         historyState: window.history.state,
+      }),
+      routeContext: getConversationRouteContextFromRoute({
+        name: route.name,
+        params: route.params,
       }),
     });
   }
