@@ -5,7 +5,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**name** | **string** |  | [default to undefined]
+**firstName** | **string** |  | [default to undefined]
+**lastName** | **string** |  | [optional] [default to undefined]
 **roleLabel** | **string** |  | [optional] [default to undefined]
 **affiliationName** | **string** |  | [optional] [default to undefined]
 **imageUrl** | **string** |  | [optional] [default to undefined]
@@ -18,7 +19,8 @@ Name | Type | Description | Notes
 import { ApiV1ProjectPageFetchPost200ResponseProjectContact } from './api';
 
 const instance: ApiV1ProjectPageFetchPost200ResponseProjectContact = {
-    name,
+    firstName,
+    lastName,
     roleLabel,
     affiliationName,
     imageUrl,

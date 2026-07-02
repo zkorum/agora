@@ -1188,29 +1188,76 @@ async function fetchProjectContact({
     db,
     projectId,
     baseImageServiceUrl,
+    effectiveLanguageCode,
+    defaultLanguageCode,
 }: {
     db: PostgresJsDatabase;
     projectId: number;
     baseImageServiceUrl: string;
+    effectiveLanguageCode: SupportedDisplayLanguageCodes;
+    defaultLanguageCode: SupportedDisplayLanguageCodes;
 }): Promise<ProjectPageContact | undefined> {
+    const languageCandidates = Array.from(
+        getLanguageCandidateSet({ effectiveLanguageCode, defaultLanguageCode }),
+    );
     const rows = await db
         .select({
-            name: projectContactTable.name,
+            firstName: projectContactTable.firstName,
+            lastName: projectContactTable.lastName,
             roleLabel: projectContactTable.roleLabel,
             email: projectContactTable.email,
+            websiteUrl: projectContactTable.websiteUrl,
+            imagePath: projectContactTable.imagePath,
+            isFullImagePath: projectContactTable.isFullImagePath,
+            organizationDefaultLanguageCode: organizationTable.defaultLanguageCode,
             organizationName: organizationTable.displayName,
+            organizationDescription: organizationTable.description,
             organizationWebsiteUrl: organizationTable.websiteUrl,
             organizationImagePath: organizationTable.imagePath,
             organizationIsFullImagePath: organizationTable.isFullImagePath,
+            organizationLocalizationLanguageCode:
+                organizationLocalizationTable.languageCode,
+            organizationLocalizationDisplayName:
+                organizationLocalizationTable.displayName,
+            organizationLocalizationDescription:
+                organizationLocalizationTable.description,
+            organizationLocalizationWebsiteUrl:
+                organizationLocalizationTable.websiteUrl,
+            organizationLocalizationImagePath: organizationLocalizationTable.imagePath,
+            organizationLocalizationIsFullImagePath:
+                organizationLocalizationTable.isFullImagePath,
+            externalDefaultLanguageCode:
+                projectExternalOrganizationTable.defaultLanguageCode,
             externalName: projectExternalOrganizationTable.displayName,
+            externalDescription: projectExternalOrganizationTable.description,
             externalWebsiteUrl: projectExternalOrganizationTable.websiteUrl,
             externalImagePath: projectExternalOrganizationTable.imagePath,
-            externalIsFullImagePath: projectExternalOrganizationTable.isFullImagePath,
+            externalIsFullImagePath:
+                projectExternalOrganizationTable.isFullImagePath,
+            externalLocalizationLanguageCode:
+                projectExternalOrganizationLocalizationTable.languageCode,
+            externalLocalizationDisplayName:
+                projectExternalOrganizationLocalizationTable.displayName,
+            externalLocalizationDescription:
+                projectExternalOrganizationLocalizationTable.description,
+            externalLocalizationWebsiteUrl:
+                projectExternalOrganizationLocalizationTable.websiteUrl,
+            externalLocalizationImagePath:
+                projectExternalOrganizationLocalizationTable.imagePath,
+            externalLocalizationIsFullImagePath:
+                projectExternalOrganizationLocalizationTable.isFullImagePath,
         })
         .from(projectContactTable)
         .leftJoin(
             organizationTable,
             eq(organizationTable.id, projectContactTable.organizationId),
+        )
+        .leftJoin(
+            organizationLocalizationTable,
+            and(
+                eq(organizationLocalizationTable.organizationId, organizationTable.id),
+                inArray(organizationLocalizationTable.languageCode, languageCandidates),
+            ),
         )
         .leftJoin(
             projectExternalOrganizationTable,
@@ -1219,28 +1266,115 @@ async function fetchProjectContact({
                 projectContactTable.externalOrganizationId,
             ),
         )
+        .leftJoin(
+            projectExternalOrganizationLocalizationTable,
+            and(
+                eq(
+                    projectExternalOrganizationLocalizationTable.externalOrganizationId,
+                    projectExternalOrganizationTable.id,
+                ),
+                inArray(
+                    projectExternalOrganizationLocalizationTable.languageCode,
+                    languageCandidates,
+                ),
+                isNull(projectExternalOrganizationLocalizationTable.deletedAt),
+            ),
+        )
         .where(
             and(
                 eq(projectContactTable.projectId, projectId),
                 isNull(projectContactTable.deletedAt),
             ),
-        )
-        .limit(1);
+        );
     const row = rows.at(0);
     if (row === undefined) {
         return undefined;
     }
-    const affiliationName = row.organizationName ?? row.externalName ?? undefined;
+    const affiliationName = (() => {
+        if (row.organizationName !== null) {
+            const defaultRow: OrganizationLocalizationRow = {
+                languageCode: row.organizationDefaultLanguageCode ?? defaultLanguageCode,
+                displayName: row.organizationName,
+                description: row.organizationDescription ?? "",
+                websiteUrl: row.organizationWebsiteUrl,
+                imagePath: row.organizationImagePath,
+                isFullImagePath: row.organizationIsFullImagePath ?? false,
+            };
+            const additionalRows: OrganizationLocalizationRow[] = rows.flatMap(
+                (candidate) =>
+                    candidate.organizationLocalizationLanguageCode === null
+                        ? []
+                        : [
+                              {
+                                  languageCode:
+                                      candidate.organizationLocalizationLanguageCode,
+                                  displayName:
+                                      candidate.organizationLocalizationDisplayName ?? "",
+                                  description:
+                                      candidate.organizationLocalizationDescription ?? "",
+                                  websiteUrl:
+                                      candidate.organizationLocalizationWebsiteUrl,
+                                  imagePath: candidate.organizationLocalizationImagePath,
+                                  isFullImagePath:
+                                      candidate.organizationLocalizationIsFullImagePath ??
+                                      false,
+                              },
+                          ],
+            );
+            return resolveLocalizationRow({
+                defaultRow,
+                additionalRows,
+                effectiveLanguageCode,
+            }).displayName;
+        }
+
+        if (row.externalName !== null) {
+            const defaultRow: OrganizationLocalizationRow = {
+                languageCode: row.externalDefaultLanguageCode ?? defaultLanguageCode,
+                displayName: row.externalName,
+                description: row.externalDescription ?? "",
+                websiteUrl: row.externalWebsiteUrl,
+                imagePath: row.externalImagePath,
+                isFullImagePath: row.externalIsFullImagePath ?? false,
+            };
+            const additionalRows: OrganizationLocalizationRow[] = rows.flatMap(
+                (candidate) =>
+                    candidate.externalLocalizationLanguageCode === null
+                        ? []
+                        : [
+                              {
+                                  languageCode:
+                                      candidate.externalLocalizationLanguageCode,
+                                  displayName:
+                                      candidate.externalLocalizationDisplayName ?? "",
+                                  description:
+                                      candidate.externalLocalizationDescription ?? "",
+                                  websiteUrl: candidate.externalLocalizationWebsiteUrl,
+                                  imagePath: candidate.externalLocalizationImagePath,
+                                  isFullImagePath:
+                                      candidate.externalLocalizationIsFullImagePath ?? false,
+                              },
+                          ],
+            );
+            return resolveLocalizationRow({
+                defaultRow,
+                additionalRows,
+                effectiveLanguageCode,
+            }).displayName;
+        }
+
+        return undefined;
+    })();
     return {
-        name: row.name,
+        firstName: row.firstName,
+        lastName: optionalText(row.lastName),
         roleLabel: optionalText(row.roleLabel),
         affiliationName,
-        email: row.email,
-        websiteUrl: optionalUrl(row.organizationWebsiteUrl ?? row.externalWebsiteUrl),
+        email: optionalText(row.email),
+        websiteUrl: optionalUrl(row.websiteUrl),
         imageUrl: toImageUrl({
-            imagePath: row.organizationImagePath ?? row.externalImagePath,
-            isFullImagePath:
-                row.organizationIsFullImagePath ?? row.externalIsFullImagePath ?? false,
+            imagePath: row.imagePath,
+            isFullImagePath: row.isFullImagePath,
             baseImageServiceUrl,
         }),
     };
@@ -1300,6 +1434,8 @@ async function buildProjectShellPayload({
                 db,
                 projectId: project.projectId,
                 baseImageServiceUrl,
+                effectiveLanguageCode: preferredContentLanguage,
+                defaultLanguageCode,
             }),
         ]);
     const projectPayload: ProjectPageProject = {

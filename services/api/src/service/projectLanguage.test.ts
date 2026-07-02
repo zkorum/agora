@@ -92,7 +92,32 @@ describe("resolveOrganizationLocalizationRow", () => {
                 additionalRows: [russianRow],
                 effectiveLanguageCode: "ru",
             }),
-        ).toBe(russianRow);
+        ).toEqual(russianRow);
+    });
+
+    it("falls back to the default row website URL when the matched row has none", () => {
+        const russianRow = {
+            languageCode: "ru",
+            displayName: "Русская организация",
+            description: "Описание",
+            websiteUrl: null,
+            imagePath: "https://example.org/ru-logo.png",
+            isFullImagePath: true,
+        } as const;
+
+        expect(
+            resolveOrganizationLocalizationRow({
+                defaultRow: {
+                    ...defaultRow,
+                    websiteUrl: "https://example.org/default",
+                },
+                additionalRows: [russianRow],
+                effectiveLanguageCode: "ru",
+            }),
+        ).toEqual({
+            ...russianRow,
+            websiteUrl: "https://example.org/default",
+        });
     });
 
     it("falls back between Chinese script rows", () => {
@@ -111,7 +136,7 @@ describe("resolveOrganizationLocalizationRow", () => {
                 additionalRows: [simplifiedChineseRow],
                 effectiveLanguageCode: "zh-Hant",
             }),
-        ).toBe(simplifiedChineseRow);
+        ).toEqual(simplifiedChineseRow);
     });
 
     it("uses the default row when no language-chain row exists", () => {

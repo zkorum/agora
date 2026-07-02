@@ -244,20 +244,43 @@
         <p class="section-description">{{ t("contactDescription") }}</p>
         <div class="form-grid">
           <q-input
-            v-model="contactNameInput"
+            v-model="contactFirstNameInput"
             outlined
-            :label="contactRequiredLabel(t('contactNameLabel'))"
+            :maxlength="MAX_LENGTH_NAME_CREATOR"
+            :label="contactRequiredLabel(t('contactFirstNameLabel'))"
+          />
+          <q-input
+            v-model="contactLastNameInput"
+            outlined
+            :maxlength="MAX_LENGTH_NAME_CREATOR"
+            :label="optionalLabel(t('contactLastNameLabel'))"
           />
           <q-input
             v-model="contactRoleInput"
             outlined
+            :maxlength="MAX_LENGTH_TITLE"
             :label="optionalLabel(t('contactRoleLabel'))"
           />
           <q-input
             v-model="contactEmailInput"
             outlined
             type="email"
-            :label="contactRequiredLabel(t('contactEmailLabel'))"
+            :label="contactChannelLabel(t('contactEmailLabel'))"
+          />
+          <q-input
+            v-model="contactWebsiteInput"
+            outlined
+            type="url"
+            :label="contactChannelLabel(t('contactWebsiteLabel'))"
+          />
+          <q-input
+            v-model="contactImagePathInput"
+            outlined
+            :label="optionalLabel(t('contactImagePathLabel'))"
+          />
+          <q-checkbox
+            v-model="contactImageIsFullPath"
+            :label="t('contactImageIsFullPathLabel')"
           />
           <ZKSelect
             v-model="contactOrganizationSlugSelectModel"
@@ -564,28 +587,47 @@
           />
           <div class="form-grid">
             <q-input
-              v-model="manageContactNameInput"
+              v-model="manageContactFirstNameInput"
               outlined
+              :maxlength="MAX_LENGTH_NAME_CREATOR"
               :label="
                 hasManageContactInput
-                  ? requiredLabel(t('contactNameLabel'))
-                  : optionalLabel(t('contactNameLabel'))
+                  ? requiredLabel(t('contactFirstNameLabel'))
+                  : optionalLabel(t('contactFirstNameLabel'))
               "
+            />
+            <q-input
+              v-model="manageContactLastNameInput"
+              outlined
+              :maxlength="MAX_LENGTH_NAME_CREATOR"
+              :label="optionalLabel(t('contactLastNameLabel'))"
             />
             <q-input
               v-model="manageContactRoleInput"
               outlined
+              :maxlength="MAX_LENGTH_TITLE"
               :label="optionalLabel(t('contactRoleLabel'))"
             />
             <q-input
               v-model="manageContactEmailInput"
               outlined
               type="email"
-              :label="
-                hasManageContactInput
-                  ? requiredLabel(t('contactEmailLabel'))
-                  : optionalLabel(t('contactEmailLabel'))
-              "
+              :label="manageContactChannelLabel(t('contactEmailLabel'))"
+            />
+            <q-input
+              v-model="manageContactWebsiteInput"
+              outlined
+              type="url"
+              :label="manageContactChannelLabel(t('contactWebsiteLabel'))"
+            />
+            <q-input
+              v-model="manageContactImagePathInput"
+              outlined
+              :label="optionalLabel(t('contactImagePathLabel'))"
+            />
+            <q-checkbox
+              v-model="manageContactImageIsFullPath"
+              :label="t('contactImageIsFullPathLabel')"
             />
             <ZKSelect
               v-model="manageContactOrganizationSlugSelectModel"
@@ -831,9 +873,13 @@ const externalImageIsFullPath = ref(true);
 const externalLocalizations = ref<ExternalLocalization[]>([]);
 const attributions = ref<CreateProjectAttributionRequest[]>([]);
 const dismissedOwnerAttributionSlugs = ref<Set<string>>(new Set());
-const contactName = ref("");
+const contactFirstName = ref("");
+const contactLastName = ref("");
 const contactRole = ref("");
 const contactEmail = ref("");
+const contactWebsite = ref("");
+const contactImagePath = ref("");
+const contactImageIsFullPath = ref(true);
 const contactOrganizationSlug = ref<string | null>(null);
 const isCreating = ref(false);
 const isDeletingProject = ref(false);
@@ -851,9 +897,13 @@ const manageBannerIsFullPath = ref(true);
 const manageContentLocalizations = ref<ProjectContentLocalization[]>([]);
 const manageAttributions = ref<CreateProjectAttributionRequest[]>([]);
 const manageDismissedOwnerAttributionSlugs = ref<Set<string>>(new Set());
-const manageContactName = ref("");
+const manageContactFirstName = ref("");
+const manageContactLastName = ref("");
 const manageContactRole = ref("");
 const manageContactEmail = ref("");
+const manageContactWebsite = ref("");
+const manageContactImagePath = ref("");
+const manageContactImageIsFullPath = ref(true);
 const manageContactOrganizationSlug = ref<string | null>(null);
 const isSavingProject = ref(false);
 const editingManageAttributionIndex = ref<number | undefined>();
@@ -885,12 +935,18 @@ const externalDisplayNameInput = stringInputModel(externalDisplayName);
 const externalDescriptionInput = stringInputModel(externalDescription);
 const externalWebsiteUrlInput = stringInputModel(externalWebsiteUrl);
 const externalImagePathInput = stringInputModel(externalImagePath);
-const contactNameInput = stringInputModel(contactName);
+const contactFirstNameInput = stringInputModel(contactFirstName);
+const contactLastNameInput = stringInputModel(contactLastName);
 const contactRoleInput = stringInputModel(contactRole);
 const contactEmailInput = stringInputModel(contactEmail);
-const manageContactNameInput = stringInputModel(manageContactName);
+const contactWebsiteInput = stringInputModel(contactWebsite);
+const contactImagePathInput = stringInputModel(contactImagePath);
+const manageContactFirstNameInput = stringInputModel(manageContactFirstName);
+const manageContactLastNameInput = stringInputModel(manageContactLastName);
 const manageContactRoleInput = stringInputModel(manageContactRole);
 const manageContactEmailInput = stringInputModel(manageContactEmail);
+const manageContactWebsiteInput = stringInputModel(manageContactWebsite);
+const manageContactImagePathInput = stringInputModel(manageContactImagePath);
 const ownerOrganizationSlugsSelectModel = stringArraySelectModel(
   ownerOrganizationSlugs
 );
@@ -1096,18 +1152,34 @@ const canAddManageAttribution = computed(() => {
 
 const hasContactInput = computed(
   () =>
-    contactName.value.trim() !== "" ||
+    contactFirstName.value.trim() !== "" ||
+    contactLastName.value.trim() !== "" ||
     contactRole.value.trim() !== "" ||
     contactEmail.value.trim() !== "" ||
+    contactWebsite.value.trim() !== "" ||
+    contactImagePath.value.trim() !== "" ||
     contactOrganizationSlug.value !== null
 );
 
 const hasManageContactInput = computed(
   () =>
-    manageContactName.value.trim() !== "" ||
+    manageContactFirstName.value.trim() !== "" ||
+    manageContactLastName.value.trim() !== "" ||
     manageContactRole.value.trim() !== "" ||
     manageContactEmail.value.trim() !== "" ||
+    manageContactWebsite.value.trim() !== "" ||
+    manageContactImagePath.value.trim() !== "" ||
     manageContactOrganizationSlug.value !== null
+);
+
+const hasContactChannelInput = computed(
+  () => contactEmail.value.trim() !== "" || contactWebsite.value.trim() !== ""
+);
+
+const hasManageContactChannelInput = computed(
+  () =>
+    manageContactEmail.value.trim() !== "" ||
+    manageContactWebsite.value.trim() !== ""
 );
 
 const hasValidContact = computed(() => {
@@ -1115,9 +1187,13 @@ const hasValidContact = computed(() => {
     return true;
   }
 
+  const trimmedEmail = contactEmail.value.trim();
+  const trimmedWebsite = contactWebsite.value.trim();
   return (
-    contactName.value.trim() !== "" &&
-    zodEmail.safeParse(contactEmail.value.trim()).success
+    contactFirstName.value.trim() !== "" &&
+    (trimmedEmail === "" || zodEmail.safeParse(trimmedEmail).success) &&
+    isOptionalUrlValid(trimmedWebsite) &&
+    hasContactChannelInput.value
   );
 });
 
@@ -1126,9 +1202,13 @@ const hasValidManageContact = computed(() => {
     return true;
   }
 
+  const trimmedEmail = manageContactEmail.value.trim();
+  const trimmedWebsite = manageContactWebsite.value.trim();
   return (
-    manageContactName.value.trim() !== "" &&
-    zodEmail.safeParse(manageContactEmail.value.trim()).success
+    manageContactFirstName.value.trim() !== "" &&
+    (trimmedEmail === "" || zodEmail.safeParse(trimmedEmail).success) &&
+    isOptionalUrlValid(trimmedWebsite) &&
+    hasManageContactChannelInput.value
   );
 });
 
@@ -1321,9 +1401,13 @@ watch(selectedProject, (project) => {
     manageAttributions.value = [];
     manageDismissedOwnerAttributionSlugs.value = new Set();
     editingManageAttributionIndex.value = undefined;
-    manageContactName.value = "";
+    manageContactFirstName.value = "";
+    manageContactLastName.value = "";
     manageContactRole.value = "";
     manageContactEmail.value = "";
+    manageContactWebsite.value = "";
+    manageContactImagePath.value = "";
+    manageContactImageIsFullPath.value = true;
     manageContactOrganizationSlug.value = null;
     manageMultilingualSetting.value = {
       additionalLanguageCodes: [],
@@ -1346,9 +1430,13 @@ watch(selectedProject, (project) => {
   manageAttributions.value = [...project.attributions];
   manageDismissedOwnerAttributionSlugs.value = new Set();
   editingManageAttributionIndex.value = undefined;
-  manageContactName.value = project.contact?.name ?? "";
+  manageContactFirstName.value = project.contact?.firstName ?? "";
+  manageContactLastName.value = project.contact?.lastName ?? "";
   manageContactRole.value = project.contact?.roleLabel ?? "";
   manageContactEmail.value = project.contact?.email ?? "";
+  manageContactWebsite.value = project.contact?.websiteUrl ?? "";
+  manageContactImagePath.value = project.contact?.imagePath ?? "";
+  manageContactImageIsFullPath.value = project.contact?.isFullImagePath ?? true;
   manageContactOrganizationSlug.value =
     project.contact?.organizationSlug ?? null;
   manageMultilingualSetting.value = {
@@ -1392,6 +1480,18 @@ function optionalLabel(label: string): string {
 
 function contactRequiredLabel(label: string): string {
   return hasContactInput.value ? requiredLabel(label) : optionalLabel(label);
+}
+
+function contactChannelLabel(label: string): string {
+  return hasContactInput.value && !hasContactChannelInput.value
+    ? requiredLabel(label)
+    : optionalLabel(label);
+}
+
+function manageContactChannelLabel(label: string): string {
+  return hasManageContactInput.value && !hasManageContactChannelInput.value
+    ? requiredLabel(label)
+    : optionalLabel(label);
 }
 
 function stringInputModel(
@@ -1825,9 +1925,13 @@ function buildCreateRequest(): CreateProjectRequest {
     attributions: attributions.value,
     contact: hasContactInput.value
       ? {
-          name: contactName.value.trim(),
+          firstName: contactFirstName.value.trim(),
+          lastName: optionalString(contactLastName.value),
           roleLabel: optionalString(contactRole.value),
-          email: contactEmail.value.trim(),
+          email: optionalString(contactEmail.value),
+          websiteUrl: optionalString(contactWebsite.value),
+          imagePath: optionalString(contactImagePath.value),
+          isFullImagePath: contactImageIsFullPath.value,
           organizationSlug: contactOrganizationSlug.value ?? undefined,
         }
       : undefined,
@@ -1859,9 +1963,13 @@ function buildUpdateRequest(project: AdminProject): UpdateProjectRequest {
     attributions: manageAttributions.value,
     contact: hasManageContactInput.value
       ? {
-          name: manageContactName.value.trim(),
+          firstName: manageContactFirstName.value.trim(),
+          lastName: optionalString(manageContactLastName.value),
           roleLabel: optionalString(manageContactRole.value),
-          email: manageContactEmail.value.trim(),
+          email: optionalString(manageContactEmail.value),
+          websiteUrl: optionalString(manageContactWebsite.value),
+          imagePath: optionalString(manageContactImagePath.value),
+          isFullImagePath: manageContactImageIsFullPath.value,
           organizationSlug: manageContactOrganizationSlug.value ?? undefined,
         }
       : undefined,
@@ -1894,9 +2002,13 @@ function resetForm(): void {
   externalImagePath.value = "";
   externalImageIsFullPath.value = true;
   externalLocalizations.value = [];
-  contactName.value = "";
+  contactFirstName.value = "";
+  contactLastName.value = "";
   contactRole.value = "";
   contactEmail.value = "";
+  contactWebsite.value = "";
+  contactImagePath.value = "";
+  contactImageIsFullPath.value = true;
   contactOrganizationSlug.value = null;
   createMultilingualSetting.value = {
     additionalLanguageCodes: [],

@@ -49,7 +49,10 @@ export function resolveOrganizationLocalizationRow({
     })) {
         const row = rowsByLanguageCode.get(fallbackLanguageCode);
         if (row !== undefined) {
-            return row;
+            return {
+                ...row,
+                websiteUrl: row.websiteUrl ?? defaultRow.websiteUrl,
+            };
         }
     }
 

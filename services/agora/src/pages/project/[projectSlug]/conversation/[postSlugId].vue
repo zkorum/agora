@@ -91,6 +91,7 @@
         hasConversationData &&
         loadedConversationData.metadata.conversationType !== 'maxdiff'
       "
+      :anchor-element="actionBarElement ?? undefined"
       :respect-drawer-offset="false"
     >
       <CommentComposer

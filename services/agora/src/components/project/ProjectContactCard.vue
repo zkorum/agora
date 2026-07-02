@@ -7,15 +7,17 @@
           'project-contact-card__avatar--image': contact.imageUrl !== undefined,
         }"
       >
-        <img
+        <OrganizationImage
           v-if="contact.imageUrl !== undefined"
-          :src="contact.imageUrl"
-          :alt="t('contactImageAlt', { name: contact.name })"
+          class="project-contact-card__avatar-image"
+          height="100%"
+          :organization-image-url="contact.imageUrl"
+          :organization-name="displayName"
         />
         <template v-else>{{ initials }}</template>
       </div>
       <div>
-        <h3>{{ contact.name }}</h3>
+        <h3>{{ displayName }}</h3>
         <p>{{ subtitle }}</p>
       </div>
     </div>
@@ -29,7 +31,7 @@
         :external="false"
         variant="outline"
         :block="true"
-        :accessible-label="t('emailContactAriaLabel', { name: contact.name })"
+        :accessible-label="t('emailContactAriaLabel', { name: displayName })"
         :interactive="true"
       />
 
@@ -41,7 +43,7 @@
         :external="true"
         variant="outline"
         :block="true"
-        :accessible-label="t('contactPageAriaLabel', { name: contact.name })"
+        :accessible-label="t('contactPageAriaLabel', { name: displayName })"
         :interactive="true"
       />
     </div>
@@ -50,6 +52,8 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+
+import OrganizationImage from "src/components/account/OrganizationImage.vue";
 
 import ProjectActionButton from "./ProjectActionButton.vue";
 import {
@@ -73,14 +77,16 @@ const subtitle = computed(() => {
     .join(" · ");
 });
 
+const displayName = computed(() =>
+  [props.contact.firstName, props.contact.lastName]
+    .filter((part): part is string => part !== undefined)
+    .join(" ")
+);
+
 const initials = computed(() => {
-  return props.contact.name
-    .split(" ")
-    .filter((part) => part.length > 0)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
+  const firstInitial = props.contact.firstName.trim().at(0) ?? "";
+  const lastInitial = props.contact.lastName?.trim().at(0) ?? "";
+  return `${firstInitial}${lastInitial}`.toUpperCase();
 });
 
 const safeEmailHref = computed(() =>
@@ -135,12 +141,13 @@ function t(
   padding: 0.35rem;
   border: 1px solid $sky-lighter;
   background: white;
+}
 
-  img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-  }
+.project-contact-card__avatar-image {
+  width: 100%;
+  max-width: 100%;
+  display: block;
+  object-fit: contain;
 }
 
 h3,

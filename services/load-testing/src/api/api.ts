@@ -275,7 +275,7 @@ export interface ApiV1AdministratorProjectCreatePostRequest {
     'contentLocalizations'?: Array<ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInner>;
     'languageSettings'?: ApiV1AdministratorProjectCreatePostRequestLanguageSettings;
     'attributions'?: Array<ApiV1AdministratorProjectCreatePostRequestAttributionsInner>;
-    'contact'?: ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact;
+    'contact'?: ApiV1AdministratorProjectCreatePostRequestContact;
 }
 /**
  * @type ApiV1AdministratorProjectCreatePostRequestAttributionsInner
@@ -347,6 +347,16 @@ export const ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdd
 
 export type ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum];
 
+export interface ApiV1AdministratorProjectCreatePostRequestContact {
+    'firstName': string;
+    'lastName'?: string;
+    'roleLabel'?: string;
+    'email'?: string;
+    'organizationSlug'?: string;
+    'websiteUrl'?: string;
+    'imagePath'?: string;
+    'isFullImagePath'?: boolean;
+}
 export interface ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInner {
     'languageCode': ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInnerLanguageCodeEnum;
     'projectTitle'?: string;
@@ -529,10 +539,14 @@ export const ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListIn
 export type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1AdditionalLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1AdditionalLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1AdditionalLocalizationsInnerLanguageCodeEnum];
 
 export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact {
-    'name': string;
+    'firstName': string;
+    'lastName'?: string;
     'roleLabel'?: string;
-    'email': string;
+    'email'?: string;
     'organizationSlug'?: string;
+    'websiteUrl'?: string;
+    'imagePath'?: string;
+    'isFullImagePath': boolean;
 }
 export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInner {
     'languageCode': ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInnerLanguageCodeEnum;
@@ -650,7 +664,7 @@ export interface ApiV1AdministratorProjectUpdatePostRequest {
     'contentLocalizations'?: Array<ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInner>;
     'languageSettings'?: ApiV1AdministratorProjectCreatePostRequestLanguageSettings;
     'attributions'?: Array<ApiV1AdministratorProjectCreatePostRequestAttributionsInner>;
-    'contact'?: ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact;
+    'contact'?: ApiV1AdministratorProjectCreatePostRequestContact;
     'currentProjectSlug': string;
 }
 /**
@@ -5578,7 +5592,8 @@ export const ApiV1ProjectPageFetchPost200ResponseProjectAttributionsInnerRoleEnu
 export type ApiV1ProjectPageFetchPost200ResponseProjectAttributionsInnerRoleEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectAttributionsInnerRoleEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectAttributionsInnerRoleEnum];
 
 export interface ApiV1ProjectPageFetchPost200ResponseProjectContact {
-    'name': string;
+    'firstName': string;
+    'lastName'?: string;
     'roleLabel'?: string;
     'affiliationName'?: string;
     'imageUrl'?: string;

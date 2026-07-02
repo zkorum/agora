@@ -1430,9 +1430,14 @@ export const projectContactTable = pgTable(
         projectId: integer("project_id")
             .references(() => projectTable.id)
             .notNull(),
-        name: varchar("name", { length: MAX_LENGTH_NAME_CREATOR }).notNull(),
+        firstName: varchar("first_name", { length: MAX_LENGTH_NAME_CREATOR })
+            .notNull(),
+        lastName: varchar("last_name", { length: MAX_LENGTH_NAME_CREATOR }),
         roleLabel: varchar("role_label", { length: MAX_LENGTH_TITLE }),
-        email: text("email").notNull(),
+        email: text("email"),
+        websiteUrl: text("website_url"),
+        imagePath: text("image_path"),
+        isFullImagePath: boolean("is_full_image_path").notNull().default(false),
         organizationId: integer("organization_id").references(
             () => organizationTable.id,
         ),
@@ -1455,6 +1460,10 @@ export const projectContactTable = pgTable(
         check(
             "project_contact_affiliation_source_check",
             sql`num_nonnulls(${table.organizationId}, ${table.externalOrganizationId}) <= 1`,
+        ),
+        check(
+            "project_contact_email_or_website_check",
+            sql`num_nonnulls(${table.email}, ${table.websiteUrl}) >= 1`,
         ),
         foreignKey({
             columns: [table.projectId, table.externalOrganizationId],

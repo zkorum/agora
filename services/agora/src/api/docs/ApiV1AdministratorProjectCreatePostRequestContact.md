@@ -5,10 +5,14 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**name** | **string** |  | [default to undefined]
+**firstName** | **string** |  | [default to undefined]
+**lastName** | **string** |  | [optional] [default to undefined]
 **roleLabel** | **string** |  | [optional] [default to undefined]
-**email** | **string** |  | [default to undefined]
+**email** | **string** |  | [optional] [default to undefined]
 **organizationSlug** | **string** |  | [optional] [default to undefined]
+**websiteUrl** | **string** |  | [optional] [default to undefined]
+**imagePath** | **string** |  | [optional] [default to undefined]
+**isFullImagePath** | **boolean** |  | [optional] [default to false]
 
 ## Example
 
@@ -16,10 +20,14 @@ Name | Type | Description | Notes
 import { ApiV1AdministratorProjectCreatePostRequestContact } from './api';
 
 const instance: ApiV1AdministratorProjectCreatePostRequestContact = {
-    name,
+    firstName,
+    lastName,
     roleLabel,
     email,
     organizationSlug,
+    websiteUrl,
+    imagePath,
+    isFullImagePath,
 };
 ```
 

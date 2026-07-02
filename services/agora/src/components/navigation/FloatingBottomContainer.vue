@@ -14,19 +14,50 @@ import {
   isConversationOnboardingRoutePath,
   isConversationRoutePath,
 } from "src/utils/router/conversationRouteContext";
-import { computed } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 const props = withDefaults(
   defineProps<{
     respectDrawerOffset?: boolean;
+    anchorElement?: HTMLElement | undefined;
   }>(),
-  { respectDrawerOffset: true }
+  { respectDrawerOffset: true, anchorElement: undefined }
 );
 
 const $q = useQuasar();
 const route = useRoute();
 const { drawerBehavior, drawerWidth } = storeToRefs(useNavigationStore());
+const anchorRect = ref<DOMRectReadOnly | undefined>(undefined);
+let resizeObserver: ResizeObserver | undefined;
+
+function updateAnchorRect(): void {
+  anchorRect.value = props.anchorElement?.getBoundingClientRect();
+}
+
+watch(
+  () => props.anchorElement,
+  (anchorElement) => {
+    window.removeEventListener("resize", updateAnchorRect);
+    resizeObserver?.disconnect();
+    resizeObserver = undefined;
+    if (anchorElement === undefined) {
+      anchorRect.value = undefined;
+      return;
+    }
+
+    updateAnchorRect();
+    window.addEventListener("resize", updateAnchorRect, { passive: true });
+    resizeObserver = new ResizeObserver(updateAnchorRect);
+    resizeObserver.observe(anchorElement);
+  },
+  { immediate: true }
+);
+
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", updateAnchorRect);
+  resizeObserver?.disconnect();
+});
 
 const hideBottomBarForRoute = computed(() => {
   const routePath = route.path;
@@ -37,6 +68,15 @@ const hideBottomBarForRoute = computed(() => {
 });
 
 const barStyle = computed(() => {
+  const rect = anchorRect.value;
+  if (rect !== undefined) {
+    return {
+      left: `${rect.left + rect.width / 2}px`,
+      transform: "translateX(-50%)",
+      width: `${rect.width}px`,
+    };
+  }
+
   const isRtl = $q.lang.rtl;
   if (props.respectDrawerOffset && drawerBehavior.value === "desktop") {
     const dw = drawerWidth.value;
@@ -58,6 +98,7 @@ const barStyle = computed(() => {
 
 <style scoped lang="scss">
 .bottomBar {
+  box-sizing: border-box;
   position: fixed;
   bottom: 0rem;
   z-index: 100;

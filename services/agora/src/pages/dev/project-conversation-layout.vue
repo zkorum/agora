@@ -364,10 +364,11 @@ const project = computed<ProjectPageData>(() => {
     activityCount: 4,
     attributions: localizedAttributions.value,
     contact: {
-      name: "Aida Saparova",
+      firstName: "Aida",
+      lastName: "Saparova",
       roleLabel: "Facilitator",
       affiliationName: projectOwner?.displayName,
-      imageUrl: projectOwner?.imageUrl,
+      imageUrl: undefined,
       email: "contact@example.org",
       websiteUrl: "https://example.org/project-contact",
     },
