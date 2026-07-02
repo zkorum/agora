@@ -10,8 +10,19 @@
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import { useNavigationStore } from "src/stores/navigation";
+import {
+  isConversationOnboardingRoutePath,
+  isConversationRoutePath,
+} from "src/utils/router/conversationRouteContext";
 import { computed } from "vue";
 import { useRoute } from "vue-router";
+
+const props = withDefaults(
+  defineProps<{
+    respectDrawerOffset?: boolean;
+  }>(),
+  { respectDrawerOffset: true }
+);
 
 const $q = useQuasar();
 const route = useRoute();
@@ -19,15 +30,15 @@ const { drawerBehavior, drawerWidth } = storeToRefs(useNavigationStore());
 
 const hideBottomBarForRoute = computed(() => {
   const routePath = route.path;
-  const isConversationRoute = routePath.startsWith("/conversation/");
-  const isConversationOnboardingRoute = routePath.includes("/onboarding");
-
-  return !isConversationRoute || isConversationOnboardingRoute;
+  return (
+    !isConversationRoutePath(routePath) ||
+    isConversationOnboardingRoutePath(routePath)
+  );
 });
 
 const barStyle = computed(() => {
   const isRtl = $q.lang.rtl;
-  if (drawerBehavior.value === "desktop") {
+  if (props.respectDrawerOffset && drawerBehavior.value === "desktop") {
     const dw = drawerWidth.value;
     // In RTL the drawer is on the right, so offset the center leftward
     const positionProp = isRtl ? "right" : "left";

@@ -1,4 +1,6 @@
 import type {
+  FetchProjectConversationPageRequest,
+  FetchProjectConversationPageResponse,
   FetchProjectPageActivitiesRequest,
   FetchProjectPageActivitiesResponse,
   FetchProjectPageRequest,
@@ -66,8 +68,25 @@ export function useBackendProjectPageApi() {
     return Dto.fetchProjectPageActivitiesResponse.parse(response.data);
   }
 
+  async function fetchProjectConversationPage({
+    request,
+    authenticated,
+  }: {
+    request: FetchProjectConversationPageRequest;
+    authenticated: boolean;
+  }): Promise<FetchProjectConversationPageResponse> {
+    const params = Dto.fetchProjectConversationPageRequest.parse(request);
+    const response = await postWithOptionalAuth({
+      url: "/api/v1/project/conversation/fetch",
+      params,
+      authenticated,
+    });
+    return Dto.fetchProjectConversationPageResponse.parse(response.data);
+  }
+
   return {
     fetchProjectPage,
     fetchProjectPageActivities,
+    fetchProjectConversationPage,
   };
 }

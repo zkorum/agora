@@ -10,6 +10,8 @@
     :has-conversation-data="props.hasConversationData"
     :navigate-to-discover-tab="props.navigateToDiscoverTab"
     :conversation-scroll-context="props.conversationScrollContext"
+    :conversation-route-context="props.conversationRouteContext"
+    :report-route-override="props.reportRouteOverride"
     @analysis-live-pause-stats="emit('analysisLivePauseStats', $event)"
   />
 </template>
@@ -20,13 +22,22 @@ import MaxDiffResultsTab from "src/components/post/maxdiff/MaxDiffResultsTab.vue
 import type { ConversationActionBarStats } from "src/composables/conversation/useConversationActionBarStats";
 import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
 import type { ExtendedConversation } from "src/shared/types/zod";
+import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
+import type { RouteLocationRaw } from "vue-router";
 
-const props = defineProps<{
-  conversationData: ExtendedConversation;
-  hasConversationData: boolean;
-  navigateToDiscoverTab: () => void;
-  conversationScrollContext: ConversationScrollContext;
-}>();
+const props = withDefaults(
+  defineProps<{
+    conversationData: ExtendedConversation;
+    hasConversationData: boolean;
+    navigateToDiscoverTab: () => void;
+    conversationScrollContext: ConversationScrollContext;
+    conversationRouteContext: ConversationRouteContext;
+    reportRouteOverride?: RouteLocationRaw;
+  }>(),
+  {
+    reportRouteOverride: undefined,
+  }
+);
 
 const emit = defineEmits<{
   analysisLivePauseStats: [stats: ConversationActionBarStats | undefined];

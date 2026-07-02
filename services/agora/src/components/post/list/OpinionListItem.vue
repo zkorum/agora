@@ -28,6 +28,7 @@
               :post-slug-id="conversationSlugId"
               :conversation-author-username="conversationAuthorUsername"
               :conversation-organization-name="conversationOrganizationName"
+              :conversation-route-context="normalConversationRouteContext"
             />
           </div>
         </div>
@@ -67,6 +68,7 @@
 import ConversationTitle from "src/components/features/conversation/ConversationTitle.vue";
 import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
 import type { OpinionItem } from "src/shared/types/zod";
+import { normalConversationRouteContext } from "src/utils/router/conversationRouteContext";
 
 import SpaLink from "../../ui-library/SpaLink.vue";
 import ZKHoverEffect from "../../ui-library/ZKHoverEffect.vue";

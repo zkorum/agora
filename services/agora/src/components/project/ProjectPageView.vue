@@ -135,6 +135,7 @@
                   v-for="activity in activities"
                   :key="activity.slug"
                   :activity="activity"
+                  :project-slug="project.slug"
                   :language-code="selectedLanguageValue"
                   :text-direction="projectTextDirection"
                 />

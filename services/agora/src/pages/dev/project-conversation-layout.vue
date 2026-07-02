@@ -124,6 +124,7 @@
               :survey-gate="undefined"
               :on-view-analysis="showAnalysisTab"
               :is-voting-disabled="false"
+              :conversation-route-context="projectConversationRouteContext"
             />
           </ZKCard>
 
@@ -190,6 +191,7 @@ import type {
 } from "src/shared/types/zod";
 import type { AnalysisData } from "src/utils/api/comment/analysisData";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
+import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
@@ -204,6 +206,10 @@ usePageLayout({
 });
 
 const controlsVisible = ref(true);
+const projectConversationRouteContext: ConversationRouteContext = {
+  kind: "project",
+  projectSlug: "voices-for-change",
+};
 const selectedLanguage = ref<string | readonly string[]>("en");
 const route = useRoute();
 const currentTab = ref<"comment" | "analysis">(getRouteTab());

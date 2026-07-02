@@ -74,6 +74,7 @@ import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
+import { useConversationOnboardingRoute } from "src/composables/conversation/useConversationOnboardingRoute";
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
@@ -85,13 +86,15 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
-import { getSingleRouteParam } from "src/utils/router/params";
 import {
   getConversationSurveyOnboardingPath,
+  getConversationSurveyVerifyEmailPath,
+  getConversationSurveyVerifyPassportPath,
   getConversationSurveyVerifyPath,
+  getConversationSurveyVerifyPhonePath,
 } from "src/utils/survey/navigation";
 import { computed, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 
 import {
   type ConversationSurveyOnboardingTranslations,
@@ -99,7 +102,7 @@ import {
 } from "../index.i18n";
 
 const router = useRouter();
-const route = useRoute();
+const { routeConversationSlugId, routeContext } = useConversationOnboardingRoute();
 const conversationOnboardingStore = useConversationOnboardingStore();
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { safeNavigateBack } = useGoBackButtonHandler();
@@ -113,16 +116,13 @@ const { t: tCommon } =
     conversationSurveyOnboardingTranslations
   );
 
-const routeConversationSlugId = computed(() => {
-  return getSingleRouteParam(route.params.postSlugId);
-});
-
 if (
   conversationOnboardingStore.conversationSlugId !==
   routeConversationSlugId.value
 ) {
   conversationOnboardingStore.startManualEntry({
     conversationSlugId: routeConversationSlugId.value,
+    routeContext: routeContext.value,
   });
 }
 
@@ -149,6 +149,7 @@ watch(
       void router.replace({
         path: getConversationSurveyVerifyPath({
           conversationSlugId: conversationSlugId.value,
+          routeContext: routeContext.value,
         }),
       });
     }
@@ -161,6 +162,7 @@ async function handleBackToWelcome(): Promise<void> {
   await safeNavigateBack({
     path: getConversationSurveyOnboardingPath({
       conversationSlugId: conversationSlugId.value,
+      routeContext: routeContext.value,
     }),
   });
 }
@@ -169,6 +171,7 @@ async function handleBackToConversation(): Promise<void> {
   credentialUpgradeTarget.value = null;
   await exitToConversation({
     conversationSlugId: conversationSlugId.value,
+    routeContext: routeContext.value,
   });
 }
 
@@ -176,8 +179,10 @@ async function goToPassport(): Promise<void> {
   onboardingMode.value = "LOGIN";
   credentialUpgradeTarget.value = "hard";
   await router.push({
-    name: "/conversation/[postSlugId].onboarding/verify/passport",
-    params: { postSlugId: conversationSlugId.value },
+    path: getConversationSurveyVerifyPassportPath({
+      conversationSlugId: conversationSlugId.value,
+      routeContext: routeContext.value,
+    }),
   });
 }
 
@@ -185,8 +190,10 @@ async function goToPhone(): Promise<void> {
   onboardingMode.value = "LOGIN";
   credentialUpgradeTarget.value = "hard";
   await router.push({
-    name: "/conversation/[postSlugId].onboarding/verify/phone",
-    params: { postSlugId: conversationSlugId.value },
+    path: getConversationSurveyVerifyPhonePath({
+      conversationSlugId: conversationSlugId.value,
+      routeContext: routeContext.value,
+    }),
   });
 }
 
@@ -194,8 +201,10 @@ async function goToEmail(): Promise<void> {
   onboardingMode.value = "LOGIN";
   credentialUpgradeTarget.value = "hard";
   await router.push({
-    name: "/conversation/[postSlugId].onboarding/verify/email",
-    params: { postSlugId: conversationSlugId.value },
+    path: getConversationSurveyVerifyEmailPath({
+      conversationSlugId: conversationSlugId.value,
+      routeContext: routeContext.value,
+    }),
   });
 }
 </script>

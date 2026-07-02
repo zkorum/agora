@@ -23,6 +23,7 @@
               :survey-gate="props.surveyGate"
               :on-view-analysis="props.onViewAnalysis"
               :is-voting-disabled="props.isVotingDisabled"
+              :conversation-route-context="props.conversationRouteContext"
               @deleted="(opinionSlugId) => handleOpinionDeleted(opinionSlugId)"
               @muted-comment="handleOpinionMuted()"
             />
@@ -65,6 +66,7 @@ import { useUserStore } from "src/stores/user";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
+import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import { useNotify } from "src/utils/ui/notify";
 import {
   computed,
@@ -91,6 +93,7 @@ const props = defineProps<{
   surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
+  conversationRouteContext: ConversationRouteContext;
   preloadedQueries: {
     commentsDiscoverQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;
     commentsNewQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;

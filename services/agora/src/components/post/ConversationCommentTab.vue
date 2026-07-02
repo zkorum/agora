@@ -12,6 +12,7 @@
       :survey-gate="conversationData.interaction.surveyGate"
       :on-view-analysis="props.onViewAnalysis"
       :is-voting-disabled="isVotingDisabled"
+      :conversation-route-context="props.conversationRouteContext"
       :preloaded-queries="{
         commentsDiscoverQuery,
         commentsNewQuery,
@@ -38,6 +39,7 @@ import {
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
+import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import {
   computed,
   inject,
@@ -58,6 +60,7 @@ const props = defineProps<{
   moderationHistoryTrigger: number;
   commentFilter: CommentFilterOptions;
   onViewAnalysis: () => void;
+  conversationRouteContext: ConversationRouteContext;
 }>();
 
 const emit = defineEmits<{

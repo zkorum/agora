@@ -14,6 +14,7 @@
           :on-same-tab-click="props.onSameTabClick"
           :conversation-type="props.conversationType"
           :enable-route-navigation="props.enableRouteNavigation"
+          :conversation-route-context="props.conversationRouteContext"
         />
       </div>
 
@@ -88,6 +89,10 @@ import { useShareActions } from "src/composables/share/useShareActions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ConversationType } from "src/shared/types/zod";
 import type { ContentAction } from "src/utils/actions/core/types";
+import {
+  type ConversationRouteContext,
+  normalConversationRouteContext,
+} from "src/utils/router/conversationRouteContext";
 import { useNotify } from "src/utils/ui/notify";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
 import { computed, ref } from "vue";
@@ -119,11 +124,13 @@ const props = withDefaults(
     onSameTabClick?: () => void;
     conversationType?: ConversationType;
     enableRouteNavigation: boolean;
+    conversationRouteContext?: ConversationRouteContext;
   }>(),
   {
     hasSurvey: false,
     onSameTabClick: undefined,
     conversationType: "polis",
+    conversationRouteContext: () => normalConversationRouteContext,
   }
 );
 
@@ -170,7 +177,10 @@ const participantsExplanation = computed(() => {
 });
 
 function shareClicked(): void {
-  const sharePostUrl = getConversationUrl(props.conversationSlugId);
+  const sharePostUrl = getConversationUrl({
+    conversationSlugId: props.conversationSlugId,
+    routeContext: props.conversationRouteContext,
+  });
   const shareTitle = "Agora - " + props.conversationTitle;
 
   // Show share actions menu

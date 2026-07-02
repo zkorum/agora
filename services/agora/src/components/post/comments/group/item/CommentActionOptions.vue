@@ -73,6 +73,10 @@ import type { ContentAction } from "src/utils/actions/core/types";
 import { useContentActions } from "src/utils/actions/definitions/content-actions";
 import { useDeleteCommentMutation } from "src/utils/api/comment/useCommentQueries";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
+import {
+  type ConversationRouteContext,
+  getOpinionShareUrl,
+} from "src/utils/router/conversationRouteContext";
 import { useNotify } from "src/utils/ui/notify";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
@@ -87,6 +91,7 @@ const props = defineProps<{
   commentItem: OpinionItem;
   conversationAuthorUsername: string;
   conversationOrganizationName: string;
+  conversationRouteContext: ConversationRouteContext;
 }>();
 
 const emit = defineEmits<{
@@ -141,10 +146,11 @@ async function openUserReportsCallback() {
 }
 
 function shareOpinionCallback() {
-  const sharePostUrl = new URL(
-    `/conversation/${props.postSlugId}?opinion=${props.commentItem.opinionSlugId}`,
-    window.location.origin
-  ).href;
+  const sharePostUrl = getOpinionShareUrl({
+    conversationSlugId: props.postSlugId,
+    opinionSlugId: props.commentItem.opinionSlugId,
+    routeContext: props.conversationRouteContext,
+  });
 
   shareActions.showShareActions({
     targetType: "comment",

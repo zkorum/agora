@@ -39,6 +39,10 @@ import {
 import { useLanguageStore } from "./stores/language";
 import { useBackendAuthApi } from "./utils/api/auth";
 import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
+import {
+  isConversationRouteName,
+  isProjectRouteName,
+} from "./utils/router/conversationRouteContext";
 import { getSingleRouteParam } from "./utils/router/params";
 import { useNotify } from "./utils/ui/notify";
 
@@ -57,8 +61,7 @@ const { zupassIframeContainer } = useZupassVerification();
 // Determine layout mode from route name
 const route = useRoute();
 const realtimeConversationSlugId = computed(() => {
-  const routeName = String(route.name ?? "");
-  if (!routeName.startsWith("/conversation/[postSlugId]")) {
+  if (!isConversationRouteName(route.name)) {
     return undefined;
   }
 
@@ -69,7 +72,7 @@ const realtimeConversationSlugId = computed(() => {
   return getSingleRouteParam(route.params.postSlugId) || undefined;
 });
 const realtimeProjectSlug = computed(() => {
-  if (String(route.name ?? "") !== "/project/[projectSlug]") {
+  if (!isProjectRouteName(route.name)) {
     return undefined;
   }
 

@@ -11,6 +11,7 @@
     :on-view-analysis="onViewAnalysis"
     :is-voting-disabled="isVotingDisabled"
     :content-translation="translationPreview"
+    :conversation-route-context="conversationRouteContext"
     @update:content-translation-mode="setTranslationMode"
     @deleted="emit('deleted', $event)"
     @muted-comment="emit('mutedComment')"
@@ -27,6 +28,7 @@ import type {
   SurveyGateSummary,
 } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
+import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import type { ContentTranslationDisplayMode } from "src/utils/translation/contentTranslation";
 import { getContentTranslationSourceLanguageLabel } from "src/utils/translation/contentTranslation";
 import {
@@ -48,6 +50,7 @@ const props = defineProps<{
   surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
+  conversationRouteContext: ConversationRouteContext;
 }>();
 
 const emit = defineEmits<{

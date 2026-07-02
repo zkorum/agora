@@ -53,6 +53,7 @@ import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import RarimoVerificationForm from "src/components/verification/RarimoVerificationForm.vue";
 import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
+import { useConversationOnboardingRoute } from "src/composables/conversation/useConversationOnboardingRoute";
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useVerificationComplete } from "src/composables/verification/useVerificationComplete";
@@ -65,23 +66,23 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
-import { getSingleRouteParam } from "src/utils/router/params";
 import {
   getConversationSurveyOnboardingPath,
   getConversationSurveyVerifyHardPath,
   getConversationSurveyVerifyIdentityPath,
   getConversationSurveyVerifyPath,
+  getConversationSurveyVerifyPhonePath,
 } from "src/utils/survey/navigation";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, onMounted, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 
 const { t } = useComponentI18n<VerifyPassportTranslations>(
   verifyPassportTranslations
 );
 
 const router = useRouter();
-const route = useRoute();
+const { routeConversationSlugId, routeContext } = useConversationOnboardingRoute();
 const conversationOnboardingStore = useConversationOnboardingStore();
 const { isAuthInitialized, credentials } = storeToRefs(
   useAuthenticationStore()
@@ -92,16 +93,13 @@ const { credentialUpgradeTarget } = storeToRefs(onboardingFlowStore());
 const { completeVerification } = useVerificationComplete();
 const { showNotifyMessage } = useNotify();
 
-const routeConversationSlugId = computed(() => {
-  return getSingleRouteParam(route.params.postSlugId);
-});
-
 if (
   conversationOnboardingStore.conversationSlugId !==
   routeConversationSlugId.value
 ) {
   conversationOnboardingStore.startManualEntry({
     conversationSlugId: routeConversationSlugId.value,
+    routeContext: routeContext.value,
   });
 }
 
@@ -126,6 +124,7 @@ const backPath = computed(() => {
   ) {
     return getConversationSurveyVerifyIdentityPath({
       conversationSlugId: conversationSlugId.value,
+      routeContext: routeContext.value,
     });
   }
 
@@ -135,11 +134,13 @@ const backPath = computed(() => {
   ) {
     return getConversationSurveyVerifyHardPath({
       conversationSlugId: conversationSlugId.value,
+      routeContext: routeContext.value,
     });
   }
 
   return getConversationSurveyOnboardingPath({
     conversationSlugId: conversationSlugId.value,
+    routeContext: routeContext.value,
   });
 });
 
@@ -150,6 +151,7 @@ watch(
       void router.replace({
         path: getConversationSurveyVerifyPath({
           conversationSlugId: conversationSlugId.value,
+          routeContext: routeContext.value,
         }),
       });
     }
@@ -182,8 +184,10 @@ async function handleBackToAuthChoice(): Promise<void> {
 
 async function goToPhoneVerification() {
   await router.replace({
-    name: "/conversation/[postSlugId].onboarding/verify/phone",
-    params: { postSlugId: conversationSlugId.value },
+    path: getConversationSurveyVerifyPhonePath({
+      conversationSlugId: conversationSlugId.value,
+      routeContext: routeContext.value,
+    }),
   });
 }
 
@@ -191,6 +195,7 @@ async function handleBackToConversation(): Promise<void> {
   credentialUpgradeTarget.value = null;
   await exitToConversation({
     conversationSlugId: conversationSlugId.value,
+    routeContext: routeContext.value,
   });
 }
 </script>

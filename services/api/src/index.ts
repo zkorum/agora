@@ -1808,6 +1808,25 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
+        url: `/api/${apiVersion}/project/conversation/fetch`,
+        schema: {
+            body: Dto.fetchProjectConversationPageRequest,
+            response: {
+                200: Dto.fetchProjectConversationPageResponse,
+            },
+        },
+        handler: async (request) => {
+            return await projectPageService.fetchProjectConversationPage({
+                db,
+                baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                request: request.body,
+                currentDisplayLanguage: getRequestDisplayLanguage({ request }),
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
         url: `/api/${apiVersion}/moderation/conversation/create`,
         schema: {
             body: Dto.moderateReportPostRequest,

@@ -88,6 +88,7 @@ All URIs are relative to *http://localhost*
 |[**apiV1OpinionFetchCommentStatsByConversationPost**](#apiv1opinionfetchcommentstatsbyconversationpost) | **POST** /api/v1/opinion/fetch-comment-stats-by-conversation | |
 |[**apiV1OpinionFetchHiddenByConversationPost**](#apiv1opinionfetchhiddenbyconversationpost) | **POST** /api/v1/opinion/fetch-hidden-by-conversation | |
 |[**apiV1PremiumFeatureAccessCheckPost**](#apiv1premiumfeatureaccesscheckpost) | **POST** /api/v1/premium-feature/access/check | |
+|[**apiV1ProjectConversationFetchPost**](#apiv1projectconversationfetchpost) | **POST** /api/v1/project/conversation/fetch | |
 |[**apiV1ProjectCreateOptionsListPost**](#apiv1projectcreateoptionslistpost) | **POST** /api/v1/project/create-options/list | |
 |[**apiV1ProjectPageActivitiesFetchPost**](#apiv1projectpageactivitiesfetchpost) | **POST** /api/v1/project/page/activities/fetch | |
 |[**apiV1ProjectPageFetchPost**](#apiv1projectpagefetchpost) | **POST** /api/v1/project/page/fetch | |
@@ -4280,6 +4281,57 @@ const { status, data } = await apiInstance.apiV1PremiumFeatureAccessCheckPost(
 ### Return type
 
 **ApiV1PremiumFeatureAccessCheckPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1ProjectConversationFetchPost**
+> ApiV1ProjectConversationFetchPost200Response apiV1ProjectConversationFetchPost(apiV1ProjectConversationFetchPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ProjectConversationFetchPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ProjectConversationFetchPostRequest: ApiV1ProjectConversationFetchPostRequest; //
+
+const { status, data } = await apiInstance.apiV1ProjectConversationFetchPost(
+    apiV1ProjectConversationFetchPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ProjectConversationFetchPostRequest** | **ApiV1ProjectConversationFetchPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1ProjectConversationFetchPost200Response**
 
 ### Authorization
 

@@ -1,6 +1,8 @@
 <template>
+  <router-view v-if="!isProjectRootRoute" />
+
   <PageLoadingSpinner
-    v-if="projectPageQuery.isPending.value && projectPageData === undefined"
+    v-else-if="projectPageQuery.isPending.value && projectPageData === undefined"
   />
 
   <ErrorRetryBlock
@@ -72,6 +74,7 @@ const { changeDisplayLanguage } = languageStore;
 const projectSlug = computed(() =>
   getSingleRouteParam(route.params.projectSlug)
 );
+const isProjectRootRoute = computed(() => route.name === "/project/[projectSlug]");
 const selectedLanguage = ref<string | readonly string[]>(displayLanguage.value);
 const activities = ref<ProjectPageActivity[]>([]);
 const nextActivityCursor = ref<ProjectPageActivityCursor | undefined>();
@@ -104,7 +107,12 @@ const projectPageQuery = useQuery({
       },
       authenticated: isGuestOrLoggedIn.value,
     }),
-  enabled: computed(() => projectSlug.value !== "" && isAuthInitialized.value),
+  enabled: computed(
+    () =>
+      isProjectRootRoute.value &&
+      projectSlug.value !== "" &&
+      isAuthInitialized.value
+  ),
   retry: false,
 });
 const projectPageData = computed(() => projectPageQuery.data.value);

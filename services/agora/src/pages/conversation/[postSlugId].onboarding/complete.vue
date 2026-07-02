@@ -47,14 +47,14 @@ import ConversationSurveyOnboardingHero from "src/components/onboarding/backgrou
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
+import { useConversationOnboardingRoute } from "src/composables/conversation/useConversationOnboardingRoute";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
-import { getSingleRouteParam } from "src/utils/router/params";
 import { getConversationSurveySummaryPath } from "src/utils/survey/navigation";
 import { computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 
 import {
   type ConversationSurveyCompleteTranslations,
@@ -65,13 +65,10 @@ const { t } = useComponentI18n<ConversationSurveyCompleteTranslations>(
   conversationSurveyCompleteTranslations
 );
 const router = useRouter();
-const route = useRoute();
 const { exitToConversation } = useConversationOnboardingExit();
 const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
-
-const conversationSlugId = computed(() => {
-  return getSingleRouteParam(route.params.postSlugId);
-});
+const { routeConversationSlugId: conversationSlugId, routeContext } =
+  useConversationOnboardingRoute();
 
 const conversationQuery = useConversationQuery({
   conversationSlugId,
@@ -83,6 +80,7 @@ const conversationData = computed(() => conversationQuery.data.value);
 async function handleBackToConversation(): Promise<void> {
   await exitToConversation({
     conversationSlugId: conversationSlugId.value,
+    routeContext: routeContext.value,
   });
 }
 
@@ -90,6 +88,7 @@ async function handleReviewAnswers(): Promise<void> {
   await router.replace({
     path: getConversationSurveySummaryPath({
       conversationSlugId: conversationSlugId.value,
+      routeContext: routeContext.value,
     }),
   });
 }

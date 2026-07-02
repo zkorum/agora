@@ -17,6 +17,7 @@
           :post-slug-id="postSlugId"
           :conversation-author-username="conversationAuthorUsername"
           :conversation-organization-name="conversationOrganizationName"
+          :conversation-route-context="props.conversationRouteContext"
           @deleted="deletedComment()"
           @muted-comment="mutedComment()"
         />
@@ -76,6 +77,7 @@ import type {
   ParticipationMode,
   SurveyGateSummary,
 } from "src/shared/types/zod";
+import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import type { ContentTranslationDisplayMode } from "src/utils/translation/contentTranslation";
 import { computed } from "vue";
 
@@ -105,6 +107,7 @@ const props = defineProps<{
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
   contentTranslation: CommentContentTranslationPreview | undefined;
+  conversationRouteContext: ConversationRouteContext;
 }>();
 
 const emit = defineEmits<{

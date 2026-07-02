@@ -38,13 +38,15 @@
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ConversationType } from "src/shared/types/zod";
-import { computed, ref, watch } from "vue";
 import {
-  type LocationQueryRaw,
-  type RouteLocationRaw,
-  useRoute,
-  useRouter,
-} from "vue-router";
+  type ConversationRouteContext,
+  getConversationAnalysisRoute,
+  getConversationAnalysisRouteName,
+  getConversationCommentRoute,
+  normalConversationRouteContext,
+} from "src/utils/router/conversationRouteContext";
+import { computed, ref, watch } from "vue";
+import { type LocationQueryRaw, type RouteLocationRaw, useRoute, useRouter } from "vue-router";
 
 import {
   type InteractionTabTranslations,
@@ -60,10 +62,12 @@ const props = withDefaults(
     onSameTabClick?: () => void;
     conversationType?: ConversationType;
     enableRouteNavigation: boolean;
+    conversationRouteContext?: ConversationRouteContext;
   }>(),
   {
     onSameTabClick: undefined,
     conversationType: "polis",
+    conversationRouteContext: () => normalConversationRouteContext,
   }
 );
 
@@ -79,18 +83,11 @@ const router = useRouter();
 const canGoBackToComment = ref(false);
 const lastAnalysisQuery = ref<LocationQueryRaw>({});
 
-const isEmbed = computed(() => route.path.includes("/embed"));
-
-const commentRouteName = computed(() =>
-  isEmbed.value
-    ? "/conversation/[postSlugId].embed/"
-    : "/conversation/[postSlugId]/"
-);
-
-const analysisRouteName = computed(() =>
-  isEmbed.value
-    ? "/conversation/[postSlugId].embed/analysis"
-    : "/conversation/[postSlugId]/analysis"
+const analysisRouteName = computed(
+  () =>
+    getConversationAnalysisRouteName({
+      routeContext: props.conversationRouteContext,
+    })
 );
 
 const commentRoute = computed<RouteLocationRaw | undefined>(() => {
@@ -98,10 +95,10 @@ const commentRoute = computed<RouteLocationRaw | undefined>(() => {
     return undefined;
   }
 
-  return {
-    name: commentRouteName.value,
-    params: { postSlugId: props.conversationSlugId },
-  };
+  return getConversationCommentRoute({
+    conversationSlugId: props.conversationSlugId,
+    routeContext: props.conversationRouteContext,
+  });
 });
 
 const analysisRoute = computed<RouteLocationRaw | undefined>(() => {
@@ -109,11 +106,11 @@ const analysisRoute = computed<RouteLocationRaw | undefined>(() => {
     return undefined;
   }
 
-  return {
-    name: analysisRouteName.value,
-    params: { postSlugId: props.conversationSlugId },
+  return getConversationAnalysisRoute({
+    conversationSlugId: props.conversationSlugId,
+    routeContext: props.conversationRouteContext,
     query: lastAnalysisQuery.value,
-  };
+  });
 });
 
 watch(
@@ -140,26 +137,30 @@ function handleCommentClick(): void {
       router.back();
     } else {
       // Fallback for deep links (entered directly on analysis)
-      void router.replace({
-        name: commentRouteName.value,
-        params: { postSlugId: props.conversationSlugId },
-      });
+      void router.replace(
+        getConversationCommentRoute({
+          conversationSlugId: props.conversationSlugId,
+          routeContext: props.conversationRouteContext,
+        })
+      );
     }
   }
 }
 
 function handleAnalysisClick(): void {
-  if (model.value === "analysis") {
+  if (model.value === "analysis" && route.name === analysisRouteName.value) {
     props.onSameTabClick?.();
   } else if (!props.enableRouteNavigation) {
     model.value = "analysis";
   } else {
     canGoBackToComment.value = true;
-    void router.push({
-      name: analysisRouteName.value,
-      params: { postSlugId: props.conversationSlugId },
-      query: lastAnalysisQuery.value,
-    });
+    void router.push(
+      getConversationAnalysisRoute({
+        conversationSlugId: props.conversationSlugId,
+        routeContext: props.conversationRouteContext,
+        query: lastAnalysisQuery.value,
+      })
+    );
   }
 }
 </script>

@@ -83,7 +83,10 @@ function checkForActiveEmbedIntention(): {
 } {
   // Check voting intention
   const votingIntention = loginIntentionStore.getCurrentVotingIntention();
-  if (votingIntention.enabled && votingIntention.isEmbedView) {
+  if (
+    votingIntention.enabled &&
+    votingIntention.routeContext.kind === "embed"
+  ) {
     return {
       hasIntention: true,
       conversationSlugId: votingIntention.conversationSlugId,
@@ -93,7 +96,10 @@ function checkForActiveEmbedIntention(): {
   // Check opinion agreement intention
   const agreementIntention =
     loginIntentionStore.getCurrentOpinionAgreementIntention();
-  if (agreementIntention.enabled && agreementIntention.isEmbedView) {
+  if (
+    agreementIntention.enabled &&
+    agreementIntention.routeContext.kind === "embed"
+  ) {
     return {
       hasIntention: true,
       conversationSlugId: agreementIntention.conversationSlugId,
@@ -104,7 +110,10 @@ function checkForActiveEmbedIntention(): {
   // Check report user content intention
   const reportIntention =
     loginIntentionStore.getCurrentReportUserContentIntention();
-  if (reportIntention.enabled && reportIntention.isEmbedView) {
+  if (
+    reportIntention.enabled &&
+    reportIntention.routeContext.kind === "embed"
+  ) {
     return {
       hasIntention: true,
       conversationSlugId: reportIntention.conversationSlugId,

@@ -117,10 +117,14 @@ import {
   useOpenConversationMutation,
 } from "src/utils/api/post/useConversationMutations";
 import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
+import {
+  type ConversationRouteContext,
+  normalConversationRouteContext,
+} from "src/utils/router/conversationRouteContext";
 import { useEmbedMode } from "src/utils/ui/embedMode";
 import { useNotify } from "src/utils/ui/notify";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import {
@@ -183,6 +187,14 @@ const $q = useQuasar();
 const notify = useNotify();
 const { getEmbedUrl, getConversationUrl } = useConversationUrl();
 const shareActions = useShareActions();
+
+const conversationRouteContext = computed<ConversationRouteContext>(() => {
+  if (props.projectSlug !== undefined) {
+    return { kind: "project", projectSlug: props.projectSlug };
+  }
+
+  return normalConversationRouteContext;
+});
 
 function onLoginConfirmationOk() {
   setReportIntention("");
@@ -298,7 +310,10 @@ async function editConversationCallback() {
 }
 
 function shareCallback() {
-  const sharePostUrl = getConversationUrl(props.postSlugId);
+  const sharePostUrl = getConversationUrl({
+    conversationSlugId: props.postSlugId,
+    routeContext: conversationRouteContext.value,
+  });
   const shareTitle = "Agora - " + props.conversationTitle;
 
   shareActions.showShareActions({

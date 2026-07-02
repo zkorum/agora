@@ -51,6 +51,7 @@
         :survey-gate="props.surveyGate"
         :on-view-analysis="props.onViewAnalysis"
         :is-voting-disabled="props.isVotingDisabled"
+        :conversation-route-context="props.conversationRouteContext"
         @deleted="deletedComment(commentItem.opinionSlugId)"
         @muted-comment="mutedComment()"
       />
@@ -72,6 +73,7 @@ import type {
   ParticipationMode,
   SurveyGateSummary,
 } from "src/shared/types/zod";
+import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import { computed, nextTick } from "vue";
 
 import TranslatedCommentItem from "./item/TranslatedCommentItem.vue";
@@ -88,6 +90,7 @@ const props = defineProps<{
   surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
+  conversationRouteContext: ConversationRouteContext;
 }>();
 
 const emit = defineEmits<{

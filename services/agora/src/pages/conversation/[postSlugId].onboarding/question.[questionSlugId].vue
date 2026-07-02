@@ -159,6 +159,7 @@ import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKDigitsInput from "src/components/ui-library/ZKDigitsInput.vue";
 import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
+import { useConversationOnboardingRoute } from "src/composables/conversation/useConversationOnboardingRoute";
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
 import { useSurveyNavigation } from "src/composables/conversation/useSurveyNavigation";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -202,7 +203,7 @@ import {
 } from "src/utils/translation/useContentTranslationPreview";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 
 import {
   type ConversationSurveyQuestionTranslations,
@@ -212,7 +213,8 @@ import {
 type SurveyFormQuestion = SurveyFormData["questions"][number];
 
 const router = useRouter();
-const route = useRoute();
+const { route, routeConversationSlugId, routeContext } =
+  useConversationOnboardingRoute();
 const { safeNavigateBack } = useGoBackButtonHandler();
 const { showNotifyMessage } = useNotify();
 const { exitToConversation } = useConversationOnboardingExit();
@@ -223,10 +225,6 @@ const { displayLanguage } = storeToRefs(useLanguageStore());
 const { t } = useComponentI18n<ConversationSurveyQuestionTranslations>(
   conversationSurveyQuestionTranslations
 );
-
-const routeConversationSlugId = computed(() => {
-  return getSingleRouteParam(route.params.postSlugId);
-});
 
 const {
   conversationData,
@@ -242,7 +240,9 @@ const {
 const saveMutation = useSurveyAnswerSaveMutation({ conversationSlugId });
 
 const routeQuestionSlugId = computed(() => {
-  return getSingleRouteParam(route.params.questionSlugId);
+  return getSingleRouteParam(
+    "questionSlugId" in route.params ? route.params.questionSlugId : undefined
+  );
 });
 
 const questionIndex = computed(() => {
@@ -771,6 +771,7 @@ watch(
       void router.replace({
         path: getConversationSurveyOnboardingPath({
           conversationSlugId: conversationSlugId.value,
+          routeContext: routeContext.value,
         }),
       });
     }
@@ -788,6 +789,7 @@ watch(
       void router.replace({
         path: getConversationPath({
           conversationSlugId: conversationSlugId.value,
+          routeContext: routeContext.value,
         }),
       });
       return;
@@ -798,6 +800,7 @@ watch(
           conversationSlugId: conversationSlugId.value,
           routeResolution: statusData.routeResolution,
           firstQuestionSlugId: formData.questions[0]?.questionSlugId,
+          routeContext: routeContext.value,
         }),
       });
     }
@@ -813,6 +816,7 @@ async function handleBlockedReason(
     case "survey_outdated":
       await navigateToNextSurveyStep({
         conversationSlugId: conversationSlugId.value,
+        routeContext: routeContext.value,
       });
       break;
     case "account_required":
@@ -821,6 +825,7 @@ async function handleBlockedReason(
     case "event_ticket_required":
       await navigateToSurveyRoot({
         conversationSlugId: conversationSlugId.value,
+        routeContext: routeContext.value,
       });
       break;
     case "conversation_closed":
@@ -836,11 +841,13 @@ function getPreviousPath(): string {
     return getConversationSurveyQuestionPath({
       conversationSlugId: conversationSlugId.value,
       questionSlugId: previousQuestionSlugId.value,
+      routeContext: routeContext.value,
     });
   }
 
   return getConversationSurveyOnboardingPath({
     conversationSlugId: conversationSlugId.value,
+    routeContext: routeContext.value,
   });
 }
 
@@ -849,17 +856,20 @@ function getNextPath(): string {
     return getConversationSurveyQuestionPath({
       conversationSlugId: conversationSlugId.value,
       questionSlugId: nextQuestionSlugId.value,
+      routeContext: routeContext.value,
     });
   }
 
   return getConversationSurveySummaryPath({
     conversationSlugId: conversationSlugId.value,
+    routeContext: routeContext.value,
   });
 }
 
 async function handleBackToConversation(): Promise<void> {
   await exitToConversation({
     conversationSlugId: conversationSlugId.value,
+    routeContext: routeContext.value,
   });
 }
 
@@ -899,10 +909,12 @@ async function saveCurrentDraftIfNeeded(): Promise<boolean> {
       if (response.justCompleted) {
         conversationOnboardingStore.markJustCompletedSurvey({
           conversationSlugId: conversationSlugId.value,
+          routeContext: routeContext.value,
         });
         await router.push({
           path: getConversationSurveyCompletePath({
             conversationSlugId: conversationSlugId.value,
+            routeContext: routeContext.value,
           }),
         });
         return false;
@@ -937,10 +949,12 @@ async function saveCurrentDraftIfNeeded(): Promise<boolean> {
     if (response.justCompleted) {
       conversationOnboardingStore.markJustCompletedSurvey({
         conversationSlugId: conversationSlugId.value,
+        routeContext: routeContext.value,
       });
       await router.push({
         path: getConversationSurveyCompletePath({
           conversationSlugId: conversationSlugId.value,
+          routeContext: routeContext.value,
         }),
       });
       return false;

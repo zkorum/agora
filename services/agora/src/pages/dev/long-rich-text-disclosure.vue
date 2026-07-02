@@ -119,6 +119,7 @@
               :on-view-analysis="noop"
               :is-voting-disabled="true"
               :content-translation="statementTranslationPreview(statement)"
+              :conversation-route-context="normalConversationRouteContext"
               @update:content-translation-mode="statementTranslationMode = $event"
             />
           </div>
@@ -173,6 +174,7 @@ import type {
   OpinionItem,
   VotingAction,
 } from "src/shared/types/zod";
+import { normalConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import {
   type ContentTranslationDisplayMode,
   resolveContentTranslationState,

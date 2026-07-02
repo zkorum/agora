@@ -14,7 +14,14 @@ import {
   getScrollTop,
   scrollTo,
 } from "src/utils/html/scroll";
-import { computed, provide, type Ref, ref, watch } from "vue";
+import {
+  type ConversationRouteContext,
+  getConversationAnalysisPath,
+  getConversationCommentRoute,
+  getConversationPath,
+} from "src/utils/router/conversationRouteContext";
+import { getSingleRouteParam } from "src/utils/router/params";
+import { computed, type MaybeRef, provide, type Ref, ref, unref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { RouteNamedMap } from "vue-router/auto-routes";
 
@@ -27,7 +34,8 @@ const PULL_TO_REFRESH_MIN_DELAY_MS = 500;
 export interface ConversationParentConfig {
   analysisRouteName: RouteName;
   commentRouteNames: RouteName[];
-  routePrefix: string; // e.g. "/conversation/{id}" or "/conversation/{id}/embed"
+  reportRouteNames?: RouteName[];
+  routeContext: MaybeRef<ConversationRouteContext>;
   scrollContainer?: Ref<HTMLElement | null>; // embed pages use a container div instead of window
 }
 
@@ -54,11 +62,13 @@ export interface ConversationScrollContext {
 export function useConversationParentState({
   analysisRouteName,
   commentRouteNames,
-  routePrefix,
+  reportRouteNames = [],
+  routeContext,
   scrollContainer,
 }: ConversationParentConfig) {
   const route = useRoute();
   const router = useRouter();
+  const routeContextValue = computed(() => unref(routeContext));
 
   const authStore = useAuthenticationStore();
   const { isAuthInitialized } = storeToRefs(authStore);
@@ -72,7 +82,7 @@ export function useConversationParentState({
   // Use TanStack Query for conversation data
   const conversationQuery = useConversationQuery({
     conversationSlugId: computed(
-      () => (route.params as { postSlugId: string }).postSlugId
+      () => getSingleRouteParam("postSlugId" in route.params ? route.params.postSlugId : undefined)
     ),
     enabled: computed(() => isAuthInitialized.value),
   });
@@ -214,7 +224,10 @@ export function useConversationParentState({
 
     pendingScrollOverride.value = true;
     void router.push({
-      path: `${routePrefix.replace("{id}", data.metadata.conversationSlugId)}/analysis`,
+      path: getConversationAnalysisPath({
+        conversationSlugId: data.metadata.conversationSlugId,
+        routeContext: routeContextValue.value,
+      }),
       query: initialTab ? { tab: initialTab } : undefined,
     });
   }
@@ -227,7 +240,10 @@ export function useConversationParentState({
     void invalidateComments(data.metadata.conversationSlugId);
 
     void router.replace(
-      `${routePrefix.replace("{id}", data.metadata.conversationSlugId)}/`
+      getConversationPath({
+        conversationSlugId: data.metadata.conversationSlugId,
+        routeContext: routeContextValue.value,
+      })
     );
   }
 
@@ -245,7 +261,10 @@ export function useConversationParentState({
     // Push (not back/replace) so the analysis entry stays in history.
     // Back from the comment tab will return to analysis at its saved position.
     void router.push(
-      `${routePrefix.replace("{id}", data.metadata.conversationSlugId)}/`
+      getConversationPath({
+        conversationSlugId: data.metadata.conversationSlugId,
+        routeContext: routeContextValue.value,
+      })
     );
   }
 
@@ -257,7 +276,10 @@ export function useConversationParentState({
   watch(
     () => route.name,
     (newRouteName) => {
-      if (newRouteName === analysisRouteName) {
+      if (
+        newRouteName === analysisRouteName ||
+        reportRouteNames.some((name) => name === newRouteName)
+      ) {
         currentTab.value = "analysis";
       } else if (commentRouteNames.some((name) => name === newRouteName)) {
         currentTab.value = "comment";
@@ -290,14 +312,14 @@ export function useConversationParentState({
   async function handleSubmittedComment(
     data: SubmittedCommentData
   ): Promise<void> {
-    const handler = submittedCommentHandler.value;
-    if (handler !== undefined) {
-      await handler(data);
+    const slugId = conversationData.value?.metadata.conversationSlugId;
+    if (slugId === undefined) {
       return;
     }
 
-    const slugId = conversationData.value?.metadata.conversationSlugId;
-    if (slugId === undefined) {
+    const handler = submittedCommentHandler.value;
+    if (currentTab.value === "comment" && handler !== undefined) {
+      await handler(data);
       return;
     }
 
@@ -306,6 +328,18 @@ export function useConversationParentState({
 
     if (data.needsCacheRefresh) {
       await loadAuthenticatedModules();
+    }
+
+    if (currentTab.value !== "comment") {
+      commentFilter.value = "discover";
+      pendingScrollOverride.value = true;
+      await router.push(
+        getConversationCommentRoute({
+          conversationSlugId: slugId,
+          routeContext: routeContextValue.value,
+          query: { opinion: data.opinionSlugId },
+        })
+      );
     }
   }
 

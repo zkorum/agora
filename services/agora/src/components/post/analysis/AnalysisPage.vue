@@ -407,6 +407,11 @@ import {
   shortcutItemSchema,
 } from "src/utils/component/analysis/shortcutBar";
 import { getDisplayPolisClusters } from "src/utils/component/opinion";
+import {
+  type ConversationRouteContext,
+  getConversationReportPath,
+  normalConversationRouteContext,
+} from "src/utils/router/conversationRouteContext";
 import { computed, nextTick, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 import { useRoute, useRouter } from "vue-router";
@@ -428,27 +433,34 @@ import {
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 import SurveyTab from "./surveyTab/SurveyTab.vue";
 
-const props = defineProps<{
-  conversationSlugId: string;
-  conversationAuthorUsername: string;
-  conversationOrganizationName: string;
-  analysisQuery: UseQueryReturnType<AnalysisData, Error>;
-  analysisCheckpointsQuery: UseQueryReturnType<
-    FetchAnalysisCheckpointsResponse,
-    Error
-  >;
-  liveConversationViewSnapshotId: number | undefined;
-  surveyQuery: UseQueryReturnType<SurveyResultsAggregatedResponse, Error>;
-  hasSurvey: boolean;
-  surveyGate: SurveyGateSummary | undefined;
-  aiLabelingEnabled: boolean;
-  showReportButton: boolean;
-  reportRouteOverride?: RouteLocationRaw;
-  isLiveAnalysisPaused: boolean;
-  isConversationClosed: boolean;
-  navigateToDiscoverTab: () => void;
-  conversationScrollContext: ConversationScrollContext;
-}>();
+const props = withDefaults(
+  defineProps<{
+    conversationSlugId: string;
+    conversationAuthorUsername: string;
+    conversationOrganizationName: string;
+    analysisQuery: UseQueryReturnType<AnalysisData, Error>;
+    analysisCheckpointsQuery: UseQueryReturnType<
+      FetchAnalysisCheckpointsResponse,
+      Error
+    >;
+    liveConversationViewSnapshotId: number | undefined;
+    surveyQuery: UseQueryReturnType<SurveyResultsAggregatedResponse, Error>;
+    hasSurvey: boolean;
+    surveyGate: SurveyGateSummary | undefined;
+    aiLabelingEnabled: boolean;
+    showReportButton: boolean;
+    reportRouteOverride?: RouteLocationRaw;
+    isLiveAnalysisPaused: boolean;
+    isConversationClosed: boolean;
+    navigateToDiscoverTab: () => void;
+    conversationScrollContext: ConversationScrollContext;
+    conversationRouteContext?: ConversationRouteContext;
+  }>(),
+  {
+    reportRouteOverride: undefined,
+    conversationRouteContext: () => normalConversationRouteContext,
+  }
+);
 
 const emit = defineEmits<{
   "update:liveAnalysisPaused": [paused: boolean];
@@ -1040,7 +1052,10 @@ const reportRouteQuery = computed(() =>
   })
 );
 const reportRoute = computed<RouteLocationRaw>(() => ({
-  path: `/conversation/${props.conversationSlugId}/report`,
+  path: getConversationReportPath({
+    conversationSlugId: props.conversationSlugId,
+    routeContext: props.conversationRouteContext,
+  }),
   query: reportRouteQuery.value,
 }));
 const effectiveReportRoute = computed(

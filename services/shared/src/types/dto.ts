@@ -1877,6 +1877,18 @@ export class Dto {
             nextActivityCursor: zodProjectPageActivityCursor.optional(),
         })
         .strict();
+    static fetchProjectConversationPageRequest = z
+        .object({
+            projectSlug: zodProjectSlug,
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static fetchProjectConversationPageResponse = z
+        .object({
+            project: zodProjectPageProject,
+            languageOptions: z.array(zodProjectPageLanguageOption),
+        })
+        .strict();
     static premiumFeatureEntitlementSubjectRequest = z
         .object({
             username: zodUsername.optional(),
@@ -2554,6 +2566,12 @@ export type FetchProjectPageActivitiesRequest = z.infer<
 >;
 export type FetchProjectPageActivitiesResponse = z.infer<
     typeof Dto.fetchProjectPageActivitiesResponse
+>;
+export type FetchProjectConversationPageRequest = z.infer<
+    typeof Dto.fetchProjectConversationPageRequest
+>;
+export type FetchProjectConversationPageResponse = z.infer<
+    typeof Dto.fetchProjectConversationPageResponse
 >;
 export type CreateProjectFailureReason = z.infer<
     typeof zodCreateProjectFailureReason

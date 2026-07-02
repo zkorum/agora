@@ -3365,6 +3365,342 @@
                 }
             }
         },
+        "/api/v1/project/conversation/fetch": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "projectSlug": {
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                    },
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "projectSlug",
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "project": {
+                                            "type": "object",
+                                            "properties": {
+                                                "slug": {
+                                                    "type": "string",
+                                                    "maxLength": 65,
+                                                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                },
+                                                "title": {
+                                                    "type": "string",
+                                                    "minLength": 1,
+                                                    "maxLength": 140
+                                                },
+                                                "subtitle": {
+                                                    "type": "string",
+                                                    "minLength": 1,
+                                                    "maxLength": 140
+                                                },
+                                                "bodyHtml": {
+                                                    "type": "string",
+                                                    "maxLength": 60000
+                                                },
+                                                "originalContent": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "title": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 140
+                                                        },
+                                                        "subtitle": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 140
+                                                        },
+                                                        "bodyHtml": {
+                                                            "type": "string",
+                                                            "maxLength": 60000
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "title"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                "machineTranslation": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "targetLanguageCode": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "en",
+                                                                "es",
+                                                                "fr",
+                                                                "zh-Hant",
+                                                                "zh-Hans",
+                                                                "ja",
+                                                                "ar",
+                                                                "fa",
+                                                                "he",
+                                                                "ky",
+                                                                "ru"
+                                                            ]
+                                                        },
+                                                        "sourceLanguageCode": {
+                                                            "nullable": true,
+                                                            "type": "string"
+                                                        },
+                                                        "sourceLanguageLabel": {
+                                                            "type": "string",
+                                                            "minLength": 1
+                                                        },
+                                                        "status": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "not_requested",
+                                                                "pending",
+                                                                "running",
+                                                                "failed",
+                                                                "completed"
+                                                            ]
+                                                        },
+                                                        "translatedContent": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "title": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 140
+                                                                },
+                                                                "subtitle": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 140
+                                                                },
+                                                                "bodyHtml": {
+                                                                    "type": "string",
+                                                                    "maxLength": 60000
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "title"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "targetLanguageCode",
+                                                        "status"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                "bannerVariant": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "blue",
+                                                        "purple",
+                                                        "green"
+                                                    ]
+                                                },
+                                                "bannerImageUrl": {
+                                                    "type": "string",
+                                                    "format": "uri"
+                                                },
+                                                "participantCount": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "voteCount": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "activityCount": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "attributions": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "role": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "project_owner",
+                                                                    "sponsor",
+                                                                    "partner"
+                                                                ]
+                                                            },
+                                                            "displayName": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 65
+                                                            },
+                                                            "description": {
+                                                                "type": "string",
+                                                                "minLength": 1
+                                                            },
+                                                            "websiteUrl": {
+                                                                "type": "string",
+                                                                "format": "uri"
+                                                            },
+                                                            "initials": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 4
+                                                            },
+                                                            "accentColor": {
+                                                                "type": "string",
+                                                                "minLength": 1
+                                                            },
+                                                            "imageUrl": {
+                                                                "type": "string",
+                                                                "format": "uri"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "role",
+                                                            "displayName",
+                                                            "initials",
+                                                            "accentColor"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    }
+                                                },
+                                                "contact": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "name": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 65
+                                                        },
+                                                        "roleLabel": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 140
+                                                        },
+                                                        "affiliationName": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 65
+                                                        },
+                                                        "imageUrl": {
+                                                            "type": "string",
+                                                            "format": "uri"
+                                                        },
+                                                        "email": {
+                                                            "type": "string",
+                                                            "maxLength": 254,
+                                                            "format": "email",
+                                                            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                        },
+                                                        "websiteUrl": {
+                                                            "type": "string",
+                                                            "format": "uri"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "name"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            },
+                                            "required": [
+                                                "slug",
+                                                "title",
+                                                "originalContent",
+                                                "bannerVariant",
+                                                "participantCount",
+                                                "voteCount",
+                                                "activityCount",
+                                                "attributions"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        "languageOptions": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "label": {
+                                                        "type": "string",
+                                                        "minLength": 1
+                                                    },
+                                                    "value": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "en",
+                                                            "es",
+                                                            "fr",
+                                                            "zh-Hant",
+                                                            "zh-Hans",
+                                                            "ja",
+                                                            "ar",
+                                                            "fa",
+                                                            "he",
+                                                            "ky",
+                                                            "ru"
+                                                        ]
+                                                    },
+                                                    "caption": {
+                                                        "type": "string",
+                                                        "minLength": 1
+                                                    },
+                                                    "projectSupported": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "searchText": {
+                                                        "type": "string",
+                                                        "minLength": 1
+                                                    },
+                                                    "shortLabel": {
+                                                        "type": "string",
+                                                        "minLength": 1
+                                                    }
+                                                },
+                                                "required": [
+                                                    "label",
+                                                    "value"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "project",
+                                        "languageOptions"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/moderation/conversation/create": {
             "post": {
                 "requestBody": {

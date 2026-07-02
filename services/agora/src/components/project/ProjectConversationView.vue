@@ -207,9 +207,7 @@
           </article>
 
           <section class="project-conversation-view__conversation-stream">
-            <div class="project-conversation-view__action-bar">
-              <slot name="conversation-actions" />
-            </div>
+            <slot name="conversation-actions" />
 
             <div class="project-conversation-view__toolbar">
               <slot name="conversation-toolbar" />
@@ -258,9 +256,12 @@
               />
             </section>
           </aside>
-        </div>
 
-        <ProjectPageFooter :language-code="selectedLanguageValue" />
+          <ProjectPageFooter
+            class="project-conversation-view__footer"
+            :language-code="selectedLanguageValue"
+          />
+        </div>
       </div>
     </main>
 
@@ -664,7 +665,8 @@ main {
   grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
   grid-template-areas:
     "title ."
-    "stream aside";
+    "stream aside"
+    "footer aside";
   column-gap: clamp(1.4rem, 4vw, 2.7rem);
   row-gap: 1rem;
   align-items: start;
@@ -887,6 +889,11 @@ main {
   min-width: 0;
 }
 
+.project-conversation-view__footer {
+  grid-area: footer;
+  padding-block: 2.5rem 5.5rem;
+}
+
 .project-conversation-view__aside,
 .project-conversation-view__info-section {
   display: flex;
@@ -925,7 +932,8 @@ main {
     grid-template-columns: 1fr;
     grid-template-areas:
       "title"
-      "stream";
+      "stream"
+      "footer";
   }
 
   .project-conversation-view__aside {
@@ -935,6 +943,7 @@ main {
   .project-conversation-view__mobile-attributions {
     display: grid;
   }
+
 }
 
 @media (max-width: 1180px) {
@@ -943,7 +952,8 @@ main {
       grid-template-columns: 1fr;
       grid-template-areas:
         "title"
-        "stream";
+        "stream"
+        "footer";
     }
 
     .project-conversation-view__aside {

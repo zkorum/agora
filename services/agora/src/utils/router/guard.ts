@@ -1,8 +1,11 @@
 import { useAuthenticationStore } from "src/stores/authentication";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
-import type { Router,RouteRecordName } from "vue-router";
+import type { Router, RouteRecordName } from "vue-router";
+import type { RouteNamedMap } from "vue-router/auto-routes";
 
-const onboardingRoutes: RouteRecordName[] = [
+type RouteName = keyof RouteNamedMap;
+
+const onboardingRoutes = [
     "/onboarding/step1-login/",
     "/onboarding/step1-signup/",
     "/onboarding/step2-signup/",
@@ -19,12 +22,12 @@ const onboardingRoutes: RouteRecordName[] = [
     "/verify/phone/",
     "/verify/phone-code/",
     "/verify/passport/",
-  ];
+  ] satisfies ReadonlyArray<RouteName>;
 
 // Login/onboarding pages that logged-in users should never see.
 // Excludes step4-username (reached right after isLoggedIn becomes true during signup)
 // and /verify/* pages (used for credential upgrades on gated conversations).
-const loginAndOnboardingRoutes: RouteRecordName[] = [
+const loginAndOnboardingRoutes = [
     "/welcome/",
     "/onboarding/step1-login/",
     "/onboarding/step1-signup/",
@@ -34,7 +37,21 @@ const loginAndOnboardingRoutes: RouteRecordName[] = [
     "/onboarding/step3-passport/",
     "/onboarding/step3-phone-1/",
     "/onboarding/step3-phone-2/",
-  ];
+  ] satisfies ReadonlyArray<RouteName>;
+
+function routeNameMatches({
+  routeName,
+  routeNames,
+}: {
+  routeName: RouteRecordName;
+  routeNames: readonly string[];
+}): boolean {
+  if (typeof routeName !== "string") {
+    return false;
+  }
+
+  return routeNames.some((candidate) => candidate === routeName);
+}
 
 export function useRouterGuard() {
   async function firstLoadGuard({
@@ -44,7 +61,7 @@ export function useRouterGuard() {
     toName: RouteRecordName;
     router: Router;
   }) {
-    const unauthenticatedRoutes: RouteRecordName[] = [
+    const unauthenticatedRoutes = [
       ...onboardingRoutes,
       "/",
       "/welcome/",
@@ -69,6 +86,10 @@ export function useRouterGuard() {
       "/conversation/[postSlugId].onboarding/summary",
       "/conversation/[postSlugId].onboarding/complete",
       "/conversation/[conversationSlugId]/report",
+      "/project/[projectSlug]/conversation/[postSlugId]",
+      "/project/[projectSlug]/conversation/[postSlugId]/",
+      "/project/[projectSlug]/conversation/[postSlugId]/analysis",
+      "/project/[projectSlug]/conversation/[postSlugId]/report",
       "/conversation/new/create/",
       "/conversation/new/seed/",
       "/conversation/new/survey/",
@@ -83,10 +104,10 @@ export function useRouterGuard() {
       "/settings/languages/spoken-languages/",
       "/topic/[topicCode]",
       "/topics/",
-    ];
+    ] satisfies ReadonlyArray<RouteName>;
 
     if (
-      !unauthenticatedRoutes.includes(toName) &&
+      !routeNameMatches({ routeName: toName, routeNames: unauthenticatedRoutes }) &&
       !isDevRouteAllowed(toName)
     ) {
       await router.push({ name: "/" });
@@ -109,7 +130,9 @@ export function useRouterGuard() {
       fromName == "/conversation/[postSlugId]" ||
       fromName == "/conversation/[postSlugId]/" ||
       fromName == "/conversation/[postSlugId].embed" ||
-      fromName == "/conversation/[postSlugId].embed/"
+      fromName == "/conversation/[postSlugId].embed/" ||
+      fromName == "/project/[projectSlug]/conversation/[postSlugId]" ||
+      fromName == "/project/[projectSlug]/conversation/[postSlugId]/"
     ) {
       // Allow navigation to onboarding when doing a credential upgrade
       // (e.g., user needs email/phone verification to participate)
@@ -118,7 +141,7 @@ export function useRouterGuard() {
         return "ignore";
       }
 
-      if (onboardingRoutes.includes(toName) && toName != "/") {
+      if (routeNameMatches({ routeName: toName, routeNames: onboardingRoutes }) && toName != "/") {
         return "home";
       }
     }
@@ -128,7 +151,10 @@ export function useRouterGuard() {
 
   function loggedInGuard(toName: RouteRecordName): "home" | "ignore" {
     const authStore = useAuthenticationStore();
-    if (authStore.isLoggedIn && loginAndOnboardingRoutes.includes(toName)) {
+    if (
+      authStore.isLoggedIn &&
+      routeNameMatches({ routeName: toName, routeNames: loginAndOnboardingRoutes })
+    ) {
       return "home";
     }
     return "ignore";

@@ -34,6 +34,7 @@ import type { PossibleIntentions } from "src/stores/loginIntention";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { getHistoryPosition } from "src/utils/nav/historyBack";
+import { getConversationRouteContextFromRoute } from "src/utils/router/conversationRouteContext";
 import { getConversationSurveyVerifyPath } from "src/utils/survey/navigation";
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -79,8 +80,6 @@ function getSubMessage(): string {
       return t("subMessageReturnToStatement");
     case "reportUserContent":
       return t("subMessageReportRequired");
-    case "survey":
-      return t("subMessageReturnToConversation");
     case "voting":
       return t("subMessageReturnToConversation");
     case "settings":
@@ -190,10 +189,18 @@ async function okButtonClicked() {
       returnHistoryPosition: getHistoryPosition({
         historyState: window.history.state,
       }),
+      routeContext: getConversationRouteContextFromRoute({
+        name: route.name,
+        params: route.params,
+      }),
     });
     await router.push({
       path: getConversationSurveyVerifyPath({
         conversationSlugId: props.conversationSlugId,
+        routeContext: getConversationRouteContextFromRoute({
+          name: route.name,
+          params: route.params,
+        }),
       }),
     });
     return;

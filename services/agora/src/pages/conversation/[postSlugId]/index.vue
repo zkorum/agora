@@ -12,6 +12,7 @@
     :moderation-history-trigger="moderationHistoryTrigger"
     :comment-filter="commentFilter"
     :on-view-analysis="onViewAnalysis"
+    :conversation-route-context="conversationRouteContext"
     @update:comment-filter="
       (filter: CommentFilterOptions) => emit('update:commentFilter', filter)
     "
@@ -23,6 +24,7 @@ import ConversationCommentTab from "src/components/post/ConversationCommentTab.v
 import MaxDiffVotingTab from "src/components/post/maxdiff/MaxDiffVotingTab.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
+import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 
 const { onViewAnalysis } = defineProps<{
   conversationData: ExtendedConversation;
@@ -30,6 +32,7 @@ const { onViewAnalysis } = defineProps<{
   moderationHistoryTrigger: number;
   commentFilter: CommentFilterOptions;
   onViewAnalysis: () => void;
+  conversationRouteContext: ConversationRouteContext;
 }>();
 
 const emit = defineEmits<{

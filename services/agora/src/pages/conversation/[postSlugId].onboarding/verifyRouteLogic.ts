@@ -2,6 +2,10 @@ import type { SurveyStatusCheckResponse } from "src/shared/types/dto";
 import type { ParticipationMode } from "src/shared/types/zod";
 import type { SurveyFormData } from "src/utils/api/survey/useSurveyQueries";
 import {
+  type ConversationRouteContext,
+  normalConversationRouteContext,
+} from "src/utils/router/conversationRouteContext";
+import {
   getConversationPath,
   getConversationSurveyCompletePath,
   getConversationSurveyContinuePath,
@@ -59,6 +63,7 @@ export function resolveVerifyRouteDecision({
   surveyStatus,
   surveyForm,
   requirementState,
+  routeContext = normalConversationRouteContext,
 }: {
   exactVerifyRoute: boolean;
   isInitialLoading: boolean;
@@ -69,6 +74,7 @@ export function resolveVerifyRouteDecision({
   surveyStatus: SurveyStatusCheckResponse | undefined;
   surveyForm: SurveyFormData | undefined;
   requirementState: VerifyRouteRequirementState;
+  routeContext?: ConversationRouteContext;
 }): VerifyRouteDecision {
   if (!exactVerifyRoute || isInitialLoading) {
     return createDecision({ navigation: { kind: "none" } });
@@ -78,7 +84,7 @@ export function resolveVerifyRouteDecision({
     return createDecision({
       navigation: {
         kind: "redirect",
-        path: getConversationSurveyCompletePath({ conversationSlugId }),
+        path: getConversationSurveyCompletePath({ conversationSlugId, routeContext }),
       },
     });
   }
@@ -87,7 +93,7 @@ export function resolveVerifyRouteDecision({
     return createDecision({
       navigation: {
         kind: "redirect",
-        path: getConversationSurveyOnboardingPath({ conversationSlugId }),
+        path: getConversationSurveyOnboardingPath({ conversationSlugId, routeContext }),
       },
     });
   }
@@ -111,11 +117,20 @@ export function resolveVerifyRouteDecision({
     const redirectPath = (() => {
       switch (destination.target) {
         case "email":
-          return getConversationSurveyVerifyEmailPath({ conversationSlugId });
+          return getConversationSurveyVerifyEmailPath({
+            conversationSlugId,
+            routeContext,
+          });
         case "strong":
-          return getConversationSurveyVerifyIdentityPath({ conversationSlugId });
+          return getConversationSurveyVerifyIdentityPath({
+            conversationSlugId,
+            routeContext,
+          });
         case "hard":
-          return getConversationSurveyVerifyHardPath({ conversationSlugId });
+          return getConversationSurveyVerifyHardPath({
+            conversationSlugId,
+            routeContext,
+          });
       }
     })();
 
@@ -129,8 +144,11 @@ export function resolveVerifyRouteDecision({
   if (requirementState.needsTicket) {
     return createDecision({
       navigation: {
-        kind: "redirect",
-        path: getConversationSurveyVerifyTicketPath({ conversationSlugId }),
+          kind: "redirect",
+          path: getConversationSurveyVerifyTicketPath({
+            conversationSlugId,
+            routeContext,
+          }),
       },
     });
   }
@@ -147,9 +165,10 @@ export function resolveVerifyRouteDecision({
     conversationSlugId,
     routeResolution: surveyStatus.routeResolution,
     firstQuestionSlugId: surveyForm.questions[0]?.questionSlugId,
+    routeContext,
   });
 
-  if (continuePath === getConversationPath({ conversationSlugId })) {
+  if (continuePath === getConversationPath({ conversationSlugId, routeContext })) {
     return createDecision({ navigation: { kind: "exitToConversation" } });
   }
 
