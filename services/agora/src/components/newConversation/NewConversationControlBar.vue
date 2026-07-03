@@ -143,10 +143,8 @@ import { usePremiumFeatureApi } from "src/utils/api/premiumFeature";
 import { processEnv } from "src/utils/processEnv";
 import { computed, ref, watch } from "vue";
 
-import {
-  formatLanguageControlLabel,
-  getDisplayLanguageName,
-} from "./conversationLanguageControlLabel";
+import { formatLanguageControlLabel } from "./conversationLanguageControlLabel";
+import { getLanguageLabel } from "./dialog/conversationLanguageSettings.utils";
 import MaxDiffSourceDialog from "./dialog/MaxDiffSourceDialog.vue";
 import PostTypeDialog from "./dialog/PostTypeDialog.vue";
 import {
@@ -190,7 +188,7 @@ const props = withDefaults(defineProps<Props>(), {
   hideLanguageSetting: false,
 });
 
-const { t } = useComponentI18n<NewConversationControlBarTranslations>(
+const { t, locale } = useComponentI18n<NewConversationControlBarTranslations>(
   newConversationControlBarTranslations
 );
 
@@ -609,7 +607,10 @@ const languageSettingLabel = computed(() => {
   const detectedLanguage =
     props.detectedLanguageCode === null || props.detectedLanguageCode === undefined
       ? t("languagePrimaryAuto")
-      : getDisplayLanguageName({ languageCode: props.detectedLanguageCode });
+      : getLanguageLabel({
+          languageCode: props.detectedLanguageCode,
+          locale: locale.value,
+        });
 
   return formatLanguageControlLabel({
     languagesLabel: t("languagesLabel"),
