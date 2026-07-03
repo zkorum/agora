@@ -199,13 +199,13 @@ export const useLanguageStore = defineStore("language", () => {
   }): Promise<boolean> {
     const originalLanguage = displayLanguage.value;
     try {
-      await updateLocale(newLanguage);
-
       if (authStore.isGuestOrLoggedIn) {
         await saveDisplayLanguageToBackend({
           newDisplayLanguage: newLanguage,
         });
       }
+
+      await updateLocale(newLanguage);
 
       return true;
     } catch (err) {

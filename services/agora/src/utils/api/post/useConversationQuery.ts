@@ -108,6 +108,8 @@ export function useConversationQuery({
     ],
     queryFn: async () => {
       const slugId = toValue(conversationSlugId);
+      const targetLanguageCode = displayLanguage.value;
+      const requestedSpokenLanguages = [...spokenLanguages.value];
       const fetchedConversation = await fetchConversationBySlugIdWithDisplayContent({
         postSlugId: slugId,
         loadPersonalizedData: isGuestOrLoggedIn.value,
@@ -119,8 +121,8 @@ export function useConversationQuery({
       queryClient.setQueryData<ConversationContentFetchResponse>(
         getConversationDisplayContentQueryKey({
           conversationSlugId: slugId,
-          targetLanguageCode: displayLanguage.value,
-          spokenLanguages: spokenLanguages.value,
+          targetLanguageCode,
+          spokenLanguages: requestedSpokenLanguages,
         }),
         fetchedConversation.displayContent
       );
@@ -130,8 +132,8 @@ export function useConversationQuery({
             conversationSlugId: slugId,
             contentId: fetchedConversation.displayContent.contentId,
             mode: fetchedConversation.displayContent.mode,
-            targetLanguageCode: displayLanguage.value,
-            spokenLanguages: spokenLanguages.value,
+            targetLanguageCode,
+            spokenLanguages: requestedSpokenLanguages,
           }),
           fetchedConversation.displayContent
         );

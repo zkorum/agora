@@ -23,6 +23,7 @@ import {
     phoneTable,
     userTable,
     userDisplayLanguageTable,
+    userSpokenLanguagesTable,
 } from "@/shared-backend/schema.js";
 import { nowZeroMs } from "@/shared/util.js";
 import type {
@@ -237,6 +238,7 @@ async function finalizePhoneOtpSuccess({
     resultOtp,
     now,
     sessionLifetimeDays,
+    currentDisplayLanguage,
 }: {
     db: PostgresDatabase;
     authResult: Exclude<AuthResult, { type: "associated_with_another_user" }>;
@@ -251,6 +253,7 @@ async function finalizePhoneOtpSuccess({
     };
     now: Date;
     sessionLifetimeDays: number;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }): Promise<VerifyOtp200> {
     return await db.transaction(async (tx) => {
         const verifyResult = await registerOrLoginWithPhoneNumber({
@@ -265,6 +268,7 @@ async function finalizePhoneOtpSuccess({
             userAgent: resultOtp.userAgent,
             now,
             sessionLifetimeDays,
+            currentDisplayLanguage,
         });
         await resetPhoneOtpDestinationState({
             db: tx,
@@ -285,6 +289,7 @@ async function finalizeEmailOtpSuccess({
     now,
     sessionLifetimeDays,
     emailReachability,
+    currentDisplayLanguage,
 }: {
     db: PostgresDatabase;
     authResult: Exclude<AuthResult, { type: "associated_with_another_user" }>;
@@ -295,6 +300,7 @@ async function finalizeEmailOtpSuccess({
     now: Date;
     sessionLifetimeDays: number;
     emailReachability: ReacherIsReachable | null;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }): Promise<VerifyOtp200> {
     return await db.transaction(async (tx) => {
         const verifyResult = await registerOrLoginWithEmail({
@@ -306,6 +312,7 @@ async function finalizeEmailOtpSuccess({
             now,
             sessionLifetimeDays,
             emailReachability,
+            currentDisplayLanguage,
         });
         await resetEmailOtpDestinationState({
             db: tx,
@@ -328,11 +335,13 @@ interface VerifyOtpProps {
     peppers: string[];
     sessionLifetimeDays: number;
     now: Date;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }
 
 interface RegisterWithPhoneNumberProps {
     db: PostgresDatabase;
     didWrite: string;
+    now: Date;
     lastTwoDigits: number;
     countryCallingCode: string;
     phoneCountryCode?: CountryCode;
@@ -341,6 +350,7 @@ interface RegisterWithPhoneNumberProps {
     userAgent: string;
     userId: string;
     sessionExpiry: Date;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }
 
 interface RegisterWithoutVerificationProps {
@@ -348,17 +358,20 @@ interface RegisterWithoutVerificationProps {
     didWrite: string;
     now: Date;
     userAgent: string;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }
 
 interface RegisterWithZKPProps {
     db: PostgresDatabase;
     didWrite: string;
+    now: Date;
     citizenship: string;
     nullifier: string;
     sex: string;
     userAgent: string;
     userId: string;
     sessionExpiry: Date;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }
 
 interface LoginProps {
@@ -383,6 +396,69 @@ interface LoginNewDeviceWithZKPProps {
     userAgent: string;
     userId: string;
     sessionExpiry: Date;
+}
+
+async function insertInitialLanguagePreferencesForNewUser({
+    db,
+    userId,
+    currentDisplayLanguage,
+    now,
+}: {
+    db: PostgresDatabase;
+    userId: string;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
+    now: Date;
+}): Promise<void> {
+    await db
+        .insert(userDisplayLanguageTable)
+        .values({
+            userId,
+            languageCode: currentDisplayLanguage,
+            createdAt: now,
+            updatedAt: now,
+        });
+
+    await db
+        .insert(userSpokenLanguagesTable)
+        .values({
+            userId,
+            languageCode: currentDisplayLanguage,
+            createdAt: now,
+        });
+}
+
+export async function createUserWithInitialLanguagePreferencesIfMissing({
+    db,
+    userId,
+    currentDisplayLanguage,
+    now,
+}: {
+    db: PostgresDatabase;
+    userId: string;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
+    now: Date;
+}): Promise<boolean> {
+    const username = await generateUnusedRandomUsername({ db });
+    const insertedUser = await db
+        .insert(userTable)
+        .values({
+            username,
+            id: userId,
+        })
+        .onConflictDoNothing({ target: userTable.id })
+        .returning({ id: userTable.id });
+
+    if (insertedUser.length === 0) {
+        return false;
+    }
+
+    await insertInitialLanguagePreferencesForNewUser({
+        db,
+        userId,
+        currentDisplayLanguage,
+        now,
+    });
+    return true;
 }
 
 interface GetPhoneAuthenticationTypeByNumber {
@@ -471,6 +547,7 @@ interface RegisterOrLoginWithPhoneNumberBaseProps {
     userAgent: string;
     now: Date;
     sessionLifetimeDays: number;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }
 
 type RegisterOrLoginWithPhoneNumberProps =
@@ -565,7 +642,9 @@ async function registerOrLoginWithPhoneNumber(
                 pepperVersion: pepperVersion,
                 userAgent: userAgent,
                 userId: props.userId,
+                now,
                 sessionExpiry: loginSessionExpiry,
+                currentDisplayLanguage: props.currentDisplayLanguage,
             });
             return {
                 success: true,
@@ -640,6 +719,7 @@ export async function verifyPhoneOtp({
     twilioServiceSid,
     peppers,
     sessionLifetimeDays,
+    currentDisplayLanguage,
     now: providedNow,
 }: VerifyOtpProps): Promise<VerifyOtp200> {
     if (
@@ -806,6 +886,7 @@ export async function verifyPhoneOtp({
                     resultOtp: resultOtp[0],
                     now,
                     sessionLifetimeDays,
+                    currentDisplayLanguage,
                 });
             default:
                 log.error(
@@ -827,6 +908,7 @@ export async function verifyPhoneOtp({
             resultOtp: resultOtp[0],
             now,
             sessionLifetimeDays,
+            currentDisplayLanguage,
         });
     } else {
         await updateCodeGuessAttemptAmount(
@@ -885,6 +967,7 @@ export async function updateCodeGuessAttemptAmount(
 export async function registerWithPhoneNumber({
     db,
     didWrite,
+    now,
     lastTwoDigits,
     phoneCountryCode,
     countryCallingCode,
@@ -893,29 +976,22 @@ export async function registerWithPhoneNumber({
     userAgent,
     userId,
     sessionExpiry,
+    currentDisplayLanguage,
 }: RegisterWithPhoneNumberProps): Promise<void> {
     log.info("Register with phone number");
     await db.transaction(async (tx) => {
         // Note: OTP expiration happens at registerOrLoginWithPhoneNumber entry point
         // to prevent race conditions across all auth paths
 
-        // Check if user already exists (credential upgrade case: user logged in
-        // with another credential and is adding phone)
-        const existingUser = await tx
-            .select({ id: userTable.id })
-            .from(userTable)
-            .where(eq(userTable.id, userId))
-            .limit(1);
+        const wasUserCreated =
+            await createUserWithInitialLanguagePreferencesIfMissing({
+                db: tx,
+                userId,
+                currentDisplayLanguage,
+                now,
+            });
 
-        if (existingUser.length === 0) {
-            // New user registration
-            const username = await generateUnusedRandomUsername({
-                db: db,
-            });
-            await tx.insert(userTable).values({
-                username,
-                id: userId,
-            });
+        if (wasUserCreated) {
             await tx.insert(deviceTable).values({
                 userId: userId,
                 didWrite: didWrite,
@@ -928,7 +1004,7 @@ export async function registerWithPhoneNumber({
                 .update(deviceTable)
                 .set({
                     sessionExpiry: sessionExpiry,
-                    updatedAt: nowZeroMs(),
+                    updatedAt: now,
                 })
                 .where(eq(deviceTable.didWrite, didWrite));
         }
@@ -954,6 +1030,7 @@ export async function createGuestUser({
     didWrite,
     now,
     userAgent,
+    currentDisplayLanguage,
 }: RegisterWithoutVerificationProps): Promise<{
     userId: string;
     wasUserJustCreated: boolean;
@@ -981,6 +1058,12 @@ export async function createGuestUser({
                 // might happen when a user clicks multiple times on votes for the first time
                 tx.rollback(); // will throw
             }
+            await insertInitialLanguagePreferencesForNewUser({
+                db: tx,
+                userId,
+                currentDisplayLanguage,
+                now,
+            });
             return { userId: userId, wasUserJustCreated: true };
         });
     } catch (e) {
@@ -1007,30 +1090,26 @@ export async function createGuestUser({
 export async function registerWithZKP({
     db,
     didWrite,
+    now,
     citizenship,
     nullifier,
     sex,
     userAgent,
     userId,
     sessionExpiry,
+    currentDisplayLanguage,
 }: RegisterWithZKPProps): Promise<void> {
     log.info("Register with ZKP");
     await db.transaction(async (tx) => {
-        // Check if user already exists (credential upgrade case: user logged in
-        // with another credential and is adding Rarimo)
-        const existingUser = await tx
-            .select({ id: userTable.id })
-            .from(userTable)
-            .where(eq(userTable.id, userId))
-            .limit(1);
-
-        if (existingUser.length === 0) {
-            // New user registration
-            const username = await generateUnusedRandomUsername({ db: db });
-            await tx.insert(userTable).values({
-                username,
-                id: userId,
+        const wasUserCreated =
+            await createUserWithInitialLanguagePreferencesIfMissing({
+                db: tx,
+                userId,
+                currentDisplayLanguage,
+                now,
             });
+
+        if (wasUserCreated) {
             await tx.insert(deviceTable).values({
                 userId: userId,
                 didWrite: didWrite,
@@ -1043,7 +1122,7 @@ export async function registerWithZKP({
                 .update(deviceTable)
                 .set({
                     sessionExpiry: sessionExpiry,
-                    updatedAt: nowZeroMs(),
+                    updatedAt: now,
                 })
                 .where(eq(deviceTable.didWrite, didWrite));
         }
@@ -2841,22 +2920,26 @@ async function updateEmailCodeGuessAttemptAmount({
 interface RegisterWithEmailProps {
     db: PostgresDatabase;
     didWrite: string;
+    now: Date;
     email: string;
     userAgent: string;
     userId: string;
     sessionExpiry: Date;
     emailReachability: ReacherIsReachable | null;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }
 
 // WARN: we assume the OTP was verified AND EXPIRED at registerOrLoginWithEmail entry point
 async function registerWithEmail({
     db,
     didWrite,
+    now,
     email,
     userAgent,
     userId,
     sessionExpiry,
     emailReachability,
+    currentDisplayLanguage,
 }: RegisterWithEmailProps): Promise<void> {
     const canonicalEmail = normalizeEmail(email);
 
@@ -2865,23 +2948,15 @@ async function registerWithEmail({
         // Note: OTP expiration happens at registerOrLoginWithEmail entry point
         // to prevent race conditions across all auth paths
 
-        // Check if user already exists (credential upgrade case: user logged in
-        // with another credential and is adding email)
-        const existingUser = await tx
-            .select({ id: userTable.id })
-            .from(userTable)
-            .where(eq(userTable.id, userId))
-            .limit(1);
+        const wasUserCreated =
+            await createUserWithInitialLanguagePreferencesIfMissing({
+                db: tx,
+                userId,
+                currentDisplayLanguage,
+                now,
+            });
 
-        if (existingUser.length === 0) {
-            // New user registration
-            const username = await generateUnusedRandomUsername({
-                db: db,
-            });
-            await tx.insert(userTable).values({
-                username,
-                id: userId,
-            });
+        if (wasUserCreated) {
             await tx.insert(deviceTable).values({
                 userId: userId,
                 didWrite: didWrite,
@@ -2894,7 +2969,7 @@ async function registerWithEmail({
                 .update(deviceTable)
                 .set({
                     sessionExpiry: sessionExpiry,
-                    updatedAt: nowZeroMs(),
+                    updatedAt: now,
                 })
                 .where(eq(deviceTable.didWrite, didWrite));
         }
@@ -2916,6 +2991,7 @@ interface RegisterOrLoginWithEmailBaseProps {
     now: Date;
     sessionLifetimeDays: number;
     emailReachability: ReacherIsReachable | null;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }
 
 type RegisterOrLoginWithEmailProps =
@@ -2996,8 +3072,10 @@ async function registerOrLoginWithEmail(
                 email,
                 userAgent,
                 userId: props.userId,
+                now,
                 sessionExpiry: loginSessionExpiry,
                 emailReachability,
+                currentDisplayLanguage: props.currentDisplayLanguage,
             });
             return {
                 success: true,
@@ -3069,6 +3147,7 @@ interface VerifyEmailOtpProps {
     email: string;
     sessionLifetimeDays: number;
     now: Date;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }
 
 export async function verifyEmailOtp({
@@ -3078,6 +3157,7 @@ export async function verifyEmailOtp({
     code,
     email,
     sessionLifetimeDays,
+    currentDisplayLanguage,
     now: providedNow,
 }: VerifyEmailOtpProps): Promise<VerifyOtp200> {
     const now = providedNow;
@@ -3190,6 +3270,7 @@ export async function verifyEmailOtp({
             now,
             sessionLifetimeDays,
             emailReachability: resultOtp[0].emailReachability,
+            currentDisplayLanguage,
         });
     } else {
         await updateEmailCodeGuessAttemptAmount({

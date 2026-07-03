@@ -11,6 +11,7 @@ import {
     zodZKProof,
     zodStatusResponse,
 } from "@/shared/types/zod.js";
+import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { type AxiosInstance } from "axios";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { and, eq } from "drizzle-orm";
@@ -115,6 +116,7 @@ interface VerifyUserStatusProps {
     axiosVerificatorSvc: AxiosInstance;
     userAgent: string;
     sessionLifetimeDays: number;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }
 
 export async function isLoggedInOrExistsAndAssociatedWithNoNullifier({
@@ -279,6 +281,7 @@ export async function verifyUserStatusAndAuthenticate({
     axiosVerificatorSvc,
     userAgent,
     sessionLifetimeDays,
+    currentDisplayLanguage,
 }: VerifyUserStatusProps): Promise<VerifyUserStatusAndAuthenticate200> {
     const now = nowZeroMs();
     // TODO: move this check to verifyUCAN directly in the controller:
@@ -378,7 +381,9 @@ export async function verifyUserStatusAndAuthenticate({
                     sex: sex,
                     userAgent,
                     userId: authResult.userId,
+                    now,
                     sessionExpiry: loginSessionExpiry,
+                    currentDisplayLanguage,
                 });
                 break;
             case "login_known_device":

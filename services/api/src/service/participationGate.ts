@@ -8,6 +8,7 @@ import type {
     ParticipationMode,
     SurveyGateStatus,
 } from "@/shared/types/zod.js";
+import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { useCommonPost } from "./common.js";
 import * as authUtilService from "./authUtil.js";
 import * as zupassService from "./zupass.js";
@@ -197,6 +198,7 @@ export async function checkConversationParticipation({
     didWrite,
     userAgent,
     now,
+    currentDisplayLanguage,
     requireCompletedSurvey = true,
     skipLockCheck = false,
     skipClosedCheck = false,
@@ -206,6 +208,7 @@ export async function checkConversationParticipation({
     didWrite: string;
     userAgent: string;
     now: Date;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
     requireCompletedSurvey?: boolean;
     skipLockCheck?: boolean;
     skipClosedCheck?: boolean;
@@ -310,6 +313,7 @@ export async function checkConversationParticipation({
                     participationMode: metadata.participationMode,
                     userAgent,
                     now,
+                    currentDisplayLanguage,
                 });
         } else {
             throw httpErrors.unauthorized(
