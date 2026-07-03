@@ -41,15 +41,19 @@
             class="project-conversation-view__consultation-pill"
             :class="{
               'project-conversation-view__consultation-pill--closed':
-                conversation.isClosed,
+                conversationData.metadata.isClosed,
             }"
           >
             <ZKLiveStatusDot
               class="project-conversation-view__consultation-dot"
-              :active="!conversation.isClosed"
+              :active="!conversationData.metadata.isClosed"
               tone="positive"
             />
-            {{ conversation.isClosed ? t("closedConsultation") : t("liveConsultation") }}
+            {{
+              conversationData.metadata.isClosed
+                ? t("closedConsultation")
+                : t("liveConsultation")
+            }}
           </div>
         </div>
       </section>
@@ -109,8 +113,12 @@
                     :created-at="new Date(conversationData.metadata.createdAt)"
                     :is-edited="conversationData.metadata.isEdited"
                     :post-slug-id="conversationData.metadata.conversationSlugId"
-                    organization-url=""
-                    organization-name=""
+                    :organization-url="
+                      conversationData.metadata.organization?.imageUrl ?? ''
+                    "
+                    :organization-name="
+                      conversationData.metadata.organization?.name ?? ''
+                    "
                     :participation-mode="conversationData.metadata.participationMode"
                     :is-closed="conversationData.metadata.isClosed"
                     :conversation-title="conversationData.payload.title"
@@ -118,6 +126,7 @@
                     :external-source-config="conversationData.metadata.externalSourceConfig ?? null"
                     :show-identity-card="false"
                     :project-slug="project.slug"
+                    @conversation-deleted="emit('conversationDeleted')"
                   />
                 </div>
               </div>
@@ -321,9 +330,7 @@ import {
   parseSupportedDisplayLanguageOrUndefined,
 } from "src/shared/languages";
 import type {
-  ConversationType,
   ExtendedConversation,
-  ExternalSourceConfig,
   ParticipationMode,
 } from "src/shared/types/zod";
 import { useConversationDisplayContent } from "src/utils/translation/useConversationDisplayContent";
@@ -339,21 +346,10 @@ import {
   translateProjectPageText,
 } from "./projectPageI18n";
 import type {
-  ProjectActivityStats,
   ProjectAttribution,
   ProjectLanguageOption,
   ProjectPageData,
 } from "./projectPageTypes";
-
-export interface ProjectConversationViewConversation {
-  slugId: string;
-  title: string;
-  bodyHtml: string | undefined;
-  isClosed: boolean;
-  stats: ProjectActivityStats;
-  conversationType: ConversationType;
-  externalSourceConfig: ExternalSourceConfig | null;
-}
 
 interface ProjectConversationStatusBadge {
   key: string;
@@ -364,12 +360,15 @@ interface ProjectConversationStatusBadge {
 
 const props = defineProps<{
   project: ProjectPageData;
-  conversation: ProjectConversationViewConversation;
   conversationData: ExtendedConversation;
   languageOptions: readonly ProjectLanguageOption[];
   initialLanguage: string;
   bannerImageUrl?: string;
   reportLayout?: boolean;
+}>();
+
+const emit = defineEmits<{
+  conversationDeleted: [];
 }>();
 
 const selectedLanguage = defineModel<string | readonly string[]>(

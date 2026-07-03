@@ -361,6 +361,11 @@ async function syncGitHubCallback(): Promise<void> {
 async function conversationDeletedCallback(): Promise<void> {
   emit("conversationDeleted");
 
+  if (props.projectSlug !== undefined) {
+    await router.push({ path: `/project/${props.projectSlug}` });
+    return;
+  }
+
   const slugPrefix = `/conversation/${props.postSlugId}`;
   if (route.path === slugPrefix || route.path.startsWith(`${slugPrefix}/`)) {
     await router.push({ name: "/" });
