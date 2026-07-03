@@ -535,7 +535,9 @@ function t(
 
 <style scoped lang="scss">
 .project-conversation-view {
+  box-sizing: border-box;
   min-height: 100dvh;
+  overflow-x: hidden;
   background:
     radial-gradient(
       circle at 1px 1px,
@@ -545,6 +547,12 @@ function t(
     $app-background-color;
   background-size: 24px 24px;
   color: $ink-darker;
+}
+
+.project-conversation-view *,
+.project-conversation-view *::before,
+.project-conversation-view *::after {
+  box-sizing: inherit;
 }
 
 main {
@@ -669,6 +677,7 @@ main {
 
 .project-conversation-view__content-grid {
   display: grid;
+  width: 100%;
   grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
   grid-template-areas:
     "title ."
@@ -696,6 +705,7 @@ main {
   position: relative;
   z-index: 1;
   grid-area: title;
+  min-width: 0;
   isolation: isolate;
   display: flex;
   flex-direction: column;
@@ -724,6 +734,7 @@ main {
 .project-conversation-view__title-block {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   gap: 0.85rem;
 }
 
@@ -743,6 +754,10 @@ main {
 
 .project-conversation-view__title-row :deep(.title-section) {
   min-width: 0;
+}
+
+.project-conversation-view__title-row :deep(.conversation-title) {
+  overflow-wrap: anywhere;
 }
 
 .project-conversation-view__translated-title {
@@ -766,7 +781,9 @@ main {
 }
 
 .project-conversation-view__breadcrumb-link {
+  display: block;
   overflow: hidden;
+  flex: 1 1 auto;
   min-width: 0;
   max-width: min(28rem, 100%);
   color: $primary-dark;
@@ -948,7 +965,7 @@ main {
   }
 
   .project-conversation-view__content-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       "title"
       "stream"
@@ -1007,6 +1024,7 @@ main {
   }
 
   .project-conversation-view__title-row {
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.45rem;
   }
 

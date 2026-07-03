@@ -2499,6 +2499,7 @@ export async function saveSurveyAnswer({
     didWrite,
     userAgent,
     now,
+    currentDisplayLanguage,
     valkey,
 }: {
     db: PostgresJsDatabase;
@@ -2508,6 +2509,7 @@ export async function saveSurveyAnswer({
     didWrite: string;
     userAgent: string;
     now: Date;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
     valkey?: Valkey;
 }): Promise<
     | {
@@ -2526,6 +2528,7 @@ export async function saveSurveyAnswer({
         didWrite,
         userAgent,
         now,
+        currentDisplayLanguage,
         requireCompletedSurvey: false,
     });
     if (!participationCheck.success) {
@@ -2829,6 +2832,7 @@ export async function withdrawSurveyResponse({
     didWrite,
     userAgent,
     now,
+    currentDisplayLanguage,
     valkey,
 }: {
     db: PostgresJsDatabase;
@@ -2836,6 +2840,7 @@ export async function withdrawSurveyResponse({
     didWrite: string;
     userAgent: string;
     now: Date;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
     valkey?: Valkey;
 }): Promise<
     | {
@@ -2853,6 +2858,7 @@ export async function withdrawSurveyResponse({
         didWrite,
         userAgent,
         now,
+        currentDisplayLanguage,
         requireCompletedSurvey: false,
     });
     if (!participationCheck.success) {

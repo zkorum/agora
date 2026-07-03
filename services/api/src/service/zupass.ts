@@ -10,6 +10,7 @@ import type {
     EventSlug,
     DeviceLoginStatusExtended,
 } from "@/shared/types/zod.js";
+import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { and, eq } from "drizzle-orm";
 import { determineAuthType } from "./auth/core/stateHelpers.js";
@@ -20,8 +21,8 @@ import type { JSONBoundConfig, JSONRevealedClaims } from "@pcd/gpc";
 import { log } from "@/app.js";
 import { getZupassEventId, getZupassSignerPublicKey } from "./zupassConfig.js";
 import * as authUtilService from "./authUtil.js";
-import { generateUnusedRandomUsername } from "./account.js";
 import { mergeGuestIntoVerifiedUser } from "./merge.js";
+import { createUserWithInitialLanguagePreferencesIfMissing } from "./auth.js";
 
 // Dynamic import wrapper for gpcVerify to work around broken ESM in @pcd/gpc
 async function gpcVerify(
@@ -42,6 +43,7 @@ interface VerifyEventTicketProps {
     userAgent: string;
     now: Date;
     sessionLifetimeDays: number;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }
 
 /**
@@ -58,6 +60,7 @@ export async function verifyEventTicket({
     userAgent,
     now,
     sessionLifetimeDays,
+    currentDisplayLanguage,
 }: VerifyEventTicketProps): Promise<VerifyEventTicket200> {
     try {
         // Step 0: Parse and validate proof data structure
@@ -491,6 +494,8 @@ export async function verifyEventTicket({
                             userAgent,
                             userId: authResult.userId,
                             sessionExpiry,
+                            currentDisplayLanguage,
+                            now,
                         });
                         log.info(
                             { userId: authResult.userId, nullifier, eventSlug },
@@ -797,6 +802,8 @@ interface RegisterWithZupassProps {
     userAgent: string;
     userId: string;
     sessionExpiry: Date;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
+    now: Date;
 }
 
 interface LoginNewDeviceWithZupassProps {
@@ -826,20 +833,35 @@ export async function registerWithZupass({
     userAgent,
     userId,
     sessionExpiry,
+    currentDisplayLanguage,
+    now,
 }: RegisterWithZupassProps): Promise<void> {
     log.info("[Zupass] Register with Zupass");
     await db.transaction(async (tx) => {
-        const username = await generateUnusedRandomUsername({ db: db });
-        await tx.insert(userTable).values({
-            username,
-            id: userId,
-        });
-        await tx.insert(deviceTable).values({
-            userId: userId,
-            didWrite: didWrite,
-            userAgent: userAgent,
-            sessionExpiry: sessionExpiry,
-        });
+        const wasUserCreated =
+            await createUserWithInitialLanguagePreferencesIfMissing({
+                db: tx,
+                userId,
+                currentDisplayLanguage,
+                now,
+            });
+
+        if (wasUserCreated) {
+            await tx.insert(deviceTable).values({
+                userId: userId,
+                didWrite: didWrite,
+                userAgent: userAgent,
+                sessionExpiry: sessionExpiry,
+            });
+        } else {
+            await tx
+                .update(deviceTable)
+                .set({
+                    sessionExpiry,
+                    updatedAt: now,
+                })
+                .where(eq(deviceTable.didWrite, didWrite));
+        }
         await tx.insert(eventTicketTable).values({
             userId: userId,
             provider: "zupass",

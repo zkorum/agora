@@ -10,6 +10,7 @@ import type {
 } from "@/shared/types/dto.js";
 import type { ImportPolisResults } from "@/shared/types/polis.js";
 import type { VotingAction, VotingOption } from "@/shared/types/zod.js";
+import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { nowZeroMs } from "@/shared/util.js";
 import type {
     OpinionContentIdPerOpinionId,
@@ -75,6 +76,7 @@ interface CastVoteForOpinionSlugIdProps {
     votingAction: VotingAction;
     userAgent: string;
     now: Date;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
     returnIsUserClustered?: boolean;
 }
 
@@ -470,6 +472,7 @@ export async function castVoteForOpinionSlugId({
     votingAction,
     userAgent,
     now,
+    currentDisplayLanguage,
     returnIsUserClustered,
 }: CastVoteForOpinionSlugIdProps): Promise<CastVoteResponse> {
     const { conversationSlugId, conversationId } =
@@ -483,6 +486,7 @@ export async function castVoteForOpinionSlugId({
         didWrite,
         userAgent,
         now,
+        currentDisplayLanguage,
     });
     if (!participationCheck.success) {
         return participationCheck;

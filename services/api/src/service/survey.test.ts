@@ -264,6 +264,7 @@ describe("saveSurveyAnswer", () => {
             didWrite: "did:test:1",
             userAgent: "Vitest",
             now: new Date("2026-01-01T00:00:00.000Z"),
+            currentDisplayLanguage: "en",
         });
 
         expect(result).toEqual({
@@ -276,6 +277,7 @@ describe("saveSurveyAnswer", () => {
             didWrite: "did:test:1",
             userAgent: "Vitest",
             now: new Date("2026-01-01T00:00:00.000Z"),
+            currentDisplayLanguage: "en",
             requireCompletedSurvey: false,
         });
         expect(transactionMock).not.toHaveBeenCalled();
@@ -302,6 +304,7 @@ describe("withdrawSurveyResponse", () => {
             didWrite: "did:test:2",
             userAgent: "Vitest",
             now: new Date("2026-01-02T00:00:00.000Z"),
+            currentDisplayLanguage: "es",
         });
 
         expect(result).toEqual({
@@ -314,6 +317,7 @@ describe("withdrawSurveyResponse", () => {
             didWrite: "did:test:2",
             userAgent: "Vitest",
             now: new Date("2026-01-02T00:00:00.000Z"),
+            currentDisplayLanguage: "es",
             requireCompletedSurvey: false,
         });
         expect(transactionMock).not.toHaveBeenCalled();

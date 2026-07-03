@@ -36,6 +36,7 @@ const {
     otpPhoneDestinationStateTable,
     phoneTable,
     userTable,
+    userDisplayLanguageTable,
 } = schema;
 
 const SESSION_EXPIRY = new Date("2100-01-01T00:00:00.000Z");
@@ -110,6 +111,15 @@ describe("OTP destination throttling", () => {
             sessionExpiry: SESSION_EXPIRY,
         });
         return { userId };
+    }
+
+    async function expectNoDisplayLanguagePreferences(userId: string) {
+        const displayLanguages = await db
+            .select()
+            .from(userDisplayLanguageTable)
+            .where(eq(userDisplayLanguageTable.userId, userId));
+
+        expect(displayLanguages).toHaveLength(0);
     }
 
     function getWrongCode(actualCode: number): number {
@@ -201,6 +211,7 @@ describe("OTP destination throttling", () => {
             email,
             sessionLifetimeDays: 90,
             now: currentNow,
+            currentDisplayLanguage: "en",
         });
 
         expect(verifyResponse).toEqual({
@@ -272,6 +283,7 @@ describe("OTP destination throttling", () => {
             peppers: [process.env.PEPPERS!],
             sessionLifetimeDays: 90,
             now: currentNow,
+            currentDisplayLanguage: "en",
         });
 
         expect(verifyResponse).toEqual({
@@ -317,6 +329,7 @@ describe("OTP destination throttling", () => {
             email,
             sessionLifetimeDays: 90,
             now: currentNow,
+            currentDisplayLanguage: "en",
         });
 
         expect(wrongGuess.success).toBe(false);
@@ -507,6 +520,7 @@ describe("OTP destination throttling", () => {
                 email,
                 sessionLifetimeDays: 90,
                 now: currentNow,
+                currentDisplayLanguage: "en",
             });
         }
 
@@ -575,6 +589,7 @@ describe("OTP destination throttling", () => {
             email,
             sessionLifetimeDays: 90,
             now: currentNow,
+            currentDisplayLanguage: "en",
         });
 
         expect(successResponse.success).toBe(true);
@@ -588,6 +603,7 @@ describe("OTP destination throttling", () => {
             .where(eq(emailTable.userId, successResponse.userId));
 
         expect(storedEmail.email).toBe(normalizeEmail(email));
+        await expectNoDisplayLanguagePreferences(successResponse.userId);
 
         const [destinationState] = await db
             .select()
@@ -640,6 +656,7 @@ describe("OTP destination throttling", () => {
             peppers: [process.env.PEPPERS!],
             sessionLifetimeDays: 90,
             now: currentNow,
+            currentDisplayLanguage: "en",
         });
 
         expect(wrongGuess.success).toBe(false);
@@ -788,6 +805,7 @@ describe("OTP destination throttling", () => {
                 peppers: [process.env.PEPPERS!],
                 sessionLifetimeDays: 90,
                 now: currentNow,
+                currentDisplayLanguage: "en",
             });
         }
 
@@ -864,9 +882,14 @@ describe("OTP destination throttling", () => {
             peppers: [process.env.PEPPERS!],
             sessionLifetimeDays: 90,
             now: currentNow,
+            currentDisplayLanguage: "en",
         });
 
         expect(successResponse.success).toBe(true);
+        if (!successResponse.success) {
+            throw new Error("Expected successful phone verification");
+        }
+        await expectNoDisplayLanguagePreferences(successResponse.userId);
 
         const [destinationState] = await db
             .select()

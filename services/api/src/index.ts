@@ -1592,6 +1592,9 @@ server.after(() => {
                     twilioServiceSid: config.TWILIO_SERVICE_SID,
                     peppers: config.PEPPERS,
                     sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
+                    currentDisplayLanguage: getRequestDisplayLanguage({
+                        request,
+                    }),
                 });
             }
             return await doVerifyPhoneOtp();
@@ -1694,6 +1697,9 @@ server.after(() => {
                     code: request.body.code,
                     email: request.body.email,
                     sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
+                    currentDisplayLanguage: getRequestDisplayLanguage({
+                        request,
+                    }),
                 });
             }
             return await doVerifyEmailOtp();
@@ -2307,6 +2313,7 @@ server.after(() => {
                 votingAction: request.body.chosenOption,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now: now,
+                currentDisplayLanguage: getRequestDisplayLanguage({ request }),
                 returnIsUserClustered: request.body.returnIsUserClustered,
             });
             reply.send(castVoteResponse);
@@ -2333,6 +2340,7 @@ server.after(() => {
                 didWrite,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now,
+                currentDisplayLanguage: getRequestDisplayLanguage({ request }),
             });
             if (!participationCheck.success) {
                 return participationCheck;
@@ -2640,6 +2648,7 @@ server.after(() => {
                 didWrite: didWrite,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now: now,
+                currentDisplayLanguage: getRequestDisplayLanguage({ request }),
                 isSeed: false,
                 googleCloudCredentials,
                 voteBuffer: voteBuffer,
@@ -2663,7 +2672,7 @@ server.after(() => {
             const headerDisplayLanguage = getRequestDisplayLanguage({
                 request,
             });
-            const languagePreferences = deviceStatus.isLoggedIn
+            const languagePreferences = deviceStatus.isKnown
                 ? await getLanguagePreferences({
                       db,
                       userId: deviceStatus.userId,
@@ -2854,7 +2863,7 @@ server.after(() => {
             const headerDisplayLanguage = getRequestDisplayLanguage({
                 request,
             });
-            const languagePreferences = deviceStatus.isLoggedIn
+            const languagePreferences = deviceStatus.isKnown
                 ? await getLanguagePreferences({
                       db,
                       userId: deviceStatus.userId,
@@ -3646,7 +3655,7 @@ server.after(() => {
             const headerDisplayLanguage = getRequestDisplayLanguage({
                 request,
             });
-            const languagePreferences = deviceStatus.isLoggedIn
+            const languagePreferences = deviceStatus.isKnown
                 ? await getLanguagePreferences({
                       db,
                       userId: deviceStatus.userId,
@@ -3806,7 +3815,7 @@ server.after(() => {
             const headerDisplayLanguage = getRequestDisplayLanguage({
                 request,
             });
-            const languagePreferences = deviceStatus.isLoggedIn
+            const languagePreferences = deviceStatus.isKnown
                 ? await getLanguagePreferences({
                       db,
                       userId: deviceStatus.userId,
@@ -3941,6 +3950,7 @@ server.after(() => {
                 didWrite,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now: nowZeroMs(),
+                currentDisplayLanguage: getRequestDisplayLanguage({ request }),
                 valkey: queueValkeyRef.current,
             });
         },
@@ -3962,6 +3972,7 @@ server.after(() => {
                 didWrite,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now: nowZeroMs(),
+                currentDisplayLanguage: getRequestDisplayLanguage({ request }),
                 valkey: queueValkeyRef.current,
             });
         },
@@ -4132,6 +4143,9 @@ server.after(() => {
                     axiosVerificatorSvc,
                     userAgent,
                     sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
+                    currentDisplayLanguage: getRequestDisplayLanguage({
+                        request,
+                    }),
                 });
             return verificationStatusAndNullifier;
         },
@@ -4158,6 +4172,7 @@ server.after(() => {
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now,
                 sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
+                currentDisplayLanguage: getRequestDisplayLanguage({ request }),
             });
         },
     });
@@ -5258,6 +5273,9 @@ server.after(() => {
                 didWrite,
                 now,
             });
+            const headerDisplayLanguage = getRequestDisplayLanguage({
+                request,
+            });
             const requesterUserId = deviceStatus.isKnown
                 ? deviceStatus.userId
                 : (
@@ -5266,23 +5284,16 @@ server.after(() => {
                           didWrite,
                           now,
                           userAgent,
+                          currentDisplayLanguage: headerDisplayLanguage,
                       })
                   ).userId;
-            const headerDisplayLanguage = getRequestDisplayLanguage({
-                request,
+            const languagePreferences = await getLanguagePreferences({
+                db,
+                userId: requesterUserId,
+                request: {
+                    currentDisplayLanguage: headerDisplayLanguage,
+                },
             });
-            const languagePreferences = deviceStatus.isLoggedIn
-                ? await getLanguagePreferences({
-                      db,
-                      userId: deviceStatus.userId,
-                      request: {
-                          currentDisplayLanguage: headerDisplayLanguage,
-                      },
-                  })
-                : {
-                      displayLanguage: headerDisplayLanguage,
-                      spokenLanguages: [headerDisplayLanguage],
-                  };
 
             const preferredContentTranslation =
                 await getPreferredContentTranslationAvailabilityForConversation({
@@ -5404,6 +5415,9 @@ server.after(() => {
                           didWrite,
                           now,
                           userAgent,
+                          currentDisplayLanguage: getRequestDisplayLanguage({
+                              request,
+                          }),
                       })
                   ).userId;
 

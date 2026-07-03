@@ -20,6 +20,7 @@ import type {
     DeviceLoginStatusExtended,
     ParticipationMode,
 } from "@/shared/types/zod.js";
+import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 
 // Internal type extending the API type with sessionExpiry for the isKnown=true case.
 // sessionExpiry is internal-only — NOT exposed in the check-login-status API response.
@@ -114,6 +115,7 @@ interface GetOrRegisterUserIdFromDeviceStatusProps {
     participationMode: ParticipationMode;
     userAgent: string;
     now: Date;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }
 
 export async function getOrRegisterUserIdFromDeviceStatus({
@@ -122,6 +124,7 @@ export async function getOrRegisterUserIdFromDeviceStatus({
     participationMode,
     userAgent,
     now,
+    currentDisplayLanguage,
 }: GetOrRegisterUserIdFromDeviceStatusProps): Promise<string> {
     const deviceStatus = await getDeviceStatus({
         db,
@@ -158,6 +161,7 @@ export async function getOrRegisterUserIdFromDeviceStatus({
             didWrite,
             now,
             userAgent,
+            currentDisplayLanguage,
         });
         return userId;
     });

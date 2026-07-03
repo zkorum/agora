@@ -2682,7 +2682,7 @@ async function getPostIdFromPostSlugId(
     return postId;
 }
 
-interface PostNewOpinionProps {
+interface PostNewOpinionBaseProps {
     db: PostgresJsDatabase;
     tx?: PostgresJsDatabase;
     commentBody: string;
@@ -2697,7 +2697,11 @@ interface PostNewOpinionProps {
     voteBuffer?: VoteBuffer;
     realtimeSSEManager?: RealtimeSSEManager;
     onCreatedOpinionSource?: (source: OpinionContentSource) => void;
-    conversationMetadata?: {
+}
+
+interface PostNewOpinionWithConversationMetadataProps {
+    currentDisplayLanguage?: never;
+    conversationMetadata: {
         conversationId: number;
         conversationContentId: number;
         conversationAuthorId: string;
@@ -2709,23 +2713,36 @@ interface PostNewOpinionProps {
     };
 }
 
-export async function postNewOpinion({
-    db,
-    tx,
-    commentBody,
-    opinionPlainText,
-    conversationSlugId,
-    didWrite,
-    userAgent,
-    now,
-    isSeed,
-    googleCloudCredentials,
-    useGoogleLanguageDetection,
-    voteBuffer,
-    realtimeSSEManager,
-    onCreatedOpinionSource,
-    conversationMetadata,
-}: PostNewOpinionProps): Promise<CreateCommentResponse> {
+interface PostNewOpinionWithParticipationCheckProps {
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
+    conversationMetadata?: undefined;
+}
+
+type PostNewOpinionProps = PostNewOpinionBaseProps &
+    (
+        | PostNewOpinionWithConversationMetadataProps
+        | PostNewOpinionWithParticipationCheckProps
+    );
+
+export async function postNewOpinion(
+    props: PostNewOpinionProps,
+): Promise<CreateCommentResponse> {
+    const {
+        db,
+        tx,
+        opinionPlainText,
+        conversationSlugId,
+        didWrite,
+        userAgent,
+        now,
+        isSeed,
+        googleCloudCredentials,
+        useGoogleLanguageDetection,
+        voteBuffer,
+        realtimeSSEManager,
+        onCreatedOpinionSource,
+    } = props;
+    let { commentBody } = props;
     interface ParticipationContext {
         success: true;
         conversationId: number;
@@ -2765,13 +2782,13 @@ export async function postNewOpinion({
     const participationContext:
         | ParticipationContext
         | Extract<CreateCommentResponse, { success: false }> =
-        conversationMetadata !== undefined
+        props.conversationMetadata !== undefined
             ? {
                   success: true,
-                  conversationId: conversationMetadata.conversationId,
+                  conversationId: props.conversationMetadata.conversationId,
                   conversationContentId:
-                      conversationMetadata.conversationContentId,
-                  participantId: conversationMetadata.conversationAuthorId,
+                      props.conversationMetadata.conversationContentId,
+                  participantId: props.conversationMetadata.conversationAuthorId,
               }
             : await (async () => {
                   const participationCheck =
@@ -2781,6 +2798,8 @@ export async function postNewOpinion({
                           didWrite,
                           userAgent,
                           now,
+                          currentDisplayLanguage:
+                              props.currentDisplayLanguage,
                       });
                   if (!participationCheck.success) {
                       return participationCheck;
@@ -2875,7 +2894,7 @@ export async function postNewOpinion({
             .where(eq(userTable.id, participationContext.participantId));
 
         const participantUsername =
-            conversationMetadata?.conversationAuthorUsername ??
+            props.conversationMetadata?.conversationAuthorUsername ??
             (await (async (): Promise<string> => {
                 const participantRows = await transactionDb
                     .select({ username: userTable.username })
