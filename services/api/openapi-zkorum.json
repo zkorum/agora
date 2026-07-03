@@ -2262,7 +2262,12 @@
                                                 "contact": {
                                                     "type": "object",
                                                     "properties": {
-                                                        "name": {
+                                                        "firstName": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 65
+                                                        },
+                                                        "lastName": {
                                                             "type": "string",
                                                             "minLength": 1,
                                                             "maxLength": 65
@@ -2293,7 +2298,7 @@
                                                         }
                                                     },
                                                     "required": [
-                                                        "name"
+                                                        "firstName"
                                                     ],
                                                     "additionalProperties": false
                                                 }
@@ -3592,7 +3597,12 @@
                                                 "contact": {
                                                     "type": "object",
                                                     "properties": {
-                                                        "name": {
+                                                        "firstName": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 65
+                                                        },
+                                                        "lastName": {
                                                             "type": "string",
                                                             "minLength": 1,
                                                             "maxLength": 65
@@ -3623,7 +3633,7 @@
                                                         }
                                                     },
                                                     "required": [
-                                                        "name"
+                                                        "firstName"
                                                     ],
                                                     "additionalProperties": false
                                                 }
@@ -16809,7 +16819,12 @@
                                                     "contact": {
                                                         "type": "object",
                                                         "properties": {
-                                                            "name": {
+                                                            "firstName": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 65
+                                                            },
+                                                            "lastName": {
                                                                 "type": "string",
                                                                 "minLength": 1,
                                                                 "maxLength": 65
@@ -16829,11 +16844,23 @@
                                                                 "type": "string",
                                                                 "maxLength": 65,
                                                                 "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                            },
+                                                            "websiteUrl": {
+                                                                "type": "string",
+                                                                "format": "uri"
+                                                            },
+                                                            "imagePath": {
+                                                                "type": "string",
+                                                                "minLength": 1
+                                                            },
+                                                            "isFullImagePath": {
+                                                                "default": false,
+                                                                "type": "boolean"
                                                             }
                                                         },
                                                         "required": [
-                                                            "name",
-                                                            "email"
+                                                            "firstName",
+                                                            "isFullImagePath"
                                                         ],
                                                         "additionalProperties": false
                                                     }
@@ -17277,7 +17304,12 @@
                                                 "contact": {
                                                     "type": "object",
                                                     "properties": {
-                                                        "name": {
+                                                        "firstName": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 65
+                                                        },
+                                                        "lastName": {
                                                             "type": "string",
                                                             "minLength": 1,
                                                             "maxLength": 65
@@ -17297,11 +17329,23 @@
                                                             "type": "string",
                                                             "maxLength": 65,
                                                             "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                        },
+                                                        "websiteUrl": {
+                                                            "type": "string",
+                                                            "format": "uri"
+                                                        },
+                                                        "imagePath": {
+                                                            "type": "string",
+                                                            "minLength": 1
+                                                        },
+                                                        "isFullImagePath": {
+                                                            "default": false,
+                                                            "type": "boolean"
                                                         }
                                                     },
                                                     "required": [
-                                                        "name",
-                                                        "email"
+                                                        "firstName",
+                                                        "isFullImagePath"
                                                     ],
                                                     "additionalProperties": false
                                                 }
@@ -17620,7 +17664,12 @@
                                     "contact": {
                                         "type": "object",
                                         "properties": {
-                                            "name": {
+                                            "firstName": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 65
+                                            },
+                                            "lastName": {
                                                 "type": "string",
                                                 "minLength": 1,
                                                 "maxLength": 65
@@ -17640,11 +17689,22 @@
                                                 "type": "string",
                                                 "maxLength": 65,
                                                 "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                            },
+                                            "websiteUrl": {
+                                                "type": "string",
+                                                "format": "uri"
+                                            },
+                                            "imagePath": {
+                                                "type": "string",
+                                                "minLength": 1
+                                            },
+                                            "isFullImagePath": {
+                                                "default": false,
+                                                "type": "boolean"
                                             }
                                         },
                                         "required": [
-                                            "name",
-                                            "email"
+                                            "firstName"
                                         ],
                                         "additionalProperties": false
                                     }
@@ -18221,7 +18281,12 @@
                                     "contact": {
                                         "type": "object",
                                         "properties": {
-                                            "name": {
+                                            "firstName": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 65
+                                            },
+                                            "lastName": {
                                                 "type": "string",
                                                 "minLength": 1,
                                                 "maxLength": 65
@@ -18241,11 +18306,22 @@
                                                 "type": "string",
                                                 "maxLength": 65,
                                                 "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                            },
+                                            "websiteUrl": {
+                                                "type": "string",
+                                                "format": "uri"
+                                            },
+                                            "imagePath": {
+                                                "type": "string",
+                                                "minLength": 1
+                                            },
+                                            "isFullImagePath": {
+                                                "default": false,
+                                                "type": "boolean"
                                             }
                                         },
                                         "required": [
-                                            "name",
-                                            "email"
+                                            "firstName"
                                         ],
                                         "additionalProperties": false
                                     },

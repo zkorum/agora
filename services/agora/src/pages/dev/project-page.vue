@@ -286,7 +286,8 @@ const languageOptions: readonly ProjectLanguageOption[] = [
 
 const contactByScenario = {
   email: {
-    name: "Aida Saparova",
+    firstName: "Aida",
+    lastName: "Saparova",
     roleLabel: "Facilitator",
     affiliationName: "Kurak Foundation",
     imageUrl: undefined,
@@ -294,7 +295,8 @@ const contactByScenario = {
     websiteUrl: undefined,
   },
   web: {
-    name: "Aida Saparova",
+    firstName: "Aida",
+    lastName: "Saparova",
     roleLabel: "Facilitator",
     affiliationName: "Kurak Foundation",
     imageUrl: undefined,
@@ -302,7 +304,8 @@ const contactByScenario = {
     websiteUrl: "https://example.org/project-contact",
   },
   both: {
-    name: "Aida Saparova",
+    firstName: "Aida",
+    lastName: "Saparova",
     roleLabel: "Facilitator",
     affiliationName: "Kurak Foundation",
     imageUrl: undefined,
@@ -313,26 +316,32 @@ const contactByScenario = {
 
 const contactLocalizationByLanguage = {
   en: {
-    name: "Aida Saparova",
+    firstName: "Aida",
+    lastName: "Saparova",
     roleLabel: "Facilitator",
     affiliationName: "Search for Common Ground Kyrgyzstan",
     imageUrl: attributionImageUrls.searchForCommonGround,
   },
   ky: {
-    name: "Айда Сапарова (KG)",
+    firstName: "Айда",
+    lastName: "Сапарова",
     roleLabel: "Фасилитатор",
     affiliationName: "Граждандык союз",
     imageUrl: civicUnionImageUrlsByLanguage.ky,
   },
   ru: {
-    name: "Аида Сапарова (RU)",
+    firstName: "Аида",
+    lastName: "Сапарова",
     roleLabel: "Координатор проекта",
     affiliationName: "Европейский союз",
     imageUrl: attributionImageUrls.europeanUnion,
   },
 } satisfies Record<
   ProjectPageLanguage,
-  Pick<ProjectContact, "name" | "roleLabel" | "affiliationName" | "imageUrl">
+  Pick<
+    ProjectContact,
+    "firstName" | "lastName" | "roleLabel" | "affiliationName" | "imageUrl"
+  >
 >;
 
 const attributionLocalizationByLanguage = {

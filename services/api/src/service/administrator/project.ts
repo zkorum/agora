@@ -1193,9 +1193,16 @@ export async function createProject({
             if (data.contact !== undefined) {
                 await tx.insert(projectContactTable).values({
                     projectId: insertedProject.projectId,
-                    name: data.contact.name.trim(),
+                    firstName: data.contact.firstName.trim(),
+                    lastName: normalizeOptionalString(data.contact.lastName),
                     roleLabel: normalizeOptionalString(data.contact.roleLabel),
-                    email: normalizeEmail(data.contact.email),
+                    email:
+                        data.contact.email === undefined
+                            ? null
+                            : normalizeEmail(data.contact.email),
+                    websiteUrl: normalizeOptionalString(data.contact.websiteUrl),
+                    imagePath: normalizeOptionalString(data.contact.imagePath),
+                    isFullImagePath: data.contact.isFullImagePath,
                     organizationId:
                         data.contact.organizationSlug === undefined
                             ? null
@@ -1458,9 +1465,13 @@ export async function getAllProjects({
             : await db
                   .select({
                       projectId: projectContactTable.projectId,
-                      name: projectContactTable.name,
+                      firstName: projectContactTable.firstName,
+                      lastName: projectContactTable.lastName,
                       roleLabel: projectContactTable.roleLabel,
                       email: projectContactTable.email,
+                      websiteUrl: projectContactTable.websiteUrl,
+                      imagePath: projectContactTable.imagePath,
+                      isFullImagePath: projectContactTable.isFullImagePath,
                       organizationSlug: organizationTable.slug,
                   })
                   .from(projectContactTable)
@@ -1685,9 +1696,13 @@ export async function getAllProjects({
         contactRows.map((contact) => [
             contact.projectId,
             {
-                name: contact.name,
+                firstName: contact.firstName,
+                lastName: contact.lastName ?? undefined,
                 roleLabel: contact.roleLabel ?? undefined,
-                email: contact.email,
+                email: contact.email ?? undefined,
+                websiteUrl: contact.websiteUrl ?? undefined,
+                imagePath: contact.imagePath ?? undefined,
+                isFullImagePath: contact.isFullImagePath,
                 organizationSlug: contact.organizationSlug ?? undefined,
             },
         ]),
@@ -2283,9 +2298,16 @@ export async function updateProject({
             if (data.contact !== undefined) {
                 await tx.insert(projectContactTable).values({
                     projectId: project.projectId,
-                    name: data.contact.name.trim(),
+                    firstName: data.contact.firstName.trim(),
+                    lastName: normalizeOptionalString(data.contact.lastName),
                     roleLabel: normalizeOptionalString(data.contact.roleLabel),
-                    email: normalizeEmail(data.contact.email),
+                    email:
+                        data.contact.email === undefined
+                            ? null
+                            : normalizeEmail(data.contact.email),
+                    websiteUrl: normalizeOptionalString(data.contact.websiteUrl),
+                    imagePath: normalizeOptionalString(data.contact.imagePath),
+                    isFullImagePath: data.contact.isFullImagePath,
                     organizationId:
                         data.contact.organizationSlug === undefined
                             ? null

@@ -444,7 +444,7 @@ const zodProjectPageAttribution = z
         role: zodProjectOrganizationAttributionRole,
         displayName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
         description: z.string().trim().min(1).optional(),
-        websiteUrl: z.url().optional(),
+        websiteUrl: zodHttpUrl.optional(),
         initials: z.string().trim().min(1).max(4),
         accentColor: z.string().trim().min(1),
         imageUrl: z.url().optional(),
@@ -452,7 +452,8 @@ const zodProjectPageAttribution = z
     .strict();
 const zodProjectPageContact = z
     .object({
-        name: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
+        firstName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
+        lastName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR).optional(),
         roleLabel: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
         affiliationName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR).optional(),
         imageUrl: z.url().optional(),
@@ -1642,17 +1643,37 @@ export class Dto {
     ]);
     static createProjectContactRequest = z
         .object({
-            name: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
+            firstName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
+            lastName: z
+                .string()
+                .trim()
+                .min(1)
+                .max(MAX_LENGTH_NAME_CREATOR)
+                .optional(),
             roleLabel: z
                 .string()
                 .trim()
                 .min(1)
                 .max(MAX_LENGTH_TITLE)
                 .optional(),
-            email: zodEmail,
+            email: zodEmail.optional(),
             organizationSlug: zodOrganizationSlug.optional(),
+            websiteUrl: zodHttpUrl.optional(),
+            imagePath: zodOptionalNonEmptyText,
+            isFullImagePath: z.boolean().default(false),
         })
-        .strict();
+        .strict()
+        .superRefine((contact, context) => {
+            if (contact.email !== undefined || contact.websiteUrl !== undefined) {
+                return;
+            }
+
+            context.addIssue({
+                code: "custom",
+                message: "Contact requires an email or website URL",
+                path: ["email"],
+            });
+        });
     static createProjectRequest = z
         .object({
             projectSlug: zodProjectSlug,

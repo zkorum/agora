@@ -13,10 +13,10 @@
       v-else-if="hasConversationData && projectConversationData !== undefined"
       v-model:selected-language="selectedLanguage"
       :project="projectConversationData.project"
-      :conversation="projectConversation"
       :conversation-data="loadedConversationData"
       :language-options="projectConversationData.languageOptions"
       :initial-language="displayLanguage"
+      @conversation-deleted="handleConversationDeleted"
     >
       <template #conversation-actions>
         <div ref="actionBarElement" class="project-conversation__action-bar">
@@ -91,6 +91,7 @@
         hasConversationData &&
         loadedConversationData.metadata.conversationType !== 'maxdiff'
       "
+      :anchor-element="actionBarElement ?? undefined"
       :respect-drawer-offset="false"
     >
       <CommentComposer
@@ -107,15 +108,13 @@
 </template>
 
 <script setup lang="ts">
-import { useQuery } from "@tanstack/vue-query";
+import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
 import FloatingBottomContainer from "src/components/navigation/FloatingBottomContainer.vue";
 import CommentComposer from "src/components/post/comments/CommentComposer.vue";
 import CommentSortingSelector from "src/components/post/comments/group/CommentSortingSelector.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
-import ProjectConversationView, {
-  type ProjectConversationViewConversation,
-} from "src/components/project/ProjectConversationView.vue";
+import ProjectConversationView from "src/components/project/ProjectConversationView.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import PullToRefresh from "src/components/ui/PullToRefresh.vue";
@@ -152,6 +151,7 @@ const { t } = useComponentI18n<ConversationPageTranslations>(
   conversationPageTranslations
 );
 const route = useRoute();
+const queryClient = useQueryClient();
 const { fetchProjectConversationPage } = useBackendProjectPageApi();
 const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(
   useAuthenticationStore()
@@ -282,23 +282,6 @@ const hasInitialLoadError = computed(
       projectConversationData.value === undefined)
 );
 
-const projectConversation = computed<ProjectConversationViewConversation>(() => {
-  const metadata = loadedConversationData.value.metadata;
-  return {
-    slugId: metadata.conversationSlugId,
-    title: loadedConversationData.value.payload.title,
-    bodyHtml: loadedConversationData.value.payload.body,
-    isClosed: metadata.isClosed,
-    conversationType: metadata.conversationType,
-    externalSourceConfig: metadata.externalSourceConfig ?? null,
-    stats: {
-      opinionCount: metadata.opinionCount,
-      participantCount: metadata.participantCount,
-      voteCount: metadata.voteCount,
-    },
-  };
-});
-
 const isVotingDisabled = computed(() => {
   const data = conversationData.value;
   if (data === undefined) {
@@ -398,6 +381,12 @@ function handleSameTabActionBarClick(): void {
   if (currentTab.value === "comment") {
     void refetchCommentStats();
   }
+}
+
+function handleConversationDeleted(): void {
+  void queryClient.invalidateQueries({
+    queryKey: ["projectPage", projectSlug.value],
+  });
 }
 
 function canStartConversationRefresh(): boolean {

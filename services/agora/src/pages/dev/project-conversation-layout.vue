@@ -67,7 +67,6 @@
     <ProjectConversationView
       v-model:selected-language="selectedLanguage"
       :project="project"
-      :conversation="conversation"
       :conversation-data="conversationData"
       :language-options="languageOptions"
       initial-language="en"
@@ -164,9 +163,7 @@ import AnalysisPage from "src/components/post/analysis/AnalysisPage.vue";
 import CommentSortingSelector from "src/components/post/comments/group/CommentSortingSelector.vue";
 import TranslatedCommentItem from "src/components/post/comments/group/item/TranslatedCommentItem.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
-import ProjectConversationView, {
-  type ProjectConversationViewConversation,
-} from "src/components/project/ProjectConversationView.vue";
+import ProjectConversationView from "src/components/project/ProjectConversationView.vue";
 import type {
   ProjectLanguageOption,
   ProjectPageData,
@@ -364,17 +361,28 @@ const project = computed<ProjectPageData>(() => {
     activityCount: 4,
     attributions: localizedAttributions.value,
     contact: {
-      name: "Aida Saparova",
+      firstName: "Aida",
+      lastName: "Saparova",
       roleLabel: "Facilitator",
       affiliationName: projectOwner?.displayName,
-      imageUrl: projectOwner?.imageUrl,
+      imageUrl: undefined,
       email: "contact@example.org",
       websiteUrl: "https://example.org/project-contact",
     },
   };
 });
 
-const conversation = computed<ProjectConversationViewConversation>(() => ({
+interface ProjectConversationPreview {
+  slugId: string;
+  title: string;
+  bodyHtml: string;
+  isClosed: boolean;
+  stats: { opinionCount: number; participantCount: number; voteCount: number };
+  conversationType: ExtendedConversation["metadata"]["conversationType"];
+  externalSourceConfig: null;
+}
+
+const conversation = computed<ProjectConversationPreview>(() => ({
   slugId: "share01",
   title: projectContentByLanguage[activeScenarioLanguage.value].conversationTitle,
   bodyHtml: projectContentByLanguage[activeScenarioLanguage.value].conversationBody,

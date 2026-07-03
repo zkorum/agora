@@ -52,9 +52,13 @@ export interface AdministratorProjectTranslations {
   externalOrganizationSource: string;
   contactTitle: string;
   contactDescription: string;
-  contactNameLabel: string;
+  contactFirstNameLabel: string;
+  contactLastNameLabel: string;
   contactRoleLabel: string;
   contactEmailLabel: string;
+  contactWebsiteLabel: string;
+  contactImagePathLabel: string;
+  contactImageIsFullPathLabel: string;
   contactOrganizationLabel: string;
   createButton: string;
   manageTitle: string;
@@ -152,10 +156,14 @@ const en: AdministratorProjectTranslations = {
   contactTitle: "Participant contact",
   contactDescription:
     "Optional. If you add contact details, contact name and email are required.",
-  contactNameLabel: "Contact name",
+  contactFirstNameLabel: "Contact first name",
+  contactLastNameLabel: "Contact last name",
   contactRoleLabel: "Contact role label",
   contactEmailLabel: "Contact email",
-  contactOrganizationLabel: "Contact organization",
+  contactWebsiteLabel: "Contact page URL",
+  contactImagePathLabel: "Contact image path",
+  contactImageIsFullPathLabel: "Contact image path is a full URL",
+  contactOrganizationLabel: "Contact organization affiliation",
   createButton: "Create project",
   manageTitle: "Manage projects",
   manageDescription:

@@ -2,7 +2,6 @@
   <ProjectConversationView
     v-model:selected-language="selectedLanguage"
     :project="project"
-    :conversation="conversation"
     :conversation-data="conversationData"
     :language-options="languageOptions"
     initial-language="en"
@@ -99,9 +98,7 @@
 <script setup lang="ts">
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
 import AnalysisReport from "src/components/post/report/AnalysisReport.vue";
-import ProjectConversationView, {
-  type ProjectConversationViewConversation,
-} from "src/components/project/ProjectConversationView.vue";
+import ProjectConversationView from "src/components/project/ProjectConversationView.vue";
 import type {
   ProjectLanguageOption,
   ProjectPageData,
@@ -243,7 +240,17 @@ const project = computed<ProjectPageData>(() => ({
   contact: undefined,
 }));
 
-const conversation = computed<ProjectConversationViewConversation>(() => ({
+interface ProjectConversationPreview {
+  slugId: string;
+  title: string;
+  bodyHtml: string;
+  isClosed: boolean;
+  stats: { opinionCount: number; participantCount: number; voteCount: number };
+  conversationType: ExtendedConversation["metadata"]["conversationType"];
+  externalSourceConfig: null;
+}
+
+const conversation = computed<ProjectConversationPreview>(() => ({
   slugId: "share01",
   title: "Share your ideas",
   bodyHtml:

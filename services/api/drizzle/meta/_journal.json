@@ -547,6 +547,13 @@
       "when": 1782835644607,
       "tag": "0077_nebulous_fantastic_four",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1783034360596,
+      "tag": "0078_rare_the_enforcers",
+      "breakpoints": true
     }
   ]
 }

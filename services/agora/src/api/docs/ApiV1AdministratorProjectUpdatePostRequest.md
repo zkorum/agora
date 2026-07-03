@@ -16,7 +16,7 @@ Name | Type | Description | Notes
 **contentLocalizations** | [**Array&lt;ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInner&gt;**](ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInner.md) |  | [optional] [default to undefined]
 **languageSettings** | [**ApiV1AdministratorProjectCreatePostRequestLanguageSettings**](ApiV1AdministratorProjectCreatePostRequestLanguageSettings.md) |  | [optional] [default to undefined]
 **attributions** | [**Array&lt;ApiV1AdministratorProjectCreatePostRequestAttributionsInner&gt;**](ApiV1AdministratorProjectCreatePostRequestAttributionsInner.md) |  | [optional] [default to undefined]
-**contact** | [**ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact**](ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact.md) |  | [optional] [default to undefined]
+**contact** | [**ApiV1AdministratorProjectCreatePostRequestContact**](ApiV1AdministratorProjectCreatePostRequestContact.md) |  | [optional] [default to undefined]
 **currentProjectSlug** | **string** |  | [default to undefined]
 
 ## Example

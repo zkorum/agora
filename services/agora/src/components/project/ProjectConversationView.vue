@@ -41,15 +41,19 @@
             class="project-conversation-view__consultation-pill"
             :class="{
               'project-conversation-view__consultation-pill--closed':
-                conversation.isClosed,
+                conversationData.metadata.isClosed,
             }"
           >
             <ZKLiveStatusDot
               class="project-conversation-view__consultation-dot"
-              :active="!conversation.isClosed"
+              :active="!conversationData.metadata.isClosed"
               tone="positive"
             />
-            {{ conversation.isClosed ? t("closedConsultation") : t("liveConsultation") }}
+            {{
+              conversationData.metadata.isClosed
+                ? t("closedConsultation")
+                : t("liveConsultation")
+            }}
           </div>
         </div>
       </section>
@@ -81,14 +85,25 @@
               </div>
 
               <div class="project-conversation-view__title-row">
-                <ConversationTitle
-                  :is-private="!conversationData.metadata.isIndexed"
-                  :title="conversationData.payload.title"
-                  size="medium"
-                  :conversation-type="conversationData.metadata.conversationType"
-                  :external-source-config="conversationData.metadata.externalSourceConfig ?? null"
-                  :show-chips="false"
-                />
+                <div class="project-conversation-view__translated-title">
+                  <ContentTranslationControl
+                    v-if="translationPreview?.isAvailable === true"
+                    :model-value="translationPreview.mode"
+                    :source-language-label="translationPreview.sourceLanguageLabel"
+                    :translation-status="translationPreview.translationStatus"
+                    class="project-conversation-view__translation-control"
+                    @update:model-value="setTranslationMode"
+                  />
+
+                  <ConversationTitle
+                    :is-private="!conversationData.metadata.isIndexed"
+                    :title="displayedTitle"
+                    size="medium"
+                    :conversation-type="conversationData.metadata.conversationType"
+                    :external-source-config="conversationData.metadata.externalSourceConfig ?? null"
+                    :show-chips="false"
+                  />
+                </div>
 
                 <div class="project-conversation-view__post-menu">
                   <PostMetadata
@@ -98,8 +113,12 @@
                     :created-at="new Date(conversationData.metadata.createdAt)"
                     :is-edited="conversationData.metadata.isEdited"
                     :post-slug-id="conversationData.metadata.conversationSlugId"
-                    organization-url=""
-                    organization-name=""
+                    :organization-url="
+                      conversationData.metadata.organization?.imageUrl ?? ''
+                    "
+                    :organization-name="
+                      conversationData.metadata.organization?.name ?? ''
+                    "
                     :participation-mode="conversationData.metadata.participationMode"
                     :is-closed="conversationData.metadata.isClosed"
                     :conversation-title="conversationData.payload.title"
@@ -107,16 +126,17 @@
                     :external-source-config="conversationData.metadata.externalSourceConfig ?? null"
                     :show-identity-card="false"
                     :project-slug="project.slug"
+                    @conversation-deleted="emit('conversationDeleted')"
                   />
                 </div>
               </div>
 
               <div
-                v-if="conversationBody.length > 0"
+                v-if="displayedBody !== undefined && displayedBody.length > 0"
                 class="project-conversation-view__conversation-body"
               >
                 <ZKHtmlContent
-                  :html-body="conversationBody"
+                  :html-body="displayedBody"
                   :compact-mode="false"
                   :enable-links="true"
                   :desktop-collapsed-line-count="18"
@@ -299,6 +319,7 @@ import {
   userIdentityCardTranslations,
 } from "src/components/features/user/UserIdentityCard.i18n";
 import PostMetadata from "src/components/post/display/PostMetadata.vue";
+import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
 import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKChip from "src/components/ui-library/ZKChip.vue";
@@ -309,11 +330,10 @@ import {
   parseSupportedDisplayLanguageOrUndefined,
 } from "src/shared/languages";
 import type {
-  ConversationType,
   ExtendedConversation,
-  ExternalSourceConfig,
   ParticipationMode,
 } from "src/shared/types/zod";
+import { useConversationDisplayContent } from "src/utils/translation/useConversationDisplayContent";
 import { computed, ref } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
@@ -326,21 +346,10 @@ import {
   translateProjectPageText,
 } from "./projectPageI18n";
 import type {
-  ProjectActivityStats,
   ProjectAttribution,
   ProjectLanguageOption,
   ProjectPageData,
 } from "./projectPageTypes";
-
-export interface ProjectConversationViewConversation {
-  slugId: string;
-  title: string;
-  bodyHtml: string | undefined;
-  isClosed: boolean;
-  stats: ProjectActivityStats;
-  conversationType: ConversationType;
-  externalSourceConfig: ExternalSourceConfig | null;
-}
 
 interface ProjectConversationStatusBadge {
   key: string;
@@ -351,12 +360,15 @@ interface ProjectConversationStatusBadge {
 
 const props = defineProps<{
   project: ProjectPageData;
-  conversation: ProjectConversationViewConversation;
   conversationData: ExtendedConversation;
   languageOptions: readonly ProjectLanguageOption[];
   initialLanguage: string;
   bannerImageUrl?: string;
   reportLayout?: boolean;
+}>();
+
+const emit = defineEmits<{
+  conversationDeleted: [];
 }>();
 
 const selectedLanguage = defineModel<string | readonly string[]>(
@@ -389,7 +401,11 @@ const userIdentityText = computed<UserIdentityCardTranslations>(
 const projectRoute = computed<RouteLocationRaw>(() => ({
   path: `/project/${props.project.slug}`,
 }));
-const conversationBody = computed(() => props.conversationData.payload.body ?? "");
+const extendedConversation = computed(() => props.conversationData);
+const { displayedTitle, displayedBody, translationPreview, setTranslationMode } =
+  useConversationDisplayContent({
+    extendedConversation,
+  });
 const effectiveBannerImageUrl = computed(
   () => props.bannerImageUrl ?? props.project.bannerImageUrl
 );
@@ -736,6 +752,14 @@ main {
 
 .project-conversation-view__title-row :deep(.title-section) {
   min-width: 0;
+}
+
+.project-conversation-view__translated-title {
+  min-width: 0;
+}
+
+.project-conversation-view__translation-control {
+  margin-block-end: 0.35rem;
 }
 
 .project-conversation-view__breadcrumb {
