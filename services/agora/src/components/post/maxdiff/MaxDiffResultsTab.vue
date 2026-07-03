@@ -58,7 +58,7 @@
 
       <!-- Completed items -->
       <div
-        v-if="currentTab === 'Summary' || currentTab === 'Completed'"
+        v-if="hasLifecycleTabs && (currentTab === 'Summary' || currentTab === 'Completed')"
         class="tabComponent"
       >
         <MaxDiffItemListSection
@@ -77,7 +77,7 @@
 
       <!-- Canceled items -->
       <div
-        v-if="currentTab === 'Summary' || currentTab === 'Canceled'"
+        v-if="hasLifecycleTabs && (currentTab === 'Summary' || currentTab === 'Canceled')"
         class="tabComponent"
       >
         <MaxDiffItemListSection
@@ -103,7 +103,7 @@
             <p>{{ t("communityLearnMoreHow") }}</p>
             <p>{{ t("communityLearnMoreCocm") }}</p>
             <p>{{ t("communityLearnMoreDiversity") }}</p>
-            <p>{{ isGitHubLinked ? t("communityLearnMoreSourceGitHub") : t("communityLearnMoreSourceManual") }}</p>
+            <p>{{ hasLifecycleTabs ? t("communityLearnMoreSourceGitHub") : t("communityLearnMoreSourceManual") }}</p>
             <p class="learn-more-reference">
               {{ t("communityLearnMoreReference") }}
               <a
@@ -205,13 +205,29 @@ function getMaxDiffTabRoute(item: string): RouteLocationRaw {
   return { path: route.path, query: { tab: item } };
 }
 
-const maxdiffTabItems: MaxDiffShortcutItem[] = [
-  "Summary",
-  "Me",
-  "Results",
-  "Completed",
-  "Canceled",
-];
+const hasLifecycleTabs = computed(
+  () => props.conversationData.metadata.externalSourceConfig !== null,
+);
+
+const maxdiffTabItems = computed<MaxDiffShortcutItem[]>(() => {
+  const baseItems: MaxDiffShortcutItem[] = ["Summary", "Me", "Results"];
+  if (!hasLifecycleTabs.value) {
+    return baseItems;
+  }
+  return [...baseItems, "Completed", "Canceled"];
+});
+
+function isLifecycleTab(item: MaxDiffShortcutItem): boolean {
+  return item === "Completed" || item === "Canceled";
+}
+
+function isTabAvailable(item: MaxDiffShortcutItem): boolean {
+  return hasLifecycleTabs.value || !isLifecycleTab(item);
+}
+
+if (!isTabAvailable(currentTab.value)) {
+  currentTab.value = "Summary";
+}
 
 const tabLabelMap: Record<string, string> = {
   Summary: t("tabSummary"),
@@ -228,7 +244,7 @@ function getTabLabel(item: string): string {
 function onTabChange(value: string): void {
   const parsed = maxdiffShortcutItemSchema.safeParse(value);
   if (parsed.success) {
-    currentTab.value = parsed.data;
+    currentTab.value = isTabAvailable(parsed.data) ? parsed.data : "Summary";
   }
 }
 
@@ -243,9 +259,6 @@ const registerChildRefreshHandler = inject<RegisterChildRefreshHandler>(
   },
 );
 let unregisterChildRefreshHandler: (() => void) | undefined;
-
-const isGitHubLinked =
-  props.conversationData.metadata.externalSourceConfig !== null;
 
 const conversationSlugId =
   props.conversationData.metadata.conversationSlugId;
@@ -324,7 +337,7 @@ function openLifecycleLearnMore(
   const keys = keyMap[lifecycle];
   lifecycleInfoTitle.value = t(keys.title);
   lifecycleInfoContent.value = t(
-    isGitHubLinked ? keys.github : keys.manual,
+    hasLifecycleTabs.value ? keys.github : keys.manual,
   );
   showLifecycleInfoDialog.value = true;
 }
@@ -406,6 +419,10 @@ async function fetchResults({ showLoading }: { showLoading: boolean }): Promise<
 }
 
 async function fetchAllLifecycleItems({ showLoading }: { showLoading: boolean }): Promise<void> {
+  if (!hasLifecycleTabs.value) {
+    return;
+  }
+
   await Promise.all([
     fetchLifecycleItems({ lifecycle: "completed", itemsRef: completedItems, loadingRef: isCompletedLoading, showLoading }),
     fetchLifecycleItems({ lifecycle: "canceled", itemsRef: canceledItems, loadingRef: isCanceledLoading, showLoading }),
