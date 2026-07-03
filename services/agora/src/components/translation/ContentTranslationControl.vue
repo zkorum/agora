@@ -1,5 +1,5 @@
 <template>
-  <div class="content-translation-control">
+  <InlineMetadataLine class="content-translation-control">
     <span v-if="translationStatus === 'pending' || translationStatus === 'running'" class="content-translation-control__label">
       {{ t("translating") }}
     </span>
@@ -17,10 +17,11 @@
     >
       {{ toggleLabel }}
     </button>
-  </div>
+  </InlineMetadataLine>
 </template>
 
 <script setup lang="ts">
+import InlineMetadataLine from "src/components/ui-library/InlineMetadataLine.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { LocalizedContentTranslationStatus } from "src/shared/types/zod";
 import type { ContentTranslationDisplayMode } from "src/utils/translation/contentTranslation";
@@ -71,18 +72,9 @@ function handleToggleClick(event: MouseEvent): void {
 </script>
 
 <style scoped lang="scss">
-.content-translation-control {
-  display: flex;
-  align-items: center;
-  gap: 0.28rem;
-  color: $color-text-weak;
-  font-size: 0.75rem;
-  line-height: 1.2;
-}
-
 .content-translation-control__icon {
-  width: 0.88rem;
-  height: 0.88rem;
+  width: 0.82rem;
+  height: 0.82rem;
   flex: 0 0 auto;
   opacity: 0.72;
 }
@@ -90,7 +82,8 @@ function handleToggleClick(event: MouseEvent): void {
 .content-translation-control__meta {
   display: inline-flex;
   align-items: center;
-  gap: 0.28rem;
+  gap: 0.3rem;
+  flex: none;
 }
 
 .content-translation-control__label {
@@ -104,6 +97,7 @@ function handleToggleClick(event: MouseEvent): void {
   color: $primary;
   font: inherit;
   font-weight: var(--font-weight-medium);
+  white-space: nowrap;
   cursor: pointer;
 }
 

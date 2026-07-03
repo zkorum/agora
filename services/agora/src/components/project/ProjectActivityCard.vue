@@ -8,13 +8,21 @@
   >
     <article>
       <div class="activity-card__topline">
-        <span
-          class="activity-card__type"
-          :class="`activity-card__type--${activity.kind}`"
-        >
-          <q-icon :name="activityTypeIcon" size="1rem" />
-          {{ activityTypeLabel }}
-        </span>
+        <div class="activity-card__topline-left">
+          <span
+            class="activity-card__type"
+            :class="`activity-card__type--${activity.kind}`"
+          >
+            <q-icon :name="activityTypeIcon" size="1rem" />
+            {{ activityTypeLabel }}
+          </span>
+
+          <ContentMetadataLine
+            :created-at="activity.createdAt"
+            :is-edited="activity.isEdited"
+            :edited-label="userIdentityText.edited"
+          />
+        </div>
 
         <span
           class="activity-card__status"
@@ -93,7 +101,12 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import {
+  type UserIdentityCardTranslations,
+  userIdentityCardTranslations,
+} from "src/components/features/user/UserIdentityCard.i18n";
 import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
+import ContentMetadataLine from "src/components/ui-library/ContentMetadataLine.vue";
 import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKPlainTextContent from "src/components/ui-library/ZKPlainTextContent.vue";
 import type {
@@ -131,6 +144,9 @@ const { spokenLanguages } = storeToRefs(useLanguageStore());
 const activityTranslationModePreference = ref<
   ContentTranslationDisplayMode | undefined
 >();
+const userIdentityText = computed<UserIdentityCardTranslations>(
+  () => userIdentityCardTranslations[props.languageCode]
+);
 
 const activityTypeLabel = computed(() =>
   props.activity.kind === "conversation" ? t("conversationType") : t("voteType")
@@ -317,6 +333,14 @@ article {
   align-items: center;
   justify-content: space-between;
   gap: 0.65rem;
+}
+
+.activity-card__topline-left {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
+  gap: 0.5rem;
 }
 
 .activity-card__type,

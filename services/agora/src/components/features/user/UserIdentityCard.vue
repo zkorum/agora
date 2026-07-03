@@ -25,12 +25,12 @@
         />
       </div>
 
-      <div :style="{ fontSize: '0.75rem' }" class="timestamp-container">
-        {{ timeAgo }}
-        <template v-if="isEdited">
-          <span class="bullet">•</span>
-          <span>{{ t("edited") }}</span>
-        </template>
+      <div class="timestamp-container">
+        <ContentMetadataLine
+          :created-at="createdAt"
+          :is-edited="isEdited"
+          :edited-label="t('edited')"
+        />
         <template v-if="participationMode">
           <span class="bullet">•</span>
           <span
@@ -67,8 +67,8 @@
 import OrganizationImage from "src/components/account/OrganizationImage.vue";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import UserMetadata from "src/components/features/user/UserMetadata.vue";
+import ContentMetadataLine from "src/components/ui-library/ContentMetadataLine.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useLocalizedTimeAgo } from "src/composables/ui/useLocalizedTimeAgo";
 import type { ParticipationMode } from "src/shared/types/zod";
 
 import {
@@ -76,7 +76,7 @@ import {
   userIdentityCardTranslations,
 } from "./UserIdentityCard.i18n";
 
-const props = defineProps<{
+defineProps<{
   userIdentity: string;
   authorVerified: boolean;
   createdAt: Date;
@@ -86,8 +86,6 @@ const props = defineProps<{
   showAvatarFallback: boolean;
   participationMode?: ParticipationMode;
 }>();
-
-const timeAgo = useLocalizedTimeAgo(() => props.createdAt);
 
 const { t } = useComponentI18n<UserIdentityCardTranslations>(
   userIdentityCardTranslations

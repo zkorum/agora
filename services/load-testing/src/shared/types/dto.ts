@@ -425,6 +425,8 @@ const zodProjectPageActivity = z
         slug: zodSlugId,
         kind: z.enum(["conversation", "vote"]),
         isClosed: z.boolean(),
+        createdAt: zodDateTimeFlexible,
+        isEdited: z.boolean(),
         title: zodConversationTitle,
         bodyPlainText: zodConversationBodyPlainTextInput.default(""),
         originalContent: zodProjectPageActivityContentVariant,

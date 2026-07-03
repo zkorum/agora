@@ -5173,6 +5173,8 @@ export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInner {
     'slug': string;
     'kind': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerKindEnum;
     'isClosed': boolean;
+    'createdAt': string;
+    'isEdited': boolean;
     'title': string;
     'bodyPlainText': string;
     'originalContent': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOriginalContent;

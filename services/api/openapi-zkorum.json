@@ -2334,6 +2334,13 @@
                                                     "isClosed": {
                                                         "type": "boolean"
                                                     },
+                                                    "createdAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "isEdited": {
+                                                        "type": "boolean"
+                                                    },
                                                     "title": {
                                                         "type": "string",
                                                         "minLength": 1,
@@ -2739,6 +2746,8 @@
                                                     "slug",
                                                     "kind",
                                                     "isClosed",
+                                                    "createdAt",
+                                                    "isEdited",
                                                     "title",
                                                     "bodyPlainText",
                                                     "originalContent",
@@ -2917,6 +2926,13 @@
                                                     "isClosed": {
                                                         "type": "boolean"
                                                     },
+                                                    "createdAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "isEdited": {
+                                                        "type": "boolean"
+                                                    },
                                                     "title": {
                                                         "type": "string",
                                                         "minLength": 1,
@@ -3322,6 +3338,8 @@
                                                     "slug",
                                                     "kind",
                                                     "isClosed",
+                                                    "createdAt",
+                                                    "isEdited",
                                                     "title",
                                                     "bodyPlainText",
                                                     "originalContent",
