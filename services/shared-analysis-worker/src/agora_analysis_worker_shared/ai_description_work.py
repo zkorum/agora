@@ -60,9 +60,6 @@ from agora_analysis_worker_shared.generated_models import (
     OpinionGroupLineageDescriptionWork,
     OpinionGroupOpinionStats,
     OpinionGroupVariant,
-    PremiumFeature,
-    PremiumFeatureEntitlement,
-    ProjectOrganizationOwnership,
     RealtimeEventOutbox,
 )
 from agora_analysis_worker_shared.generated_shared_types import (
@@ -74,8 +71,9 @@ log = logging.getLogger(__name__)
 POSTGRES_INSERT_BIND_PARAM_LIMIT = 60_000
 DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE = 4
 FIRST_PASS_MAX_EXISTING_ATTEMPT_COUNT = 1
-SUPPORTED_EAGER_TRANSLATION_TARGET_LANGUAGE_CODES = set(
-    SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES
+AI_DESCRIPTION_SOURCE_LOCALE = "en"
+SUPPORTED_EAGER_AI_DESCRIPTION_TARGET_LANGUAGE_CODES = (
+    set(SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES) - {AI_DESCRIPTION_SOURCE_LOCALE}
 )
 
 
@@ -261,14 +259,12 @@ class CandidateLocaleRequestRow:
 class EagerDescriptionCandidateRow:
     conversation_id: int
     candidate_id: int
-    language_settings_source: str
 
 
 @dataclass(frozen=True)
-class EagerAdditionalTranslationLocaleRow:
+class EagerAiDescriptionTargetLocaleRow:
     conversation_id: int
     language_code: str
-    dynamic_translation_entitled: bool
 
 
 @dataclass(frozen=True)
@@ -279,7 +275,6 @@ class EagerCandidateOptionRow:
     group_count: int
     preferred_group_count: int | None
     selection_score: float
-    language_settings_source: str
 
 
 @dataclass(frozen=True)
@@ -1699,24 +1694,22 @@ def lineage_description_work_demands_for_eager_candidates(
     return list(demands_by_lineage_id.values())
 
 
-def eager_translation_target_locales_by_candidate(
+def eager_ai_description_target_locales_by_candidate(
     *,
     candidates: Sequence[EagerDescriptionCandidateRow],
-    additional_locale_rows: Sequence[EagerAdditionalTranslationLocaleRow],
+    target_locale_rows: Sequence[EagerAiDescriptionTargetLocaleRow],
     supported_target_language_codes: set[str] | None = None,
 ) -> dict[int, tuple[str, ...]]:
     supported_codes = (
         supported_target_language_codes
         if supported_target_language_codes is not None
-        else SUPPORTED_EAGER_TRANSLATION_TARGET_LANGUAGE_CODES
-    )
-    additional_locales_by_conversation_id: dict[int, set[str]] = {}
-    for row in additional_locale_rows:
-        if not row.dynamic_translation_entitled:
-            continue
+        else SUPPORTED_EAGER_AI_DESCRIPTION_TARGET_LANGUAGE_CODES
+    ) - {AI_DESCRIPTION_SOURCE_LOCALE}
+    target_locales_by_conversation_id: dict[int, set[str]] = {}
+    for row in target_locale_rows:
         if row.language_code not in supported_codes:
             continue
-        additional_locales_by_conversation_id.setdefault(row.conversation_id, set()).add(
+        target_locales_by_conversation_id.setdefault(row.conversation_id, set()).add(
             row.language_code
         )
 
@@ -1724,7 +1717,7 @@ def eager_translation_target_locales_by_candidate(
     for candidate in candidates:
         target_locales: set[str] = set()
         target_locales.update(
-            additional_locales_by_conversation_id.get(candidate.conversation_id, set())
+            target_locales_by_conversation_id.get(candidate.conversation_id, set())
         )
         if target_locales:
             target_locales_by_candidate_id[candidate.candidate_id] = tuple(
@@ -2033,7 +2026,6 @@ def _select_eager_candidates(
         candidates_by_id[selected_row.candidate_id] = EagerDescriptionCandidateRow(
             conversation_id=selected_row.conversation_id,
             candidate_id=selected_row.candidate_id,
-            language_settings_source=selected_row.language_settings_source,
         )
 
     return list(candidates_by_id.values())
@@ -2065,7 +2057,6 @@ def _fetch_eager_description_candidates(
             OpinionGroupCandidate.id.label("candidate_id"),
             OpinionGroupVariant.group_count,
             Conversation.preferred_opinion_group_count,
-            Conversation.language_settings_source,
             OpinionGroupCandidateAssessment.selection_score,
         )
         .join(
@@ -2130,7 +2121,6 @@ def _fetch_eager_description_candidates(
                 group_count=row.group_count,
                 preferred_group_count=row.preferred_opinion_group_count,
                 selection_score=row.selection_score,
-                language_settings_source=row.language_settings_source,
             )
             for row in rows
             if row.selection_score is not None
@@ -2138,11 +2128,11 @@ def _fetch_eager_description_candidates(
     )
 
 
-def _fetch_eager_additional_translation_locale_rows(
+def _fetch_eager_ai_description_target_locale_rows(
     session: Session,
     *,
     conversation_ids: list[int],
-) -> list[EagerAdditionalTranslationLocaleRow]:
+) -> list[EagerAiDescriptionTargetLocaleRow]:
     if not conversation_ids:
         return []
 
@@ -2150,59 +2140,28 @@ def _fetch_eager_additional_translation_locale_rows(
         select(
             ConversationTranslationTargetLanguage.conversation_id,
             ConversationTranslationTargetLanguage.language_code,
-            _active_dynamic_translation_entitlement_exists().label(
-                "dynamic_translation_entitled"
-            ),
         )
         .select_from(ConversationTranslationTargetLanguage)
-        .join(
-            Conversation,
-            Conversation.id == ConversationTranslationTargetLanguage.conversation_id,
-        )
         .where(
             and_(
-                Conversation.id.in_(sorted(set(conversation_ids))),
-                Conversation.dynamic_translation_enabled.is_(True),
-                ConversationTranslationTargetLanguage.language_code.in_(
-                    sorted(SUPPORTED_EAGER_TRANSLATION_TARGET_LANGUAGE_CODES)
+                ConversationTranslationTargetLanguage.conversation_id.in_(
+                    sorted(set(conversation_ids))
                 ),
+                ConversationTranslationTargetLanguage.language_code.in_(
+                    sorted(SUPPORTED_EAGER_AI_DESCRIPTION_TARGET_LANGUAGE_CODES)
+                ),
+                ConversationTranslationTargetLanguage.deleted_at.is_(None),
             )
         )
     ).all()
 
     return [
-        EagerAdditionalTranslationLocaleRow(
+        EagerAiDescriptionTargetLocaleRow(
             conversation_id=row.conversation_id,
             language_code=row.language_code,
-            dynamic_translation_entitled=row.dynamic_translation_entitled,
         )
         for row in rows
     ]
-
-
-def _active_dynamic_translation_entitlement_exists() -> ColumnElement[bool]:
-    now = func.now()
-    return (
-        select(PremiumFeatureEntitlement.id)
-        .join(
-            ProjectOrganizationOwnership,
-            PremiumFeatureEntitlement.organization_id
-            == ProjectOrganizationOwnership.organization_id,
-        )
-        .where(
-            and_(
-                ProjectOrganizationOwnership.project_id == Conversation.project_id,
-                PremiumFeatureEntitlement.feature == PremiumFeature.dynamic_translation,
-                PremiumFeatureEntitlement.starts_at <= now,
-                PremiumFeatureEntitlement.revoked_at.is_(None),
-                or_(
-                    PremiumFeatureEntitlement.expires_at.is_(None),
-                    PremiumFeatureEntitlement.expires_at > now,
-                ),
-            )
-        )
-        .exists()
-    )
 
 
 def _materialize_eager_lineage_description_work(
@@ -2255,13 +2214,13 @@ def _materialize_eager_translation_work(
         session,
         candidate_ids=[candidate.candidate_id for candidate in candidates],
     )
-    additional_locale_rows = _fetch_eager_additional_translation_locale_rows(
+    target_locale_rows = _fetch_eager_ai_description_target_locale_rows(
         session,
         conversation_ids=[candidate.conversation_id for candidate in candidates],
     )
-    target_locales_by_candidate_id = eager_translation_target_locales_by_candidate(
+    target_locales_by_candidate_id = eager_ai_description_target_locales_by_candidate(
         candidates=candidates,
-        additional_locale_rows=additional_locale_rows,
+        target_locale_rows=target_locale_rows,
     )
     description_ids = sorted(
         {
@@ -2478,16 +2437,15 @@ def _translation_work_candidate_relevance_conditions(
     eager_target_language_candidate = and_(
         effective_preferred_candidate,
         OpinionGroupDescriptionTranslationWork.locale.in_(
-            sorted(SUPPORTED_EAGER_TRANSLATION_TARGET_LANGUAGE_CODES)
+            sorted(SUPPORTED_EAGER_AI_DESCRIPTION_TARGET_LANGUAGE_CODES)
         ),
-        _active_dynamic_translation_entitlement_exists(),
-        Conversation.dynamic_translation_enabled.is_(True),
         select(ConversationTranslationTargetLanguage.id)
         .where(
             and_(
                 ConversationTranslationTargetLanguage.conversation_id == Conversation.id,
                 ConversationTranslationTargetLanguage.language_code
                 == OpinionGroupDescriptionTranslationWork.locale,
+                ConversationTranslationTargetLanguage.deleted_at.is_(None),
             )
         )
         .exists(),
