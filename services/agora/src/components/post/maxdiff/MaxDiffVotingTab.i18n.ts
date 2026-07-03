@@ -60,7 +60,7 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreScoringLink: "How your votes become a ranking \u2192",
     scoringDetailTitle: "From votes to ranking",
     scoringDetailPipeline: "Your best-worst choices are converted into preference scores using a mathematical model. These scores are combined with other participants' votes by Solidago, an open-source aggregation algorithm that weighs contributions by user trust level.",
-    scoringDetailCocm: "To keep the ranking fair, the system uses Connection-Oriented Cluster Match (COCM). This prevents groups of socially connected voters from having outsized influence, so every participant's voice contributes meaningfully.",
+    scoringDetailCocm: "Connection-Oriented Cluster Match (COCM) is an optional setup that is not enabled here yet. When enabled, it helps correct unrepresentative participation by quadratically improving how votes are distributed across groups.",
     scoringDetailReference: "Learn more:",
   },
   ar: {
@@ -89,7 +89,7 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreScoringLink: "كيف تتحول أصواتك إلى ترتيب \u2190",
     scoringDetailTitle: "من الأصوات إلى الترتيب",
     scoringDetailPipeline: "تُحوَّل اختياراتك للأفضل والأسوأ إلى درجات تفضيل باستخدام نموذج رياضي. تُدمج هذه الدرجات مع أصوات المشاركين الآخرين بواسطة Solidago، خوارزمية تجميع مفتوحة المصدر تُرجّح المساهمات حسب مستوى ثقة المستخدم.",
-    scoringDetailCocm: "للحفاظ على عدالة الترتيب، يستخدم النظام COCM (مطابقة العناقيد الموجّهة بالروابط). يمنع هذا مجموعات المصوّتين المرتبطين اجتماعياً من التأثير المفرط، بحيث يساهم صوت كل مشارك بشكل فعّال.",
+    scoringDetailCocm: "مطابقة العناقيد الموجّهة بالروابط (COCM) إعداد اختياري غير مفعّل هنا بعد. عند تفعيله، يساعد في تصحيح المشاركة غير الممثلة عبر تحسين توزيع الأصوات بين المجموعات بشكل تربيعي.",
     scoringDetailReference: "اعرف المزيد:",
   },
   es: {
@@ -118,7 +118,7 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreScoringLink: "Cómo tus votos se convierten en una clasificación \u2192",
     scoringDetailTitle: "De votos a clasificación",
     scoringDetailPipeline: "Tus elecciones de mejor y peor se convierten en puntuaciones de preferencia mediante un modelo matemático. Estas puntuaciones se combinan con los votos de otros participantes mediante Solidago, un algoritmo de agregación de código abierto que pondera las contribuciones según el nivel de confianza del usuario.",
-    scoringDetailCocm: "Para mantener la equidad del ranking, el sistema utiliza COCM (Connection-Oriented Cluster Match). Esto evita que grupos de votantes socialmente conectados tengan una influencia desproporcionada, asegurando que la voz de cada participante contribuya significativamente.",
+    scoringDetailCocm: "Connection-Oriented Cluster Match (COCM) es una configuración opcional que aún no está activada aquí. Cuando se activa, ayuda a corregir una participación no representativa mejorando de forma cuadrática cómo se distribuyen los votos entre grupos.",
     scoringDetailReference: "Más información:",
   },
   fa: {
@@ -147,7 +147,7 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreScoringLink: "چگونه آرای شما به رتبه‌بندی تبدیل می‌شوند \u2190",
     scoringDetailTitle: "از آرا تا رتبه‌بندی",
     scoringDetailPipeline: "انتخاب‌های بهترین و بدترین شما با استفاده از یک مدل ریاضی به امتیازات ترجیحی تبدیل می‌شوند. این امتیازات با آرای سایر شرکت‌کنندگان توسط Solidago، یک الگوریتم تجمیع متن‌باز که مشارکت‌ها را بر اساس سطح اعتماد کاربر وزن‌دهی می‌کند، ترکیب می‌شوند.",
-    scoringDetailCocm: "برای حفظ عدالت رتبه‌بندی، سیستم از COCM (تطبیق خوشه‌ای مبتنی بر ارتباط) استفاده می‌کند. این کار از تأثیر نامتناسب گروه‌های رأی‌دهندگان مرتبط اجتماعی جلوگیری می‌کند تا صدای هر شرکت‌کننده به طور معناداری مشارکت داشته باشد.",
+    scoringDetailCocm: "Connection-Oriented Cluster Match (COCM) یک تنظیم اختیاری است که هنوز اینجا فعال نشده است. وقتی فعال شود، با بهبود درجه‌دومی توزیع آرا میان گروه‌ها به اصلاح مشارکت غیرنماینده کمک می‌کند.",
     scoringDetailReference: "اطلاعات بیشتر:",
   },
   he: {
@@ -176,7 +176,7 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreScoringLink: "איך ההצבעות שלכם הופכות לדירוג \u2190",
     scoringDetailTitle: "מהצבעות לדירוג",
     scoringDetailPipeline: "הבחירות שלכם של הטוב והרע ביותר מומרות לציוני העדפה באמצעות מודל מתמטי. ציונים אלה משולבים עם הצבעות משתתפים אחרים על ידי Solidago, אלגוריתם צבירה בקוד פתוח שמשקלל תרומות לפי רמת האמון של המשתמש.",
-    scoringDetailCocm: "כדי לשמור על הוגנות הדירוג, המערכת משתמשת ב-COCM (התאמת אשכולות מוכוונת קשרים). זה מונע מקבוצות של מצביעים בעלי קשרים חברתיים להשפיע באופן מוגזם, כך שקולו של כל משתתף תורם באופן משמעותי.",
+    scoringDetailCocm: "Connection-Oriented Cluster Match (COCM) היא הגדרה אופציונלית שעדיין אינה מופעלת כאן. כשהיא מופעלת, היא עוזרת לתקן השתתפות שאינה מייצגת באמצעות שיפור ריבועי של חלוקת הקולות בין קבוצות.",
     scoringDetailReference: "מידע נוסף:",
   },
   fr: {
@@ -205,7 +205,7 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreScoringLink: "Comment vos votes deviennent un classement \u2192",
     scoringDetailTitle: "Des votes au classement",
     scoringDetailPipeline: "Vos choix du meilleur et du pire sont convertis en scores de préférence via un modèle mathématique. Ces scores sont combinés avec les votes des autres participants par Solidago, un algorithme d'agrégation open source qui pondère les contributions selon le niveau de confiance de l'utilisateur.",
-    scoringDetailCocm: "Pour garantir l'équité du classement, le système utilise COCM (Connection-Oriented Cluster Match). Cela empêche les groupes de votants socialement connectés d'avoir une influence disproportionnée, afin que la voix de chaque participant contribue de manière significative.",
+    scoringDetailCocm: "Connection-Oriented Cluster Match (COCM) est une configuration optionnelle qui n'est pas encore activée ici. Une fois activée, elle aide à corriger une participation non représentative en améliorant quadratiquement la répartition des votes entre les groupes.",
     scoringDetailReference: "En savoir plus :",
   },
   "zh-Hans": {
@@ -234,7 +234,7 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreScoringLink: "您的投票如何变成排名 \u2192",
     scoringDetailTitle: "从投票到排名",
     scoringDetailPipeline: "您的最佳和最差选择通过数学模型转换为偏好分数。这些分数通过 Solidago（一种按用户信任级别加权贡献的开源聚合算法）与其他参与者的投票合并。",
-    scoringDetailCocm: "为确保排名公平，系统使用 COCM（面向连接的聚类匹配）。这防止了社交关联投票者群体产生过大影响力，确保每位参与者的声音都能有意义地贡献。",
+    scoringDetailCocm: "Connection-Oriented Cluster Match (COCM) 是一项可选设置，此处尚未启用。启用后，它通过以二次方式改善各群体之间的投票分配，帮助修正参与者分布不具代表性的问题。",
     scoringDetailReference: "了解更多：",
   },
   "zh-Hant": {
@@ -263,7 +263,7 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreScoringLink: "您的投票如何變成排名 \u2192",
     scoringDetailTitle: "從投票到排名",
     scoringDetailPipeline: "您的最佳和最差選擇透過數學模型轉換為偏好分數。這些分數透過 Solidago（一種按使用者信任級別加權貢獻的開源聚合演算法）與其他參與者的投票合併。",
-    scoringDetailCocm: "為確保排名公平，系統使用 COCM（面向連接的聚類匹配）。這防止了社交關聯投票者群體產生過大影響力，確保每位參與者的聲音都能有意義地貢獻。",
+    scoringDetailCocm: "Connection-Oriented Cluster Match (COCM) 是一項可選設定，此處尚未啟用。啟用後，它透過以二次方式改善各群體之間的投票分配，協助修正參與者分布不具代表性的問題。",
     scoringDetailReference: "了解更多：",
   },
   ja: {
@@ -292,7 +292,7 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreScoringLink: "あなたの投票がランキングになるまで \u2192",
     scoringDetailTitle: "投票からランキングへ",
     scoringDetailPipeline: "あなたのベスト・ワーストの選択は数学モデルにより選好スコアに変換されます。これらのスコアはSolidago（ユーザーの信頼レベルに基づいて貢献を重み付けするオープンソースの集約アルゴリズム）によって他の参加者の投票と統合されます。",
-    scoringDetailCocm: "ランキングの公正性を保つため、システムはCOCM（接続指向クラスターマッチ）を使用します。これにより、社会的につながりのある投票者グループの過大な影響力を防ぎ、すべての参加者の声が有意義に貢献できるようにします。",
+    scoringDetailCocm: "Connection-Oriented Cluster Match (COCM) は任意設定で、ここではまだ有効化されていません。有効化すると、グループ間の票の配分を二次的に改善することで、代表性の低い参加状況の補正に役立ちます。",
     scoringDetailReference: "詳しくはこちら：",
   },
   ky: {
@@ -321,7 +321,7 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreScoringLink: "Добуштарыңыз кантип рейтингге айланат \u2192",
     scoringDetailTitle: "Добуштардан рейтингге",
     scoringDetailPipeline: "Сиздин эң жакшы жана эң жаман тандоолоруңуз математикалык модель аркылуу артыкчылык упайларына айландырылат. Бул упайлар башка катышуучулардын добуштары менен Solidago (колдонуучунун ишеним деңгээлине жараша салымдарды салмактаган ачык булак топтоо алгоритми) аркылуу бириктирилет.",
-    scoringDetailCocm: "Рейтингдин адилеттүүлүгүн сактоо үчүн система COCM (байланышка багытталган кластер дал келтирүү) колдонот. Бул социалдык байланыштуу добуш берүүчүлөр тобунун ашыкча таасирин алдын алып, ар бир катышуучунун үнү маанилүү салым кошуусун камсыздайт.",
+    scoringDetailCocm: "Connection-Oriented Cluster Match (COCM) бул кошумча жөндөө жана бул жерде азырынча иштетилген эмес. Иштетилгенде, топтор арасында добуштардын бөлүштүрүлүшүн квадраттык түрдө жакшыртып, өкүлчүлүгү жетишсиз катышууну оңдоого жардам берет.",
     scoringDetailReference: "Көбүрөөк билүү:",
   },
   ru: {
@@ -350,7 +350,7 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreScoringLink: "Как ваши голоса становятся рейтингом \u2192",
     scoringDetailTitle: "От голосов к рейтингу",
     scoringDetailPipeline: "Ваши выборы лучшего и худшего преобразуются в баллы предпочтений с помощью математической модели. Эти баллы объединяются с голосами других участников алгоритмом Solidago — открытым алгоритмом агрегации, взвешивающим вклад по уровню доверия пользователя.",
-    scoringDetailCocm: "Для справедливости рейтинга система использует COCM (Connection-Oriented Cluster Match). Это предотвращает непропорциональное влияние групп социально связанных голосующих, чтобы голос каждого участника вносил значимый вклад.",
+    scoringDetailCocm: "Connection-Oriented Cluster Match (COCM) — это необязательная настройка, которая здесь пока не включена. При включении она помогает корректировать нерепрезентативное участие, квадратично улучшая распределение голосов между группами.",
     scoringDetailReference: "Подробнее:",
   },
 };

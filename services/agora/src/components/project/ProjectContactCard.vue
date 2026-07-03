@@ -51,9 +51,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-
 import OrganizationImage from "src/components/account/OrganizationImage.vue";
+import { computed } from "vue";
 
 import ProjectActionButton from "./ProjectActionButton.vue";
 import {

@@ -8,6 +8,8 @@ Name | Type | Description | Notes
 **slug** | **string** |  | [default to undefined]
 **kind** | **string** |  | [default to undefined]
 **isClosed** | **boolean** |  | [default to undefined]
+**createdAt** | **string** |  | [default to undefined]
+**isEdited** | **boolean** |  | [default to undefined]
 **title** | **string** |  | [default to undefined]
 **bodyPlainText** | **string** |  | [default to '']
 **originalContent** | [**ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOriginalContent**](ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOriginalContent.md) |  | [default to undefined]
@@ -25,6 +27,8 @@ const instance: ApiV1ProjectPageFetchPost200ResponseActivitiesInner = {
     slug,
     kind,
     isClosed,
+    createdAt,
+    isEdited,
     title,
     bodyPlainText,
     originalContent,

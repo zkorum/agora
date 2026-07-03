@@ -114,6 +114,7 @@ interface ProjectActivityRow {
     slug: string;
     isClosed: boolean;
     createdAt: Date;
+    isEdited: boolean;
     conversationType: "polis" | "maxdiff";
     title: string;
     bodyPlainText: string | null;
@@ -652,6 +653,7 @@ async function fetchProjectActivityRowsByStatus({
             slug: conversationTable.slugId,
             isClosed: conversationTable.isClosed,
             createdAt: conversationTable.createdAt,
+            isEdited: conversationTable.isEdited,
             conversationType: conversationTable.conversationType,
             title: conversationContentTable.title,
             bodyPlainText: conversationContentTable.bodyPlainText,
@@ -679,6 +681,7 @@ async function fetchProjectActivityRowsByStatus({
         slug: row.slug,
         isClosed: row.isClosed,
         createdAt: row.createdAt,
+        isEdited: row.isEdited,
         conversationType: row.conversationType,
         title: row.title,
         bodyPlainText: row.bodyPlainText,
@@ -879,6 +882,8 @@ async function fetchProjectActivities({
             slug: row.slug,
             kind: row.conversationType === "maxdiff" ? "vote" : "conversation",
             isClosed: row.isClosed,
+            createdAt: row.createdAt,
+            isEdited: row.isEdited,
             title: translatedContent?.title ?? row.title,
             bodyPlainText: translatedContent?.bodyPlainText ?? row.bodyPlainText ?? "",
             originalContent,

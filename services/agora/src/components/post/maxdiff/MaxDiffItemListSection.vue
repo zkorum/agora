@@ -35,14 +35,15 @@
               v-for="(item, index) in displayItems"
               :key="item.slugId"
               class="item-row"
-              @click="props.onClickItem({ title: item.title, body: item.body, externalUrl: item.externalUrl })"
+              :class="{ 'item-row--clickable': canOpenItem(item) }"
+              @click="handleItemClick(item)"
             >
               <span class="item-number">{{ index + 1 }}</span>
               <div class="item-details">
                 <ZKHtmlContent
                   class="item-content"
                   :html-body="item.title"
-                  :compact-mode="true"
+                  :compact-mode="compactMode"
                   :enable-links="false"
                   content-role="title"
                 />
@@ -108,12 +109,45 @@ const props = defineProps<{
 }>();
 
 const COMPACT_LIMIT = 3;
+const EXPANDABLE_COMPACT_TITLE_LENGTH = 220;
 
 const displayItems = computed(() =>
   props.compactMode ? props.items.slice(0, COMPACT_LIMIT) : props.items,
 );
 
 const hasMore = computed(() => props.items.length > COMPACT_LIMIT);
+
+function plainTextFromHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").trim();
+}
+
+function hasBodyContent(body: string | null): boolean {
+  return body !== null && plainTextFromHtml(body).length > 0;
+}
+
+function canOpenItem(item: MaxDiffListItem): boolean {
+  if (hasBodyContent(item.body)) {
+    return true;
+  }
+  if (item.externalUrl !== null) {
+    return true;
+  }
+  return (
+    props.compactMode &&
+    plainTextFromHtml(item.title).length > EXPANDABLE_COMPACT_TITLE_LENGTH
+  );
+}
+
+function handleItemClick(item: MaxDiffListItem): void {
+  if (!canOpenItem(item)) {
+    return;
+  }
+  props.onClickItem({
+    title: item.title,
+    body: item.body,
+    externalUrl: item.externalUrl,
+  });
+}
 </script>
 
 <style scoped lang="scss">
@@ -146,8 +180,11 @@ const hasMore = computed(() => props.items.length > COMPACT_LIMIT);
   padding: 0.75rem 1rem;
   background: $app-background-color;
   border-radius: 8px;
-  cursor: pointer;
   transition: background-color 0.2s ease;
+}
+
+.item-row--clickable {
+  cursor: pointer;
 
   &:hover {
     background-color: rgba(0, 0, 0, 0.05);
