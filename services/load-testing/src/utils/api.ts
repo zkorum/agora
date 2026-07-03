@@ -74,11 +74,88 @@ export interface FetchOpinionsParams {
     conversationSlugId: string;
 }
 
+type ParticipationMode =
+    | "account_required"
+    | "strong_verification"
+    | "email_verification"
+    | "guest";
+
+export interface FetchConversationMetadataParams {
+    conversationSlugId: string;
+}
+
+export type FetchConversationMetadataResponse =
+    | {
+          success: true;
+          participationMode: ParticipationMode;
+          requiresEventTicket: string | undefined;
+          responseTime: number;
+      }
+    | {
+          success: false;
+          responseTime: number;
+          error: string;
+      };
+
 export interface FetchOpinionsResponse {
     success: boolean;
     opinions: { opinionSlugId: string }[];
     responseTime: number;
     error?: string;
+}
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parseParticipationMode(value: unknown): ParticipationMode | undefined {
+    if (
+        value === "account_required" ||
+        value === "strong_verification" ||
+        value === "email_verification" ||
+        value === "guest"
+    ) {
+        return value;
+    }
+
+    return undefined;
+}
+
+function parseConversationMetadataResponse(body: unknown):
+    | {
+          participationMode: ParticipationMode;
+          requiresEventTicket?: string;
+      }
+    | undefined {
+    if (!isObjectRecord(body)) {
+        return undefined;
+    }
+
+    const conversationData = body.conversationData;
+    if (!isObjectRecord(conversationData)) {
+        return undefined;
+    }
+
+    const metadataRecord = conversationData.metadata;
+    if (!isObjectRecord(metadataRecord)) {
+        return undefined;
+    }
+
+    const participationMode = parseParticipationMode(
+        metadataRecord.participationMode,
+    );
+    if (participationMode === undefined) {
+        return undefined;
+    }
+
+    const requiresEventTicket = metadataRecord.requiresEventTicket;
+    return {
+        participationMode,
+        requiresEventTicket:
+            typeof requiresEventTicket === "string"
+                ? requiresEventTicket
+                : undefined,
+    };
 }
 
 export interface FetchConversationPageParams {
@@ -402,6 +479,58 @@ export function fetchOpinions(
         return {
             success: false,
             opinions: [],
+            responseTime: 0,
+            error: String(error),
+        };
+    }
+}
+
+export function fetchConversationMetadata({
+    conversationSlugId,
+}: FetchConversationMetadataParams): FetchConversationMetadataResponse {
+    const url = `${API_BASE_URL}/api/v1/conversation/get`;
+    const requestBody = { conversationSlugId };
+
+    try {
+        const startTime = Date.now();
+        const response = http.post(url, JSON.stringify(requestBody), {
+            headers: {
+                "Content-Type": "application/json",
+            },
+            timeout: "30s",
+        });
+        const responseTime = Date.now() - startTime;
+        const responseBody =
+            typeof response.body === "string" ? response.body : "Unknown body";
+
+        if (response.status !== 200) {
+            return {
+                success: false,
+                responseTime,
+                error: `HTTP ${String(response.status)}: ${responseBody}`,
+            };
+        }
+
+        const parsedMetadata = parseConversationMetadataResponse(
+            JSON.parse(responseBody),
+        );
+        if (parsedMetadata === undefined) {
+            return {
+                success: false,
+                responseTime,
+                error: "Unexpected conversation metadata response shape",
+            };
+        }
+
+        return {
+            success: true,
+            participationMode: parsedMetadata.participationMode,
+            requiresEventTicket: parsedMetadata.requiresEventTicket,
+            responseTime,
+        };
+    } catch (error) {
+        return {
+            success: false,
             responseTime: 0,
             error: String(error),
         };

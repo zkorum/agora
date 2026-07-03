@@ -150,6 +150,7 @@ Tests voting load on one or more conversations:
 - Each user votes on 50-100% of fetched opinions
 - Users occasionally create new opinions while voting
 - Page fetches are mixed in to simulate realistic browsing behavior
+- Requires conversations with `participationMode: "guest"` and no event-ticket requirement. The scenario generates fresh guest identities and does not perform account registration, email verification, or strong verification.
 
 **What it tests:**
 
@@ -168,6 +169,7 @@ Edit scenario files to adjust:
 - `OPINION_CREATOR_COUNT` / `ADDITIONAL_VOTERS` (default: 50/50)
 - `INTERMITTENT_OPINION_CREATION_PROBABILITY` (default: 0.1)
 - `MAIN_PAGE_FETCH_PROBABILITY` / `CONVERSATION_PAGE_FETCH_PROBABILITY`
+- `INITIAL_CONVERSATION_PAGE_FETCH_PROBABILITY` to override the initial frontend page-load probability. If omitted, an explicit `CONVERSATION_PAGE_FETCH_PROBABILITY` value is reused; otherwise the initial page load defaults to always on.
 - `SLEEP_BETWEEN_ACTIONS` and retry constants in the scenario file
 
 ### Monitoring Configuration (Local Only)
