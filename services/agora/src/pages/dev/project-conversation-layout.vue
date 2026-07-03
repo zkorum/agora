@@ -69,7 +69,6 @@
       :project="project"
       :conversation-data="conversationData"
       :language-options="languageOptions"
-      initial-language="en"
     >
       <template #conversation-actions>
         <PostActionBar
@@ -175,6 +174,7 @@ import type {
   OpinionVotingUtilities,
   UserVote,
 } from "src/composables/opinion/types";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
   CastVoteResponse,
   FetchAnalysisCheckpointsResponse,
@@ -207,7 +207,7 @@ const projectConversationRouteContext: ConversationRouteContext = {
   kind: "project",
   projectSlug: "voices-for-change",
 };
-const selectedLanguage = ref<string | readonly string[]>("en");
+const selectedLanguage = ref<SupportedDisplayLanguageCodes>("en");
 const route = useRoute();
 const currentTab = ref<"comment" | "analysis">(getRouteTab());
 const commentFilter = ref<CommentFilterOptions>("discover");
@@ -253,16 +253,8 @@ const participationModeOptions = [
   { label: "Strong", value: "strong_verification" },
 ] satisfies readonly { label: string; value: ParticipationMode }[];
 
-const selectedLanguageValue = computed(() => {
-  if (Array.isArray(selectedLanguage.value)) {
-    return selectedLanguage.value.at(0) ?? "en";
-  }
-
-  return selectedLanguage.value;
-});
-
 const activeScenarioLanguage = computed<ProjectConversationDevLanguage>(() => {
-  const language = selectedLanguageValue.value;
+  const language = selectedLanguage.value;
   if (language === "ky" || language === "ru") {
     return language;
   }

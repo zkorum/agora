@@ -3,6 +3,7 @@ import {
   type SupportedSpokenLanguageCodes,
   SupportedSpokenLanguageMetadataList,
 } from "src/shared/languages";
+import { toUnionUndefined } from "src/shared/shared";
 import type {
   ContentLanguageMetadataOutput,
   ContentTranslationSourceLanguage,
@@ -21,34 +22,37 @@ export interface ContentTranslationState {
 
 export interface ResolveContentTranslationStateParams {
   dynamicTranslationEnabled: boolean;
-  sourceLanguageCode: string | null | undefined;
+  sourceLanguageCode: SupportedSpokenLanguageCodes | undefined;
   displayLanguage: SupportedDisplayLanguageCodes;
   spokenLanguages: SupportedSpokenLanguageCodes[];
   supportedTargetLanguageCodes: SupportedDisplayLanguageCodes[];
   hasTranslatedContent: boolean;
 }
 
-function getLanguageComparisonKey(languageCode: string): string {
-  if (languageCode === "zh-Hans" || languageCode === "zh-Hant") {
-    return languageCode;
-  }
-  return languageCode.split("-")[0]?.toLowerCase() ?? languageCode.toLowerCase();
-}
-
 function viewerUnderstandsSourceLanguage({
-  sourceLanguageKey,
+  sourceLanguageCode,
   displayLanguage,
   spokenLanguages,
 }: {
-  sourceLanguageKey: string;
+  sourceLanguageCode: SupportedSpokenLanguageCodes;
   displayLanguage: SupportedDisplayLanguageCodes;
   spokenLanguages: SupportedSpokenLanguageCodes[];
 }): boolean {
-  const understoodLanguageKeys = new Set<string>([
-    getLanguageComparisonKey(displayLanguage),
-    ...spokenLanguages.map((languageCode) => getLanguageComparisonKey(languageCode)),
+  const understoodLanguageCodes = new Set<string>([
+    displayLanguage,
+    ...spokenLanguages,
   ]);
-  return understoodLanguageKeys.has(sourceLanguageKey);
+  return understoodLanguageCodes.has(sourceLanguageCode);
+}
+
+export function isSameContentLanguage({
+  sourceLanguageCode,
+  displayLanguage,
+}: {
+  sourceLanguageCode: SupportedSpokenLanguageCodes;
+  displayLanguage: SupportedDisplayLanguageCodes;
+}): boolean {
+  return sourceLanguageCode === displayLanguage;
 }
 
 export function getLanguageDisplayName({
@@ -79,12 +83,11 @@ export function getConversationLanguageSettingSourceLanguageCode({
 }: {
   contentLanguageMetadata?: ContentLanguageMetadataOutput;
   languageSetting?: ConversationLanguageSettingOutput;
-}): string | null {
+}): SupportedSpokenLanguageCodes | undefined {
   return (
     contentLanguageMetadata?.detectedSourceLanguageCode ??
     languageSetting?.detectedSourceLanguageCode ??
-    languageSetting?.languageCode ??
-    null
+    toUnionUndefined(languageSetting?.languageCode)
   );
 }
 
@@ -147,10 +150,8 @@ export function resolveContentTranslationState({
     };
   }
 
-  if (sourceLanguageCode !== undefined && sourceLanguageCode !== null) {
-    const sourceLanguageKey = getLanguageComparisonKey(sourceLanguageCode);
-    const displayLanguageKey = getLanguageComparisonKey(displayLanguage);
-    if (sourceLanguageKey === displayLanguageKey) {
+  if (sourceLanguageCode !== undefined) {
+    if (isSameContentLanguage({ sourceLanguageCode, displayLanguage })) {
       return {
         isAvailable: false,
         initialMode: "original",
@@ -161,7 +162,7 @@ export function resolveContentTranslationState({
 
     if (
       viewerUnderstandsSourceLanguage({
-        sourceLanguageKey,
+        sourceLanguageCode,
         displayLanguage,
         spokenLanguages,
       })

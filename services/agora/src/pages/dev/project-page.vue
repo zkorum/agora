@@ -81,7 +81,6 @@
       :is-loading-more-activities="false"
       :is-requesting-project-translation="false"
       :language-options="languageOptions"
-      initial-language="en"
       @request-project-translation="ignoreProjectTranslationRequest"
     />
   </div>
@@ -96,6 +95,7 @@ import type {
 } from "src/components/project/projectPageTypes";
 import ProjectPageView from "src/components/project/ProjectPageView.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { computed, ref } from "vue";
 
 type ContactScenario = "email" | "web" | "both";
@@ -138,7 +138,7 @@ const contactScenario = ref<ContactScenario>("both");
 const activityStatusScenario = ref<ActivityStatusScenario>("mixed");
 const activityVolumeScenario = ref<ActivityVolumeScenario>("default");
 const bodyLengthScenario = ref<BodyLengthScenario>("normal");
-const selectedLanguage = ref<string | readonly string[]>("en");
+const selectedLanguage = ref<SupportedDisplayLanguageCodes>("en");
 const controlsVisible = ref(true);
 
 const contactScenarioOptions: {
@@ -573,11 +573,7 @@ const baseProject = {
 } satisfies BaseDevProjectData;
 
 const selectedProjectLanguage = computed<ProjectPageLanguage>(() => {
-  const value = Array.isArray(selectedLanguage.value)
-    ? selectedLanguage.value.at(0)
-    : selectedLanguage.value;
-
-  return normalizeProjectPageLanguage({ value });
+  return normalizeProjectPageLanguage({ value: selectedLanguage.value });
 });
 
 const projectContent = computed(

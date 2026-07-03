@@ -178,6 +178,7 @@ import { normalConversationRouteContext } from "src/utils/router/conversationRou
 import {
   type ContentTranslationDisplayMode,
   resolveContentTranslationState,
+  type ResolveContentTranslationStateParams,
 } from "src/utils/translation/contentTranslation";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -427,7 +428,9 @@ const conversationPreview = computed(() => {
   return createConversation({ body: conversationBody.value });
 });
 
-const translationInputs = computed(() => {
+const translationInputs = computed<
+  Omit<ResolveContentTranslationStateParams, "hasTranslatedContent">
+>(() => {
   if (translationScenario.value === "off") {
     return {
       dynamicTranslationEnabled: false,
@@ -458,7 +461,7 @@ const translationInputs = computed(() => {
   if (translationScenario.value === "unknown") {
     return {
       dynamicTranslationEnabled: true,
-      sourceLanguageCode: null,
+      sourceLanguageCode: undefined,
       displayLanguage: "en" as const,
       spokenLanguages: ["en" as const],
       supportedTargetLanguageCodes: ["en" as const],

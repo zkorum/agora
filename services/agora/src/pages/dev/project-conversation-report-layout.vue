@@ -4,7 +4,6 @@
     :project="project"
     :conversation-data="conversationData"
     :language-options="languageOptions"
-    initial-language="en"
     report-layout
   >
     <template #conversation-actions>
@@ -108,6 +107,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useReportDownload } from "src/composables/report/useReportDownload";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import {
   getReportAllOpinions,
@@ -150,7 +150,7 @@ usePageLayout({
   enableHeader: false,
 });
 
-const selectedLanguage = ref<string | readonly string[]>("en");
+const selectedLanguage = ref<SupportedDisplayLanguageCodes>("en");
 const currentTab = ref<"comment" | "analysis">("analysis");
 const actionBarRef = ref<HTMLElement | null>(null);
 const analysisReportRef = ref<AnalysisReportExposed | null>(null);

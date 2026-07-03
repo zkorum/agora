@@ -249,17 +249,17 @@
               <ProjectAttributionSection
                 :title="t('sponsorsTitle')"
                 :entries="sponsorAttributions"
-                :language-code="selectedLanguageValue"
+                :language-code="selectedLanguage"
               />
               <ProjectAttributionSection
                 :title="t('projectOwnersTitle')"
                 :entries="projectOwnerAttributions"
-                :language-code="selectedLanguageValue"
+                :language-code="selectedLanguage"
               />
               <ProjectAttributionSection
                 :title="t('partnersTitle')"
                 :entries="partnerAttributions"
-                :language-code="selectedLanguageValue"
+                :language-code="selectedLanguage"
               />
             </section>
 
@@ -272,14 +272,14 @@
               </h2>
               <ProjectContactCard
                 :contact="project.contact"
-                :language-code="selectedLanguageValue"
+                :language-code="selectedLanguage"
               />
             </section>
           </aside>
 
           <ProjectPageFooter
             class="project-conversation-view__footer"
-            :language-code="selectedLanguageValue"
+            :language-code="selectedLanguage"
           />
         </div>
       </div>
@@ -290,17 +290,17 @@
         <ProjectAttributionSection
           :title="t('sponsorsTitle')"
           :entries="sponsorAttributions"
-          :language-code="selectedLanguageValue"
+          :language-code="selectedLanguage"
         />
         <ProjectAttributionSection
           :title="t('projectOwnersTitle')"
           :entries="projectOwnerAttributions"
-          :language-code="selectedLanguageValue"
+          :language-code="selectedLanguage"
         />
         <ProjectAttributionSection
           :title="t('partnersTitle')"
           :entries="partnerAttributions"
-          :language-code="selectedLanguageValue"
+          :language-code="selectedLanguage"
         />
       </ZKBottomDialogContainer>
     </q-dialog>
@@ -328,6 +328,7 @@ import ZKLiveStatusDot from "src/components/ui-library/ZKLiveStatusDot.vue";
 import {
   getLanguageTextDirection,
   parseSupportedDisplayLanguageOrUndefined,
+  type SupportedDisplayLanguageCodes,
 } from "src/shared/languages";
 import type {
   ExtendedConversation,
@@ -362,7 +363,6 @@ const props = defineProps<{
   project: ProjectPageData;
   conversationData: ExtendedConversation;
   languageOptions: readonly ProjectLanguageOption[];
-  initialLanguage: string;
   bannerImageUrl?: string;
   reportLayout?: boolean;
 }>();
@@ -371,26 +371,17 @@ const emit = defineEmits<{
   conversationDeleted: [];
 }>();
 
-const selectedLanguage = defineModel<string | readonly string[]>(
+const selectedLanguage = defineModel<SupportedDisplayLanguageCodes>(
   "selectedLanguage",
-  {
-    required: true,
-  }
+  { required: true }
 );
 const showMobileAttributions = ref(false);
 
-const selectedLanguageValue = computed(() => {
-  if (Array.isArray(selectedLanguage.value)) {
-    return selectedLanguage.value.at(0) ?? props.initialLanguage;
-  }
-
-  return selectedLanguage.value;
-});
 const projectTextDirection = computed(() =>
-  getLanguageTextDirection(selectedLanguageValue.value)
+  getLanguageTextDirection(selectedLanguage.value)
 );
 const selectedSupportedLanguage = computed(
-  () => parseSupportedDisplayLanguageOrUndefined(selectedLanguageValue.value) ?? "en"
+  () => parseSupportedDisplayLanguageOrUndefined(selectedLanguage.value) ?? "en"
 );
 const conversationTitleText = computed<ConversationTitleTranslations>(
   () => conversationTitleTranslations[selectedSupportedLanguage.value]
@@ -535,7 +526,7 @@ function t(
   params?: Readonly<Record<string, string | number>>
 ): string {
   return translateProjectPageText({
-    languageCode: selectedLanguageValue.value,
+    languageCode: selectedLanguage.value,
     key,
     params,
   });
@@ -952,12 +943,17 @@ main {
 }
 
 @media (max-width: 860px) {
+  .project-conversation-view__shell {
+    width: min(35.9375rem, 100%);
+  }
+
   .project-conversation-view__content-grid {
     grid-template-columns: 1fr;
     grid-template-areas:
       "title"
       "stream"
       "footer";
+    padding-inline: 1rem;
   }
 
   .project-conversation-view__aside {
@@ -999,10 +995,6 @@ main {
   .project-conversation-view__consultation-pill {
     padding: 0.5rem 0.7rem;
     font-size: 0.78rem;
-  }
-
-  .project-conversation-view__shell {
-    width: calc(100% - 1rem);
   }
 
   .project-conversation-view__conversation-card {

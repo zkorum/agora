@@ -15,7 +15,6 @@
       :project="projectConversationData.project"
       :conversation-data="loadedConversationData"
       :language-options="projectConversationData.languageOptions"
-      :initial-language="displayLanguage"
       @conversation-deleted="handleConversationDeleted"
     >
       <template #conversation-actions>
@@ -129,7 +128,7 @@ import {
 import { useTabScrollRestoration } from "src/composables/conversation/useTabScrollRestoration";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { ZodSupportedDisplayLanguageCodes } from "src/shared/languages";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
 import { useBackendProjectPageApi } from "src/utils/api/projectPage";
@@ -160,8 +159,15 @@ const languageStore = useLanguageStore();
 const { displayLanguage } = storeToRefs(languageStore);
 const { changeDisplayLanguage } = languageStore;
 const pausedAnalysisActionBarStats = ref<ConversationActionBarStats | undefined>();
-const selectedLanguage = ref<string | readonly string[]>(displayLanguage.value);
-const isApplyingStoreLanguage = ref(false);
+const selectedLanguage = computed<SupportedDisplayLanguageCodes>({
+  get: () => displayLanguage.value,
+  set: (newLanguage) => {
+    if (newLanguage === displayLanguage.value) {
+      return;
+    }
+    void changeDisplayLanguage({ newLanguage });
+  },
+});
 
 const projectSlug = computed(() =>
   getSingleRouteParam(
@@ -310,41 +316,6 @@ const { tabContentStyle } = useTabScrollRestoration({
   actionBarElement,
 });
 
-const selectedLanguageValue = computed(() => {
-  if (Array.isArray(selectedLanguage.value)) {
-    return selectedLanguage.value.at(0) ?? "";
-  }
-
-  return selectedLanguage.value;
-});
-
-watch(displayLanguage, (languageCode) => {
-  isApplyingStoreLanguage.value = true;
-  selectedLanguage.value = languageCode;
-  queueMicrotask(() => {
-    isApplyingStoreLanguage.value = false;
-  });
-});
-
-watch(selectedLanguageValue, async (languageCode, previousLanguageCode) => {
-  if (
-    isApplyingStoreLanguage.value ||
-    languageCode === "" ||
-    previousLanguageCode === undefined ||
-    languageCode === previousLanguageCode
-  ) {
-    return;
-  }
-
-  const selectedDisplayLanguage =
-    ZodSupportedDisplayLanguageCodes.safeParse(languageCode);
-  if (!selectedDisplayLanguage.success) {
-    return;
-  }
-
-  await changeDisplayLanguage({ newLanguage: selectedDisplayLanguage.data });
-});
-
 watch(
   () => ({
     conversationSlugId: conversationData.value?.metadata.conversationSlugId,
@@ -406,8 +377,8 @@ async function refetchInitialData(): Promise<void> {
   position: sticky;
   top: 0;
   z-index: 10;
-  margin-inline: -0.25rem;
-  padding: 0 0.25rem 0.65rem;
+  min-width: 0;
+  padding: 0 0 0.65rem;
   background:
     radial-gradient(
       circle at 1px 1px,
