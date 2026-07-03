@@ -1,38 +1,27 @@
-import type {
-  SupportedDisplayLanguageCodes,
-  SupportedSpokenLanguageCodes,
-} from "src/shared/languages";
 import { describe, expect, it } from "vitest";
 
 import {
   getContentTranslationSourceLanguageLabel,
   getConversationLanguageSettingSourceLanguageCode,
   getLanguageDisplayName,
+  isSameContentLanguage,
   resolveContentTranslationState,
+  type ResolveContentTranslationStateParams,
 } from "./contentTranslation";
 
-function resolveState({
-  dynamicTranslationEnabled = true,
-  sourceLanguageCode = "ja",
-  displayLanguage = "en",
-  spokenLanguages = ["en"],
-  supportedTargetLanguageCodes = ["en"],
-  hasTranslatedContent = true,
-}: {
-  dynamicTranslationEnabled?: boolean;
-  sourceLanguageCode?: string | null;
-  displayLanguage?: SupportedDisplayLanguageCodes;
-  spokenLanguages?: SupportedSpokenLanguageCodes[];
-  supportedTargetLanguageCodes?: SupportedDisplayLanguageCodes[];
-  hasTranslatedContent?: boolean;
-}) {
+const defaultResolveStateParams: ResolveContentTranslationStateParams = {
+  dynamicTranslationEnabled: true,
+  sourceLanguageCode: "ja",
+  displayLanguage: "en",
+  spokenLanguages: ["en"],
+  supportedTargetLanguageCodes: ["en"],
+  hasTranslatedContent: true,
+};
+
+function resolveState(overrides: Partial<ResolveContentTranslationStateParams>) {
   return resolveContentTranslationState({
-    dynamicTranslationEnabled,
-    sourceLanguageCode,
-    displayLanguage,
-    spokenLanguages,
-    supportedTargetLanguageCodes,
-    hasTranslatedContent,
+    ...defaultResolveStateParams,
+    ...overrides,
   });
 }
 
@@ -78,7 +67,7 @@ describe("resolveContentTranslationState", () => {
   });
 
   it("hides the control when the source matches the display language", () => {
-    expect(resolveState({ sourceLanguageCode: "en-US" })).toMatchObject({
+    expect(resolveState({ sourceLanguageCode: "en" })).toMatchObject({
       isAvailable: false,
       initialMode: "original",
     });
@@ -126,7 +115,7 @@ describe("resolveContentTranslationState", () => {
   });
 
   it("treats unknown source language as needing translation", () => {
-    expect(resolveState({ sourceLanguageCode: null })).toMatchObject({
+    expect(resolveState({ sourceLanguageCode: undefined })).toMatchObject({
       isAvailable: true,
       initialMode: "translated",
       sourceLanguageLabel: undefined,
@@ -145,6 +134,23 @@ describe("getLanguageDisplayName", () => {
     expect(
       getLanguageDisplayName({ languageCode: null, displayLanguage: "fr" })
     ).toBeUndefined();
+  });
+});
+
+describe("isSameContentLanguage", () => {
+  it("keeps Chinese scripts distinct", () => {
+    expect(
+      isSameContentLanguage({
+        sourceLanguageCode: "zh-Hant",
+        displayLanguage: "zh-Hans",
+      })
+    ).toBe(false);
+  });
+
+  it("matches identical canonical language codes", () => {
+    expect(
+      isSameContentLanguage({ sourceLanguageCode: "ky", displayLanguage: "ky" })
+    ).toBe(true);
   });
 });
 

@@ -136,7 +136,7 @@
                   :key="activity.slug"
                   :activity="activity"
                   :project-slug="project.slug"
-                  :language-code="selectedLanguageValue"
+                  :language-code="selectedLanguage"
                   :text-direction="projectTextDirection"
                 />
               </div>
@@ -172,17 +172,17 @@
               <ProjectAttributionSection
                 :title="t('sponsorsTitle')"
                 :entries="sponsorAttributions"
-                :language-code="selectedLanguageValue"
+                :language-code="selectedLanguage"
               />
               <ProjectAttributionSection
                 :title="t('projectOwnersTitle')"
                 :entries="projectOwnerAttributions"
-                :language-code="selectedLanguageValue"
+                :language-code="selectedLanguage"
               />
               <ProjectAttributionSection
                 :title="t('partnersTitle')"
                 :entries="partnerAttributions"
-                :language-code="selectedLanguageValue"
+                :language-code="selectedLanguage"
               />
             </section>
 
@@ -195,13 +195,13 @@
               </h2>
               <ProjectContactCard
                 :contact="project.contact"
-                :language-code="selectedLanguageValue"
+                :language-code="selectedLanguage"
               />
             </section>
           </aside>
         </div>
 
-        <ProjectPageFooter :language-code="selectedLanguageValue" />
+        <ProjectPageFooter :language-code="selectedLanguage" />
       </div>
     </main>
   </div>
@@ -212,12 +212,20 @@ import { storeToRefs } from "pinia";
 import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import ZKLiveStatusDot from "src/components/ui-library/ZKLiveStatusDot.vue";
-import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
-import { getLanguageTextDirection } from "src/shared/languages";
+import type {
+  SupportedDisplayLanguageCodes,
+  SupportedSpokenLanguageCodes,
+} from "src/shared/languages";
+import {
+  getLanguageTextDirection,
+  parseSupportedSpokenLanguageOrUndefined,
+} from "src/shared/languages";
+import { toUnionUndefined } from "src/shared/shared";
 import type { LocalizedContentTranslationStatus } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
 import {
   type ContentTranslationDisplayMode,
+  getContentTranslationSourceLanguageLabel,
   resolveContentTranslationState,
 } from "src/utils/translation/contentTranslation";
 import { computed } from "vue";
@@ -248,7 +256,6 @@ const props = defineProps<{
   isLoadingMoreActivities: boolean;
   isRequestingProjectTranslation: boolean;
   languageOptions: readonly ProjectLanguageOption[];
-  initialLanguage: string;
 }>();
 const emit = defineEmits<{
   loadMoreActivities: [done: () => void];
@@ -262,23 +269,13 @@ const projectTranslationModePreference = ref<
   ContentTranslationDisplayMode | undefined
 >();
 
-const selectedLanguage = defineModel<string | readonly string[]>(
+const selectedLanguage = defineModel<SupportedDisplayLanguageCodes>(
   "selectedLanguage",
-  {
-    required: true,
-  }
+  { required: true }
 );
 
-const selectedLanguageValue = computed(() => {
-  if (Array.isArray(selectedLanguage.value)) {
-    return selectedLanguage.value.at(0) ?? props.initialLanguage;
-  }
-
-  return selectedLanguage.value;
-});
-
 const projectTextDirection = computed(() =>
-  getLanguageTextDirection(selectedLanguageValue.value)
+  getLanguageTextDirection(selectedLanguage.value)
 );
 
 const selectedBannerImageUrl = computed(() => {
@@ -289,7 +286,7 @@ const projectMachineTranslation = computed(() => {
   const machineTranslation = props.project.machineTranslation;
   if (
     machineTranslation === undefined ||
-    machineTranslation.targetLanguageCode !== selectedLanguageValue.value
+    machineTranslation.targetLanguageCode !== selectedLanguage.value
   ) {
     return undefined;
   }
@@ -305,10 +302,13 @@ const projectTranslationInitialMode = computed<ContentTranslationDisplayMode>(
     ) {
       return "original";
     }
+    const sourceLanguageCode = getProjectMachineTranslationSourceLanguageCode(
+      machineTranslation.sourceLanguageCode
+    );
 
     return resolveContentTranslationState({
       dynamicTranslationEnabled: true,
-      sourceLanguageCode: machineTranslation.sourceLanguageCode,
+      sourceLanguageCode,
       displayLanguage: machineTranslation.targetLanguageCode,
       spokenLanguages: spokenLanguages.value,
       supportedTargetLanguageCodes: [machineTranslation.targetLanguageCode],
@@ -348,7 +348,12 @@ const projectTranslationControl = computed<
     return undefined;
   }
   return {
-    sourceLanguageLabel: machineTranslation.sourceLanguageLabel,
+    sourceLanguageLabel: getContentTranslationSourceLanguageLabel({
+      sourceLanguage: undefined,
+      fallbackLanguageCode: machineTranslation.sourceLanguageCode,
+      fallbackLabel: machineTranslation.sourceLanguageLabel,
+      displayLanguage: machineTranslation.targetLanguageCode,
+    }),
     status: props.isRequestingProjectTranslation
       ? "pending"
       : machineTranslation.status,
@@ -440,7 +445,7 @@ function t(
   params?: Readonly<Record<string, string | number>>
 ): string {
   return translateProjectPageText({
-    languageCode: selectedLanguageValue.value,
+    languageCode: selectedLanguage.value,
     key,
     params,
   });
@@ -459,6 +464,17 @@ function onActivitiesLoad(_index: number, done: () => void): void {
   }
 
   emit("loadMoreActivities", done);
+}
+
+function getProjectMachineTranslationSourceLanguageCode(
+  sourceLanguageCode: string | null | undefined
+): SupportedSpokenLanguageCodes | undefined {
+  const normalizedSourceLanguageCode = toUnionUndefined(sourceLanguageCode);
+  if (normalizedSourceLanguageCode === undefined) {
+    return undefined;
+  }
+
+  return parseSupportedSpokenLanguageOrUndefined(normalizedSourceLanguageCode);
 }
 </script>
 

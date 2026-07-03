@@ -1,6 +1,6 @@
 <template>
   <ZKSearchableBottomSheetSelect
-    v-model="selectedLanguage"
+    :model-value="selectedLanguage"
     variant="pill"
     :label="t('languageLabel')"
     :dialog-title="t('languageDialogTitle')"
@@ -9,12 +9,16 @@
     search-mode="always"
     :options="displayLanguageOptions"
     :text-direction="textDirection"
+    @update:model-value="updateSelectedLanguage"
   />
 </template>
 
 <script setup lang="ts">
 import ZKSearchableBottomSheetSelect from "src/components/ui-library/ZKSearchableBottomSheetSelect.vue";
-import type { LanguageTextDirection } from "src/shared/languages";
+import type {
+  LanguageTextDirection,
+  SupportedDisplayLanguageCodes,
+} from "src/shared/languages";
 import { computed } from "vue";
 
 import {
@@ -28,20 +32,14 @@ const props = defineProps<{
   textDirection: LanguageTextDirection;
 }>();
 
-const selectedLanguage = defineModel<string | readonly string[]>(
+const selectedLanguage = defineModel<SupportedDisplayLanguageCodes>(
   "selectedLanguage",
-  {
-    required: true,
-  }
+  { required: true }
 );
 
-const selectedLanguageValue = computed(() => {
-  if (Array.isArray(selectedLanguage.value)) {
-    return selectedLanguage.value.at(0) ?? "en";
-  }
-
-  return selectedLanguage.value;
-});
+type SelectLanguageModelValue =
+  | SupportedDisplayLanguageCodes
+  | readonly SupportedDisplayLanguageCodes[];
 
 const displayLanguageOptions = computed<readonly ProjectLanguageOption[]>(
   () => {
@@ -76,8 +74,14 @@ function toDisplayLanguageOption(
 
 function t(key: keyof ProjectPageTranslations): string {
   return translateProjectPageText({
-    languageCode: selectedLanguageValue.value,
+    languageCode: selectedLanguage.value,
     key,
   });
+}
+
+function updateSelectedLanguage(value: SelectLanguageModelValue): void {
+  selectedLanguage.value = Array.isArray(value)
+    ? value.at(0) ?? selectedLanguage.value
+    : value;
 }
 </script>

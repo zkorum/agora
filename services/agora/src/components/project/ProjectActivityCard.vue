@@ -96,11 +96,16 @@ import { storeToRefs } from "pinia";
 import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
 import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKPlainTextContent from "src/components/ui-library/ZKPlainTextContent.vue";
-import type { LanguageTextDirection } from "src/shared/languages";
+import type {
+  LanguageTextDirection,
+  SupportedDisplayLanguageCodes,
+} from "src/shared/languages";
+import { toUnionUndefined } from "src/shared/shared";
 import type { LocalizedContentTranslationStatus } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
 import {
   type ContentTranslationDisplayMode,
+  getContentTranslationSourceLanguageLabel,
   resolveContentTranslationState,
 } from "src/utils/translation/contentTranslation";
 import { computed, ref, watch } from "vue";
@@ -118,7 +123,7 @@ import type {
 const props = defineProps<{
   activity: ProjectActivity;
   projectSlug: string;
-  languageCode: string;
+  languageCode: SupportedDisplayLanguageCodes;
   textDirection: LanguageTextDirection;
 }>();
 
@@ -177,7 +182,7 @@ const activityTranslationInitialMode = computed<ContentTranslationDisplayMode>(
 
     return resolveContentTranslationState({
       dynamicTranslationEnabled: true,
-      sourceLanguageCode: machineTranslation.sourceLanguageCode,
+      sourceLanguageCode: toUnionUndefined(machineTranslation.sourceLanguageCode),
       displayLanguage: machineTranslation.targetLanguageCode,
       spokenLanguages: spokenLanguages.value,
       supportedTargetLanguageCodes: [machineTranslation.targetLanguageCode],
@@ -215,7 +220,12 @@ const activityTranslationControl = computed<
   }
 
   return {
-    sourceLanguageLabel: machineTranslation.sourceLanguageLabel,
+    sourceLanguageLabel: getContentTranslationSourceLanguageLabel({
+      sourceLanguage: undefined,
+      fallbackLanguageCode: machineTranslation.sourceLanguageCode,
+      fallbackLabel: machineTranslation.sourceLanguageLabel,
+      displayLanguage: machineTranslation.targetLanguageCode,
+    }),
     status: machineTranslation.status,
   };
 });

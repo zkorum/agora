@@ -21,7 +21,6 @@
     :is-loading-more-activities="isLoadingMoreActivities"
     :is-requesting-project-translation="isRequestingProjectTranslation"
     :language-options="projectPageData.languageOptions"
-    :initial-language="displayLanguage"
     @load-more-activities="loadMoreActivities"
     @request-project-translation="requestProjectTranslation"
   />
@@ -39,7 +38,6 @@ import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import {
   type SupportedDisplayLanguageCodes,
-  ZodSupportedDisplayLanguageCodes,
 } from "src/shared/languages";
 import type {
   FetchProjectPageResponse,
@@ -75,19 +73,18 @@ const projectSlug = computed(() =>
   getSingleRouteParam(route.params.projectSlug)
 );
 const isProjectRootRoute = computed(() => route.name === "/project/[projectSlug]");
-const selectedLanguage = ref<string | readonly string[]>(displayLanguage.value);
 const activities = ref<ProjectPageActivity[]>([]);
 const nextActivityCursor = ref<ProjectPageActivityCursor | undefined>();
 const isLoadingMoreActivities = ref(false);
 const isRequestingProjectTranslation = ref(false);
-const isApplyingStoreLanguage = ref(false);
-
-const selectedLanguageValue = computed(() => {
-  if (Array.isArray(selectedLanguage.value)) {
-    return selectedLanguage.value.at(0) ?? "";
-  }
-
-  return selectedLanguage.value;
+const selectedLanguage = computed<SupportedDisplayLanguageCodes>({
+  get: () => displayLanguage.value,
+  set: (newLanguage) => {
+    if (newLanguage === displayLanguage.value) {
+      return;
+    }
+    void changeDisplayLanguage({ newLanguage });
+  },
 });
 
 const projectPageQueryKey = computed(() => [
@@ -128,33 +125,6 @@ watch(
   },
   { immediate: true }
 );
-
-watch(displayLanguage, (languageCode) => {
-  isApplyingStoreLanguage.value = true;
-  selectedLanguage.value = languageCode;
-  queueMicrotask(() => {
-    isApplyingStoreLanguage.value = false;
-  });
-});
-
-watch(selectedLanguageValue, async (languageCode, previousLanguageCode) => {
-  if (
-    isApplyingStoreLanguage.value ||
-    languageCode === "" ||
-    previousLanguageCode === undefined ||
-    languageCode === previousLanguageCode
-  ) {
-    return;
-  }
-
-  const selectedDisplayLanguage =
-    ZodSupportedDisplayLanguageCodes.safeParse(languageCode);
-  if (!selectedDisplayLanguage.success) {
-    return;
-  }
-
-  await changeDisplayLanguage({ newLanguage: selectedDisplayLanguage.data });
-});
 
 async function loadMoreActivities(done: () => void): Promise<void> {
   const cursor = nextActivityCursor.value;

@@ -17,6 +17,7 @@ import {
   type ContentTranslationDisplayMode,
   getContentTranslationSourceLanguageLabel,
   getConversationLanguageSettingSourceLanguageCode,
+  isSameContentLanguage,
 } from "./contentTranslation";
 
 export interface ConversationContentTranslationPreview {
@@ -66,7 +67,12 @@ export function useConversationDisplayContent({
     () => {
       if (
         modePreference.value !== undefined &&
-        requestedContentQuery.data.value !== undefined
+        requestedContentQuery.data.value !== undefined &&
+        isDisplayContentForMode({
+          displayContent: requestedContentQuery.data.value,
+          mode: requestedMode.value,
+          isFetching: requestedContentQuery.isFetching.value,
+        })
       ) {
         return requestedContentQuery.data.value;
       }
@@ -87,13 +93,35 @@ export function useConversationDisplayContent({
     if (translationControl === null) {
       return undefined;
     }
+    const sourceLanguageCode = getConversationLanguageSettingSourceLanguageCode({
+      contentLanguageMetadata: conversation.metadata.contentLanguageMetadata,
+      languageSetting: conversation.metadata.languageSetting,
+    });
+    if (
+      sourceLanguageCode !== undefined &&
+      isSameContentLanguage({
+        sourceLanguageCode,
+        displayLanguage: displayLanguage.value,
+      })
+    ) {
+      return undefined;
+    }
+
+    const isWaitingForTranslatedContent =
+      modePreference.value === "translated" &&
+      requestedContentQuery.isFetching.value &&
+      !isDisplayContentForMode({
+        displayContent,
+        mode: "translated",
+        isFetching: requestedContentQuery.isFetching.value,
+      });
+    const translationStatus = isWaitingForTranslatedContent
+      ? "pending"
+      : translationControl.status;
 
     const sourceLanguageLabel = getContentTranslationSourceLanguageLabel({
       sourceLanguage: undefined,
-      fallbackLanguageCode: getConversationLanguageSettingSourceLanguageCode({
-        contentLanguageMetadata: conversation.metadata.contentLanguageMetadata,
-        languageSetting: conversation.metadata.languageSetting,
-      }),
+      fallbackLanguageCode: sourceLanguageCode,
       fallbackLabel: translationControl.sourceLanguageLabel,
       displayLanguage: displayLanguage.value,
     });
@@ -104,23 +132,20 @@ export function useConversationDisplayContent({
         isLoadingInitialTranslation: false,
         mode: "original",
         sourceLanguageLabel,
-        translationStatus: requestedContentQuery.isFetching.value
-          ? "pending"
-          : translationControl.status,
+        translationStatus,
         translatedTitle: "",
         translatedBody: undefined,
       };
     }
 
-    const isTranslatedContent = displayContent.mode === "translated";
+    const isTranslatedContent =
+      displayContent.mode === "translated" && modePreference.value !== "original";
     return {
       isAvailable: true,
       isLoadingInitialTranslation: false,
       mode: isTranslatedContent ? "translated" : "original",
       sourceLanguageLabel,
-      translationStatus: requestedContentQuery.isFetching.value
-        ? "pending"
-        : translationControl.status,
+      translationStatus,
       translatedTitle: isTranslatedContent ? displayContent.content.title : "",
       translatedBody: isTranslatedContent ? displayContent.content.body : undefined,
     };
@@ -150,6 +175,22 @@ export function useConversationDisplayContent({
 
   function setTranslationMode(mode: ContentTranslationDisplayMode): void {
     modePreference.value = mode;
+  }
+
+  function isDisplayContentForMode({
+    displayContent,
+    mode,
+    isFetching,
+  }: {
+    displayContent: ConversationContentFetchResponse;
+    mode: ConversationContentMode;
+    isFetching: boolean;
+  }): boolean {
+    if (displayContent.status !== "available") {
+      return !isFetching;
+    }
+
+    return displayContent.mode === mode;
   }
 
   watch([displayLanguage, sortedSpokenLanguageKey], () => {

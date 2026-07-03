@@ -24,8 +24,8 @@ export const PEPPER_VERSION = 0;
 export const MAX_CONVERSATION_LANGUAGE_DETECTION_BODY_CHARS = 1000;
 export const MIN_CONVERSATION_LANGUAGE_DETECTION_CHARS = 2;
 
-export function toUnionUndefined<T>(value: T | null): T | undefined {
-    if (value === null) {
+export function toUnionUndefined<T>(value: T | null | undefined): T | undefined {
+    if (value === null || value === undefined) {
         return undefined;
     }
     return value;
