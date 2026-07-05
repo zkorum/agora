@@ -54,7 +54,6 @@ import type {
     ProjectPageProject,
 } from "@/shared/types/dto.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
-import { htmlToCountedText } from "@/shared-app-api/html.js";
 import { translationSourceMatchesCurrentSource } from "@/shared-backend/translate.js";
 import { getSourceLanguageLabel } from "./contentTranslationContent.js";
 import {
@@ -128,6 +127,7 @@ interface ProjectActivityContentTranslationRow {
     displayLanguageCode: SupportedDisplayLanguageCodes;
     translatedTitle: string;
     translatedBody: string | null;
+    translatedBodyPlainText: string | null;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
 }
 
@@ -751,6 +751,8 @@ async function fetchProjectActivityTranslations({
                 conversationContentTranslationTable.displayLanguageCode,
             translatedTitle: conversationContentTranslationTable.translatedTitle,
             translatedBody: conversationContentTranslationTable.translatedBody,
+            translatedBodyPlainText:
+                conversationContentTranslationTable.translatedBodyPlainText,
             sourceLanguageCode: conversationContentTranslationTable.sourceLanguageCode,
         })
         .from(conversationContentTranslationTable)
@@ -866,17 +868,12 @@ async function fetchProjectActivities({
             })
                 ? translation
                 : undefined;
-        const translatedBodyPlainText =
-            freshTranslation?.translatedBody === null ||
-            freshTranslation?.translatedBody === undefined
-                ? ""
-                : htmlToCountedText(freshTranslation.translatedBody);
         const translatedContent =
             freshTranslation === undefined
                 ? undefined
                 : {
                       title: freshTranslation.translatedTitle,
-                      bodyPlainText: translatedBodyPlainText,
+                      bodyPlainText: freshTranslation.translatedBodyPlainText ?? "",
                   };
         return {
             slug: row.slug,

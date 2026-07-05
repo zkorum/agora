@@ -2,6 +2,7 @@
 // Copyright ts-odd team
 // Apache v2 License
 // Extracted from: https://github.com/oddsdk/ts-odd/tree/f90bde37416d9986d1c0afed406182a95ce7c1d7
+import { decode } from "html-entities";
 import linkifyHtml from "linkify-html";
 import type { Opts } from "linkifyjs";
 import localforage from "localforage";
@@ -44,7 +45,7 @@ export function htmlToCountedText(htmlString: string): string {
     const plainText = sanitizeHtml(textWithNewlines, options);
 
     // Trim trailing newline (single paragraph ends with \n which shouldn't be counted)
-    return plainText.replace(/\n$/, "");
+    return decode(plainText).replace(/\n$/, "");
 }
 
 /**

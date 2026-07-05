@@ -45,8 +45,7 @@ import type {
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import { normalizeEmail } from "@/shared/types/zod-email.js";
-import { htmlToCountedText, validateRichTextInput } from "@/shared/shared.js";
-import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
+import { htmlToCountedText } from "@/shared/shared.js";
 import {
     contentLanguageMetadataUpdateValues,
     type ContentLanguageMetadata,
@@ -64,6 +63,7 @@ import {
     normalizeProjectLanguageSettings,
     sourceLanguageToDisplayLanguage,
 } from "../translationLanguageSetting.js";
+import { normalizeUserRichTextInput } from "../richText.js";
 
 type ProjectOrganizationAttributionRole =
     CreateProjectAttributionRequest["role"];
@@ -119,6 +119,7 @@ interface SanitizedProjectContentLocalization {
     projectTitle: string | null;
     subtitle: string | null;
     body: string | null;
+    bodyPlainText: string | undefined;
     bannerPath: string | null;
     bannerIsFullPath: boolean;
 }
@@ -189,37 +190,51 @@ function normalizeOptionalString(value: string | undefined): string | null {
     return trimmed === undefined || trimmed === "" ? null : trimmed;
 }
 
-function sanitizeProjectBody(body: string | undefined): SanitizedProjectBody {
+function sanitizeProjectBody({
+    body,
+    bodyPlainText,
+}: {
+    body: string | undefined;
+    bodyPlainText: string | undefined;
+}): SanitizedProjectBody {
     if (body === undefined) {
         return { body: undefined, bodyPlainText: "" };
     }
 
-    let sanitizedBody: string;
+    if (bodyPlainText === undefined) {
+        throw httpErrors.badRequest(
+            "Project body plain text is required when project body HTML is provided",
+        );
+    }
+
     try {
-        sanitizedBody = processUserGeneratedHtml(body, false, "input");
+        const normalizationResult = normalizeUserRichTextInput({
+            html: body,
+            plainText: bodyPlainText,
+            validationMode: "conversation",
+            logLabel: "[ProjectPlainText] Frontend/backend plain text mismatch",
+        });
+        if (!normalizationResult.success) {
+            throw httpErrors.badRequest(normalizationResult.reason);
+        }
+
+        const normalizedBody = normalizeOptionalString(
+            normalizationResult.content.html,
+        );
+        if (normalizedBody === null) {
+            return { body: undefined, bodyPlainText: "" };
+        }
+
+        return {
+            body: normalizedBody,
+            bodyPlainText: normalizationResult.content.plainText,
+        };
     } catch (error) {
         if (error instanceof Error) {
             throw httpErrors.badRequest(error.message);
         }
         throw httpErrors.badRequest("Error while sanitizing project body");
     }
-
-    const validationResult = validateRichTextInput({
-        htmlString: sanitizedBody,
-        mode: "conversation",
-    });
-    if (!validationResult.success) {
-        throw httpErrors.badRequest(validationResult.reason);
-    }
-
-    sanitizedBody = processUserGeneratedHtml(sanitizedBody, true, "input");
-    const bodyPlainText = htmlToCountedText(sanitizedBody);
-    const normalizedBody = normalizeOptionalString(sanitizedBody);
-    if (normalizedBody === null) {
-        return { body: undefined, bodyPlainText: "" };
-    }
-
-    return { body: normalizedBody, bodyPlainText };
 }
 
 function buildProjectBannerLocalizationRows({
@@ -270,7 +285,10 @@ function sanitizeProjectContentLocalizations({
         }
 
         const projectTitle = normalizeOptionalString(localization.projectTitle);
-        const sanitizedBody = sanitizeProjectBody(localization.body);
+        const sanitizedBody = sanitizeProjectBody({
+            body: localization.body,
+            bodyPlainText: localization.bodyPlainText,
+        });
         const subtitle = normalizeOptionalString(localization.subtitle);
         if (
             projectTitle === null &&
@@ -300,6 +318,10 @@ function sanitizeProjectContentLocalizations({
             projectTitle,
             subtitle,
             body: sanitizedBody.body ?? null,
+            bodyPlainText:
+                sanitizedBody.body === undefined
+                    ? undefined
+                    : sanitizedBody.bodyPlainText,
             bannerPath: normalizeOptionalString(localization.bannerPath),
             bannerIsFullPath: localization.bannerIsFullPath,
         };
@@ -461,6 +483,7 @@ async function syncProjectContentLocalizations({
                 translatedTitle: localization.projectTitle,
                 translatedSubtitle: localization.subtitle,
                 translatedBody: localization.body,
+                translatedBodyPlainText: localization.bodyPlainText ?? null,
                 sourceKind: "manual",
                 ...contentLanguageMetadataUpdateValues(sourceLanguageMetadata),
             })
@@ -474,6 +497,7 @@ async function syncProjectContentLocalizations({
                     translatedTitle: localization.projectTitle,
                     translatedSubtitle: localization.subtitle,
                     translatedBody: localization.body,
+                    translatedBodyPlainText: localization.bodyPlainText ?? null,
                     sourceKind: "manual",
                     deletedAt: null,
                     ...contentLanguageMetadataUpdateValues(
@@ -975,7 +999,10 @@ export async function createProject({
         organizationsBySlug: organizationLookup.organizationsBySlug,
     });
 
-    const sanitizedProjectBody = sanitizeProjectBody(data.body);
+    const sanitizedProjectBody = sanitizeProjectBody({
+        body: data.body,
+        bodyPlainText: data.bodyPlainText,
+    });
     const bodyPlainText = sanitizedProjectBody.bodyPlainText;
     const projectLanguageMetadata = await resolveProjectContentLanguageMetadata(
         {
@@ -1923,7 +1950,10 @@ export async function updateProject({
         requestedAttributions: data.attributions,
         organizationsBySlug: organizationLookup.organizationsBySlug,
     });
-    const sanitizedProjectBody = sanitizeProjectBody(data.body);
+    const sanitizedProjectBody = sanitizeProjectBody({
+        body: data.body,
+        bodyPlainText: data.bodyPlainText,
+    });
     const bodyPlainText = sanitizedProjectBody.bodyPlainText;
     const currentBodyPlainText =
         project.currentBodyPlainText ??

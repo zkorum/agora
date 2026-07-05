@@ -33,8 +33,9 @@ import {
     validateRichTextInput,
 } from "@/shared/shared.js";
 import { postNewOpinion } from "./comment.js";
-import { createMaxdiffItem } from "./maxdiffItem.js";
+import { createRankingItem } from "./rankingItem.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
+import { normalizeUserRichTextInput } from "./richText.js";
 import { deleteAllConversationExports } from "@/service/conversationExport/index.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
@@ -170,11 +171,18 @@ export async function createNewPost({
     let bodyPlainText = "";
     if (conversationBody != null) {
         try {
-            conversationBody = processUserGeneratedHtml(
-                conversationBody,
-                false,
-                "input",
-            );
+            const normalizationResult = normalizeUserRichTextInput({
+                html: conversationBody,
+                plainText: conversationBodyPlainText,
+                validationMode: "conversation",
+                logLabel:
+                    "[ConversationPlainText] Frontend/backend plain text mismatch on create",
+            });
+            if (!normalizationResult.success) {
+                return normalizationResult;
+            }
+            conversationBody = normalizationResult.content.html;
+            bodyPlainText = normalizationResult.content.plainText;
         } catch (error) {
             if (error instanceof Error) {
                 throw httpErrors.badRequest(error.message);
@@ -183,30 +191,6 @@ export async function createNewPost({
                     "Error while sanitizing request body",
                 );
             }
-        }
-
-        const validationResult = validateRichTextInput({
-            htmlString: conversationBody,
-            mode: "conversation",
-        });
-        if (!validationResult.success) {
-            return validationResult;
-        }
-
-        conversationBody = processUserGeneratedHtml(
-            conversationBody,
-            true,
-            "input",
-        );
-        bodyPlainText = htmlToCountedText(conversationBody);
-        if (bodyPlainText !== conversationBodyPlainText) {
-            log.info(
-                {
-                    frontendPlainTextChars: conversationBodyPlainText.length,
-                    serverPlainTextChars: bodyPlainText.length,
-                },
-                "[ConversationPlainText] Frontend/backend plain text mismatch on create",
-            );
         }
     }
 
@@ -371,7 +355,7 @@ export async function createNewPost({
         if (seedOpinionList.length > 0) {
             if (conversationType === "maxdiff") {
                 for (const seedTitle of seedOpinionList) {
-                    await createMaxdiffItem({
+                    await createRankingItem({
                         db,
                         tx,
                         conversationId: insertedConversationId,
@@ -379,6 +363,9 @@ export async function createNewPost({
                         authorId,
                         title: seedTitle,
                         isSeed: true,
+                        googleCloudCredentials,
+                        useGoogleLanguageDetection:
+                            normalizedMultilingualSetting.dynamicTranslationEnabled,
                     });
                 }
             } else {

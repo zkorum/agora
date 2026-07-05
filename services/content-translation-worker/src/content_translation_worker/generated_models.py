@@ -27,6 +27,7 @@ class ContentTranslationSourceKind(StrEnum):
     opinion = "opinion"
     survey_question = "survey_question"
     project = "project"
+    ranking_item = "ranking_item"
 
 
 class DisplayLanguageCode(StrEnum):
@@ -230,6 +231,13 @@ class DirectoryVisibility(StrEnum):
     unlisted = "unlisted"
 
 
+class RankingItemLifecycleStatus(StrEnum):
+    active = "active"
+    completed = "completed"
+    in_progress = "in_progress"
+    canceled = "canceled"
+
+
 class SurveyQuestionType(StrEnum):
     choice = "choice"
     free_text = "free_text"
@@ -262,6 +270,7 @@ class ContentTranslationWork(Base):
         ARRAY(Integer),
         nullable=True,
     )
+    ranking_item_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     display_language_code: Mapped[DisplayLanguageCode] = mapped_column(
         SaEnum(
             DisplayLanguageCode,
@@ -339,6 +348,7 @@ class ConversationContentTranslation(Base):
     )
     translated_title: Mapped[str] = mapped_column(Text)
     translated_body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    translated_body_plain_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     source_language_code: Mapped[SpokenLanguageCode | None] = mapped_column(
         SaEnum(
             SpokenLanguageCode,
@@ -370,6 +380,8 @@ class Conversation(Base):
     slug_id: Mapped[str] = mapped_column(String(8))
     project_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    polis_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    ranking_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
     language_settings_source: Mapped[ConversationLanguageSettingsSource] = mapped_column(
         SaEnum(
@@ -488,6 +500,7 @@ class OpinionContentTranslation(Base):
         ),
     )
     translated_content: Mapped[str] = mapped_column(Text)
+    translated_content_plain_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     source_language_code: Mapped[SpokenLanguageCode | None] = mapped_column(
         SaEnum(
             SpokenLanguageCode,
@@ -580,6 +593,7 @@ class ProjectContentTranslation(Base):
     translated_title: Mapped[str] = mapped_column(Text)
     translated_subtitle: Mapped[str | None] = mapped_column(Text, nullable=True)
     translated_body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    translated_body_plain_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     source_kind: Mapped[ProjectContentTranslationSourceKind] = mapped_column(
         SaEnum(
             ProjectContentTranslationSourceKind,
@@ -650,6 +664,103 @@ class ProjectTranslationTargetLanguage(Base):
     )
     created_at: Mapped[datetime] = mapped_column(DateTime)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class RankingItemContent(Base):
+    __tablename__ = "ranking_item_content"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    ranking_item_id: Mapped[int] = mapped_column(Integer)
+    conversation_content_id: Mapped[int] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(200))
+    body: Mapped[str | None] = mapped_column(String(3000), nullable=True)
+    body_plain_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_language_code: Mapped[SpokenLanguageCode | None] = mapped_column(
+        SaEnum(
+            SpokenLanguageCode,
+            name="spoken_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    source_raw_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    source_language_provider: Mapped[LanguageDetectionProvider | None] = mapped_column(
+        SaEnum(
+            LanguageDetectionProvider,
+            name="language_detection_provider",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class RankingItemContentTranslation(Base):
+    __tablename__ = "ranking_item_content_translation"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ranking_item_content_id: Mapped[int] = mapped_column(Integer)
+    display_language_code: Mapped[DisplayLanguageCode] = mapped_column(
+        SaEnum(
+            DisplayLanguageCode,
+            name="display_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    translated_title: Mapped[str] = mapped_column(Text)
+    translated_body_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+    translated_body_plain_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_language_code: Mapped[SpokenLanguageCode | None] = mapped_column(
+        SaEnum(
+            SpokenLanguageCode,
+            name="spoken_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    source_raw_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    source_language_provider: Mapped[LanguageDetectionProvider | None] = mapped_column(
+        SaEnum(
+            LanguageDetectionProvider,
+            name="language_detection_provider",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class RankingItem(Base):
+    __tablename__ = "ranking_item"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug_id: Mapped[str] = mapped_column(String(8))
+    author_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    is_seed: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    lifecycle_status: Mapped[RankingItemLifecycleStatus] = mapped_column(
+        SaEnum(
+            RankingItemLifecycleStatus,
+            name="ranking_item_lifecycle_status",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    snapshot_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    snapshot_rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    snapshot_participant_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
 
 
 class RealtimeEventOutbox(Base):

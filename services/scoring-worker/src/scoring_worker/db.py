@@ -17,10 +17,10 @@ from sqlalchemy.orm import Session
 from scoring_worker.generated_models import (
     Conversation,
     MaxdiffComparison,
-    MaxdiffItem,
-    MaxdiffLifecycleStatus,
     MaxdiffResult,
     MaxdiffUserEntityScore,
+    RankingItem,
+    RankingItemLifecycleStatus,
     RankingScore,
     RankingScoreEntity,
     SurveyAnswer,
@@ -372,14 +372,14 @@ def fetch_active_items_batch(
     if not conversation_ids:
         return {}
 
-    stmt = select(MaxdiffItem.conversation_id, MaxdiffItem.slug_id).where(
+    stmt = select(RankingItem.conversation_id, RankingItem.slug_id).where(
         and_(
-            MaxdiffItem.conversation_id.in_(conversation_ids),
-            MaxdiffItem.current_content_id.is_not(None),
-            MaxdiffItem.lifecycle_status.in_(
+            RankingItem.conversation_id.in_(conversation_ids),
+            RankingItem.current_content_id.is_not(None),
+            RankingItem.lifecycle_status.in_(
                 [
-                    MaxdiffLifecycleStatus.active,
-                    MaxdiffLifecycleStatus.in_progress,
+                    RankingItemLifecycleStatus.active,
+                    RankingItemLifecycleStatus.in_progress,
                 ]
             ),
         ),

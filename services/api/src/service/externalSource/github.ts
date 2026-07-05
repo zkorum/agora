@@ -4,14 +4,18 @@ import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgre
 import { eq, and, sql, asc, isNull } from "drizzle-orm";
 import {
     conversationTable,
-    maxdiffItemTable,
-    maxdiffItemContentTable,
-    maxdiffItemExternalSourceTable,
+    rankingItemTable,
+    rankingItemContentTable,
+    rankingItemExternalSourceTable,
     organizationMembershipTable,
     projectOrganizationOwnershipTable,
 } from "@/shared-backend/schema.js";
 import { zodExternalSourceConfig } from "@/shared/types/zod.js";
-import { createMaxdiffItem } from "@/service/maxdiffItem.js";
+import {
+    createRankingItem,
+    markRankingScoringDirty,
+    normalizeProviderRankingItemContent,
+} from "@/service/rankingItem.js";
 import { computeItemSnapshot } from "@/service/maxdiff.js";
 import { log } from "@/app.js";
 import {
@@ -21,6 +25,7 @@ import {
 import { marked } from "marked";
 import type { GitHubClient, GitHubIssue, SyncResult } from "./index.js";
 import { requireProjectCapability } from "@/service/projectAccess.js";
+import { contentLanguageMetadataUpdateValues } from "@/service/contentLanguageMetadata.js";
 
 async function getDeterministicProjectMemberUserId({
     db,
@@ -161,7 +166,6 @@ export function parseWebhookPayload({
 // --- Webhook handler ---
 
 import type { Valkey } from "@/shared-backend/valkey.js";
-import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
 
 interface HandleWebhookProps {
     db: PostgresDatabase;
@@ -309,7 +313,7 @@ async function upsertItemFromGitHubIssue({
 
     // Wrap the entire upsert in a transaction with an advisory lock to prevent
     // the TOCTOU race condition that previously caused duplicate items.
-    return await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
         // Advisory lock serializes concurrent upserts for the same
         // (externalId, conversationId) pair, preventing duplicate creation.
         await tx.execute(
@@ -319,40 +323,40 @@ async function upsertItemFromGitHubIssue({
         // Check if item already exists for this conversation
         const existingRows = await tx
             .select({
-                maxdiffItemId: maxdiffItemExternalSourceTable.maxdiffItemId,
+                rankingItemId: rankingItemExternalSourceTable.rankingItemId,
             })
-            .from(maxdiffItemExternalSourceTable)
+            .from(rankingItemExternalSourceTable)
             .innerJoin(
-                maxdiffItemTable,
+                rankingItemTable,
                 eq(
-                    maxdiffItemTable.id,
-                    maxdiffItemExternalSourceTable.maxdiffItemId,
+                    rankingItemTable.id,
+                    rankingItemExternalSourceTable.rankingItemId,
                 ),
             )
             .where(
                 and(
-                    eq(maxdiffItemExternalSourceTable.externalId, externalId),
-                    eq(maxdiffItemTable.conversationId, conversationId),
+                    eq(rankingItemExternalSourceTable.externalId, externalId),
+                    eq(rankingItemTable.conversationId, conversationId),
                 ),
             );
 
         if (existingRows.length === 0) {
             // Create new item + external source
-            const result = await createMaxdiffItem({
-                db,
+            const issueBodyHtml = convertMarkdownToHtml({ markdown: issue.body });
+            const result = await createRankingItem({
+                db: tx,
                 tx,
                 conversationId,
-                conversationSlugId,
                 conversationContentId,
                 authorId,
                 title: issue.title,
-                body: convertMarkdownToHtml({ markdown: issue.body }),
+                bodyHtml: issueBodyHtml,
+                contentSource: "provider",
                 isSeed: false,
-                valkey,
             });
 
-            await tx.insert(maxdiffItemExternalSourceTable).values({
-                maxdiffItemId: result.itemId,
+            await tx.insert(rankingItemExternalSourceTable).values({
+                rankingItemId: result.itemId,
                 conversationId,
                 sourceType: "github_issue",
                 externalId,
@@ -364,13 +368,13 @@ async function upsertItemFromGitHubIssue({
             // If issue is already closed, transition to correct lifecycle
             if (newLifecycle !== "active") {
                 const snapshot = await computeItemSnapshot({
-                    db,
+                    db: tx,
                     conversationId,
                     itemSlugId: result.slugId,
                 });
 
                 await tx
-                    .update(maxdiffItemTable)
+                    .update(rankingItemTable)
                     .set({
                         lifecycleStatus: newLifecycle,
                         snapshotScore: snapshot.snapshotScore,
@@ -379,7 +383,7 @@ async function upsertItemFromGitHubIssue({
                             snapshot.snapshotParticipantCount,
                         updatedAt: new Date(),
                     })
-                    .where(eq(maxdiffItemTable.id, result.itemId));
+                    .where(eq(rankingItemTable.id, result.itemId));
             }
 
             log.info(
@@ -388,43 +392,49 @@ async function upsertItemFromGitHubIssue({
             return "created";
         } else {
             // Update existing item
-            const itemId = existingRows[0].maxdiffItemId;
+            const itemId = existingRows[0].rankingItemId;
 
             // Update external source metadata
             await tx
-                .update(maxdiffItemExternalSourceTable)
+                .update(rankingItemExternalSourceTable)
                 .set({
                     externalUrl: issue.htmlUrl,
                     externalMetadata: metadata,
                     lastSyncedAt: new Date(),
                 })
                 .where(
-                    eq(maxdiffItemExternalSourceTable.maxdiffItemId, itemId),
+                    eq(rankingItemExternalSourceTable.rankingItemId, itemId),
                 );
 
-            // Update content (title/body)
+            // Update content only when the normalized provider content changed.
             const now = new Date();
-            const [contentRow] = await tx
-                .insert(maxdiffItemContentTable)
-                .values({
-                    maxdiffItemId: itemId,
-                    conversationContentId,
-                    title: issue.title,
-                    body: convertMarkdownToHtml({
-                        markdown: issue.body,
-                    }),
-                    createdAt: now,
-                })
-                .returning({ id: maxdiffItemContentTable.id });
+            const issueBodyHtml = convertMarkdownToHtml({
+                markdown: issue.body,
+            });
+            const normalizedContent = await normalizeProviderRankingItemContent({
+                title: issue.title,
+                bodyHtml: issueBodyHtml,
+            });
 
             // Get current item state
             const currentItemRows = await tx
                 .select({
-                    slugId: maxdiffItemTable.slugId,
-                    lifecycleStatus: maxdiffItemTable.lifecycleStatus,
+                    slugId: rankingItemTable.slugId,
+                    lifecycleStatus: rankingItemTable.lifecycleStatus,
+                    currentContentId: rankingItemTable.currentContentId,
+                    title: rankingItemContentTable.title,
+                    body: rankingItemContentTable.body,
+                    bodyPlainText: rankingItemContentTable.bodyPlainText,
                 })
-                .from(maxdiffItemTable)
-                .where(eq(maxdiffItemTable.id, itemId));
+                .from(rankingItemTable)
+                .innerJoin(
+                    rankingItemContentTable,
+                    eq(
+                        rankingItemContentTable.id,
+                        rankingItemTable.currentContentId,
+                    ),
+                )
+                .where(eq(rankingItemTable.id, itemId));
 
             if (currentItemRows.length === 0) {
                 throw new Error(
@@ -432,6 +442,34 @@ async function upsertItemFromGitHubIssue({
                 );
             }
             const currentItem = currentItemRows[0];
+            const contentChanged =
+                currentItem.title !== normalizedContent.title ||
+                currentItem.body !== normalizedContent.bodyHtml ||
+                currentItem.bodyPlainText !== normalizedContent.bodyPlainText;
+            let contentId = currentItem.currentContentId;
+            if (contentChanged) {
+                const insertedContentRows = await tx
+                    .insert(rankingItemContentTable)
+                    .values({
+                        rankingItemId: itemId,
+                        conversationContentId,
+                        title: normalizedContent.title,
+                        body: normalizedContent.bodyHtml,
+                        bodyPlainText: normalizedContent.bodyPlainText,
+                        ...contentLanguageMetadataUpdateValues(
+                            normalizedContent.sourceLanguageMetadata,
+                        ),
+                        createdAt: now,
+                    })
+                    .returning({ id: rankingItemContentTable.id });
+                const insertedContent = insertedContentRows.at(0);
+                if (insertedContent === undefined) {
+                    throw new Error(
+                        `[GitHub] Failed to insert ranking item content for externalId=${externalId}`,
+                    );
+                }
+                contentId = insertedContent.id;
+            }
 
             const wasActive =
                 currentItem.lifecycleStatus === "active" ||
@@ -442,15 +480,15 @@ async function upsertItemFromGitHubIssue({
             if (wasActive && isDeactivating) {
                 // Snapshot before deactivating
                 const snapshot = await computeItemSnapshot({
-                    db,
+                    db: tx,
                     conversationId,
                     itemSlugId: currentItem.slugId,
                 });
 
                 await tx
-                    .update(maxdiffItemTable)
+                    .update(rankingItemTable)
                     .set({
-                        currentContentId: contentRow.id,
+                        currentContentId: contentId,
                         lifecycleStatus: newLifecycle,
                         snapshotScore: snapshot.snapshotScore,
                         snapshotRank: snapshot.snapshotRank,
@@ -458,37 +496,40 @@ async function upsertItemFromGitHubIssue({
                             snapshot.snapshotParticipantCount,
                         updatedAt: now,
                     })
-                    .where(eq(maxdiffItemTable.id, itemId));
+                    .where(eq(rankingItemTable.id, itemId));
             } else if (!wasActive && newLifecycle === "active") {
                 // Reactivating: clear snapshot
                 await tx
-                    .update(maxdiffItemTable)
+                    .update(rankingItemTable)
                     .set({
-                        currentContentId: contentRow.id,
+                        currentContentId: contentId,
                         lifecycleStatus: newLifecycle,
                         snapshotScore: null,
                         snapshotRank: null,
                         snapshotParticipantCount: null,
                         updatedAt: now,
                     })
-                    .where(eq(maxdiffItemTable.id, itemId));
+                    .where(eq(rankingItemTable.id, itemId));
             } else {
                 await tx
-                    .update(maxdiffItemTable)
+                    .update(rankingItemTable)
                     .set({
-                        currentContentId: contentRow.id,
+                        currentContentId: contentId,
                         lifecycleStatus: newLifecycle,
                         updatedAt: now,
                     })
-                    .where(eq(maxdiffItemTable.id, itemId));
+                    .where(eq(rankingItemTable.id, itemId));
             }
 
             log.info(
-                `[GitHub] Updated item from ${externalId} → ${newLifecycle}`,
+                `[GitHub] Updated item from ${externalId} -> ${newLifecycle}`,
             );
             return "updated";
         }
     });
+
+    markRankingScoringDirty({ valkey, conversationId, conversationSlugId });
+    return result;
 }
 
 // --- Deactivate item when label is removed ---
@@ -508,34 +549,34 @@ async function deactivateItemByExternalId({
 }): Promise<void> {
     const rows = await db
         .select({
-            maxdiffItemId: maxdiffItemExternalSourceTable.maxdiffItemId,
+            rankingItemId: rankingItemExternalSourceTable.rankingItemId,
         })
-        .from(maxdiffItemExternalSourceTable)
+        .from(rankingItemExternalSourceTable)
         .innerJoin(
-            maxdiffItemTable,
+            rankingItemTable,
             eq(
-                maxdiffItemTable.id,
-                maxdiffItemExternalSourceTable.maxdiffItemId,
+                rankingItemTable.id,
+                rankingItemExternalSourceTable.rankingItemId,
             ),
         )
         .where(
             and(
-                eq(maxdiffItemExternalSourceTable.externalId, externalId),
-                eq(maxdiffItemTable.conversationId, conversationId),
+                eq(rankingItemExternalSourceTable.externalId, externalId),
+                eq(rankingItemTable.conversationId, conversationId),
             ),
         );
 
     if (rows.length === 0) return;
 
-    const itemId = rows[0].maxdiffItemId;
+    const itemId = rows[0].rankingItemId;
 
     const itemRows = await db
         .select({
-            slugId: maxdiffItemTable.slugId,
-            lifecycleStatus: maxdiffItemTable.lifecycleStatus,
+            slugId: rankingItemTable.slugId,
+            lifecycleStatus: rankingItemTable.lifecycleStatus,
         })
-        .from(maxdiffItemTable)
-        .where(eq(maxdiffItemTable.id, itemId));
+        .from(rankingItemTable)
+        .where(eq(rankingItemTable.id, itemId));
 
     if (itemRows.length === 0) return;
     const item = itemRows[0];
@@ -554,7 +595,7 @@ async function deactivateItemByExternalId({
     });
 
     await db
-        .update(maxdiffItemTable)
+        .update(rankingItemTable)
         .set({
             lifecycleStatus: "canceled",
             snapshotScore: snapshot.snapshotScore,
@@ -562,21 +603,11 @@ async function deactivateItemByExternalId({
             snapshotParticipantCount: snapshot.snapshotParticipantCount,
             updatedAt: new Date(),
         })
-        .where(eq(maxdiffItemTable.id, itemId));
+        .where(eq(rankingItemTable.id, itemId));
 
     log.info(`[GitHub] Deactivated item from ${externalId} (label removed)`);
 
-    if (valkey !== undefined) {
-        const member = `${String(conversationId)}:${conversationSlugId}`;
-        valkey
-            .zadd(VALKEY_QUEUE_KEYS.SCORING_DIRTY_SOLIDAGO, { [member]: 0 })
-            .catch((error: unknown) => {
-                log.error(
-                    error,
-                    `[MaxDiff] Failed to ZADD scoring:dirty:solidago for ${member}`,
-                );
-            });
-    }
+    markRankingScoringDirty({ valkey, conversationId, conversationSlugId });
 }
 
 // --- Sync (initial import) ---

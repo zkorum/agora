@@ -1,4 +1,8 @@
 /** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
+
+import { decode } from "html-entities";
+import sanitizeHtml from "sanitize-html";
+
 // WARNING: this is also used in schema.ts and cannot be imported there so it was copy-pasted
 // IF YOU CHANGE THESE VALUES ALSO CHANGE THEM IN SCHEMA.TS
 export const MAX_LENGTH_OPTION = 30;
@@ -41,7 +45,7 @@ interface CountHtmlPlainTextCharactersReturn {
     characterCount: number;
 }
 
-export type RichTextValidationMode = "conversation" | "opinion";
+export type RichTextValidationMode = "conversation" | "opinion" | "ranking_item";
 export type RichTextValidationFailureReason =
     | "plain_text_too_long"
     | "html_too_long";
@@ -96,16 +100,11 @@ export function htmlToCountedText(htmlString: string): string {
         .replace(/<br\s*\/?>/gi, "\n")
         .replace(/<p>/gi, "");
 
-    // Strip HTML tags; repeat until stable to handle malformed/nested tags
-    let plainText = textWithNewlines;
-    let prev: string;
-    do {
-        prev = plainText;
-        plainText = plainText.replace(/<[^>]*>/g, "");
-    } while (plainText !== prev);
-    // Remove any remaining incomplete opening tag (e.g. "<script" with no closing >)
-    plainText = plainText.replace(/<[^>]*$/, "");
-    return plainText.replace(/\n$/, "");
+    const plainText = sanitizeHtml(textWithNewlines, {
+        allowedTags: [],
+        allowedAttributes: {},
+    });
+    return decode(plainText).replace(/\n$/, "");
 }
 
 export function countHtmlPlainTextCharacters(
@@ -134,14 +133,34 @@ export function validateHtmlStringCharacterCount(
     htmlString: string,
     mode: RichTextValidationMode,
 ): ValidateHtmlStringCharacterCountReturn {
-    const characterLimit =
-        mode == "conversation"
-            ? MAX_LENGTH_CONVERSATION_BODY
-            : MAX_LENGTH_OPINION;
+    const { characterLimit } = getRichTextValidationLimits(mode);
     return validateHtmlStringCharacterCountWithLimit({
         htmlString,
         maxCharacterCount: characterLimit,
     });
+}
+
+function getRichTextValidationLimits(mode: RichTextValidationMode): {
+    characterLimit: number;
+    htmlLimit: number;
+} {
+    switch (mode) {
+        case "conversation":
+            return {
+                characterLimit: MAX_LENGTH_CONVERSATION_BODY,
+                htmlLimit: MAX_LENGTH_CONVERSATION_BODY_HTML,
+            };
+        case "opinion":
+            return {
+                characterLimit: MAX_LENGTH_OPINION,
+                htmlLimit: MAX_LENGTH_OPINION_HTML,
+            };
+        case "ranking_item":
+            return {
+                characterLimit: MAX_LENGTH_BODY,
+                htmlLimit: MAX_LENGTH_BODY_HTML,
+            };
+    }
 }
 
 export function validateRichTextInput({
@@ -151,14 +170,7 @@ export function validateRichTextInput({
     htmlString: string;
     mode: RichTextValidationMode;
 }): ValidateRichTextInputReturn | ValidateRichTextInputFailureReturn {
-    const characterLimit =
-        mode === "conversation"
-            ? MAX_LENGTH_CONVERSATION_BODY
-            : MAX_LENGTH_OPINION;
-    const htmlLimit =
-        mode === "conversation"
-            ? MAX_LENGTH_CONVERSATION_BODY_HTML
-            : MAX_LENGTH_OPINION_HTML;
+    const { characterLimit, htmlLimit } = getRichTextValidationLimits(mode);
     const { characterCount } = countHtmlPlainTextCharacters(htmlString);
 
     if (characterCount > characterLimit) {

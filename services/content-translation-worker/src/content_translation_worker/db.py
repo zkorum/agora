@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import html
 import logging
+import re
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -72,6 +74,24 @@ def sanitize_translated_html(value: str) -> str:
         attributes={},
         strip=True,
     )
+
+
+def html_to_counted_text(value: str) -> str:
+    text_with_newlines = re.sub(r"</p>", "\n", value, flags=re.IGNORECASE)
+    text_with_newlines = re.sub(
+        r"<br\s*/?>",
+        "\n",
+        text_with_newlines,
+        flags=re.IGNORECASE,
+    )
+    text_with_newlines = re.sub(r"<p>", "", text_with_newlines, flags=re.IGNORECASE)
+    plain_text = bleach.clean(
+        text_with_newlines,
+        tags=frozenset(),
+        attributes={},
+        strip=True,
+    )
+    return html.unescape(plain_text).removesuffix("\n")
 
 
 @dataclass(frozen=True)
@@ -1303,6 +1323,9 @@ def _translate_conversation_source(
             if body_result is not None
             else None
         )
+        translated_body_plain_text = (
+            html_to_counted_text(translated_body) if translated_body is not None else None
+        )
         source_metadata = build_translation_source_metadata_from_results(
             [title_result, *([] if body_result is None else [body_result])],
             use_google_detected_source=False,
@@ -1316,6 +1339,7 @@ def _translate_conversation_source(
             display_language_code=display_language_code,
             translated_title=title_result.translated_text,
             translated_body=translated_body,
+            translated_body_plain_text=translated_body_plain_text,
             source_language_code=source_metadata.source_language_code,
             source_raw_language_code=source_metadata.source_raw_language_code,
             source_language_provider=source_metadata.source_language_provider,
@@ -1332,6 +1356,7 @@ def _translate_conversation_source(
                 set_={
                     "translated_title": title_result.translated_text,
                     "translated_body": translated_body,
+                    "translated_body_plain_text": translated_body_plain_text,
                     "source_language_code": source_metadata.source_language_code,
                     "source_raw_language_code": source_metadata.source_raw_language_code,
                     "source_language_provider": source_metadata.source_language_provider,
@@ -1405,6 +1430,9 @@ def _translate_project_source(
             if body_result is not None
             else None
         )
+        translated_body_plain_text = (
+            html_to_counted_text(translated_body) if translated_body is not None else None
+        )
         source_metadata = build_translation_source_metadata_from_results(
             [
                 title_result,
@@ -1425,6 +1453,7 @@ def _translate_project_source(
                 subtitle_result.translated_text if subtitle_result is not None else None
             ),
             translated_body=translated_body,
+            translated_body_plain_text=translated_body_plain_text,
             source_kind=ProjectContentTranslationSourceKind.machine,
             source_language_code=source_metadata.source_language_code,
             source_raw_language_code=source_metadata.source_raw_language_code,
@@ -1448,6 +1477,7 @@ def _translate_project_source(
                         else None
                     ),
                     "translated_body": translated_body,
+                    "translated_body_plain_text": translated_body_plain_text,
                     "source_kind": ProjectContentTranslationSourceKind.machine,
                     "source_language_code": source_metadata.source_language_code,
                     "source_raw_language_code": source_metadata.source_raw_language_code,
@@ -1486,6 +1516,7 @@ def _translate_opinion_source(
         translated_content = sanitize_translated_html(
             localized_result.result.translated_text
         )
+        translated_content_plain_text = html_to_counted_text(translated_content)
         source_metadata = build_translation_source_metadata_from_results(
             [localized_result.result],
             use_google_detected_source=source_decision.use_google_detected_source,
@@ -1503,6 +1534,7 @@ def _translate_opinion_source(
             opinion_content_id=source.content_id,
             display_language_code=localized_result.display_language_code,
             translated_content=translated_content,
+            translated_content_plain_text=translated_content_plain_text,
             source_language_code=source_metadata.source_language_code,
             source_raw_language_code=source_metadata.source_raw_language_code,
             source_language_provider=source_metadata.source_language_provider,
@@ -1518,6 +1550,7 @@ def _translate_opinion_source(
                 ],
                 set_={
                     "translated_content": translated_content,
+                    "translated_content_plain_text": translated_content_plain_text,
                     "source_language_code": source_metadata.source_language_code,
                     "source_raw_language_code": source_metadata.source_raw_language_code,
                     "source_language_provider": source_metadata.source_language_provider,

@@ -2307,6 +2307,18 @@ export async function requestContentTranslation({
         });
     }
 
+    if (subject.kind === "ranking_item") {
+        log.info(
+            {
+                conversationSlugId: subject.conversationSlugId,
+                itemSlugId: subject.itemSlugId,
+                targetLanguageCode,
+            },
+            "[ContentTranslation] Ranking item translation subject is not wired yet",
+        );
+        return undefined;
+    }
+
     const source = await fetchOpinionSource({
         db,
         conversationSlugId: subject.conversationSlugId,

@@ -124,6 +124,7 @@ function createCompleteMonoChoiceState({
                 answerId: responseId * 10 + 1,
                 answeredQuestionSemanticVersion: 1,
                 textValueHtml: null,
+                textValuePlainText: null,
                 optionSlugIds: [optionSlugId],
             },
         ],
@@ -134,6 +135,7 @@ function createCompleteMonoChoiceState({
             answerId: responseId * 10 + 2,
             answeredQuestionSemanticVersion: 1,
             textValueHtml: freeTextHtml,
+            textValuePlainText: freeTextHtml,
             optionSlugIds: [],
         });
     }
@@ -828,6 +830,7 @@ describe("buildSurveyCompletionCounts", () => {
                                 answerId: 21,
                                 answeredQuestionSemanticVersion: 0,
                                 textValueHtml: null,
+                                textValuePlainText: null,
                                 optionSlugIds: ["optYes01"],
                             },
                         ],

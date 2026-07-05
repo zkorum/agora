@@ -6,7 +6,7 @@ import {
     opinionTable,
     conversationModerationTable,
     organizationTable,
-    maxdiffItemTable,
+    rankingItemTable,
     projectOrganizationOwnershipTable,
 } from "@/shared-backend/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
@@ -527,15 +527,15 @@ export function useCommonPost() {
                     .select({
                         count: sql<number>`count(*)::int`,
                     })
-                    .from(maxdiffItemTable)
+                    .from(rankingItemTable)
                     .where(
                         and(
                             eq(
-                                maxdiffItemTable.conversationId,
+                                rankingItemTable.conversationId,
                                 postItem.conversationId,
                             ),
-                            isNotNull(maxdiffItemTable.currentContentId),
-                            inArray(maxdiffItemTable.lifecycleStatus, [
+                            isNotNull(rankingItemTable.currentContentId),
+                            inArray(rankingItemTable.lifecycleStatus, [
                                 "active",
                                 "in_progress",
                             ]),

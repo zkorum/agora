@@ -40,7 +40,6 @@ import {
 import type { Valkey } from "@/shared-backend/valkey.js";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
 import {
-    countHtmlPlainTextCharacters,
     htmlToCountedText,
     PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
 } from "@/shared/shared.js";
@@ -98,6 +97,7 @@ import {
 } from "./conversationLanguage.js";
 import { getConversationMultilingualSetting } from "./conversationMultilingual.js";
 import type { SurveyQuestionContentSource } from "./contentTranslation.js";
+import { normalizeUserRichTextInput } from "./richText.js";
 
 interface ConversationAccessContext {
     conversationId: number;
@@ -416,7 +416,17 @@ export interface StoredSurveyAnswer {
     answerId: number;
     answeredQuestionSemanticVersion: number;
     textValueHtml: string | null;
+    textValuePlainText: string | null;
     optionSlugIds: string[];
+}
+
+function getStoredSurveyAnswerPlainText(
+    storedAnswer: StoredSurveyAnswer,
+): string {
+    return (
+        storedAnswer.textValuePlainText ??
+        htmlToCountedText(storedAnswer.textValueHtml ?? "")
+    );
 }
 
 function isStoredSurveyAnswerPassed({
@@ -432,7 +442,7 @@ function isStoredSurveyAnswerPassed({
 
     return (
         storedAnswer.optionSlugIds.length === 0 &&
-        htmlToCountedText(storedAnswer.textValueHtml ?? "").length === 0
+        getStoredSurveyAnswerPlainText(storedAnswer).length === 0
     );
 }
 
@@ -567,6 +577,7 @@ function storedSurveyAnswerToAnswerDraft({
             return {
                 questionType: question.questionType,
                 textValueHtml: storedAnswer.textValueHtml ?? "",
+                textValuePlainText: getStoredSurveyAnswerPlainText(storedAnswer),
             };
         case "choice":
             return {
@@ -685,9 +696,7 @@ export function validateSurveyAnswer({
                 return false;
             }
 
-            const { characterCount } = countHtmlPlainTextCharacters(
-                answer.textValueHtml,
-            );
+            const characterCount = answer.textValuePlainText.length;
             const effectiveMinLength = Math.max(minPlainTextLength ?? 0, 1);
             return (
                 characterCount >= effectiveMinLength &&
@@ -725,6 +734,51 @@ export function validateSurveyAnswer({
             }
             return true;
         }
+    }
+}
+
+function normalizeSurveyAnswerForStorage({
+    question,
+    answer,
+}: {
+    question: ActiveSurveyQuestionRecord;
+    answer: SurveyAnswerSubmission;
+}): SurveyAnswerSubmission {
+    if (answer.questionType !== "free_text") {
+        return answer;
+    }
+
+    if (
+        question.constraints.type === "free_text" &&
+        question.constraints.inputMode === "integer"
+    ) {
+        return {
+            ...answer,
+            textValuePlainText: answer.textValueHtml,
+        };
+    }
+
+    try {
+        const normalizationResult = normalizeUserRichTextInput({
+            html: answer.textValueHtml,
+            plainText: answer.textValuePlainText,
+            logLabel:
+                "[SurveyAnswerPlainText] Frontend/backend plain text mismatch",
+        });
+        if (!normalizationResult.success) {
+            throw httpErrors.badRequest(normalizationResult.reason);
+        }
+
+        return {
+            questionType: "free_text",
+            textValueHtml: normalizationResult.content.html,
+            textValuePlainText: normalizationResult.content.plainText,
+        };
+    } catch (error) {
+        if (error instanceof Error) {
+            throw httpErrors.badRequest(error.message);
+        }
+        throw httpErrors.badRequest("Error while sanitizing survey answer");
     }
 }
 
@@ -1228,6 +1282,7 @@ export async function loadSurveyParticipantState({
             answeredQuestionSemanticVersion:
                 surveyAnswerTable.answeredQuestionSemanticVersion,
             textValueHtml: surveyAnswerTable.textValueHtml,
+            textValuePlainText: surveyAnswerTable.textValuePlainText,
         })
         .from(surveyAnswerTable)
         .where(
@@ -1283,6 +1338,7 @@ export async function loadSurveyParticipantState({
             answeredQuestionSemanticVersion:
                 answer.answeredQuestionSemanticVersion,
             textValueHtml: answer.textValueHtml,
+            textValuePlainText: answer.textValuePlainText,
             optionSlugIds: optionSlugIdsByAnswerId.get(answer.answerId) ?? [],
         });
     }
@@ -2570,7 +2626,15 @@ export async function saveSurveyAnswer({
         surveyIsOptional: activeSurveyConfig.isOptional,
     });
 
-    if (answer !== null && !validateSurveyAnswer({ question, answer })) {
+    const normalizedAnswer =
+        answer === null
+            ? null
+            : normalizeSurveyAnswerForStorage({ question, answer });
+
+    if (
+        normalizedAnswer !== null &&
+        !validateSurveyAnswer({ question, answer: normalizedAnswer })
+    ) {
         throw httpErrors.badRequest("Invalid survey answer payload");
     }
 
@@ -2644,7 +2708,7 @@ export async function saveSurveyAnswer({
             .limit(1);
         const existingAnswerId = existingAnswerRows.at(0)?.id;
 
-        if (answer === null) {
+        if (normalizedAnswer === null) {
             if (question.isRequired) {
                 if (existingAnswerId !== undefined) {
                     await tx
@@ -2678,6 +2742,7 @@ export async function saveSurveyAnswer({
                         answeredQuestionSemanticVersion:
                             question.currentSemanticVersion,
                         textValueHtml: null,
+                        textValuePlainText: null,
                         deletedAt: null,
                         createdAt: now,
                         updatedAt: now,
@@ -2691,6 +2756,7 @@ export async function saveSurveyAnswer({
                         answeredQuestionSemanticVersion:
                             question.currentSemanticVersion,
                         textValueHtml: null,
+                        textValuePlainText: null,
                         deletedAt: null,
                         updatedAt: now,
                     })
@@ -2713,7 +2779,13 @@ export async function saveSurveyAnswer({
         }
 
         const textValueHtml =
-            answer.questionType === "free_text" ? answer.textValueHtml : null;
+            normalizedAnswer.questionType === "free_text"
+                ? normalizedAnswer.textValueHtml
+                : null;
+        const textValuePlainText =
+            normalizedAnswer.questionType === "free_text"
+                ? normalizedAnswer.textValuePlainText
+                : null;
         let surveyAnswerId = existingAnswerId;
         if (surveyAnswerId === undefined) {
             const insertedAnswer = await tx
@@ -2725,6 +2797,7 @@ export async function saveSurveyAnswer({
                     answeredQuestionSemanticVersion:
                         question.currentSemanticVersion,
                     textValueHtml,
+                    textValuePlainText,
                     deletedAt: null,
                     createdAt: now,
                     updatedAt: now,
@@ -2738,6 +2811,7 @@ export async function saveSurveyAnswer({
                     answeredQuestionSemanticVersion:
                         question.currentSemanticVersion,
                     textValueHtml,
+                    textValuePlainText,
                     deletedAt: null,
                     updatedAt: now,
                 })
@@ -2756,13 +2830,13 @@ export async function saveSurveyAnswer({
                 );
         }
 
-        if (answer.questionType !== "free_text") {
+        if (normalizedAnswer.questionType !== "free_text") {
             const optionIdsBySlugId = new Map(
                 question.options.map((option) => [option.slugId, option.id]),
             );
-            if (answer.optionSlugIds.length > 0) {
+            if (normalizedAnswer.optionSlugIds.length > 0) {
                 await tx.insert(surveyAnswerOptionTable).values(
-                    answer.optionSlugIds.map((optionSlugId) => {
+                    normalizedAnswer.optionSlugIds.map((optionSlugId) => {
                         const surveyQuestionOptionId =
                             optionIdsBySlugId.get(optionSlugId);
                         if (surveyQuestionOptionId === undefined) {
@@ -3082,5 +3156,5 @@ export function surveyAnswerToPlainText({
         return undefined;
     }
 
-    return htmlToCountedText(answer.textValueHtml);
+    return answer.textValuePlainText;
 }

@@ -1,9 +1,9 @@
 import {
     conversationTable,
     maxdiffResultTable,
-    maxdiffItemTable,
-    maxdiffItemContentTable,
-    maxdiffItemExternalSourceTable,
+    rankingItemTable,
+    rankingItemContentTable,
+    rankingItemExternalSourceTable,
     rankingScoreTable,
     maxdiffComparisonTable,
     maxdiffUserEntityScoreTable,
@@ -79,13 +79,13 @@ export async function computeGlobalUncertainty({
     conversationId: number;
 }): Promise<{ items: string[]; uncertainty: Map<string, number> }> {
     const activeItems = await db
-        .select({ slugId: maxdiffItemTable.slugId })
-        .from(maxdiffItemTable)
+        .select({ slugId: rankingItemTable.slugId })
+        .from(rankingItemTable)
         .where(
             and(
-                eq(maxdiffItemTable.conversationId, conversationId),
-                isNotNull(maxdiffItemTable.currentContentId),
-                inArray(maxdiffItemTable.lifecycleStatus, [
+                eq(rankingItemTable.conversationId, conversationId),
+                isNotNull(rankingItemTable.currentContentId),
+                inArray(rankingItemTable.lifecycleStatus, [
                     "active",
                     "in_progress",
                 ]),
@@ -361,32 +361,32 @@ export async function getMaxdiffResults({
     // Fetch items with their content and optional external source URL
     const itemRows = await db
         .select({
-            slugId: maxdiffItemTable.slugId,
-            title: maxdiffItemContentTable.title,
-            body: maxdiffItemContentTable.body,
-            lifecycleStatus: maxdiffItemTable.lifecycleStatus,
-            snapshotScore: maxdiffItemTable.snapshotScore,
-            snapshotRank: maxdiffItemTable.snapshotRank,
-            snapshotParticipantCount: maxdiffItemTable.snapshotParticipantCount,
-            externalUrl: maxdiffItemExternalSourceTable.externalUrl,
+            slugId: rankingItemTable.slugId,
+            title: rankingItemContentTable.title,
+            body: rankingItemContentTable.body,
+            lifecycleStatus: rankingItemTable.lifecycleStatus,
+            snapshotScore: rankingItemTable.snapshotScore,
+            snapshotRank: rankingItemTable.snapshotRank,
+            snapshotParticipantCount: rankingItemTable.snapshotParticipantCount,
+            externalUrl: rankingItemExternalSourceTable.externalUrl,
         })
-        .from(maxdiffItemTable)
+        .from(rankingItemTable)
         .innerJoin(
-            maxdiffItemContentTable,
-            eq(maxdiffItemContentTable.id, maxdiffItemTable.currentContentId),
+            rankingItemContentTable,
+            eq(rankingItemContentTable.id, rankingItemTable.currentContentId),
         )
         .leftJoin(
-            maxdiffItemExternalSourceTable,
+            rankingItemExternalSourceTable,
             eq(
-                maxdiffItemExternalSourceTable.maxdiffItemId,
-                maxdiffItemTable.id,
+                rankingItemExternalSourceTable.rankingItemId,
+                rankingItemTable.id,
             ),
         )
         .where(
             and(
-                eq(maxdiffItemTable.conversationId, conversationId),
-                isNotNull(maxdiffItemTable.currentContentId),
-                inArray(maxdiffItemTable.lifecycleStatus, activeStatuses),
+                eq(rankingItemTable.conversationId, conversationId),
+                isNotNull(rankingItemTable.currentContentId),
+                inArray(rankingItemTable.lifecycleStatus, activeStatuses),
             ),
         );
 

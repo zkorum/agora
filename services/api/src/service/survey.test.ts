@@ -80,6 +80,7 @@ function createPassedAnswer({
         answerId: question.id * 100,
         answeredQuestionSemanticVersion: question.currentSemanticVersion,
         textValueHtml: null,
+        textValuePlainText: null,
         optionSlugIds: [],
     };
 }
@@ -210,6 +211,7 @@ describe("deriveSurveyQuestionFormItem", () => {
                 answerId: 10,
                 answeredQuestionSemanticVersion: 1,
                 textValueHtml: "Saved answer",
+                textValuePlainText: "Saved answer",
                 optionSlugIds: [],
             },
         });
@@ -219,6 +221,7 @@ describe("deriveSurveyQuestionFormItem", () => {
         expect(formItem.currentAnswer).toEqual({
             questionType: "free_text",
             textValueHtml: "Saved answer",
+            textValuePlainText: "Saved answer",
         });
     });
 
@@ -356,6 +359,7 @@ describe("validateSurveyAnswer", () => {
                 answer: {
                     questionType: "free_text",
                     textValueHtml: "34",
+                    textValuePlainText: "34",
                 },
             }),
         ).toBe(true);
@@ -366,6 +370,7 @@ describe("validateSurveyAnswer", () => {
                 answer: {
                     questionType: "free_text",
                     textValueHtml: "34.5",
+                    textValuePlainText: "34.5",
                 },
             }),
         ).toBe(false);
@@ -376,6 +381,7 @@ describe("validateSurveyAnswer", () => {
                 answer: {
                     questionType: "free_text",
                     textValueHtml: "0",
+                    textValuePlainText: "0",
                 },
             }),
         ).toBe(false);

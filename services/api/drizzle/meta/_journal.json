@@ -554,6 +554,13 @@
       "when": 1783034360596,
       "tag": "0078_rare_the_enforcers",
       "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1783283317737,
+      "tag": "0079_shiny_bucky",
+      "breakpoints": true
     }
   ]
 }

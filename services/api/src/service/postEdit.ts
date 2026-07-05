@@ -10,14 +10,8 @@ import {
     projectTable,
 } from "@/shared-backend/schema.js";
 import { and, eq, isNull } from "drizzle-orm";
-import { log } from "@/app.js";
 import { httpErrors } from "@fastify/sensible";
-import {
-    htmlToCountedText,
-    toUnionUndefined,
-    validateRichTextInput,
-} from "@/shared/shared.js";
-import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
+import { toUnionUndefined } from "@/shared/shared.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import {
     getActiveSurveyConfigRecord,
@@ -69,6 +63,7 @@ import {
     normalizeInheritedConversationMultilingualSettings,
     sourceLanguageToDisplayLanguage,
 } from "./translationLanguageSetting.js";
+import { normalizeUserRichTextInput } from "./richText.js";
 
 interface GetConversationForEditProps {
     db: PostgresDatabase;
@@ -303,16 +298,22 @@ export async function updateConversation({
         surveyConfig,
     } = data;
 
-    // Sanitize HTML body if provided (backend security layer)
     let sanitizedBody = conversationBody;
     let bodyPlainText = "";
     if (sanitizedBody != null) {
         try {
-            sanitizedBody = processUserGeneratedHtml(
-                sanitizedBody,
-                false,
-                "input",
-            );
+            const normalizationResult = normalizeUserRichTextInput({
+                html: sanitizedBody,
+                plainText: conversationBodyPlainText,
+                validationMode: "conversation",
+                logLabel:
+                    "[ConversationPlainText] Frontend/backend plain text mismatch on update",
+            });
+            if (!normalizationResult.success) {
+                return normalizationResult;
+            }
+            sanitizedBody = normalizationResult.content.html;
+            bodyPlainText = normalizationResult.content.plainText;
         } catch (error) {
             if (error instanceof Error) {
                 throw httpErrors.badRequest(error.message);
@@ -321,26 +322,6 @@ export async function updateConversation({
                     "Error while sanitizing request body",
                 );
             }
-        }
-
-        const validationResult = validateRichTextInput({
-            htmlString: sanitizedBody,
-            mode: "conversation",
-        });
-        if (!validationResult.success) {
-            return validationResult;
-        }
-
-        sanitizedBody = processUserGeneratedHtml(sanitizedBody, true, "input");
-        bodyPlainText = htmlToCountedText(sanitizedBody);
-        if (bodyPlainText !== conversationBodyPlainText) {
-            log.info(
-                {
-                    frontendPlainTextChars: conversationBodyPlainText.length,
-                    serverPlainTextChars: bodyPlainText.length,
-                },
-                "[ConversationPlainText] Frontend/backend plain text mismatch on update",
-            );
         }
     }
 

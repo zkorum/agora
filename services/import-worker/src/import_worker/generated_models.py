@@ -36,6 +36,7 @@ class ContentTranslationSourceKind(StrEnum):
     opinion = "opinion"
     survey_question = "survey_question"
     project = "project"
+    ranking_item = "ranking_item"
 
 
 class DisplayLanguageCode(StrEnum):
@@ -203,6 +204,11 @@ class LanguageDetectionProvider(StrEnum):
     google_translate = "google_translate"
 
 
+class ImportMethod(StrEnum):
+    url = "url"
+    csv = "csv"
+
+
 class ImportStatusEnum(StrEnum):
     processing = "processing"
     completed = "completed"
@@ -235,11 +241,6 @@ class ConversationType(StrEnum):
 
 class EventSlug(StrEnum):
     devconnect_2025 = "devconnect-2025"
-
-
-class ImportMethod(StrEnum):
-    url = "url"
-    csv = "csv"
 
 
 class ConversationViewSnapshotReasonEnum(StrEnum):
@@ -352,6 +353,7 @@ class ContentTranslationWork(Base):
         ARRAY(Integer),
         nullable=True,
     )
+    ranking_item_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     display_language_code: Mapped[DisplayLanguageCode] = mapped_column(
         SaEnum(
             DisplayLanguageCode,
@@ -414,6 +416,24 @@ class ConversationContent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
+class ConversationImportSource(Base):
+    __tablename__ = "conversation_import_source"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    import_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    import_conversation_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    import_export_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    import_created_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    import_author: Mapped[str | None] = mapped_column(Text, nullable=True)
+    import_method: Mapped[ImportMethod | None] = mapped_column(
+        SaEnum(ImportMethod, name="import_method", values_callable=_enum_values, native_enum=True),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
 class ConversationImport(Base):
     __tablename__ = "conversation_import"
 
@@ -450,6 +470,8 @@ class Conversation(Base):
     slug_id: Mapped[str] = mapped_column(String(8))
     project_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    polis_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    ranking_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
     language_settings_source: Mapped[ConversationLanguageSettingsSource] = mapped_column(
         SaEnum(

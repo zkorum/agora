@@ -325,6 +325,13 @@ export const zodContentTranslationSubject = z.discriminatedUnion("kind", [
             projectSlug: zodProjectSlug,
         })
         .strict(),
+    z
+        .object({
+            kind: z.literal("ranking_item"),
+            conversationSlugId: zodSlugId,
+            itemSlugId: zodSlugId,
+        })
+        .strict(),
 ]);
 export const zodContentTranslationSourceLanguage = z.discriminatedUnion("kind", [
     z
@@ -479,6 +486,22 @@ export const zodProjectContentVariant = z
 export const zodLocalizedProjectContent = createZodLocalizedContent(
     zodProjectContentVariant,
     zodProjectContentVariant,
+);
+export const zodTitleBodyContentVariant = z
+    .object({
+        title: z.string(),
+        bodyHtml: z.string().optional(),
+    })
+    .strict();
+const zodTranslatedTitleBodyContentVariant = z
+    .object({
+        title: z.string(),
+        bodyHtml: z.string().optional(),
+    })
+    .strict();
+export const zodLocalizedRankingItemContent = createZodLocalizedContent(
+    zodTitleBodyContentVariant,
+    zodTranslatedTitleBodyContentVariant,
 );
 export const zodConversationDisplayedContent = createZodDisplayedContent(
     zodConversationContentVariant,
@@ -1075,6 +1098,7 @@ const zodSurveyFreeTextAnswerDraft = z
     .object({
         questionType: z.literal("free_text"),
         textValueHtml: z.string().max(MAX_LENGTH_BODY_HTML),
+        textValuePlainText: z.string().max(MAX_LENGTH_BODY),
     })
     .strict();
 
@@ -1898,6 +1922,12 @@ export type LocalizedConversationContent = z.infer<
 >;
 export type ProjectContentVariant = z.infer<typeof zodProjectContentVariant>;
 export type LocalizedProjectContent = z.infer<typeof zodLocalizedProjectContent>;
+export type TitleBodyContentVariant = z.infer<
+    typeof zodTitleBodyContentVariant
+>;
+export type LocalizedRankingItemContent = z.infer<
+    typeof zodLocalizedRankingItemContent
+>;
 export type CommentContent = z.infer<typeof zodOpinionContentOutput>;
 export type OpinionContentVariant = z.infer<typeof zodOpinionContentVariant>;
 export type LocalizedOpinionContent = z.infer<

@@ -15,6 +15,7 @@
         "@eslint/js": "^10.0.1",
         "@types/k6": "^1.7.0",
         "@types/node": "^25.5.2",
+        "@types/sanitize-html": "^2.16.1",
         "eslint": "^10.2.0",
         "eslint-config-prettier": "^10.1.8",
         "globals": "^17.4.0",
@@ -27,6 +28,8 @@
         "@ucans/ucans": "^0.12.0",
         "@zkorum/keystore-idb": "^0.18.1",
         "fast-text-encoding": "^1.0.6",
+        "html-entities": "^2.6.0",
+        "sanitize-html": "^2.17.5",
         "tweetnacl": "^1.0.3",
         "uint8arrays": "^5.1.0"
     },

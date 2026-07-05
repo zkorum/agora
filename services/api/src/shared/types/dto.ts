@@ -353,6 +353,17 @@ const zodProjectContentLocalization = z
                 path: ["body"],
             });
         }
+        if (
+            localization.body !== undefined &&
+            localization.bodyPlainText === undefined
+        ) {
+            context.addIssue({
+                code: "custom",
+                message:
+                    "Project content localization body plain text is required when body HTML is provided",
+                path: ["bodyPlainText"],
+            });
+        }
     });
 const zodProjectContentLocalizations = z
     .array(zodProjectContentLocalization)
@@ -1705,6 +1716,15 @@ export class Dto {
         })
         .strict()
         .superRefine((request, context) => {
+            if (request.body !== undefined && request.bodyPlainText === undefined) {
+                context.addIssue({
+                    code: "custom",
+                    message:
+                        "Project body plain text is required when body HTML is provided",
+                    path: ["bodyPlainText"],
+                });
+            }
+
             const targetLanguageCodes = new Set(
                 request.languageSettings.targetLanguageCodes,
             );

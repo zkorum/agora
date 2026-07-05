@@ -314,6 +314,13 @@ class PremiumFeature(StrEnum):
     dynamic_translation = "dynamic_translation"
 
 
+class RankingItemLifecycleStatus(StrEnum):
+    active = "active"
+    completed = "completed"
+    in_progress = "in_progress"
+    canceled = "canceled"
+
+
 class SurveyQuestionType(StrEnum):
     choice = "choice"
     free_text = "free_text"
@@ -505,6 +512,8 @@ class Conversation(Base):
     slug_id: Mapped[str] = mapped_column(String(8))
     project_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    polis_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    ranking_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
     language_settings_source: Mapped[ConversationLanguageSettingsSource] = mapped_column(
         SaEnum(
@@ -1027,6 +1036,17 @@ class Opinion(Base):
     last_reacted_at: Mapped[datetime] = mapped_column(DateTime)
 
 
+class PolisConversationConfig(Base):
+    __tablename__ = "polis_conversation_config"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ai_labeling_enabled: Mapped[bool] = mapped_column(Boolean, server_default="true")
+    analysis_data_generation: Mapped[int] = mapped_column(Integer, server_default="0")
+    preferred_opinion_group_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
 class PremiumFeatureEntitlement(Base):
     __tablename__ = "premium_feature_entitlement"
 
@@ -1058,6 +1078,63 @@ class ProjectOrganizationOwnership(Base):
     organization_id: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class RankingItemContent(Base):
+    __tablename__ = "ranking_item_content"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    ranking_item_id: Mapped[int] = mapped_column(Integer)
+    conversation_content_id: Mapped[int] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(200))
+    body: Mapped[str | None] = mapped_column(String(3000), nullable=True)
+    body_plain_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_language_code: Mapped[SpokenLanguageCode | None] = mapped_column(
+        SaEnum(
+            SpokenLanguageCode,
+            name="spoken_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    source_raw_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    source_language_provider: Mapped[LanguageDetectionProvider | None] = mapped_column(
+        SaEnum(
+            LanguageDetectionProvider,
+            name="language_detection_provider",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class RankingItem(Base):
+    __tablename__ = "ranking_item"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug_id: Mapped[str] = mapped_column(String(8))
+    author_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    is_seed: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    lifecycle_status: Mapped[RankingItemLifecycleStatus] = mapped_column(
+        SaEnum(
+            RankingItemLifecycleStatus,
+            name="ranking_item_lifecycle_status",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    snapshot_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    snapshot_rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    snapshot_participant_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
 
 
 class RealtimeEventOutbox(Base):
@@ -1172,6 +1249,7 @@ class SurveyAnswer(Base):
     survey_question_id: Mapped[int] = mapped_column(Integer)
     answered_question_semantic_version: Mapped[int] = mapped_column(Integer)
     text_value_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+    text_value_plain_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)

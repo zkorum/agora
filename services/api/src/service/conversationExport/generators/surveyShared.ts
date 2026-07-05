@@ -501,6 +501,7 @@ export async function loadSurveyExportContext({
                       answeredQuestionSemanticVersion:
                           surveyAnswerTable.answeredQuestionSemanticVersion,
                       textValueHtml: surveyAnswerTable.textValueHtml,
+                      textValuePlainText: surveyAnswerTable.textValuePlainText,
                   })
                   .from(surveyAnswerTable)
                   .where(
@@ -556,6 +557,7 @@ export async function loadSurveyExportContext({
                 answerId: number;
                 answeredQuestionSemanticVersion: number;
                 textValueHtml: string | null;
+                textValuePlainText: string | null;
                 optionSlugIds: string[];
             }
         >
@@ -569,6 +571,7 @@ export async function loadSurveyExportContext({
                     answerId: number;
                     answeredQuestionSemanticVersion: number;
                     textValueHtml: string | null;
+                    textValuePlainText: string | null;
                     optionSlugIds: string[];
                 }
             >();
@@ -577,6 +580,7 @@ export async function loadSurveyExportContext({
             answeredQuestionSemanticVersion:
                 answer.answeredQuestionSemanticVersion,
             textValueHtml: answer.textValueHtml,
+            textValuePlainText: answer.textValuePlainText,
             optionSlugIds: optionSlugIdsByAnswerId.get(answer.answerId) ?? [],
         });
         answersByResponseId.set(answer.surveyResponseId, answersByQuestionId);

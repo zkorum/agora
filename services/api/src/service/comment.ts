@@ -86,12 +86,13 @@ import type {
 } from "@/utils/dataStructure.js";
 import { nowZeroMs } from "@/shared/util.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
-import { htmlToCountedText, validateRichTextInput } from "@/shared/shared.js";
+import { htmlToCountedText } from "@/shared/shared.js";
 import {
     getOpinionGroupAnalysisSelection,
     getSelectedOpinionGroupCandidate,
 } from "./opinionGroupAnalysis.js";
 import { ensureAiDescriptionLocaleRequestForConversationViewSnapshot } from "./conversationViewSnapshot.js";
+import { normalizeUserRichTextInput } from "./richText.js";
 import { alias } from "drizzle-orm/pg-core";
 import {
     type SupportedDisplayLanguageCodes,
@@ -2750,34 +2751,25 @@ export async function postNewOpinion(
         participantId: string;
     }
 
+    let contentPlainText: string;
     try {
-        commentBody = processUserGeneratedHtml(commentBody, false, "input");
+        const normalizationResult = normalizeUserRichTextInput({
+            html: commentBody,
+            plainText: opinionPlainText,
+            validationMode: "opinion",
+            logLabel: "[OpinionPlainText] Frontend/backend plain text mismatch",
+        });
+        if (!normalizationResult.success) {
+            return normalizationResult;
+        }
+        commentBody = normalizationResult.content.html;
+        contentPlainText = normalizationResult.content.plainText;
     } catch (error) {
         if (error instanceof Error) {
             throw httpErrors.badRequest(error.message);
         } else {
             throw httpErrors.badRequest("Error while sanitizing request body");
         }
-    }
-
-    const validationResult = validateRichTextInput({
-        htmlString: commentBody,
-        mode: "opinion",
-    });
-    if (!validationResult.success) {
-        return validationResult;
-    }
-
-    commentBody = processUserGeneratedHtml(commentBody, true, "input");
-    const contentPlainText = htmlToCountedText(commentBody);
-    if (contentPlainText !== opinionPlainText) {
-        log.info(
-            {
-                frontendPlainTextChars: opinionPlainText.length,
-                serverPlainTextChars: contentPlainText.length,
-            },
-            "[OpinionPlainText] Frontend/backend plain text mismatch",
-        );
     }
     const participationContext:
         | ParticipationContext

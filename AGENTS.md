@@ -746,7 +746,11 @@ In Vue components, prefer **explicit props drilling** over `inject`/`provide` fo
 
 ### Vue Props: Prefer Required Nullable Props
 
-For Vue component props, prefer `prop: T | undefined` over `prop?: T`. Optional props can hide typos because a mistyped binding may simply omit the intended prop. A required prop whose value may be `undefined` forces every caller to wire the prop by name while still representing absent data.
+For Vue component props, prefer required `prop: T | undefined` over optional `prop?: T`. Optional props can hide typos because a mistyped binding may simply omit the intended prop. A required prop whose value may be `undefined` forces every caller to wire the prop by name while still representing absent data. Callers should pass `some-value-or-undefined` explicitly, not rely on omitted props, when absence is part of the component contract.
+
+### Undefined Over Null in App Code
+
+Prefer `undefined` for absent optional values in frontend and backend application code. In backend service/DAO mappers, normalize database `null` values with `toUnionUndefined()` when the internal or frontend-facing shape represents absence. DTOs sent to the frontend should use `undefined` or omit absent optional fields unless the DTO contract intentionally requires `null`. Use `null` where it is required by the database schema, external APIs, or existing DTO contracts, and convert explicitly at those boundaries.
 
 ### Logging Guidelines
 
