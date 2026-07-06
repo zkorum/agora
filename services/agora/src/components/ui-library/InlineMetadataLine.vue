@@ -11,7 +11,7 @@
   gap: 0.4rem;
   color: $color-text-weak;
   font-size: 0.75rem;
-  font-weight: var(--font-weight-regular);
+  font-weight: var(--font-weight-normal);
   line-height: 1.2;
 }
 </style>

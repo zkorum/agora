@@ -419,7 +419,7 @@ function t({
 .project-conversation-header-card__breadcrumb-separator {
   color: $ink-light;
   font-size: 0.75rem;
-  font-weight: var(--font-weight-regular);
+  font-weight: var(--font-weight-normal);
   line-height: 1.2;
   opacity: 0.65;
 }
