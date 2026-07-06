@@ -133,7 +133,7 @@
               >
                 <ProjectActivityCard
                   v-for="activity in activities"
-                  :key="activity.slug"
+                  :key="getProjectActivityIdentity(activity)"
                   :activity="activity"
                   :project-slug="project.slug"
                   :language-code="selectedLanguage"
@@ -206,10 +206,11 @@ import {
   type ProjectPageTranslations,
   translateProjectPageText,
 } from "./projectPageI18n";
-import type {
-  ProjectActivity,
-  ProjectLanguageOption,
-  ProjectPageData,
+import {
+  getProjectActivityIdentity,
+  type ProjectActivity,
+  type ProjectLanguageOption,
+  type ProjectPageData,
 } from "./projectPageTypes";
 
 type ConsultationStatus = "none" | "live" | "closed";
@@ -384,8 +385,12 @@ const activityListKey = computed(() => {
   return [
     props.project.slug,
     props.activities.length,
-    firstActivity?.slug ?? "none",
-    lastActivity?.slug ?? "none",
+    firstActivity === undefined
+      ? "none"
+      : getProjectActivityIdentity(firstActivity),
+    lastActivity === undefined
+      ? "none"
+      : getProjectActivityIdentity(lastActivity),
   ].join(":");
 });
 

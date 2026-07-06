@@ -31,6 +31,16 @@
         />
 
         <q-btn-toggle
+          v-model="activityAccessScenario"
+          unelevated
+          no-caps
+          toggle-color="primary"
+          color="white"
+          text-color="primary"
+          :options="activityAccessScenarioOptions"
+        />
+
+        <q-btn-toggle
           v-model="contactScenario"
           unelevated
           no-caps
@@ -100,6 +110,7 @@ import { computed, ref } from "vue";
 
 type ContactScenario = "email" | "web" | "both";
 type ActivityStatusScenario = "mixed" | "closed" | "empty";
+type ActivityAccessScenario = "public" | "mixed" | "invitation-only";
 type ActivityVolumeScenario = "default" | "many" | "lots";
 type BodyLengthScenario =
   | "normal"
@@ -114,15 +125,15 @@ type DevAttributionKey =
 type DevProjectAttribution = ProjectPageData["attributions"][number] & {
   devKey?: DevAttributionKey;
 };
-type BaseDevActivity = Omit<
-  ProjectActivity,
-  | "bodyPlainText"
-  | "dynamicTranslationEnabled"
-  | "machineTranslation"
-  | "originalContent"
-  | "sourceLanguageCode"
-  | "title"
->;
+type BaseDevActivity = {
+  devSlugIdBase: string;
+  kind: ProjectActivity["kind"];
+  isIndexed: boolean;
+  isClosed: boolean;
+  createdAt: Date;
+  isEdited: boolean;
+  stats: ProjectActivity["stats"];
+};
 type BaseDevProjectData = Omit<
   ProjectPageData,
   "activityCount" | "attributions" | "contact" | "participantCount" | "voteCount"
@@ -136,6 +147,7 @@ usePageLayout({
 
 const contactScenario = ref<ContactScenario>("both");
 const activityStatusScenario = ref<ActivityStatusScenario>("mixed");
+const activityAccessScenario = ref<ActivityAccessScenario>("mixed");
 const activityVolumeScenario = ref<ActivityVolumeScenario>("default");
 const bodyLengthScenario = ref<BodyLengthScenario>("normal");
 const selectedLanguage = ref<SupportedDisplayLanguageCodes>("en");
@@ -157,6 +169,15 @@ const activityStatusScenarioOptions: {
   { label: "Live + closed", value: "mixed" },
   { label: "Closed only", value: "closed" },
   { label: "No activities", value: "empty" },
+];
+
+const activityAccessScenarioOptions: {
+  label: string;
+  value: ActivityAccessScenario;
+}[] = [
+  { label: "Public only", value: "public" },
+  { label: "Mixed access", value: "mixed" },
+  { label: "Invitation-only", value: "invitation-only" },
 ];
 
 const activityVolumeScenarioOptions: {
@@ -474,32 +495,36 @@ const activityLocalizationByLanguage = {
 
 const baseActivities = [
   {
-    slug: "voices-for-change-share-ideas",
+    devSlugIdBase: "voices-for-change-share-ideas",
     kind: "conversation",
+    isIndexed: true,
     isClosed: false,
     createdAt: new Date("2026-04-03T12:00:00.000Z"),
     isEdited: false,
     stats: { opinionCount: 62, participantCount: 214, voteCount: 1238 },
   },
   {
-    slug: "voices-for-change-rank-priorities",
+    devSlugIdBase: "voices-for-change-rank-priorities",
     kind: "vote",
+    isIndexed: true,
     isClosed: false,
     createdAt: new Date("2026-04-10T12:00:00.000Z"),
     isEdited: false,
     stats: { opinionCount: 18, participantCount: 188, voteCount: 941 },
   },
   {
-    slug: "voices-for-change-youth-access",
+    devSlugIdBase: "voices-for-change-youth-access",
     kind: "conversation",
+    isIndexed: true,
     isClosed: true,
     createdAt: new Date("2026-03-20T12:00:00.000Z"),
     isEdited: true,
     stats: { opinionCount: 34, participantCount: 126, voteCount: 438 },
   },
   {
-    slug: "voices-for-change-final-feedback",
+    devSlugIdBase: "voices-for-change-final-feedback",
     kind: "vote",
+    isIndexed: false,
     isClosed: true,
     createdAt: new Date("2026-03-28T12:00:00.000Z"),
     isEdited: false,
@@ -613,7 +638,12 @@ const activities = computed<readonly ProjectActivity[]>(() => {
     scenarioActivities = generatedActivities;
   }
 
-  const localizedActivities = scenarioActivities.map(
+  const accessScenarioActivities = scenarioActivities.map(
+    (activity, activityIndex) =>
+      applyActivityAccessScenario({ activity, activityIndex })
+  );
+
+  const localizedActivities = accessScenarioActivities.map(
     (activity, activityIndex) =>
       localizeActivity({
         activity,
@@ -622,11 +652,14 @@ const activities = computed<readonly ProjectActivity[]>(() => {
         useGeneratedActivityLabels,
       })
   );
+  const orderedLocalizedActivities = localizedActivities.toSorted(
+    compareProjectPageActivityOrder
+  );
 
   const activitiesWithBodyLength = hasLongActivityBodies({
     scenario: bodyLengthScenario.value,
   })
-    ? localizedActivities.map((activity, activityIndex) => {
+    ? orderedLocalizedActivities.map((activity, activityIndex) => {
         const bodyPlainText = createLongActivityBody({
           activity,
           activityIndex,
@@ -641,7 +674,7 @@ const activities = computed<readonly ProjectActivity[]>(() => {
           },
         };
       })
-    : localizedActivities;
+    : orderedLocalizedActivities;
 
   if (activityStatusScenario.value === "closed") {
     return activitiesWithBodyLength.map((activity) => ({
@@ -759,8 +792,12 @@ function localizeActivity({
   const activityNumber = activityIndex + 1;
   const roundNumber = Math.floor(activityIndex / baseActivities.length) + 1;
 
-  return {
-    ...activity,
+  const activityContent = {
+    kind: activity.kind,
+    isClosed: activity.isClosed,
+    createdAt: activity.createdAt,
+    isEdited: activity.isEdited,
+    stats: activity.stats,
     title: useGeneratedActivityLabels
       ? `${localization.title} ${activityNumber.toString()}`
       : localization.title,
@@ -785,6 +822,47 @@ function localizeActivity({
     dynamicTranslationEnabled: false,
     machineTranslation: undefined,
   };
+
+  return activity.isIndexed
+    ? {
+        ...activityContent,
+        isIndexed: true,
+        slugId: activity.devSlugIdBase,
+      }
+    : {
+        ...activityContent,
+        isIndexed: false,
+      };
+}
+
+function applyActivityAccessScenario({
+  activity,
+  activityIndex,
+}: {
+  activity: BaseDevActivity;
+  activityIndex: number;
+}): BaseDevActivity {
+  switch (activityAccessScenario.value) {
+    case "public":
+      return { ...activity, isIndexed: true };
+    case "invitation-only":
+      return { ...activity, isIndexed: false };
+    case "mixed":
+      return activityIndex === 1
+        ? { ...activity, isIndexed: false }
+        : activity;
+  }
+}
+
+function compareProjectPageActivityOrder(
+  firstActivity: Pick<ProjectActivity, "createdAt" | "isIndexed">,
+  secondActivity: Pick<ProjectActivity, "createdAt" | "isIndexed">
+): number {
+  if (firstActivity.isIndexed !== secondActivity.isIndexed) {
+    return firstActivity.isIndexed ? -1 : 1;
+  }
+
+  return secondActivity.createdAt.getTime() - firstActivity.createdAt.getTime();
 }
 
 function localizedGeneratedActivitySuffix({
@@ -864,7 +942,7 @@ function createGeneratedActivity({
 
   return {
     ...baseActivity,
-    slug: `${baseActivity.slug}-${activityNumber}`,
+    devSlugIdBase: `${baseActivity.devSlugIdBase}-${activityNumber}`,
     isClosed: activityIndex % 5 === 2 || activityIndex % 7 === 4,
     stats: {
       opinionCount: baseActivity.stats.opinionCount + (activityIndex % 9) * 3,

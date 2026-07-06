@@ -102,7 +102,6 @@ interface ConversationDisplayCounts {
     voteCount: number;
 }
 
-type ProjectActivityStatus = ProjectPageActivityCursor["status"];
 type ProjectPageTranslationStatus = NonNullable<
     ProjectPageProject["machineTranslation"]
 >["status"];
@@ -110,7 +109,8 @@ type ProjectPageTranslationStatus = NonNullable<
 interface ProjectActivityRow {
     conversationId: number;
     conversationContentId: number;
-    slug: string;
+    slugId: string;
+    isIndexed: boolean;
     isClosed: boolean;
     createdAt: Date;
     isEdited: boolean;
@@ -119,7 +119,6 @@ interface ProjectActivityRow {
     bodyPlainText: string | null;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
     dynamicTranslationEnabled: boolean;
-    status: ProjectActivityStatus;
 }
 
 interface ProjectActivityContentTranslationRow {
@@ -568,34 +567,24 @@ async function fetchLatestConversationCounts({
     return new Map(rows.map((row) => [row.conversationId, row]));
 }
 
-function statusToIsClosed({
-    status,
-}: {
-    status: ProjectActivityStatus;
-}): boolean {
-    return status === "closed";
-}
-
 function rowToActivityCursor({
     row,
 }: {
     row: ProjectActivityRow;
 }): ProjectPageActivityCursor {
     return {
-        status: row.status,
+        isIndexed: row.isIndexed,
         createdAt: row.createdAt,
         conversationId: row.conversationId,
     };
 }
 
-function getActivityCursorWhereClause({
+function getCreatedBeforeActivityCursorWhereClause({
     activityCursor,
-    status,
 }: {
     activityCursor: ProjectPageActivityCursor | undefined;
-    status: ProjectActivityStatus;
 }): SQL | undefined {
-    if (activityCursor?.status !== status) {
+    if (activityCursor === undefined) {
         return undefined;
     }
     return or(
@@ -607,39 +596,51 @@ function getActivityCursorWhereClause({
     );
 }
 
-function getVisibleProjectConversationWhereClause({
+function getActivityCursorWhereClause({
+    activityCursor,
+}: {
+    activityCursor: ProjectPageActivityCursor | undefined;
+}): SQL | undefined {
+    const createdBeforeCursor = getCreatedBeforeActivityCursorWhereClause({
+        activityCursor,
+    });
+    if (activityCursor === undefined || createdBeforeCursor === undefined) {
+        return undefined;
+    }
+
+    if (activityCursor.isIndexed) {
+        return or(
+            and(eq(conversationTable.isIndexed, true), createdBeforeCursor),
+            eq(conversationTable.isIndexed, false),
+        );
+    }
+
+    return and(eq(conversationTable.isIndexed, false), createdBeforeCursor);
+}
+
+function getProjectPageConversationWhereClause({
     projectId,
     activityCursor,
-    status,
 }: {
     projectId: number;
     activityCursor?: ProjectPageActivityCursor;
-    status?: ProjectActivityStatus;
 }): SQL | undefined {
     return and(
         eq(conversationTable.projectId, projectId),
-        eq(conversationTable.isIndexed, true),
         eq(conversationTable.isImporting, false),
         isNotNull(conversationTable.currentContentId),
-        status === undefined
-            ? undefined
-            : eq(conversationTable.isClosed, statusToIsClosed({ status })),
-        status === undefined
-            ? undefined
-            : getActivityCursorWhereClause({ activityCursor, status }),
+        getActivityCursorWhereClause({ activityCursor }),
     );
 }
 
-async function fetchProjectActivityRowsByStatus({
+async function fetchProjectActivityRows({
     db,
     projectId,
-    status,
     limit,
     activityCursor,
 }: {
     db: PostgresJsDatabase;
     projectId: number;
-    status: ProjectActivityStatus;
     limit: number;
     activityCursor: ProjectPageActivityCursor | undefined;
 }): Promise<ProjectActivityRow[]> {
@@ -650,7 +651,8 @@ async function fetchProjectActivityRowsByStatus({
         .select({
             conversationId: conversationTable.id,
             conversationContentId: conversationContentTable.id,
-            slug: conversationTable.slugId,
+            slugId: conversationTable.slugId,
+            isIndexed: conversationTable.isIndexed,
             isClosed: conversationTable.isClosed,
             createdAt: conversationTable.createdAt,
             isEdited: conversationTable.isEdited,
@@ -666,19 +668,23 @@ async function fetchProjectActivityRowsByStatus({
             eq(conversationContentTable.id, conversationTable.currentContentId),
         )
         .where(
-            getVisibleProjectConversationWhereClause({
+            getProjectPageConversationWhereClause({
                 projectId,
                 activityCursor,
-                status,
             }),
         )
-        .orderBy(desc(conversationTable.createdAt), desc(conversationTable.id))
+        .orderBy(
+            desc(conversationTable.isIndexed),
+            desc(conversationTable.createdAt),
+            desc(conversationTable.id),
+        )
         .limit(limit);
 
     return rows.map((row) => ({
         conversationId: row.conversationId,
         conversationContentId: row.conversationContentId,
-        slug: row.slug,
+        slugId: row.slugId,
+        isIndexed: row.isIndexed,
         isClosed: row.isClosed,
         createdAt: row.createdAt,
         isEdited: row.isEdited,
@@ -687,7 +693,6 @@ async function fetchProjectActivityRowsByStatus({
         bodyPlainText: row.bodyPlainText,
         sourceLanguageCode: row.sourceLanguageCode,
         dynamicTranslationEnabled: row.dynamicTranslationEnabled,
-        status,
     }));
 }
 
@@ -792,38 +797,14 @@ async function fetchProjectActivities({
     activityLimit: number;
     activityCursor: ProjectPageActivityCursor | undefined;
 }): Promise<FetchProjectPageActivitiesResponse> {
-    const openRows =
-        activityCursor?.status === "closed"
-            ? []
-            : await fetchProjectActivityRowsByStatus({
-                  db,
-                  projectId,
-                  status: "open",
-                  limit: activityLimit + 1,
-                  activityCursor,
-              });
-    const pageRows = openRows.slice(0, activityLimit);
-    const openHasMore = openRows.length > activityLimit;
-
-    let hasMore = openHasMore;
-    if (!openHasMore) {
-        const remainingCount = activityLimit - pageRows.length;
-        const closedLimit = remainingCount > 0 ? remainingCount + 1 : 1;
-        const closedRows = await fetchProjectActivityRowsByStatus({
-            db,
-            projectId,
-            status: "closed",
-            limit: closedLimit,
-            activityCursor:
-                activityCursor?.status === "closed" ? activityCursor : undefined,
-        });
-        if (remainingCount > 0) {
-            pageRows.push(...closedRows.slice(0, remainingCount));
-            hasMore = closedRows.length > remainingCount;
-        } else {
-            hasMore = closedRows.length > 0;
-        }
-    }
+    const rows = await fetchProjectActivityRows({
+        db,
+        projectId,
+        limit: activityLimit + 1,
+        activityCursor,
+    });
+    const pageRows = rows.slice(0, activityLimit);
+    const hasMore = rows.length > activityLimit;
 
     const conversationIds = pageRows.map((row) => row.conversationId);
     const targetLanguagesByConversationId =
@@ -875,8 +856,7 @@ async function fetchProjectActivities({
                       title: freshTranslation.translatedTitle,
                       bodyPlainText: freshTranslation.translatedBodyPlainText ?? "",
                   };
-        return {
-            slug: row.slug,
+        const activityBase = {
             kind: row.conversationType === "maxdiff" ? "vote" : "conversation",
             isClosed: row.isClosed,
             createdAt: row.createdAt,
@@ -903,7 +883,17 @@ async function fetchProjectActivities({
                 participantCount: counts?.participantCount ?? 0,
                 voteCount: counts?.voteCount ?? 0,
             },
-        };
+        } satisfies Omit<ProjectPageActivity, "isIndexed" | "slugId">;
+        return row.isIndexed
+            ? {
+                  ...activityBase,
+                  isIndexed: true,
+                  slugId: row.slugId,
+              }
+            : {
+                  ...activityBase,
+                  isIndexed: false,
+              };
     });
     const lastRow = pageRows.at(-1);
     return {
@@ -929,7 +919,7 @@ async function assertVisibleProjectConversation({
         .from(conversationTable)
         .where(
             and(
-                getVisibleProjectConversationWhereClause({ projectId }),
+                getProjectPageConversationWhereClause({ projectId }),
                 eq(conversationTable.slugId, conversationSlugId),
             ),
         )
@@ -972,7 +962,7 @@ async function fetchProjectAggregateCounts({
             latestSnapshot,
             eq(latestSnapshot.conversationId, conversationTable.id),
         )
-        .where(getVisibleProjectConversationWhereClause({ projectId }));
+        .where(getProjectPageConversationWhereClause({ projectId }));
     return rows.at(0) ?? { activityCount: 0, participantCount: 0, voteCount: 0 };
 }
 

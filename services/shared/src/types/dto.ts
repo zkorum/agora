@@ -401,7 +401,7 @@ const zodAdminProjectOption = z
     .strict();
 const zodProjectPageActivityCursor = z
     .object({
-        status: z.enum(["open", "closed"]),
+        isIndexed: z.boolean(),
         createdAt: zodDateTimeFlexible,
         conversationId: z.number().int().positive(),
     })
@@ -431,9 +431,8 @@ const zodProjectPageActivityMachineTranslation = z
         translatedContent: zodProjectPageActivityContentVariant.optional(),
     })
     .strict();
-const zodProjectPageActivity = z
+const zodProjectPageActivityBase = z
     .object({
-        slug: zodSlugId,
         kind: z.enum(["conversation", "vote"]),
         isClosed: z.boolean(),
         createdAt: zodDateTimeFlexible,
@@ -453,6 +452,19 @@ const zodProjectPageActivity = z
             .strict(),
     })
     .strict();
+const zodProjectPageActivity = z.discriminatedUnion("isIndexed", [
+    zodProjectPageActivityBase
+        .extend({
+            isIndexed: z.literal(true),
+            slugId: zodSlugId,
+        })
+        .strict(),
+    zodProjectPageActivityBase
+        .extend({
+            isIndexed: z.literal(false),
+        })
+        .strict(),
+]);
 const zodProjectPageAttribution = z
     .object({
         role: zodProjectOrganizationAttributionRole,

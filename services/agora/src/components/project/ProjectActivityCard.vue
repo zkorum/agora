@@ -1,10 +1,8 @@
 <template>
   <article class="project-activity-card">
     <SpaLink
-      :to="{
-        name: '/project/[projectSlug]/conversation/[postSlugId]/',
-        params: { projectSlug, postSlugId: activity.slug },
-      }"
+      v-if="activityLinkTarget !== undefined"
+      :to="activityLinkTarget"
       class="project-activity-card__link"
       :aria-label="activityActionAccessibleLabel"
     />
@@ -153,7 +151,27 @@ const activityTypeIcon = computed(() =>
   props.activity.kind === "conversation" ? "mdi-forum-outline" : "mdi-poll"
 );
 
+const isActivityInteractive = computed(() => props.activity.isIndexed);
+
+const activityLinkTarget = computed(() => {
+  if (!props.activity.isIndexed) {
+    return undefined;
+  }
+
+  return {
+    name: "/project/[projectSlug]/conversation/[postSlugId]/" as const,
+    params: {
+      projectSlug: props.projectSlug,
+      postSlugId: props.activity.slugId,
+    },
+  };
+});
+
 const actionLabel = computed(() => {
+  if (!isActivityInteractive.value) {
+    return t("invitationOnlyAction");
+  }
+
   if (props.activity.isClosed) {
     return t("viewAction");
   }
@@ -163,12 +181,16 @@ const actionLabel = computed(() => {
     : t("voteAction");
 });
 
-const actionIconName = computed(() =>
-  props.textDirection === "rtl" ? "mdi-arrow-left" : "mdi-arrow-right"
-);
+const actionIconName = computed(() => {
+  if (!isActivityInteractive.value) {
+    return "mdi-link-variant";
+  }
+
+  return props.textDirection === "rtl" ? "mdi-arrow-left" : "mdi-arrow-right";
+});
 
 const actionVariant = computed<ProjectActionButtonVariant>(() =>
-  props.activity.isClosed ? "muted" : "primary"
+  !isActivityInteractive.value || props.activity.isClosed ? "muted" : "primary"
 );
 
 const activityActionAccessibleLabel = computed(() =>
@@ -265,7 +287,7 @@ const displayedActivityContent = computed(() => {
 
 watch(
   () => [
-    props.activity.slug,
+    props.activity.isIndexed ? props.activity.slugId : props.activity.createdAt,
     props.activity.machineTranslation?.targetLanguageCode,
     props.activity.machineTranslation?.status,
   ],

@@ -6,8 +6,6 @@ import type {
   ProjectPageProject,
 } from "src/shared/types/dto";
 
-export type ProjectActivityKind = "conversation" | "vote";
-
 export type ProjectActionButtonVariant = "primary" | "outline" | "muted";
 
 export type ProjectAttributionRole = "project_owner" | "sponsor" | "partner";
@@ -23,3 +21,16 @@ export type ProjectAttribution = ProjectPageAttribution;
 export type ProjectContact = ProjectPageContact;
 
 export type ProjectPageData = ProjectPageProject;
+
+export function getProjectActivityIdentity(activity: ProjectActivity): string {
+  if (activity.isIndexed) {
+    return activity.slugId;
+  }
+
+  return [
+    "invitation",
+    activity.createdAt.toISOString(),
+    activity.kind,
+    activity.title,
+  ].join(":");
+}

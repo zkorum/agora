@@ -61,6 +61,7 @@ export interface ProjectPageTranslations {
   viewAction: string;
   joinAction: string;
   voteAction: string;
+  invitationOnlyAction: string;
   activityActionAriaLabel: string;
   openWebsiteAriaLabel: string;
   contactImageAlt: string;
@@ -110,6 +111,7 @@ export const projectPageTranslations: Readonly<
     viewAction: "View",
     joinAction: "Join",
     voteAction: "Vote",
+    invitationOnlyAction: "Link available by invitation",
     activityActionAriaLabel: "{action} {title}",
     openWebsiteAriaLabel: "Open {name} website",
     contactImageAlt: "{name} image",
@@ -155,6 +157,7 @@ export const projectPageTranslations: Readonly<
     viewAction: "Ver",
     joinAction: "Unirse",
     voteAction: "Votar",
+    invitationOnlyAction: "Enlace disponible por invitación",
     activityActionAriaLabel: "{action}: {title}",
     openWebsiteAriaLabel: "Abrir el sitio web de {name}",
     contactImageAlt: "Imagen de {name}",
@@ -200,6 +203,7 @@ export const projectPageTranslations: Readonly<
     viewAction: "Voir",
     joinAction: "Participer",
     voteAction: "Voter",
+    invitationOnlyAction: "Lien disponible sur invitation",
     activityActionAriaLabel: "{action} : {title}",
     openWebsiteAriaLabel: "Ouvrir le site web de {name}",
     contactImageAlt: "Image de {name}",
@@ -244,6 +248,7 @@ export const projectPageTranslations: Readonly<
     viewAction: "查看",
     joinAction: "加入",
     voteAction: "投票",
+    invitationOnlyAction: "链接仅凭邀请提供",
     activityActionAriaLabel: "{action}：{title}",
     openWebsiteAriaLabel: "打开 {name} 的网站",
     contactImageAlt: "{name} 图片",
@@ -288,6 +293,7 @@ export const projectPageTranslations: Readonly<
     viewAction: "查看",
     joinAction: "加入",
     voteAction: "投票",
+    invitationOnlyAction: "連結僅憑邀請提供",
     activityActionAriaLabel: "{action}：{title}",
     openWebsiteAriaLabel: "開啟 {name} 的網站",
     contactImageAlt: "{name} 圖片",
@@ -333,6 +339,7 @@ export const projectPageTranslations: Readonly<
     viewAction: "見る",
     joinAction: "参加",
     voteAction: "投票",
+    invitationOnlyAction: "招待された方にリンクを提供",
     activityActionAriaLabel: "{action}: {title}",
     openWebsiteAriaLabel: "{name} のウェブサイトを開く",
     contactImageAlt: "{name} の画像",
@@ -377,6 +384,7 @@ export const projectPageTranslations: Readonly<
     viewAction: "عرض",
     joinAction: "انضمام",
     voteAction: "تصويت",
+    invitationOnlyAction: "الرابط متاح بدعوة",
     activityActionAriaLabel: "{action}: {title}",
     openWebsiteAriaLabel: "فتح موقع {name}",
     contactImageAlt: "صورة {name}",
@@ -421,6 +429,7 @@ export const projectPageTranslations: Readonly<
     viewAction: "مشاهده",
     joinAction: "پیوستن",
     voteAction: "رأی دادن",
+    invitationOnlyAction: "پیوند با دعوت در دسترس است",
     activityActionAriaLabel: "{action}: {title}",
     openWebsiteAriaLabel: "باز کردن وب‌سایت {name}",
     contactImageAlt: "تصویر {name}",
@@ -465,6 +474,7 @@ export const projectPageTranslations: Readonly<
     viewAction: "צפייה",
     joinAction: "הצטרפות",
     voteAction: "הצבעה",
+    invitationOnlyAction: "הקישור זמין בהזמנה",
     activityActionAriaLabel: "{action}: {title}",
     openWebsiteAriaLabel: "פתיחת האתר של {name}",
     contactImageAlt: "תמונה של {name}",
@@ -509,6 +519,7 @@ export const projectPageTranslations: Readonly<
     viewAction: "Көрүү",
     joinAction: "Кошулуу",
     voteAction: "Добуш берүү",
+    invitationOnlyAction: "Шилтеме чакыруу менен жеткиликтүү",
     activityActionAriaLabel: "{action}: {title}",
     openWebsiteAriaLabel: "{name} веб-сайтын ачуу",
     contactImageAlt: "{name} сүрөтү",
@@ -554,6 +565,7 @@ export const projectPageTranslations: Readonly<
     viewAction: "Посмотреть",
     joinAction: "Присоединиться",
     voteAction: "Голосовать",
+    invitationOnlyAction: "Ссылка доступна по приглашению",
     activityActionAriaLabel: "{action}: {title}",
     openWebsiteAriaLabel: "Открыть сайт: {name}",
     contactImageAlt: "Изображение: {name}",
