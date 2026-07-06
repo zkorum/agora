@@ -8,6 +8,7 @@ Name | Type | Description | Notes
 **optionSlugIds** | **Array&lt;string&gt;** |  | [default to undefined]
 **questionType** | **string** |  | [default to undefined]
 **textValueHtml** | **string** |  | [default to undefined]
+**textValuePlainText** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -18,6 +19,7 @@ const instance: ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOf
     optionSlugIds,
     questionType,
     textValueHtml,
+    textValuePlainText,
 };
 ```
 

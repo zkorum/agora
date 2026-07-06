@@ -19,7 +19,7 @@
           v-if="effectiveBannerImageUrl !== undefined"
           :key="effectiveBannerImageUrl"
           :src="effectiveBannerImageUrl"
-          :alt="t('bannerImageAlt', { title: project.title })"
+          :alt="t('bannerImageAlt', { title: projectTitle })"
           class="project-conversation-view__banner-image"
         />
         <div class="project-conversation-view__banner-grid"></div>
@@ -63,6 +63,7 @@
           <ProjectConversationHeaderCard
             :project="project"
             :conversation-data="conversationData"
+            :initial-display-content="initialDisplayContent"
             :selected-language="selectedLanguage"
             @conversation-deleted="emit('conversationDeleted')"
           />
@@ -103,7 +104,8 @@ import {
   getLanguageTextDirection,
   type SupportedDisplayLanguageCodes,
 } from "src/shared/languages";
-import type { ExtendedConversation } from "src/shared/types/zod";
+import type { ConversationContentFetchResponse } from "src/shared/types/dto";
+import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
 import { computed } from "vue";
 
 import ProjectConversationHeaderCard from "./ProjectConversationHeaderCard.vue";
@@ -121,7 +123,8 @@ import type {
 
 const props = defineProps<{
   project: ProjectPageData;
-  conversationData: ExtendedConversation;
+  conversationData: ExtendedConversationDisplayData;
+  initialDisplayContent?: ConversationContentFetchResponse;
   languageOptions: readonly ProjectLanguageOption[];
   bannerImageUrl?: string;
   reportLayout?: boolean;
@@ -141,6 +144,11 @@ const projectTextDirection = computed(() =>
 );
 const effectiveBannerImageUrl = computed(
   () => props.bannerImageUrl ?? props.project.bannerImageUrl
+);
+const projectTitle = computed(() =>
+  props.project.displayContent.status === "available"
+    ? props.project.displayContent.content.title
+    : ""
 );
 const hasMultipleLanguageOptions = computed(
   () => new Set(props.languageOptions.map((option) => option.value)).size > 1
@@ -365,7 +373,6 @@ main {
   .project-conversation-view__aside {
     display: none;
   }
-
 }
 
 @media (max-width: 1180px) {
@@ -381,7 +388,6 @@ main {
     .project-conversation-view__aside {
       display: none;
     }
-
   }
 }
 

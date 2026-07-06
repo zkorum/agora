@@ -296,6 +296,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dev/conversation-project-context': RouteRecordInfo<
+      '/dev/conversation-project-context',
+      '/dev/conversation-project-context',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/dev/long-rich-text-disclosure': RouteRecordInfo<
       '/dev/long-rich-text-disclosure',
       '/dev/long-rich-text-disclosure',
@@ -953,6 +960,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dev/component-testing.vue': {
       routes:
         | '/dev/component-testing'
+      views:
+        | never
+    }
+    'src/pages/dev/conversation-project-context.vue': {
+      routes:
+        | '/dev/conversation-project-context'
       views:
         | never
     }

@@ -181,7 +181,7 @@ export function useConversationQuery({
         queryClient.setQueryData<ConversationContentFetchResponse>(
           getConversationContentQueryKey({
             conversationSlugId: slugId,
-            contentId: fetchedConversation.displayContent.contentId,
+            sourceVersion: fetchedConversation.displayContent.sourceVersion,
             mode: fetchedConversation.displayContent.mode,
             targetLanguageCode,
             spokenLanguages: requestedSpokenLanguages,

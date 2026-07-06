@@ -22,6 +22,7 @@ import {
     conversationViewSnapshotTable,
     userTable,
     opinionModerationTable,
+    polisConversationConfigTable,
     userMutePreferenceTable,
     voteTable,
 } from "@/shared-backend/schema.js";
@@ -1745,11 +1746,15 @@ async function fetchSelectedOpinionGroupCandidateById({
             resultId: analysisSnapshotResultTable.id,
             candidateId: opinionGroupCandidateTable.id,
             groupCount: opinionGroupVariantTable.groupCount,
-            aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+            aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
             checkpointReasonId:
                 conversationViewSnapshotCheckpointReasonTable.id,
         })
         .from(conversationTable)
+        .innerJoin(
+            polisConversationConfigTable,
+            eq(polisConversationConfigTable.id, conversationTable.polisConfigId),
+        )
         .innerJoin(
             conversationViewSnapshotTable,
             and(

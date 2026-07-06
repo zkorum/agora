@@ -11,7 +11,7 @@
         <div class="activity-card__topline-left">
           <span
             class="activity-card__type"
-            :class="`activity-card__type--${activity.kind}`"
+            :class="`activity-card__type--${activityTypeClass}`"
           >
             <q-icon :name="activityTypeIcon" size="1rem" />
             {{ activityTypeLabel }}
@@ -95,7 +95,6 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import {
   type UserIdentityCardTranslations,
   userIdentityCardTranslations,
@@ -108,14 +107,10 @@ import type {
   LanguageTextDirection,
   SupportedDisplayLanguageCodes,
 } from "src/shared/languages";
-import { toUnionUndefined } from "src/shared/shared";
+import { htmlToCountedText } from "src/shared/shared";
 import type { LocalizedContentTranslationStatus } from "src/shared/types/zod";
-import { useLanguageStore } from "src/stores/language";
-import {
-  type ContentTranslationDisplayMode,
-  getContentTranslationSourceLanguageLabel,
-  resolveContentTranslationState,
-} from "src/utils/translation/contentTranslation";
+import { useConversationContentQuery } from "src/utils/api/contentTranslation/useContentTranslationQueries";
+import type { ContentTranslationDisplayMode } from "src/utils/translation/contentTranslation";
 import { computed, ref, watch } from "vue";
 
 import ProjectActionButton from "./ProjectActionButton.vue";
@@ -123,9 +118,10 @@ import {
   type ProjectPageTranslations,
   translateProjectPageText,
 } from "./projectPageI18n";
-import type {
-  ProjectActionButtonVariant,
-  ProjectActivity,
+import {
+  getProjectActivityIdentity,
+  type ProjectActionButtonVariant,
+  type ProjectActivity,
 } from "./projectPageTypes";
 
 const props = defineProps<{
@@ -135,7 +131,6 @@ const props = defineProps<{
   textDirection: LanguageTextDirection;
 }>();
 
-const { spokenLanguages } = storeToRefs(useLanguageStore());
 const activityTranslationModePreference = ref<
   ContentTranslationDisplayMode | undefined
 >();
@@ -143,27 +138,34 @@ const userIdentityText = computed<UserIdentityCardTranslations>(
   () => userIdentityCardTranslations[props.languageCode]
 );
 
+const isRankingActivity = computed(
+  () => props.activity.conversationType === "ranking"
+);
+
+const activityTypeClass = computed(() =>
+  isRankingActivity.value ? "vote" : "conversation"
+);
+
 const activityTypeLabel = computed(() =>
-  props.activity.kind === "conversation" ? t("conversationType") : t("voteType")
+  isRankingActivity.value ? t("voteType") : t("conversationType")
 );
 
 const activityTypeIcon = computed(() =>
-  props.activity.kind === "conversation" ? "mdi-forum-outline" : "mdi-poll"
+  isRankingActivity.value ? "mdi-poll" : "mdi-forum-outline"
 );
 
 const isActivityInteractive = computed(() => props.activity.isIndexed);
 
+const activityIdentity = computed(() => getProjectActivityIdentity(props.activity));
+
 const activityLinkTarget = computed(() => {
   if (!props.activity.isIndexed) {
-    return undefined;
-  }
+      return undefined;
+    }
 
   return {
     name: "/project/[projectSlug]/conversation/[postSlugId]/" as const,
-    params: {
-      projectSlug: props.projectSlug,
-      postSlugId: props.activity.slugId,
-    },
+    params: { projectSlug: props.projectSlug, postSlugId: props.activity.slugId },
   };
 });
 
@@ -176,9 +178,7 @@ const actionLabel = computed(() => {
     return t("viewAction");
   }
 
-  return props.activity.kind === "conversation"
-    ? t("joinAction")
-    : t("voteAction");
+  return isRankingActivity.value ? t("voteAction") : t("joinAction");
 });
 
 const actionIconName = computed(() => {
@@ -196,55 +196,67 @@ const actionVariant = computed<ProjectActionButtonVariant>(() =>
 const activityActionAccessibleLabel = computed(() =>
   t("activityActionAriaLabel", {
     action: actionLabel.value,
-    title: props.activity.title,
+    title: displayedActivityContent.value.title,
   })
 );
 
-const activityMachineTranslation = computed(() => {
-  const machineTranslation = props.activity.machineTranslation;
-  if (
-    machineTranslation === undefined ||
-    machineTranslation.targetLanguageCode !== props.languageCode
-  ) {
-    return undefined;
-  }
-
-  return machineTranslation;
+const requestedActivityContentMode = computed<ContentTranslationDisplayMode>(
+  () =>
+    activityTranslationModePreference.value ??
+    (props.activity.displayContent.status === "available"
+      ? props.activity.displayContent.mode
+      : "original")
+);
+const requestedActivityContentQuery = useConversationContentQuery({
+  conversationSlugId: computed(() =>
+    props.activity.isIndexed ? props.activity.slugId : ""
+  ),
+  sourceVersion: computed(() => props.activity.displayContent.sourceVersion),
+  mode: requestedActivityContentMode,
+  requestMode: computed(() =>
+    requestedActivityContentMode.value === "translated"
+      ? "queue_if_missing"
+      : "read_existing"
+  ),
+  enabled: computed(
+    () => activityTranslationModePreference.value !== undefined && props.activity.isIndexed
+  ),
 });
-
-const activityTranslationInitialMode = computed<ContentTranslationDisplayMode>(
-  () => {
-    const machineTranslation = activityMachineTranslation.value;
-    if (
-      machineTranslation?.status !== "completed" ||
-      machineTranslation.translatedContent === undefined
-    ) {
-      return "original";
+const activeActivityDisplayContent = computed(() => {
+  if (
+    activityTranslationModePreference.value !== undefined &&
+    requestedActivityContentQuery.data.value !== undefined
+  ) {
+    const fetchedContent = requestedActivityContentQuery.data.value;
+    if (fetchedContent.status !== "available") {
+      return {
+        sourceVersion: fetchedContent.sourceVersion,
+        status: fetchedContent.status,
+        translationControl: fetchedContent.translationControl,
+      };
     }
 
-    return resolveContentTranslationState({
-      dynamicTranslationEnabled: true,
-      sourceLanguageCode: toUnionUndefined(machineTranslation.sourceLanguageCode),
-      displayLanguage: machineTranslation.targetLanguageCode,
-      spokenLanguages: spokenLanguages.value,
-      supportedTargetLanguageCodes: [machineTranslation.targetLanguageCode],
-      hasTranslatedContent: true,
-    }).initialMode;
+    return {
+      sourceVersion: fetchedContent.sourceVersion,
+      status: "available" as const,
+      mode: fetchedContent.mode,
+      content: {
+        title: fetchedContent.content.title,
+        bodyPlainText: htmlToCountedText(fetchedContent.content.body ?? ""),
+      },
+      translationControl: fetchedContent.translationControl,
+    };
   }
-);
+
+  return props.activity.displayContent;
+});
 
 const activityTranslationMode = computed<ContentTranslationDisplayMode>({
   get: () =>
-    activityTranslationModePreference.value ?? activityTranslationInitialMode.value,
+    activeActivityDisplayContent.value.status === "available"
+      ? activeActivityDisplayContent.value.mode
+      : requestedActivityContentMode.value,
   set: (mode) => {
-    const machineTranslation = activityMachineTranslation.value;
-    if (
-      mode === "translated" &&
-      (machineTranslation?.status !== "completed" ||
-        machineTranslation.translatedContent === undefined)
-    ) {
-      return;
-    }
     activityTranslationModePreference.value = mode;
   },
 });
@@ -256,40 +268,35 @@ const activityTranslationControl = computed<
     }
   | undefined
 >(() => {
-  const machineTranslation = activityMachineTranslation.value;
-  if (machineTranslation === undefined) {
+  const translationControl = activeActivityDisplayContent.value.translationControl;
+  if (translationControl === null) {
     return undefined;
   }
 
   return {
-    sourceLanguageLabel: getContentTranslationSourceLanguageLabel({
-      sourceLanguage: undefined,
-      fallbackLanguageCode: machineTranslation.sourceLanguageCode,
-      fallbackLabel: machineTranslation.sourceLanguageLabel,
-      displayLanguage: machineTranslation.targetLanguageCode,
-    }),
-    status: machineTranslation.status,
+    sourceLanguageLabel: translationControl.sourceLanguageLabel,
+    status: requestedActivityContentQuery.isFetching.value
+      ? "pending"
+      : translationControl.status,
   };
 });
 
 const displayedActivityContent = computed(() => {
-  const machineTranslation = activityMachineTranslation.value;
-  if (
-    activityTranslationMode.value === "translated" &&
-    machineTranslation?.status === "completed" &&
-    machineTranslation.translatedContent !== undefined
-  ) {
-    return machineTranslation.translatedContent;
+  const displayContent = activeActivityDisplayContent.value;
+  if (displayContent.status === "available") {
+    return displayContent.content;
   }
 
-  return props.activity.originalContent;
+  return props.activity.displayContent.status === "available"
+    ? props.activity.displayContent.content
+    : { title: "", bodyPlainText: "" };
 });
 
 watch(
   () => [
-    props.activity.isIndexed ? props.activity.slugId : props.activity.createdAt,
-    props.activity.machineTranslation?.targetLanguageCode,
-    props.activity.machineTranslation?.status,
+    activityIdentity.value,
+    props.activity.displayContent.sourceVersion,
+    props.activity.displayContent.status,
   ],
   () => {
     activityTranslationModePreference.value = undefined;
@@ -306,6 +313,7 @@ function t(
     params,
   });
 }
+
 </script>
 
 <style scoped lang="scss">

@@ -59,7 +59,25 @@ export const zodParticipationMode = z.enum([
     "email_verification",
     "guest",
 ]);
-export const zodConversationType = z.enum(["polis", "maxdiff"]);
+export const zodConversationType = z.enum(["polis", "ranking"]);
+export const zodRankingMode = z.enum(["maxdiff"]);
+export const zodConversationTypeConfig = z.discriminatedUnion(
+    "conversationType",
+    [
+        z
+            .object({
+                conversationType: z.literal("polis"),
+                rankingMode: z.undefined().optional(),
+            })
+            .strict(),
+        z
+            .object({
+                conversationType: z.literal("ranking"),
+                rankingMode: zodRankingMode,
+            })
+            .strict(),
+    ],
+);
 export const zodProjectOrganizationAttributionRole = z.enum(
     projectOrganizationAttributionRoleValues,
 );
@@ -374,7 +392,7 @@ export const zodDisplayedContentTranslationControl = z
     .strict();
 const zodDisplayedContentUnavailable = z
     .object({
-        contentId: z.uuid(),
+        sourceVersion: z.uuid(),
         status: z.enum(["not_requested", "pending", "running", "failed"]),
         translationControl: zodDisplayedContentTranslationControl.nullable(),
     })
@@ -441,7 +459,7 @@ export function createZodDisplayedContent<
     return z.union([
         z
             .object({
-                contentId: z.uuid(),
+                sourceVersion: z.uuid(),
                 status: z.literal("available"),
                 mode: z.literal("original"),
                 content: contentSchema,
@@ -450,7 +468,7 @@ export function createZodDisplayedContent<
             .strict(),
         z
             .object({
-                contentId: z.uuid(),
+                sourceVersion: z.uuid(),
                 status: z.literal("available"),
                 mode: z.literal("translated"),
                 content: translatedContentSchema,
@@ -488,6 +506,10 @@ export const zodLocalizedProjectContent = createZodLocalizedContent(
     zodProjectContentVariant,
     zodProjectContentVariant,
 );
+export const zodProjectDisplayedContent = createZodDisplayedContent(
+    zodProjectContentVariant,
+    zodProjectContentVariant,
+);
 export const zodTitleBodyContentVariant = z
     .object({
         title: z.string(),
@@ -501,6 +523,10 @@ const zodTranslatedTitleBodyContentVariant = z
     })
     .strict();
 export const zodLocalizedRankingItemContent = createZodLocalizedContent(
+    zodTitleBodyContentVariant,
+    zodTranslatedTitleBodyContentVariant,
+);
+export const zodRankingItemDisplayedContent = createZodDisplayedContent(
     zodTitleBodyContentVariant,
     zodTranslatedTitleBodyContentVariant,
 );
@@ -1159,7 +1185,16 @@ export const zodPreferredOpinionGroupCount = z
     .max(6)
     .nullable();
 
-export const zodConversationMetadata = z
+export const zodConversationProjectContext = z
+    .object({
+        projectSlug: zodProjectSlug,
+        originalProjectTitle: z.string().trim().min(1).max(MAX_LENGTH_TITLE),
+        translatedProjectTitle: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
+        conversationSlugId: zodSlugId,
+    })
+    .strict();
+
+const zodConversationMetadataBase = z
     .object({
         conversationSlugId: zodSlugId,
         conversationViewSnapshotId: z.number().int().positive().optional(),
@@ -1176,7 +1211,6 @@ export const zodConversationMetadata = z
         hiddenOpinionCount: zodCount,
         authorUsername: z.string(),
         participationMode: zodParticipationMode,
-        conversationType: zodConversationType,
         isIndexed: z.boolean(),
         aiLabelingEnabled: z.boolean(),
         preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
@@ -1190,9 +1224,23 @@ export const zodConversationMetadata = z
         requiresEventTicket: zodEventSlug.optional(),
         externalSourceConfig: zodExternalSourceConfig.nullable(),
         importInfo: zodImportInfo.optional(),
+        projectContext: zodConversationProjectContext.optional(),
     })
     .strict();
-export const zodConversationMetadataWithId = z
+export const zodConversationMetadata = z.discriminatedUnion("conversationType", [
+    zodConversationMetadataBase
+        .extend({
+            conversationType: z.literal("polis"),
+        })
+        .strict(),
+    zodConversationMetadataBase
+        .extend({
+            conversationType: z.literal("ranking"),
+            rankingMode: zodRankingMode,
+        })
+        .strict(),
+]);
+const zodConversationMetadataWithIdBase = z
     .object({
         conversationId: z.number().int().nonnegative(),
         conversationSlugId: zodSlugId,
@@ -1210,7 +1258,6 @@ export const zodConversationMetadataWithId = z
         hiddenOpinionCount: zodCount,
         authorUsername: z.string(),
         participationMode: zodParticipationMode,
-        conversationType: zodConversationType,
         isIndexed: z.boolean(),
         aiLabelingEnabled: z.boolean(),
         preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
@@ -1233,8 +1280,25 @@ export const zodConversationMetadataWithId = z
                 author: z.string().optional(),
             })
             .optional(),
+        projectContext: zodConversationProjectContext.optional(),
     })
     .strict();
+export const zodConversationMetadataWithId = z.discriminatedUnion(
+    "conversationType",
+    [
+        zodConversationMetadataWithIdBase
+            .extend({
+                conversationType: z.literal("polis"),
+            })
+            .strict(),
+        zodConversationMetadataWithIdBase
+            .extend({
+                conversationType: z.literal("ranking"),
+                rankingMode: zodRankingMode,
+            })
+            .strict(),
+    ],
+);
 export const zodPolisKey = z.enum(["0", "1", "2", "3", "4", "5"]);
 export const zodAnalysisView = z.enum([
     "facilitator_preference",
@@ -1380,6 +1444,9 @@ export const zodExtendedConversationData = z
         interaction: zodUserInteraction,
     })
     .strict();
+export const zodExtendedConversationDisplayData = zodExtendedConversationData.omit({
+    payload: true,
+});
 export const zodExtendedConversationDataWithId = z
     .object({
         metadata: zodConversationMetadataWithId,
@@ -1889,11 +1956,19 @@ export const zodPolisUrl = z
 export type Device = z.infer<typeof zodDevice>;
 export type Devices = z.infer<typeof zodDevices>;
 export type ExtendedConversation = z.infer<typeof zodExtendedConversationData>;
+export type ExtendedConversationDisplayData = z.infer<
+    typeof zodExtendedConversationDisplayData
+>;
 export type ExtendedConversationPerSlugId = z.infer<
     typeof zodExtendedConversationPerSlugId
 >;
+export type ConversationProjectContext = z.infer<
+    typeof zodConversationProjectContext
+>;
 export type UserInteraction = z.infer<typeof zodUserInteraction>;
 export type ConversationMetadata = z.infer<typeof zodConversationMetadata>;
+export type RankingMode = z.infer<typeof zodRankingMode>;
+export type ConversationTypeConfig = z.infer<typeof zodConversationTypeConfig>;
 export type ExtendedConversationPayload = z.infer<
     typeof zodConversationDataWithResult
 >;
@@ -1923,11 +1998,15 @@ export type LocalizedConversationContent = z.infer<
 >;
 export type ProjectContentVariant = z.infer<typeof zodProjectContentVariant>;
 export type LocalizedProjectContent = z.infer<typeof zodLocalizedProjectContent>;
+export type ProjectDisplayedContent = z.infer<typeof zodProjectDisplayedContent>;
 export type TitleBodyContentVariant = z.infer<
     typeof zodTitleBodyContentVariant
 >;
 export type LocalizedRankingItemContent = z.infer<
     typeof zodLocalizedRankingItemContent
+>;
+export type RankingItemDisplayedContent = z.infer<
+    typeof zodRankingItemDisplayedContent
 >;
 export type CommentContent = z.infer<typeof zodOpinionContentOutput>;
 export type OpinionContentVariant = z.infer<typeof zodOpinionContentVariant>;

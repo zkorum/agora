@@ -12,7 +12,7 @@ Name | Type | Description | Notes
 **textChangeIsSemantic** | **boolean** |  | [optional] [default to undefined]
 **choiceDisplay** | **string** |  | [default to undefined]
 **isPublicAggregateSuppressionEnabled** | **boolean** |  | [default to false]
-**_options** | [**Array&lt;ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner&gt;**](ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner.md) |  | [default to undefined]
+**_options** | [**Array&lt;ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfOptionsInner&gt;**](ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfOptionsInner.md) |  | [default to undefined]
 **questionType** | **string** |  | [default to undefined]
 **constraints** | [**ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1Constraints**](ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1Constraints.md) |  | [default to undefined]
 

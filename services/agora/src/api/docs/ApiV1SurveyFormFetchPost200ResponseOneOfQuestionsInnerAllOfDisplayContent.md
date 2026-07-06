@@ -9,7 +9,7 @@ Name | Type | Description | Notes
 **status** | **string** |  | [default to undefined]
 **mode** | **string** |  | [default to undefined]
 **content** | [**ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1Content**](ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1Content.md) |  | [default to undefined]
-**translationControl** | [**ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControl**](ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControl.md) |  | [default to undefined]
+**translationControl** | [**ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl**](ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl.md) |  | [default to undefined]
 
 ## Example
 

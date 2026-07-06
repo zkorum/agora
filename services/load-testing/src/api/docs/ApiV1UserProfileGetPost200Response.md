@@ -10,7 +10,7 @@ Name | Type | Description | Notes
 **username** | **string** |  | [default to undefined]
 **isSiteModerator** | **boolean** |  | [default to undefined]
 **isSiteOrgAdmin** | **boolean** |  | [default to undefined]
-**organizationList** | [**Array&lt;ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization&gt;**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization.md) |  | [default to undefined]
+**organizationList** | [**Array&lt;ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfOrganization&gt;**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfOrganization.md) |  | [default to undefined]
 **verifiedEventTickets** | **Array&lt;string&gt;** |  | [default to undefined]
 
 ## Example

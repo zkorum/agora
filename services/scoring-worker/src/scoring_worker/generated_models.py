@@ -36,7 +36,7 @@ class ParticipationMode(StrEnum):
 
 class ConversationType(StrEnum):
     polis = "polis"
-    maxdiff = "maxdiff"
+    ranking = "ranking"
 
 
 class EventSlug(StrEnum):

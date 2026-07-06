@@ -121,7 +121,7 @@ export interface ApiV1AdministratorOrganizationGetOrganizationDetailsPostRequest
     'organizationSlug': string;
 }
 export interface ApiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost200Response {
-    'organizationList': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization>;
+    'organizationList': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfOrganization>;
 }
 export interface ApiV1AdministratorOrganizationGetOrganizationOptionsPost200Response {
     'organizationList': Array<ApiV1AdministratorOrganizationGetOrganizationOptionsPost200ResponseOrganizationListInner>;
@@ -1280,10 +1280,10 @@ export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1Rari
 
 export interface ApiV1ContentTranslationRequestPost200Response {
     'success': boolean;
-    'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf3;
-    'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf3Content;
+    'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf4;
+    'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf4Content;
     'reason': ApiV1ContentTranslationRequestPost200ResponseReasonEnum;
-    'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting;
+    'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfMultilingualSetting;
     'blockedReason': ApiV1ContentTranslationRequestPost200ResponseBlockedReasonEnum;
 }
 
@@ -1585,28 +1585,119 @@ export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4 {
     'success': boolean;
-    'reason': ApiV1ContentTranslationRequestPost200ResponseAnyOf4ReasonEnum;
-    'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting;
+    'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf4;
+    'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf4Content;
+}
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4Content {
+    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentKindEnum;
+    'sourceVersion': string;
+    'initialMode': ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentInitialModeEnum;
+    'variants': ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2Variants;
+    'translation': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Translation;
 }
 
-export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4ReasonEnum = {
-    ContentTranslationNotEnabled: 'content_translation_not_enabled',
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentKindEnum = {
+    Translatable: 'translatable',
 } as const;
 
-export type ApiV1ContentTranslationRequestPost200ResponseAnyOf4ReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ReasonEnum];
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentKindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentKindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentKindEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentInitialModeEnum = {
+    Translated: 'translated',
+} as const;
 
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentInitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentInitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentInitialModeEnum];
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf {
+    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOfKindEnum;
+    'sourceVersion': string;
+    'initialMode': ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOfInitialModeEnum;
+    'variants': ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOfVariants;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOfKindEnum = {
+    OriginalOnly: 'original_only',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOfKindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOfKindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOfKindEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOfInitialModeEnum = {
+    Original: 'original',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOfInitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOfInitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOfInitialModeEnum];
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1 {
+    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1KindEnum;
+    'sourceVersion': string;
+    'initialMode': ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1InitialModeEnum;
+    'translation': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1Translation;
+    'variants': ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1Variants;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1KindEnum = {
+    Translatable: 'translatable',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1KindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1KindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1KindEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1InitialModeEnum = {
+    Original: 'original',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1InitialModeEnum];
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1Variants {
+    'original': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
+    'translated'?: ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
+}
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2 {
+    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2KindEnum;
+    'sourceVersion': string;
+    'initialMode': ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2InitialModeEnum;
+    'translation': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Translation;
+    'variants': ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2Variants;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2KindEnum = {
+    Translatable: 'translatable',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2KindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2KindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2KindEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2InitialModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2InitialModeEnum];
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2Variants {
+    'original'?: ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
+    'translated': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
+}
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOfVariants {
+    'original': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
+}
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf5 {
     'success': boolean;
     'reason': ApiV1ContentTranslationRequestPost200ResponseAnyOf5ReasonEnum;
-    'blockedReason': ApiV1ContentTranslationRequestPost200ResponseAnyOf5BlockedReasonEnum;
+    'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfMultilingualSetting;
 }
 
 export const ApiV1ContentTranslationRequestPost200ResponseAnyOf5ReasonEnum = {
-    ParticipationBlocked: 'participation_blocked',
+    ContentTranslationNotEnabled: 'content_translation_not_enabled',
 } as const;
 
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOf5ReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ReasonEnum];
-export const ApiV1ContentTranslationRequestPost200ResponseAnyOf5BlockedReasonEnum = {
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf6 {
+    'success': boolean;
+    'reason': ApiV1ContentTranslationRequestPost200ResponseAnyOf6ReasonEnum;
+    'blockedReason': ApiV1ContentTranslationRequestPost200ResponseAnyOf6BlockedReasonEnum;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf6ReasonEnum = {
+    ParticipationBlocked: 'participation_blocked',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf6ReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ReasonEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf6BlockedReasonEnum = {
     ConversationLocked: 'conversation_locked',
     ConversationClosed: 'conversation_closed',
     EventTicketRequired: 'event_ticket_required',
@@ -1617,7 +1708,7 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf5BlockedReasonEnu
     SurveyOutdated: 'survey_outdated',
 } as const;
 
-export type ApiV1ContentTranslationRequestPost200ResponseAnyOf5BlockedReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5BlockedReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5BlockedReasonEnum];
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf6BlockedReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6BlockedReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6BlockedReasonEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContent {
     'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentKindEnum;
@@ -2257,7 +2348,7 @@ export type ApiV1ContentTranslationRequestPostRequestRequestModeEnum = typeof Ap
 /**
  * @type ApiV1ContentTranslationRequestPostRequestSubject
  */
-export type ApiV1ContentTranslationRequestPostRequestSubject = ApiV1ContentTranslationRequestPostRequestSubjectOneOf | ApiV1ContentTranslationRequestPostRequestSubjectOneOf1 | ApiV1ContentTranslationRequestPostRequestSubjectOneOf2 | ApiV1ContentTranslationRequestPostRequestSubjectOneOf3;
+export type ApiV1ContentTranslationRequestPostRequestSubject = ApiV1ContentTranslationRequestPostRequestSubjectOneOf | ApiV1ContentTranslationRequestPostRequestSubjectOneOf1 | ApiV1ContentTranslationRequestPostRequestSubjectOneOf2 | ApiV1ContentTranslationRequestPostRequestSubjectOneOf3 | ApiV1ContentTranslationRequestPostRequestSubjectOneOf4;
 
 export interface ApiV1ContentTranslationRequestPostRequestSubjectOneOf {
     'kind': ApiV1ContentTranslationRequestPostRequestSubjectOneOfKindEnum;
@@ -2304,6 +2395,18 @@ export const ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum = {
 } as const;
 
 export type ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum = typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum[keyof typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum];
+
+export interface ApiV1ContentTranslationRequestPostRequestSubjectOneOf4 {
+    'kind': ApiV1ContentTranslationRequestPostRequestSubjectOneOf4KindEnum;
+    'conversationSlugId': string;
+    'itemSlugId': string;
+}
+
+export const ApiV1ContentTranslationRequestPostRequestSubjectOneOf4KindEnum = {
+    RankingItem: 'ranking_item',
+} as const;
+
+export type ApiV1ContentTranslationRequestPostRequestSubjectOneOf4KindEnum = typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf4KindEnum[keyof typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf4KindEnum];
 
 /**
  * @type ApiV1ConversationClosePost200Response
@@ -2368,69 +2471,119 @@ export const ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum = {
 
 export type ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum];
 
-export interface ApiV1ConversationCreatePostRequest {
+/**
+ * @type ApiV1ConversationCreatePostRequest
+ */
+export type ApiV1ConversationCreatePostRequest = ApiV1ConversationCreatePostRequestOneOf | ApiV1ConversationCreatePostRequestOneOf1;
+
+export interface ApiV1ConversationCreatePostRequestOneOf {
     'conversationTitle': string;
     'conversationBody'?: string;
     'conversationBodyPlainText': string;
     'projectSlug'?: string;
-    'languageSettingsSource'?: ApiV1ConversationCreatePostRequestLanguageSettingsSourceEnum;
+    'languageSettingsSource'?: ApiV1ConversationCreatePostRequestOneOfLanguageSettingsSourceEnum;
     'postAsOrganization': string;
     'isIndexed': boolean;
-    'participationMode': ApiV1ConversationCreatePostRequestParticipationModeEnum;
-    'conversationType': ApiV1ConversationCreatePostRequestConversationTypeEnum;
-    'multilingualSetting': ApiV1ConversationCreatePostRequestMultilingualSetting;
+    'participationMode': ApiV1ConversationCreatePostRequestOneOfParticipationModeEnum;
+    'multilingualSetting': ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
     'seedOpinionList': Array<string>;
-    'requiresEventTicket'?: ApiV1ConversationCreatePostRequestRequiresEventTicketEnum;
+    'requiresEventTicket'?: ApiV1ConversationCreatePostRequestOneOfRequiresEventTicketEnum;
+    'conversationType': ApiV1ConversationCreatePostRequestOneOfConversationTypeEnum;
     'aiLabelingEnabled'?: boolean;
     'preferredOpinionGroupCount'?: number | null;
-    'externalSourceConfig'?: ApiV1ConversationCreatePostRequestExternalSourceConfig | null;
-    'surveyConfig'?: ApiV1ConversationCreatePostRequestSurveyConfig | null;
+    'surveyConfig'?: ApiV1ConversationCreatePostRequestOneOfSurveyConfig | null;
 }
 
-export const ApiV1ConversationCreatePostRequestLanguageSettingsSourceEnum = {
+export const ApiV1ConversationCreatePostRequestOneOfLanguageSettingsSourceEnum = {
     ConversationOverride: 'conversation_override',
     ProjectInherited: 'project_inherited',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestLanguageSettingsSourceEnum = typeof ApiV1ConversationCreatePostRequestLanguageSettingsSourceEnum[keyof typeof ApiV1ConversationCreatePostRequestLanguageSettingsSourceEnum];
-export const ApiV1ConversationCreatePostRequestParticipationModeEnum = {
+export type ApiV1ConversationCreatePostRequestOneOfLanguageSettingsSourceEnum = typeof ApiV1ConversationCreatePostRequestOneOfLanguageSettingsSourceEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfLanguageSettingsSourceEnum];
+export const ApiV1ConversationCreatePostRequestOneOfParticipationModeEnum = {
     AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
     EmailVerification: 'email_verification',
     Guest: 'guest',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestParticipationModeEnum = typeof ApiV1ConversationCreatePostRequestParticipationModeEnum[keyof typeof ApiV1ConversationCreatePostRequestParticipationModeEnum];
-export const ApiV1ConversationCreatePostRequestConversationTypeEnum = {
-    Polis: 'polis',
-    Maxdiff: 'maxdiff',
-} as const;
-
-export type ApiV1ConversationCreatePostRequestConversationTypeEnum = typeof ApiV1ConversationCreatePostRequestConversationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestConversationTypeEnum];
-export const ApiV1ConversationCreatePostRequestRequiresEventTicketEnum = {
+export type ApiV1ConversationCreatePostRequestOneOfParticipationModeEnum = typeof ApiV1ConversationCreatePostRequestOneOfParticipationModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfParticipationModeEnum];
+export const ApiV1ConversationCreatePostRequestOneOfRequiresEventTicketEnum = {
     Devconnect2025: 'devconnect-2025',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestRequiresEventTicketEnum = typeof ApiV1ConversationCreatePostRequestRequiresEventTicketEnum[keyof typeof ApiV1ConversationCreatePostRequestRequiresEventTicketEnum];
+export type ApiV1ConversationCreatePostRequestOneOfRequiresEventTicketEnum = typeof ApiV1ConversationCreatePostRequestOneOfRequiresEventTicketEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfRequiresEventTicketEnum];
+export const ApiV1ConversationCreatePostRequestOneOfConversationTypeEnum = {
+    Polis: 'polis',
+} as const;
 
-export interface ApiV1ConversationCreatePostRequestExternalSourceConfig {
-    'sourceType': ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum;
+export type ApiV1ConversationCreatePostRequestOneOfConversationTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOfConversationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfConversationTypeEnum];
+
+export interface ApiV1ConversationCreatePostRequestOneOf1 {
+    'conversationTitle': string;
+    'conversationBody'?: string;
+    'conversationBodyPlainText': string;
+    'projectSlug'?: string;
+    'languageSettingsSource'?: ApiV1ConversationCreatePostRequestOneOf1LanguageSettingsSourceEnum;
+    'postAsOrganization': string;
+    'isIndexed': boolean;
+    'participationMode': ApiV1ConversationCreatePostRequestOneOf1ParticipationModeEnum;
+    'multilingualSetting': ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
+    'seedOpinionList': Array<string>;
+    'requiresEventTicket'?: ApiV1ConversationCreatePostRequestOneOf1RequiresEventTicketEnum;
+    'conversationType': ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum;
+    'rankingMode': ApiV1ConversationCreatePostRequestOneOf1RankingModeEnum;
+    'externalSourceConfig'?: ApiV1ConversationCreatePostRequestOneOf1ExternalSourceConfig | null;
+}
+
+export const ApiV1ConversationCreatePostRequestOneOf1LanguageSettingsSourceEnum = {
+    ConversationOverride: 'conversation_override',
+    ProjectInherited: 'project_inherited',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1LanguageSettingsSourceEnum = typeof ApiV1ConversationCreatePostRequestOneOf1LanguageSettingsSourceEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1LanguageSettingsSourceEnum];
+export const ApiV1ConversationCreatePostRequestOneOf1ParticipationModeEnum = {
+    AccountRequired: 'account_required',
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1ParticipationModeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1ParticipationModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1ParticipationModeEnum];
+export const ApiV1ConversationCreatePostRequestOneOf1RequiresEventTicketEnum = {
+    Devconnect2025: 'devconnect-2025',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1RequiresEventTicketEnum = typeof ApiV1ConversationCreatePostRequestOneOf1RequiresEventTicketEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1RequiresEventTicketEnum];
+export const ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum = {
+    Ranking: 'ranking',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum];
+export const ApiV1ConversationCreatePostRequestOneOf1RankingModeEnum = {
+    Maxdiff: 'maxdiff',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1RankingModeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1RankingModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1RankingModeEnum];
+
+export interface ApiV1ConversationCreatePostRequestOneOf1ExternalSourceConfig {
+    'sourceType': ApiV1ConversationCreatePostRequestOneOf1ExternalSourceConfigSourceTypeEnum;
     'repository': string;
     'label': string;
 }
 
-export const ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum = {
+export const ApiV1ConversationCreatePostRequestOneOf1ExternalSourceConfigSourceTypeEnum = {
     GithubIssue: 'github_issue',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum = typeof ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum];
+export type ApiV1ConversationCreatePostRequestOneOf1ExternalSourceConfigSourceTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1ExternalSourceConfigSourceTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1ExternalSourceConfigSourceTypeEnum];
 
-export interface ApiV1ConversationCreatePostRequestMultilingualSetting {
-    'additionalLanguageCodes': Array<ApiV1ConversationCreatePostRequestMultilingualSettingAdditionalLanguageCodesEnum>;
+export interface ApiV1ConversationCreatePostRequestOneOfMultilingualSetting {
+    'additionalLanguageCodes': Array<ApiV1ConversationCreatePostRequestOneOfMultilingualSettingAdditionalLanguageCodesEnum>;
     'dynamicTranslationEnabled': boolean;
 }
 
-export const ApiV1ConversationCreatePostRequestMultilingualSettingAdditionalLanguageCodesEnum = {
+export const ApiV1ConversationCreatePostRequestOneOfMultilingualSettingAdditionalLanguageCodesEnum = {
     En: 'en',
     Es: 'es',
     Fr: 'fr',
@@ -2444,62 +2597,62 @@ export const ApiV1ConversationCreatePostRequestMultilingualSettingAdditionalLang
     Ru: 'ru',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestMultilingualSettingAdditionalLanguageCodesEnum = typeof ApiV1ConversationCreatePostRequestMultilingualSettingAdditionalLanguageCodesEnum[keyof typeof ApiV1ConversationCreatePostRequestMultilingualSettingAdditionalLanguageCodesEnum];
+export type ApiV1ConversationCreatePostRequestOneOfMultilingualSettingAdditionalLanguageCodesEnum = typeof ApiV1ConversationCreatePostRequestOneOfMultilingualSettingAdditionalLanguageCodesEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfMultilingualSettingAdditionalLanguageCodesEnum];
 
-export interface ApiV1ConversationCreatePostRequestSurveyConfig {
+export interface ApiV1ConversationCreatePostRequestOneOfSurveyConfig {
     'isOptional'?: boolean;
-    'questions': Array<ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInner>;
+    'questions': Array<ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInner>;
 }
 /**
- * @type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInner
+ * @type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInner
  */
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInner = ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf | ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1;
+export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInner = ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf | ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1;
 
-export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf {
+export interface ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf {
     'questionSlugId'?: string;
     'questionText': string;
     'isRequired': boolean;
     'displayOrder': number;
     'textChangeIsSemantic'?: boolean;
-    'choiceDisplay': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum;
+    'choiceDisplay': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum;
     'isPublicAggregateSuppressionEnabled'?: boolean;
-    'options': Array<ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner>;
-    'questionType': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfQuestionTypeEnum;
-    'constraints': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraints;
+    'options': Array<ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfOptionsInner>;
+    'questionType': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum;
+    'constraints': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraints;
 }
 
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum = {
+export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum = {
     Auto: 'auto',
     List: 'list',
     Dropdown: 'dropdown',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum];
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfQuestionTypeEnum = {
+export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum];
+export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum = {
     Choice: 'choice',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfQuestionTypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfQuestionTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfQuestionTypeEnum];
+export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum];
 
-export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1 {
+export interface ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1 {
     'questionSlugId'?: string;
     'questionText': string;
     'isRequired': boolean;
     'displayOrder': number;
     'textChangeIsSemantic'?: boolean;
-    'questionType': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum;
-    'constraints': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1Constraints;
+    'questionType': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum;
+    'constraints': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1Constraints;
 }
 
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum = {
+export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum = {
     FreeText: 'free_text',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum];
+export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum];
 
-export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1Constraints {
-    'type': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum;
-    'inputMode': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum;
+export interface ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1Constraints {
+    'type': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum;
+    'inputMode': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum;
     'minPlainTextLength'?: number;
     'maxPlainTextLength': number;
     'maxHtmlLength': number;
@@ -2507,67 +2660,67 @@ export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOne
     'maxValue'?: number;
 }
 
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum = {
+export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum = {
     FreeText: 'free_text',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum];
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum = {
+export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum];
+export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum = {
     Integer: 'integer',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum];
+export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum];
 
-export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf {
-    'type': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum;
-    'inputMode'?: ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum;
+export interface ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf {
+    'type': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum;
+    'inputMode'?: ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum;
     'minPlainTextLength'?: number;
     'maxPlainTextLength': number;
     'maxHtmlLength': number;
 }
 
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum = {
+export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum = {
     FreeText: 'free_text',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum];
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum = {
+export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum];
+export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum = {
     RichText: 'rich_text',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum];
+export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum];
 
-export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1 {
-    'type': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum;
-    'inputMode': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum;
+export interface ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1 {
+    'type': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum;
+    'inputMode': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum;
     'minValue': number;
     'maxValue'?: number;
 }
 
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum = {
+export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum = {
     FreeText: 'free_text',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum];
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum = {
+export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum];
+export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum = {
     Integer: 'integer',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum];
+export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum];
 
-export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraints {
-    'type': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum;
+export interface ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraints {
+    'type': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum;
     'minSelections': number;
     'maxSelections'?: number;
 }
 
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum = {
+export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum = {
     Choice: 'choice',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum];
+export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum];
 
-export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner {
+export interface ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfOptionsInner {
     'optionSlugId'?: string;
     'optionText': string;
     'displayOrder': number;
@@ -2847,7 +3000,12 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteractionSurveyGateStatusEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteractionSurveyGateStatusEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteractionSurveyGateStatusEnum];
 
-export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata {
+/**
+ * @type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata
+ */
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata = ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf | ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1;
+
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf {
     'conversationSlugId': string;
     'conversationViewSnapshotId'?: number;
     'createdAt': string;
@@ -2862,52 +3020,108 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
     'moderatedOpinionCount': number;
     'hiddenOpinionCount': number;
     'authorUsername': string;
-    'participationMode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum;
-    'conversationType': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum;
+    'participationMode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfParticipationModeEnum;
     'isIndexed': boolean;
     'aiLabelingEnabled': boolean;
     'preferredOpinionGroupCount': number | null;
-    'contentLanguageMetadata': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadata;
-    'languageSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSetting;
-    'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting;
+    'contentLanguageMetadata': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadata;
+    'languageSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSetting;
+    'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfMultilingualSetting;
     'isClosed': boolean;
     'isEdited': boolean;
-    'organization'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization;
-    'moderation': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration;
-    'requiresEventTicket'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum;
-    'externalSourceConfig': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfig | null;
-    'importInfo'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfo;
+    'organization'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfOrganization;
+    'moderation': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModeration;
+    'requiresEventTicket'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfRequiresEventTicketEnum;
+    'externalSourceConfig': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfExternalSourceConfig | null;
+    'importInfo'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfImportInfo;
+    'conversationType': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfConversationTypeEnum;
 }
 
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum = {
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfParticipationModeEnum = {
     AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
     EmailVerification: 'email_verification',
     Guest: 'guest',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum];
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum = {
-    Polis: 'polis',
-    Maxdiff: 'maxdiff',
-} as const;
-
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum];
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum = {
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfParticipationModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfParticipationModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfParticipationModeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfRequiresEventTicketEnum = {
     Devconnect2025: 'devconnect-2025',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum];
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfRequiresEventTicketEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfRequiresEventTicketEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfRequiresEventTicketEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfConversationTypeEnum = {
+    Polis: 'polis',
+} as const;
 
-export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadata {
-    'detectedDisplayLanguageCode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedDisplayLanguageCodeEnum | null;
-    'detectedSourceLanguageCode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedSourceLanguageCodeEnum | null;
-    'detectedRawLanguageCode': string | null;
-    'detectionConfidence': number | null;
-    'autoDetectionStatus': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataAutoDetectionStatusEnum;
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfConversationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfConversationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfConversationTypeEnum];
+
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1 {
+    'conversationSlugId': string;
+    'conversationViewSnapshotId'?: number;
+    'createdAt': string;
+    'updatedAt'?: string;
+    'lastReactedAt': string;
+    'opinionCount': number;
+    'voteCount': number;
+    'participantCount': number;
+    'totalOpinionCount': number;
+    'totalVoteCount': number;
+    'totalParticipantCount': number;
+    'moderatedOpinionCount': number;
+    'hiddenOpinionCount': number;
+    'authorUsername': string;
+    'participationMode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ParticipationModeEnum;
+    'isIndexed': boolean;
+    'aiLabelingEnabled': boolean;
+    'preferredOpinionGroupCount': number | null;
+    'contentLanguageMetadata': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadata;
+    'languageSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSetting;
+    'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfMultilingualSetting;
+    'isClosed': boolean;
+    'isEdited': boolean;
+    'organization'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfOrganization;
+    'moderation': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModeration;
+    'requiresEventTicket'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RequiresEventTicketEnum;
+    'externalSourceConfig': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfExternalSourceConfig | null;
+    'importInfo'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfImportInfo;
+    'conversationType': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ConversationTypeEnum;
+    'rankingMode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum;
 }
 
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedDisplayLanguageCodeEnum = {
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ParticipationModeEnum = {
+    AccountRequired: 'account_required',
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest',
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ParticipationModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ParticipationModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ParticipationModeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RequiresEventTicketEnum = {
+    Devconnect2025: 'devconnect-2025',
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RequiresEventTicketEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RequiresEventTicketEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RequiresEventTicketEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ConversationTypeEnum = {
+    Ranking: 'ranking',
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ConversationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ConversationTypeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum = {
+    Maxdiff: 'maxdiff',
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum];
+
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadata {
+    'detectedDisplayLanguageCode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadataDetectedDisplayLanguageCodeEnum | null;
+    'detectedSourceLanguageCode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadataDetectedSourceLanguageCodeEnum | null;
+    'detectedRawLanguageCode': string | null;
+    'detectionConfidence': number | null;
+    'autoDetectionStatus': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadataAutoDetectionStatusEnum;
+}
+
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadataDetectedDisplayLanguageCodeEnum = {
     En: 'en',
     Es: 'es',
     Fr: 'fr',
@@ -2921,8 +3135,8 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
     Ru: 'ru',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedDisplayLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedDisplayLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedDisplayLanguageCodeEnum];
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedSourceLanguageCodeEnum = {
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadataDetectedDisplayLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadataDetectedDisplayLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadataDetectedDisplayLanguageCodeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadataDetectedSourceLanguageCodeEnum = {
     Af: 'af',
     Ak: 'ak',
     Am: 'am',
@@ -3061,30 +3275,30 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
     Zu: 'zu',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedSourceLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedSourceLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataDetectedSourceLanguageCodeEnum];
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataAutoDetectionStatusEnum = {
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadataDetectedSourceLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadataDetectedSourceLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadataDetectedSourceLanguageCodeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadataAutoDetectionStatusEnum = {
     NotAttempted: 'not_attempted',
     Detected: 'detected',
     RetryableUnknown: 'retryable_unknown',
     StableUnknown: 'stable_unknown',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataAutoDetectionStatusEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataAutoDetectionStatusEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadataAutoDetectionStatusEnum];
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadataAutoDetectionStatusEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadataAutoDetectionStatusEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadataAutoDetectionStatusEnum];
 
-export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfig {
-    'sourceType': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum;
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfExternalSourceConfig {
+    'sourceType': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfExternalSourceConfigSourceTypeEnum;
     'repository': string;
     'label': string;
 }
 
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum = {
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfExternalSourceConfigSourceTypeEnum = {
     GithubIssue: 'github_issue',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum];
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfExternalSourceConfigSourceTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfExternalSourceConfigSourceTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfExternalSourceConfigSourceTypeEnum];
 
-export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfo {
-    'method': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfoMethodEnum;
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfImportInfo {
+    'method': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfImportInfoMethodEnum;
     'sourceUrl'?: string;
     'conversationUrl'?: string;
     'exportUrl'?: string;
@@ -3092,31 +3306,31 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
     'author'?: string;
 }
 
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfoMethodEnum = {
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfImportInfoMethodEnum = {
     Url: 'url',
     Csv: 'csv',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfoMethodEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfoMethodEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfoMethodEnum];
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfImportInfoMethodEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfImportInfoMethodEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfImportInfoMethodEnum];
 
-export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSetting {
-    'mode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingModeEnum;
-    'languageCode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingLanguageCodeEnum | null;
-    'detectedLanguageCode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedLanguageCodeEnum | null;
-    'detectedSourceLanguageCode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedSourceLanguageCodeEnum | null;
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSetting {
+    'mode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingModeEnum;
+    'languageCode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingLanguageCodeEnum | null;
+    'detectedLanguageCode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingDetectedLanguageCodeEnum | null;
+    'detectedSourceLanguageCode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingDetectedSourceLanguageCodeEnum | null;
     'detectedRawLanguageCode': string | null;
     'detectionConfidence': number | null;
-    'autoDetectionStatus': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingAutoDetectionStatusEnum;
+    'autoDetectionStatus': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingAutoDetectionStatusEnum;
 }
 
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingModeEnum = {
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingModeEnum = {
     Inherit: 'inherit',
     Auto: 'auto',
     Manual: 'manual',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingModeEnum];
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingLanguageCodeEnum = {
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingModeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingLanguageCodeEnum = {
     En: 'en',
     Es: 'es',
     Fr: 'fr',
@@ -3130,8 +3344,8 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
     Ru: 'ru',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingLanguageCodeEnum];
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedLanguageCodeEnum = {
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingLanguageCodeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingDetectedLanguageCodeEnum = {
     En: 'en',
     Es: 'es',
     Fr: 'fr',
@@ -3145,8 +3359,8 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
     Ru: 'ru',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedLanguageCodeEnum];
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedSourceLanguageCodeEnum = {
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingDetectedLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingDetectedLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingDetectedLanguageCodeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingDetectedSourceLanguageCodeEnum = {
     Af: 'af',
     Ak: 'ak',
     Am: 'am',
@@ -3285,41 +3499,41 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
     Zu: 'zu',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedSourceLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedSourceLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingDetectedSourceLanguageCodeEnum];
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingAutoDetectionStatusEnum = {
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingDetectedSourceLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingDetectedSourceLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingDetectedSourceLanguageCodeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingAutoDetectionStatusEnum = {
     NotAttempted: 'not_attempted',
     Detected: 'detected',
     RetryableUnknown: 'retryable_unknown',
     StableUnknown: 'stable_unknown',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingAutoDetectionStatusEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingAutoDetectionStatusEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSettingAutoDetectionStatusEnum];
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingAutoDetectionStatusEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingAutoDetectionStatusEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSettingAutoDetectionStatusEnum];
 
 /**
- * @type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration
+ * @type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModeration
  */
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration = ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOf | ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOf1;
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModeration = ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOf | ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOf1;
 
-export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOf {
-    'status': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfStatusEnum;
-    'action': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfActionEnum;
-    'reason': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfReasonEnum;
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOf {
+    'status': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOfStatusEnum;
+    'action': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOfActionEnum;
+    'reason': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOfReasonEnum;
     'explanation': string;
     'createdAt': string;
     'updatedAt': string;
 }
 
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfStatusEnum = {
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOfStatusEnum = {
     Moderated: 'moderated',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfStatusEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfStatusEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfStatusEnum];
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfActionEnum = {
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOfStatusEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOfStatusEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOfStatusEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOfActionEnum = {
     Lock: 'lock',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfActionEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfActionEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfActionEnum];
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfReasonEnum = {
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOfActionEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOfActionEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOfActionEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOfReasonEnum = {
     Misleading: 'misleading',
     Antisocial: 'antisocial',
     Illegal: 'illegal',
@@ -3328,24 +3542,24 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
     Spam: 'spam',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfReasonEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfReasonEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfReasonEnum];
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOfReasonEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOfReasonEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOfReasonEnum];
 
-export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOf1 {
-    'status': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOf1StatusEnum;
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOf1 {
+    'status': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOf1StatusEnum;
 }
 
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOf1StatusEnum = {
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOf1StatusEnum = {
     Unmoderated: 'unmoderated',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOf1StatusEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOf1StatusEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOf1StatusEnum];
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOf1StatusEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOf1StatusEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOf1StatusEnum];
 
-export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting {
-    'additionalLanguageCodes': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSettingAdditionalLanguageCodesEnum>;
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfMultilingualSetting {
+    'additionalLanguageCodes': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfMultilingualSettingAdditionalLanguageCodesEnum>;
     'dynamicTranslationEnabled': boolean;
 }
 
-export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSettingAdditionalLanguageCodesEnum = {
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfMultilingualSettingAdditionalLanguageCodesEnum = {
     En: 'en',
     Es: 'es',
     Fr: 'fr',
@@ -3359,9 +3573,9 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
     Ru: 'ru',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSettingAdditionalLanguageCodesEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSettingAdditionalLanguageCodesEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSettingAdditionalLanguageCodesEnum];
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfMultilingualSettingAdditionalLanguageCodesEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfMultilingualSettingAdditionalLanguageCodesEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfMultilingualSettingAdditionalLanguageCodesEnum];
 
-export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization {
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfOrganization {
     'name': string;
     'slug': string;
     'imageUrl'?: string;
@@ -3393,9 +3607,9 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOf {
     'conversationSlugId': string;
     'conversationTitle': string;
     'conversationBody'?: string;
-    'contentLanguageMetadata': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadata;
-    'languageSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSetting;
-    'multilingualSetting': ApiV1ConversationCreatePostRequestMultilingualSetting;
+    'contentLanguageMetadata': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadata;
+    'languageSetting': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSetting;
+    'multilingualSetting': ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
     'languageSettingsSource': ApiV1ConversationGetForEditPost200ResponseOneOfLanguageSettingsSourceEnum;
     'projectLanguageProject'?: ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInner;
     'isIndexed': boolean;
@@ -3483,9 +3697,9 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQues
     'textChangeIsSemantic'?: boolean;
     'choiceDisplay': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum;
     'isPublicAggregateSuppressionEnabled': boolean;
-    'options': Array<ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner>;
+    'options': Array<ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfOptionsInner>;
     'questionType': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum;
-    'constraints': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraints;
+    'constraints': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraints;
 }
 
 export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum = {
@@ -3558,15 +3772,19 @@ export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestion
 export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum];
 
 export interface ApiV1ConversationGetPost200Response {
-    'conversationData': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner;
+    'conversationData': ApiV1ConversationGetPost200ResponseConversationData;
     'displayContent': ApiV1ConversationGetPost200ResponseDisplayContent;
+}
+export interface ApiV1ConversationGetPost200ResponseConversationData {
+    'metadata': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata;
+    'interaction': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteraction;
 }
 export interface ApiV1ConversationGetPost200ResponseDisplayContent {
     'contentId': string;
     'status': ApiV1ConversationGetPost200ResponseDisplayContentStatusEnum;
     'mode': ApiV1ConversationGetPost200ResponseDisplayContentModeEnum;
     'content': ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1Content;
-    'translationControl': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControl | null;
+    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
 }
 
 export const ApiV1ConversationGetPost200ResponseDisplayContentStatusEnum = {
@@ -3588,7 +3806,7 @@ export interface ApiV1ConversationGetPost200ResponseDisplayContentAnyOf {
     'status': ApiV1ConversationGetPost200ResponseDisplayContentAnyOfStatusEnum;
     'mode': ApiV1ConversationGetPost200ResponseDisplayContentAnyOfModeEnum;
     'content': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload;
-    'translationControl': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControl | null;
+    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
 }
 
 export const ApiV1ConversationGetPost200ResponseDisplayContentAnyOfStatusEnum = {
@@ -3607,7 +3825,7 @@ export interface ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1 {
     'status': ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1StatusEnum;
     'mode': ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1ModeEnum;
     'content': ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1Content;
-    'translationControl': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControl | null;
+    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
 }
 
 export const ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1StatusEnum = {
@@ -3805,12 +4023,12 @@ export interface ApiV1ConversationUpdatePostRequest {
     'conversationBodyPlainText': string;
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationUpdatePostRequestParticipationModeEnum;
-    'multilingualSetting': ApiV1ConversationCreatePostRequestMultilingualSetting;
+    'multilingualSetting': ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
     'languageSettingsSource'?: ApiV1ConversationUpdatePostRequestLanguageSettingsSourceEnum;
     'requiresEventTicket'?: ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum;
     'aiLabelingEnabled'?: boolean;
     'preferredOpinionGroupCount'?: number | null;
-    'surveyConfig'?: ApiV1ConversationCreatePostRequestSurveyConfig | null;
+    'surveyConfig'?: ApiV1ConversationCreatePostRequestOneOfSurveyConfig | null;
 }
 
 export const ApiV1ConversationUpdatePostRequestParticipationModeEnum = {
@@ -3869,8 +4087,7 @@ export interface ApiV1MaxdiffItemsFetchPost200Response {
 }
 export interface ApiV1MaxdiffItemsFetchPost200ResponseItemsInner {
     'slugId': string;
-    'title': string;
-    'body': string | null;
+    'displayContent': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContent;
     'lifecycleStatus': ApiV1MaxdiffItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum;
     'externalUrl': string | null;
     'snapshotScore': number | null;
@@ -3927,8 +4144,7 @@ export interface ApiV1MaxdiffResultsPost200Response {
 }
 export interface ApiV1MaxdiffResultsPost200ResponseRankingsInner {
     'itemSlugId': string;
-    'title': string;
-    'body': string | null;
+    'displayContent': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContent;
     'avgRank': number | null;
     'score': number | null;
     'participantCount': number;
@@ -3944,6 +4160,108 @@ export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum 
 } as const;
 
 export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum];
+
+export interface ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContent {
+    'contentId': string;
+    'status': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentStatusEnum;
+    'mode': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentModeEnum;
+    'content': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
+    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentStatusEnum = {
+    NotRequested: 'not_requested',
+    Pending: 'pending',
+    Running: 'running',
+    Failed: 'failed',
+} as const;
+
+export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentStatusEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentStatusEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentStatusEnum];
+export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentModeEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentModeEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentModeEnum];
+
+export interface ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf {
+    'contentId': string;
+    'status': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfStatusEnum;
+    'mode': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfModeEnum;
+    'content': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
+    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfStatusEnum = {
+    Available: 'available',
+} as const;
+
+export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfStatusEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfStatusEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfStatusEnum];
+export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfModeEnum = {
+    Original: 'original',
+} as const;
+
+export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfModeEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfModeEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfModeEnum];
+
+export interface ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1 {
+    'contentId': string;
+    'status': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1StatusEnum;
+    'mode': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1ModeEnum;
+    'content': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
+    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1StatusEnum = {
+    Available: 'available',
+} as const;
+
+export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1StatusEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1StatusEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1StatusEnum];
+export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1ModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1ModeEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1ModeEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1ModeEnum];
+
+export interface ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf2 {
+    'contentId': string;
+    'status': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf2StatusEnum;
+    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf2StatusEnum = {
+    NotRequested: 'not_requested',
+    Pending: 'pending',
+    Running: 'running',
+    Failed: 'failed',
+} as const;
+
+export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf2StatusEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf2StatusEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf2StatusEnum];
+
+export interface ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent {
+    'title': string;
+    'bodyHtml'?: string;
+}
+export interface ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl {
+    'status': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlStatusEnum;
+    'sourceLanguageLabel'?: string;
+    'alternateMode': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlAlternateModeEnum;
+    'canRequestAlternate': boolean;
+}
+
+export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlStatusEnum = {
+    NotRequested: 'not_requested',
+    Pending: 'pending',
+    Running: 'running',
+    Failed: 'failed',
+    Completed: 'completed',
+} as const;
+
+export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlStatusEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlStatusEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlStatusEnum];
+export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlAlternateModeEnum = {
+    Original: 'original',
+    Translated: 'translated',
+} as const;
+
+export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlAlternateModeEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlAlternateModeEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlAlternateModeEnum];
 
 export interface ApiV1MaxdiffResultsPostRequest {
     'conversationSlugId': string;
@@ -4040,7 +4358,7 @@ export type ApiV1ModerationOpinionCreatePostRequestModerationActionEnum = typeof
 /**
  * @type ApiV1ModerationOpinionGetPost200Response
  */
-export type ApiV1ModerationOpinionGetPost200Response = ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOf1 | ApiV1ModerationOpinionGetPost200ResponseOneOf;
+export type ApiV1ModerationOpinionGetPost200Response = ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModerationOneOf1 | ApiV1ModerationOpinionGetPost200ResponseOneOf;
 
 export interface ApiV1ModerationOpinionGetPost200ResponseOneOf {
     'status': ApiV1ModerationOpinionGetPost200ResponseOneOfStatusEnum;
@@ -4922,7 +5240,7 @@ export interface ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayConte
     'status': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentStatusEnum;
     'mode': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentModeEnum;
     'content': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1Content;
-    'translationControl': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControl | null;
+    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
 }
 
 export const ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentStatusEnum = {
@@ -4944,7 +5262,7 @@ export interface ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayConte
     'status': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfStatusEnum;
     'mode': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfModeEnum;
     'content': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfContent;
-    'translationControl': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControl | null;
+    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
 }
 
 export const ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfStatusEnum = {
@@ -4963,7 +5281,7 @@ export interface ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayConte
     'status': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1StatusEnum;
     'mode': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1ModeEnum;
     'content': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1Content;
-    'translationControl': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControl | null;
+    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
 }
 
 export const ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1StatusEnum = {
@@ -4980,47 +5298,9 @@ export type ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAny
 export interface ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1Content {
     'content': string;
 }
-export interface ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf2 {
-    'contentId': string;
-    'status': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf2StatusEnum;
-    'translationControl': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControl | null;
-}
-
-export const ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf2StatusEnum = {
-    NotRequested: 'not_requested',
-    Pending: 'pending',
-    Running: 'running',
-    Failed: 'failed',
-} as const;
-
-export type ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf2StatusEnum = typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf2StatusEnum[keyof typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf2StatusEnum];
-
 export interface ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfContent {
     'content': string;
 }
-export interface ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControl {
-    'status': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControlStatusEnum;
-    'sourceLanguageLabel'?: string;
-    'alternateMode': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControlAlternateModeEnum;
-    'canRequestAlternate': boolean;
-}
-
-export const ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControlStatusEnum = {
-    NotRequested: 'not_requested',
-    Pending: 'pending',
-    Running: 'running',
-    Failed: 'failed',
-    Completed: 'completed',
-} as const;
-
-export type ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControlStatusEnum = typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControlStatusEnum[keyof typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControlStatusEnum];
-export const ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControlAlternateModeEnum = {
-    Original: 'original',
-    Translated: 'translated',
-} as const;
-
-export type ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControlAlternateModeEnum = typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControlAlternateModeEnum[keyof typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControlAlternateModeEnum];
-
 export interface ApiV1OpinionFetchByConversationPostRequest {
     'conversationSlugId': string;
     'filter': ApiV1OpinionFetchByConversationPostRequestFilterEnum;
@@ -5171,7 +5451,7 @@ export interface ApiV1ProjectPageFetchPost200Response {
 }
 export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInner {
     'slug': string;
-    'kind': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerKindEnum;
+    'conversationType': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerConversationTypeEnum;
     'isClosed': boolean;
     'createdAt': string;
     'isEdited': boolean;
@@ -5184,12 +5464,12 @@ export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInner {
     'stats': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerStats;
 }
 
-export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerKindEnum = {
-    Conversation: 'conversation',
-    Vote: 'vote',
+export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerConversationTypeEnum = {
+    Polis: 'polis',
+    Ranking: 'ranking',
 } as const;
 
-export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerKindEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerKindEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerKindEnum];
+export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerConversationTypeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerConversationTypeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerConversationTypeEnum];
 export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerSourceLanguageCodeEnum = {
     Af: 'af',
     Ak: 'ak',
@@ -5752,7 +6032,7 @@ export interface ApiV1SurveyConfigUpdatePostRequest {
 }
 export interface ApiV1SurveyConfigUpdatePostRequestSurveyConfig {
     'isOptional'?: boolean;
-    'questions': Array<ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInner>;
+    'questions': Array<ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInner>;
 }
 /**
  * @type ApiV1SurveyFormFetchPost200Response
@@ -5784,7 +6064,7 @@ export interface ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInner {
     'textChangeIsSemantic'?: boolean;
     'choiceDisplay': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerChoiceDisplayEnum;
     'isPublicAggregateSuppressionEnabled': boolean;
-    'options': Array<ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner>;
+    'options': Array<ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfOptionsInner>;
     'questionType': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerQuestionTypeEnum;
     'constraints': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1Constraints;
     'currentAnswer'?: ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfCurrentAnswer;
@@ -5815,7 +6095,7 @@ export interface ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisp
     'status': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentStatusEnum;
     'mode': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentModeEnum;
     'content': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1Content;
-    'translationControl': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControl | null;
+    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
 }
 
 export const ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentStatusEnum = {
@@ -5837,7 +6117,7 @@ export interface ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisp
     'status': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfStatusEnum;
     'mode': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfModeEnum;
     'content': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfContent;
-    'translationControl': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControl | null;
+    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
 }
 
 export const ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfStatusEnum = {
@@ -5856,7 +6136,7 @@ export interface ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisp
     'status': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1StatusEnum;
     'mode': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1ModeEnum;
     'content': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1Content;
-    'translationControl': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfTranslationControl | null;
+    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
 }
 
 export const ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1StatusEnum = {
@@ -5894,9 +6174,9 @@ export interface ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneO
     'textChangeIsSemantic'?: boolean;
     'choiceDisplay': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfChoiceDisplayEnum;
     'isPublicAggregateSuppressionEnabled': boolean;
-    'options': Array<ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner>;
+    'options': Array<ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfOptionsInner>;
     'questionType': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfQuestionTypeEnum;
-    'constraints': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraints;
+    'constraints': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraints;
     'currentAnswer'?: ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfCurrentAnswer;
     'isPassed': boolean;
     'isMissingRequired': boolean;
@@ -5961,6 +6241,7 @@ export type ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfCurr
 export interface ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfCurrentAnswerOneOf1 {
     'questionType': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfCurrentAnswerOneOf1QuestionTypeEnum;
     'textValueHtml': string;
+    'textValuePlainText': string;
 }
 
 export const ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfCurrentAnswerOneOf1QuestionTypeEnum = {
@@ -6471,7 +6752,7 @@ export interface ApiV1UserProfileGetPost200Response {
     'username': string;
     'isSiteModerator': boolean;
     'isSiteOrgAdmin': boolean;
-    'organizationList': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization>;
+    'organizationList': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfOrganization>;
     'verifiedEventTickets': Array<ApiV1UserProfileGetPost200ResponseVerifiedEventTicketsEnum>;
 }
 
@@ -11556,7 +11837,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ModerationConversationGetPost(apiV1ModerationConversationGetPostRequest: ApiV1ModerationConversationGetPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration>> {
+        async apiV1ModerationConversationGetPost(apiV1ModerationConversationGetPostRequest: ApiV1ModerationConversationGetPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModeration>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ModerationConversationGetPost(apiV1ModerationConversationGetPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ModerationConversationGetPost']?.[localVarOperationServerIndex]?.url;
@@ -12737,7 +13018,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ModerationConversationGetPost(apiV1ModerationConversationGetPostRequest: ApiV1ModerationConversationGetPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration> {
+        apiV1ModerationConversationGetPost(apiV1ModerationConversationGetPostRequest: ApiV1ModerationConversationGetPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModeration> {
             return localVarFp.apiV1ModerationConversationGetPost(apiV1ModerationConversationGetPostRequest, options).then((request) => request(axios, basePath));
         },
         /**

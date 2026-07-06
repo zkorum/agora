@@ -16,7 +16,7 @@
           :key="selectedBannerImageUrl"
           class="project-page-view__banner-image"
           :src="selectedBannerImageUrl"
-          :alt="t('bannerImageAlt', { title: project.title })"
+            :alt="t('bannerImageAlt', { title: displayedProjectContent.title })"
         />
         <div class="project-page-view__banner-grid"></div>
         <div
@@ -175,28 +175,17 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import ZKLiveStatusDot from "src/components/ui-library/ZKLiveStatusDot.vue";
-import type {
-  SupportedDisplayLanguageCodes,
-  SupportedSpokenLanguageCodes,
-} from "src/shared/languages";
-import {
-  getLanguageTextDirection,
-  parseSupportedSpokenLanguageOrUndefined,
-} from "src/shared/languages";
-import { toUnionUndefined } from "src/shared/shared";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+import { getLanguageTextDirection } from "src/shared/languages";
 import type { LocalizedContentTranslationStatus } from "src/shared/types/zod";
-import { useLanguageStore } from "src/stores/language";
+import { useProjectContentQuery } from "src/utils/api/contentTranslation/useContentTranslationQueries";
 import {
   type ContentTranslationDisplayMode,
-  getContentTranslationSourceLanguageLabel,
-  resolveContentTranslationState,
 } from "src/utils/translation/contentTranslation";
-import { computed } from "vue";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
 import ProjectActivityCard from "./ProjectActivityCard.vue";
 import ProjectDetailsAside from "./ProjectDetailsAside.vue";
@@ -220,17 +209,12 @@ const props = defineProps<{
   activities: readonly ProjectActivity[];
   canLoadMoreActivities: boolean;
   isLoadingMoreActivities: boolean;
-  isRequestingProjectTranslation: boolean;
   languageOptions: readonly ProjectLanguageOption[];
 }>();
 const emit = defineEmits<{
   loadMoreActivities: [done: () => void];
-  requestProjectTranslation: [
-    targetLanguageCode: SupportedDisplayLanguageCodes,
-  ];
 }>();
 
-const { spokenLanguages } = storeToRefs(useLanguageStore());
 const projectTranslationModePreference = ref<
   ContentTranslationDisplayMode | undefined
 >();
@@ -248,57 +232,40 @@ const selectedBannerImageUrl = computed(() => {
   return props.project.bannerImageUrl;
 });
 
-const projectMachineTranslation = computed(() => {
-  const machineTranslation = props.project.machineTranslation;
-  if (
-    machineTranslation === undefined ||
-    machineTranslation.targetLanguageCode !== selectedLanguage.value
-  ) {
-    return undefined;
-  }
-
-  return machineTranslation;
-});
-const projectTranslationInitialMode = computed<ContentTranslationDisplayMode>(
-  () => {
-    const machineTranslation = projectMachineTranslation.value;
-    if (
-      machineTranslation?.status !== "completed" ||
-      machineTranslation.translatedContent === undefined
-    ) {
-      return "original";
-    }
-    const sourceLanguageCode = getProjectMachineTranslationSourceLanguageCode(
-      machineTranslation.sourceLanguageCode
-    );
-
-    return resolveContentTranslationState({
-      dynamicTranslationEnabled: true,
-      sourceLanguageCode,
-      displayLanguage: machineTranslation.targetLanguageCode,
-      spokenLanguages: spokenLanguages.value,
-      supportedTargetLanguageCodes: [machineTranslation.targetLanguageCode],
-      hasTranslatedContent: true,
-    }).initialMode;
-  }
+const requestedProjectContentMode = computed<ContentTranslationDisplayMode>(
+  () =>
+    projectTranslationModePreference.value ??
+    (props.project.displayContent.status === "available"
+      ? props.project.displayContent.mode
+      : "original")
 );
+const requestedProjectContentQuery = useProjectContentQuery({
+  projectSlug: computed(() => props.project.slug),
+  sourceVersion: computed(() => props.project.displayContent.sourceVersion),
+  mode: requestedProjectContentMode,
+  requestMode: computed(() =>
+    requestedProjectContentMode.value === "translated"
+      ? "queue_if_missing"
+      : "read_existing"
+  ),
+  enabled: computed(() => projectTranslationModePreference.value !== undefined),
+});
+const activeProjectDisplayContent = computed(() => {
+  if (
+    projectTranslationModePreference.value !== undefined &&
+    requestedProjectContentQuery.data.value !== undefined
+  ) {
+    return requestedProjectContentQuery.data.value;
+  }
+
+  return props.project.displayContent;
+});
 const projectTranslationMode = computed<ContentTranslationDisplayMode>({
   get: () =>
-    projectTranslationModePreference.value ??
-    projectTranslationInitialMode.value,
+    activeProjectDisplayContent.value.status === "available"
+      ? activeProjectDisplayContent.value.mode
+      : requestedProjectContentMode.value,
   set: (mode) => {
-    const machineTranslation = projectMachineTranslation.value;
-    if (machineTranslation === undefined) {
-      return;
-    }
-    if (
-      mode === "translated" &&
-      (machineTranslation.status !== "completed" ||
-        machineTranslation.translatedContent === undefined)
-    ) {
-      emit("requestProjectTranslation", machineTranslation.targetLanguageCode);
-      return;
-    }
     projectTranslationModePreference.value = mode;
   },
 });
@@ -309,41 +276,27 @@ const projectTranslationControl = computed<
     }
   | undefined
 >(() => {
-  const machineTranslation = projectMachineTranslation.value;
-  if (machineTranslation === undefined) {
+  const translationControl = activeProjectDisplayContent.value.translationControl;
+  if (translationControl === null) {
     return undefined;
   }
+
   return {
-    sourceLanguageLabel: getContentTranslationSourceLanguageLabel({
-      sourceLanguage: undefined,
-      fallbackLanguageCode: machineTranslation.sourceLanguageCode,
-      fallbackLabel: machineTranslation.sourceLanguageLabel,
-      displayLanguage: machineTranslation.targetLanguageCode,
-    }),
-    status: props.isRequestingProjectTranslation
+    sourceLanguageLabel: translationControl.sourceLanguageLabel,
+    status: requestedProjectContentQuery.isFetching.value
       ? "pending"
-      : machineTranslation.status,
+      : translationControl.status,
   };
 });
 const displayedProjectContent = computed(() => {
-  const machineTranslation = projectMachineTranslation.value;
-  if (machineTranslation === undefined) {
-    return {
-      title: props.project.title,
-      subtitle: props.project.subtitle,
-      bodyHtml: props.project.bodyHtml,
-    };
+  const displayContent = activeProjectDisplayContent.value;
+  if (displayContent.status === "available") {
+    return displayContent.content;
   }
 
-  if (
-    projectTranslationMode.value === "translated" &&
-    machineTranslation.status === "completed" &&
-    machineTranslation.translatedContent !== undefined
-  ) {
-    return machineTranslation.translatedContent;
-  }
-
-  return props.project.originalContent;
+  return props.project.displayContent.status === "available"
+    ? props.project.displayContent.content
+    : { title: "" };
 });
 
 const consultationStatus = computed<ConsultationStatus>(() => {
@@ -351,11 +304,7 @@ const consultationStatus = computed<ConsultationStatus>(() => {
     return "none";
   }
 
-  if (
-    props.activities.some(
-      (activity) => activity.kind === "conversation" && !activity.isClosed
-    )
-  ) {
+  if (props.activities.some((activity) => !activity.isClosed)) {
     return "live";
   }
 
@@ -388,17 +337,15 @@ const activityListKey = computed(() => {
     firstActivity === undefined
       ? "none"
       : getProjectActivityIdentity(firstActivity),
-    lastActivity === undefined
-      ? "none"
-      : getProjectActivityIdentity(lastActivity),
+    lastActivity === undefined ? "none" : getProjectActivityIdentity(lastActivity),
   ].join(":");
 });
 
 watch(
   () => [
     props.project.slug,
-    props.project.machineTranslation?.targetLanguageCode,
-    props.project.machineTranslation?.status,
+    props.project.displayContent.sourceVersion,
+    props.project.displayContent.status,
   ],
   () => {
     projectTranslationModePreference.value = undefined;
@@ -425,16 +372,6 @@ function onActivitiesLoad(_index: number, done: () => void): void {
   emit("loadMoreActivities", done);
 }
 
-function getProjectMachineTranslationSourceLanguageCode(
-  sourceLanguageCode: string | null | undefined
-): SupportedSpokenLanguageCodes | undefined {
-  const normalizedSourceLanguageCode = toUnionUndefined(sourceLanguageCode);
-  if (normalizedSourceLanguageCode === undefined) {
-    return undefined;
-  }
-
-  return parseSupportedSpokenLanguageOrUndefined(normalizedSourceLanguageCode);
-}
 </script>
 
 <style scoped lang="scss">

@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**conversationData** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner.md) |  | [default to undefined]
+**conversationData** | [**ApiV1ConversationGetPost200ResponseConversationData**](ApiV1ConversationGetPost200ResponseConversationData.md) |  | [default to undefined]
 **displayContent** | [**ApiV1ConversationGetPost200ResponseDisplayContent**](ApiV1ConversationGetPost200ResponseDisplayContent.md) |  | [default to undefined]
 
 ## Example

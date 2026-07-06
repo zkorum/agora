@@ -7,6 +7,7 @@ import {
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   ConversationLanguageSettingsSource,
+  CreateNewConversationRequest,
   CreateNewConversationResponse,
   GetConversationCreateProjectOptionsResponse,
   GetConversationResponse,
@@ -22,14 +23,11 @@ import type {
 import { Dto } from "src/shared/types/dto";
 import type {
   ConversationMultilingualSetting,
-  ConversationType,
   EventSlug,
   ExtendedConversation,
-  ExternalSourceConfig,
   FeedSortAlgorithm,
   ParticipationMode,
   PreferredOpinionGroupCount,
-  SurveyConfig,
 } from "src/shared/types/zod";
 import { zodExtendedConversationData } from "src/shared/types/zod";
 import { CSV_UPLOAD_FIELD_NAMES } from "src/shared-app-api/csvUpload";
@@ -198,25 +196,6 @@ export function useBackendPostApi() {
     }
   }
 
-  interface CreateNewPostProps {
-    postTitle: string;
-    postBody: string | undefined;
-    postBodyPlainText: string;
-    projectSlug?: string;
-    languageSettingsSource: ConversationLanguageSettingsSource;
-    multilingualSetting: ConversationMultilingualSetting;
-    postAsOrganizationName: string;
-    isIndexed: boolean;
-    participationMode: ParticipationMode;
-    conversationType: ConversationType;
-    seedOpinionList: string[];
-    requiresEventTicket?: EventSlug;
-    aiLabelingEnabled: boolean;
-    preferredOpinionGroupCount: PreferredOpinionGroupCount;
-    externalSourceConfig?: ExternalSourceConfig | null;
-    surveyConfig?: SurveyConfig | null;
-  }
-
   async function fetchConversationCreateProjectOptions({
     postAsOrganizationName,
   }: {
@@ -376,43 +355,11 @@ export function useBackendPostApi() {
     }
   }
 
-  async function createNewPost({
-    postTitle,
-    postBody,
-    postBodyPlainText,
-    projectSlug,
-    languageSettingsSource,
-    multilingualSetting,
-    postAsOrganizationName,
-    isIndexed,
-    participationMode,
-    conversationType,
-    seedOpinionList,
-    requiresEventTicket,
-    aiLabelingEnabled,
-    preferredOpinionGroupCount,
-    externalSourceConfig,
-    surveyConfig,
-  }: CreateNewPostProps): Promise<CreateNewPostResponse> {
+  async function createNewPost(
+    request: CreateNewConversationRequest
+  ): Promise<CreateNewPostResponse> {
     try {
-      const params = Dto.createNewConversationRequest.parse({
-        conversationTitle: postTitle,
-        conversationBody: postBody,
-        conversationBodyPlainText: postBodyPlainText,
-        projectSlug,
-        languageSettingsSource,
-        multilingualSetting,
-        isIndexed: isIndexed,
-        participationMode: participationMode,
-        conversationType: conversationType,
-        postAsOrganization: postAsOrganizationName,
-        seedOpinionList: seedOpinionList,
-        requiresEventTicket,
-        aiLabelingEnabled,
-        preferredOpinionGroupCount,
-        externalSourceConfig: externalSourceConfig ?? undefined,
-        surveyConfig: surveyConfig ?? undefined,
-      });
+      const params = Dto.createNewConversationRequest.parse(request);
       const url = "/api/v1/conversation/create";
       const options = { method: "POST" };
       const encodedUcan = await buildEncodedUcan(url, options);

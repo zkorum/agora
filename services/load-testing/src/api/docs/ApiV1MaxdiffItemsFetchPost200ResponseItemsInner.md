@@ -6,8 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **slugId** | **string** |  | [default to undefined]
-**title** | **string** |  | [default to undefined]
-**body** | **string** |  | [default to undefined]
+**displayContent** | [**ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContent**](ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContent.md) |  | [default to undefined]
 **lifecycleStatus** | **string** |  | [default to undefined]
 **externalUrl** | **string** |  | [default to undefined]
 **snapshotScore** | **number** |  | [default to undefined]
@@ -22,8 +21,7 @@ import { ApiV1MaxdiffItemsFetchPost200ResponseItemsInner } from './api';
 
 const instance: ApiV1MaxdiffItemsFetchPost200ResponseItemsInner = {
     slugId,
-    title,
-    body,
+    displayContent,
     lifecycleStatus,
     externalUrl,
     snapshotScore,

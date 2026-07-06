@@ -3245,7 +3245,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1ModerationConversationGetPost**
-> ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration apiV1ModerationConversationGetPost(apiV1ModerationConversationGetPostRequest)
+> ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModeration apiV1ModerationConversationGetPost(apiV1ModerationConversationGetPostRequest)
 
 
 ### Example
@@ -3276,7 +3276,7 @@ const { status, data } = await apiInstance.apiV1ModerationConversationGetPost(
 
 ### Return type
 
-**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration**
+**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModeration**
 
 ### Authorization
 

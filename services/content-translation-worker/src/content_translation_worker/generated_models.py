@@ -209,7 +209,7 @@ class ParticipationMode(StrEnum):
 
 class ConversationType(StrEnum):
     polis = "polis"
-    maxdiff = "maxdiff"
+    ranking = "ranking"
 
 
 class EventSlug(StrEnum):
@@ -546,6 +546,7 @@ class ProjectContent(Base):
     __tablename__ = "project_content"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
     project_id: Mapped[int] = mapped_column(Integer)
     title: Mapped[str] = mapped_column(String(140))
     subtitle: Mapped[str | None] = mapped_column(String(140), nullable=True)

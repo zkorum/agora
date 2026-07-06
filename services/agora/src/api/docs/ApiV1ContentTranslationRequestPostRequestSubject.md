@@ -10,6 +10,7 @@ Name | Type | Description | Notes
 **opinionSlugId** | **string** |  | [default to undefined]
 **questionSlugId** | **string** |  | [default to undefined]
 **projectSlug** | **string** |  | [default to undefined]
+**itemSlugId** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -22,6 +23,7 @@ const instance: ApiV1ContentTranslationRequestPostRequestSubject = {
     opinionSlugId,
     questionSlugId,
     projectSlug,
+    itemSlugId,
 };
 ```
 

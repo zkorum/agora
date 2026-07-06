@@ -106,6 +106,7 @@ import {
     fetchMaxdiffItems,
     updateMaxdiffItemLifecycle,
 } from "./service/maxdiffItem.js";
+import type { RankingItemDisplayPreferences } from "./service/rankingItemDisplay.js";
 import {
     verifyWebhookSignature,
     parseWebhookPayload,
@@ -1253,6 +1254,40 @@ function getRequestDisplayLanguage({
         : "en";
 }
 
+async function getRankingItemDisplayPreferences({
+    request,
+    conversationSlugId,
+}: {
+    request: FastifyRequest;
+    conversationSlugId: string;
+}): Promise<RankingItemDisplayPreferences> {
+    const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+    const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+    const languagePreferences = deviceStatus.isKnown
+        ? await getLanguagePreferences({
+              db,
+              userId: deviceStatus.userId,
+              request: {
+                  currentDisplayLanguage: headerDisplayLanguage,
+              },
+          })
+        : {
+              displayLanguage: headerDisplayLanguage,
+              spokenLanguages: [headerDisplayLanguage],
+          };
+    const preferredContentTranslation =
+        await getPreferredContentTranslationAvailabilityForConversation({
+            conversationSlugId,
+            displayLanguage: languagePreferences.displayLanguage,
+        });
+    return {
+        displayLanguage: languagePreferences.displayLanguage,
+        targetLanguage: preferredContentTranslation.targetLanguageCode,
+        spokenLanguages: languagePreferences.spokenLanguages,
+        translationAllowed: preferredContentTranslation.isAllowed,
+    };
+}
+
 async function sendLatestSubscribedConversationAnalysisEvent({
     reply,
     conversationSlugId,
@@ -1808,6 +1843,95 @@ server.after(() => {
                 db,
                 request: request.body,
                 currentDisplayLanguage: getRequestDisplayLanguage({ request }),
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/project/content/fetch`,
+        schema: {
+            body: Dto.projectContentFetchRequest,
+            response: {
+                200: Dto.projectContentFetchResponse,
+            },
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUcan(request);
+            const now = nowZeroMs();
+            const userAgent = request.headers["user-agent"] ?? "Unknown device";
+            const deviceStatus = await authUtilService.getDeviceStatus({
+                db,
+                didWrite,
+                now,
+            });
+            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const requesterUserId = deviceStatus.isKnown
+                ? deviceStatus.userId
+                : (
+                      await authService.createGuestUser({
+                          db,
+                          didWrite,
+                          now,
+                          userAgent,
+                          currentDisplayLanguage: headerDisplayLanguage,
+                      })
+                  ).userId;
+            const languagePreferences = await getLanguagePreferences({
+                db,
+                userId: requesterUserId,
+                request: {
+                    currentDisplayLanguage: headerDisplayLanguage,
+                },
+            });
+            const availability = await getContentTranslationAvailabilityForProject({
+                projectSlug: request.body.projectSlug,
+                targetLanguageCode: languagePreferences.displayLanguage,
+            });
+            const queueValkey = queueValkeyRef.current;
+            const content = await contentTranslationService.requestProjectContentTranslation({
+                db,
+                valkey: queueValkey,
+                queueScript: contentTranslationQueueScript,
+                projectSlug: request.body.projectSlug,
+                sourceVersion: request.body.sourceVersion,
+                targetLanguageCode: languagePreferences.displayLanguage,
+                requestMode:
+                    request.body.mode === "translated" && availability.isAllowed
+                        ? request.body.requestMode
+                        : "read_existing",
+                now,
+                log,
+                beforeQueueTranslationWork: async () => {
+                    if (queueValkey === undefined) {
+                        throw server.httpErrors.serviceUnavailable(
+                            "Content translation rate limiter is unavailable",
+                        );
+                    }
+                    const rateLimit = await consumeContentTranslationUserRateLimit({
+                        valkey: queueValkey,
+                        script: contentTranslationUserRateLimitScript,
+                        userId: requesterUserId,
+                        maxRequests: CONTENT_TRANSLATION_USER_RATE_LIMIT_MAX,
+                        windowMs: CONTENT_TRANSLATION_USER_RATE_LIMIT_WINDOW_MS,
+                    });
+                    if (!rateLimit.isAllowed) {
+                        throw server.httpErrors.createError(
+                            429,
+                            `Content translation rate limit exceeded. Retry after ${String(Math.ceil(rateLimit.retryAfterMs / 1000))}s`,
+                        );
+                    }
+                },
+            });
+            if (content === undefined) {
+                throw server.httpErrors.notFound("Project content not found");
+            }
+            return projectPageService.toProjectDisplayContent({
+                content: content.content,
+                mode: request.body.mode,
+                translationAllowed: availability.isAllowed,
+                displayLanguage: languagePreferences.displayLanguage,
+                spokenLanguages: languagePreferences.spokenLanguages,
             });
         },
     });
@@ -2419,9 +2543,14 @@ server.after(() => {
             },
         },
         handler: async (request) => {
+            const displayPreferences = await getRankingItemDisplayPreferences({
+                request,
+                conversationSlugId: request.body.conversationSlugId,
+            });
             return await getMaxdiffResults({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
+                displayPreferences,
                 lifecycleFilter: request.body.lifecycleFilter,
                 valkey: queueValkeyRef.current,
             });
@@ -2438,9 +2567,14 @@ server.after(() => {
             },
         },
         handler: async (request) => {
+            const displayPreferences = await getRankingItemDisplayPreferences({
+                request,
+                conversationSlugId: request.body.conversationSlugId,
+            });
             return await fetchMaxdiffItems({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
+                displayPreferences,
                 lifecycleFilter: request.body.lifecycleFilter,
             });
         },
@@ -3034,6 +3168,9 @@ server.after(() => {
             },
         },
         handler: async (request, reply) => {
+            const createConversationRequest = Dto.createNewConversationRequest.parse(
+                request.body,
+            );
             const { didWrite, deviceStatus } =
                 await verifyUcanAndKnownDeviceStatus(db, request, {
                     expectedKnownDeviceStatus: {
@@ -3051,27 +3188,30 @@ server.after(() => {
                 });
 
             const hasSurvey =
-                (request.body.surveyConfig?.questions.length ?? 0) > 0;
+                createConversationRequest.conversationType === "polis" &&
+                (createConversationRequest.surveyConfig?.questions.length ?? 0) > 0;
             const createTargetResult = await resolveConversationCreateTargetResult({
                 db,
                 userId: deviceStatus.userId,
-                postAsOrganizationSlug: request.body.postAsOrganization,
-                projectSlug: request.body.projectSlug,
+                postAsOrganizationSlug: createConversationRequest.postAsOrganization,
+                projectSlug: createConversationRequest.projectSlug,
                 autoProvisionedDefaultLanguage,
             });
             if (!createTargetResult.success) {
                 return createTargetResult;
             }
             if (
-                request.body.languageSettingsSource === "project_inherited" &&
-                request.body.projectSlug === undefined
+                createConversationRequest.languageSettingsSource ===
+                    "project_inherited" &&
+                createConversationRequest.projectSlug === undefined
             ) {
                 throw server.httpErrors.badRequest(
                     "Project language inheritance requires a selected project",
                 );
             }
             const projectLanguageSettings =
-                request.body.languageSettingsSource === "project_inherited"
+                createConversationRequest.languageSettingsSource ===
+                "project_inherited"
                     ? await getProjectLanguageSettings({
                           db,
                           projectId: createTargetResult.target.projectId,
@@ -3079,23 +3219,30 @@ server.after(() => {
                     : undefined;
             const premiumMultilingualSetting =
                 projectLanguageSettings === undefined
-                    ? request.body.multilingualSetting
+                    ? createConversationRequest.multilingualSetting
                     : getManualMultilingualSettingsFromProjectLanguageSettings({
                           languageSettings: projectLanguageSettings,
                       });
             const premiumFeatures =
                 premiumEntitlementService.getPremiumFeaturesFromCreateRequest({
-                    requiresEventTicket: request.body.requiresEventTicket,
+                    requiresEventTicket:
+                        createConversationRequest.requiresEventTicket,
                     hasSurvey,
                     preferredOpinionGroupCount:
-                        request.body.preferredOpinionGroupCount,
+                        createConversationRequest.conversationType === "polis"
+                            ? createConversationRequest.preferredOpinionGroupCount
+                            : null,
                     multilingualSetting: premiumMultilingualSetting,
                 });
 
-            if (request.body.externalSourceConfig != null) {
+            if (
+                createConversationRequest.conversationType === "ranking" &&
+                createConversationRequest.externalSourceConfig != null
+            ) {
                 assertMaxdiffGitHubAllowed({
                     userId: deviceStatus.userId,
-                    postAsOrganization: request.body.postAsOrganization,
+                    postAsOrganization:
+                        createConversationRequest.postAsOrganization,
                 });
             }
 
@@ -3114,29 +3261,12 @@ server.after(() => {
 
             const createResult = await postService.createNewPost({
                 db: db,
-                conversationTitle: request.body.conversationTitle,
-                conversationBody: request.body.conversationBody ?? null,
-                conversationBodyPlainText:
-                    request.body.conversationBodyPlainText,
+                request: createConversationRequest,
                 authorId: deviceStatus.userId,
                 didWrite: didWrite,
-                postAsOrganization: request.body.postAsOrganization,
-                projectSlug: request.body.projectSlug,
                 createTarget: createTargetResult.target,
-                languageSettingsSource: request.body.languageSettingsSource,
                 autoProvisionedDefaultLanguage,
-                isIndexed: request.body.isIndexed,
-                participationMode: request.body.participationMode,
-                conversationType: request.body.conversationType,
                 isImporting: false,
-                seedOpinionList: request.body.seedOpinionList,
-                requiresEventTicket: request.body.requiresEventTicket,
-                aiLabelingEnabled: request.body.aiLabelingEnabled,
-                preferredOpinionGroupCount:
-                    request.body.preferredOpinionGroupCount,
-                externalSourceConfig: request.body.externalSourceConfig ?? null,
-                surveyConfig: request.body.surveyConfig ?? null,
-                multilingualSetting: request.body.multilingualSetting,
                 googleCloudCredentials,
             });
 
@@ -3698,6 +3828,7 @@ server.after(() => {
                     ? deviceStatus.userId
                     : undefined,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                currentDisplayLanguage: languagePreferences.displayLanguage,
             });
             const preferredContentTranslation =
                 await getPreferredContentTranslationAvailabilityForConversation({
@@ -5336,7 +5467,7 @@ server.after(() => {
                         valkey: queueValkey,
                         queueScript: contentTranslationQueueScript,
                         conversationSlugId: request.body.conversationSlugId,
-                        contentId: request.body.contentId,
+                        sourceVersion: request.body.sourceVersion,
                         targetLanguageCode:
                             preferredContentTranslation.targetLanguageCode,
                         requestMode:

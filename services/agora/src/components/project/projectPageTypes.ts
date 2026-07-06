@@ -22,6 +22,12 @@ export type ProjectContact = ProjectPageContact;
 
 export type ProjectPageData = ProjectPageProject;
 
+function getProjectActivityTitle(activity: ProjectActivity): string {
+  return activity.displayContent.status === "available"
+    ? activity.displayContent.content.title
+    : activity.displayContent.sourceVersion;
+}
+
 export function getProjectActivityIdentity(activity: ProjectActivity): string {
   if (activity.isIndexed) {
     return activity.slugId;
@@ -30,7 +36,7 @@ export function getProjectActivityIdentity(activity: ProjectActivity): string {
   return [
     "invitation",
     activity.createdAt.toISOString(),
-    activity.kind,
-    activity.title,
+    activity.conversationType,
+    getProjectActivityTitle(activity),
   ].join(":");
 }

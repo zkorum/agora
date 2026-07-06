@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**organizationList** | [**Array&lt;ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization&gt;**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization.md) |  | [default to undefined]
+**organizationList** | [**Array&lt;ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfOrganization&gt;**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfOrganization.md) |  | [default to undefined]
 
 ## Example
 

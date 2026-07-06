@@ -6,7 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **slug** | **string** |  | [default to undefined]
-**kind** | **string** |  | [default to undefined]
+**conversationType** | **string** |  | [default to undefined]
 **isClosed** | **boolean** |  | [default to undefined]
 **createdAt** | **string** |  | [default to undefined]
 **isEdited** | **boolean** |  | [default to undefined]
@@ -25,7 +25,7 @@ import { ApiV1ProjectPageFetchPost200ResponseActivitiesInner } from './api';
 
 const instance: ApiV1ProjectPageFetchPost200ResponseActivitiesInner = {
     slug,
-    kind,
+    conversationType,
     isClosed,
     createdAt,
     isEdited,

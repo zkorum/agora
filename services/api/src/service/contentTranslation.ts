@@ -15,6 +15,9 @@ import {
     projectContentTranslationTable,
     projectTable,
     projectTranslationTargetLanguageTable,
+    rankingItemContentTable,
+    rankingItemContentTranslationTable,
+    rankingItemTable,
     surveyQuestionContentTable,
     surveyQuestionContentTranslationTable,
     surveyQuestionOptionContentTable,
@@ -37,6 +40,7 @@ import type {
     LocalizedConversationContent,
     LocalizedOpinionContent,
     LocalizedProjectContent,
+    LocalizedRankingItemContent,
     LocalizedSurveyQuestionContent,
 } from "@/shared/types/zod.js";
 import type {
@@ -44,6 +48,7 @@ import type {
     SupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
 import {
+    buildLocalizedRankingItemContent,
     buildLocalizedSurveyQuestionContent,
     buildTranslationMetadata,
     hasCompleteSurveyQuestionTranslation,
@@ -75,7 +80,13 @@ interface RequestContentTranslationParams {
 interface RequestConversationContentTranslationParams
     extends Omit<RequestContentTranslationParams, "subject"> {
     conversationSlugId: string;
-    contentId?: string;
+    sourceVersion?: string;
+}
+
+interface RequestProjectContentTranslationParams
+    extends Omit<RequestContentTranslationParams, "subject"> {
+    projectSlug: string;
+    sourceVersion?: string;
 }
 
 interface RequestSurveyQuestionContentTranslationParams
@@ -108,6 +119,7 @@ interface ScheduleEagerCreatedConversationContentTranslationParams {
     targetLanguagePolicy: TranslationTargetLanguagePolicy;
     surveySources: SurveyQuestionContentSource[];
     seedOpinionSources: OpinionContentSource[];
+    rankingItemSources: RankingItemContentSource[];
     now: Date;
     log: Pick<BaseLogger, "info">;
 }
@@ -175,11 +187,27 @@ export interface SurveyQuestionContentSource {
     options: SurveyQuestionOptionContentSource[];
 }
 
+export interface RankingItemContentSource {
+    conversationId: number;
+    conversationSlugId: string;
+    itemSlugId: string;
+    contentId: number;
+    publicId: string;
+    title: string;
+    bodyHtml: string | null;
+    bodyPlainText: string | null;
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    sourceLanguageProvider: LanguageDetectionProvider | null;
+    sourceLanguageConfidence: number | null;
+}
+
 interface ProjectContentSource {
     projectId: number;
     projectSlug: string;
     dynamicTranslationEnabled: boolean;
     contentId: number;
+    publicId: string;
     title: string;
     subtitle: string | null;
     body: string | null;
@@ -214,6 +242,12 @@ type TranslationWorkInput =
           surveyQuestionContentId: number;
           surveyQuestionOptionContentIds: number[];
           targetLanguageCode: SupportedDisplayLanguageCodes;
+      }
+    | {
+          conversationId: number;
+          sourceKind: "ranking_item";
+          rankingItemContentId: number;
+          targetLanguageCode: SupportedDisplayLanguageCodes;
       };
 
 function getContentTranslationQueueMode(
@@ -247,6 +281,14 @@ function getTranslationWorkLogFields(input: TranslationWorkInput) {
             targetLanguageCode: input.targetLanguageCode,
         };
     }
+    if (input.sourceKind === "ranking_item") {
+        return {
+            conversationId: input.conversationId,
+            sourceKind: input.sourceKind,
+            rankingItemContentId: input.rankingItemContentId,
+            targetLanguageCode: input.targetLanguageCode,
+        };
+    }
     return {
         conversationId: input.conversationId,
         sourceKind: input.sourceKind,
@@ -277,6 +319,11 @@ async function ensureTranslationWork({
             ? eq(contentTranslationWorkTable.conversationContentId, input.sourceContentId)
             : input.sourceKind === "opinion"
               ? eq(contentTranslationWorkTable.opinionContentId, input.sourceContentId)
+              : input.sourceKind === "ranking_item"
+                ? eq(
+                      contentTranslationWorkTable.rankingItemContentId,
+                      input.rankingItemContentId,
+                  )
               : and(
                     eq(
                         contentTranslationWorkTable.surveyQuestionContentId,
@@ -367,6 +414,8 @@ async function ensureTranslationWork({
             input.sourceKind === "survey_question"
                 ? input.surveyQuestionOptionContentIds
                 : null,
+        rankingItemContentId:
+            input.sourceKind === "ranking_item" ? input.rankingItemContentId : null,
         displayLanguageCode: input.targetLanguageCode,
         status: "pending" as const,
         priorityRank: priority,
@@ -413,6 +462,11 @@ async function markExistingTranslationWorkCompleted({
             ? eq(contentTranslationWorkTable.conversationContentId, input.sourceContentId)
             : input.sourceKind === "opinion"
               ? eq(contentTranslationWorkTable.opinionContentId, input.sourceContentId)
+              : input.sourceKind === "ranking_item"
+                ? eq(
+                      contentTranslationWorkTable.rankingItemContentId,
+                      input.rankingItemContentId,
+                  )
               : and(
                     eq(
                         contentTranslationWorkTable.surveyQuestionContentId,
@@ -705,6 +759,51 @@ async function fetchSurveyQuestionSource({
     return { ...question, options };
 }
 
+async function fetchRankingItemSource({
+    db,
+    conversationSlugId,
+    itemSlugId,
+}: {
+    db: PostgresDatabase;
+    conversationSlugId: string;
+    itemSlugId: string;
+}): Promise<RankingItemContentSource | undefined> {
+    const rows = await db
+        .select({
+            conversationId: conversationTable.id,
+            conversationSlugId: conversationTable.slugId,
+            itemSlugId: rankingItemTable.slugId,
+            contentId: rankingItemContentTable.id,
+            publicId: rankingItemContentTable.publicId,
+            title: rankingItemContentTable.title,
+            bodyHtml: rankingItemContentTable.body,
+            bodyPlainText: rankingItemContentTable.bodyPlainText,
+            sourceLanguageCode: rankingItemContentTable.sourceLanguageCode,
+            sourceRawLanguageCode: rankingItemContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider: rankingItemContentTable.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                rankingItemContentTable.sourceLanguageConfidence,
+        })
+        .from(rankingItemTable)
+        .innerJoin(
+            conversationTable,
+            eq(conversationTable.id, rankingItemTable.conversationId),
+        )
+        .innerJoin(
+            rankingItemContentTable,
+            eq(rankingItemContentTable.id, rankingItemTable.currentContentId),
+        )
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(rankingItemTable.slugId, itemSlugId),
+                isNotNull(rankingItemTable.currentContentId),
+            ),
+        )
+        .limit(1);
+    return rows.at(0) ?? undefined;
+}
+
 async function hasConversationTranslation({
     db,
     source,
@@ -728,6 +827,44 @@ async function hasConversationTranslation({
                 ),
                 eq(
                     conversationContentTranslationTable.displayLanguageCode,
+                    targetLanguageCode,
+                ),
+            ),
+        )
+        .limit(1);
+    const row = rows.at(0);
+    return (
+        row !== undefined &&
+        translationSourceMatchesCurrentSource({
+            translationSourceLanguageCode: row.sourceLanguageCode,
+            currentSourceLanguageCode: source.sourceLanguageCode,
+        })
+    );
+}
+
+async function hasRankingItemTranslation({
+    db,
+    source,
+    targetLanguageCode,
+}: {
+    db: PostgresDatabase;
+    source: RankingItemContentSource;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+}): Promise<boolean> {
+    const rows = await db
+        .select({
+            sourceLanguageCode:
+                rankingItemContentTranslationTable.sourceLanguageCode,
+        })
+        .from(rankingItemContentTranslationTable)
+        .where(
+            and(
+                eq(
+                    rankingItemContentTranslationTable.rankingItemContentId,
+                    source.contentId,
+                ),
+                eq(
+                    rankingItemContentTranslationTable.displayLanguageCode,
                     targetLanguageCode,
                 ),
             ),
@@ -1000,6 +1137,7 @@ async function fetchProjectContentSource({
             projectSlug: projectTable.slug,
             dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
             contentId: projectContentTable.id,
+            publicId: projectContentTable.publicId,
             title: projectContentTable.title,
             subtitle: projectContentTable.subtitle,
             body: projectContentTable.body,
@@ -1031,6 +1169,7 @@ async function fetchProjectContentSourceBySlug({
             projectSlug: projectTable.slug,
             dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
             contentId: projectContentTable.id,
+            publicId: projectContentTable.publicId,
             title: projectContentTable.title,
             subtitle: projectContentTable.subtitle,
             body: projectContentTable.body,
@@ -1327,6 +1466,7 @@ export async function scheduleEagerContentTranslationForConversation({
         targetLanguagePolicy,
         surveySources,
         seedOpinionSources,
+        rankingItemSources: [],
         now,
         log,
         checkExistingTranslations: true,
@@ -1346,6 +1486,7 @@ export async function createEagerContentTranslationWorkForCreatedConversation({
     targetLanguagePolicy,
     surveySources,
     seedOpinionSources,
+    rankingItemSources,
     now,
     log,
 }: ScheduleEagerCreatedConversationContentTranslationParams): Promise<number[]> {
@@ -1355,6 +1496,7 @@ export async function createEagerContentTranslationWorkForCreatedConversation({
         targetLanguagePolicy,
         surveySources,
         seedOpinionSources,
+        rankingItemSources,
         now,
         log,
         checkExistingTranslations: false,
@@ -1367,6 +1509,7 @@ async function createEagerContentTranslationWorkForConversationSources({
     targetLanguagePolicy,
     surveySources,
     seedOpinionSources,
+    rankingItemSources,
     now,
     log,
     checkExistingTranslations,
@@ -1417,6 +1560,7 @@ async function createEagerContentTranslationWorkForConversationSources({
             effectiveTargetLanguageCodes: targetLanguageCodes,
             surveyQuestionCount: surveySources.length,
             seedOpinionCount: seedOpinionSources.length,
+            rankingItemCount: rankingItemSources.length,
         },
         "[ContentTranslation] Scheduling eager conversation content translations",
     );
@@ -1567,6 +1711,56 @@ async function createEagerContentTranslationWorkForConversationSources({
                     conversationId: source.conversationId,
                     sourceKind: "opinion",
                     sourceContentId: source.contentId,
+                    targetLanguageCode,
+                },
+                translationExists: false,
+                now,
+                log,
+            });
+            if (workId !== undefined) {
+                workIds.push(workId);
+            }
+        }
+
+        for (const source of rankingItemSources) {
+            const shouldTranslateRankingItem = shouldTranslateContent({
+                sourceLanguageCode: source.sourceLanguageCode,
+                sourceRawLanguageCode: source.sourceRawLanguageCode,
+                targetLanguageCode,
+            });
+            const rankingItemTranslationExists = shouldTranslateRankingItem
+                ? checkExistingTranslations &&
+                  (await hasRankingItemTranslation({
+                      db,
+                      source,
+                      targetLanguageCode,
+                  }))
+                : false;
+            if (!shouldTranslateRankingItem || rankingItemTranslationExists) {
+                log.info(
+                    {
+                        conversationSlugId,
+                        conversationId: source.conversationId,
+                        sourceKind: "ranking_item",
+                        itemSlugId: source.itemSlugId,
+                        sourceContentId: source.contentId,
+                        targetLanguageCode,
+                        sourceLanguageCode: source.sourceLanguageCode,
+                        sourceRawLanguageCode: source.sourceRawLanguageCode,
+                        skipReason: shouldTranslateRankingItem
+                            ? "translation_exists"
+                            : "source_matches_target",
+                    },
+                    "[ContentTranslation] Skipped eager translation candidate",
+                );
+                continue;
+            }
+            const workId = await ensureEagerTranslationWork({
+                db,
+                input: {
+                    conversationId: source.conversationId,
+                    sourceKind: "ranking_item",
+                    rankingItemContentId: source.contentId,
                     targetLanguageCode,
                 },
                 translationExists: false,
@@ -1965,7 +2159,7 @@ async function buildProjectResponse({
         kind: "project" as const,
         projectSlug: source.projectSlug,
     };
-    const sourceVersion = String(source.contentId);
+    const sourceVersion = source.publicId;
 
     if (translation?.sourceKind === "manual") {
         return {
@@ -2039,6 +2233,65 @@ async function buildProjectResponse({
             },
         },
     };
+}
+
+async function buildRankingItemResponse({
+    db,
+    source,
+    targetLanguageCode,
+    requestMode,
+}: {
+    db: PostgresDatabase;
+    source: RankingItemContentSource;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+    requestMode: ContentTranslationRequestMode;
+}): Promise<{
+    subject: Extract<ContentTranslationSubject, { kind: "ranking_item" }>;
+    content: LocalizedRankingItemContent;
+}> {
+    const translationRows = await db
+        .select({
+            translatedTitle: rankingItemContentTranslationTable.translatedTitle,
+            translatedBodyHtml:
+                rankingItemContentTranslationTable.translatedBodyHtml,
+            sourceLanguageCode:
+                rankingItemContentTranslationTable.sourceLanguageCode,
+            sourceRawLanguageCode:
+                rankingItemContentTranslationTable.sourceRawLanguageCode,
+            sourceLanguageProvider:
+                rankingItemContentTranslationTable.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                rankingItemContentTranslationTable.sourceLanguageConfidence,
+        })
+        .from(rankingItemContentTranslationTable)
+        .where(
+            and(
+                eq(
+                    rankingItemContentTranslationTable.rankingItemContentId,
+                    source.contentId,
+                ),
+                eq(
+                    rankingItemContentTranslationTable.displayLanguageCode,
+                    targetLanguageCode,
+                ),
+            ),
+        )
+        .limit(1);
+    const translation = translationRows.at(0);
+    const freshTranslation =
+        translation !== undefined &&
+        translationSourceMatchesCurrentSource({
+            translationSourceLanguageCode: translation.sourceLanguageCode,
+            currentSourceLanguageCode: source.sourceLanguageCode,
+        })
+            ? translation
+            : undefined;
+    return buildLocalizedRankingItemContent({
+        source,
+        translation: freshTranslation,
+        targetLanguageCode,
+        requestMode,
+    });
 }
 
 async function buildOpinionResponse({
@@ -2152,53 +2405,16 @@ export async function requestContentTranslation({
     beforeQueueTranslationWork,
 }: RequestContentTranslationParams) {
     if (subject.kind === "project") {
-        const source = await fetchProjectContentSourceBySlug({
+        return await requestProjectContentTranslation({
             db,
+            valkey,
+            queueScript,
             projectSlug: subject.projectSlug,
-        });
-        if (source === undefined) {
-            return undefined;
-        }
-        const translationExists = await hasProjectContentTranslation({
-            db,
-            source,
             targetLanguageCode,
-        });
-        const skipTranslation = !shouldTranslateContent({
-            sourceLanguageCode: source.sourceLanguageCode,
-            sourceRawLanguageCode: source.sourceRawLanguageCode,
-            targetLanguageCode,
-        });
-        const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
-        if (
-            shouldQueueTranslationWork({
-                requestMode: effectiveRequestMode,
-                translationExists,
-            }) &&
-            !skipTranslation
-        ) {
-            await beforeQueueTranslationWork();
-            await queueMissingTranslationWork({
-                db,
-                valkey,
-                queueScript,
-                input: {
-                    conversationId: null,
-                    sourceKind: "project",
-                    projectContentId: source.contentId,
-                    targetLanguageCode,
-                },
-                translationExists,
-                now,
-                log,
-                priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.userInteractive,
-            });
-        }
-        return await buildProjectResponse({
-            db,
-            source,
-            targetLanguageCode,
-            requestMode: effectiveRequestMode,
+            requestMode,
+            now,
+            log,
+            beforeQueueTranslationWork,
         });
     }
 
@@ -2308,15 +2524,55 @@ export async function requestContentTranslation({
     }
 
     if (subject.kind === "ranking_item") {
-        log.info(
-            {
-                conversationSlugId: subject.conversationSlugId,
-                itemSlugId: subject.itemSlugId,
-                targetLanguageCode,
-            },
-            "[ContentTranslation] Ranking item translation subject is not wired yet",
-        );
-        return undefined;
+        const source = await fetchRankingItemSource({
+            db,
+            conversationSlugId: subject.conversationSlugId,
+            itemSlugId: subject.itemSlugId,
+        });
+        if (source === undefined) {
+            return undefined;
+        }
+        const translationExists = await hasRankingItemTranslation({
+            db,
+            source,
+            targetLanguageCode,
+        });
+        const skipTranslation = !shouldTranslateContent({
+            sourceLanguageCode: source.sourceLanguageCode,
+            sourceRawLanguageCode: source.sourceRawLanguageCode,
+            targetLanguageCode,
+        });
+        const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
+        if (
+            shouldQueueTranslationWork({
+                requestMode: effectiveRequestMode,
+                translationExists,
+            }) &&
+            !skipTranslation
+        ) {
+            await beforeQueueTranslationWork();
+            await queueMissingTranslationWork({
+                db,
+                valkey,
+                queueScript,
+                input: {
+                    conversationId: source.conversationId,
+                    sourceKind: "ranking_item",
+                    rankingItemContentId: source.contentId,
+                    targetLanguageCode,
+                },
+                translationExists,
+                now,
+                log,
+                priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.userInteractive,
+            });
+        }
+        return await buildRankingItemResponse({
+            db,
+            source,
+            targetLanguageCode,
+            requestMode: effectiveRequestMode,
+        });
     }
 
     const source = await fetchOpinionSource({
@@ -2370,12 +2626,77 @@ export async function requestContentTranslation({
     });
 }
 
+export async function requestProjectContentTranslation({
+    db,
+    valkey,
+    queueScript,
+    projectSlug,
+    sourceVersion,
+    targetLanguageCode,
+    requestMode,
+    now,
+    log,
+    beforeQueueTranslationWork,
+}: RequestProjectContentTranslationParams) {
+    const source = await fetchProjectContentSourceBySlug({
+        db,
+        projectSlug,
+    });
+    if (source === undefined) {
+        return undefined;
+    }
+    if (sourceVersion !== undefined && source.publicId !== sourceVersion) {
+        return undefined;
+    }
+    const translationExists = await hasProjectContentTranslation({
+        db,
+        source,
+        targetLanguageCode,
+    });
+    const skipTranslation = !shouldTranslateContent({
+        sourceLanguageCode: source.sourceLanguageCode,
+        sourceRawLanguageCode: source.sourceRawLanguageCode,
+        targetLanguageCode,
+    });
+    const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
+    if (
+        shouldQueueTranslationWork({
+            requestMode: effectiveRequestMode,
+            translationExists,
+        }) &&
+        !skipTranslation
+    ) {
+        await beforeQueueTranslationWork();
+        await queueMissingTranslationWork({
+            db,
+            valkey,
+            queueScript,
+            input: {
+                conversationId: null,
+                sourceKind: "project",
+                projectContentId: source.contentId,
+                targetLanguageCode,
+            },
+            translationExists,
+            now,
+            log,
+            priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.userInteractive,
+        });
+    }
+    return await buildProjectResponse({
+        db,
+        source,
+        targetLanguageCode,
+        requestMode: effectiveRequestMode,
+    });
+}
+
 export async function requestConversationContentTranslation({
     db,
     valkey,
     queueScript,
     conversationSlugId,
-    contentId,
+    sourceVersion,
     targetLanguageCode,
     requestMode,
     now,
@@ -2389,7 +2710,7 @@ export async function requestConversationContentTranslation({
     if (source === undefined) {
         return undefined;
     }
-    if (contentId !== undefined && source.publicId !== contentId) {
+    if (sourceVersion !== undefined && source.publicId !== sourceVersion) {
         return undefined;
     }
     const translationExists = await hasConversationTranslation({

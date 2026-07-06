@@ -7,6 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **questionType** | **string** |  | [default to undefined]
 **textValueHtml** | **string** |  | [default to undefined]
+**textValuePlainText** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -16,6 +17,7 @@ import { ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfCurrent
 const instance: ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfCurrentAnswerOneOf1 = {
     questionType,
     textValueHtml,
+    textValuePlainText,
 };
 ```
 

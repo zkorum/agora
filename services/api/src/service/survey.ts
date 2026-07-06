@@ -11,6 +11,7 @@ import {
     opinionGroupLineageTable,
     opinionGroupTable,
     opinionTable,
+    rankingConversationConfigTable,
     surveyAggregateOptionTable,
     surveyAggregateQuestionTable,
     surveyAggregateResultTable,
@@ -48,6 +49,7 @@ import {
     type AnalysisView,
     type ConversationType,
     type ParticipationBlockedReason,
+    type RankingMode,
     type SurveyAnswerDraft,
     type SurveyAggregateRow,
     type SurveyAnswerSubmission,
@@ -105,6 +107,7 @@ interface ConversationAccessContext {
     projectId: number;
     participationMode: (typeof conversationTable.$inferSelect)["participationMode"];
     conversationType: (typeof conversationTable.$inferSelect)["conversationType"];
+    rankingMode: RankingMode | null;
     currentContentId: number | null;
     isClosed: boolean;
     requiresEventTicket: (typeof conversationTable.$inferSelect)["requiresEventTicket"];
@@ -184,6 +187,18 @@ interface SurveyAnalysisRefreshContext {
     conversationId: number;
     slugId: string;
     conversationType: ConversationType;
+    rankingMode: RankingMode | null;
+}
+
+function isMaxdiffConversation({
+    conversation,
+}: {
+    conversation: SurveyAnalysisRefreshContext;
+}): boolean {
+    return (
+        conversation.conversationType === "ranking" &&
+        conversation.rankingMode === "maxdiff"
+    );
 }
 
 async function markMaxdiffConversationDirty({
@@ -221,7 +236,7 @@ async function refreshConversationAnalysisForSurveyChange({
     conversation: SurveyAnalysisRefreshContext;
     valkey: Valkey | undefined;
 }): Promise<void> {
-    if (conversation.conversationType === "maxdiff") {
+    if (isMaxdiffConversation({ conversation })) {
         await markMaxdiffConversationDirty({
             conversationId: conversation.conversationId,
             conversationSlugId: conversation.slugId,
@@ -268,7 +283,7 @@ async function hasParticipantAnalysisInput({
     conversation: SurveyAnalysisRefreshContext;
     participantId: string;
 }): Promise<boolean> {
-    if (conversation.conversationType === "maxdiff") {
+    if (isMaxdiffConversation({ conversation })) {
         const rows = await db
             .select({ id: maxdiffResultTable.id })
             .from(maxdiffResultTable)
@@ -1063,11 +1078,19 @@ async function getConversationAccessContextBySlugId({
             projectId: conversationTable.projectId,
             participationMode: conversationTable.participationMode,
             conversationType: conversationTable.conversationType,
+            rankingMode: rankingConversationConfigTable.rankingMode,
             currentContentId: conversationTable.currentContentId,
             isClosed: conversationTable.isClosed,
             requiresEventTicket: conversationTable.requiresEventTicket,
         })
         .from(conversationTable)
+        .leftJoin(
+            rankingConversationConfigTable,
+            eq(
+                rankingConversationConfigTable.id,
+                conversationTable.rankingConfigId,
+            ),
+        )
         .where(eq(conversationTable.slugId, conversationSlugId))
         .limit(1);
 
@@ -2596,6 +2619,7 @@ export async function saveSurveyAnswer({
         conversationId: participationCheck.conversationId,
         slugId: conversationSlugId,
         conversationType: participationCheck.conversationType,
+        rankingMode: participationCheck.rankingMode,
     };
 
     const previousSurveyState = await loadSurveyParticipantState({
@@ -2944,6 +2968,7 @@ export async function withdrawSurveyResponse({
         conversationId: participationCheck.conversationId,
         slugId: conversationSlugId,
         conversationType: participationCheck.conversationType,
+        rankingMode: participationCheck.rankingMode,
     };
 
     const previousSurveyState = await loadSurveyParticipantState({

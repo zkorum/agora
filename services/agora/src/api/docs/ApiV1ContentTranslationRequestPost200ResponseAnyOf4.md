@@ -6,8 +6,8 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **boolean** |  | [default to undefined]
-**reason** | **string** |  | [default to undefined]
-**multilingualSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting.md) |  | [default to undefined]
+**subject** | [**ApiV1ContentTranslationRequestPostRequestSubjectOneOf4**](ApiV1ContentTranslationRequestPostRequestSubjectOneOf4.md) |  | [default to undefined]
+**content** | [**ApiV1ContentTranslationRequestPost200ResponseAnyOf4Content**](ApiV1ContentTranslationRequestPost200ResponseAnyOf4Content.md) |  | [default to undefined]
 
 ## Example
 
@@ -16,8 +16,8 @@ import { ApiV1ContentTranslationRequestPost200ResponseAnyOf4 } from './api';
 
 const instance: ApiV1ContentTranslationRequestPost200ResponseAnyOf4 = {
     success,
-    reason,
-    multilingualSetting,
+    subject,
+    content,
 };
 ```
 

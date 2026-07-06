@@ -19,15 +19,13 @@
     :activities="activities"
     :can-load-more-activities="nextActivityCursor !== undefined"
     :is-loading-more-activities="isLoadingMoreActivities"
-    :is-requesting-project-translation="isRequestingProjectTranslation"
     :language-options="projectPageData.languageOptions"
     @load-more-activities="loadMoreActivities"
-    @request-project-translation="requestProjectTranslation"
   />
 </template>
 
 <script setup lang="ts">
-import { useQuery, useQueryClient } from "@tanstack/vue-query";
+import { useQuery } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
 import {
   type ProjectPageTranslations,
@@ -39,17 +37,9 @@ import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import {
   type SupportedDisplayLanguageCodes,
 } from "src/shared/languages";
-import type {
-  FetchProjectPageResponse,
-  ProjectPageActivity,
-  ProjectPageActivityCursor,
-} from "src/shared/types/dto";
+import type { ProjectPageActivity, ProjectPageActivityCursor } from "src/shared/types/dto";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
-import {
-  type ContentTranslationResponse,
-  useBackendContentTranslationApi,
-} from "src/utils/api/contentTranslation/contentTranslation";
 import { useBackendProjectPageApi } from "src/utils/api/projectPage";
 import { getSingleRouteParam } from "src/utils/router/params";
 import { computed, ref, watch } from "vue";
@@ -58,10 +48,8 @@ import { useRoute } from "vue-router";
 const activityPageSize = 12;
 
 const route = useRoute();
-const queryClient = useQueryClient();
 const { fetchProjectPage, fetchProjectPageActivities } =
   useBackendProjectPageApi();
-const { requestContentTranslation } = useBackendContentTranslationApi();
 const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(
   useAuthenticationStore()
 );
@@ -76,7 +64,6 @@ const isProjectRootRoute = computed(() => route.name === "/project/[projectSlug]
 const activities = ref<ProjectPageActivity[]>([]);
 const nextActivityCursor = ref<ProjectPageActivityCursor | undefined>();
 const isLoadingMoreActivities = ref(false);
-const isRequestingProjectTranslation = ref(false);
 const selectedLanguage = computed<SupportedDisplayLanguageCodes>({
   get: () => displayLanguage.value,
   set: (newLanguage) => {
@@ -154,89 +141,6 @@ async function loadMoreActivities(done: () => void): Promise<void> {
     isLoadingMoreActivities.value = false;
     done();
   }
-}
-
-async function requestProjectTranslation(
-  targetLanguageCode: SupportedDisplayLanguageCodes
-): Promise<void> {
-  if (isRequestingProjectTranslation.value) {
-    return;
-  }
-
-  isRequestingProjectTranslation.value = true;
-  try {
-    const response = await requestContentTranslation({
-      subject: { kind: "project", projectSlug: projectSlug.value },
-      targetLanguageCode,
-      requestMode: "queue_if_missing",
-    });
-    if (
-      !isProjectContentTranslationResponse(response) ||
-      response.content.kind !== "translatable"
-    ) {
-      return;
-    }
-
-    const translation = response.content.translation;
-    const translatedContent = response.content.variants.translated;
-
-    queryClient.setQueryData<FetchProjectPageResponse>(
-      projectPageQueryKey.value,
-      (previousData) => {
-        if (previousData === undefined) {
-          return previousData;
-        }
-
-        if (
-          translation.status === "completed" &&
-          translatedContent !== undefined
-        ) {
-          return {
-            ...previousData,
-            project: {
-              ...previousData.project,
-              title: translatedContent.title,
-              subtitle: translatedContent.subtitle,
-              bodyHtml: translatedContent.bodyHtml,
-              machineTranslation: {
-                targetLanguageCode,
-                sourceLanguageCode: translation.sourceLanguageCode,
-                sourceLanguageLabel: translation.sourceLanguageLabel,
-                status: "completed",
-                translatedContent,
-              },
-            },
-          };
-        }
-
-        return {
-          ...previousData,
-          project: {
-            ...previousData.project,
-            machineTranslation: {
-              targetLanguageCode,
-              sourceLanguageCode: translation.sourceLanguageCode,
-              sourceLanguageLabel: translation.sourceLanguageLabel,
-              status: translation.status,
-            },
-          },
-        };
-      }
-    );
-  } finally {
-    isRequestingProjectTranslation.value = false;
-  }
-}
-
-type ProjectContentTranslationResponse = Extract<
-  ContentTranslationResponse,
-  { success: true; subject: { kind: "project" } }
->;
-
-function isProjectContentTranslationResponse(
-  response: ContentTranslationResponse
-): response is ProjectContentTranslationResponse {
-  return response.success && response.subject.kind === "project";
 }
 
 function t(key: keyof ProjectPageTranslations): string {

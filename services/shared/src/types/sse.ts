@@ -212,7 +212,7 @@ export const zodSSEContentTranslationUpdatedData = z
         subject: zodContentTranslationSubject,
         targetLanguageCode: ZodSupportedDisplayLanguageCodes,
         status: z.enum(["completed", "failed"]),
-        sourceVersion: z.string().min(1),
+        sourceVersion: z.uuid(),
         timestamp: z.number(),
     })
     .strict();

@@ -4,6 +4,8 @@ import {
     opinionTable,
     conversationContentTable,
     conversationTable,
+    polisConversationConfigTable,
+    rankingConversationConfigTable,
     userTable,
 } from "@/shared-backend/schema.js";
 import { eq } from "drizzle-orm";
@@ -12,18 +14,11 @@ import { log } from "@/app.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import type {
-    ConversationMultilingualSetting,
-    ConversationType,
-    EventSlug,
     ExtendedConversation,
-    ExternalSourceConfig,
-    ParticipationMode,
-    PreferredOpinionGroupCount,
-    SurveyConfig,
 } from "@/shared/types/zod.js";
 import type {
     CloseConversationResponse,
-    ConversationLanguageSettingsSource,
+    CreateNewConversationRequest,
     CreateNewConversationResponse,
     OpenConversationResponse,
 } from "@/shared/types/dto.js";
@@ -74,34 +69,21 @@ import {
     createEagerContentTranslationWorkForCreatedConversation,
     type ConversationContentSource,
     type OpinionContentSource,
+    type RankingItemContentSource,
     type SurveyQuestionContentSource,
 } from "./contentTranslation.js";
+import { fetchConversationProjectContext } from "./projectPage.js";
 
 const MAX_CONVERSATION_SEED_ITEMS = 50;
 
 interface CreateNewPostProps {
     db: PostgresDatabase;
-    conversationTitle: string;
-    conversationBody: string | null;
-    conversationBodyPlainText: string;
+    request: CreateNewConversationRequest;
     authorId: string;
     didWrite: string;
-    postAsOrganization?: string;
-    projectSlug?: string;
     createTarget?: { projectId: number; organizationId: number };
-    languageSettingsSource: ConversationLanguageSettingsSource;
     autoProvisionedDefaultLanguage: SupportedDisplayLanguageCodes;
-    isIndexed: boolean;
-    participationMode: ParticipationMode;
-    conversationType: ConversationType;
     isImporting: boolean;
-    seedOpinionList: string[];
-    requiresEventTicket?: EventSlug;
-    aiLabelingEnabled: boolean;
-    preferredOpinionGroupCount: PreferredOpinionGroupCount;
-    externalSourceConfig?: ExternalSourceConfig | null;
-    surveyConfig?: SurveyConfig | null;
-    multilingualSetting: ConversationMultilingualSetting;
     googleCloudCredentials?: GoogleCloudCredentials;
     importUrl?: string;
     importConversationUrl?: string;
@@ -123,27 +105,12 @@ type CreateNewPostResponse =
 
 export async function createNewPost({
     db,
-    conversationTitle,
-    conversationBody,
-    conversationBodyPlainText,
+    request,
     authorId,
     didWrite,
-    postAsOrganization,
-    projectSlug,
     createTarget,
-    languageSettingsSource,
     autoProvisionedDefaultLanguage,
-    participationMode,
-    conversationType,
-    isIndexed,
     isImporting,
-    seedOpinionList,
-    requiresEventTicket,
-    aiLabelingEnabled,
-    preferredOpinionGroupCount,
-    externalSourceConfig,
-    surveyConfig,
-    multilingualSetting,
     googleCloudCredentials,
     importUrl,
     importConversationUrl,
@@ -152,6 +119,24 @@ export async function createNewPost({
     importAuthor,
     importMethod,
 }: CreateNewPostProps): Promise<CreateNewPostResponse> {
+    const {
+        conversationTitle,
+        conversationBody: requestConversationBody,
+        conversationBodyPlainText,
+        postAsOrganization,
+        projectSlug,
+        languageSettingsSource,
+        participationMode,
+        conversationType,
+        isIndexed,
+        seedOpinionList,
+        requiresEventTicket,
+        multilingualSetting,
+    } = request;
+    const surveyConfig =
+        conversationType === "polis" ? request.surveyConfig : undefined;
+    let conversationBody = requestConversationBody ?? null;
+
     if (seedOpinionList.length > MAX_CONVERSATION_SEED_ITEMS) {
         throw httpErrors.badRequest(
             `A conversation can have at most ${String(MAX_CONVERSATION_SEED_ITEMS)} seed items`,
@@ -263,6 +248,34 @@ export async function createNewPost({
 
     await db.transaction(async (tx) => {
         const now = new Date();
+        const polisConfigRows =
+            conversationType === "polis"
+                ? await tx
+                      .insert(polisConversationConfigTable)
+                      .values({
+                          aiLabelingEnabled: request.aiLabelingEnabled,
+                          preferredOpinionGroupCount:
+                              request.preferredOpinionGroupCount,
+                          createdAt: now,
+                          updatedAt: now,
+                      })
+                      .returning({ id: polisConversationConfigTable.id })
+                : [];
+        const rankingConfigRows =
+            conversationType === "ranking"
+                ? await tx
+                      .insert(rankingConversationConfigTable)
+                      .values({
+                          rankingMode: request.rankingMode,
+                          externalSourceConfig:
+                              request.externalSourceConfig ?? undefined,
+                          createdAt: now,
+                          updatedAt: now,
+                      })
+                      .returning({ id: rankingConversationConfigTable.id })
+                : [];
+        const polisConfigId = polisConfigRows.at(0)?.id;
+        const rankingConfigId = rankingConfigRows.at(0)?.id;
         const insertPostResponse = await tx
             .insert(conversationTable)
             .values({
@@ -271,11 +284,11 @@ export async function createNewPost({
                 isIndexed: isIndexed,
                 participationMode: participationMode,
                 conversationType: conversationType,
+                polisConfigId,
+                rankingConfigId,
                 isImporting: isImporting,
                 languageSettingsSource,
                 requiresEventTicket: requiresEventTicket,
-                aiLabelingEnabled,
-                preferredOpinionGroupCount,
                 currentContentId: null,
                 createdAt: now,
                 updatedAt: now,
@@ -286,7 +299,6 @@ export async function createNewPost({
                 importCreatedAt,
                 importAuthor,
                 importMethod,
-                externalSourceConfig: externalSourceConfig ?? undefined,
             })
             .returning({ conversationId: conversationTable.id });
 
@@ -350,15 +362,17 @@ export async function createNewPost({
                 conversationSourceLanguageMetadata.sourceLanguageConfidence,
         };
         const seedOpinionSources: OpinionContentSource[] = [];
+        const rankingItemSources: RankingItemContentSource[] = [];
         let surveySources: SurveyQuestionContentSource[] = [];
 
         if (seedOpinionList.length > 0) {
-            if (conversationType === "maxdiff") {
+            if (conversationType === "ranking") {
                 for (const seedTitle of seedOpinionList) {
-                    await createRankingItem({
+                    const rankingItemResult = await createRankingItem({
                         db,
                         tx,
                         conversationId: insertedConversationId,
+                        conversationSlugId,
                         conversationContentId: insertedConversationContentId,
                         authorId,
                         title: seedTitle,
@@ -367,6 +381,7 @@ export async function createNewPost({
                         useGoogleLanguageDetection:
                             normalizedMultilingualSetting.dynamicTranslationEnabled,
                     });
+                    rankingItemSources.push(rankingItemResult.contentSource);
                 }
             } else {
                 const authorRows = await tx
@@ -441,6 +456,7 @@ export async function createNewPost({
                 targetLanguagePolicy,
                 surveySources,
                 seedOpinionSources,
+                rankingItemSources,
                 now,
                 log,
             });
@@ -475,6 +491,7 @@ interface FetchPostBySlugIdProps {
     conversationSlugId: string;
     personalizedUserId?: string;
     baseImageServiceUrl: string;
+    currentDisplayLanguage?: SupportedDisplayLanguageCodes;
 }
 
 export async function fetchPostBySlugId({
@@ -482,6 +499,7 @@ export async function fetchPostBySlugId({
     conversationSlugId,
     personalizedUserId,
     baseImageServiceUrl,
+    currentDisplayLanguage,
 }: FetchPostBySlugIdProps): Promise<ExtendedConversation> {
     const { fetchPostItems } = useCommonPost();
     const postData = await fetchPostItems({
@@ -495,47 +513,50 @@ export async function fetchPostBySlugId({
         sortAlgorithm: "new",
     });
 
-    if (postData.size == 1) {
-        const [firstPost] = postData.values();
-        const { id: conversationId } =
-            await useCommonPost().getPostMetadataFromSlugId({
-                db,
-                conversationSlugId,
-            });
-        firstPost.interaction = {
-            ...firstPost.interaction,
-            surveyGate: await getSurveyGateSummary({
-                db,
-                conversationId,
-                participantId: personalizedUserId,
-            }),
-        };
-        return firstPost;
-    } else if (postData.size > 1) {
-        const [firstPost] = postData.values();
-        log.warn(
-            `Multiple conversations hold the same slugId: ${firstPost.metadata.conversationSlugId}`,
-        );
-        const { id: conversationId } =
-            await useCommonPost().getPostMetadataFromSlugId({
-                db,
-                conversationSlugId,
-            });
-        firstPost.interaction = {
-            ...firstPost.interaction,
-            surveyGate: await getSurveyGateSummary({
-                db,
-                conversationId,
-                participantId: personalizedUserId,
-            }),
-        };
-        return firstPost;
-    } else {
+    if (postData.size === 0) {
         throw httpErrors.notFound(
             "Failed to locate conversation slug ID in the database: " +
                 conversationSlugId,
         );
     }
+
+    const [firstPost] = postData.values();
+    if (postData.size > 1) {
+        log.warn(
+            `Multiple conversations hold the same slugId: ${firstPost.metadata.conversationSlugId}`,
+        );
+    }
+
+    const { id: conversationId } = await useCommonPost().getPostMetadataFromSlugId({
+        db,
+        conversationSlugId,
+    });
+    const [surveyGate, projectContext] = await Promise.all([
+        getSurveyGateSummary({
+            db,
+            conversationId,
+            participantId: personalizedUserId,
+        }),
+        currentDisplayLanguage === undefined
+            ? Promise.resolve(undefined)
+            : fetchConversationProjectContext({
+                  db,
+                  conversationSlugId,
+                  currentDisplayLanguage,
+              }),
+    ]);
+
+    return {
+        ...firstPost,
+        metadata: {
+            ...firstPost.metadata,
+            projectContext,
+        },
+        interaction: {
+            ...firstPost.interaction,
+            surveyGate,
+        },
+    };
 }
 
 interface DeletePostBySlugIdProps {
@@ -637,11 +658,15 @@ export async function closeConversation({
             isIndexed: conversationTable.isIndexed,
             participationMode: conversationTable.participationMode,
             requiresEventTicket: conversationTable.requiresEventTicket,
-            aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+            aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
             preferredOpinionGroupCount:
-                conversationTable.preferredOpinionGroupCount,
+                polisConversationConfigTable.preferredOpinionGroupCount,
         })
         .from(conversationTable)
+        .leftJoin(
+            polisConversationConfigTable,
+            eq(polisConversationConfigTable.id, conversationTable.polisConfigId),
+        )
         .where(eq(conversationTable.slugId, conversationSlugId))
         .limit(1);
 
@@ -692,9 +717,9 @@ export async function closeConversation({
                 isIndexed: conversation[0].isIndexed,
                 participationMode: conversation[0].participationMode,
                 requiresEventTicket: conversation[0].requiresEventTicket,
-                aiLabelingEnabled: conversation[0].aiLabelingEnabled,
+                aiLabelingEnabled: conversation[0].aiLabelingEnabled ?? false,
                 preferredOpinionGroupCount:
-                    conversation[0].preferredOpinionGroupCount,
+                    conversation[0].preferredOpinionGroupCount ?? null,
                 isClosed: true,
             },
         });
@@ -723,11 +748,15 @@ export async function openConversation({
             isIndexed: conversationTable.isIndexed,
             participationMode: conversationTable.participationMode,
             requiresEventTicket: conversationTable.requiresEventTicket,
-            aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+            aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
             preferredOpinionGroupCount:
-                conversationTable.preferredOpinionGroupCount,
+                polisConversationConfigTable.preferredOpinionGroupCount,
         })
         .from(conversationTable)
+        .leftJoin(
+            polisConversationConfigTable,
+            eq(polisConversationConfigTable.id, conversationTable.polisConfigId),
+        )
         .where(eq(conversationTable.slugId, conversationSlugId))
         .limit(1);
 
@@ -770,9 +799,9 @@ export async function openConversation({
                 isIndexed: conversation[0].isIndexed,
                 participationMode: conversation[0].participationMode,
                 requiresEventTicket: conversation[0].requiresEventTicket,
-                aiLabelingEnabled: conversation[0].aiLabelingEnabled,
+                aiLabelingEnabled: conversation[0].aiLabelingEnabled ?? false,
                 preferredOpinionGroupCount:
-                    conversation[0].preferredOpinionGroupCount,
+                    conversation[0].preferredOpinionGroupCount ?? null,
                 isClosed: false,
             },
         });

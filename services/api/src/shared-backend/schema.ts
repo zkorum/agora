@@ -599,7 +599,7 @@ export const participationModeEnum = pgEnum("participation_mode", [
 
 export const conversationTypeEnum = pgEnum("conversation_type", [
     "polis",
-    "maxdiff",
+    "ranking",
 ]);
 export const rankingModeEnum = pgEnum("ranking_mode", ["maxdiff"]);
 export const conversationLanguageSettingsSourceEnum = pgEnum(
@@ -1202,6 +1202,7 @@ export const projectContentTable = pgTable(
     "project_content",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        publicId: uuid("public_id").defaultRandom().notNull().unique(),
         projectId: integer("project_id")
             .references(() => projectTable.id)
             .notNull(),
@@ -1998,7 +1999,7 @@ export const conversationContentTable = pgTable(
     ],
 );
 
-/** @service api, shared-analysis-worker */
+/** @service api, shared-analysis-worker, import-worker */
 export const polisConversationConfigTable = pgTable("polis_conversation_config", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     aiLabelingEnabled: boolean("ai_labeling_enabled").notNull().default(true),
@@ -2080,7 +2081,7 @@ export const conversationTable = pgTable(
             .default("account_required"), // Determines who can vote/post opinions: "account_required" requires any account, "strong_verification" requires phone or Rarimo passport, "email_verification" requires email credential specifically, "guest" allows anyone.
         conversationType: conversationTypeEnum("conversation_type")
             .notNull()
-            .default("polis"), // "polis" = standard agree/disagree/unsure voting with clustering, "maxdiff" = best-worst scaling for prioritization
+            .default("polis"), // "polis" = standard agree/disagree/unsure voting with clustering, "ranking" = ranked-choice prioritization family
         isImporting: boolean("is_importing").notNull().default(false), // if true, the conversation is being imported from CSV and should not be visible in feed until import completes
         isClosed: boolean("is_closed").notNull().default(false), // if true, the conversation was closed by owner and users cannot post opinions or vote
         isEdited: boolean("is_edited").notNull().default(false), // if true, the conversation content was edited after creation. Used for "Edited" badge in UI. Use this field (not updatedAt) to determine if a conversation was edited — updatedAt can be accidentally bumped by migration scripts.
@@ -2160,6 +2161,10 @@ export const conversationTable = pgTable(
         check(
             "conversation_preferred_opinion_group_count_check",
             sql`${table.preferredOpinionGroupCount} IS NULL OR ${table.preferredOpinionGroupCount} >= 2`,
+        ),
+        check(
+            "conversation_subtype_config_check",
+            sql`((${table.conversationType} = 'polis' AND ${table.polisConfigId} IS NOT NULL AND ${table.rankingConfigId} IS NULL) OR (${table.conversationType} = 'ranking' AND ${table.rankingConfigId} IS NOT NULL AND ${table.polisConfigId} IS NULL))`,
         ),
     ],
 );
@@ -2284,6 +2289,8 @@ export const rankingItemContentTable = pgTable(
             length: MAX_LENGTH_RANKING_ITEM_TITLE,
         }).notNull(),
         body: varchar("body", { length: MAX_LENGTH_RANKING_ITEM_BODY }),
+        // TODO: Add a generated migration that enforces body and body_plain_text
+        // are both null or both non-null after the plaintext backfill has run.
         bodyPlainText: text("body_plain_text"),
         sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
         sourceRawLanguageCode: varchar("source_raw_language_code", {
@@ -3047,6 +3054,8 @@ export const rankingItemContentTranslationTable = pgTable(
             displayLanguageCodeEnum("display_language_code").notNull(),
         translatedTitle: text("translated_title").notNull(),
         translatedBodyHtml: text("translated_body_html"),
+        // TODO: Add a generated migration that enforces translated_body_html and
+        // translated_body_plain_text are both null or both non-null.
         translatedBodyPlainText: text("translated_body_plain_text"),
         sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
         sourceRawLanguageCode: varchar("source_raw_language_code", {
@@ -5188,7 +5197,7 @@ export const maxdiffItemExternalSourceTable = pgTable(
 
 // Computed Solidago scores for MaxDiff conversations.
 // Multiple rows per conversation are kept over time,
-// conversation.currentRankingScoreId points to the latest.
+// ranking_conversation_config.currentRankingScoreId points to the latest.
 // Populated by the scoring worker's Valkey-driven queue loop.
 /** @service scoring-worker, api */
 export const rankingScoreTable = pgTable("ranking_score", {

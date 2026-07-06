@@ -11,12 +11,12 @@ Name | Type | Description | Notes
 **conversationBodyPlainText** | **string** |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
-**multilingualSetting** | [**ApiV1ConversationCreatePostRequestMultilingualSetting**](ApiV1ConversationCreatePostRequestMultilingualSetting.md) |  | [default to undefined]
+**multilingualSetting** | [**ApiV1ConversationCreatePostRequestOneOfMultilingualSetting**](ApiV1ConversationCreatePostRequestOneOfMultilingualSetting.md) |  | [default to undefined]
 **languageSettingsSource** | **string** |  | [optional] [default to LanguageSettingsSourceEnum_ConversationOverride]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
 **aiLabelingEnabled** | **boolean** |  | [optional] [default to undefined]
 **preferredOpinionGroupCount** | **number** |  | [optional] [default to undefined]
-**surveyConfig** | [**ApiV1ConversationCreatePostRequestSurveyConfig**](ApiV1ConversationCreatePostRequestSurveyConfig.md) |  | [optional] [default to undefined]
+**surveyConfig** | [**ApiV1ConversationCreatePostRequestOneOfSurveyConfig**](ApiV1ConversationCreatePostRequestOneOfSurveyConfig.md) |  | [optional] [default to undefined]
 
 ## Example
 

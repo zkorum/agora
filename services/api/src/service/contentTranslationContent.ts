@@ -2,6 +2,7 @@ import type {
     ContentTranslationSubject,
     ContentTranslationSourceLanguage,
     LanguageDetectionProvider,
+    LocalizedRankingItemContent,
     LocalizedContentTranslationStatus,
     LocalizedSurveyQuestionContent,
 } from "@/shared/types/zod.js";
@@ -42,6 +43,28 @@ export interface SurveyQuestionTranslationSource {
     sourceLanguageProvider: LanguageDetectionProvider | null;
     sourceLanguageConfidence: number | null;
     translatedOptionsByContentId: ReadonlyMap<number, string>;
+}
+
+export interface RankingItemLocalizedContentSource {
+    conversationSlugId: string;
+    itemSlugId: string;
+    contentId: number;
+    publicId: string;
+    title: string;
+    bodyHtml: string | null;
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    sourceLanguageProvider: LanguageDetectionProvider | null;
+    sourceLanguageConfidence: number | null;
+}
+
+export interface RankingItemTranslationSource {
+    translatedTitle: string;
+    translatedBodyHtml: string | null;
+    sourceLanguageCode: NormalizedLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    sourceLanguageProvider: LanguageDetectionProvider | null;
+    sourceLanguageConfidence: number | null;
 }
 
 export interface TranslationSourceMetadata {
@@ -224,6 +247,71 @@ export function buildLocalizedSurveyQuestionContent({
                             requestMode === "read_existing" ? "not_requested" : "pending",
                 }),
             },
+            variants: {
+                original,
+            },
+        },
+    };
+}
+
+export function buildLocalizedRankingItemContent({
+    source,
+    translation,
+    targetLanguageCode,
+    requestMode,
+}: {
+    source: RankingItemLocalizedContentSource;
+    translation: RankingItemTranslationSource | undefined;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+    requestMode: ContentTranslationRequestMode;
+}): {
+    subject: Extract<ContentTranslationSubject, { kind: "ranking_item" }>;
+    content: LocalizedRankingItemContent;
+} {
+    const original = {
+        title: source.title,
+        bodyHtml: source.bodyHtml ?? undefined,
+    };
+    const subject = {
+        kind: "ranking_item" as const,
+        conversationSlugId: source.conversationSlugId,
+        itemSlugId: source.itemSlugId,
+    };
+
+    if (translation !== undefined) {
+        return {
+            subject,
+            content: {
+                kind: "translatable",
+                sourceVersion: source.publicId,
+                initialMode: "translated",
+                translation: buildTranslationMetadata({
+                    targetLanguageCode,
+                    sourceMetadata: source,
+                    status: "completed",
+                }),
+                variants: {
+                    original,
+                    translated: {
+                        title: translation.translatedTitle,
+                        bodyHtml: translation.translatedBodyHtml ?? undefined,
+                    },
+                },
+            },
+        };
+    }
+
+    return {
+        subject,
+        content: {
+            kind: "translatable",
+            sourceVersion: source.publicId,
+            initialMode: "original",
+            translation: buildTranslationMetadata({
+                targetLanguageCode,
+                sourceMetadata: source,
+                status: requestMode === "read_existing" ? "not_requested" : "pending",
+            }),
             variants: {
                 original,
             },

@@ -236,7 +236,7 @@ class ParticipationMode(StrEnum):
 
 class ConversationType(StrEnum):
     polis = "polis"
-    maxdiff = "maxdiff"
+    ranking = "ranking"
 
 
 class EventSlug(StrEnum):
@@ -747,6 +747,17 @@ class Organization(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class PolisConversationConfig(Base):
+    __tablename__ = "polis_conversation_config"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ai_labeling_enabled: Mapped[bool] = mapped_column(Boolean, server_default="true")
+    analysis_data_generation: Mapped[int] = mapped_column(Integer, server_default="0")
+    preferred_opinion_group_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
 
 
 class ProjectOrganizationOwnership(Base):

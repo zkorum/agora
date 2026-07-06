@@ -6,7 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **isOptional** | **boolean** |  | [optional] [default to false]
-**questions** | [**Array&lt;ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInner&gt;**](ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInner.md) |  | [default to undefined]
+**questions** | [**Array&lt;ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInner&gt;**](ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInner.md) |  | [default to undefined]
 
 ## Example
 

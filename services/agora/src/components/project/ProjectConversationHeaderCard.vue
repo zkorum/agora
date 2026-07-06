@@ -10,7 +10,7 @@
             :to="projectRoute"
             class="project-conversation-header-card__breadcrumb-link"
           >
-            {{ project.title }}
+            {{ projectTitle }}
           </SpaLink>
           <q-icon
             :name="breadcrumbIcon"
@@ -21,7 +21,9 @@
           <span class="project-conversation-header-card__breadcrumb-current">
             {{ t({ key: "conversationType" }) }}
           </span>
-          <span class="project-conversation-header-card__breadcrumb-separator">•</span>
+          <span class="project-conversation-header-card__breadcrumb-separator"
+            >•</span
+          >
           <ContentMetadataLine
             :created-at="conversationData.metadata.createdAt"
             :is-edited="conversationData.metadata.isEdited"
@@ -37,13 +39,19 @@
             :created-at="new Date(conversationData.metadata.createdAt)"
             :is-edited="conversationData.metadata.isEdited"
             :post-slug-id="conversationData.metadata.conversationSlugId"
-            :organization-url="conversationData.metadata.organization?.imageUrl ?? ''"
-            :organization-name="conversationData.metadata.organization?.name ?? ''"
+            :organization-url="
+              conversationData.metadata.organization?.imageUrl ?? ''
+            "
+            :organization-name="
+              conversationData.metadata.organization?.name ?? ''
+            "
             :participation-mode="conversationData.metadata.participationMode"
             :is-closed="conversationData.metadata.isClosed"
-            :conversation-title="conversationData.payload.title"
-            :conversation-type="conversationData.metadata.conversationType"
-            :external-source-config="conversationData.metadata.externalSourceConfig ?? null"
+            :conversation-title="displayedTitle"
+            :conversation-type-config="conversationData.metadata"
+            :external-source-config="
+              conversationData.metadata.externalSourceConfig ?? null
+            "
             :show-identity-card="false"
             :project-slug="project.slug"
             @conversation-deleted="emit('conversationDeleted')"
@@ -65,8 +73,12 @@
           :is-private="!conversationData.metadata.isIndexed"
           :title="displayedTitle"
           size="medium"
-          :conversation-type="conversationData.metadata.conversationType"
-          :external-source-config="conversationData.metadata.externalSourceConfig ?? null"
+          :conversation-type-config="conversationData.metadata"
+          :external-source-config="
+            conversationData.metadata.externalSourceConfig ?? null
+          "
+          :project-context="undefined"
+          project-context-title-mode="original"
         />
       </div>
 
@@ -120,7 +132,9 @@
                 entry.imageUrl !== undefined,
             }"
             :style="
-              entry.imageUrl === undefined ? logoStyle(entry.accentColor) : undefined
+              entry.imageUrl === undefined
+                ? logoStyle(entry.accentColor)
+                : undefined
             "
           >
             <OrganizationImage
@@ -188,7 +202,12 @@ import {
   parseSupportedDisplayLanguageOrUndefined,
   type SupportedDisplayLanguageCodes,
 } from "src/shared/languages";
-import type { ExtendedConversation, ParticipationMode } from "src/shared/types/zod";
+import type { ConversationContentFetchResponse } from "src/shared/types/dto";
+import type {
+  ExtendedConversation,
+  ExtendedConversationDisplayData,
+  ParticipationMode,
+} from "src/shared/types/zod";
 import { useConversationDisplayContent } from "src/utils/translation/useConversationDisplayContent";
 import { computed, ref } from "vue";
 import type { RouteLocationRaw } from "vue-router";
@@ -209,7 +228,8 @@ interface ProjectConversationStatusBadge {
 
 const props = defineProps<{
   project: ProjectPageData;
-  conversationData: ExtendedConversation;
+  conversationData: ExtendedConversation | ExtendedConversationDisplayData;
+  initialDisplayContent?: ConversationContentFetchResponse;
   selectedLanguage: SupportedDisplayLanguageCodes;
 }>();
 
@@ -227,17 +247,34 @@ const userIdentityText = computed<UserIdentityCardTranslations>(
 const projectRoute = computed<RouteLocationRaw>(() => ({
   path: `/project/${props.project.slug}`,
 }));
+const projectTitle = computed(() =>
+  props.project.displayContent.status === "available"
+    ? props.project.displayContent.content.title
+    : ""
+);
 const projectTextDirection = computed(() =>
   getLanguageTextDirection(props.selectedLanguage)
 );
 const breadcrumbIcon = computed(() =>
-  projectTextDirection.value === "rtl" ? "mdi-chevron-left" : "mdi-chevron-right"
+  projectTextDirection.value === "rtl"
+    ? "mdi-chevron-left"
+    : "mdi-chevron-right"
 );
 const extendedConversation = computed(() => props.conversationData);
-const { displayedTitle, displayedBody, translationPreview, setTranslationMode } =
-  useConversationDisplayContent({
-    extendedConversation,
-  });
+const initialDisplayContent = computed(() => props.initialDisplayContent);
+const fallbackPayload = computed(() =>
+  "payload" in props.conversationData ? props.conversationData.payload : undefined
+);
+const {
+  displayedTitle,
+  displayedBody,
+  translationPreview,
+  setTranslationMode,
+} = useConversationDisplayContent({
+  conversationData: extendedConversation,
+  initialDisplayContent,
+  fallbackPayload,
+});
 const projectOwnerAttributions = computed(() =>
   filterAttributions("project_owner")
 );
@@ -256,7 +293,8 @@ const hasMobileProjectDetailLogos = computed(
 );
 const mobileAttributionHiddenCount = computed(() =>
   Math.max(
-    orderedAttributions.value.length - mobileAttributionPreviewEntries.value.length,
+    orderedAttributions.value.length -
+      mobileAttributionPreviewEntries.value.length,
     0
   )
 );

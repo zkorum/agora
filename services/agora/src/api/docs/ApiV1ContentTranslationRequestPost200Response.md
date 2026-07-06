@@ -6,10 +6,10 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **boolean** |  | [default to undefined]
-**subject** | [**ApiV1ContentTranslationRequestPostRequestSubjectOneOf3**](ApiV1ContentTranslationRequestPostRequestSubjectOneOf3.md) |  | [default to undefined]
-**content** | [**ApiV1ContentTranslationRequestPost200ResponseAnyOf3Content**](ApiV1ContentTranslationRequestPost200ResponseAnyOf3Content.md) |  | [default to undefined]
+**subject** | [**ApiV1ContentTranslationRequestPostRequestSubjectOneOf4**](ApiV1ContentTranslationRequestPostRequestSubjectOneOf4.md) |  | [default to undefined]
+**content** | [**ApiV1ContentTranslationRequestPost200ResponseAnyOf4Content**](ApiV1ContentTranslationRequestPost200ResponseAnyOf4Content.md) |  | [default to undefined]
 **reason** | **string** |  | [default to undefined]
-**multilingualSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting.md) |  | [default to undefined]
+**multilingualSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfMultilingualSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfMultilingualSetting.md) |  | [default to undefined]
 **blockedReason** | **string** |  | [default to undefined]
 
 ## Example

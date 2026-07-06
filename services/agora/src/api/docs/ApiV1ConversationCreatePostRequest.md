@@ -13,14 +13,15 @@ Name | Type | Description | Notes
 **postAsOrganization** | **string** |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
-**conversationType** | **string** |  | [default to undefined]
-**multilingualSetting** | [**ApiV1ConversationCreatePostRequestMultilingualSetting**](ApiV1ConversationCreatePostRequestMultilingualSetting.md) |  | [default to undefined]
+**multilingualSetting** | [**ApiV1ConversationCreatePostRequestOneOfMultilingualSetting**](ApiV1ConversationCreatePostRequestOneOfMultilingualSetting.md) |  | [default to undefined]
 **seedOpinionList** | **Array&lt;string&gt;** |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
+**conversationType** | **string** |  | [default to undefined]
 **aiLabelingEnabled** | **boolean** |  | [optional] [default to true]
 **preferredOpinionGroupCount** | **number** |  | [optional] [default to undefined]
-**externalSourceConfig** | [**ApiV1ConversationCreatePostRequestExternalSourceConfig**](ApiV1ConversationCreatePostRequestExternalSourceConfig.md) |  | [optional] [default to undefined]
-**surveyConfig** | [**ApiV1ConversationCreatePostRequestSurveyConfig**](ApiV1ConversationCreatePostRequestSurveyConfig.md) |  | [optional] [default to undefined]
+**surveyConfig** | [**ApiV1ConversationCreatePostRequestOneOfSurveyConfig**](ApiV1ConversationCreatePostRequestOneOfSurveyConfig.md) |  | [optional] [default to undefined]
+**rankingMode** | **string** |  | [default to undefined]
+**externalSourceConfig** | [**ApiV1ConversationCreatePostRequestOneOf1ExternalSourceConfig**](ApiV1ConversationCreatePostRequestOneOf1ExternalSourceConfig.md) |  | [optional] [default to undefined]
 
 ## Example
 
@@ -36,14 +37,15 @@ const instance: ApiV1ConversationCreatePostRequest = {
     postAsOrganization,
     isIndexed,
     participationMode,
-    conversationType,
     multilingualSetting,
     seedOpinionList,
     requiresEventTicket,
+    conversationType,
     aiLabelingEnabled,
     preferredOpinionGroupCount,
-    externalSourceConfig,
     surveyConfig,
+    rankingMode,
+    externalSourceConfig,
 };
 ```
 

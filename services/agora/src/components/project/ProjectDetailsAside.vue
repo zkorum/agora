@@ -56,8 +56,7 @@ interface ProjectDetailsAttributionSectionConfig {
   titleKey: ProjectDetailsAttributionTitleKey;
 }
 
-interface ProjectDetailsAttributionSection
-  extends ProjectDetailsAttributionSectionConfig {
+interface ProjectDetailsAttributionSection extends ProjectDetailsAttributionSectionConfig {
   entries: readonly ProjectAttribution[];
 }
 

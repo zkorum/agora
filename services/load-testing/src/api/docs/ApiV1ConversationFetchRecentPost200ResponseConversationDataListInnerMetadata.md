@@ -20,20 +20,21 @@ Name | Type | Description | Notes
 **hiddenOpinionCount** | **number** |  | [default to undefined]
 **authorUsername** | **string** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
-**conversationType** | **string** |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
 **aiLabelingEnabled** | **boolean** |  | [default to undefined]
 **preferredOpinionGroupCount** | **number** |  | [default to undefined]
-**contentLanguageMetadata** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadata**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataContentLanguageMetadata.md) |  | [default to undefined]
-**languageSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataLanguageSetting.md) |  | [default to undefined]
-**multilingualSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataMultilingualSetting.md) |  | [default to undefined]
+**contentLanguageMetadata** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadata**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfContentLanguageMetadata.md) |  | [default to undefined]
+**languageSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfLanguageSetting.md) |  | [default to undefined]
+**multilingualSetting** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfMultilingualSetting**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfMultilingualSetting.md) |  | [default to undefined]
 **isClosed** | **boolean** |  | [default to undefined]
 **isEdited** | **boolean** |  | [default to undefined]
-**organization** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization.md) |  | [optional] [default to undefined]
-**moderation** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration.md) |  | [default to undefined]
+**organization** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfOrganization**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfOrganization.md) |  | [optional] [default to undefined]
+**moderation** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModeration**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfModeration.md) |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
-**externalSourceConfig** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfig**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfig.md) |  | [default to undefined]
-**importInfo** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfo**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfo.md) |  | [optional] [default to undefined]
+**externalSourceConfig** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfExternalSourceConfig**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfExternalSourceConfig.md) |  | [default to undefined]
+**importInfo** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfImportInfo**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfImportInfo.md) |  | [optional] [default to undefined]
+**conversationType** | **string** |  | [default to undefined]
+**rankingMode** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -56,7 +57,6 @@ const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListI
     hiddenOpinionCount,
     authorUsername,
     participationMode,
-    conversationType,
     isIndexed,
     aiLabelingEnabled,
     preferredOpinionGroupCount,
@@ -70,6 +70,8 @@ const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListI
     requiresEventTicket,
     externalSourceConfig,
     importInfo,
+    conversationType,
+    rankingMode,
 };
 ```
 

@@ -1,7 +1,8 @@
 import { storeToRefs } from "pinia";
 import type { ConversationContentFetchResponse } from "src/shared/types/dto";
 import type {
-  ExtendedConversation,
+  ExtendedConversationDisplayData,
+  ExtendedConversationPayload,
   LocalizedContentTranslationStatus,
 } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
@@ -31,9 +32,15 @@ export interface ConversationContentTranslationPreview {
 }
 
 export function useConversationDisplayContent({
-  extendedConversation,
+  conversationData,
+  initialDisplayContent,
+  fallbackPayload,
 }: {
-  extendedConversation: MaybeRefOrGetter<ExtendedConversation | undefined>;
+  conversationData: MaybeRefOrGetter<ExtendedConversationDisplayData | undefined>;
+  initialDisplayContent?: MaybeRefOrGetter<
+    ConversationContentFetchResponse | undefined
+  >;
+  fallbackPayload?: MaybeRefOrGetter<ExtendedConversationPayload | undefined>;
 }) {
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
   const modePreference = ref<ConversationContentMode | undefined>();
@@ -41,25 +48,30 @@ export function useConversationDisplayContent({
     [...spokenLanguages.value].sort().join("\u0000")
   );
   const conversationSlugId = computed(
-    () => toValue(extendedConversation)?.metadata.conversationSlugId ?? ""
+    () => toValue(conversationData)?.metadata.conversationSlugId ?? ""
   );
 
   const initialDisplayContentQuery = useConversationDisplayContentCache({
     conversationSlugId,
   });
-  const contentId = computed(() => initialDisplayContentQuery.data.value?.contentId);
+  const effectiveInitialDisplayContent = computed(
+    () => initialDisplayContentQuery.data.value ?? toValue(initialDisplayContent)
+  );
+  const sourceVersion = computed(
+    () => effectiveInitialDisplayContent.value?.sourceVersion
+  );
   const requestedMode = computed<ConversationContentMode>(
     () => modePreference.value ?? "original"
   );
   const requestedContentQuery = useConversationContentQuery({
     conversationSlugId,
-    contentId,
+    sourceVersion,
     mode: requestedMode,
     requestMode: computed(() =>
       requestedMode.value === "translated" ? "queue_if_missing" : "read_existing"
     ),
     enabled: computed(
-      () => modePreference.value !== undefined && toValue(extendedConversation) !== undefined
+      () => modePreference.value !== undefined && toValue(conversationData) !== undefined
     ),
   });
 
@@ -76,7 +88,7 @@ export function useConversationDisplayContent({
       ) {
         return requestedContentQuery.data.value;
       }
-      return initialDisplayContentQuery.data.value;
+      return effectiveInitialDisplayContent.value;
     }
   );
 
@@ -84,7 +96,7 @@ export function useConversationDisplayContent({
     ConversationContentTranslationPreview | undefined
   >(() => {
     const displayContent = activeDisplayContent.value;
-    const conversation = toValue(extendedConversation);
+    const conversation = toValue(conversationData);
     if (displayContent === undefined || conversation === undefined) {
       return undefined;
     }
@@ -152,25 +164,31 @@ export function useConversationDisplayContent({
   });
 
   const displayedTitle = computed(() => {
-    const conversation = toValue(extendedConversation);
     if (translationPreview.value?.isLoadingInitialTranslation === true) {
       return "";
     }
     if (translationPreview.value?.mode === "translated") {
       return translationPreview.value.translatedTitle;
     }
-    return conversation?.payload.title ?? "";
+    const displayContent = activeDisplayContent.value;
+    if (displayContent?.status === "available") {
+      return displayContent.content.title;
+    }
+    return toValue(fallbackPayload)?.title ?? "";
   });
 
   const displayedBody = computed(() => {
-    const conversation = toValue(extendedConversation);
     if (translationPreview.value?.isLoadingInitialTranslation === true) {
       return undefined;
     }
     if (translationPreview.value?.mode === "translated") {
       return translationPreview.value.translatedBody;
     }
-    return conversation?.payload.body;
+    const displayContent = activeDisplayContent.value;
+    if (displayContent?.status === "available") {
+      return displayContent.content.body;
+    }
+    return toValue(fallbackPayload)?.body;
   });
 
   function setTranslationMode(mode: ContentTranslationDisplayMode): void {

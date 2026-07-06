@@ -30,6 +30,11 @@ import {
     type ContentLanguageMetadata,
 } from "./contentLanguageMetadata.js";
 import { normalizeUserRichTextInput } from "./richText.js";
+import {
+    buildRankingItemDisplayContentByContentId,
+    type RankingItemDisplayPreferences,
+} from "./rankingItemDisplay.js";
+import type { RankingItemContentSource } from "./contentTranslation.js";
 
 export interface NormalizedRankingItemContent {
     title: string;
@@ -189,6 +194,7 @@ interface CreateRankingItemCommonProps {
     db: PostgresDatabase;
     tx?: PostgresDatabase;
     conversationId: number;
+    conversationSlugId: string;
     conversationContentId: number;
     authorId: string;
     title: string;
@@ -229,7 +235,7 @@ async function createRankingItemInTx({
     normalizedContent: NormalizedRankingItemContent;
     isSeed: boolean;
     now: Date;
-}): Promise<{ itemId: number; contentId: number }> {
+}): Promise<{ itemId: number; contentId: number; contentPublicId: string }> {
     const itemRows = await tx
         .insert(rankingItemTable)
         .values({
@@ -260,7 +266,10 @@ async function createRankingItemInTx({
             ),
             createdAt: now,
         })
-        .returning({ id: rankingItemContentTable.id });
+        .returning({
+            id: rankingItemContentTable.id,
+            publicId: rankingItemContentTable.publicId,
+        });
     const contentRow = contentRows.at(0);
     if (contentRow === undefined) {
         throw new Error("Failed to create ranking item content");
@@ -271,13 +280,18 @@ async function createRankingItemInTx({
         .set({ currentContentId: contentRow.id })
         .where(eq(rankingItemTable.id, itemRow.id));
 
-    return { itemId: itemRow.id, contentId: contentRow.id };
+    return {
+        itemId: itemRow.id,
+        contentId: contentRow.id,
+        contentPublicId: contentRow.publicId,
+    };
 }
 
 export async function createRankingItem({
     db,
     tx,
     conversationId,
+    conversationSlugId,
     conversationContentId,
     authorId,
     title,
@@ -287,7 +301,11 @@ export async function createRankingItem({
     isSeed,
     googleCloudCredentials,
     useGoogleLanguageDetection,
-}: CreateRankingItemProps): Promise<{ slugId: string; itemId: number }> {
+}: CreateRankingItemProps): Promise<{
+    slugId: string;
+    itemId: number;
+    contentSource: RankingItemContentSource;
+}> {
     const slugId = generateRandomSlugId();
     const now = new Date();
 
@@ -317,7 +335,7 @@ export async function createRankingItem({
         now,
     };
 
-    const { itemId, contentId } = tx
+    const { itemId, contentId, contentPublicId } = tx
         ? await createRankingItemInTx({ tx, ...params })
         : await db.transaction(async (innerTx) =>
               createRankingItemInTx({ tx: innerTx, ...params }),
@@ -327,7 +345,28 @@ export async function createRankingItem({
         `[RankingItem] Created item ${slugId} (id=${String(itemId)}, content=${String(contentId)}) for conversation ${String(conversationId)}`,
     );
 
-    return { slugId, itemId };
+    return {
+        slugId,
+        itemId,
+        contentSource: {
+            conversationId,
+            conversationSlugId,
+            itemSlugId: slugId,
+            contentId,
+            publicId: contentPublicId,
+            title: normalizedContent.title,
+            bodyHtml: normalizedContent.bodyHtml,
+            bodyPlainText: normalizedContent.bodyPlainText,
+            sourceLanguageCode:
+                normalizedContent.sourceLanguageMetadata.sourceLanguageCode,
+            sourceRawLanguageCode:
+                normalizedContent.sourceLanguageMetadata.sourceRawLanguageCode,
+            sourceLanguageProvider:
+                normalizedContent.sourceLanguageMetadata.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                normalizedContent.sourceLanguageMetadata.sourceLanguageConfidence,
+        },
+    };
 }
 
 type LifecycleFilter = MaxdiffLifecycleStatus | "all";
@@ -335,12 +374,14 @@ type LifecycleFilter = MaxdiffLifecycleStatus | "all";
 interface FetchRankingItemsProps {
     db: PostgresDatabase;
     conversationSlugId: string;
+    displayPreferences: RankingItemDisplayPreferences;
     lifecycleFilter?: LifecycleFilter;
 }
 
 export async function fetchRankingItems({
     db,
     conversationSlugId,
+    displayPreferences,
     lifecycleFilter = "active",
 }: FetchRankingItemsProps): Promise<MaxDiffItemsFetchResponse> {
     const { id: conversationId } =
@@ -359,8 +400,15 @@ export async function fetchRankingItems({
     const rows = await db
         .select({
             slugId: rankingItemTable.slugId,
+            contentId: rankingItemContentTable.id,
+            publicId: rankingItemContentTable.publicId,
             title: rankingItemContentTable.title,
             body: rankingItemContentTable.body,
+            sourceLanguageCode: rankingItemContentTable.sourceLanguageCode,
+            sourceRawLanguageCode: rankingItemContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider: rankingItemContentTable.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                rankingItemContentTable.sourceLanguageConfidence,
             lifecycleStatus: rankingItemTable.lifecycleStatus,
             externalUrl: rankingItemExternalSourceTable.externalUrl,
             snapshotScore: rankingItemTable.snapshotScore,
@@ -388,17 +436,42 @@ export async function fetchRankingItems({
             ),
         );
 
-    const items: MaxDiffItem[] = rows.map((r) => ({
-        slugId: r.slugId,
+    const sources = rows.map((r) => ({
+        conversationSlugId,
+        itemSlugId: r.slugId,
+        contentId: r.contentId,
+        publicId: r.publicId,
         title: r.title,
-        body: r.body,
-        lifecycleStatus: r.lifecycleStatus,
-        externalUrl: r.externalUrl,
-        snapshotScore: r.snapshotScore,
-        snapshotRank: r.snapshotRank,
-        snapshotParticipantCount: r.snapshotParticipantCount,
-        createdAt: r.createdAt.toISOString(),
+        bodyHtml: r.body,
+        sourceLanguageCode: r.sourceLanguageCode,
+        sourceRawLanguageCode: r.sourceRawLanguageCode,
+        sourceLanguageProvider: r.sourceLanguageProvider,
+        sourceLanguageConfidence: r.sourceLanguageConfidence,
     }));
+    const displayContentByContentId = await buildRankingItemDisplayContentByContentId({
+        db,
+        sources,
+        preferences: displayPreferences,
+    });
+
+    const items: MaxDiffItem[] = rows.map((r) => {
+            const displayContent = displayContentByContentId.get(r.contentId);
+            if (displayContent === undefined) {
+                throw httpErrors.internalServerError(
+                    "Failed to build ranking item display content",
+                );
+            }
+            return {
+                slugId: r.slugId,
+                displayContent,
+                lifecycleStatus: r.lifecycleStatus,
+                externalUrl: r.externalUrl,
+                snapshotScore: r.snapshotScore,
+                snapshotRank: r.snapshotRank,
+                snapshotParticipantCount: r.snapshotParticipantCount,
+                createdAt: r.createdAt.toISOString(),
+            };
+        });
 
     return { items };
 }

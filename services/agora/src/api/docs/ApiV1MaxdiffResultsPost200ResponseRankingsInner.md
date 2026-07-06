@@ -6,8 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **itemSlugId** | **string** |  | [default to undefined]
-**title** | **string** |  | [default to undefined]
-**body** | **string** |  | [default to undefined]
+**displayContent** | [**ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContent**](ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContent.md) |  | [default to undefined]
 **avgRank** | **number** |  | [default to undefined]
 **score** | **number** |  | [default to undefined]
 **participantCount** | **number** |  | [default to undefined]
@@ -21,8 +20,7 @@ import { ApiV1MaxdiffResultsPost200ResponseRankingsInner } from './api';
 
 const instance: ApiV1MaxdiffResultsPost200ResponseRankingsInner = {
     itemSlugId,
-    title,
-    body,
+    displayContent,
     avgRank,
     score,
     participantCount,

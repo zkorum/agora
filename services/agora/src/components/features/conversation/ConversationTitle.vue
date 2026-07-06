@@ -6,7 +6,7 @@
       background-color="#333"
     />
     <ConversationChip
-      v-if="showChips && conversationType === 'maxdiff'"
+      v-if="showChips && isMaxDiffConversation"
       :label="t('prioritizationLabel')"
       background-color="var(--q-primary)"
       icon="mdi-sort-numeric-ascending"
@@ -17,6 +17,12 @@
       background-color="#24292f"
       icon="mdi-github"
     />
+    <ConversationProjectContextPill
+      v-if="showChips && projectContext !== undefined"
+      :project-slug="projectContext.projectSlug"
+      :project-title="displayedProjectTitle"
+      :conversation-slug-id="projectContext.conversationSlugId"
+    />
     <h1 class="conversation-title" :class="`conversation-title--${size}`">
       {{ title }}
     </h1>
@@ -25,20 +31,30 @@
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { ConversationType, ExternalSourceConfig } from "src/shared/types/zod";
+import type {
+  ConversationProjectContext,
+  ConversationTypeConfig,
+  ExternalSourceConfig,
+} from "src/shared/types/zod";
+import { getConversationProjectContextTitle } from "src/utils/project/conversationProjectContext";
+import type { ContentTranslationDisplayMode } from "src/utils/translation/contentTranslation";
+import { computed } from "vue";
 
 import ConversationChip from "./ConversationChip.vue";
+import ConversationProjectContextPill from "./ConversationProjectContextPill.vue";
 import {
   type ConversationTitleTranslations,
   conversationTitleTranslations,
 } from "./ConversationTitle.i18n";
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   isPrivate: boolean;
   title: string;
   size: "medium" | "large";
-  conversationType: ConversationType;
+  conversationTypeConfig: ConversationTypeConfig;
   externalSourceConfig: ExternalSourceConfig | null;
+  projectContext: ConversationProjectContext | undefined;
+  projectContextTitleMode: ContentTranslationDisplayMode;
   showChips?: boolean;
 }>(), {
   showChips: true,
@@ -47,6 +63,22 @@ withDefaults(defineProps<{
 const { t } = useComponentI18n<ConversationTitleTranslations>(
   conversationTitleTranslations,
 );
+const isMaxDiffConversation = computed(
+  () =>
+    props.conversationTypeConfig.conversationType === "ranking" &&
+    props.conversationTypeConfig.rankingMode === "maxdiff"
+);
+const displayedProjectTitle = computed(() => {
+  const projectContext = props.projectContext;
+  if (projectContext === undefined) {
+    return "";
+  }
+
+  return getConversationProjectContextTitle({
+    projectContext,
+    titleMode: props.projectContextTitleMode,
+  });
+});
 </script>
 
 <style scoped lang="scss">
