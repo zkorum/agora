@@ -640,7 +640,12 @@ export function useCommonPost() {
                 requiresEventTicket: conversationTable.requiresEventTicket,
             })
             .from(conversationTable)
-            .where(eq(conversationTable.slugId, conversationSlugId));
+            .where(
+                and(
+                    eq(conversationTable.slugId, conversationSlugId),
+                    eq(conversationTable.isImporting, false),
+                ),
+            );
         if (postTableResponse.length === 0) {
             throw httpErrors.notFound("Conversation slugId not found");
         }

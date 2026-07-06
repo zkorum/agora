@@ -3652,6 +3652,30 @@ server.after(() => {
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+            const importAccessState =
+                await conversationImportService.getConversationImportAccessState({
+                    db,
+                    conversationSlugId: request.body.conversationSlugId,
+                    userId: deviceStatus.isKnown ? deviceStatus.userId : undefined,
+                });
+            switch (importAccessState.status) {
+                case "not_found":
+                case "importing_not_visible":
+                    throw server.httpErrors.notFound("Conversation not found");
+                case "importing": {
+                    const response: GetConversationResponse = {
+                        status: "importing",
+                        importSlugId: importAccessState.importSlugId,
+                    };
+                    return response;
+                }
+                case "ready":
+                    break;
+                default: {
+                    const exhaustiveCheck: never = importAccessState;
+                    return exhaustiveCheck;
+                }
+            }
             const headerDisplayLanguage = getRequestDisplayLanguage({
                 request,
             });
@@ -3702,7 +3726,11 @@ server.after(() => {
             }
 
             const response: GetConversationResponse = {
-                conversationData: postItem,
+                status: "ready",
+                conversationData: {
+                    metadata: postItem.metadata,
+                    interaction: postItem.interaction,
+                },
                 displayContent:
                     conversationContentService.toInitialConversationDisplayContent(
                         {

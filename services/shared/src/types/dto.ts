@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
     zodExtendedConversationData,
+    zodExtendedConversationDisplayData,
     zodSlugId,
     zodOpinionItem,
     zodDisplayedOpinionItem,
@@ -1017,12 +1018,21 @@ export class Dto {
             conversationSlugId: zodSlugId,
         })
         .strict();
-    static getConversationResponse = z
-        .object({
-            conversationData: zodExtendedConversationData,
-            displayContent: zodConversationDisplayedContent,
-        })
-        .strict();
+    static getConversationResponse = z.discriminatedUnion("status", [
+        z
+            .object({
+                status: z.literal("ready"),
+                conversationData: zodExtendedConversationDisplayData,
+                displayContent: zodConversationDisplayedContent,
+            })
+            .strict(),
+        z
+            .object({
+                status: z.literal("importing"),
+                importSlugId: zodSlugId,
+            })
+            .strict(),
+    ]);
     static getConversationForEditRequest = z
         .object({
             conversationSlugId: zodSlugId,

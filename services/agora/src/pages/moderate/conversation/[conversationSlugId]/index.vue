@@ -8,14 +8,14 @@
       <div>{{ t("moderateConversation") }}</div>
     </div>
 
-    <div class="postPreview">
+    <div v-if="conversationItem?.displayContent.status === 'available'" class="postPreview">
       <b>
-        {{ conversationItem.payload.title }}
+        {{ conversationItem.displayContent.content.title }}
       </b>
 
       <ZKHtmlContent
-        v-if="conversationItem.payload.body"
-        :html-body="conversationItem.payload.body"
+        v-if="conversationItem.displayContent.content.body"
+        :html-body="conversationItem.displayContent.content.body"
         :compact-mode="false"
         :enable-links="false"
       />
@@ -68,13 +68,14 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   ConversationModerationAction,
   ConversationModerationProperties,
-  ExtendedConversation,
   ModerationReason,
 } from "src/shared/types/zod";
-import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useBackendModerateApi } from "src/utils/api/moderation";
 import { useBackendPostApi } from "src/utils/api/post/post";
-import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
+import {
+  type ConversationDetail,
+  updateConversationQueryCache,
+} from "src/utils/api/post/useConversationQuery";
 import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
 import {
   moderationActionPostsMapping,
@@ -101,9 +102,8 @@ const route = useRoute();
 const router = useRouter();
 const queryClient = useQueryClient();
 
-const { emptyPost } = useHomeFeedStore();
 const { invalidateFeed } = useInvalidateFeedQuery();
-const { fetchPostBySlugId } = useBackendPostApi();
+const { fetchConversationBySlugIdWithDisplayContent } = useBackendPostApi();
 
 const DEFAULT_MODERATION_ACTION = "lock";
 const moderationAction = ref<ConversationModerationAction>(
@@ -122,7 +122,7 @@ const hasExistingDecision = ref(false);
 let postSlugId: string | null = null;
 loadRouteParams();
 
-const conversationItem = ref<ExtendedConversation>(emptyPost);
+const conversationItem = ref<ConversationDetail | undefined>();
 
 const { t } = useComponentI18n<ConversationModerationTranslations>(
   conversationModerationTranslations
@@ -158,10 +158,11 @@ async function loadRemoteModerationData() {
 
 async function loadRemoteConversationData() {
   if (postSlugId) {
-    const response = await fetchPostBySlugId(postSlugId, false);
-    if (response) {
-      conversationItem.value = response;
-    }
+    const response = await fetchConversationBySlugIdWithDisplayContent({
+      postSlugId,
+      loadPersonalizedData: false,
+    });
+    conversationItem.value = response;
   }
 }
 
@@ -180,7 +181,7 @@ function updateConversationModerationCache({
   }
 
   const fallbackConversation =
-    conversationItem.value.metadata.conversationSlugId === postSlugId
+    conversationItem.value?.conversationData.metadata.conversationSlugId === postSlugId
       ? conversationItem.value
       : undefined;
 
@@ -197,12 +198,15 @@ function updateConversationModerationCache({
     fallbackConversation,
   });
 
-  if (fallbackConversation) {
+  if (fallbackConversation !== undefined) {
     conversationItem.value = {
       ...fallbackConversation,
-      metadata: {
-        ...fallbackConversation.metadata,
-        moderation,
+      conversationData: {
+        ...fallbackConversation.conversationData,
+        metadata: {
+          ...fallbackConversation.conversationData.metadata,
+          moderation,
+        },
       },
     };
   }
@@ -210,7 +214,8 @@ function updateConversationModerationCache({
 
 function getModeratedConversationState(): ConversationModerationProperties {
   const now = new Date();
-  const existingModeration = conversationItem.value.metadata.moderation;
+  const existingModeration =
+    conversationItem.value?.conversationData.metadata.moderation;
 
   return {
     status: "moderated",
@@ -218,7 +223,7 @@ function getModeratedConversationState(): ConversationModerationProperties {
     reason: moderationReason.value,
     explanation: moderationExplanation.value,
     createdAt:
-      existingModeration.status === "moderated"
+      existingModeration?.status === "moderated"
         ? existingModeration.createdAt
         : now,
     updatedAt: now,

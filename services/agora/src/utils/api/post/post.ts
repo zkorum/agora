@@ -6,10 +6,10 @@ import {
 } from "src/api";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
-  ConversationContentFetchResponse,
   ConversationLanguageSettingsSource,
   CreateNewConversationResponse,
   GetConversationCreateProjectOptionsResponse,
+  GetConversationResponse,
   ImportConversationResponse,
   ImportCsvConversationResponse,
 } from "src/shared/types/dto";
@@ -48,6 +48,12 @@ import {
   postApiTranslations,
 } from "./post.i18n";
 
+type ReadyConversationResponse = Extract<
+  GetConversationResponse,
+  { status: "ready" }
+>;
+type FetchConversationBySlugIdResult = Omit<ReadyConversationResponse, "status">;
+
 export function useBackendPostApi() {
   const {
     buildEncodedUcan,
@@ -60,9 +66,21 @@ export function useBackendPostApi() {
 
   const router = useRouter();
 
-  interface FetchConversationBySlugIdResult {
-    conversationData: ExtendedConversation;
-    displayContent: ConversationContentFetchResponse;
+  async function handleGetConversationResponse(
+    data: GetConversationResponse
+  ): Promise<FetchConversationBySlugIdResult> {
+    if (data.status === "importing") {
+      await router.replace({
+        name: "/conversation/import/[importSlugId]",
+        params: { importSlugId: data.importSlugId },
+      });
+      throw new Error("Conversation import is still processing");
+    }
+
+    return {
+      conversationData: data.conversationData,
+      displayContent: data.displayContent,
+    };
   }
 
   function createInternalPostData(
@@ -89,10 +107,7 @@ export function useBackendPostApi() {
         const response = await api.post(url, params);
         const data = Dto.getConversationResponse.parse(response.data);
 
-        return {
-          conversationData: createInternalPostData(data.conversationData),
-          displayContent: data.displayContent,
-        };
+        return await handleGetConversationResponse(data);
       } else {
         const encodedUcan = await buildEncodedUcan(url, options);
         const response = await api.post(url, params, {
@@ -102,10 +117,7 @@ export function useBackendPostApi() {
         });
         const data = Dto.getConversationResponse.parse(response.data);
 
-        return {
-          conversationData: createInternalPostData(data.conversationData),
-          displayContent: data.displayContent,
-        };
+        return await handleGetConversationResponse(data);
       }
     } catch (error) {
       if (axiosInstance.isAxiosError(error) && error.status === 404) {
@@ -116,17 +128,6 @@ export function useBackendPostApi() {
       }
       throw error;
     }
-  }
-
-  async function fetchPostBySlugId(
-    postSlugId: string,
-    loadPersonalizedData: boolean
-  ): Promise<ExtendedConversation> {
-    const result = await fetchConversationBySlugIdWithDisplayContent({
-      postSlugId,
-      loadPersonalizedData,
-    });
-    return result.conversationData;
   }
 
   type FetchRecentPostSuccessResponse = AxiosSuccessResponse<FetchFeedResponse>;
@@ -634,7 +635,6 @@ export function useBackendPostApi() {
   return {
     createNewPost,
     fetchRecentPost,
-    fetchPostBySlugId,
     fetchConversationBySlugIdWithDisplayContent,
     createInternalPostData,
     deletePostBySlugId,

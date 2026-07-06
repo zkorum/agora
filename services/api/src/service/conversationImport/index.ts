@@ -170,6 +170,9 @@ export async function requestConversationImport(
     return { importSlugId: createImportResult.importSlugId };
 }
 
+export const getConversationImportAccessState =
+    database.getConversationImportAccessState;
+
 interface RequestUrlImportParams {
     db: PostgresDatabase;
     userId: string;

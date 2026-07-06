@@ -99,6 +99,60 @@ interface GetImportStatusParams {
     importSlugId: string;
 }
 
+interface GetConversationImportAccessStateParams {
+    db: PostgresDatabase;
+    conversationSlugId: string;
+    userId?: string;
+}
+
+export type ConversationImportAccessState =
+    | { status: "not_found" }
+    | { status: "ready" }
+    | { status: "importing"; importSlugId: string }
+    | { status: "importing_not_visible" };
+
+export async function getConversationImportAccessState({
+    db,
+    conversationSlugId,
+    userId,
+}: GetConversationImportAccessStateParams): Promise<ConversationImportAccessState> {
+    const conversationRows = await db
+        .select({
+            conversationId: conversationTable.id,
+            isImporting: conversationTable.isImporting,
+        })
+        .from(conversationTable)
+        .where(eq(conversationTable.slugId, conversationSlugId))
+        .limit(1);
+
+    const conversation = conversationRows.at(0);
+    if (conversation === undefined) {
+        return { status: "not_found" };
+    }
+    if (!conversation.isImporting) {
+        return { status: "ready" };
+    }
+    if (userId === undefined) {
+        return { status: "importing_not_visible" };
+    }
+
+    const importRows = await db
+        .select({ importSlugId: conversationImportTable.slugId })
+        .from(conversationImportTable)
+        .where(
+            and(
+                eq(conversationImportTable.conversationId, conversation.conversationId),
+                eq(conversationImportTable.userId, userId),
+            ),
+        )
+        .limit(1);
+
+    const importRow = importRows.at(0);
+    return importRow === undefined
+        ? { status: "importing_not_visible" }
+        : { status: "importing", importSlugId: importRow.importSlugId };
+}
+
 interface ImportStatusResult {
     status: (typeof importStatusEnum.enumValues)[number];
     conversationSlugId: string | null;
