@@ -79,44 +79,13 @@
             </div>
           </section>
 
-          <aside
+          <ProjectDetailsAside
             class="project-conversation-view__aside"
-            :aria-label="t('projectDetailsAriaLabel')"
-          >
-            <section class="project-conversation-view__info-section">
-              <h2 class="project-conversation-view__aside-title">
-                {{ t("behindThisTitle") }}
-              </h2>
-              <ProjectAttributionSection
-                :title="t('sponsorsTitle')"
-                :entries="sponsorAttributions"
-                :language-code="selectedLanguage"
-              />
-              <ProjectAttributionSection
-                :title="t('projectOwnersTitle')"
-                :entries="projectOwnerAttributions"
-                :language-code="selectedLanguage"
-              />
-              <ProjectAttributionSection
-                :title="t('partnersTitle')"
-                :entries="partnerAttributions"
-                :language-code="selectedLanguage"
-              />
-            </section>
-
-            <section
-              v-if="project.contact !== undefined"
-              class="project-conversation-view__info-section project-conversation-view__info-section--contact"
-            >
-              <h2 class="project-conversation-view__aside-title">
-                {{ t("projectContactTitle") }}
-              </h2>
-              <ProjectContactCard
-                :contact="project.contact"
-                :language-code="selectedLanguage"
-              />
-            </section>
-          </aside>
+            :attributions="project.attributions"
+            :contact="project.contact"
+            :language-code="selectedLanguage"
+            :show-attribution-title="true"
+          />
 
           <ProjectPageFooter
             class="project-conversation-view__footer"
@@ -137,16 +106,18 @@ import {
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { computed } from "vue";
 
-import ProjectAttributionSection from "./ProjectAttributionSection.vue";
-import ProjectContactCard from "./ProjectContactCard.vue";
 import ProjectConversationHeaderCard from "./ProjectConversationHeaderCard.vue";
+import ProjectDetailsAside from "./ProjectDetailsAside.vue";
 import ProjectLanguageSelect from "./ProjectLanguageSelect.vue";
 import ProjectPageFooter from "./ProjectPageFooter.vue";
 import {
   type ProjectPageTranslations,
   translateProjectPageText,
 } from "./projectPageI18n";
-import type { ProjectAttribution, ProjectLanguageOption, ProjectPageData } from "./projectPageTypes";
+import type {
+  ProjectLanguageOption,
+  ProjectPageData,
+} from "./projectPageTypes";
 
 const props = defineProps<{
   project: ProjectPageData;
@@ -174,18 +145,6 @@ const effectiveBannerImageUrl = computed(
 const hasMultipleLanguageOptions = computed(
   () => new Set(props.languageOptions.map((option) => option.value)).size > 1
 );
-const projectOwnerAttributions = computed(() =>
-  filterAttributions("project_owner")
-);
-const sponsorAttributions = computed(() => filterAttributions("sponsor"));
-const partnerAttributions = computed(() => filterAttributions("partner"));
-
-function filterAttributions(
-  role: ProjectAttribution["role"]
-): readonly ProjectAttribution[] {
-  return props.project.attributions.filter((entry) => entry.role === role);
-}
-
 function t(
   key: keyof ProjectPageTranslations,
   params?: Readonly<Record<string, string | number>>
@@ -354,8 +313,7 @@ main {
 }
 
 .project-conversation-view__conversation-stream,
-.project-conversation-view__aside,
-.project-conversation-view__info-section {
+.project-conversation-view__aside {
   min-width: 0;
 }
 
@@ -384,37 +342,10 @@ main {
   padding-block: 2.5rem 5.5rem;
 }
 
-.project-conversation-view__aside,
-.project-conversation-view__info-section {
-  display: flex;
-  flex-direction: column;
-}
-
 .project-conversation-view__aside {
   grid-area: aside;
   position: sticky;
   top: 1.25rem;
-  gap: 2.35rem;
-}
-
-.project-conversation-view__info-section {
-  gap: 0;
-}
-
-.project-conversation-view__info-section--contact {
-  gap: 0.65rem;
-}
-
-.project-conversation-view__aside-title {
-  margin: 0 0 1rem;
-  color: $ink-light;
-  font-size: 1rem;
-  font-weight: var(--font-weight-semibold);
-  letter-spacing: -0.01em;
-}
-
-.project-conversation-view__info-section :deep(.project-attribution-section + .project-attribution-section) {
-  margin-top: 1.15rem;
 }
 
 @media (max-width: 860px) {

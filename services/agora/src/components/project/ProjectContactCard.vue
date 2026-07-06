@@ -16,9 +16,9 @@
         />
         <template v-else>{{ initials }}</template>
       </div>
-      <div>
+      <div class="project-contact-card__body">
         <h3>{{ displayName }}</h3>
-        <p>{{ subtitle }}</p>
+        <p v-if="subtitle !== ''">{{ subtitle }}</p>
       </div>
     </div>
 
@@ -52,6 +52,7 @@
 
 <script setup lang="ts">
 import OrganizationImage from "src/components/account/OrganizationImage.vue";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { computed } from "vue";
 
 import ProjectActionButton from "./ProjectActionButton.vue";
@@ -60,14 +61,11 @@ import {
   translateProjectPageText,
 } from "./projectPageI18n";
 import type { ProjectContact } from "./projectPageTypes";
-import {
-  getSafeProjectHref,
-  getSafeProjectWebHref,
-} from "./projectUrlSafety";
+import { getSafeProjectHref, getSafeProjectWebHref } from "./projectUrlSafety";
 
 const props = defineProps<{
   contact: ProjectContact;
-  languageCode: string;
+  languageCode: SupportedDisplayLanguageCodes;
 }>();
 
 const subtitle = computed(() => {
@@ -122,6 +120,7 @@ function t(
   display: flex;
   align-items: center;
   gap: 0.8rem;
+  min-width: 0;
 }
 
 .project-contact-card__avatar {
@@ -149,16 +148,23 @@ function t(
   object-fit: contain;
 }
 
+.project-contact-card__body {
+  min-width: 0;
+}
+
 h3,
 p {
   margin: 0;
 }
 
 h3 {
+  overflow: hidden;
   color: $ink-darker;
   font-size: 1rem;
   font-weight: var(--font-weight-bold);
   line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 p {

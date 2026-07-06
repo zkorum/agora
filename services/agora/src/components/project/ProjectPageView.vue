@@ -159,46 +159,13 @@
             </q-infinite-scroll>
           </section>
 
-          <aside
+          <ProjectDetailsAside
             class="project-page-view__aside"
-            :aria-label="t('projectDetailsAriaLabel')"
-          >
-            <section
-              class="project-page-view__info-section project-page-view__info-section--attributions"
-            >
-              <h2 class="project-page-view__aside-title">
-                {{ t("behindThisTitle") }}
-              </h2>
-              <ProjectAttributionSection
-                :title="t('sponsorsTitle')"
-                :entries="sponsorAttributions"
-                :language-code="selectedLanguage"
-              />
-              <ProjectAttributionSection
-                :title="t('projectOwnersTitle')"
-                :entries="projectOwnerAttributions"
-                :language-code="selectedLanguage"
-              />
-              <ProjectAttributionSection
-                :title="t('partnersTitle')"
-                :entries="partnerAttributions"
-                :language-code="selectedLanguage"
-              />
-            </section>
-
-            <section
-              v-if="project.contact !== undefined"
-              class="project-page-view__info-section project-page-view__info-section--contact"
-            >
-              <h2 class="project-page-view__aside-title">
-                {{ t("projectContactTitle") }}
-              </h2>
-              <ProjectContactCard
-                :contact="project.contact"
-                :language-code="selectedLanguage"
-              />
-            </section>
-          </aside>
+            :attributions="project.attributions"
+            :contact="project.contact"
+            :language-code="selectedLanguage"
+            :show-attribution-title="true"
+          />
         </div>
 
         <ProjectPageFooter :language-code="selectedLanguage" />
@@ -232,8 +199,7 @@ import { computed } from "vue";
 import { ref, watch } from "vue";
 
 import ProjectActivityCard from "./ProjectActivityCard.vue";
-import ProjectAttributionSection from "./ProjectAttributionSection.vue";
-import ProjectContactCard from "./ProjectContactCard.vue";
+import ProjectDetailsAside from "./ProjectDetailsAside.vue";
 import ProjectLanguageSelect from "./ProjectLanguageSelect.vue";
 import ProjectPageFooter from "./ProjectPageFooter.vue";
 import {
@@ -242,7 +208,6 @@ import {
 } from "./projectPageI18n";
 import type {
   ProjectActivity,
-  ProjectAttribution,
   ProjectLanguageOption,
   ProjectPageData,
 } from "./projectPageTypes";
@@ -380,11 +345,6 @@ const displayedProjectContent = computed(() => {
   return props.project.originalContent;
 });
 
-const projectOwnerAttributions = computed(() =>
-  filterAttributions("project_owner")
-);
-const sponsorAttributions = computed(() => filterAttributions("sponsor"));
-const partnerAttributions = computed(() => filterAttributions("partner"));
 const consultationStatus = computed<ConsultationStatus>(() => {
   if (props.activities.length === 0) {
     return "none";
@@ -449,12 +409,6 @@ function t(
     key,
     params,
   });
-}
-
-function filterAttributions(
-  role: ProjectAttribution["role"]
-): readonly ProjectAttribution[] {
-  return props.project.attributions.filter((entry) => entry.role === role);
 }
 
 function onActivitiesLoad(_index: number, done: () => void): void {
@@ -699,9 +653,7 @@ h2 {
   white-space: nowrap;
 }
 
-.project-page-view__activity-list,
-.project-page-view__aside,
-.project-page-view__info-section {
+.project-page-view__activity-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -735,33 +687,6 @@ h2 {
 .project-page-view__aside {
   position: sticky;
   top: 5.2rem;
-  gap: 2.35rem;
-}
-
-.project-page-view__info-section {
-  gap: 0;
-}
-
-.project-page-view__info-section--attributions {
-  .project-page-view__aside-title + .project-attribution-section {
-    margin-top: 0.9rem;
-  }
-
-  .project-attribution-section + .project-attribution-section {
-    margin-top: 1.15rem;
-  }
-}
-
-.project-page-view__info-section--contact {
-  gap: 0.65rem;
-}
-
-.project-page-view__aside-title {
-  margin: 0 0 0.1rem;
-  color: $ink-light;
-  font-size: 1rem;
-  font-weight: var(--font-weight-semibold);
-  letter-spacing: -0.01em;
 }
 
 @media (max-width: 860px) {
