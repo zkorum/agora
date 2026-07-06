@@ -204,7 +204,7 @@ watch(showDialog, (newValue) => {
 
 .action-trailing-icon {
   flex-shrink: 0;
-  color: $primary;
+  color: $color-text-weak;
 }
 
 .action-content {

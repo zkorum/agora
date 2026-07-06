@@ -14,6 +14,7 @@ export interface ExportPageTranslations {
   errorActiveExportInProgress: string;
   errorConversationNotFound: string;
   errorNoOpinions: string;
+  errorUnsupportedConversationType: string;
   exportFeatureDisabled: string;
 }
 
@@ -40,6 +41,8 @@ export const exportPageTranslations: Record<
     errorConversationNotFound: "Conversation not found",
     errorNoOpinions:
       "This conversation has no statements to export. Add some statements first.",
+    errorUnsupportedConversationType:
+      "Export is not available for prioritization conversations yet.",
     exportFeatureDisabled: "Export feature is disabled",
   },
   ar: {
@@ -59,6 +62,8 @@ export const exportPageTranslations: Record<
     errorConversationNotFound: "المحادثة غير موجودة",
     errorNoOpinions:
       "لا توجد مقترحات في هذه المحادثة للتصدير. أضف بعض المقترحات أولاً.",
+    errorUnsupportedConversationType:
+      "التصدير غير متاح لمحادثات تحديد الأولويات بعد.",
     exportFeatureDisabled: "ميزة التصدير معطلة",
   },
   es: {
@@ -81,6 +86,8 @@ export const exportPageTranslations: Record<
     errorConversationNotFound: "Conversación no encontrada",
     errorNoOpinions:
       "Esta conversación no tiene proposiciones para exportar. Añade algunas proposiciones primero.",
+    errorUnsupportedConversationType:
+      "La exportación aún no está disponible para conversaciones de priorización.",
     exportFeatureDisabled: "La función de exportación está deshabilitada",
   },
   fa: {
@@ -102,6 +109,8 @@ export const exportPageTranslations: Record<
     errorConversationNotFound: "گفتگو یافت نشد",
     errorNoOpinions:
       "این گفتگو گزاره‌ای برای خروجی ندارد. ابتدا چند گزاره اضافه کنید.",
+    errorUnsupportedConversationType:
+      "خروجی برای گفتگوهای اولویت‌بندی هنوز در دسترس نیست.",
     exportFeatureDisabled: "قابلیت خروجی غیرفعال است",
   },
   he: {
@@ -123,6 +132,8 @@ export const exportPageTranslations: Record<
     errorConversationNotFound: "השיחה לא נמצאה",
     errorNoOpinions:
       "לשיחה זו אין הצהרות לייצוא. הוסיפו הצהרות תחילה.",
+    errorUnsupportedConversationType:
+      "ייצוא עדיין אינו זמין לשיחות תעדוף.",
     exportFeatureDisabled: "תכונת הייצוא מושבתת",
   },
   fr: {
@@ -146,6 +157,8 @@ export const exportPageTranslations: Record<
     errorConversationNotFound: "Conversation introuvable",
     errorNoOpinions:
       "Cette conversation n'a pas de propositions à exporter. Ajoutez d'abord quelques propositions.",
+    errorUnsupportedConversationType:
+      "L'export n'est pas encore disponible pour les conversations de priorisation.",
     exportFeatureDisabled: "La fonction d'export est désactivée",
   },
   "zh-Hans": {
@@ -162,6 +175,7 @@ export const exportPageTranslations: Record<
     errorActiveExportInProgress: "导出正在进行中。请等待完成。",
     errorConversationNotFound: "未找到对话",
     errorNoOpinions: "此对话没有可导出的意见。请先添加一些意见。",
+    errorUnsupportedConversationType: "优先排序对话尚不支持导出。",
     exportFeatureDisabled: "导出功能已禁用",
   },
   "zh-Hant": {
@@ -178,6 +192,7 @@ export const exportPageTranslations: Record<
     errorActiveExportInProgress: "匯出正在進行中。請等待完成。",
     errorConversationNotFound: "未找到對話",
     errorNoOpinions: "此對話沒有可匯出的意見。請先新增一些意見。",
+    errorUnsupportedConversationType: "優先排序對話尚不支援匯出。",
     exportFeatureDisabled: "匯出功能已停用",
   },
   ja: {
@@ -200,6 +215,8 @@ export const exportPageTranslations: Record<
     errorConversationNotFound: "会話が見つかりません",
     errorNoOpinions:
       "この会話にはエクスポートする意見がありません。まず意見を追加してください。",
+    errorUnsupportedConversationType:
+      "優先順位付けの会話はまだエクスポートできません。",
     exportFeatureDisabled: "エクスポート機能は無効です",
   },
   ky: {
@@ -221,6 +238,8 @@ export const exportPageTranslations: Record<
     errorConversationNotFound: "Талкуу табылган жок",
     errorNoOpinions:
       "Бул талкууда экспорттоого пикирлер жок. Алгач пикирлерди кошуңуз.",
+    errorUnsupportedConversationType:
+      "Артыкчылык берүү талкууларын экспорттоо азырынча жеткиликтүү эмес.",
     exportFeatureDisabled: "Экспорт функциясы өчүрүлгөн",
   },
   ru: {
@@ -243,6 +262,8 @@ export const exportPageTranslations: Record<
     errorConversationNotFound: "Обсуждение не найдено",
     errorNoOpinions:
       "В этом обсуждении нет высказываний для экспорта. Сначала добавьте высказывания.",
+    errorUnsupportedConversationType:
+      "Экспорт пока недоступен для обсуждений с приоритизацией.",
     exportFeatureDisabled: "Функция экспорта отключена",
   },
 };

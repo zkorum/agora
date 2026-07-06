@@ -207,6 +207,7 @@ interface ConversationExportConversationRecord {
     slugId: string;
     title: string;
     projectId: number;
+    conversationType: typeof conversationTable.$inferSelect.conversationType;
 }
 
 async function findConversationRecord({
@@ -222,6 +223,7 @@ async function findConversationRecord({
             slugId: conversationTable.slugId,
             title: conversationContentTable.title,
             projectId: conversationTable.projectId,
+            conversationType: conversationTable.conversationType,
         })
         .from(conversationTable)
         .innerJoin(
@@ -251,6 +253,26 @@ async function getConversationRecord({
     }
 
     return conversation;
+}
+
+function isConversationExportSupported({
+    conversation,
+}: {
+    conversation: ConversationExportConversationRecord;
+}): boolean {
+    return conversation.conversationType !== "ranking";
+}
+
+function assertConversationExportSupported({
+    conversation,
+}: {
+    conversation: ConversationExportConversationRecord;
+}): void {
+    if (!isConversationExportSupported({ conversation })) {
+        throw httpErrors.badRequest(
+            "Conversation export is not supported for prioritization conversations",
+        );
+    }
 }
 
 async function getOpinionCount({
@@ -732,6 +754,10 @@ export async function requestConversationExport({
         return { success: false, reason: "conversation_not_found" };
     }
 
+    if (!isConversationExportSupported({ conversation })) {
+        return { success: false, reason: "unsupported_conversation_type" };
+    }
+
     const exportAccessLevel =
         await getConversationViewAccessLevelForConversation({
             db,
@@ -1173,6 +1199,16 @@ export async function getConversationExportHistory({
     conversationSlugId,
     userId,
 }: GetConversationExportHistoryParams): Promise<GetConversationExportHistoryResponse> {
+    const conversation = await findConversationRecord({
+        db,
+        conversationSlugId,
+    });
+    if (conversation === undefined) {
+        return [];
+    }
+
+    assertConversationExportSupported({ conversation });
+
     const exports = await db
         .select({
             exportSlugId: conversationExportRequestTable.slugId,

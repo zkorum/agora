@@ -292,6 +292,13 @@ async function exportConversationCallback() {
   });
 }
 
+function openInAgoraCallback() {
+  openRegularAppRouteInNewTab({
+    name: "/conversation/[postSlugId]/",
+    params: { postSlugId: props.postSlugId },
+  });
+}
+
 async function editConversationCallback() {
   if (props.projectSlug !== undefined) {
     openRegularAppRouteInNewTab({
@@ -390,6 +397,8 @@ function clickedMoreIcon() {
       copyEmbedLinkCallback,
       editConversationCallback,
       exportConversationCallback,
+      openInAgoraCallback:
+        props.projectSlug === undefined ? null : openInAgoraCallback,
       shareCallback,
       syncGitHubCallback: showSyncGitHub ? syncGitHubCallback : null,
       openConversationCallback: () => {
@@ -399,6 +408,7 @@ function clickedMoreIcon() {
         showCloseDialog.value = true;
       },
       isConversationClosed: props.isClosed,
+      isConversationExportAvailable: props.conversationType !== "maxdiff",
       conversationDeletedCallback,
     },
   );

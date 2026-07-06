@@ -150,11 +150,13 @@ export function useContentActions() {
       copyEmbedLinkCallback: () => void | Promise<void>;
       editConversationCallback: () => void | Promise<void>;
       exportConversationCallback: () => void | Promise<void>;
+      openInAgoraCallback: (() => void | Promise<void>) | null;
       shareCallback: () => void | Promise<void>;
       syncGitHubCallback: (() => void | Promise<void>) | null;
       openConversationCallback: () => void | Promise<void>;
       closeConversationCallback: () => void | Promise<void>;
       isConversationClosed: boolean;
+      isConversationExportAvailable: boolean;
       conversationDeletedCallback: () => void | Promise<void>;
     }
   ): void => {
@@ -199,6 +201,7 @@ export function useContentActions() {
       moderate: t("moderate"),
       userReports: t("userReports"),
       exportConversation: t("exportConversation"),
+      openInAgora: t("openInAgora"),
       syncGitHub: t("syncGitHub"),
       openConversation: t("openConversation"),
       closeConversation: t("closeConversation"),
@@ -215,11 +218,13 @@ export function useContentActions() {
       deletePostCallback,
       editConversationCallback: callbacks.editConversationCallback,
       exportConversationCallback: callbacks.exportConversationCallback,
+      openInAgoraCallback: callbacks.openInAgoraCallback,
       shareCallback: callbacks.shareCallback,
       syncGitHubCallback: callbacks.syncGitHubCallback,
       openConversationCallback: callbacks.openConversationCallback,
       closeConversationCallback: callbacks.closeConversationCallback,
       isConversationClosed: callbacks.isConversationClosed,
+      isConversationExportAvailable: callbacks.isConversationExportAvailable,
       translations: postTranslations,
     });
 

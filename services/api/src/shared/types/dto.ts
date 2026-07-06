@@ -2181,6 +2181,7 @@ export class Dto {
                     "active_export_in_progress",
                     "conversation_not_found",
                     "no_opinions",
+                    "unsupported_conversation_type",
                 ]),
             })
             .strict(),

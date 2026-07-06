@@ -11,6 +11,7 @@ export interface ActionsTranslations {
   moderationHistory: string;
   embedLink: string;
   exportConversation: string;
+  openInAgora: string;
   syncGitHub: string;
   openConversation: string;
   closeConversation: string;
@@ -37,6 +38,7 @@ export const actionsTranslations: Record<
     moderationHistory: "Moderation History",
     embedLink: "Copy Embed Link",
     exportConversation: "Export Conversation",
+    openInAgora: "Open in Agora",
     syncGitHub: "Sync from GitHub",
     openConversation: "Open Conversation",
     closeConversation: "Close Conversation",
@@ -59,6 +61,7 @@ export const actionsTranslations: Record<
     moderationHistory: "سجل الإدارة",
     embedLink: "نسخ رابط التضمين",
     exportConversation: "تصدير المحادثة",
+    openInAgora: "فتح في Agora",
     syncGitHub: "مزامنة من GitHub",
     openConversation: "فتح المحادثة",
     closeConversation: "إغلاق المحادثة",
@@ -81,6 +84,7 @@ export const actionsTranslations: Record<
     moderationHistory: "Historial de Moderación",
     embedLink: "Copiar Enlace de Inserción",
     exportConversation: "Exportar Conversación",
+    openInAgora: "Abrir en Agora",
     syncGitHub: "Sincronizar desde GitHub",
     openConversation: "Abrir conversación",
     closeConversation: "Cerrar conversación",
@@ -103,6 +107,7 @@ export const actionsTranslations: Record<
     moderationHistory: "تاریخچه مدیریت محتوا",
     embedLink: "کپی لینک جاسازی",
     exportConversation: "خروجی گفتگو",
+    openInAgora: "باز کردن در Agora",
     syncGitHub: "همگام‌سازی از GitHub",
     openConversation: "باز کردن گفتگو",
     closeConversation: "بستن گفتگو",
@@ -125,6 +130,7 @@ export const actionsTranslations: Record<
     moderationHistory: "היסטוריית ניהול תוכן",
     embedLink: "העתקת קישור הטמעה",
     exportConversation: "ייצוא שיחה",
+    openInAgora: "פתיחה ב-Agora",
     syncGitHub: "סנכרון מ-GitHub",
     openConversation: "פתיחת שיחה",
     closeConversation: "סגירת שיחה",
@@ -147,6 +153,7 @@ export const actionsTranslations: Record<
     moderationHistory: "Historique de Modération",
     embedLink: "Copier le Lien d'Intégration",
     exportConversation: "Exporter la Conversation",
+    openInAgora: "Ouvrir dans Agora",
     syncGitHub: "Synchroniser depuis GitHub",
     openConversation: "Ouvrir la Conversation",
     closeConversation: "Fermer la Conversation",
@@ -170,6 +177,7 @@ export const actionsTranslations: Record<
     moderationHistory: "审核历史",
     embedLink: "复制嵌入链接",
     exportConversation: "导出对话",
+    openInAgora: "在 Agora 中打开",
     syncGitHub: "从 GitHub 同步",
     openConversation: "打开对话",
     closeConversation: "关闭对话",
@@ -191,6 +199,7 @@ export const actionsTranslations: Record<
     moderationHistory: "審核歷史",
     embedLink: "複製嵌入連結",
     exportConversation: "匯出對話",
+    openInAgora: "在 Agora 中打開",
     syncGitHub: "從 GitHub 同步",
     openConversation: "打開對話",
     closeConversation: "關閉對話",
@@ -212,6 +221,7 @@ export const actionsTranslations: Record<
     moderationHistory: "審査履歴",
     embedLink: "埋め込みリンクをコピー",
     exportConversation: "会話をエクスポート",
+    openInAgora: "Agoraで開く",
     syncGitHub: "GitHub から同期",
     openConversation: "会話を開く",
     closeConversation: "会話を閉じる",
@@ -234,6 +244,7 @@ export const actionsTranslations: Record<
     moderationHistory: "Модерация тарыхы",
     embedLink: "Кыстаруу шилтемесин көчүрүү",
     exportConversation: "Талкууну экспорттоо",
+    openInAgora: "Agora'да ачуу",
     syncGitHub: "GitHub'тен синхрондоо",
     openConversation: "Талкууну ачуу",
     closeConversation: "Талкууну жабуу",
@@ -256,6 +267,7 @@ export const actionsTranslations: Record<
     moderationHistory: "История модерации",
     embedLink: "Копировать ссылку для встраивания",
     exportConversation: "Экспорт обсуждения",
+    openInAgora: "Открыть в Agora",
     syncGitHub: "Синхронизировать с GitHub",
     openConversation: "Открыть обсуждение",
     closeConversation: "Закрыть обсуждение",

@@ -31,7 +31,10 @@ export async function getExportReadinessForConversation({
 }: GetExportReadinessForConversationParams): Promise<GetExportReadinessResponse> {
     // Find conversation ID from slug
     const conversation = await db
-        .select({ id: conversationTable.id })
+        .select({
+            id: conversationTable.id,
+            conversationType: conversationTable.conversationType,
+        })
         .from(conversationTable)
         .where(eq(conversationTable.slugId, conversationSlugId))
         .limit(1);
@@ -40,7 +43,14 @@ export async function getExportReadinessForConversation({
         throw httpErrors.notFound("Conversation not found");
     }
 
-    const conversationId = conversation[0].id;
+    const conversationRecord = conversation[0];
+    if (conversationRecord.conversationType === "ranking") {
+        throw httpErrors.badRequest(
+            "Conversation export is not supported for prioritization conversations",
+        );
+    }
+
+    const conversationId = conversationRecord.id;
 
     // Step 1: Check for active (processing) export for this user+conversation
     const activeExportList = await db
