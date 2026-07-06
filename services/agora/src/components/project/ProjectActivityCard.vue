@@ -1,12 +1,14 @@
 <template>
-  <SpaLink
-    :to="{
-      name: '/project/[projectSlug]/conversation/[postSlugId]/',
-      params: { projectSlug, postSlugId: activity.slug },
-    }"
-    class="project-activity-card"
-  >
-    <article>
+  <article class="project-activity-card">
+    <SpaLink
+      :to="{
+        name: '/project/[projectSlug]/conversation/[postSlugId]/',
+        params: { projectSlug, postSlugId: activity.slug },
+      }"
+      class="project-activity-card__link"
+      :aria-label="activityActionAccessibleLabel"
+    />
+    <div class="project-activity-card__surface">
       <div class="activity-card__topline">
         <div class="activity-card__topline-left">
           <span
@@ -86,17 +88,12 @@
           :external="false"
           :variant="actionVariant"
           :block="true"
-          :accessible-label="
-            t('activityActionAriaLabel', {
-              action: actionLabel,
-              title: activity.title,
-            })
-          "
+          :accessible-label="undefined"
           :interactive="false"
         />
       </div>
-    </article>
-  </SpaLink>
+    </div>
+  </article>
 </template>
 
 <script setup lang="ts">
@@ -172,6 +169,13 @@ const actionIconName = computed(() =>
 
 const actionVariant = computed<ProjectActionButtonVariant>(() =>
   props.activity.isClosed ? "muted" : "primary"
+);
+
+const activityActionAccessibleLabel = computed(() =>
+  t("activityActionAriaLabel", {
+    action: actionLabel.value,
+    title: props.activity.title,
+  })
 );
 
 const activityMachineTranslation = computed(() => {
@@ -285,12 +289,20 @@ function t(
 <style scoped lang="scss">
 .project-activity-card {
   display: block;
+  position: relative;
   border-radius: 20px;
+}
+
+.project-activity-card__link {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border-radius: inherit;
 
   &:focus-visible {
     outline: none;
 
-    article {
+    + .project-activity-card__surface {
       border-color: rgba($primary, 0.5);
       box-shadow:
         0 0.75rem 2rem rgba(10, 7, 20, 0.09),
@@ -299,7 +311,7 @@ function t(
   }
 }
 
-article {
+.project-activity-card__surface {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
@@ -315,14 +327,14 @@ article {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .project-activity-card:hover article {
+  .project-activity-card__link:hover + .project-activity-card__surface {
     border-color: rgba($primary, 0.38);
     box-shadow: 0 0.8rem 2rem rgba(10, 7, 20, 0.08);
     transform: translateY(-1px);
   }
 }
 
-.project-activity-card:active article {
+.project-activity-card__link:active + .project-activity-card__surface {
   box-shadow: 0 0.18rem 0.55rem rgba(10, 7, 20, 0.04);
   transform: translateY(1px) scale(0.99);
 }
@@ -376,6 +388,8 @@ article {
 }
 
 .activity-card__translation-control {
+  position: relative;
+  z-index: 2;
   margin-bottom: -0.25rem;
 }
 
@@ -427,7 +441,7 @@ h3 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  article {
+  .project-activity-card__surface {
     transition: none;
   }
 }
