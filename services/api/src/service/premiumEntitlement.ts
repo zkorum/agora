@@ -24,6 +24,7 @@ import {
     conversationTranslationTargetLanguageTable,
     organizationMembershipTable,
     organizationTable,
+    polisConversationConfigTable,
     premiumFeatureEntitlementTable,
     projectOrganizationOwnershipTable,
     surveyConfigTable,
@@ -681,8 +682,15 @@ async function clearPreferredOpinionGroupCountForSubject({
     const conversationRows =
         subject.organizationId !== undefined
             ? await db
-                  .select({ conversationId: conversationTable.id })
+                  .select({ polisConfigId: polisConversationConfigTable.id })
                   .from(conversationTable)
+                  .innerJoin(
+                      polisConversationConfigTable,
+                      eq(
+                          polisConversationConfigTable.id,
+                          conversationTable.polisConfigId,
+                      ),
+                  )
                   .innerJoin(
                       projectOrganizationOwnershipTable,
                       and(
@@ -699,28 +707,39 @@ async function clearPreferredOpinionGroupCountForSubject({
                               projectOrganizationOwnershipTable.organizationId,
                               subject.organizationId,
                           ),
-                          isNotNull(conversationTable.preferredOpinionGroupCount),
+                          isNotNull(
+                              polisConversationConfigTable.preferredOpinionGroupCount,
+                          ),
                       ),
                   )
             : await db
-                  .select({ conversationId: conversationTable.id })
+                  .select({ polisConfigId: polisConversationConfigTable.id })
                   .from(conversationTable)
+                  .innerJoin(
+                      polisConversationConfigTable,
+                      eq(
+                          polisConversationConfigTable.id,
+                          conversationTable.polisConfigId,
+                      ),
+                  )
                   .where(
                       and(
                           eq(conversationTable.projectId, subject.projectId),
-                          isNotNull(conversationTable.preferredOpinionGroupCount),
+                          isNotNull(
+                              polisConversationConfigTable.preferredOpinionGroupCount,
+                          ),
                       ),
                   );
 
-    const conversationIds = conversationRows.map((row) => row.conversationId);
-    if (conversationIds.length === 0) {
+    const polisConfigIds = conversationRows.map((row) => row.polisConfigId);
+    if (polisConfigIds.length === 0) {
         return;
     }
 
     await db
-        .update(conversationTable)
+        .update(polisConversationConfigTable)
         .set({ preferredOpinionGroupCount: null })
-        .where(inArray(conversationTable.id, conversationIds));
+        .where(inArray(polisConversationConfigTable.id, polisConfigIds));
 }
 
 export async function buildConversationEditPermissions({

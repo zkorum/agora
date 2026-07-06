@@ -25,8 +25,10 @@
         :is-private="conversationDraft.isPrivate"
         :title="conversationDraft.title"
         size="large"
-        :conversation-type="conversationDraft.conversationType"
+        :conversation-type-config="conversationDraft"
         :external-source-config="conversationDraft.externalSourceConfig"
+        :project-context="undefined"
+        project-context-title-mode="original"
       />
 
       <!-- GitHub-linked: show read-only preview (items will sync from GitHub) -->
@@ -76,14 +78,14 @@
       <div v-else class="seed-opinions-section">
         <div class="section-title">
           {{
-            conversationDraft.conversationType === "maxdiff"
+            isMaxDiffDraft
               ? t("addMaxDiffItems")
               : t("addSeedOpinions")
           }}
         </div>
         <p class="section-description">
           {{
-            conversationDraft.conversationType === "maxdiff"
+            isMaxDiffDraft
               ? t("maxDiffSeedDescription")
               : t("seedOpinionsDescription")
           }}
@@ -126,7 +128,7 @@
         <div class="add-button-container">
           <ConversationControlButton
             :label="
-              conversationDraft.conversationType === 'maxdiff'
+              isMaxDiffDraft
                 ? t('addMaxDiffItem')
                 : t('addOpinion')
             "
@@ -217,6 +219,11 @@ const { validateForReview, isDraftModified, resetDraft } = useConversationDraft(
   { syncToStore: true }
 );
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
+const isMaxDiffDraft = computed(
+  () =>
+    conversationDraft.value.conversationType === "ranking" &&
+    conversationDraft.value.rankingMode === "bws"
+);
 
 const { previewGitHubIssues } = useMaxDiffApi();
 const { publishConversationDraft } = usePublishConversationDraft();
@@ -429,7 +436,7 @@ function validateSeedOpinions(): boolean {
 
   // MaxDiff requires minimum 2 seed opinions
   if (
-    conversationDraft.value.conversationType === "maxdiff" &&
+    isMaxDiffDraft.value &&
     conversationDraft.value.seedOpinions.filter(
       (s: string) => s.trim().length > 0
     ).length < 2

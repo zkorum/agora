@@ -4,7 +4,7 @@ from content_translation_worker.db import (
     TranslationSourceDecision,
     TranslationSourceMetadata,
     build_translation_source_metadata_from_results,
-    choose_opinion_translation_source,
+    choose_user_content_translation_source,
     should_promote_google_source_metadata,
 )
 from content_translation_worker.generated_models import (
@@ -131,8 +131,8 @@ def test_non_google_or_unrecognized_source_metadata_is_not_promoted() -> None:
     )
 
 
-def test_unknown_opinion_source_uses_google_auto_detection() -> None:
-    assert choose_opinion_translation_source(
+def test_unknown_user_content_source_uses_google_auto_detection() -> None:
+    assert choose_user_content_translation_source(
         source_language_code=None,
         source_language_provider=None,
         source_language_confidence=None,
@@ -142,8 +142,8 @@ def test_unknown_opinion_source_uses_google_auto_detection() -> None:
     )
 
 
-def test_google_opinion_source_is_passed_without_repromotion() -> None:
-    assert choose_opinion_translation_source(
+def test_google_user_content_source_is_passed_without_repromotion() -> None:
+    assert choose_user_content_translation_source(
         source_language_code="ky",
         source_language_provider=LanguageDetectionProvider.google_translate,
         source_language_confidence=None,
@@ -153,8 +153,8 @@ def test_google_opinion_source_is_passed_without_repromotion() -> None:
     )
 
 
-def test_high_confidence_lingua_opinion_source_is_passed_without_repromotion() -> None:
-    assert choose_opinion_translation_source(
+def test_high_confidence_lingua_user_content_source_is_passed_without_repromotion() -> None:
+    assert choose_user_content_translation_source(
         source_language_code="fr",
         source_language_provider=LanguageDetectionProvider.lingua,
         source_language_confidence=0.8,
@@ -164,8 +164,8 @@ def test_high_confidence_lingua_opinion_source_is_passed_without_repromotion() -
     )
 
 
-def test_low_confidence_lingua_opinion_source_uses_google_auto_detection() -> None:
-    assert choose_opinion_translation_source(
+def test_low_confidence_lingua_user_content_source_uses_google_auto_detection() -> None:
+    assert choose_user_content_translation_source(
         source_language_code="kk",
         source_language_provider=LanguageDetectionProvider.lingua,
         source_language_confidence=0.79,
@@ -175,8 +175,8 @@ def test_low_confidence_lingua_opinion_source_uses_google_auto_detection() -> No
     )
 
 
-def test_unattributed_opinion_source_uses_google_auto_detection() -> None:
-    assert choose_opinion_translation_source(
+def test_unattributed_user_content_source_uses_google_auto_detection() -> None:
+    assert choose_user_content_translation_source(
         source_language_code="en",
         source_language_provider=None,
         source_language_confidence=None,

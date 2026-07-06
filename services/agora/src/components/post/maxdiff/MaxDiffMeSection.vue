@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ApiV1MaxdiffLoadPost200Response } from "src/api";
+import type { ApiV1RankingBwsLoadPost200Response } from "src/api";
 import AnalysisActionButton from "src/components/post/analysis/common/AnalysisActionButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { MaxDiffComparison } from "src/shared/types/zod";
@@ -58,13 +58,13 @@ import {
 } from "./MaxDiffResultsTab.i18n";
 
 interface ClickItemData {
-  title: string;
-  body: string | null;
+  itemSlugId: string;
+  displayContent: MaxDiffListItem["displayContent"];
   externalUrl: string | null;
 }
 
 const props = defineProps<{
-  loadData: ApiV1MaxdiffLoadPost200Response | undefined;
+  loadData: ApiV1RankingBwsLoadPost200Response | undefined;
   allItems: MaxDiffListItem[];
   compactMode: boolean;
   onClickItem: (item: ClickItemData) => void;

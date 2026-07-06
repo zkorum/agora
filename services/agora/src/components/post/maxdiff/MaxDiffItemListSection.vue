@@ -79,19 +79,22 @@ import AnalysisTitleHeader from "src/components/post/analysis/common/AnalysisTit
 import CompactFadeContainer from "src/components/post/analysis/common/CompactFadeContainer.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
+import { htmlToCountedText } from "src/shared/shared";
+import type { RankingItemDisplayedContent } from "src/shared/types/zod";
 import { computed } from "vue";
 
 export interface MaxDiffListItem {
   slugId: string;
   title: string;
   body: string | null;
+  displayContent: RankingItemDisplayedContent;
   score: number | null;
   externalUrl: string | null;
 }
 
 interface ClickItemData {
-  title: string;
-  body: string | null;
+  itemSlugId: string;
+  displayContent: RankingItemDisplayedContent;
   externalUrl: string | null;
 }
 
@@ -117,12 +120,8 @@ const displayItems = computed(() =>
 
 const hasMore = computed(() => props.items.length > COMPACT_LIMIT);
 
-function plainTextFromHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").trim();
-}
-
 function hasBodyContent(body: string | null): boolean {
-  return body !== null && plainTextFromHtml(body).length > 0;
+  return body !== null && htmlToCountedText(body).trim().length > 0;
 }
 
 function canOpenItem(item: MaxDiffListItem): boolean {
@@ -134,7 +133,7 @@ function canOpenItem(item: MaxDiffListItem): boolean {
   }
   return (
     props.compactMode &&
-    plainTextFromHtml(item.title).length > EXPANDABLE_COMPACT_TITLE_LENGTH
+    htmlToCountedText(item.title).length > EXPANDABLE_COMPACT_TITLE_LENGTH
   );
 }
 
@@ -143,8 +142,8 @@ function handleItemClick(item: MaxDiffListItem): void {
     return;
   }
   props.onClickItem({
-    title: item.title,
-    body: item.body,
+    itemSlugId: item.slugId,
+    displayContent: item.displayContent,
     externalUrl: item.externalUrl,
   });
 }

@@ -60,6 +60,7 @@ from agora_analysis_worker_shared.generated_models import (
     OpinionGroupLineageDescriptionWork,
     OpinionGroupOpinionStats,
     OpinionGroupVariant,
+    PolisConversationConfig,
     RealtimeEventOutbox,
 )
 from agora_analysis_worker_shared.generated_shared_types import (
@@ -656,12 +657,16 @@ def fetch_claimable_ai_description_work_conversation_ids(
                     Conversation.id == OpinionGroupLineageDescriptionWork.conversation_id,
                 )
                 .join(
+                    PolisConversationConfig,
+                    PolisConversationConfig.id == Conversation.polis_config_id,
+                )
+                .join(
                     OpinionGroupLineage,
                     OpinionGroupLineage.id == OpinionGroupLineageDescriptionWork.lineage_id,
                 )
                 .where(
                     and_(
-                        Conversation.ai_labeling_enabled.is_(True),
+                        PolisConversationConfig.ai_labeling_enabled.is_(True),
                         OpinionGroupLineage.system_description_id.is_(None),
                         OpinionGroupLineageDescriptionWork.lease_token.is_(None),
                         _lineage_work_relevant_candidate_filter(
@@ -710,9 +715,13 @@ def fetch_claimable_ai_description_work_conversation_ids(
                     Conversation,
                     Conversation.id == OpinionGroupDescriptionTranslationWork.conversation_id,
                 )
+                .join(
+                    PolisConversationConfig,
+                    PolisConversationConfig.id == Conversation.polis_config_id,
+                )
                 .where(
                     and_(
-                        Conversation.ai_labeling_enabled.is_(True),
+                        PolisConversationConfig.ai_labeling_enabled.is_(True),
                         OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
                         _translation_work_relevant_candidate_filter(
                             conversation_view_snapshot_ids=None,
@@ -941,9 +950,13 @@ def fetch_ai_description_view_snapshot_ids_for_analysis_snapshots(
                 Conversation,
                 Conversation.id == ConversationViewSnapshot.conversation_id,
             )
+            .join(
+                PolisConversationConfig,
+                PolisConversationConfig.id == Conversation.polis_config_id,
+            )
             .where(
                 and_(
-                    Conversation.ai_labeling_enabled.is_(True),
+                    PolisConversationConfig.ai_labeling_enabled.is_(True),
                     _processable_conversation_condition(),
                     ConversationViewSnapshot.analysis_snapshot_id.in_(
                         sorted(set(analysis_snapshot_ids))
@@ -1016,6 +1029,7 @@ def _fetch_candidate_locale_request_rows(
             AnalysisSnapshotResult.id == OpinionGroupCandidate.snapshot_result_id,
         )
         .join(Conversation, Conversation.id == AnalysisSnapshotResult.conversation_id)
+        .join(PolisConversationConfig, PolisConversationConfig.id == Conversation.polis_config_id)
         .join(
             ConversationViewSnapshot,
             and_(
@@ -1030,7 +1044,7 @@ def _fetch_candidate_locale_request_rows(
         .where(
             and_(
                 conversation_filter,
-                Conversation.ai_labeling_enabled.is_(True),
+                PolisConversationConfig.ai_labeling_enabled.is_(True),
                 processable_filter,
                 locale_filter,
                 AnalysisSnapshotResult.outcome == AnalysisResultOutcomeEnum.success,
@@ -2056,7 +2070,7 @@ def _fetch_eager_description_candidates(
             ConversationViewSnapshot.id.label("conversation_view_snapshot_id"),
             OpinionGroupCandidate.id.label("candidate_id"),
             OpinionGroupVariant.group_count,
-            Conversation.preferred_opinion_group_count,
+            PolisConversationConfig.preferred_opinion_group_count,
             OpinionGroupCandidateAssessment.selection_score,
         )
         .join(
@@ -2072,6 +2086,7 @@ def _fetch_eager_description_candidates(
             OpinionGroupCandidateAssessment.candidate_id == OpinionGroupCandidate.id,
         )
         .join(Conversation, Conversation.id == AnalysisSnapshotResult.conversation_id)
+        .join(PolisConversationConfig, PolisConversationConfig.id == Conversation.polis_config_id)
         .join(
             ConversationViewSnapshot,
             and_(
@@ -2086,7 +2101,7 @@ def _fetch_eager_description_candidates(
         .where(
             and_(
                 conversation_filter,
-                Conversation.ai_labeling_enabled.is_(True),
+                PolisConversationConfig.ai_labeling_enabled.is_(True),
                 _processable_conversation_condition(),
                 AnalysisSnapshotResult.outcome == AnalysisResultOutcomeEnum.success,
                 OpinionGroupCandidate.outcome == AnalysisResultOutcomeEnum.success,
@@ -2425,11 +2440,12 @@ def _translation_work_candidate_relevance_conditions(
     )
     effective_preferred_candidate = or_(
         and_(
-            Conversation.preferred_opinion_group_count.is_not(None),
-            OpinionGroupVariant.group_count == Conversation.preferred_opinion_group_count,
+            PolisConversationConfig.preferred_opinion_group_count.is_not(None),
+            OpinionGroupVariant.group_count
+            == PolisConversationConfig.preferred_opinion_group_count,
         ),
         and_(
-            Conversation.preferred_opinion_group_count.is_(None),
+            PolisConversationConfig.preferred_opinion_group_count.is_(None),
             ~higher_priority_auto_candidate_exists,
         ),
     )
@@ -2484,6 +2500,7 @@ def _translation_work_relevant_candidate_exists_filter(
             AnalysisSnapshotResult.id == OpinionGroupCandidate.snapshot_result_id,
         )
         .join(Conversation, Conversation.id == AnalysisSnapshotResult.conversation_id)
+        .join(PolisConversationConfig, PolisConversationConfig.id == Conversation.polis_config_id)
         .join(
             ConversationContent,
             ConversationContent.id == Conversation.current_content_id,
@@ -2513,7 +2530,7 @@ def _translation_work_relevant_candidate_exists_filter(
             and_(
                 AnalysisSnapshotResult.conversation_id
                 == OpinionGroupDescriptionTranslationWork.conversation_id,
-                Conversation.ai_labeling_enabled.is_(True),
+                PolisConversationConfig.ai_labeling_enabled.is_(True),
                 AnalysisSnapshotResult.outcome == AnalysisResultOutcomeEnum.success,
                 OpinionGroupCandidate.outcome == AnalysisResultOutcomeEnum.success,
                 OpinionGroupCandidateAssessment.hidden_reason.is_(None),
@@ -2726,13 +2743,17 @@ def _claim_ai_description_locale_work_items_batch(
                         Conversation.id == OpinionGroupLineageDescriptionWork.conversation_id,
                     )
                     .join(
+                        PolisConversationConfig,
+                        PolisConversationConfig.id == Conversation.polis_config_id,
+                    )
+                    .join(
                         OpinionGroupLineage,
                         OpinionGroupLineage.id == OpinionGroupLineageDescriptionWork.lineage_id,
                     )
                     .where(
                         and_(
                             OpinionGroupLineageDescriptionWork.conversation_id == conversation_id,
-                            Conversation.ai_labeling_enabled.is_(True),
+                            PolisConversationConfig.ai_labeling_enabled.is_(True),
                             _processable_conversation_condition(),
                             OpinionGroupLineage.system_description_id.is_(None),
                             OpinionGroupLineageDescriptionWork.lease_token.is_(None),
@@ -2858,10 +2879,14 @@ def _claim_ai_description_locale_work_items_batch(
                     Conversation,
                     Conversation.id == OpinionGroupDescriptionTranslationWork.conversation_id,
                 )
+                .join(
+                    PolisConversationConfig,
+                    PolisConversationConfig.id == Conversation.polis_config_id,
+                )
                 .where(
                     and_(
                         OpinionGroupDescriptionTranslationWork.conversation_id == conversation_id,
-                        Conversation.ai_labeling_enabled.is_(True),
+                        PolisConversationConfig.ai_labeling_enabled.is_(True),
                         _processable_conversation_condition(),
                         OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
                         translation_attempt_filter,

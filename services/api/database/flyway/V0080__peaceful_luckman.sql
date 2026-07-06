@@ -5,6 +5,10 @@
 -- constraints are deferred.
 ALTER TABLE "conversation" ALTER COLUMN "conversation_type" SET DATA TYPE text;--> statement-breakpoint
 ALTER TABLE "conversation" ALTER COLUMN "conversation_type" SET DEFAULT 'polis'::text;--> statement-breakpoint
+-- This data rewrite belongs in the enum migration rather than V0079.1 because
+-- the old conversation_type enum cannot store 'ranking'. V0079.1 must still see
+-- 'maxdiff' to copy legacy rows into ranking_conversation_config first.
+UPDATE "conversation" SET "conversation_type" = 'ranking' WHERE "conversation_type" = 'maxdiff';--> statement-breakpoint
 DROP TYPE "public"."conversation_type";--> statement-breakpoint
 CREATE TYPE "public"."conversation_type" AS ENUM('polis', 'ranking');--> statement-breakpoint
 ALTER TABLE "conversation" ALTER COLUMN "conversation_type" SET DEFAULT 'polis'::"public"."conversation_type";--> statement-breakpoint

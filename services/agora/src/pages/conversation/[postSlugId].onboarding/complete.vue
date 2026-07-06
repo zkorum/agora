@@ -5,7 +5,10 @@
     :show-close-button="true"
   >
     <template #body>
-      <ConversationSurveyOnboardingHero :conversation-data="conversationData" />
+      <ConversationSurveyOnboardingHero
+        :conversation-data="conversationData"
+        :initial-display-content="conversationDisplayContent"
+      />
     </template>
 
     <template #footer>
@@ -75,7 +78,10 @@ const conversationQuery = useConversationQuery({
   enabled: computed(() => isAuthInitialized.value),
 });
 
-const conversationData = computed(() => conversationQuery.data.value);
+const conversationData = computed(() => conversationQuery.data.value?.conversationData);
+const conversationDisplayContent = computed(
+  () => conversationQuery.data.value?.displayContent
+);
 
 async function handleBackToConversation(): Promise<void> {
   await exitToConversation({

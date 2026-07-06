@@ -310,6 +310,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dev/maxdiff-translation': RouteRecordInfo<
+      '/dev/maxdiff-translation',
+      '/dev/maxdiff-translation',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/dev/opinion-group-visualization': RouteRecordInfo<
       '/dev/opinion-group-visualization',
       '/dev/opinion-group-visualization',
@@ -972,6 +979,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dev/long-rich-text-disclosure.vue': {
       routes:
         | '/dev/long-rich-text-disclosure'
+      views:
+        | never
+    }
+    'src/pages/dev/maxdiff-translation.vue': {
+      routes:
+        | '/dev/maxdiff-translation'
       views:
         | never
     }

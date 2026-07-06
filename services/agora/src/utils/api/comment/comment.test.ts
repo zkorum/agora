@@ -41,6 +41,10 @@ type AnalysisFrameManifestWithFrame = AnalysisFrameManifest & {
 type ConversationViewSnapshot = NonNullable<
   AnalysisFrameManifest["conversationViewSnapshot"]
 >;
+type PolisConversationMetadata = Extract<
+  ConversationMetadata,
+  { conversationType: "polis" }
+>;
 
 const manifest: AnalysisFrameManifestWithFrame = {
   frameKey,
@@ -73,8 +77,8 @@ const manifest: AnalysisFrameManifestWithFrame = {
 };
 
 function conversationMetadata(
-  overrides: Partial<ConversationMetadata> = {}
-): ConversationMetadata {
+  overrides: Partial<PolisConversationMetadata> = {}
+): PolisConversationMetadata {
   const { contentLanguageMetadata, ...restOverrides } = overrides;
   return {
     conversationSlugId: "conversation-1",

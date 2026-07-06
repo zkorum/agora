@@ -28,7 +28,7 @@
         v-model:participation-mode="participationMode"
         v-model:requires-event-ticket="requiresEventTicket"
         v-model:post-as="postAs"
-        v-model:conversation-type="conversationType"
+        v-model:conversation-type-config="conversationTypeConfig"
         v-model:import-settings="importSettings"
         v-model:external-source-config="externalSourceConfig"
         v-model:title="title"
@@ -190,6 +190,7 @@ import {
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_LENGTH_CONVERSATION_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
 import type { GetConversationCreateProjectOptionsResponse } from "src/shared/types/dto";
+import type { ConversationTypeConfig } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
@@ -243,6 +244,7 @@ const {
   selectedProjectSlug,
   inheritProjectLanguages,
   conversationType,
+  rankingMode,
   isPrivate,
   participationMode,
   requiresEventTicket,
@@ -265,6 +267,26 @@ const isSubmitButtonLoading = ref(false);
 const isTitleOverLimit = ref(false);
 const isBodyOverLimit = ref(false);
 const titlePlainText = ref("");
+
+function getConversationTypeConfig(): ConversationTypeConfig {
+  if (conversationType.value === "ranking") {
+    return {
+      conversationType: "ranking",
+      rankingMode: rankingMode.value ?? "bws",
+    };
+  }
+
+  return { conversationType: "polis" };
+}
+
+const conversationTypeConfig = computed({
+  get: getConversationTypeConfig,
+  set: (value: ConversationTypeConfig) => {
+    conversationType.value = value.conversationType;
+    rankingMode.value =
+      value.conversationType === "ranking" ? value.rankingMode : undefined;
+  },
+});
 
 const isManualTitleEmpty = computed(
   () =>

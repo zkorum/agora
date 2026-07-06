@@ -1,0 +1,2 @@
+services/agora/src/api/** whitespace=-blank-at-eol
+services/load-testing/src/api/** whitespace=-blank-at-eol

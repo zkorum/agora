@@ -41,7 +41,7 @@
         v-model:title="title"
         v-model:content="content"
         v-model:multilingual-setting="multilingualSetting"
-        v-model:conversation-type="conversationType"
+        v-model:conversation-type-config="conversationTypeConfig"
         v-model:ai-labeling-enabled="aiLabelingEnabled"
         v-model:preferred-opinion-group-count="preferredOpinionGroupCount"
         :is-edit-mode="true"
@@ -159,6 +159,7 @@ import type {
 import type {
   ContentLanguageMetadataOutput,
   ConversationMultilingualSetting,
+  ConversationTypeConfig,
   ParticipationMode,
   PreferredOpinionGroupCount,
   ProjectLanguageSettings,
@@ -376,6 +377,7 @@ const {
   importSettings,
   externalSourceConfig,
   conversationType,
+  rankingMode,
   validationState,
   validateTitle,
   validateBody,
@@ -383,6 +385,26 @@ const {
   updateContent,
   initializeFromData,
 } = useConversationDraft({ syncToStore: false });
+
+function getConversationTypeConfig(): ConversationTypeConfig {
+  if (conversationType.value === "ranking") {
+    return {
+      conversationType: "ranking",
+      rankingMode: rankingMode.value ?? "bws",
+    };
+  }
+
+  return { conversationType: "polis" };
+}
+
+const conversationTypeConfig = computed({
+  get: getConversationTypeConfig,
+  set: (value: ConversationTypeConfig) => {
+    conversationType.value = value.conversationType;
+    rankingMode.value =
+      value.conversationType === "ranking" ? value.rankingMode : undefined;
+  },
+});
 
 const currentProjectLanguageProject = ref<
   CurrentProjectLanguageProject | undefined

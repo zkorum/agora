@@ -187,26 +187,36 @@ export function useUpdateConversationMutation() {
       updateConversationQueryCache({
         queryClient,
         conversationSlugId: variables.conversationSlugId,
-        updateConversation: (oldData) => ({
-          ...oldData,
-          metadata: {
-            ...oldData.metadata,
-            isIndexed: variables.isIndexed,
-            aiLabelingEnabled:
-              variables.aiLabelingEnabled ?? oldData.metadata.aiLabelingEnabled,
-            preferredOpinionGroupCount:
-              variables.preferredOpinionGroupCount === undefined
-                ? oldData.metadata.preferredOpinionGroupCount
-                : variables.preferredOpinionGroupCount,
-            participationMode: variables.participationMode,
-            requiresEventTicket: variables.requiresEventTicket,
-          },
-          payload: {
-            ...oldData.payload,
-            title: variables.conversationTitle,
-            body: variables.conversationBody,
-          },
-        }),
+        updateConversation: (oldData) => {
+          const updatedData = {
+            ...oldData,
+            metadata: {
+              ...oldData.metadata,
+              isIndexed: variables.isIndexed,
+              aiLabelingEnabled:
+                variables.aiLabelingEnabled ?? oldData.metadata.aiLabelingEnabled,
+              preferredOpinionGroupCount:
+                variables.preferredOpinionGroupCount === undefined
+                  ? oldData.metadata.preferredOpinionGroupCount
+                  : variables.preferredOpinionGroupCount,
+              participationMode: variables.participationMode,
+              requiresEventTicket: variables.requiresEventTicket,
+            },
+          };
+
+          if (!("payload" in oldData)) {
+            return updatedData;
+          }
+
+          return {
+            ...updatedData,
+            payload: {
+              ...oldData.payload,
+              title: variables.conversationTitle,
+              body: variables.conversationBody,
+            },
+          };
+        },
       });
 
       return { previousConversations };

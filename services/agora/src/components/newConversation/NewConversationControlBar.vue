@@ -36,7 +36,7 @@
   <PostTypeDialog
     v-model="showPostTypeDialog"
     v-model:import-settings="importSettings"
-    v-model:conversation-type="conversationType"
+    v-model:conversation-type-config="conversationTypeConfig"
     :is-max-diff-allowed="isMaxDiffAllowed"
     :is-import-allowed="isImportAllowed"
     @mode-change-requested="handleModeChangeRequest"
@@ -121,7 +121,7 @@ import {
 import type {
   AutoLanguageDetectionStatus,
   ConversationMultilingualSetting,
-  ConversationType,
+  ConversationTypeConfig,
   EventSlug,
   ExternalSourceConfig,
   OrganizationProperties,
@@ -205,9 +205,18 @@ const requiresEventTicket = defineModel<EventSlug | undefined>(
   { required: true }
 );
 const postAs = defineModel<PostAsSettings>("postAs", { required: true });
-const conversationType = defineModel<ConversationType>("conversationType", {
-  required: true,
-});
+const conversationTypeConfig = defineModel<ConversationTypeConfig>(
+  "conversationTypeConfig",
+  { required: true }
+);
+const conversationType = computed(
+  () => conversationTypeConfig.value.conversationType
+);
+const rankingMode = computed(() =>
+  conversationTypeConfig.value.conversationType === "ranking"
+    ? conversationTypeConfig.value.rankingMode
+    : undefined
+);
 const importSettings = defineModel<ConversationImportSettings>(
   "importSettings",
   { required: true }
@@ -291,16 +300,18 @@ function checkHasContentThatWouldBeCleared(): boolean {
 
 interface ModeChangeConfig {
   importType: "polis-url" | "csv-import" | null;
-  conversationType: ConversationType;
+  conversationTypeConfig: ConversationTypeConfig;
 }
 
 const pendingModeChangeConfig = ref<ModeChangeConfig | null>(null);
 
 const handleModeChangeRequest = (config: ModeChangeConfig): void => {
-  // Set conversation type immediately
-  conversationType.value = config.conversationType;
+  conversationTypeConfig.value = config.conversationTypeConfig;
 
-  if (config.conversationType === "maxdiff") {
+  if (
+    config.conversationTypeConfig.conversationType === "ranking" &&
+    config.conversationTypeConfig.rankingMode === "bws"
+  ) {
     // Auto-open source dialog if GitHub is allowed
     if (isMaxDiffGitHubAllowed.value) {
       showMaxDiffSourceDialog.value = true;
@@ -635,7 +646,7 @@ const controlButtons = computed((): ControlButton[] => [
   {
     id: "post-type",
     label:
-      conversationType.value === "maxdiff"
+      conversationType.value === "ranking" && rankingMode.value === "bws"
         ? t("typeMaxDiff")
         : importSettings.value.importType === "polis-url"
           ? t("importFromPolisUrl")

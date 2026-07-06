@@ -6,7 +6,10 @@ import {
     opinionTable,
     conversationModerationTable,
     organizationTable,
+    polisConversationConfigTable,
     rankingItemTable,
+    rankingConversationConfigTable,
+    conversationImportSourceTable,
     projectOrganizationOwnershipTable,
 } from "@/shared-backend/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
@@ -16,6 +19,7 @@ import type {
     ExtendedConversationPerSlugId,
     ExtendedConversation,
     ConversationType,
+    RankingMode,
     FeedSortAlgorithm,
     EventSlug,
     ParticipationMode,
@@ -49,6 +53,40 @@ import {
     DEFAULT_CONVERSATION_MULTILINGUAL_SETTING,
     getConversationMultilingualSettingsByConversationId,
 } from "./conversationMultilingual.js";
+
+function requireJoinedRankingMode({
+    conversationId,
+    rankingMode,
+}: {
+    conversationId: number;
+    rankingMode: RankingMode | null;
+}): RankingMode {
+    if (rankingMode !== null) {
+        return rankingMode;
+    }
+
+    log.error(
+        `[CommonPost] Ranking conversation ${String(conversationId)} is missing ranking config`,
+    );
+    throw httpErrors.internalServerError("Invalid conversation configuration");
+}
+
+function requireJoinedPolisConfig({
+    aiLabelingEnabled,
+    conversationId,
+}: {
+    aiLabelingEnabled: boolean | null;
+    conversationId: number;
+}): boolean {
+    if (aiLabelingEnabled !== null) {
+        return aiLabelingEnabled;
+    }
+
+    log.error(
+        `[CommonPost] Polis conversation ${String(conversationId)} is missing Polis config`,
+    );
+    throw httpErrors.internalServerError("Invalid conversation configuration");
+}
 
 export function useCommonUser() {
     interface GetUserIdFromUsernameProps {
@@ -262,27 +300,31 @@ export function useCommonPost() {
                 organizationIsFullImagePath: organizationTable.isFullImagePath,
                 organizationDescription: organizationTable.description,
                 isIndexed: conversationTable.isIndexed,
-                aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+                aiLabelingEnabled:
+                    polisConversationConfigTable.aiLabelingEnabled,
                 preferredOpinionGroupCount:
-                    conversationTable.preferredOpinionGroupCount,
+                    polisConversationConfigTable.preferredOpinionGroupCount,
                 participationMode: conversationTable.participationMode,
                 conversationType: conversationTable.conversationType,
+                rankingMode: rankingConversationConfigTable.rankingMode,
                 isClosed: conversationTable.isClosed,
                 isEdited: conversationTable.isEdited,
                 requiresEventTicket: conversationTable.requiresEventTicket,
-                externalSourceConfig: conversationTable.externalSourceConfig,
+                externalSourceConfig:
+                    rankingConversationConfigTable.externalSourceConfig,
                 sourceLanguageCode: conversationContentTable.sourceLanguageCode,
                 sourceRawLanguageCode:
                     conversationContentTable.sourceRawLanguageCode,
                 sourceLanguageConfidence:
                     conversationContentTable.sourceLanguageConfidence,
                 // import metadata
-                importUrl: conversationTable.importUrl,
-                importConversationUrl: conversationTable.importConversationUrl,
-                importExportUrl: conversationTable.importExportUrl,
-                importCreatedAt: conversationTable.importCreatedAt,
-                importAuthor: conversationTable.importAuthor,
-                importMethod: conversationTable.importMethod,
+                importUrl: conversationImportSourceTable.importUrl,
+                importConversationUrl:
+                    conversationImportSourceTable.importConversationUrl,
+                importExportUrl: conversationImportSourceTable.importExportUrl,
+                importCreatedAt: conversationImportSourceTable.importCreatedAt,
+                importAuthor: conversationImportSourceTable.importAuthor,
+                importMethod: conversationImportSourceTable.importMethod,
                 // moderation
                 moderationAction: conversationModerationTable.moderationAction,
                 moderationExplanation:
@@ -321,6 +363,27 @@ export function useCommonPost() {
                 eq(
                     personalOrganizationUserTable.id,
                     organizationTable.autoProvisionedForUserId,
+                ),
+            )
+            .leftJoin(
+                polisConversationConfigTable,
+                eq(
+                    polisConversationConfigTable.id,
+                    conversationTable.polisConfigId,
+                ),
+            )
+            .leftJoin(
+                rankingConversationConfigTable,
+                eq(
+                    rankingConversationConfigTable.id,
+                    conversationTable.rankingConfigId,
+                ),
+            )
+            .leftJoin(
+                conversationImportSourceTable,
+                eq(
+                    conversationImportSourceTable.conversationId,
+                    conversationTable.id,
                 ),
             )
             .leftJoin(
@@ -423,8 +486,7 @@ export function useCommonPost() {
                     latestViewSnapshotCountsByConversationId,
                 conversationId: postItem.conversationId,
             });
-
-            const metadata: ConversationMetadata = {
+            const metadataBase = {
                 conversationSlugId: postItem.slugId,
                 conversationViewSnapshotId:
                     displayCounts.conversationViewSnapshotId,
@@ -442,8 +504,6 @@ export function useCommonPost() {
                 hiddenOpinionCount: displayCounts.hiddenOpinionCount,
                 authorUsername: postItem.authorName ?? postItem.organizationName,
                 isIndexed: postItem.isIndexed,
-                aiLabelingEnabled: postItem.aiLabelingEnabled,
-                preferredOpinionGroupCount: postItem.preferredOpinionGroupCount,
                 contentLanguageMetadata:
                     conversationContentSourceMetadataToContentLanguageMetadataOutput({
                         sourceLanguageCode: postItem.sourceLanguageCode,
@@ -463,7 +523,6 @@ export function useCommonPost() {
                         postItem.conversationId,
                     ) ?? DEFAULT_CONVERSATION_MULTILINGUAL_SETTING,
                 participationMode: postItem.participationMode,
-                conversationType: postItem.conversationType,
                 isClosed: postItem.isClosed,
                 isEdited: postItem.isEdited,
                 requiresEventTicket: postItem.requiresEventTicket ?? undefined,
@@ -520,9 +579,37 @@ export function useCommonPost() {
                           }
                         : undefined,
             };
+            const metadata: ConversationMetadata = (() => {
+                if (postItem.conversationType === "ranking") {
+                    const rankingMode = requireJoinedRankingMode({
+                        conversationId: postItem.conversationId,
+                        rankingMode: postItem.rankingMode,
+                    });
+                    return {
+                        ...metadataBase,
+                        conversationType: "ranking",
+                        rankingMode,
+                        aiLabelingEnabled: false,
+                        preferredOpinionGroupCount: null,
+                    };
+                }
+
+                const aiLabelingEnabled = requireJoinedPolisConfig({
+                    aiLabelingEnabled: postItem.aiLabelingEnabled,
+                    conversationId: postItem.conversationId,
+                });
+
+                return {
+                    ...metadataBase,
+                    conversationType: "polis",
+                    aiLabelingEnabled,
+                    preferredOpinionGroupCount:
+                        postItem.preferredOpinionGroupCount,
+                };
+            })();
 
             // For MaxDiff conversations, override opinionCount with active item count
-            if (postItem.conversationType === "maxdiff") {
+            if (postItem.conversationType === "ranking") {
                 const [itemCountResult] = await db
                     .select({
                         count: sql<number>`count(*)::int`,
@@ -604,6 +691,7 @@ export function useCommonPost() {
         id: number;
         contentId: number | null;
         conversationType: ConversationType;
+        rankingMode: RankingMode | null;
         participantCount: number;
         opinionCount: number;
         voteCount: number;
@@ -635,11 +723,19 @@ export function useCommonPost() {
                 isIndexed: conversationTable.isIndexed,
                 participationMode: conversationTable.participationMode,
                 conversationType: conversationTable.conversationType,
+                rankingMode: rankingConversationConfigTable.rankingMode,
                 isClosed: conversationTable.isClosed,
                 isEdited: conversationTable.isEdited,
                 requiresEventTicket: conversationTable.requiresEventTicket,
             })
             .from(conversationTable)
+            .leftJoin(
+                rankingConversationConfigTable,
+                eq(
+                    rankingConversationConfigTable.id,
+                    conversationTable.rankingConfigId,
+                ),
+            )
             .where(
                 and(
                     eq(conversationTable.slugId, conversationSlugId),
@@ -649,19 +745,27 @@ export function useCommonPost() {
         if (postTableResponse.length === 0) {
             throw httpErrors.notFound("Conversation slugId not found");
         }
+        const post = postTableResponse[0];
+        const rankingMode =
+            post.conversationType === "ranking"
+                ? requireJoinedRankingMode({
+                      conversationId: post.id,
+                      rankingMode: post.rankingMode,
+                  })
+                : null;
         const latestViewSnapshotCountsByConversationId =
             await fetchLatestConversationViewSnapshotCountsByConversationId({
                 db,
-                conversationIds: [postTableResponse[0].id],
+                conversationIds: [post.id],
             });
         const displayCounts = requireConversationDisplayCounts({
             countsByConversationId: latestViewSnapshotCountsByConversationId,
-            conversationId: postTableResponse[0].id,
+            conversationId: post.id,
         });
 
         return {
-            contentId: postTableResponse[0].currentContentId,
-            id: postTableResponse[0].id,
+            contentId: post.currentContentId,
+            id: post.id,
             participantCount: displayCounts.participantCount,
             voteCount: displayCounts.voteCount,
             opinionCount: displayCounts.opinionCount,
@@ -670,11 +774,12 @@ export function useCommonPost() {
             totalOpinionCount: displayCounts.totalOpinionCount,
             moderatedOpinionCount: displayCounts.moderatedOpinionCount,
             hiddenOpinionCount: displayCounts.hiddenOpinionCount,
-            isIndexed: postTableResponse[0].isIndexed,
-            participationMode: postTableResponse[0].participationMode,
-            conversationType: postTableResponse[0].conversationType,
-            isClosed: postTableResponse[0].isClosed,
-            requiresEventTicket: postTableResponse[0].requiresEventTicket,
+            isIndexed: post.isIndexed,
+            participationMode: post.participationMode,
+            conversationType: post.conversationType,
+            rankingMode,
+            isClosed: post.isClosed,
+            requiresEventTicket: post.requiresEventTicket,
         };
     }
 

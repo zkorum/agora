@@ -15664,7 +15664,7 @@
       "name": "ranking_mode",
       "schema": "public",
       "values": [
-        "maxdiff"
+        "bws"
       ]
     },
     "public.report_reason_enum": {

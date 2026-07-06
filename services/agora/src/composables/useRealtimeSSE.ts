@@ -1209,7 +1209,7 @@ export function useRealtimeSSE({
         const translationControl = displayContent.translationControl;
         if (
           translationControl === null ||
-          translationControl.targetLanguageCode !== data.targetLanguageCode
+          displayContent.sourceVersion !== data.sourceVersion
         ) {
           return previousData;
         }

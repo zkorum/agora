@@ -664,7 +664,7 @@ function createCommentItems({ count }: { count: number }): DisplayedOpinionItem[
       updatedAt: now,
       opinion: `<p>${content}</p>`,
       displayContent: {
-        contentId: `00000000-0000-4000-8000-${sequenceNumber.toString().padStart(12, "0")}`,
+        sourceVersion: `00000000-0000-4000-8000-${sequenceNumber.toString().padStart(12, "0")}`,
         status: "available",
         mode: "original",
         content: { content: `<p>${content}</p>` },

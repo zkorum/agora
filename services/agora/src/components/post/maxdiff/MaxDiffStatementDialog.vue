@@ -10,22 +10,29 @@
         />
       </div>
       <div class="dialog-body">
+        <ContentTranslationControl
+          v-if="translationPreview !== undefined"
+          v-model="translationMode"
+          class="dialog-translation-control"
+          :source-language-label="translationPreview.sourceLanguageLabel"
+          :translation-status="translationPreview.translationStatus"
+        />
         <ZKHtmlContent
           class="dialog-title-text"
-          :html-body="title"
+          :html-body="displayedTitle"
           :compact-mode="false"
           :enable-links="false"
           content-role="title"
         />
         <ZKHtmlContent
-          v-if="htmlBody"
-          :html-body="htmlBody"
+          v-if="displayedBody"
+          :html-body="displayedBody"
           :compact-mode="false"
           :enable-links="true"
         />
         <a
-          v-if="externalUrl !== null"
-          :href="externalUrl"
+          v-if="safeExternalUrl !== undefined"
+          :href="safeExternalUrl"
           target="_blank"
           rel="noopener noreferrer"
           class="github-link"
@@ -50,14 +57,19 @@
 </template>
 
 <script setup lang="ts">
+import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
+import type { RankingItemDisplayedContent } from "src/shared/types/zod";
+import { useRankingItemDisplayContent } from "src/utils/translation/useRankingItemDisplayContent";
+import { computed, watch } from "vue";
 
 const props = withDefaults(
   defineProps<{
-    title: string;
-    htmlBody: string;
+    conversationSlugId: string;
+    itemSlugId: string | undefined;
     externalUrl: string | null;
+    displayContent: RankingItemDisplayedContent | undefined;
     voteLabel?: string;
     voteColor?: string;
     voteFlat?: boolean;
@@ -72,6 +84,43 @@ const props = withDefaults(
 );
 
 const showDialog = defineModel<boolean>({ required: true });
+const {
+  displayedTitle,
+  displayedBody,
+  translationPreview,
+  setTranslationMode,
+  resetTranslationMode,
+} = useRankingItemDisplayContent({
+  conversationSlugId: computed(() => props.conversationSlugId),
+  itemSlugId: computed(() => props.itemSlugId),
+  displayContent: computed(() => props.displayContent),
+});
+
+const translationMode = computed({
+  get: () => translationPreview.value?.mode ?? "original",
+  set: setTranslationMode,
+});
+
+const safeExternalUrl = computed(() => {
+  if (props.externalUrl === null) {
+    return undefined;
+  }
+
+  try {
+    const parsedUrl = new URL(props.externalUrl);
+    return parsedUrl.protocol === "https:" || parsedUrl.protocol === "http:"
+      ? parsedUrl.href
+      : undefined;
+  } catch {
+    return undefined;
+  }
+});
+
+watch(showDialog, (isOpen) => {
+  if (!isOpen) {
+    resetTranslationMode();
+  }
+});
 
 function handleVote(): void {
   props.onVote?.();
@@ -112,6 +161,10 @@ function handleVote(): void {
   font-weight: var(--font-weight-semibold);
   font-size: 1.1rem;
   color: $ink-darkest;
+}
+
+.dialog-translation-control {
+  margin-bottom: 0.25rem;
 }
 
 .github-link {

@@ -657,6 +657,10 @@ const activities = computed<readonly ProjectActivity[]>(() => {
     scenario: bodyLengthScenario.value,
   })
     ? orderedLocalizedActivities.map((activity, activityIndex) => {
+        if (activity.displayContent.status !== "available") {
+          return activity;
+        }
+
         const bodyPlainText = createLongActivityBody({
           activity,
           activityIndex,
@@ -917,8 +921,13 @@ function createLongActivityBody({
     ],
   } satisfies Record<ProjectPageLanguage, readonly string[]>;
 
+  const bodyPlainText =
+    activity.displayContent.status === "available"
+      ? activity.displayContent.content.bodyPlainText
+      : "";
+
   return [
-    activity.displayContent.content.bodyPlainText,
+    bodyPlainText,
     ...extraSentencesByLanguage[language],
   ].join(" ");
 }

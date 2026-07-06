@@ -4,6 +4,7 @@ import {
     rankingItemTable,
     rankingItemContentTable,
     rankingItemExternalSourceTable,
+    rankingConversationConfigTable,
     rankingScoreTable,
     maxdiffComparisonTable,
     maxdiffUserEntityScoreTable,
@@ -27,6 +28,10 @@ import {
 import type { Valkey } from "@/shared-backend/valkey.js";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
 import { log } from "@/app.js";
+import {
+    buildRankingItemDisplayContentByContentId,
+    type RankingItemDisplayPreferences,
+} from "./rankingItemDisplay.js";
 
 // --- Types ---
 
@@ -157,11 +162,23 @@ export async function saveMaxdiffResult({
     const conversationTypeResult = await db
         .select({
             conversationType: conversationTable.conversationType,
+            rankingMode: rankingConversationConfigTable.rankingMode,
         })
         .from(conversationTable)
+        .leftJoin(
+            rankingConversationConfigTable,
+            eq(
+                rankingConversationConfigTable.id,
+                conversationTable.rankingConfigId,
+            ),
+        )
         .where(eq(conversationTable.id, conversationId));
 
-    if (conversationTypeResult[0]?.conversationType !== "maxdiff") {
+    const conversation = conversationTypeResult.at(0);
+    if (
+        conversation?.conversationType !== "ranking" ||
+        conversation.rankingMode !== "bws"
+    ) {
         throw httpErrors.badRequest(
             "This conversation is not a MaxDiff conversation",
         );
@@ -325,6 +342,7 @@ type LifecycleFilter = MaxdiffLifecycleStatus | "all";
 interface GetMaxdiffResultsProps {
     db: PostgresDatabase;
     conversationSlugId: string;
+    displayPreferences: RankingItemDisplayPreferences;
     lifecycleFilter?: LifecycleFilter;
     valkey?: Valkey;
 }
@@ -332,6 +350,7 @@ interface GetMaxdiffResultsProps {
 export async function getMaxdiffResults({
     db,
     conversationSlugId,
+    displayPreferences,
     lifecycleFilter = "active",
     valkey,
 }: GetMaxdiffResultsProps): Promise<MaxDiffResultsResponse> {
@@ -362,8 +381,15 @@ export async function getMaxdiffResults({
     const itemRows = await db
         .select({
             slugId: rankingItemTable.slugId,
+            contentId: rankingItemContentTable.id,
+            publicId: rankingItemContentTable.publicId,
             title: rankingItemContentTable.title,
             body: rankingItemContentTable.body,
+            sourceLanguageCode: rankingItemContentTable.sourceLanguageCode,
+            sourceRawLanguageCode: rankingItemContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider: rankingItemContentTable.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                rankingItemContentTable.sourceLanguageConfidence,
             lifecycleStatus: rankingItemTable.lifecycleStatus,
             snapshotScore: rankingItemTable.snapshotScore,
             snapshotRank: rankingItemTable.snapshotRank,
@@ -391,20 +417,56 @@ export async function getMaxdiffResults({
         );
 
     const items = itemRows.map((r) => r.slugId);
+    const itemSlugIds = new Set(items);
+    const sources = itemRows.map((r) => ({
+        conversationSlugId,
+        itemSlugId: r.slugId,
+        contentId: r.contentId,
+        publicId: r.publicId,
+        title: r.title,
+        bodyHtml: r.body,
+        sourceLanguageCode: r.sourceLanguageCode,
+        sourceRawLanguageCode: r.sourceRawLanguageCode,
+        sourceLanguageProvider: r.sourceLanguageProvider,
+        sourceLanguageConfidence: r.sourceLanguageConfidence,
+    }));
+    const displayContentByContentId = await buildRankingItemDisplayContentByContentId({
+        db,
+        sources,
+        preferences: displayPreferences,
+    });
+    const displayContentBySlugId = new Map(
+        itemRows.map((r) => {
+            const displayContent = displayContentByContentId.get(r.contentId);
+            if (displayContent === undefined) {
+                throw httpErrors.internalServerError(
+                    "Failed to build ranking item display content",
+                );
+            }
+            return [r.slugId, displayContent] as const;
+        }),
+    );
 
     // For completed/canceled items, return snapshot scores if available
     if (lifecycleFilter === "completed" || lifecycleFilter === "canceled") {
         const rankings: MaxDiffResultItem[] = itemRows
-            .map((r) => ({
-                itemSlugId: r.slugId,
-                title: r.title,
-                body: r.body,
-                avgRank: 0, // not meaningful for snapshots
-                score: r.snapshotScore ?? 0,
-                participantCount: r.snapshotParticipantCount ?? 0,
-                lifecycleStatus: r.lifecycleStatus,
-                externalUrl: r.externalUrl,
-            }))
+            .map((r) => {
+                const displayContent = displayContentBySlugId.get(r.slugId);
+                if (displayContent === undefined) {
+                    throw httpErrors.internalServerError(
+                        "Failed to locate ranking item display content",
+                    );
+                }
+                return {
+                    itemSlugId: r.slugId,
+                    displayContent,
+                    avgRank: 0, // not meaningful for snapshots
+                    score: r.snapshotScore ?? 0,
+                    participantCount: r.snapshotParticipantCount ?? 0,
+                    lifecycleStatus: r.lifecycleStatus,
+                    externalUrl: r.externalUrl,
+                };
+            })
             .sort((a, b) => b.score - a.score)
             .map((r, idx) => ({
                 ...r,
@@ -417,9 +479,14 @@ export async function getMaxdiffResults({
     // If no cache exists, requeue work for the scoring worker and return empty results.
     const cachedScoreRow = await db
         .select({
-            currentRankingScoreId: conversationTable.currentRankingScoreId,
+            currentRankingScoreId:
+                rankingConversationConfigTable.currentRankingScoreId,
         })
         .from(conversationTable)
+        .innerJoin(
+            rankingConversationConfigTable,
+            eq(rankingConversationConfigTable.id, conversationTable.rankingConfigId),
+        )
         .where(eq(conversationTable.id, conversationId));
 
     const currentScoreId =
@@ -448,7 +515,7 @@ export async function getMaxdiffResults({
                 .parse(scoreRows[0].participantCounts);
 
             scored = cachedScores
-                .filter((s) => items.includes(s.entityId))
+                .filter((s) => itemSlugIds.has(s.entityId))
                 .map((s, idx) => ({
                     itemSlugId: s.entityId,
                     avgRank: idx + 1,
@@ -488,8 +555,7 @@ export async function getMaxdiffResults({
         itemRows.map((r) => [
             r.slugId,
             {
-                title: r.title,
-                body: r.body,
+                displayContent: displayContentBySlugId.get(r.slugId),
                 lifecycleStatus: r.lifecycleStatus,
                 externalUrl: r.externalUrl,
             },
@@ -500,15 +566,19 @@ export async function getMaxdiffResults({
 
     const rankings: MaxDiffResultItem[] = scored.map((s) => {
         const content = contentMap.get(s.itemSlugId);
+        if (content?.displayContent === undefined) {
+            throw httpErrors.internalServerError(
+                "Failed to locate ranking item display content",
+            );
+        }
         return {
             itemSlugId: s.itemSlugId,
-            title: content?.title ?? "",
-            body: content?.body ?? null,
+            displayContent: content.displayContent,
             avgRank: s.avgRank,
             score: s.score,
             participantCount: s.participantCount,
-            lifecycleStatus: content?.lifecycleStatus ?? "active",
-            externalUrl: content?.externalUrl ?? null,
+            lifecycleStatus: content.lifecycleStatus,
+            externalUrl: content.externalUrl,
         };
     });
 
@@ -516,15 +586,19 @@ export async function getMaxdiffResults({
     for (const slugId of items) {
         if (scoredSlugIds.has(slugId)) continue;
         const content = contentMap.get(slugId);
+        if (content?.displayContent === undefined) {
+            throw httpErrors.internalServerError(
+                "Failed to locate ranking item display content",
+            );
+        }
         rankings.push({
             itemSlugId: slugId,
-            title: content?.title ?? "",
-            body: content?.body ?? null,
+            displayContent: content.displayContent,
             avgRank: null,
             score: null,
             participantCount: 0,
-            lifecycleStatus: content?.lifecycleStatus ?? "active",
-            externalUrl: content?.externalUrl ?? null,
+            lifecycleStatus: content.lifecycleStatus,
+            externalUrl: content.externalUrl,
         });
     }
 
@@ -556,9 +630,14 @@ export async function computeItemSnapshot({
     // Read latest scores from ranking_score table
     const convRows = await db
         .select({
-            currentRankingScoreId: conversationTable.currentRankingScoreId,
+            currentRankingScoreId:
+                rankingConversationConfigTable.currentRankingScoreId,
         })
         .from(conversationTable)
+        .innerJoin(
+            rankingConversationConfigTable,
+            eq(rankingConversationConfigTable.id, conversationTable.rankingConfigId),
+        )
         .where(eq(conversationTable.id, conversationId));
 
     const currentScoreId =

@@ -147,14 +147,16 @@
 
     <MaxDiffStatementDialog
       v-model="showStatementDialog"
-      :title="expandedTitle"
-      :html-body="expandedContent"
+      :conversation-slug-id="conversationSlugId"
+      :item-slug-id="expandedItemSlugId"
+      :display-content="expandedDisplayContent"
       :external-url="expandedExternalUrl"
     />
   </div>
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import ShortcutBar from "src/components/post/analysis/shortcutBar/ShortcutBar.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
@@ -162,11 +164,15 @@ import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogCon
 import type { RegisterChildRefreshHandler } from "src/composables/conversation/useConversationParentState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTabNavigation } from "src/composables/ui/useTabNavigation";
-import type { ExtendedConversation } from "src/shared/types/zod";
+import type { MaxDiffItem, MaxDiffResultItem } from "src/shared/types/dto";
+import type { ExtendedConversationDisplayData, RankingItemDisplayedContent } from "src/shared/types/zod";
+import { useLanguageStore } from "src/stores/language";
 import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import { useMaxDiffLoadQuery } from "src/utils/api/maxdiff/useMaxDiffQueries";
 import type { MaxDiffShortcutItem } from "src/utils/component/analysis/maxdiffShortcutBar";
 import { maxdiffShortcutItemSchema } from "src/utils/component/analysis/maxdiffShortcutBar";
+import { subscribeToContentTranslationUpdated } from "src/utils/translation/contentTranslationEvents";
+import { getRankingItemDisplayText } from "src/utils/translation/useRankingItemDisplayContent";
 import { computed, inject, onActivated, onDeactivated, onMounted, onUnmounted, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 import { useRoute } from "vue-router";
@@ -181,7 +187,7 @@ import {
 import MaxDiffStatementDialog from "./MaxDiffStatementDialog.vue";
 
 const props = defineProps<{
-  conversationData: ExtendedConversation;
+  conversationData: ExtendedConversationDisplayData;
   navigateToVotingTab: () => void;
 }>();
 
@@ -190,6 +196,7 @@ const { t } = useComponentI18n<MaxDiffResultsTabTranslations>(
 );
 
 const { getMaxDiffResults, fetchMaxDiffItems } = useMaxDiffApi();
+const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
 
 const route = useRoute();
 
@@ -259,6 +266,9 @@ const registerChildRefreshHandler = inject<RegisterChildRefreshHandler>(
   },
 );
 let unregisterChildRefreshHandler: (() => void) | undefined;
+let unregisterTranslationUpdateHandler: (() => void) | undefined;
+let translationRefreshTimeout: ReturnType<typeof setTimeout> | undefined;
+const isActive = ref(true);
 
 const conversationSlugId =
   props.conversationData.metadata.conversationSlugId;
@@ -292,21 +302,21 @@ const showLifecycleInfoDialog = ref(false);
 const lifecycleInfoTitle = ref("");
 const lifecycleInfoContent = ref("");
 const showStatementDialog = ref(false);
-const expandedTitle = ref("");
-const expandedContent = ref("");
+const expandedItemSlugId = ref<string | undefined>(undefined);
+const expandedDisplayContent = ref<RankingItemDisplayedContent | undefined>(undefined);
 const expandedExternalUrl = ref<string | null>(null);
 
 function openStatementDialog({
-  title,
-  body,
+  itemSlugId,
+  displayContent,
   externalUrl,
 }: {
-  title: string;
-  body: string | null;
+  itemSlugId: string;
+  displayContent: RankingItemDisplayedContent;
   externalUrl: string | null;
 }): void {
-  expandedTitle.value = title;
-  expandedContent.value = body ?? "";
+  expandedItemSlugId.value = itemSlugId;
+  expandedDisplayContent.value = displayContent;
   expandedExternalUrl.value = externalUrl;
   showStatementDialog.value = true;
 }
@@ -342,20 +352,34 @@ function openLifecycleLearnMore(
   showLifecycleInfoDialog.value = true;
 }
 
-function mapApiItemsToListItems(
-  apiItems: Array<{
-    slugId: string;
-    title: string;
-    body: string | null;
-    snapshotScore: number | null;
-    externalUrl: string | null;
-  }>,
-): MaxDiffListItem[] {
+function mapApiItemsToListItems({
+  apiItems,
+}: {
+  apiItems: MaxDiffItem[];
+}): MaxDiffListItem[] {
   return apiItems.map((item) => ({
     slugId: item.slugId,
-    title: item.title,
-    body: item.body ?? null,
+    ...getRankingItemDisplayText({
+      displayContent: item.displayContent,
+    }),
+    displayContent: item.displayContent,
     score: item.snapshotScore ?? null,
+    externalUrl: item.externalUrl ?? null,
+  }));
+}
+
+function mapApiResultItemsToListItems({
+  apiItems,
+}: {
+  apiItems: MaxDiffResultItem[];
+}): MaxDiffListItem[] {
+  return apiItems.map((item) => ({
+    slugId: item.itemSlugId,
+    ...getRankingItemDisplayText({
+      displayContent: item.displayContent,
+    }),
+    displayContent: item.displayContent,
+    score: item.score ?? null,
     externalUrl: item.externalUrl ?? null,
   }));
 }
@@ -381,7 +405,7 @@ async function fetchLifecycleItems({
   });
 
   if (response.status === "success") {
-    itemsRef.value = mapApiItemsToListItems(response.data.items);
+    itemsRef.value = mapApiItemsToListItems({ apiItems: response.data.items });
   }
 
   if (showLoading) {
@@ -402,13 +426,9 @@ async function fetchResults({ showLoading }: { showLoading: boolean }): Promise<
   const response = await getMaxDiffResults({ conversationSlugId });
 
   if (response.status === "success") {
-    resultItems.value = response.data.rankings.map((r) => ({
-      slugId: r.itemSlugId,
-      title: r.title,
-      body: r.body ?? null,
-      score: r.score ?? null,
-      externalUrl: r.externalUrl ?? null,
-    }));
+    resultItems.value = mapApiResultItemsToListItems({
+      apiItems: response.data.rankings,
+    });
   } else {
     hasError.value = true;
   }
@@ -439,6 +459,17 @@ async function handleChildRefresh(): Promise<void> {
   ]);
 }
 
+function queueTranslationRefresh(): void {
+  if (translationRefreshTimeout !== undefined) {
+    return;
+  }
+
+  translationRefreshTimeout = setTimeout(() => {
+    translationRefreshTimeout = undefined;
+    void handleChildRefresh();
+  }, 250);
+}
+
 function registerRefreshHandler(): void {
   unregisterChildRefreshHandler?.();
   unregisterChildRefreshHandler = registerChildRefreshHandler(handleChildRefresh);
@@ -449,9 +480,31 @@ function unregisterRefreshHandler(): void {
   unregisterChildRefreshHandler = undefined;
 }
 
+function registerTranslationHandler(): void {
+  unregisterTranslationHandler();
+  unregisterTranslationUpdateHandler = subscribeToContentTranslationUpdated((data) => {
+    if (
+      data.subject.kind === "ranking_item" &&
+      data.subject.conversationSlugId === conversationSlugId
+    ) {
+      queueTranslationRefresh();
+    }
+  });
+}
+
+function unregisterTranslationHandler(): void {
+  unregisterTranslationUpdateHandler?.();
+  unregisterTranslationUpdateHandler = undefined;
+  if (translationRefreshTimeout !== undefined) {
+    clearTimeout(translationRefreshTimeout);
+    translationRefreshTimeout = undefined;
+  }
+}
+
 // Register on initial setup and re-register on KeepAlive reactivation
 // (whichever tab activates last must own the handler)
 registerRefreshHandler();
+registerTranslationHandler();
 
 const hasInitiallyLoaded = ref(false);
 
@@ -464,14 +517,23 @@ onMounted(async () => {
 // Silently refresh data when reactivated from KeepAlive (tab switch back)
 // Shows stale cached data immediately, then updates in background
 onActivated(async () => {
+  isActive.value = true;
   registerRefreshHandler();
+  registerTranslationHandler();
   if (!hasInitiallyLoaded.value) return;
   await handleChildRefresh();
 });
 
-onDeactivated(unregisterRefreshHandler);
+onDeactivated(() => {
+  isActive.value = false;
+  unregisterRefreshHandler();
+  unregisterTranslationHandler();
+});
 
-onUnmounted(unregisterRefreshHandler);
+onUnmounted(() => {
+  unregisterRefreshHandler();
+  unregisterTranslationHandler();
+});
 
 watch(currentTab, async (newTab, oldTab) => {
   if (oldTab === "Summary" && newTab !== "Summary") {
@@ -490,6 +552,14 @@ watch(currentTab, async (newTab, oldTab) => {
     }
   }
 });
+
+watch(
+  computed(() => `${displayLanguage.value}:${spokenLanguages.value.join(",")}`),
+  async () => {
+    if (!isActive.value) return;
+    await handleChildRefresh();
+  },
+);
 </script>
 
 <style scoped lang="scss">

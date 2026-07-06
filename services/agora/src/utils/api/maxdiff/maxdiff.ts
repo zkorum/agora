@@ -1,18 +1,21 @@
 import type {
-  ApiV1MaxdiffGithubPreviewPost200Response,
-  ApiV1MaxdiffItemsFetchPost200Response,
-  ApiV1MaxdiffItemsLifecycleUpdatePostRequest,
-  ApiV1MaxdiffLoadPost200Response,
-  ApiV1MaxdiffResultsPost200Response,
-  ApiV1MaxdiffResultsPostRequest,
-  ApiV1MaxdiffSavePostRequest,
-  ApiV1MaxdiffSyncPost200Response,
+  ApiV1RankingBwsGithubPreviewPost200Response,
+  ApiV1RankingBwsItemsLifecycleUpdatePostRequest,
+  ApiV1RankingBwsLoadPost200Response,
+  ApiV1RankingBwsResultsPostRequest,
+  ApiV1RankingBwsSavePostRequest,
+  ApiV1RankingBwsSyncPost200Response,
 } from "src/api";
 import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
-import { Dto, type MaxDiffSaveResponse } from "src/shared/types/dto";
+import {
+  Dto,
+  type MaxDiffItemsFetchResponse,
+  type MaxDiffResultsResponse,
+  type MaxDiffSaveResponse,
+} from "src/shared/types/dto";
 import type { MaxDiffComparison } from "src/shared/types/zod";
 
 import { api } from "../client";
@@ -44,7 +47,7 @@ export function useMaxDiffApi() {
     isComplete,
   }: SaveMaxDiffParams): Promise<SaveMaxDiffResponseApi> {
     try {
-      const params: ApiV1MaxdiffSavePostRequest = {
+      const params: ApiV1RankingBwsSavePostRequest = {
         conversationSlugId,
         ranking,
         comparisons,
@@ -52,13 +55,13 @@ export function useMaxDiffApi() {
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1MaxdiffSavePost(params);
+        await DefaultApiAxiosParamCreator().apiV1RankingBwsSavePost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1MaxdiffSavePost(
+      ).apiV1RankingBwsSavePost(
         params,
         createRawAxiosRequestConfig({ encodedUcan })
       );
@@ -77,7 +80,7 @@ export function useMaxDiffApi() {
   }
 
   type LoadMaxDiffSuccessResponse =
-    AxiosSuccessResponse<ApiV1MaxdiffLoadPost200Response>;
+    AxiosSuccessResponse<ApiV1RankingBwsLoadPost200Response>;
   type LoadMaxDiffResponse =
     | LoadMaxDiffSuccessResponse
     | AxiosErrorResponse;
@@ -89,13 +92,13 @@ export function useMaxDiffApi() {
       const params = { conversationSlugId };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1MaxdiffLoadPost(params);
+        await DefaultApiAxiosParamCreator().apiV1RankingBwsLoadPost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1MaxdiffLoadPost(
+      ).apiV1RankingBwsLoadPost(
         params,
         createRawAxiosRequestConfig({ encodedUcan })
       );
@@ -108,11 +111,11 @@ export function useMaxDiffApi() {
 
   interface GetMaxDiffResultsParams {
     conversationSlugId: string;
-    lifecycleFilter?: ApiV1MaxdiffResultsPostRequest["lifecycleFilter"];
+    lifecycleFilter?: ApiV1RankingBwsResultsPostRequest["lifecycleFilter"];
   }
 
   type GetMaxDiffResultsSuccessResponse =
-    AxiosSuccessResponse<ApiV1MaxdiffResultsPost200Response>;
+    AxiosSuccessResponse<MaxDiffResultsResponse>;
   type GetMaxDiffResultsResponse =
     | GetMaxDiffResultsSuccessResponse
     | AxiosErrorResponse;
@@ -125,18 +128,21 @@ export function useMaxDiffApi() {
       const params = { conversationSlugId, lifecycleFilter };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1MaxdiffResultsPost(params);
+        await DefaultApiAxiosParamCreator().apiV1RankingBwsResultsPost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1MaxdiffResultsPost(
+      ).apiV1RankingBwsResultsPost(
         params,
         createRawAxiosRequestConfig({ encodedUcan })
       );
 
-      return { status: "success", data: response.data };
+      return {
+        status: "success",
+        data: Dto.maxdiffResultsResponse.parse(response.data),
+      };
     } catch (e) {
       return createAxiosErrorResponse(e);
     }
@@ -144,11 +150,11 @@ export function useMaxDiffApi() {
 
   interface FetchMaxDiffItemsParams {
     conversationSlugId: string;
-    lifecycleFilter?: ApiV1MaxdiffResultsPostRequest["lifecycleFilter"];
+    lifecycleFilter?: ApiV1RankingBwsResultsPostRequest["lifecycleFilter"];
   }
 
   type FetchMaxDiffItemsResponse =
-    | AxiosSuccessResponse<ApiV1MaxdiffItemsFetchPost200Response>
+    | AxiosSuccessResponse<MaxDiffItemsFetchResponse>
     | AxiosErrorResponse;
 
   async function fetchMaxDiffItems({
@@ -159,18 +165,21 @@ export function useMaxDiffApi() {
       const params = { conversationSlugId, lifecycleFilter };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1MaxdiffItemsFetchPost(params);
+        await DefaultApiAxiosParamCreator().apiV1RankingBwsItemsFetchPost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1MaxdiffItemsFetchPost(
+      ).apiV1RankingBwsItemsFetchPost(
         params,
         createRawAxiosRequestConfig({ encodedUcan })
       );
 
-      return { status: "success", data: response.data };
+      return {
+        status: "success",
+        data: Dto.maxdiffItemsFetchResponse.parse(response.data),
+      };
     } catch (e) {
       return createAxiosErrorResponse(e);
     }
@@ -179,7 +188,7 @@ export function useMaxDiffApi() {
   interface UpdateMaxDiffItemLifecycleParams {
     conversationSlugId: string;
     itemSlugId: string;
-    newStatus: ApiV1MaxdiffItemsLifecycleUpdatePostRequest["newStatus"];
+    newStatus: ApiV1RankingBwsItemsLifecycleUpdatePostRequest["newStatus"];
   }
 
   type UpdateMaxDiffItemLifecycleResponse =
@@ -195,13 +204,13 @@ export function useMaxDiffApi() {
       const params = { conversationSlugId, itemSlugId, newStatus };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1MaxdiffItemsLifecycleUpdatePost(params);
+        await DefaultApiAxiosParamCreator().apiV1RankingBwsItemsLifecycleUpdatePost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
       await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1MaxdiffItemsLifecycleUpdatePost(
+      ).apiV1RankingBwsItemsLifecycleUpdatePost(
         params,
         createRawAxiosRequestConfig({ encodedUcan })
       );
@@ -217,7 +226,7 @@ export function useMaxDiffApi() {
   }
 
   type SyncMaxDiffResponse =
-    | AxiosSuccessResponse<ApiV1MaxdiffSyncPost200Response>
+    | AxiosSuccessResponse<ApiV1RankingBwsSyncPost200Response>
     | AxiosErrorResponse;
 
   async function syncMaxDiff({
@@ -227,13 +236,13 @@ export function useMaxDiffApi() {
       const params = { conversationSlugId };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1MaxdiffSyncPost(params);
+        await DefaultApiAxiosParamCreator().apiV1RankingBwsSyncPost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1MaxdiffSyncPost(
+      ).apiV1RankingBwsSyncPost(
         params,
         createRawAxiosRequestConfig({ encodedUcan })
       );
@@ -250,7 +259,7 @@ export function useMaxDiffApi() {
   }
 
   type PreviewGitHubIssuesResponse =
-    | AxiosSuccessResponse<ApiV1MaxdiffGithubPreviewPost200Response>
+    | AxiosSuccessResponse<ApiV1RankingBwsGithubPreviewPost200Response>
     | AxiosErrorResponse;
 
   async function previewGitHubIssues({
@@ -261,13 +270,13 @@ export function useMaxDiffApi() {
       const params = { repository, label };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1MaxdiffGithubPreviewPost(params);
+        await DefaultApiAxiosParamCreator().apiV1RankingBwsGithubPreviewPost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1MaxdiffGithubPreviewPost(
+      ).apiV1RankingBwsGithubPreviewPost(
         params,
         createRawAxiosRequestConfig({ encodedUcan })
       );

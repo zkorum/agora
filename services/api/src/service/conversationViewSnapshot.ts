@@ -15,6 +15,7 @@ import {
     analysisSnapshotResultTable,
     conversationTable,
     conversationViewSnapshotCheckpointReasonTable,
+    polisConversationConfigTable,
     opinionGroupCandidateAssessmentTable,
     opinionGroupCandidateTable,
     opinionGroupCandidateDescriptionLocaleRequestTable,
@@ -340,9 +341,13 @@ export async function createConversationViewSnapshotsFromCurrentState({
             currentContentId: conversationTable.currentContentId,
             isClosed: conversationTable.isClosed,
             preferredOpinionGroupCount:
-                conversationTable.preferredOpinionGroupCount,
+                polisConversationConfigTable.preferredOpinionGroupCount,
         })
         .from(conversationTable)
+        .leftJoin(
+            polisConversationConfigTable,
+            eq(polisConversationConfigTable.id, conversationTable.polisConfigId),
+        )
         .where(eq(conversationTable.id, conversationId))
         .limit(1);
 
@@ -560,7 +565,7 @@ export async function ensureAiDescriptionLocaleRequestForConversationViewSnapsho
     const snapshotRows = await db
         .select({
             conversationId: conversationTable.id,
-            aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+            aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
             opinionGroupSpecId: conversationViewSnapshotTable.opinionGroupSpecId,
             viewSnapshotCreatedAt: conversationViewSnapshotTable.createdAt,
             resultId: analysisSnapshotResultTable.id,
@@ -572,6 +577,10 @@ export async function ensureAiDescriptionLocaleRequestForConversationViewSnapsho
         .innerJoin(
             conversationTable,
             eq(conversationTable.id, conversationViewSnapshotTable.conversationId),
+        )
+        .innerJoin(
+            polisConversationConfigTable,
+            eq(polisConversationConfigTable.id, conversationTable.polisConfigId),
         )
         .leftJoin(
             analysisSnapshotResultTable,

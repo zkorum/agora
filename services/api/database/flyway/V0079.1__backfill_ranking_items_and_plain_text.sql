@@ -42,9 +42,10 @@ INSERT INTO ranking_conversation_config (
     updated_at
 )
 OVERRIDING SYSTEM VALUE
+-- V0079 creates ranking_mode with bws directly on this branch.
 SELECT
     c.id,
-    'maxdiff',
+    'bws',
     c.current_ranking_score_id,
     c.external_source_config,
     c.created_at,

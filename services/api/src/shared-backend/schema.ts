@@ -36,8 +36,6 @@ const MAX_LENGTH_SURVEY_QUESTION = 500;
 const MAX_LENGTH_SURVEY_OPTION = 200;
 const MAX_LENGTH_RANKING_ITEM_TITLE = 200;
 const MAX_LENGTH_RANKING_ITEM_BODY = 3000;
-const MAX_LENGTH_MAXDIFF_ITEM_TITLE = MAX_LENGTH_RANKING_ITEM_TITLE;
-const MAX_LENGTH_MAXDIFF_ITEM_BODY = MAX_LENGTH_RANKING_ITEM_BODY;
 const MAX_LENGTH_NAME_CREATOR = 65;
 const MAX_LENGTH_DESCRIPTION_CREATOR = 280;
 const MAX_LENGTH_USERNAME = 20;
@@ -601,7 +599,7 @@ export const conversationTypeEnum = pgEnum("conversation_type", [
     "polis",
     "ranking",
 ]);
-export const rankingModeEnum = pgEnum("ranking_mode", ["maxdiff"]);
+export const rankingModeEnum = pgEnum("ranking_mode", ["bws"]);
 export const conversationLanguageSettingsSourceEnum = pgEnum(
     "conversation_language_settings_source",
     ["conversation_override", "project_inherited"],
@@ -683,12 +681,6 @@ export const surveyChoiceDisplayEnum = pgEnum("survey_choice_display", [
     "dropdown",
 ]);
 
-export const maxdiffLifecycleStatusEnum = pgEnum("maxdiff_lifecycle_status", [
-    "active",
-    "completed",
-    "in_progress",
-    "canceled",
-]);
 export const rankingItemLifecycleStatusEnum = pgEnum(
     "ranking_item_lifecycle_status",
     ["active", "completed", "in_progress", "canceled"],
@@ -2000,26 +1992,35 @@ export const conversationContentTable = pgTable(
 );
 
 /** @service api, shared-analysis-worker, import-worker */
-export const polisConversationConfigTable = pgTable("polis_conversation_config", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    aiLabelingEnabled: boolean("ai_labeling_enabled").notNull().default(true),
-    analysisDataGeneration: integer("analysis_data_generation")
-        .notNull()
-        .default(0),
-    preferredOpinionGroupCount: integer("preferred_opinion_group_count"),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const polisConversationConfigTable = pgTable(
+    "polis_conversation_config",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        aiLabelingEnabled: boolean("ai_labeling_enabled").notNull().default(true),
+        analysisDataGeneration: integer("analysis_data_generation")
+            .notNull()
+            .default(0),
+        preferredOpinionGroupCount: integer("preferred_opinion_group_count"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        check(
+            "polis_conversation_config_preferred_opinion_group_count_check",
+            sql`${table.preferredOpinionGroupCount} IS NULL OR ${table.preferredOpinionGroupCount} >= 2`,
+        ),
+    ],
+);
 
 /** @service api, scoring-worker */
 export const rankingConversationConfigTable = pgTable(
@@ -2072,9 +2073,6 @@ export const conversationTable = pgTable(
         )
             .notNull()
             .default("conversation_override"),
-        currentRankingScoreId: integer("current_ranking_score_id")
-            .references((): AnyPgColumn => rankingScoreTable.id)
-            .unique(), // null for polis conversations or if no scores computed yet
         isIndexed: boolean("is_indexed").notNull().default(true), // if true, the conversation can be fetched in the feed and search engine, else it is hidden, unless users have the link
         participationMode: participationModeEnum("participation_mode")
             .notNull()
@@ -2086,34 +2084,6 @@ export const conversationTable = pgTable(
         isClosed: boolean("is_closed").notNull().default(false), // if true, the conversation was closed by owner and users cannot post opinions or vote
         isEdited: boolean("is_edited").notNull().default(false), // if true, the conversation content was edited after creation. Used for "Edited" badge in UI. Use this field (not updatedAt) to determine if a conversation was edited — updatedAt can be accidentally bumped by migration scripts.
         requiresEventTicket: eventSlugEnum("requires_event_ticket"), // if set, only users with verified ticket for this event can participate (vote/post opinions)
-        // Deprecated: moved to polis_conversation_config. Drop in a later cleanup migration when requested.
-        aiLabelingEnabled: boolean("ai_labeling_enabled")
-            .notNull()
-            .default(true),
-        // Deprecated: moved to polis_conversation_config. Drop in a later cleanup migration when requested.
-        analysisDataGeneration: integer("analysis_data_generation")
-            .notNull()
-            .default(0),
-        // Deprecated: moved to polis_conversation_config. Drop in a later cleanup migration when requested.
-        preferredOpinionGroupCount: integer("preferred_opinion_group_count"),
-        // Deprecated: moved to conversation_import_source. Drop in a later cleanup migration when requested.
-        importUrl: text("import_url"), // originally used for importing
-        // Deprecated: moved to conversation_import_source. Drop in a later cleanup migration when requested.
-        importConversationUrl: text("import_conversation_url"),
-        // Deprecated: moved to conversation_import_source. Drop in a later cleanup migration when requested.
-        importExportUrl: text("import_export_url"),
-        // Deprecated: moved to conversation_import_source. Drop in a later cleanup migration when requested.
-        importCreatedAt: timestamp("import_created_at", {
-            // original creatoin date
-            mode: "date",
-            precision: 0,
-        }),
-        // Deprecated: moved to conversation_import_source. Drop in a later cleanup migration when requested.
-        importAuthor: text("import_author"),
-        // Deprecated: moved to conversation_import_source. Drop in a later cleanup migration when requested.
-        importMethod: importMethodType("import_method"),
-        // Deprecated: moved to ranking_conversation_config. Drop in a later cleanup migration when requested.
-        externalSourceConfig: jsonb("external_source_config"), // Typed via zodExternalSourceConfig; e.g. { sourceType: "github_issue", repository: "owner/repo", label: "roadmap" }
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -2158,10 +2128,6 @@ export const conversationTable = pgTable(
                 sql`${table.id} DESC`,
             )
             .where(isNotNull(table.currentContentId)),
-        check(
-            "conversation_preferred_opinion_group_count_check",
-            sql`${table.preferredOpinionGroupCount} IS NULL OR ${table.preferredOpinionGroupCount} >= 2`,
-        ),
         check(
             "conversation_subtype_config_check",
             sql`((${table.conversationType} = 'polis' AND ${table.polisConfigId} IS NOT NULL AND ${table.rankingConfigId} IS NULL) OR (${table.conversationType} = 'ranking' AND ${table.rankingConfigId} IS NOT NULL AND ${table.polisConfigId} IS NULL))`,
@@ -2227,6 +2193,54 @@ export const conversationImportSourceTable = pgTable(
 );
 
 /** @service api, scoring-worker, shared-analysis-worker, content-translation-worker */
+export const rankingItemContentTable = pgTable(
+    "ranking_item_content",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        publicId: uuid("public_id").defaultRandom().notNull().unique(),
+        rankingItemId: integer("ranking_item_id")
+            .notNull()
+            .references((): AnyPgColumn => rankingItemTable.id),
+        conversationContentId: integer("conversation_content_id")
+            .notNull()
+            .references(() => conversationContentTable.id),
+        title: varchar("title", {
+            length: MAX_LENGTH_RANKING_ITEM_TITLE,
+        }).notNull(),
+        body: varchar("body", { length: MAX_LENGTH_RANKING_ITEM_BODY }),
+        bodyPlainText: text("body_plain_text"),
+        sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
+        sourceRawLanguageCode: varchar("source_raw_language_code", {
+            length: 35,
+        }),
+        sourceLanguageProvider: languageDetectionProviderEnum(
+            "source_language_provider",
+        ),
+        sourceLanguageConfidence: real("source_language_confidence"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("ranking_item_content_id_item_unique").on(
+            table.id,
+            table.rankingItemId,
+        ),
+        check(
+            "ranking_item_content_source_metadata_check",
+            sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
+        ),
+        check(
+            "ranking_item_content_body_plain_text_pair_check",
+            sql`((${table.body} IS NULL AND ${table.bodyPlainText} IS NULL) OR (${table.body} IS NOT NULL AND ${table.bodyPlainText} IS NOT NULL))`,
+        ),
+    ],
+);
+
+/** @service api, scoring-worker, shared-analysis-worker, content-translation-worker */
 export const rankingItemTable = pgTable(
     "ranking_item",
     {
@@ -2238,9 +2252,7 @@ export const rankingItemTable = pgTable(
         conversationId: integer("conversation_id")
             .notNull()
             .references(() => conversationTable.id),
-        currentContentId: integer("current_content_id").references(
-            (): AnyPgColumn => rankingItemContentTable.id,
-        ),
+        currentContentId: integer("current_content_id"),
         isSeed: boolean("is_seed").notNull().default(false),
         lifecycleStatus: rankingItemLifecycleStatusEnum("lifecycle_status")
             .notNull()
@@ -2270,52 +2282,14 @@ export const rankingItemTable = pgTable(
             table.conversationId,
             table.lifecycleStatus,
         ),
-    ],
-);
-
-/** @service api, scoring-worker, shared-analysis-worker, content-translation-worker */
-export const rankingItemContentTable = pgTable(
-    "ranking_item_content",
-    {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        publicId: uuid("public_id").defaultRandom().notNull().unique(),
-        rankingItemId: integer("ranking_item_id")
-            .notNull()
-            .references(() => rankingItemTable.id),
-        conversationContentId: integer("conversation_content_id")
-            .notNull()
-            .references(() => conversationContentTable.id),
-        title: varchar("title", {
-            length: MAX_LENGTH_RANKING_ITEM_TITLE,
-        }).notNull(),
-        body: varchar("body", { length: MAX_LENGTH_RANKING_ITEM_BODY }),
-        // TODO: Add a generated migration that enforces body and body_plain_text
-        // are both null or both non-null after the plaintext backfill has run.
-        bodyPlainText: text("body_plain_text"),
-        sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
-        sourceRawLanguageCode: varchar("source_raw_language_code", {
-            length: 35,
+        foreignKey({
+            columns: [table.currentContentId, table.id],
+            foreignColumns: [
+                rankingItemContentTable.id,
+                rankingItemContentTable.rankingItemId,
+            ],
+            name: "ranking_item_current_content_owned_by_item_fk",
         }),
-        sourceLanguageProvider: languageDetectionProviderEnum(
-            "source_language_provider",
-        ),
-        sourceLanguageConfidence: real("source_language_confidence"),
-        createdAt: timestamp("created_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-    },
-    (table) => [
-        unique("ranking_item_content_id_item_unique").on(
-            table.id,
-            table.rankingItemId,
-        ),
-        check(
-            "ranking_item_content_source_metadata_check",
-            sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
-        ),
     ],
 );
 
@@ -2493,6 +2467,10 @@ export const conversationContentTranslationTable = pgTable(
             "conversation_content_translation_source_metadata_check",
             sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
         ),
+        check(
+            "conversation_content_translation_body_plain_text_pair_check",
+            sql`((${table.translatedBody} IS NULL AND ${table.translatedBodyPlainText} IS NULL) OR (${table.translatedBody} IS NOT NULL AND ${table.translatedBodyPlainText} IS NOT NULL))`,
+        ),
         unique("conversation_content_translation_unique").on(
             table.conversationContentId,
             table.displayLanguageCode,
@@ -2543,6 +2521,10 @@ export const projectContentTranslationTable = pgTable(
         check(
             "project_content_translation_source_metadata_check",
             sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
+        ),
+        check(
+            "project_content_translation_body_plain_text_pair_check",
+            sql`((${table.translatedBody} IS NULL AND ${table.translatedBodyPlainText} IS NULL) OR (${table.translatedBody} IS NOT NULL AND ${table.translatedBodyPlainText} IS NOT NULL))`,
         ),
         uniqueIndex("project_content_translation_active_unique")
             .on(table.projectContentId, table.displayLanguageCode)
@@ -3054,8 +3036,6 @@ export const rankingItemContentTranslationTable = pgTable(
             displayLanguageCodeEnum("display_language_code").notNull(),
         translatedTitle: text("translated_title").notNull(),
         translatedBodyHtml: text("translated_body_html"),
-        // TODO: Add a generated migration that enforces translated_body_html and
-        // translated_body_plain_text are both null or both non-null.
         translatedBodyPlainText: text("translated_body_plain_text"),
         sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
         sourceRawLanguageCode: varchar("source_raw_language_code", {
@@ -3082,6 +3062,10 @@ export const rankingItemContentTranslationTable = pgTable(
         check(
             "ranking_item_content_translation_source_metadata_check",
             sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
+        ),
+        check(
+            "ranking_item_content_translation_body_plain_text_pair_check",
+            sql`((${table.translatedBodyHtml} IS NULL AND ${table.translatedBodyPlainText} IS NULL) OR (${table.translatedBodyHtml} IS NOT NULL AND ${table.translatedBodyPlainText} IS NOT NULL))`,
         ),
         unique("ranking_item_content_translation_unique").on(
             table.rankingItemContentId,
@@ -5082,116 +5066,6 @@ export const maxdiffResultTable = pgTable(
         index("maxdiff_result_complete_idx").on(t.conversationId, t.isComplete),
         // For JSONB aggregate query in computeGlobalUncertainty (routing)
         index("maxdiff_result_conversation_idx").on(t.conversationId),
-    ],
-);
-
-// Deprecated: rankable item storage moved to ranking_item. Keep for compatibility
-// until a later cleanup migration is explicitly requested.
-/** @service scoring-worker, api, shared-analysis-worker */
-export const maxdiffItemTable = pgTable(
-    "maxdiff_item",
-    {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        slugId: varchar("slug_id", { length: 8 }).notNull().unique(),
-        authorId: uuid("author_id")
-            .notNull()
-            .references(() => userTable.id),
-        conversationId: integer("conversation_id")
-            .notNull()
-            .references(() => conversationTable.id),
-        currentContentId: integer("current_content_id"), // FK added via constraint below; null = soft-deleted
-        isSeed: boolean("is_seed").notNull().default(false),
-        lifecycleStatus: maxdiffLifecycleStatusEnum("lifecycle_status")
-            .notNull()
-            .default("active"),
-        // Snapshot frozen at the moment lifecycle transitions away from 'active'
-        snapshotScore: real("snapshot_score"), // normalized 0-1 score at time of transition
-        snapshotRank: integer("snapshot_rank"), // 1-based rank at time of transition
-        snapshotParticipantCount: integer("snapshot_participant_count"), // number of participants at time of transition
-        createdAt: timestamp("created_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-        updatedAt: timestamp("updated_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-    },
-    (t) => [
-        index("maxdiff_item_conversation_active_idx").on(
-            t.conversationId,
-            t.currentContentId,
-        ),
-        index("maxdiff_item_lifecycle_idx").on(
-            t.conversationId,
-            t.lifecycleStatus,
-        ),
-    ],
-);
-
-// Deprecated: rankable item content moved to ranking_item_content. Keep for
-// compatibility until a later cleanup migration is explicitly requested.
-export const maxdiffItemContentTable = pgTable("maxdiff_item_content", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    maxdiffItemId: integer("maxdiff_item_id")
-        .notNull()
-        .references(() => maxdiffItemTable.id),
-    conversationContentId: integer("conversation_content_id")
-        .notNull()
-        .references(() => conversationContentTable.id),
-    title: varchar("title", {
-        length: MAX_LENGTH_MAXDIFF_ITEM_TITLE,
-    }).notNull(),
-    body: varchar("body", { length: MAX_LENGTH_MAXDIFF_ITEM_BODY }), // optional; populated from GitHub issue body, null for manual items
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
-
-// Deprecated: rankable item external source metadata moved to
-// ranking_item_external_source. Keep for compatibility until a later cleanup
-// migration is explicitly requested.
-export const maxdiffItemExternalSourceTable = pgTable(
-    "maxdiff_item_external_source",
-    {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        maxdiffItemId: integer("maxdiff_item_id")
-            .notNull()
-            .references(() => maxdiffItemTable.id)
-            .unique(),
-        // Denormalized from maxdiff_item for the unique constraint below.
-        conversationId: integer("conversation_id")
-            .notNull()
-            .references(() => conversationTable.id),
-        sourceType: externalSourceTypeEnum("source_type").notNull(),
-        externalId: text("external_id").notNull(), // e.g. "owner/repo#42"
-        externalUrl: text("external_url"), // clickable link to GitHub issue
-        externalMetadata: jsonb("external_metadata"), // Typed via zodGitHubIssueMetadata; provider-specific data
-        lastSyncedAt: timestamp("last_synced_at", {
-            mode: "date",
-            precision: 0,
-        }),
-        createdAt: timestamp("created_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-    },
-    (t) => [
-        // Prevents duplicate items for the same external source within a conversation.
-        // Scoped per-conversation so the same issue can exist in multiple conversations.
-        uniqueIndex("maxdiff_external_source_dedup_idx").on(
-            t.externalId,
-            t.conversationId,
-        ),
     ],
 );
 

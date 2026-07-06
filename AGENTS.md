@@ -582,6 +582,59 @@ function processImport(files: Partial<Record<string, string>>): void {
 
 **Key principle:** Parsing returns a new value with a more precise type. Validation returns a boolean and requires unsafe casting. Parsing makes invalid states unrepresentable in the type system.
 
+### Use Parsed DTOs as Downstream Types
+
+When an API endpoint has a shared Zod DTO schema with important type-level invariants, parse or safe-parse the request/response at the boundary and consider passing the parsed value downstream. This is especially important for `z.discriminatedUnion()` or other correlated/special shapes that can be weakened or flattened by OpenAPI-generated client types. Do not recreate a parallel TypeScript interface or duplicate those invariants in service/composable props.
+
+Do not apply this mechanically to every DTO. For simple flat request/response shapes where generated OpenAPI types preserve the useful structure, normal explicit parameter objects are fine.
+
+Be careful when changing DTO shapes used by the OpenAPI generator: generated API client types can be temporarily out of sync with the source Zod schemas until `make generate` has run, and some Zod semantics may not round-trip perfectly through OpenAPI. When editing these paths, check both the source DTO schema and generated client/shared copies before relying on either type.
+
+**Preferred approach:**
+
+```typescript
+const request = Dto.createNewConversationRequest.parse({
+  conversationTitle,
+  conversationType: "ranking",
+  rankingMode: "maxdiff",
+  // ...other fields
+});
+
+await createNewPost({ db, request });
+```
+
+Then downstream code should accept the parsed DTO type:
+
+```typescript
+async function createNewPost({
+  db,
+  request,
+}: {
+  db: PostgresDatabase;
+  request: CreateNewConversationRequest;
+}) {
+  if (request.conversationType === "ranking") {
+    // TypeScript knows request.rankingMode exists here.
+    useRankingMode(request.rankingMode);
+  }
+}
+```
+
+**Avoid:**
+
+```typescript
+interface CreateNewPostProps {
+  conversationType: ConversationType;
+  rankingMode?: RankingMode;
+}
+
+if (conversationType === "ranking" && rankingMode === undefined) {
+  throw new Error("Missing ranking mode");
+}
+```
+
+Use `z.discriminatedUnion()` in the DTO schema when fields are correlated, such as `conversationType: "ranking"` requiring `rankingMode`. This makes invalid combinations unrepresentable after parsing and lets TypeScript narrow correctly throughout downstream code.
+
 ### Functional Programming Style: Closure Pattern (Zustand-style)
 
 **Preferred Pattern**: Closure-based state encapsulation with immutable API

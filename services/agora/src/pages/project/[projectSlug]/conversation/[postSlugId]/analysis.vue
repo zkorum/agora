@@ -39,6 +39,6 @@ const emit = defineEmits<{
 const isMaxDiffConversation = computed(
   () =>
     props.conversationData.metadata.conversationType === "ranking" &&
-    props.conversationData.metadata.rankingMode === "maxdiff"
+    props.conversationData.metadata.rankingMode === "bws"
 );
 </script>

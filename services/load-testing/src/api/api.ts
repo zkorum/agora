@@ -1554,8 +1554,8 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1Ini
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1InitialModeEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1Variants {
-    'original': ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent;
-    'translated'?: ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent;
+    'original': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
+    'translated'?: ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2 {
     'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2KindEnum;
@@ -1577,11 +1577,11 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2Ini
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2InitialModeEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2Variants {
-    'original'?: ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent;
-    'translated': ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent;
+    'original'?: ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
+    'translated': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOfVariants {
-    'original': ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent;
+    'original': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4 {
     'success': boolean;
@@ -1645,8 +1645,8 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1Ini
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1InitialModeEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1Variants {
-    'original': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
-    'translated'?: ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
+    'original': ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
+    'translated'?: ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2 {
     'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2KindEnum;
@@ -1668,11 +1668,11 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2Ini
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2InitialModeEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2Variants {
-    'original'?: ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
-    'translated': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
+    'original'?: ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
+    'translated': ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOfVariants {
-    'original': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
+    'original': ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf5 {
     'success': boolean;
@@ -2120,7 +2120,7 @@ export type ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1Trans
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1Variants {
     'original': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload;
-    'translated'?: ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1Content;
+    'translated'?: ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOf1Content;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2 {
     'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2KindEnum;
@@ -2312,7 +2312,7 @@ export type ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Trans
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Variants {
     'original'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload;
-    'translated': ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1Content;
+    'translated': ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOf1Content;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOfVariants {
     'original': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload;
@@ -2430,7 +2430,7 @@ export type ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum = typeof ApiV1
 
 export interface ApiV1ConversationContentFetchPostRequest {
     'conversationSlugId': string;
-    'contentId': string;
+    'sourceVersion': string;
     'mode': ApiV1ConversationContentFetchPostRequestModeEnum;
     'requestMode': ApiV1ConversationContentFetchPostRequestRequestModeEnum;
 }
@@ -2561,7 +2561,7 @@ export const ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum = {
 
 export type ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum];
 export const ApiV1ConversationCreatePostRequestOneOf1RankingModeEnum = {
-    Maxdiff: 'maxdiff',
+    Bws: 'bws',
 } as const;
 
 export type ApiV1ConversationCreatePostRequestOneOf1RankingModeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1RankingModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1RankingModeEnum];
@@ -2798,6 +2798,7 @@ export const ApiV1ConversationExportRequestPost200ResponseReasonEnum = {
     ActiveExportInProgress: 'active_export_in_progress',
     ConversationNotFound: 'conversation_not_found',
     NoOpinions: 'no_opinions',
+    UnsupportedConversationType: 'unsupported_conversation_type',
 } as const;
 
 export type ApiV1ConversationExportRequestPost200ResponseReasonEnum = typeof ApiV1ConversationExportRequestPost200ResponseReasonEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseReasonEnum];
@@ -2835,6 +2836,7 @@ export const ApiV1ConversationExportRequestPost200ResponseAnyOf2ReasonEnum = {
     ActiveExportInProgress: 'active_export_in_progress',
     ConversationNotFound: 'conversation_not_found',
     NoOpinions: 'no_opinions',
+    UnsupportedConversationType: 'unsupported_conversation_type',
 } as const;
 
 export type ApiV1ConversationExportRequestPost200ResponseAnyOf2ReasonEnum = typeof ApiV1ConversationExportRequestPost200ResponseAnyOf2ReasonEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseAnyOf2ReasonEnum];
@@ -3034,6 +3036,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
     'requiresEventTicket'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfRequiresEventTicketEnum;
     'externalSourceConfig': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfExternalSourceConfig | null;
     'importInfo'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfImportInfo;
+    'projectContext'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfProjectContext;
     'conversationType': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfConversationTypeEnum;
 }
 
@@ -3085,6 +3088,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
     'requiresEventTicket'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RequiresEventTicketEnum;
     'externalSourceConfig': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfExternalSourceConfig | null;
     'importInfo'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfImportInfo;
+    'projectContext'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfProjectContext;
     'conversationType': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ConversationTypeEnum;
     'rankingMode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum;
 }
@@ -3108,7 +3112,7 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ConversationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ConversationTypeEnum];
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum = {
-    Maxdiff: 'maxdiff',
+    Bws: 'bws',
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum];
@@ -3582,6 +3586,12 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
     'websiteUrl'?: string;
     'description': string;
 }
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfProjectContext {
+    'projectSlug': string;
+    'originalProjectTitle': string;
+    'translatedProjectTitle'?: string;
+    'conversationSlugId': string;
+}
 export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload {
     'title': string;
     'body'?: string;
@@ -3771,75 +3781,99 @@ export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestion
 
 export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum];
 
-export interface ApiV1ConversationGetPost200Response {
-    'conversationData': ApiV1ConversationGetPost200ResponseConversationData;
-    'displayContent': ApiV1ConversationGetPost200ResponseDisplayContent;
+/**
+ * @type ApiV1ConversationGetPost200Response
+ */
+export type ApiV1ConversationGetPost200Response = ApiV1ConversationGetPost200ResponseOneOf | ApiV1ConversationGetPost200ResponseOneOf1;
+
+export interface ApiV1ConversationGetPost200ResponseOneOf {
+    'status': ApiV1ConversationGetPost200ResponseOneOfStatusEnum;
+    'conversationData': ApiV1ConversationGetPost200ResponseOneOfConversationData;
+    'displayContent': ApiV1ConversationGetPost200ResponseOneOfDisplayContent;
 }
-export interface ApiV1ConversationGetPost200ResponseConversationData {
+
+export const ApiV1ConversationGetPost200ResponseOneOfStatusEnum = {
+    Ready: 'ready',
+} as const;
+
+export type ApiV1ConversationGetPost200ResponseOneOfStatusEnum = typeof ApiV1ConversationGetPost200ResponseOneOfStatusEnum[keyof typeof ApiV1ConversationGetPost200ResponseOneOfStatusEnum];
+
+export interface ApiV1ConversationGetPost200ResponseOneOf1 {
+    'status': ApiV1ConversationGetPost200ResponseOneOf1StatusEnum;
+    'importSlugId': string;
+}
+
+export const ApiV1ConversationGetPost200ResponseOneOf1StatusEnum = {
+    Importing: 'importing',
+} as const;
+
+export type ApiV1ConversationGetPost200ResponseOneOf1StatusEnum = typeof ApiV1ConversationGetPost200ResponseOneOf1StatusEnum[keyof typeof ApiV1ConversationGetPost200ResponseOneOf1StatusEnum];
+
+export interface ApiV1ConversationGetPost200ResponseOneOfConversationData {
     'metadata': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata;
     'interaction': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteraction;
 }
-export interface ApiV1ConversationGetPost200ResponseDisplayContent {
-    'contentId': string;
-    'status': ApiV1ConversationGetPost200ResponseDisplayContentStatusEnum;
-    'mode': ApiV1ConversationGetPost200ResponseDisplayContentModeEnum;
-    'content': ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1Content;
-    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
+export interface ApiV1ConversationGetPost200ResponseOneOfDisplayContent {
+    'sourceVersion': string;
+    'status': ApiV1ConversationGetPost200ResponseOneOfDisplayContentStatusEnum;
+    'mode': ApiV1ConversationGetPost200ResponseOneOfDisplayContentModeEnum;
+    'content': ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOf1Content;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
 }
 
-export const ApiV1ConversationGetPost200ResponseDisplayContentStatusEnum = {
+export const ApiV1ConversationGetPost200ResponseOneOfDisplayContentStatusEnum = {
     NotRequested: 'not_requested',
     Pending: 'pending',
     Running: 'running',
     Failed: 'failed',
 } as const;
 
-export type ApiV1ConversationGetPost200ResponseDisplayContentStatusEnum = typeof ApiV1ConversationGetPost200ResponseDisplayContentStatusEnum[keyof typeof ApiV1ConversationGetPost200ResponseDisplayContentStatusEnum];
-export const ApiV1ConversationGetPost200ResponseDisplayContentModeEnum = {
+export type ApiV1ConversationGetPost200ResponseOneOfDisplayContentStatusEnum = typeof ApiV1ConversationGetPost200ResponseOneOfDisplayContentStatusEnum[keyof typeof ApiV1ConversationGetPost200ResponseOneOfDisplayContentStatusEnum];
+export const ApiV1ConversationGetPost200ResponseOneOfDisplayContentModeEnum = {
     Translated: 'translated',
 } as const;
 
-export type ApiV1ConversationGetPost200ResponseDisplayContentModeEnum = typeof ApiV1ConversationGetPost200ResponseDisplayContentModeEnum[keyof typeof ApiV1ConversationGetPost200ResponseDisplayContentModeEnum];
+export type ApiV1ConversationGetPost200ResponseOneOfDisplayContentModeEnum = typeof ApiV1ConversationGetPost200ResponseOneOfDisplayContentModeEnum[keyof typeof ApiV1ConversationGetPost200ResponseOneOfDisplayContentModeEnum];
 
-export interface ApiV1ConversationGetPost200ResponseDisplayContentAnyOf {
-    'contentId': string;
-    'status': ApiV1ConversationGetPost200ResponseDisplayContentAnyOfStatusEnum;
-    'mode': ApiV1ConversationGetPost200ResponseDisplayContentAnyOfModeEnum;
+export interface ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOf {
+    'sourceVersion': string;
+    'status': ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOfStatusEnum;
+    'mode': ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOfModeEnum;
     'content': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload;
-    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
 }
 
-export const ApiV1ConversationGetPost200ResponseDisplayContentAnyOfStatusEnum = {
+export const ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOfStatusEnum = {
     Available: 'available',
 } as const;
 
-export type ApiV1ConversationGetPost200ResponseDisplayContentAnyOfStatusEnum = typeof ApiV1ConversationGetPost200ResponseDisplayContentAnyOfStatusEnum[keyof typeof ApiV1ConversationGetPost200ResponseDisplayContentAnyOfStatusEnum];
-export const ApiV1ConversationGetPost200ResponseDisplayContentAnyOfModeEnum = {
+export type ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOfStatusEnum = typeof ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOfStatusEnum[keyof typeof ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOfStatusEnum];
+export const ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOfModeEnum = {
     Original: 'original',
 } as const;
 
-export type ApiV1ConversationGetPost200ResponseDisplayContentAnyOfModeEnum = typeof ApiV1ConversationGetPost200ResponseDisplayContentAnyOfModeEnum[keyof typeof ApiV1ConversationGetPost200ResponseDisplayContentAnyOfModeEnum];
+export type ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOfModeEnum = typeof ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOfModeEnum[keyof typeof ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOfModeEnum];
 
-export interface ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1 {
-    'contentId': string;
-    'status': ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1StatusEnum;
-    'mode': ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1ModeEnum;
-    'content': ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1Content;
-    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
+export interface ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOf1 {
+    'sourceVersion': string;
+    'status': ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOf1StatusEnum;
+    'mode': ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOf1ModeEnum;
+    'content': ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOf1Content;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
 }
 
-export const ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1StatusEnum = {
+export const ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOf1StatusEnum = {
     Available: 'available',
 } as const;
 
-export type ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1StatusEnum = typeof ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1StatusEnum[keyof typeof ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1StatusEnum];
-export const ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1ModeEnum = {
+export type ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOf1StatusEnum = typeof ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOf1StatusEnum[keyof typeof ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOf1StatusEnum];
+export const ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOf1ModeEnum = {
     Translated: 'translated',
 } as const;
 
-export type ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1ModeEnum = typeof ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1ModeEnum[keyof typeof ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1ModeEnum];
+export type ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOf1ModeEnum = typeof ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOf1ModeEnum[keyof typeof ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOf1ModeEnum];
 
-export interface ApiV1ConversationGetPost200ResponseDisplayContentAnyOf1Content {
+export interface ApiV1ConversationGetPost200ResponseOneOfDisplayContentAnyOf1Content {
     'title': string;
     'body'?: string;
 }
@@ -4059,248 +4093,6 @@ export interface ApiV1ConversationValidateCsvPost200Response {
 export interface ApiV1ConversationValidateCsvPost200ResponseSummaryFile {
     'isValid': boolean;
     'error'?: string;
-}
-export interface ApiV1MaxdiffGithubPreviewPost200Response {
-    'issues': Array<ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInner>;
-}
-export interface ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInner {
-    'number': number;
-    'title': string;
-    'body': string | null;
-    'state': ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInnerStateEnum;
-    'htmlUrl': string;
-}
-
-export const ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInnerStateEnum = {
-    Open: 'open',
-    Closed: 'closed',
-} as const;
-
-export type ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInnerStateEnum = typeof ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInnerStateEnum[keyof typeof ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInnerStateEnum];
-
-export interface ApiV1MaxdiffGithubPreviewPostRequest {
-    'repository': string;
-    'label': string;
-}
-export interface ApiV1MaxdiffItemsFetchPost200Response {
-    'items': Array<ApiV1MaxdiffItemsFetchPost200ResponseItemsInner>;
-}
-export interface ApiV1MaxdiffItemsFetchPost200ResponseItemsInner {
-    'slugId': string;
-    'displayContent': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContent;
-    'lifecycleStatus': ApiV1MaxdiffItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum;
-    'externalUrl': string | null;
-    'snapshotScore': number | null;
-    'snapshotRank': number | null;
-    'snapshotParticipantCount': number | null;
-    'createdAt': string;
-}
-
-export const ApiV1MaxdiffItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum = {
-    Active: 'active',
-    Completed: 'completed',
-    InProgress: 'in_progress',
-    Canceled: 'canceled',
-} as const;
-
-export type ApiV1MaxdiffItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum = typeof ApiV1MaxdiffItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum[keyof typeof ApiV1MaxdiffItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum];
-
-export interface ApiV1MaxdiffItemsLifecycleUpdatePostRequest {
-    'conversationSlugId': string;
-    'itemSlugId': string;
-    'newStatus': ApiV1MaxdiffItemsLifecycleUpdatePostRequestNewStatusEnum;
-}
-
-export const ApiV1MaxdiffItemsLifecycleUpdatePostRequestNewStatusEnum = {
-    Active: 'active',
-    Completed: 'completed',
-    InProgress: 'in_progress',
-    Canceled: 'canceled',
-} as const;
-
-export type ApiV1MaxdiffItemsLifecycleUpdatePostRequestNewStatusEnum = typeof ApiV1MaxdiffItemsLifecycleUpdatePostRequestNewStatusEnum[keyof typeof ApiV1MaxdiffItemsLifecycleUpdatePostRequestNewStatusEnum];
-
-export interface ApiV1MaxdiffLoadPost200Response {
-    'ranking': Array<string> | null;
-    'comparisons': Array<ApiV1MaxdiffLoadPost200ResponseComparisonsInner> | null;
-    'isComplete': boolean;
-    'candidateSets': Array<Array<string>>;
-    'perUserScores': Array<ApiV1MaxdiffLoadPost200ResponsePerUserScoresInner> | null;
-}
-export interface ApiV1MaxdiffLoadPost200ResponseComparisonsInner {
-    'best': string;
-    'worst': string;
-    'set': Array<string>;
-}
-export interface ApiV1MaxdiffLoadPost200ResponsePerUserScoresInner {
-    'entitySlugId': string;
-    'score': number;
-}
-export interface ApiV1MaxdiffLoadPostRequest {
-    'conversationSlugId': string;
-}
-export interface ApiV1MaxdiffResultsPost200Response {
-    'rankings': Array<ApiV1MaxdiffResultsPost200ResponseRankingsInner>;
-}
-export interface ApiV1MaxdiffResultsPost200ResponseRankingsInner {
-    'itemSlugId': string;
-    'displayContent': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContent;
-    'avgRank': number | null;
-    'score': number | null;
-    'participantCount': number;
-    'lifecycleStatus': ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum;
-    'externalUrl': string | null;
-}
-
-export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum = {
-    Active: 'active',
-    Completed: 'completed',
-    InProgress: 'in_progress',
-    Canceled: 'canceled',
-} as const;
-
-export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum];
-
-export interface ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContent {
-    'contentId': string;
-    'status': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentStatusEnum;
-    'mode': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentModeEnum;
-    'content': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
-    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
-}
-
-export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentStatusEnum = {
-    NotRequested: 'not_requested',
-    Pending: 'pending',
-    Running: 'running',
-    Failed: 'failed',
-} as const;
-
-export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentStatusEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentStatusEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentStatusEnum];
-export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentModeEnum = {
-    Translated: 'translated',
-} as const;
-
-export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentModeEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentModeEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentModeEnum];
-
-export interface ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf {
-    'contentId': string;
-    'status': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfStatusEnum;
-    'mode': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfModeEnum;
-    'content': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
-    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
-}
-
-export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfStatusEnum = {
-    Available: 'available',
-} as const;
-
-export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfStatusEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfStatusEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfStatusEnum];
-export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfModeEnum = {
-    Original: 'original',
-} as const;
-
-export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfModeEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfModeEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfModeEnum];
-
-export interface ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1 {
-    'contentId': string;
-    'status': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1StatusEnum;
-    'mode': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1ModeEnum;
-    'content': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
-    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
-}
-
-export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1StatusEnum = {
-    Available: 'available',
-} as const;
-
-export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1StatusEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1StatusEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1StatusEnum];
-export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1ModeEnum = {
-    Translated: 'translated',
-} as const;
-
-export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1ModeEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1ModeEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf1ModeEnum];
-
-export interface ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf2 {
-    'contentId': string;
-    'status': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf2StatusEnum;
-    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
-}
-
-export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf2StatusEnum = {
-    NotRequested: 'not_requested',
-    Pending: 'pending',
-    Running: 'running',
-    Failed: 'failed',
-} as const;
-
-export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf2StatusEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf2StatusEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOf2StatusEnum];
-
-export interface ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent {
-    'title': string;
-    'bodyHtml'?: string;
-}
-export interface ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl {
-    'status': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlStatusEnum;
-    'sourceLanguageLabel'?: string;
-    'alternateMode': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlAlternateModeEnum;
-    'canRequestAlternate': boolean;
-}
-
-export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlStatusEnum = {
-    NotRequested: 'not_requested',
-    Pending: 'pending',
-    Running: 'running',
-    Failed: 'failed',
-    Completed: 'completed',
-} as const;
-
-export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlStatusEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlStatusEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlStatusEnum];
-export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlAlternateModeEnum = {
-    Original: 'original',
-    Translated: 'translated',
-} as const;
-
-export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlAlternateModeEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlAlternateModeEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControlAlternateModeEnum];
-
-export interface ApiV1MaxdiffResultsPostRequest {
-    'conversationSlugId': string;
-    'lifecycleFilter'?: ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum;
-}
-
-export const ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum = {
-    Active: 'active',
-    Completed: 'completed',
-    InProgress: 'in_progress',
-    Canceled: 'canceled',
-    All: 'all',
-} as const;
-
-export type ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum = typeof ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum[keyof typeof ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum];
-
-/**
- * @type ApiV1MaxdiffSavePost200Response
- */
-export type ApiV1MaxdiffSavePost200Response = ApiV1MaxdiffSavePost200ResponseOneOf | ApiV1VoteCastPost200ResponseOneOf1;
-
-export interface ApiV1MaxdiffSavePost200ResponseOneOf {
-    'success': boolean;
-    'candidateSets': Array<Array<string>>;
-}
-export interface ApiV1MaxdiffSavePostRequest {
-    'conversationSlugId': string;
-    'ranking': Array<string> | null;
-    'comparisons': Array<ApiV1MaxdiffSavePostRequestComparisonsInner>;
-    'isComplete': boolean;
-}
-export interface ApiV1MaxdiffSavePostRequestComparisonsInner {
-    'best': string;
-    'worst': string;
-    'set': Array<string>;
-}
-export interface ApiV1MaxdiffSyncPost200Response {
-    'created': number;
-    'updated': number;
 }
 export interface ApiV1ModerationConversationCreatePostRequest {
     'conversationSlugId': string;
@@ -5236,11 +5028,11 @@ export interface ApiV1OpinionFetchByConversationPost200ResponseInner {
     'displayContent': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContent;
 }
 export interface ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContent {
-    'contentId': string;
+    'sourceVersion': string;
     'status': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentStatusEnum;
     'mode': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentModeEnum;
     'content': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1Content;
-    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
 }
 
 export const ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentStatusEnum = {
@@ -5258,11 +5050,11 @@ export const ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentMo
 export type ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentModeEnum = typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentModeEnum[keyof typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentModeEnum];
 
 export interface ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf {
-    'contentId': string;
+    'sourceVersion': string;
     'status': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfStatusEnum;
     'mode': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfModeEnum;
     'content': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfContent;
-    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
 }
 
 export const ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfStatusEnum = {
@@ -5277,11 +5069,11 @@ export const ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAn
 export type ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfModeEnum = typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfModeEnum[keyof typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfModeEnum];
 
 export interface ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1 {
-    'contentId': string;
+    'sourceVersion': string;
     'status': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1StatusEnum;
     'mode': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1ModeEnum;
     'content': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1Content;
-    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
 }
 
 export const ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1StatusEnum = {
@@ -5362,6 +5154,26 @@ export const ApiV1PremiumFeatureAccessCheckPostRequestFeatureEnum = {
 } as const;
 
 export type ApiV1PremiumFeatureAccessCheckPostRequestFeatureEnum = typeof ApiV1PremiumFeatureAccessCheckPostRequestFeatureEnum[keyof typeof ApiV1PremiumFeatureAccessCheckPostRequestFeatureEnum];
+
+export interface ApiV1ProjectContentFetchPostRequest {
+    'projectSlug': string;
+    'sourceVersion': string;
+    'mode': ApiV1ProjectContentFetchPostRequestModeEnum;
+    'requestMode': ApiV1ProjectContentFetchPostRequestRequestModeEnum;
+}
+
+export const ApiV1ProjectContentFetchPostRequestModeEnum = {
+    Original: 'original',
+    Translated: 'translated',
+} as const;
+
+export type ApiV1ProjectContentFetchPostRequestModeEnum = typeof ApiV1ProjectContentFetchPostRequestModeEnum[keyof typeof ApiV1ProjectContentFetchPostRequestModeEnum];
+export const ApiV1ProjectContentFetchPostRequestRequestModeEnum = {
+    ReadExisting: 'read_existing',
+    QueueIfMissing: 'queue_if_missing',
+} as const;
+
+export type ApiV1ProjectContentFetchPostRequestRequestModeEnum = typeof ApiV1ProjectContentFetchPostRequestRequestModeEnum[keyof typeof ApiV1ProjectContentFetchPostRequestRequestModeEnum];
 
 export interface ApiV1ProjectConversationFetchPost200Response {
     'project': ApiV1ProjectPageFetchPost200ResponseProject;
@@ -5449,346 +5261,111 @@ export interface ApiV1ProjectPageFetchPost200Response {
     'languageOptions': Array<ApiV1ProjectPageFetchPost200ResponseLanguageOptionsInner>;
     'nextActivityCursor'?: ApiV1ProjectPageFetchPost200ResponseNextActivityCursor;
 }
-export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInner {
-    'slug': string;
-    'conversationType': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerConversationTypeEnum;
+/**
+ * @type ApiV1ProjectPageFetchPost200ResponseActivitiesInner
+ */
+export type ApiV1ProjectPageFetchPost200ResponseActivitiesInner = ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf | ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1;
+
+export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf {
+    'conversationType': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfConversationTypeEnum;
     'isClosed': boolean;
     'createdAt': string;
     'isEdited': boolean;
-    'title': string;
-    'bodyPlainText': string;
-    'originalContent': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOriginalContent;
-    'sourceLanguageCode'?: ApiV1ProjectPageFetchPost200ResponseActivitiesInnerSourceLanguageCodeEnum | null;
-    'dynamicTranslationEnabled': boolean;
-    'machineTranslation'?: ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslation;
-    'stats': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerStats;
+    'displayContent': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContent;
+    'stats': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfStats;
+    'isIndexed': boolean;
+    'slugId': string;
 }
 
-export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerConversationTypeEnum = {
+export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfConversationTypeEnum = {
     Polis: 'polis',
     Ranking: 'ranking',
 } as const;
 
-export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerConversationTypeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerConversationTypeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerConversationTypeEnum];
-export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerSourceLanguageCodeEnum = {
-    Af: 'af',
-    Ak: 'ak',
-    Am: 'am',
-    Ar: 'ar',
-    As: 'as',
-    Ay: 'ay',
-    Az: 'az',
-    Be: 'be',
-    Bg: 'bg',
-    Bho: 'bho',
-    Bm: 'bm',
-    Bn: 'bn',
-    Bs: 'bs',
-    Ca: 'ca',
-    Ceb: 'ceb',
-    Ckb: 'ckb',
-    Co: 'co',
-    Cs: 'cs',
-    Cy: 'cy',
-    Da: 'da',
-    De: 'de',
-    Doi: 'doi',
-    Dv: 'dv',
-    Ee: 'ee',
-    El: 'el',
-    En: 'en',
-    Eo: 'eo',
-    Es: 'es',
-    Et: 'et',
-    Eu: 'eu',
-    Fa: 'fa',
-    Fi: 'fi',
-    Fil: 'fil',
-    Fr: 'fr',
-    Fy: 'fy',
-    Ga: 'ga',
-    Gd: 'gd',
-    Gl: 'gl',
-    Gn: 'gn',
-    Gom: 'gom',
-    Gu: 'gu',
-    Ha: 'ha',
-    Haw: 'haw',
-    He: 'he',
-    Hi: 'hi',
-    Hmn: 'hmn',
-    Hr: 'hr',
-    Ht: 'ht',
-    Hu: 'hu',
-    Hy: 'hy',
-    Id: 'id',
-    Ig: 'ig',
-    Ilo: 'ilo',
-    Is: 'is',
-    It: 'it',
-    Ja: 'ja',
-    Jv: 'jv',
-    Ka: 'ka',
-    Kk: 'kk',
-    Km: 'km',
-    Kn: 'kn',
-    Ko: 'ko',
-    Kri: 'kri',
-    Ku: 'ku',
-    Ky: 'ky',
-    La: 'la',
-    Lb: 'lb',
-    Lg: 'lg',
-    Ln: 'ln',
-    Lo: 'lo',
-    Lt: 'lt',
-    Lus: 'lus',
-    Lv: 'lv',
-    Mai: 'mai',
-    Mg: 'mg',
-    Mi: 'mi',
-    Mk: 'mk',
-    Ml: 'ml',
-    Mn: 'mn',
-    MniMtei: 'mni-Mtei',
-    Mr: 'mr',
-    Ms: 'ms',
-    Mt: 'mt',
-    My: 'my',
-    Nb: 'nb',
-    Ne: 'ne',
-    Nl: 'nl',
-    Nn: 'nn',
-    No: 'no',
-    Nso: 'nso',
-    Ny: 'ny',
-    Om: 'om',
-    Or: 'or',
-    Pa: 'pa',
-    Pl: 'pl',
-    Ps: 'ps',
-    Pt: 'pt',
-    Qu: 'qu',
-    Ro: 'ro',
-    Ru: 'ru',
-    Rw: 'rw',
-    Sa: 'sa',
-    Sd: 'sd',
-    Si: 'si',
-    Sk: 'sk',
-    Sl: 'sl',
-    Sm: 'sm',
-    Sn: 'sn',
-    So: 'so',
-    Sq: 'sq',
-    Sr: 'sr',
-    St: 'st',
-    Su: 'su',
-    Sv: 'sv',
-    Sw: 'sw',
-    Ta: 'ta',
-    Te: 'te',
-    Tg: 'tg',
-    Th: 'th',
-    Ti: 'ti',
-    Tk: 'tk',
-    Tn: 'tn',
-    Tr: 'tr',
-    Ts: 'ts',
-    Tt: 'tt',
-    Ug: 'ug',
-    Uk: 'uk',
-    Ur: 'ur',
-    Uz: 'uz',
-    Vi: 'vi',
-    Xh: 'xh',
-    Yi: 'yi',
-    Yo: 'yo',
-    ZhHans: 'zh-Hans',
-    ZhHant: 'zh-Hant',
-    Zu: 'zu',
-} as const;
+export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfConversationTypeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfConversationTypeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfConversationTypeEnum];
 
-export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerSourceLanguageCodeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerSourceLanguageCodeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerSourceLanguageCodeEnum];
-
-export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslation {
-    'targetLanguageCode': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationTargetLanguageCodeEnum;
-    'sourceLanguageCode'?: ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationSourceLanguageCodeEnum | null;
-    'sourceLanguageLabel'?: string;
-    'status': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationStatusEnum;
-    'translatedContent'?: ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOriginalContent;
+export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1 {
+    'conversationType': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1ConversationTypeEnum;
+    'isClosed': boolean;
+    'createdAt': string;
+    'isEdited': boolean;
+    'displayContent': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContent;
+    'stats': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfStats;
+    'isIndexed': boolean;
 }
 
-export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationTargetLanguageCodeEnum = {
-    En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
-    Ar: 'ar',
-    Fa: 'fa',
-    He: 'he',
-    Ky: 'ky',
-    Ru: 'ru',
+export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1ConversationTypeEnum = {
+    Polis: 'polis',
+    Ranking: 'ranking',
 } as const;
 
-export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationTargetLanguageCodeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationTargetLanguageCodeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationTargetLanguageCodeEnum];
-export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationSourceLanguageCodeEnum = {
-    Af: 'af',
-    Ak: 'ak',
-    Am: 'am',
-    Ar: 'ar',
-    As: 'as',
-    Ay: 'ay',
-    Az: 'az',
-    Be: 'be',
-    Bg: 'bg',
-    Bho: 'bho',
-    Bm: 'bm',
-    Bn: 'bn',
-    Bs: 'bs',
-    Ca: 'ca',
-    Ceb: 'ceb',
-    Ckb: 'ckb',
-    Co: 'co',
-    Cs: 'cs',
-    Cy: 'cy',
-    Da: 'da',
-    De: 'de',
-    Doi: 'doi',
-    Dv: 'dv',
-    Ee: 'ee',
-    El: 'el',
-    En: 'en',
-    Eo: 'eo',
-    Es: 'es',
-    Et: 'et',
-    Eu: 'eu',
-    Fa: 'fa',
-    Fi: 'fi',
-    Fil: 'fil',
-    Fr: 'fr',
-    Fy: 'fy',
-    Ga: 'ga',
-    Gd: 'gd',
-    Gl: 'gl',
-    Gn: 'gn',
-    Gom: 'gom',
-    Gu: 'gu',
-    Ha: 'ha',
-    Haw: 'haw',
-    He: 'he',
-    Hi: 'hi',
-    Hmn: 'hmn',
-    Hr: 'hr',
-    Ht: 'ht',
-    Hu: 'hu',
-    Hy: 'hy',
-    Id: 'id',
-    Ig: 'ig',
-    Ilo: 'ilo',
-    Is: 'is',
-    It: 'it',
-    Ja: 'ja',
-    Jv: 'jv',
-    Ka: 'ka',
-    Kk: 'kk',
-    Km: 'km',
-    Kn: 'kn',
-    Ko: 'ko',
-    Kri: 'kri',
-    Ku: 'ku',
-    Ky: 'ky',
-    La: 'la',
-    Lb: 'lb',
-    Lg: 'lg',
-    Ln: 'ln',
-    Lo: 'lo',
-    Lt: 'lt',
-    Lus: 'lus',
-    Lv: 'lv',
-    Mai: 'mai',
-    Mg: 'mg',
-    Mi: 'mi',
-    Mk: 'mk',
-    Ml: 'ml',
-    Mn: 'mn',
-    MniMtei: 'mni-Mtei',
-    Mr: 'mr',
-    Ms: 'ms',
-    Mt: 'mt',
-    My: 'my',
-    Nb: 'nb',
-    Ne: 'ne',
-    Nl: 'nl',
-    Nn: 'nn',
-    No: 'no',
-    Nso: 'nso',
-    Ny: 'ny',
-    Om: 'om',
-    Or: 'or',
-    Pa: 'pa',
-    Pl: 'pl',
-    Ps: 'ps',
-    Pt: 'pt',
-    Qu: 'qu',
-    Ro: 'ro',
-    Ru: 'ru',
-    Rw: 'rw',
-    Sa: 'sa',
-    Sd: 'sd',
-    Si: 'si',
-    Sk: 'sk',
-    Sl: 'sl',
-    Sm: 'sm',
-    Sn: 'sn',
-    So: 'so',
-    Sq: 'sq',
-    Sr: 'sr',
-    St: 'st',
-    Su: 'su',
-    Sv: 'sv',
-    Sw: 'sw',
-    Ta: 'ta',
-    Te: 'te',
-    Tg: 'tg',
-    Th: 'th',
-    Ti: 'ti',
-    Tk: 'tk',
-    Tn: 'tn',
-    Tr: 'tr',
-    Ts: 'ts',
-    Tt: 'tt',
-    Ug: 'ug',
-    Uk: 'uk',
-    Ur: 'ur',
-    Uz: 'uz',
-    Vi: 'vi',
-    Xh: 'xh',
-    Yi: 'yi',
-    Yo: 'yo',
-    ZhHans: 'zh-Hans',
-    ZhHant: 'zh-Hant',
-    Zu: 'zu',
-} as const;
+export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1ConversationTypeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1ConversationTypeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1ConversationTypeEnum];
 
-export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationSourceLanguageCodeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationSourceLanguageCodeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationSourceLanguageCodeEnum];
-export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationStatusEnum = {
+export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContent {
+    'sourceVersion': string;
+    'status': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentStatusEnum;
+    'mode': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentModeEnum;
+    'content': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOfContent;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentStatusEnum = {
     NotRequested: 'not_requested',
     Pending: 'pending',
     Running: 'running',
     Failed: 'failed',
-    Completed: 'completed',
 } as const;
 
-export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationStatusEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationStatusEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerMachineTranslationStatusEnum];
+export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentStatusEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentStatusEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentStatusEnum];
+export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentModeEnum = {
+    Translated: 'translated',
+} as const;
 
-export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOriginalContent {
+export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentModeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentModeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentModeEnum];
+
+export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOf {
+    'sourceVersion': string;
+    'status': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOfStatusEnum;
+    'mode': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOfModeEnum;
+    'content': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOfContent;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOfStatusEnum = {
+    Available: 'available',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOfStatusEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOfStatusEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOfStatusEnum];
+export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOfModeEnum = {
+    Original: 'original',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOfModeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOfModeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOfModeEnum];
+
+export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOf1 {
+    'sourceVersion': string;
+    'status': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOf1StatusEnum;
+    'mode': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOf1ModeEnum;
+    'content': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOfContent;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOf1StatusEnum = {
+    Available: 'available',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOf1StatusEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOf1StatusEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOf1StatusEnum];
+export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOf1ModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOf1ModeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOf1ModeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOf1ModeEnum];
+
+export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOfContent {
     'title': string;
     'bodyPlainText': string;
 }
-export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerStats {
+export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfStats {
     'opinionCount': number;
     'participantCount': number;
     'voteCount': number;
@@ -5819,25 +5396,13 @@ export const ApiV1ProjectPageFetchPost200ResponseLanguageOptionsInnerValueEnum =
 export type ApiV1ProjectPageFetchPost200ResponseLanguageOptionsInnerValueEnum = typeof ApiV1ProjectPageFetchPost200ResponseLanguageOptionsInnerValueEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseLanguageOptionsInnerValueEnum];
 
 export interface ApiV1ProjectPageFetchPost200ResponseNextActivityCursor {
-    'status': ApiV1ProjectPageFetchPost200ResponseNextActivityCursorStatusEnum;
+    'isIndexed': boolean;
     'createdAt': string;
     'conversationId': number;
 }
-
-export const ApiV1ProjectPageFetchPost200ResponseNextActivityCursorStatusEnum = {
-    Open: 'open',
-    Closed: 'closed',
-} as const;
-
-export type ApiV1ProjectPageFetchPost200ResponseNextActivityCursorStatusEnum = typeof ApiV1ProjectPageFetchPost200ResponseNextActivityCursorStatusEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseNextActivityCursorStatusEnum];
-
 export interface ApiV1ProjectPageFetchPost200ResponseProject {
     'slug': string;
-    'title': string;
-    'subtitle'?: string;
-    'bodyHtml'?: string;
-    'originalContent': ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent;
-    'machineTranslation'?: ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslation;
+    'displayContent': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContent;
     'bannerVariant': ApiV1ProjectPageFetchPost200ResponseProjectBannerVariantEnum;
     'bannerImageUrl'?: string;
     'participantCount': number;
@@ -5882,30 +5447,94 @@ export interface ApiV1ProjectPageFetchPost200ResponseProjectContact {
     'email'?: string;
     'websiteUrl'?: string;
 }
-export interface ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslation {
-    'targetLanguageCode': ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationTargetLanguageCodeEnum;
-    'sourceLanguageCode'?: string | null;
-    'sourceLanguageLabel'?: string;
-    'status': ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationStatusEnum;
-    'translatedContent'?: ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent;
+export interface ApiV1ProjectPageFetchPost200ResponseProjectDisplayContent {
+    'sourceVersion': string;
+    'status': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentStatusEnum;
+    'mode': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentModeEnum;
+    'content': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
 }
 
-export const ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationTargetLanguageCodeEnum = {
-    En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
-    Ar: 'ar',
-    Fa: 'fa',
-    He: 'he',
-    Ky: 'ky',
-    Ru: 'ru',
+export const ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentStatusEnum = {
+    NotRequested: 'not_requested',
+    Pending: 'pending',
+    Running: 'running',
+    Failed: 'failed',
 } as const;
 
-export type ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationTargetLanguageCodeEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationTargetLanguageCodeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationTargetLanguageCodeEnum];
-export const ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationStatusEnum = {
+export type ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentStatusEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentStatusEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentStatusEnum];
+export const ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentModeEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentModeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentModeEnum];
+
+export interface ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf {
+    'sourceVersion': string;
+    'status': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfStatusEnum;
+    'mode': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfModeEnum;
+    'content': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfStatusEnum = {
+    Available: 'available',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfStatusEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfStatusEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfStatusEnum];
+export const ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfModeEnum = {
+    Original: 'original',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfModeEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfModeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfModeEnum];
+
+export interface ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf1 {
+    'sourceVersion': string;
+    'status': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf1StatusEnum;
+    'mode': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf1ModeEnum;
+    'content': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf1StatusEnum = {
+    Available: 'available',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf1StatusEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf1StatusEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf1StatusEnum];
+export const ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf1ModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf1ModeEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf1ModeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf1ModeEnum];
+
+export interface ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf2 {
+    'sourceVersion': string;
+    'status': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf2StatusEnum;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf2StatusEnum = {
+    NotRequested: 'not_requested',
+    Pending: 'pending',
+    Running: 'running',
+    Failed: 'failed',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf2StatusEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf2StatusEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOf2StatusEnum];
+
+export interface ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent {
+    'title': string;
+    'subtitle'?: string;
+    'bodyHtml'?: string;
+}
+export interface ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl {
+    'status': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControlStatusEnum;
+    'sourceLanguageLabel'?: string;
+    'alternateMode': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControlAlternateModeEnum;
+    'canRequestAlternate': boolean;
+}
+
+export const ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControlStatusEnum = {
     NotRequested: 'not_requested',
     Pending: 'pending',
     Running: 'running',
@@ -5913,31 +5542,228 @@ export const ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationStatus
     Completed: 'completed',
 } as const;
 
-export type ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationStatusEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationStatusEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectMachineTranslationStatusEnum];
+export type ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControlStatusEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControlStatusEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControlStatusEnum];
+export const ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControlAlternateModeEnum = {
+    Original: 'original',
+    Translated: 'translated',
+} as const;
 
-export interface ApiV1ProjectPageFetchPost200ResponseProjectOriginalContent {
-    'title': string;
-    'subtitle'?: string;
-    'bodyHtml'?: string;
-}
+export type ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControlAlternateModeEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControlAlternateModeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControlAlternateModeEnum];
+
 export interface ApiV1ProjectPageFetchPostRequest {
     'projectSlug': string;
     'activityLimit'?: number;
     'activityCursor'?: ApiV1ProjectPageFetchPostRequestActivityCursor;
 }
 export interface ApiV1ProjectPageFetchPostRequestActivityCursor {
-    'status': ApiV1ProjectPageFetchPostRequestActivityCursorStatusEnum;
+    'isIndexed': boolean;
     'createdAt': any;
     'conversationId': number;
 }
+export interface ApiV1RankingBwsGithubPreviewPost200Response {
+    'issues': Array<ApiV1RankingBwsGithubPreviewPost200ResponseIssuesInner>;
+}
+export interface ApiV1RankingBwsGithubPreviewPost200ResponseIssuesInner {
+    'number': number;
+    'title': string;
+    'body': string | null;
+    'state': ApiV1RankingBwsGithubPreviewPost200ResponseIssuesInnerStateEnum;
+    'htmlUrl': string;
+}
 
-export const ApiV1ProjectPageFetchPostRequestActivityCursorStatusEnum = {
+export const ApiV1RankingBwsGithubPreviewPost200ResponseIssuesInnerStateEnum = {
     Open: 'open',
     Closed: 'closed',
 } as const;
 
-export type ApiV1ProjectPageFetchPostRequestActivityCursorStatusEnum = typeof ApiV1ProjectPageFetchPostRequestActivityCursorStatusEnum[keyof typeof ApiV1ProjectPageFetchPostRequestActivityCursorStatusEnum];
+export type ApiV1RankingBwsGithubPreviewPost200ResponseIssuesInnerStateEnum = typeof ApiV1RankingBwsGithubPreviewPost200ResponseIssuesInnerStateEnum[keyof typeof ApiV1RankingBwsGithubPreviewPost200ResponseIssuesInnerStateEnum];
 
+export interface ApiV1RankingBwsGithubPreviewPostRequest {
+    'repository': string;
+    'label': string;
+}
+export interface ApiV1RankingBwsItemsFetchPost200Response {
+    'items': Array<ApiV1RankingBwsItemsFetchPost200ResponseItemsInner>;
+}
+export interface ApiV1RankingBwsItemsFetchPost200ResponseItemsInner {
+    'slugId': string;
+    'displayContent': ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContent;
+    'lifecycleStatus': ApiV1RankingBwsItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum;
+    'externalUrl': string | null;
+    'snapshotScore': number | null;
+    'snapshotRank': number | null;
+    'snapshotParticipantCount': number | null;
+    'createdAt': string;
+}
+
+export const ApiV1RankingBwsItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum = {
+    Active: 'active',
+    Completed: 'completed',
+    InProgress: 'in_progress',
+    Canceled: 'canceled',
+} as const;
+
+export type ApiV1RankingBwsItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum = typeof ApiV1RankingBwsItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum[keyof typeof ApiV1RankingBwsItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum];
+
+export interface ApiV1RankingBwsItemsLifecycleUpdatePostRequest {
+    'conversationSlugId': string;
+    'itemSlugId': string;
+    'newStatus': ApiV1RankingBwsItemsLifecycleUpdatePostRequestNewStatusEnum;
+}
+
+export const ApiV1RankingBwsItemsLifecycleUpdatePostRequestNewStatusEnum = {
+    Active: 'active',
+    Completed: 'completed',
+    InProgress: 'in_progress',
+    Canceled: 'canceled',
+} as const;
+
+export type ApiV1RankingBwsItemsLifecycleUpdatePostRequestNewStatusEnum = typeof ApiV1RankingBwsItemsLifecycleUpdatePostRequestNewStatusEnum[keyof typeof ApiV1RankingBwsItemsLifecycleUpdatePostRequestNewStatusEnum];
+
+export interface ApiV1RankingBwsLoadPost200Response {
+    'ranking': Array<string> | null;
+    'comparisons': Array<ApiV1RankingBwsLoadPost200ResponseComparisonsInner> | null;
+    'isComplete': boolean;
+    'candidateSets': Array<Array<string>>;
+    'perUserScores': Array<ApiV1RankingBwsLoadPost200ResponsePerUserScoresInner> | null;
+}
+export interface ApiV1RankingBwsLoadPost200ResponseComparisonsInner {
+    'best': string;
+    'worst': string;
+    'set': Array<string>;
+}
+export interface ApiV1RankingBwsLoadPost200ResponsePerUserScoresInner {
+    'entitySlugId': string;
+    'score': number;
+}
+export interface ApiV1RankingBwsLoadPostRequest {
+    'conversationSlugId': string;
+}
+export interface ApiV1RankingBwsResultsPost200Response {
+    'rankings': Array<ApiV1RankingBwsResultsPost200ResponseRankingsInner>;
+}
+export interface ApiV1RankingBwsResultsPost200ResponseRankingsInner {
+    'itemSlugId': string;
+    'displayContent': ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContent;
+    'avgRank': number | null;
+    'score': number | null;
+    'participantCount': number;
+    'lifecycleStatus': ApiV1RankingBwsResultsPost200ResponseRankingsInnerLifecycleStatusEnum;
+    'externalUrl': string | null;
+}
+
+export const ApiV1RankingBwsResultsPost200ResponseRankingsInnerLifecycleStatusEnum = {
+    Active: 'active',
+    Completed: 'completed',
+    InProgress: 'in_progress',
+    Canceled: 'canceled',
+} as const;
+
+export type ApiV1RankingBwsResultsPost200ResponseRankingsInnerLifecycleStatusEnum = typeof ApiV1RankingBwsResultsPost200ResponseRankingsInnerLifecycleStatusEnum[keyof typeof ApiV1RankingBwsResultsPost200ResponseRankingsInnerLifecycleStatusEnum];
+
+export interface ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContent {
+    'sourceVersion': string;
+    'status': ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentStatusEnum;
+    'mode': ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentModeEnum;
+    'content': ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentStatusEnum = {
+    NotRequested: 'not_requested',
+    Pending: 'pending',
+    Running: 'running',
+    Failed: 'failed',
+} as const;
+
+export type ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentStatusEnum = typeof ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentStatusEnum[keyof typeof ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentStatusEnum];
+export const ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentModeEnum = typeof ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentModeEnum[keyof typeof ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentModeEnum];
+
+export interface ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOf {
+    'sourceVersion': string;
+    'status': ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfStatusEnum;
+    'mode': ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfModeEnum;
+    'content': ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfStatusEnum = {
+    Available: 'available',
+} as const;
+
+export type ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfStatusEnum = typeof ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfStatusEnum[keyof typeof ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfStatusEnum];
+export const ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfModeEnum = {
+    Original: 'original',
+} as const;
+
+export type ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfModeEnum = typeof ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfModeEnum[keyof typeof ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfModeEnum];
+
+export interface ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOf1 {
+    'sourceVersion': string;
+    'status': ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOf1StatusEnum;
+    'mode': ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOf1ModeEnum;
+    'content': ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOf1StatusEnum = {
+    Available: 'available',
+} as const;
+
+export type ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOf1StatusEnum = typeof ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOf1StatusEnum[keyof typeof ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOf1StatusEnum];
+export const ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOf1ModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOf1ModeEnum = typeof ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOf1ModeEnum[keyof typeof ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOf1ModeEnum];
+
+export interface ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayContentAnyOfContent {
+    'title': string;
+    'bodyHtml'?: string;
+}
+export interface ApiV1RankingBwsResultsPostRequest {
+    'conversationSlugId': string;
+    'lifecycleFilter'?: ApiV1RankingBwsResultsPostRequestLifecycleFilterEnum;
+}
+
+export const ApiV1RankingBwsResultsPostRequestLifecycleFilterEnum = {
+    Active: 'active',
+    Completed: 'completed',
+    InProgress: 'in_progress',
+    Canceled: 'canceled',
+    All: 'all',
+} as const;
+
+export type ApiV1RankingBwsResultsPostRequestLifecycleFilterEnum = typeof ApiV1RankingBwsResultsPostRequestLifecycleFilterEnum[keyof typeof ApiV1RankingBwsResultsPostRequestLifecycleFilterEnum];
+
+/**
+ * @type ApiV1RankingBwsSavePost200Response
+ */
+export type ApiV1RankingBwsSavePost200Response = ApiV1RankingBwsSavePost200ResponseOneOf | ApiV1VoteCastPost200ResponseOneOf1;
+
+export interface ApiV1RankingBwsSavePost200ResponseOneOf {
+    'success': boolean;
+    'candidateSets': Array<Array<string>>;
+}
+export interface ApiV1RankingBwsSavePostRequest {
+    'conversationSlugId': string;
+    'ranking': Array<string> | null;
+    'comparisons': Array<ApiV1RankingBwsSavePostRequestComparisonsInner>;
+    'isComplete': boolean;
+}
+export interface ApiV1RankingBwsSavePostRequestComparisonsInner {
+    'best': string;
+    'worst': string;
+    'set': Array<string>;
+}
+export interface ApiV1RankingBwsSyncPost200Response {
+    'created': number;
+    'updated': number;
+}
 export interface ApiV1ReportConversationCreatePostRequest {
     'conversationSlugId': string;
     'reportReason': ApiV1ReportConversationCreatePostRequestReportReasonEnum;
@@ -6091,11 +5917,11 @@ export const ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerQuestionTypeE
 export type ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerQuestionTypeEnum = typeof ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerQuestionTypeEnum[keyof typeof ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerQuestionTypeEnum];
 
 export interface ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContent {
-    'contentId': string;
+    'sourceVersion': string;
     'status': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentStatusEnum;
     'mode': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentModeEnum;
     'content': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1Content;
-    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
 }
 
 export const ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentStatusEnum = {
@@ -6113,11 +5939,11 @@ export const ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayC
 export type ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentModeEnum = typeof ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentModeEnum[keyof typeof ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentModeEnum];
 
 export interface ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf {
-    'contentId': string;
+    'sourceVersion': string;
     'status': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfStatusEnum;
     'mode': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfModeEnum;
     'content': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfContent;
-    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
 }
 
 export const ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfStatusEnum = {
@@ -6132,11 +5958,11 @@ export const ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayC
 export type ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfModeEnum = typeof ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfModeEnum[keyof typeof ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfModeEnum];
 
 export interface ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1 {
-    'contentId': string;
+    'sourceVersion': string;
     'status': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1StatusEnum;
     'mode': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1ModeEnum;
     'content': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1Content;
-    'translationControl': ApiV1MaxdiffResultsPost200ResponseRankingsInnerDisplayContentAnyOfTranslationControl | null;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
 }
 
 export const ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1StatusEnum = {
@@ -8855,271 +8681,6 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1MaxdiffGithubPreviewPostRequest} apiV1MaxdiffGithubPreviewPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1MaxdiffGithubPreviewPost: async (apiV1MaxdiffGithubPreviewPostRequest: ApiV1MaxdiffGithubPreviewPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1MaxdiffGithubPreviewPostRequest' is not null or undefined
-            assertParamExists('apiV1MaxdiffGithubPreviewPost', 'apiV1MaxdiffGithubPreviewPostRequest', apiV1MaxdiffGithubPreviewPostRequest)
-            const localVarPath = `/api/v1/maxdiff/github/preview`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffGithubPreviewPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffResultsPostRequest} apiV1MaxdiffResultsPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1MaxdiffItemsFetchPost: async (apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1MaxdiffResultsPostRequest' is not null or undefined
-            assertParamExists('apiV1MaxdiffItemsFetchPost', 'apiV1MaxdiffResultsPostRequest', apiV1MaxdiffResultsPostRequest)
-            const localVarPath = `/api/v1/maxdiff/items/fetch`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffResultsPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffItemsLifecycleUpdatePostRequest} apiV1MaxdiffItemsLifecycleUpdatePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1MaxdiffItemsLifecycleUpdatePost: async (apiV1MaxdiffItemsLifecycleUpdatePostRequest: ApiV1MaxdiffItemsLifecycleUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1MaxdiffItemsLifecycleUpdatePostRequest' is not null or undefined
-            assertParamExists('apiV1MaxdiffItemsLifecycleUpdatePost', 'apiV1MaxdiffItemsLifecycleUpdatePostRequest', apiV1MaxdiffItemsLifecycleUpdatePostRequest)
-            const localVarPath = `/api/v1/maxdiff/items/lifecycle/update`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffItemsLifecycleUpdatePostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1MaxdiffLoadPost: async (apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1MaxdiffLoadPostRequest' is not null or undefined
-            assertParamExists('apiV1MaxdiffLoadPost', 'apiV1MaxdiffLoadPostRequest', apiV1MaxdiffLoadPostRequest)
-            const localVarPath = `/api/v1/maxdiff/load`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffLoadPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffResultsPostRequest} apiV1MaxdiffResultsPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1MaxdiffResultsPost: async (apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1MaxdiffResultsPostRequest' is not null or undefined
-            assertParamExists('apiV1MaxdiffResultsPost', 'apiV1MaxdiffResultsPostRequest', apiV1MaxdiffResultsPostRequest)
-            const localVarPath = `/api/v1/maxdiff/results`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffResultsPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffSavePostRequest} apiV1MaxdiffSavePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1MaxdiffSavePost: async (apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1MaxdiffSavePostRequest' is not null or undefined
-            assertParamExists('apiV1MaxdiffSavePost', 'apiV1MaxdiffSavePostRequest', apiV1MaxdiffSavePostRequest)
-            const localVarPath = `/api/v1/maxdiff/save`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffSavePostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1MaxdiffSyncPost: async (apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1MaxdiffLoadPostRequest' is not null or undefined
-            assertParamExists('apiV1MaxdiffSyncPost', 'apiV1MaxdiffLoadPostRequest', apiV1MaxdiffLoadPostRequest)
-            const localVarPath = `/api/v1/maxdiff/sync`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffLoadPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
          * @param {ApiV1ModerationConversationCreatePostRequest} apiV1ModerationConversationCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -9939,6 +9500,44 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1ProjectContentFetchPostRequest} apiV1ProjectContentFetchPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ProjectContentFetchPost: async (apiV1ProjectContentFetchPostRequest: ApiV1ProjectContentFetchPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ProjectContentFetchPostRequest' is not null or undefined
+            assertParamExists('apiV1ProjectContentFetchPost', 'apiV1ProjectContentFetchPostRequest', apiV1ProjectContentFetchPostRequest)
+            const localVarPath = `/api/v1/project/content/fetch`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ProjectContentFetchPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1ProjectConversationFetchPostRequest} apiV1ProjectConversationFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -10083,6 +9682,271 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(apiV1ProjectPageFetchPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsGithubPreviewPostRequest} apiV1RankingBwsGithubPreviewPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1RankingBwsGithubPreviewPost: async (apiV1RankingBwsGithubPreviewPostRequest: ApiV1RankingBwsGithubPreviewPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1RankingBwsGithubPreviewPostRequest' is not null or undefined
+            assertParamExists('apiV1RankingBwsGithubPreviewPost', 'apiV1RankingBwsGithubPreviewPostRequest', apiV1RankingBwsGithubPreviewPostRequest)
+            const localVarPath = `/api/v1/ranking/bws/github/preview`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1RankingBwsGithubPreviewPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsResultsPostRequest} apiV1RankingBwsResultsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1RankingBwsItemsFetchPost: async (apiV1RankingBwsResultsPostRequest: ApiV1RankingBwsResultsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1RankingBwsResultsPostRequest' is not null or undefined
+            assertParamExists('apiV1RankingBwsItemsFetchPost', 'apiV1RankingBwsResultsPostRequest', apiV1RankingBwsResultsPostRequest)
+            const localVarPath = `/api/v1/ranking/bws/items/fetch`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1RankingBwsResultsPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsItemsLifecycleUpdatePostRequest} apiV1RankingBwsItemsLifecycleUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1RankingBwsItemsLifecycleUpdatePost: async (apiV1RankingBwsItemsLifecycleUpdatePostRequest: ApiV1RankingBwsItemsLifecycleUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1RankingBwsItemsLifecycleUpdatePostRequest' is not null or undefined
+            assertParamExists('apiV1RankingBwsItemsLifecycleUpdatePost', 'apiV1RankingBwsItemsLifecycleUpdatePostRequest', apiV1RankingBwsItemsLifecycleUpdatePostRequest)
+            const localVarPath = `/api/v1/ranking/bws/items/lifecycle/update`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1RankingBwsItemsLifecycleUpdatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsLoadPostRequest} apiV1RankingBwsLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1RankingBwsLoadPost: async (apiV1RankingBwsLoadPostRequest: ApiV1RankingBwsLoadPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1RankingBwsLoadPostRequest' is not null or undefined
+            assertParamExists('apiV1RankingBwsLoadPost', 'apiV1RankingBwsLoadPostRequest', apiV1RankingBwsLoadPostRequest)
+            const localVarPath = `/api/v1/ranking/bws/load`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1RankingBwsLoadPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsResultsPostRequest} apiV1RankingBwsResultsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1RankingBwsResultsPost: async (apiV1RankingBwsResultsPostRequest: ApiV1RankingBwsResultsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1RankingBwsResultsPostRequest' is not null or undefined
+            assertParamExists('apiV1RankingBwsResultsPost', 'apiV1RankingBwsResultsPostRequest', apiV1RankingBwsResultsPostRequest)
+            const localVarPath = `/api/v1/ranking/bws/results`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1RankingBwsResultsPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsSavePostRequest} apiV1RankingBwsSavePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1RankingBwsSavePost: async (apiV1RankingBwsSavePostRequest: ApiV1RankingBwsSavePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1RankingBwsSavePostRequest' is not null or undefined
+            assertParamExists('apiV1RankingBwsSavePost', 'apiV1RankingBwsSavePostRequest', apiV1RankingBwsSavePostRequest)
+            const localVarPath = `/api/v1/ranking/bws/save`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1RankingBwsSavePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsLoadPostRequest} apiV1RankingBwsLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1RankingBwsSyncPost: async (apiV1RankingBwsLoadPostRequest: ApiV1RankingBwsLoadPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1RankingBwsLoadPostRequest' is not null or undefined
+            assertParamExists('apiV1RankingBwsSyncPost', 'apiV1RankingBwsLoadPostRequest', apiV1RankingBwsLoadPostRequest)
+            const localVarPath = `/api/v1/ranking/bws/sync`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1RankingBwsLoadPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -11528,7 +11392,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ConversationContentFetchPost(apiV1ConversationContentFetchPostRequest: ApiV1ConversationContentFetchPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationGetPost200ResponseDisplayContent>> {
+        async apiV1ConversationContentFetchPost(apiV1ConversationContentFetchPostRequest: ApiV1ConversationContentFetchPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationGetPost200ResponseOneOfDisplayContent>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationContentFetchPost(apiV1ConversationContentFetchPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationContentFetchPost']?.[localVarOperationServerIndex]?.url;
@@ -11733,90 +11597,6 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationValidateCsvPost(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationValidateCsvPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffGithubPreviewPostRequest} apiV1MaxdiffGithubPreviewPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1MaxdiffGithubPreviewPost(apiV1MaxdiffGithubPreviewPostRequest: ApiV1MaxdiffGithubPreviewPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffGithubPreviewPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffGithubPreviewPost(apiV1MaxdiffGithubPreviewPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffGithubPreviewPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffResultsPostRequest} apiV1MaxdiffResultsPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1MaxdiffItemsFetchPost(apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffItemsFetchPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffItemsFetchPost(apiV1MaxdiffResultsPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffItemsFetchPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffItemsLifecycleUpdatePostRequest} apiV1MaxdiffItemsLifecycleUpdatePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1MaxdiffItemsLifecycleUpdatePost(apiV1MaxdiffItemsLifecycleUpdatePostRequest: ApiV1MaxdiffItemsLifecycleUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffItemsLifecycleUpdatePost(apiV1MaxdiffItemsLifecycleUpdatePostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffItemsLifecycleUpdatePost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffLoadPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffLoadPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffResultsPostRequest} apiV1MaxdiffResultsPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1MaxdiffResultsPost(apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffResultsPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffResultsPost(apiV1MaxdiffResultsPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffResultsPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffSavePostRequest} apiV1MaxdiffSavePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffSavePost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffSavePost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1MaxdiffSyncPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffSyncPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffSyncPost(apiV1MaxdiffLoadPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffSyncPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -12083,6 +11863,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1ProjectContentFetchPostRequest} apiV1ProjectContentFetchPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ProjectContentFetchPost(apiV1ProjectContentFetchPostRequest: ApiV1ProjectContentFetchPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ProjectPageFetchPost200ResponseProjectDisplayContent>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ProjectContentFetchPost(apiV1ProjectContentFetchPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ProjectContentFetchPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1ProjectConversationFetchPostRequest} apiV1ProjectConversationFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -12127,6 +11919,90 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ProjectPageFetchPost(apiV1ProjectPageFetchPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ProjectPageFetchPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsGithubPreviewPostRequest} apiV1RankingBwsGithubPreviewPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1RankingBwsGithubPreviewPost(apiV1RankingBwsGithubPreviewPostRequest: ApiV1RankingBwsGithubPreviewPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1RankingBwsGithubPreviewPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1RankingBwsGithubPreviewPost(apiV1RankingBwsGithubPreviewPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1RankingBwsGithubPreviewPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsResultsPostRequest} apiV1RankingBwsResultsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1RankingBwsItemsFetchPost(apiV1RankingBwsResultsPostRequest: ApiV1RankingBwsResultsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1RankingBwsItemsFetchPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1RankingBwsItemsFetchPost(apiV1RankingBwsResultsPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1RankingBwsItemsFetchPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsItemsLifecycleUpdatePostRequest} apiV1RankingBwsItemsLifecycleUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1RankingBwsItemsLifecycleUpdatePost(apiV1RankingBwsItemsLifecycleUpdatePostRequest: ApiV1RankingBwsItemsLifecycleUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1RankingBwsItemsLifecycleUpdatePost(apiV1RankingBwsItemsLifecycleUpdatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1RankingBwsItemsLifecycleUpdatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsLoadPostRequest} apiV1RankingBwsLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1RankingBwsLoadPost(apiV1RankingBwsLoadPostRequest: ApiV1RankingBwsLoadPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1RankingBwsLoadPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1RankingBwsLoadPost(apiV1RankingBwsLoadPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1RankingBwsLoadPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsResultsPostRequest} apiV1RankingBwsResultsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1RankingBwsResultsPost(apiV1RankingBwsResultsPostRequest: ApiV1RankingBwsResultsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1RankingBwsResultsPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1RankingBwsResultsPost(apiV1RankingBwsResultsPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1RankingBwsResultsPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsSavePostRequest} apiV1RankingBwsSavePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1RankingBwsSavePost(apiV1RankingBwsSavePostRequest: ApiV1RankingBwsSavePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1RankingBwsSavePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1RankingBwsSavePost(apiV1RankingBwsSavePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1RankingBwsSavePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsLoadPostRequest} apiV1RankingBwsLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1RankingBwsSyncPost(apiV1RankingBwsLoadPostRequest: ApiV1RankingBwsLoadPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1RankingBwsSyncPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1RankingBwsSyncPost(apiV1RankingBwsLoadPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1RankingBwsSyncPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -12787,7 +12663,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ConversationContentFetchPost(apiV1ConversationContentFetchPostRequest: ApiV1ConversationContentFetchPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationGetPost200ResponseDisplayContent> {
+        apiV1ConversationContentFetchPost(apiV1ConversationContentFetchPostRequest: ApiV1ConversationContentFetchPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationGetPost200ResponseOneOfDisplayContent> {
             return localVarFp.apiV1ConversationContentFetchPost(apiV1ConversationContentFetchPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
@@ -12939,69 +12815,6 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1ConversationValidateCsvPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationValidateCsvPost200Response> {
             return localVarFp.apiV1ConversationValidateCsvPost(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffGithubPreviewPostRequest} apiV1MaxdiffGithubPreviewPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1MaxdiffGithubPreviewPost(apiV1MaxdiffGithubPreviewPostRequest: ApiV1MaxdiffGithubPreviewPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffGithubPreviewPost200Response> {
-            return localVarFp.apiV1MaxdiffGithubPreviewPost(apiV1MaxdiffGithubPreviewPostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffResultsPostRequest} apiV1MaxdiffResultsPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1MaxdiffItemsFetchPost(apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffItemsFetchPost200Response> {
-            return localVarFp.apiV1MaxdiffItemsFetchPost(apiV1MaxdiffResultsPostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffItemsLifecycleUpdatePostRequest} apiV1MaxdiffItemsLifecycleUpdatePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1MaxdiffItemsLifecycleUpdatePost(apiV1MaxdiffItemsLifecycleUpdatePostRequest: ApiV1MaxdiffItemsLifecycleUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.apiV1MaxdiffItemsLifecycleUpdatePost(apiV1MaxdiffItemsLifecycleUpdatePostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffLoadPost200Response> {
-            return localVarFp.apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffResultsPostRequest} apiV1MaxdiffResultsPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1MaxdiffResultsPost(apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffResultsPost200Response> {
-            return localVarFp.apiV1MaxdiffResultsPost(apiV1MaxdiffResultsPostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffSavePostRequest} apiV1MaxdiffSavePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffSavePost200Response> {
-            return localVarFp.apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1MaxdiffSyncPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffSyncPost200Response> {
-            return localVarFp.apiV1MaxdiffSyncPost(apiV1MaxdiffLoadPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -13201,6 +13014,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1ProjectContentFetchPostRequest} apiV1ProjectContentFetchPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ProjectContentFetchPost(apiV1ProjectContentFetchPostRequest: ApiV1ProjectContentFetchPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ProjectPageFetchPost200ResponseProjectDisplayContent> {
+            return localVarFp.apiV1ProjectContentFetchPost(apiV1ProjectContentFetchPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1ProjectConversationFetchPostRequest} apiV1ProjectConversationFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -13234,6 +13056,69 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1ProjectPageFetchPost(apiV1ProjectPageFetchPostRequest: ApiV1ProjectPageFetchPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ProjectPageFetchPost200Response> {
             return localVarFp.apiV1ProjectPageFetchPost(apiV1ProjectPageFetchPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsGithubPreviewPostRequest} apiV1RankingBwsGithubPreviewPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1RankingBwsGithubPreviewPost(apiV1RankingBwsGithubPreviewPostRequest: ApiV1RankingBwsGithubPreviewPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1RankingBwsGithubPreviewPost200Response> {
+            return localVarFp.apiV1RankingBwsGithubPreviewPost(apiV1RankingBwsGithubPreviewPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsResultsPostRequest} apiV1RankingBwsResultsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1RankingBwsItemsFetchPost(apiV1RankingBwsResultsPostRequest: ApiV1RankingBwsResultsPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1RankingBwsItemsFetchPost200Response> {
+            return localVarFp.apiV1RankingBwsItemsFetchPost(apiV1RankingBwsResultsPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsItemsLifecycleUpdatePostRequest} apiV1RankingBwsItemsLifecycleUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1RankingBwsItemsLifecycleUpdatePost(apiV1RankingBwsItemsLifecycleUpdatePostRequest: ApiV1RankingBwsItemsLifecycleUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1RankingBwsItemsLifecycleUpdatePost(apiV1RankingBwsItemsLifecycleUpdatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsLoadPostRequest} apiV1RankingBwsLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1RankingBwsLoadPost(apiV1RankingBwsLoadPostRequest: ApiV1RankingBwsLoadPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1RankingBwsLoadPost200Response> {
+            return localVarFp.apiV1RankingBwsLoadPost(apiV1RankingBwsLoadPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsResultsPostRequest} apiV1RankingBwsResultsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1RankingBwsResultsPost(apiV1RankingBwsResultsPostRequest: ApiV1RankingBwsResultsPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1RankingBwsResultsPost200Response> {
+            return localVarFp.apiV1RankingBwsResultsPost(apiV1RankingBwsResultsPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsSavePostRequest} apiV1RankingBwsSavePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1RankingBwsSavePost(apiV1RankingBwsSavePostRequest: ApiV1RankingBwsSavePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1RankingBwsSavePost200Response> {
+            return localVarFp.apiV1RankingBwsSavePost(apiV1RankingBwsSavePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsLoadPostRequest} apiV1RankingBwsLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1RankingBwsSyncPost(apiV1RankingBwsLoadPostRequest: ApiV1RankingBwsLoadPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1RankingBwsSyncPost200Response> {
+            return localVarFp.apiV1RankingBwsSyncPost(apiV1RankingBwsLoadPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -14020,76 +13905,6 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1MaxdiffGithubPreviewPostRequest} apiV1MaxdiffGithubPreviewPostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiV1MaxdiffGithubPreviewPost(apiV1MaxdiffGithubPreviewPostRequest: ApiV1MaxdiffGithubPreviewPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1MaxdiffGithubPreviewPost(apiV1MaxdiffGithubPreviewPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1MaxdiffResultsPostRequest} apiV1MaxdiffResultsPostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiV1MaxdiffItemsFetchPost(apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1MaxdiffItemsFetchPost(apiV1MaxdiffResultsPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1MaxdiffItemsLifecycleUpdatePostRequest} apiV1MaxdiffItemsLifecycleUpdatePostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiV1MaxdiffItemsLifecycleUpdatePost(apiV1MaxdiffItemsLifecycleUpdatePostRequest: ApiV1MaxdiffItemsLifecycleUpdatePostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1MaxdiffItemsLifecycleUpdatePost(apiV1MaxdiffItemsLifecycleUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1MaxdiffResultsPostRequest} apiV1MaxdiffResultsPostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiV1MaxdiffResultsPost(apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1MaxdiffResultsPost(apiV1MaxdiffResultsPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1MaxdiffSavePostRequest} apiV1MaxdiffSavePostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiV1MaxdiffSyncPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1MaxdiffSyncPost(apiV1MaxdiffLoadPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
      * @param {ApiV1ModerationConversationCreatePostRequest} apiV1ModerationConversationCreatePostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -14308,6 +14123,16 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @param {ApiV1ProjectContentFetchPostRequest} apiV1ProjectContentFetchPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1ProjectContentFetchPost(apiV1ProjectContentFetchPostRequest: ApiV1ProjectContentFetchPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ProjectContentFetchPost(apiV1ProjectContentFetchPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @param {ApiV1ProjectConversationFetchPostRequest} apiV1ProjectConversationFetchPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -14344,6 +14169,76 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1ProjectPageFetchPost(apiV1ProjectPageFetchPostRequest: ApiV1ProjectPageFetchPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1ProjectPageFetchPost(apiV1ProjectPageFetchPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1RankingBwsGithubPreviewPostRequest} apiV1RankingBwsGithubPreviewPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1RankingBwsGithubPreviewPost(apiV1RankingBwsGithubPreviewPostRequest: ApiV1RankingBwsGithubPreviewPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1RankingBwsGithubPreviewPost(apiV1RankingBwsGithubPreviewPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1RankingBwsResultsPostRequest} apiV1RankingBwsResultsPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1RankingBwsItemsFetchPost(apiV1RankingBwsResultsPostRequest: ApiV1RankingBwsResultsPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1RankingBwsItemsFetchPost(apiV1RankingBwsResultsPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1RankingBwsItemsLifecycleUpdatePostRequest} apiV1RankingBwsItemsLifecycleUpdatePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1RankingBwsItemsLifecycleUpdatePost(apiV1RankingBwsItemsLifecycleUpdatePostRequest: ApiV1RankingBwsItemsLifecycleUpdatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1RankingBwsItemsLifecycleUpdatePost(apiV1RankingBwsItemsLifecycleUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1RankingBwsLoadPostRequest} apiV1RankingBwsLoadPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1RankingBwsLoadPost(apiV1RankingBwsLoadPostRequest: ApiV1RankingBwsLoadPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1RankingBwsLoadPost(apiV1RankingBwsLoadPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1RankingBwsResultsPostRequest} apiV1RankingBwsResultsPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1RankingBwsResultsPost(apiV1RankingBwsResultsPostRequest: ApiV1RankingBwsResultsPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1RankingBwsResultsPost(apiV1RankingBwsResultsPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1RankingBwsSavePostRequest} apiV1RankingBwsSavePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1RankingBwsSavePost(apiV1RankingBwsSavePostRequest: ApiV1RankingBwsSavePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1RankingBwsSavePost(apiV1RankingBwsSavePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1RankingBwsLoadPostRequest} apiV1RankingBwsLoadPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1RankingBwsSyncPost(apiV1RankingBwsLoadPostRequest: ApiV1RankingBwsLoadPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1RankingBwsSyncPost(apiV1RankingBwsLoadPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -14610,6 +14505,5 @@ export class DefaultApi extends BaseAPI {
         return DefaultApiFp(this.configuration).apiV1WebhookGithubPost(options).then((request) => request(this.axios, this.basePath));
     }
 }
-
 
 

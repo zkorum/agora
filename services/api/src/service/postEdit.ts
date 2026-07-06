@@ -5,6 +5,7 @@ import {
     conversationTable,
     conversationModerationTable,
     organizationTable,
+    polisConversationConfigTable,
     projectContentTable,
     projectOrganizationOwnershipTable,
     projectTable,
@@ -95,9 +96,9 @@ export async function getConversationForEdit({
             participationMode: conversationTable.participationMode,
             conversationType: conversationTable.conversationType,
             requiresEventTicket: conversationTable.requiresEventTicket,
-            aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+            aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
             preferredOpinionGroupCount:
-                conversationTable.preferredOpinionGroupCount,
+                polisConversationConfigTable.preferredOpinionGroupCount,
             postAsOrganizationName: organizationTable.displayName,
             autoProvisionedForUserId:
                 organizationTable.autoProvisionedForUserId,
@@ -135,6 +136,10 @@ export async function getConversationForEdit({
                 projectOrganizationOwnershipTable.organizationId,
                 organizationTable.id,
             ),
+        )
+        .leftJoin(
+            polisConversationConfigTable,
+            eq(polisConversationConfigTable.id, conversationTable.polisConfigId),
         )
         .leftJoin(
             conversationModerationTable,
@@ -250,10 +255,10 @@ export async function getConversationForEdit({
         isIndexed: conversation.isIndexed,
         participationMode: conversation.participationMode,
         requiresEventTicket: toUnionUndefined(conversation.requiresEventTicket),
-        aiLabelingEnabled: conversation.aiLabelingEnabled,
+        aiLabelingEnabled: conversation.aiLabelingEnabled ?? false,
         preferredOpinionGroupCount:
             editPermissions.canUseAnalysisVariantsPreference
-                ? conversation.preferredOpinionGroupCount
+                ? (conversation.preferredOpinionGroupCount ?? null)
                 : null,
         postAsOrganizationName: toUnionUndefined(
             conversation.autoProvisionedForUserId === null
@@ -335,13 +340,14 @@ export async function updateConversation({
                 organizationName: organizationTable.displayName,
                 currentContentId: conversationTable.currentContentId,
                 conversationType: conversationTable.conversationType,
+                polisConfigId: conversationTable.polisConfigId,
                 isIndexed: conversationTable.isIndexed,
                 participationMode: conversationTable.participationMode,
                 requiresEventTicket: conversationTable.requiresEventTicket,
-                aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+                aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
                 isClosed: conversationTable.isClosed,
                 currentPreferredOpinionGroupCount:
-                    conversationTable.preferredOpinionGroupCount,
+                    polisConversationConfigTable.preferredOpinionGroupCount,
                 currentLanguageSettingsSource:
                     conversationTable.languageSettingsSource,
                 currentTitle: conversationContentTable.title,
@@ -374,6 +380,10 @@ export async function updateConversation({
                     projectOrganizationOwnershipTable.organizationId,
                     organizationTable.id,
                 ),
+            )
+            .leftJoin(
+                polisConversationConfigTable,
+                eq(polisConversationConfigTable.id, conversationTable.polisConfigId),
             )
             .leftJoin(
                 conversationModerationTable,
@@ -581,13 +591,13 @@ export async function updateConversation({
             updatedPreferredOpinionGroupCount !==
             conversation.currentPreferredOpinionGroupCount;
         const updatedAiLabelingEnabled =
-            aiLabelingEnabled ?? conversation.aiLabelingEnabled;
+            aiLabelingEnabled ?? conversation.aiLabelingEnabled ?? true;
         const conversationSettingsChanged =
             isIndexed !== conversation.isIndexed ||
             participationMode !== conversation.participationMode ||
             (requiresEventTicket ?? null) !==
                 conversation.requiresEventTicket ||
-            updatedAiLabelingEnabled !== conversation.aiLabelingEnabled ||
+            updatedAiLabelingEnabled !== (conversation.aiLabelingEnabled ?? true) ||
             preferredOpinionGroupCountChanged ||
             languageSettingsSource !== conversation.currentLanguageSettingsSource;
 
@@ -638,8 +648,6 @@ export async function updateConversation({
             isIndexed: boolean;
             participationMode: typeof participationMode;
             requiresEventTicket: typeof requiresEventTicket | null;
-            aiLabelingEnabled: boolean;
-            preferredOpinionGroupCount?: typeof preferredOpinionGroupCount;
             languageSettingsSource: typeof languageSettingsSource;
             updatedAt: Date;
             isEdited?: boolean;
@@ -647,7 +655,6 @@ export async function updateConversation({
             isIndexed: isIndexed,
             participationMode: participationMode,
             requiresEventTicket: requiresEventTicket ?? null,
-            aiLabelingEnabled: updatedAiLabelingEnabled,
             languageSettingsSource,
             updatedAt: new Date(),
         };
@@ -657,16 +664,28 @@ export async function updateConversation({
             conversationUpdateValues.isEdited = true;
         }
 
-        if (preferredOpinionGroupCountChanged) {
-            conversationUpdateValues.preferredOpinionGroupCount =
-                updatedPreferredOpinionGroupCount;
-        }
-
         // Update conversation with new content and settings
         await tx
             .update(conversationTable)
             .set(conversationUpdateValues)
             .where(eq(conversationTable.id, conversationId));
+
+        if (
+            conversation.conversationType === "polis" &&
+            conversation.polisConfigId !== null &&
+            (updatedAiLabelingEnabled !==
+                (conversation.aiLabelingEnabled ?? true) ||
+                preferredOpinionGroupCountChanged)
+        ) {
+            await tx
+                .update(polisConversationConfigTable)
+                .set({
+                    aiLabelingEnabled: updatedAiLabelingEnabled,
+                    preferredOpinionGroupCount: updatedPreferredOpinionGroupCount,
+                    updatedAt: now,
+                })
+                .where(eq(polisConversationConfigTable.id, conversation.polisConfigId));
+        }
 
         if (surveyConfig !== undefined) {
             const sourceLanguageMetadata =

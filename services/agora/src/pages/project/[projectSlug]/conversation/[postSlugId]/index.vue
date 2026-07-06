@@ -50,7 +50,7 @@ const emit = defineEmits<{
 const isMaxDiffConversation = computed(
   () =>
     conversationData.metadata.conversationType === "ranking" &&
-    conversationData.metadata.rankingMode === "maxdiff"
+    conversationData.metadata.rankingMode === "bws"
 );
 
 </script>

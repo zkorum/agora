@@ -1,5 +1,5 @@
 import type { AnalysisCheckpoint } from "src/shared/types/dto";
-import type { ExtendedConversation } from "src/shared/types/zod";
+import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
 import { parseCheckpointQuery } from "src/utils/analysis/analysisRoute";
 import {
   pickCommentStatsForActionBar,
@@ -11,7 +11,7 @@ import { computed, toValue } from "vue";
 import type { LocationQuery } from "vue-router";
 
 export type ConversationActionBarStats = Pick<
-  ExtendedConversation["metadata"],
+  ExtendedConversationDisplayData["metadata"],
   | "opinionCount"
   | "participantCount"
   | "voteCount"
@@ -20,7 +20,7 @@ export type ConversationActionBarStats = Pick<
 >;
 
 interface UseConversationActionBarStatsParams {
-  conversationData: MaybeRefOrGetter<ExtendedConversation | undefined>;
+  conversationData: MaybeRefOrGetter<ExtendedConversationDisplayData | undefined>;
   currentTab: MaybeRefOrGetter<"comment" | "analysis">;
   routeQuery: MaybeRefOrGetter<LocationQuery>;
   overrideStats?: MaybeRefOrGetter<ConversationActionBarStats | undefined>;
@@ -48,11 +48,14 @@ export function useConversationActionBarStats({
   );
   const shouldLoadCommentStats = computed(() => {
     const conversation = toValue(conversationData);
+    const isMaxDiffConversation =
+      conversation?.metadata.conversationType === "ranking" &&
+      conversation.metadata.rankingMode === "bws";
     return (
       toValue(currentTab) === "comment" &&
       toValue(enableCommentStats) &&
       conversationSlugId.value !== "" &&
-      conversation?.metadata.conversationType !== "maxdiff"
+      !isMaxDiffConversation
     );
   });
 

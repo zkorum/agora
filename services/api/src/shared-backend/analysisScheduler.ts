@@ -6,6 +6,7 @@ import {
     conversationTable,
     opinionTable,
     opinionGroupSpecTable,
+    polisConversationConfigTable,
     surveyResponseTable,
     voteTable,
 } from "./schema.js";
@@ -124,12 +125,17 @@ export async function scheduleAnalysisUpdate({
         const conversations = await tx
             .select({
                 analysisDataGeneration:
-                    conversationTable.analysisDataGeneration,
+                    polisConversationConfigTable.analysisDataGeneration,
+                polisConfigId: conversationTable.polisConfigId,
                 conversationSlugId: conversationTable.slugId,
                 conversationType: conversationTable.conversationType,
                 currentContentId: conversationTable.currentContentId,
             })
             .from(conversationTable)
+            .leftJoin(
+                polisConversationConfigTable,
+                eq(polisConversationConfigTable.id, conversationTable.polisConfigId),
+            )
             .where(eq(conversationTable.id, conversationId))
             // FK checks from analysis workers take KEY SHARE on conversation.
             // NO KEY UPDATE still serializes schedulers without blocking them.
@@ -160,9 +166,18 @@ export async function scheduleAnalysisUpdate({
             return {
                 conversationId,
                 conversationSlugId: conversation.conversationSlugId,
-                dataGeneration: conversation.analysisDataGeneration,
+                dataGeneration: conversation.analysisDataGeneration ?? 0,
                 scheduledSpecCount: 0,
             };
+        }
+
+        if (
+            conversation.polisConfigId === null ||
+            conversation.analysisDataGeneration === null
+        ) {
+            throw new Error(
+                `Cannot schedule analysis update for polis conversation ${String(conversationId)} without polis config`,
+            );
         }
 
         const dataGeneration = conversation.analysisDataGeneration + 1;
@@ -170,9 +185,9 @@ export async function scheduleAnalysisUpdate({
             `[AnalysisScheduler] Incrementing analysis generation conversationId=${String(conversationId)} conversationSlugId=${conversation.conversationSlugId} from=${String(conversation.analysisDataGeneration)} to=${String(dataGeneration)}`,
         );
         await tx
-            .update(conversationTable)
+            .update(polisConversationConfigTable)
             .set({ analysisDataGeneration: dataGeneration })
-            .where(eq(conversationTable.id, conversationId));
+            .where(eq(polisConversationConfigTable.id, conversation.polisConfigId));
 
         log.info(
             `[AnalysisScheduler] Fetching current opinion-group specs conversationId=${String(conversationId)} conversationSlugId=${conversation.conversationSlugId}`,

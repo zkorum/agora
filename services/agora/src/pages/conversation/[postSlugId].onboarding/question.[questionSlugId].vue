@@ -6,7 +6,10 @@
     :pin-footer-to-bottom="false"
   >
     <template #body>
-      <ConversationSurveyOnboardingHero :conversation-data="conversationData" />
+      <ConversationSurveyOnboardingHero
+        :conversation-data="conversationData"
+        :initial-display-content="conversationDisplayContent"
+      />
     </template>
 
     <template #footer>
@@ -228,6 +231,7 @@ const { t } = useComponentI18n<ConversationSurveyQuestionTranslations>(
 
 const {
   conversationData,
+  conversationDisplayContent,
   conversationSlugId,
   surveyStatus,
   surveyForm,

@@ -2,7 +2,7 @@
 
 ## Ranking Item Dynamic Translation
 
-Ranking-item translation is not fully implemented yet. This document describes the intended implementation direction.
+Ranking-item translation is implemented for the current MaxDiff surfaces in this branch, with pairwise still deferred. This document describes the intended implementation direction and the current branch state.
 
 The goal is not to bolt translation onto MaxDiff with one-off logic. The goal is to make rankable prioritization items a first-class translated content kind that can be reused by multiple comparison methods, starting with MaxDiff and later pairwise.
 
@@ -10,7 +10,7 @@ MaxDiff and pairwise are comparison methods. They should not own translated item
 
 ## Implementation Status
 
-This document is still the target plan. The current branch implements the storage/runtime foundation, not the full ranking-item translation product.
+This document is still the target plan. The current branch implements the storage/runtime foundation, the conversation-family refactor, the backend/worker ranking-item translation path, and MaxDiff frontend display/translation controls.
 
 Implemented in the current branch:
 
@@ -21,26 +21,47 @@ Implemented in the current branch:
 - `content_translation_work` has `ranking_item_content_id`, ranking-item uniqueness, and source-kind constraints.
 - `ranking_item`, `ranking_item_content`, `ranking_item_external_source`, `ranking_item_content_translation`, `polis_conversation_config`, `ranking_conversation_config`, and `conversation_import_source` exist in schema.
 - Existing MaxDiff item rows are structurally copied into `ranking_item*` tables by explicit SQL backfill while preserving item slug IDs and `conversation_content_id`.
-- Runtime MaxDiff item reads/writes and GitHub sync paths use `ranking_item*` tables internally while public `/maxdiff/*` naming remains temporarily.
+- Runtime MaxDiff/BWS item reads/writes and GitHub sync paths use `ranking_item*` tables internally while public API routes are namespaced under `/ranking/bws/*`.
 - The scoring worker reads ranking items instead of legacy MaxDiff item tables.
 - Plaintext data backfill is an explicit TypeScript script run after migrations, using application HTML-to-plaintext helpers rather than SQL HTML parsing.
 - Shared TypeScript and content-translation-worker Python HTML-to-plaintext helpers strip HTML through sanitizer/parser libraries and have focused tests for newline/entity behavior.
+- `conversation_type` is migrated to the broad family values `polis | ranking`; MaxDiff is stored as `ranking_conversation_config.ranking_mode = 'maxdiff'`.
+- Shared DTOs model conversation type/config as discriminated unions, and create-conversation parsing preserves the ranking-mode correlation downstream.
+- API metadata, edit, snapshot, analysis, entitlement-cleanup, and scoring paths use `polis_conversation_config` and `ranking_conversation_config` as the active config sources.
+- MaxDiff-specific code paths check both `conversation_type = 'ranking'` and `ranking_mode = 'maxdiff'`.
+- `subject.kind = 'ranking_item'` is accepted by the content-translation API wrapper, backend request handling, and content-translation worker.
+- Ranking-item translation source fetch, existence/freshness checks, upsert, and event emission are wired through the backend/worker path.
+- The generated OpenAPI spec/client includes `ranking_item` translation subjects and the discriminated create-conversation request shape.
+- The frontend draft/model layer stores `conversationType = 'ranking'` plus `rankingMode = 'maxdiff'`, normalizes legacy local drafts with `conversationType = 'maxdiff'`, and threads `ConversationTypeConfig` through relevant component boundaries.
+- Project activity DTOs now expose canonical `conversationType` instead of a separate `kind = conversation | vote` field.
+- MaxDiff item and result DTOs include backend-selected ranking-item `displayContent` with translation status/control metadata and no duplicate top-level rendered `title`/`body` fields.
+- MaxDiff voting cards, dialogs, personal rankings, community rankings, completed items, and canceled items render `displayContent` through shared parsed DTO types.
+- MaxDiff item queries and results refresh on display/spoken language preference changes.
+- MaxDiff item dialogs support lazy ranking-item translation requests through the shared `ContentTranslationControl` and content-translation preview flow.
+- API and import-worker conversation creation both create subtype config rows and conversation rows in the same database transaction/commit path. API creates Pol.is/ranking config rows as appropriate; import-worker creates and links `polis_conversation_config` for imported Pol.is conversations.
+- Backend display-content policy for conversation, opinion, survey-question, and ranking-item content is shared through `conversationContent.ts` helpers instead of duplicating translation-control and initial-mode decisions.
+- Frontend ranking-item dialog display/request state is centralized in `useRankingItemDisplayContent`, mirroring the existing `useConversationDisplayContent` pattern more closely than keeping translation state in the dialog component.
+- The detailed conversation endpoint now returns lean `conversationData` metadata/interaction plus backend-selected conversation `displayContent`, instead of duplicating rendered conversation `title`/`body` under both `payload` and `displayContent.content`.
+- The frontend detailed-conversation path now keeps `conversationData` and `displayContent` separate, uses the lean `ConversationDetail` view type, and derives rendered detailed-page title/body from `displayContent` instead of reconstructing `ExtendedConversation`.
+- Manual seed ranking items are eagerly scheduled for translation during API conversation creation, using the same target-language policy as conversation/survey/opinion eager scheduling.
+- GitHub-backed ranking items are not eagerly scheduled for translation; they continue to use lazy request/display flows.
+- Ranking-item translation completion events invalidate active MaxDiff item queries and refresh MaxDiff result/completed/canceled list state for the affected conversation.
+- Active MaxDiff voting cards freeze the displayed candidate content for the current candidate set, so background translation refreshes do not mutate card text until the next/undo/redo candidate-set transition or explicit dialog interaction.
+- API and import-worker runtime import metadata reads/writes use `conversation_import_source` instead of deprecated `conversation.import_*` columns.
 
 Partially implemented in the current branch:
 
-- Config/source tables and nullable pointers exist, but `conversation_type` still persists `polis | maxdiff`; it has not been migrated to `polis | ranking`.
-- Legacy conversation columns remain as the compatibility source for some reads/writes; not every Polis/ranking/import read has moved to the new config/source tables.
-- Ranking-item translation storage exists, but ranking-item translation is explicitly not wired through backend request handling or the worker yet.
+- Deprecated legacy `conversation` columns for moved config/source fields still exist for compatibility and cleanup sequencing, but they should no longer be treated as active sources of truth for Pol.is settings, ranking mode, ranking score pointer, or ranking external source config.
+- Deprecated legacy `conversation.import_*` columns still exist for cleanup sequencing, but they should no longer be treated as active import metadata sources of truth.
+- Old `maxdiff_item*` tables still exist while runtime MaxDiff item internals use `ranking_item*` tables.
+- Public BWS endpoint names now live under `/ranking/bws/*` while internals use ranking-item storage where applicable.
+- Ranking-item translation support is implemented first for MaxDiff compatibility endpoints. Future ranking modes should reuse the same ranking-item display/translation path instead of introducing method-specific translation storage.
 
 Still pending:
 
-- Migrate existing MaxDiff conversations to `conversation_type = 'ranking'` with `ranking_conversation_config.ranking_mode = 'maxdiff'` and add final subtype pointer constraints.
-- Move all remaining subtype/source reads and writes off deprecated legacy `conversation` columns.
-- Implement ranking-item source fetch, translation existence/freshness checks, localized content selection, and `requestContentTranslation()` support for `subject.kind = 'ranking_item'`.
-- Extend the content-translation worker to claim, translate, upsert, and emit events for `ranking_item` work.
-- Update MaxDiff item/results endpoints to return backend-selected original/translated ranking item fields and translation control/status metadata.
-- Add frontend ranking-item translation controls, language-aware query keys, SSE/cache invalidation, and mid-round text-freezing behavior.
-- Add lazy dialog translation request flow, optional eager scheduling, and later cleanup migrations for deprecated `maxdiff_item*` tables and moved legacy columns.
+- Add focused ranking-item translation tests for backend request handling, worker claim/translate/upsert/event/failure paths, and MaxDiff frontend UI behavior.
+- Add later cleanup migrations for deprecated `maxdiff_item*` tables and moved legacy `conversation` columns.
+- Add deferred plaintext null-pair/check constraints after the explicit plaintext backfill has run and the generated migration is intentionally reviewed.
 
 ## Target Model
 
@@ -76,29 +97,51 @@ future pairwise_result / pairwise_comparison
 
 ## Current State
 
-- Rankable prioritization items currently live under MaxDiff-specific names: `maxdiff_item` and immutable versions in `maxdiff_item_content`.
+- Rankable prioritization item storage now lives under method-neutral `ranking_item`, `ranking_item_content`, and `ranking_item_content_translation` tables, while old MaxDiff tables still exist for compatibility/cleanup sequencing.
 - The main conversation title/body can already use normal conversation translation.
-- The actual prioritization items render raw `title` and `body` from `/maxdiff/items/fetch` and `/maxdiff/results`.
-- The content translation system currently supports `project`, `conversation`, `opinion`, and `survey_question` subjects. There is no ranking-item or MaxDiff-item translation subject yet.
+- The actual prioritization items render backend-selected ranking-item `displayContent` from `/ranking/bws/items/fetch` and `/ranking/bws/results`.
+- The content translation system supports `project`, `conversation`, `opinion`, `survey_question`, and `ranking_item` subjects.
 - Survey translation already includes both question text and all current options under the single `survey_question` subject.
 - The scoring worker already separates comparison methods: it has `MaxDiffObservation`, `PairwiseObservation`, `score_maxdiff_observations()`, and `score_pairwise_observations()`.
-- API/storage still couples rankable item content and ranking conversation mode to MaxDiff.
+- Conversation family and ranking mode are separated as `conversation_type = 'ranking'` plus `ranking_conversation_config.ranking_mode = 'maxdiff'`.
+- Pol.is-only settings are sourced from `polis_conversation_config`; ranking-only score/source settings are sourced from `ranking_conversation_config`.
+- `conversation_import_source` is the runtime import metadata source for API and import-worker paths.
 
 Missing pieces today:
 
-- There is no method-neutral rankable item subject such as `ranking_item` or `prioritization_item`.
-- `conversation_type` only has `polis` and `maxdiff`; target state should be `polis` and `ranking`, with `maxdiff` stored as the ranking mode for existing MaxDiff conversations.
-- Polis-only config currently lives directly on `conversation`.
-- Ranking-only config/state currently lives directly on `conversation` or in MaxDiff-specific tables.
-- `content_translation_source_kind` has no method-neutral ranking item value.
-- `content_translation_work` has no method-neutral ranking item content source column or unique work index.
-- `maxdiff_item_content` has no `public_id` source version.
-- `maxdiff_item_content` has no per-content source-language metadata.
-- There is no ranking item content translation table.
-- The content-translation worker cannot fetch, translate, store, or emit events for ranking items.
-- Ranking item DTOs do not expose view-specific translated fields or backend-provided translation control metadata.
-- MaxDiff query keys are not display-language-aware.
-- MaxDiff cards, dialogs, personal rankings, community rankings, completed items, and canceled items render raw fields directly.
+- Deprecated legacy `conversation` columns for moved config/source fields still exist and need a later cleanup migration after compatibility windows close.
+- Deprecated `conversation.import_*` columns can be dropped in a later cleanup migration after generated models and fixtures no longer need them.
+- Deprecated legacy `maxdiff_item*` tables still exist and need a later cleanup migration after old compatibility paths are retired.
+- Plaintext null-pair/check constraints for ranking-item body fields are deferred until an intentional generated migration after plaintext backfill.
+- Pairwise has not been built yet, but it should reuse ranking-item `displayContent`, translation subject handling, and dialog/control patterns rather than adding pairwise-specific translation infrastructure.
+
+## Detailed-Conversation Redesign Notes
+
+The current clean target is to avoid any client/server response path that carries rendered conversation title/body twice. The detailed conversation endpoint should return:
+
+```ts
+{
+    conversationData: {
+        metadata: ConversationMetadata;
+        interaction: UserInteraction;
+    };
+    displayContent: ConversationDisplayedContent;
+}
+```
+
+`ExtendedConversation` should remain the feed/list/profile shape for responses that do not include `displayContent`. It should not be used as the detailed conversation view shape because `payload.title/body` and `displayContent.content.title/body` represent the same rendered content in that context.
+
+Places using the clean split:
+
+- `services/agora/src/utils/api/post/post.ts`: returns the parsed detailed response shape instead of reconstructing `ExtendedConversation`.
+- `services/agora/src/utils/api/post/useConversationQuery.ts`: cache/query a detailed conversation view object and continue seeding the conversation display-content cache from `displayContent`.
+- `services/agora/src/composables/conversation/useConversationParentState.ts`: expose loaded detailed conversation metadata/interaction plus display content separately.
+- `services/agora/src/utils/translation/useConversationDisplayContent.ts`: accept detailed conversation data and an explicit initial `displayContent` source instead of depending on `conversation.payload.title/body`.
+- `services/agora/src/components/post/display/TranslatedPostContent.vue` and `PostContent.vue`: accept metadata/interaction plus `displayContent`-derived displayed title/body for detailed pages; keep feed/list usages separate if they still use `ExtendedConversation`.
+- Detailed page shells derive header/action-bar titles from `displayContent`: `pages/conversation/[postSlugId].vue`, `pages/conversation/[postSlugId].embed.vue`, and `pages/project/[projectSlug]/conversation/[postSlugId].vue`.
+- Project/report/detail/moderation preview surfaces using detailed conversation data follow the same split; profile/feed/list surfaces can keep `ExtendedConversation` if they do not receive `displayContent`.
+
+This is not required for survey question, opinion, or ranking-item display-content flows found during the interruption: those currently read `displayContent.content` directly and do not reconstruct an older payload-bearing DTO. Dev fixture pages that manually build `payload` for local mocks are not the same server-response duplication issue.
 
 ## Design Principles
 
@@ -148,7 +191,8 @@ Required order for the ranking-item/plaintext migration pass:
 2. Ensure `content_translation_source_kind = 'ranking_item'` is added in a migration before the migration that uses the value in indexes or check constraints. PostgreSQL rejects using a new enum value in the same transaction that adds it.
 3. Apply the structural schema migration that creates ranking-item tables and new plaintext columns.
 4. Apply the structural SQL data-copy backfill that copies legacy MaxDiff rows into `ranking_item*` tables.
-5. Run the explicit TypeScript plaintext backfill script from `services/api` after all those migrations apply: `pnpm backfill:rich-text-plain-text`.
+5. Apply the enum migration that rewrites `conversation.conversation_type` from persisted `maxdiff` to persisted `ranking`. This rewrite must happen after the SQL data-copy backfill, because that backfill still selects legacy `conversation_type = 'maxdiff'`, and it must happen while the column is temporarily `text`, because the old enum cannot store `ranking`.
+6. Run the explicit TypeScript plaintext backfill script from `services/api` after the structural/data-copy migrations apply and before the strict plaintext-pair constraints: `pnpm backfill:rich-text-plain-text`.
 
 The TypeScript backfill exists because it reuses the app's HTML-to-plaintext logic for source and translation rows. Do not replace it with approximate SQL HTML parsing unless there is a concrete, reviewed reason.
 
@@ -178,7 +222,7 @@ Use `maxdiff` only for Best-Worst Scaling-specific concepts:
 
 - MaxDiff candidate-set routing and BWS algorithms.
 - `maxdiff_result` and `maxdiff_comparison` session/observation tables.
-- MaxDiff save/load/submit endpoint compatibility while public routes remain `/maxdiff/*`.
+- BWS save/load/submit endpoint routes under `/ranking/bws/*`.
 - MaxDiff-specific UI components and copy that describe the Best-Worst interaction.
 - MaxDiff-specific scoring conversion from best/worst observations.
 
@@ -532,7 +576,7 @@ Recommended order:
 14. Add method-neutral ranking item enums and tables alongside existing MaxDiff item tables.
 15. Backfill `ranking_item`, `ranking_item_content`, and `ranking_item_external_source` from existing MaxDiff tables, preserving existing item slug IDs and `conversation_content_id` exactly.
 16. Add `public_id`, source-language metadata, `body_plain_text`, and the current-content ownership invariant as part of the new content table.
-17. Move API reads/writes to ranking item tables while preserving old `/maxdiff/*` endpoint URLs.
+17. Move API reads/writes to ranking item tables and expose BWS routes under `/ranking/bws/*`.
 18. Move scoring-worker generated models and queries to ranking item tables.
 19. Move shared-analysis-worker/import/generated-model consumers that currently reference MaxDiff item tables.
 20. Update MaxDiff result/comparison code to treat stored slug IDs as ranking item slug IDs; the existing comparison/result table names can remain MaxDiff-specific because they describe the comparison method, not item content.
@@ -599,40 +643,34 @@ Extend `ContentTranslationSubject` with the method-neutral subject:
 
 Avoid adding `pairwise_item` later. Pairwise should request translations with the same `ranking_item` subject.
 
-Ranking item DTOs should return the fields each endpoint/view needs, selected by the backend for the request language context:
+Current implementation for MaxDiff compatibility DTOs exposes backend-selected `displayContent: zodRankingItemDisplayedContent` and intentionally does not duplicate rendered `title`/`body` next to it. This matches the detailed-conversation cleanup: rendered text belongs in `displayContent.content`, while sibling fields remain metadata only.
 
 ```ts
-static rankingItem = z.object({
+static maxdiffItem = z.object({
     slugId: z.string(),
-    title: z.string(),
-    bodyHtml: z.string().optional(),
-    sourceVersion: z.string(),
-    translationControl: zodRankingItemTranslationControl.nullable(),
+    displayContent: zodRankingItemDisplayedContent,
     // existing fields...
 });
 
-static rankingResultItem = z.object({
+static maxdiffResultItem = z.object({
     itemSlugId: z.string(),
-    title: z.string(),
-    bodyHtml: z.string().optional(),
-    sourceVersion: z.string(),
-    translationControl: zodRankingItemTranslationControl.nullable(),
+    displayContent: zodRankingItemDisplayedContent,
     // existing fields...
 });
 ```
 
-Do not send both overloaded `body` and explicit `bodyHtml` to new frontend views. Prefer `bodyHtml` for rich rendered content. Plaintext body is backend/internal except on create/edit payloads where the frontend sends both HTML and plaintext.
+New generic ranking endpoints should also avoid overloaded `body`; prefer `bodyHtml` inside the view-specific content shape or reuse the `displayContent.content.bodyHtml` shape. Plaintext body is backend/internal except on create/edit payloads where the frontend sends both HTML and plaintext.
 
 ## Backend Display Policy
 
-Extend or refactor `conversationContent.ts` rather than duplicating policy.
+`conversationContent.ts` has been refactored so conversation, survey-question, opinion, and ranking-item display shapers share the same localized-content display policy through `toDisplayedContent()`.
 
-The cleanest design is to refactor the existing policy helpers around reusable localized-content policy logic, then expose domain-specific wrappers that return view-appropriate DTO fields:
+The domain-specific wrappers remain explicit:
 
 - existing conversation content fetch response shapers.
 - existing survey question content response shapers.
 - existing opinion content response shapers.
-- `toRankingItemViewContent()` or equivalent view-specific ranking item shapers.
+- `toRankingItemDisplayContent()` for ranking item display-content DTOs.
 
 The backend must decide:
 
@@ -642,7 +680,7 @@ The backend must decide:
 - Use `translationControl.alternateMode` to tell the frontend whether the button means translated or original.
 - Use backend-selected original/translated fields plus translation status/control metadata to choose the initially visible content.
 
-The frontend should not replicate this logic.
+The frontend should not replicate this logic. It may hold local display-mode/request state for a specific interaction, but eligibility, status, initial mode, source-language policy, and available variants come from backend response fields.
 
 ## API Translation Service Plan
 
@@ -680,12 +718,13 @@ Extend work input with:
 }
 ```
 
-Add functions with ranking-item-specific names and storage boundaries:
+Implemented functions use ranking-item-specific names and storage boundaries, including:
 
 - `fetchRankingItemSource()`.
 - `hasRankingItemTranslation()`.
 - `buildLocalizedRankingItemContent()`.
-- `buildRankingItemResponse()`.
+- `buildRankingItemDisplayContentByContentId()`.
+- `getRankingItemContentFromDisplay()`.
 
 Add a `requestContentTranslation()` branch for `subject.kind === "ranking_item"`.
 
@@ -693,7 +732,7 @@ Refactor when useful, but keep adapters domain-specific. For example, ranking it
 
 ## Ranking Fetch/Results Plan
 
-Update MaxDiff endpoints as the first consumers of ranking item translated/original content selection. If endpoint names stay `/maxdiff/items/fetch` and `/maxdiff/results` temporarily, their internals should still read from ranking item tables and return view-specific fields selected for the request language context.
+BWS endpoints are the first consumers of ranking item translated/original content selection. Public endpoint names live under `/ranking/bws/*`; their internals read from ranking item tables and include `displayContent` selected for the request language context. Internal DTO/component/table names still use `MaxDiff` where a full BWS rename would require a separate broad refactor.
 
 Resolve language preferences like opinion fetch does:
 
@@ -705,10 +744,11 @@ Resolve language preferences like opinion fetch does:
 
 Update ranking item service queries to left join `ranking_item_content_translation` for the target language.
 
-Each returned item/result should include:
+Each returned item/result currently includes:
 
-- Backend-selected `title` and optional `bodyHtml`.
-- Translation control/status metadata when the view can request or toggle translation.
+- Legacy `title` and nullable `body` compatibility fields.
+- `displayContent` with backend-selected original/translated `{ title, bodyHtml? }` content when available.
+- Translation control/status metadata inside `displayContent.translationControl` when the view can request or toggle translation.
 
 Ranking logic should continue to use only item slug IDs and scores. Translation must not affect candidate generation, comparisons, scoring, lifecycle snapshots, or ranking identity.
 
@@ -801,16 +841,16 @@ GitHub-backed conversations can contain many issues, so eager translation must b
 
 ## Frontend Plan
 
-The frontend should render the view-specific fields returned by the backend. It should not reconstruct translation eligibility, source/display-language policy, initial original/translated mode, or work status locally.
+The frontend renders the view-specific fields returned by the backend. It should not reconstruct translation eligibility, source/display-language policy, initial original/translated mode, or work status locally.
 
-Update ranking item query keys to include language context:
+Implemented for active MaxDiff items: ranking item query keys include language context:
 
 - `displayLanguage`.
 - sorted `spokenLanguages`.
-- lifecycle filter where relevant.
-- comparison mode where the query result shape differs.
+- lifecycle filter where relevant. This is still manual state in `MaxDiffResultsTab` for completed/canceled lists rather than a shared TanStack query helper.
+- comparison mode where the query result shape differs. This is future-facing; only MaxDiff exists today.
 
-Update these views to render backend-selected ranking item content:
+Implemented views rendering backend-selected ranking item content:
 
 - MaxDiff voting cards.
 - Expanded item dialog.
@@ -826,7 +866,7 @@ Keep ranking state slug-based:
 - Saved ranking remains slug IDs.
 - Displayed text is a rendering concern only.
 
-Add a ranking item translation request flow using the existing content-translation query transport, but do not reuse frontend logic that computes translation eligibility, initial mode, source/display-language policy, or control status. Those decisions come from backend response fields and translation control/status metadata.
+Ranking item translation requests use the existing content-translation query transport via `useRankingItemContentTranslationPreview()` and `useRankingItemDisplayContent()`. The frontend state mirrors existing conversation/project state-management patterns: it stores only user display-mode/request intent for the current interaction, while backend response fields provide eligibility, initial mode, source/display-language policy, and control status.
 
 The request subject is:
 
@@ -838,7 +878,7 @@ The request subject is:
 }
 ```
 
-Use `ContentTranslationControl` in the expanded dialog first. Do not clutter voting cards with controls.
+Implemented: `ContentTranslationControl` is used in the expanded MaxDiff item dialog first. Voting cards do not show translation controls.
 
 Frontend control visibility:
 
@@ -847,7 +887,7 @@ Frontend control visibility:
 - Let the existing control render pending/running/completed/original labels from props.
 - On toggle/request, call the backend with the `ranking_item` subject and then render the backend response; do not locally decide that translation is allowed or which mode should initially display.
 
-Avoid mid-round text changes:
+Avoid mid-round text changes. Active MaxDiff voting cards snapshot display content for the current candidate set:
 
 - Freeze displayed candidate content for the current candidate set.
 - If cache updates arrive while a user is selecting best/worst, do not change the visible candidate text until the next round or explicit dialog interaction.
@@ -856,13 +896,14 @@ Avoid mid-round text changes:
 
 Extending `ContentTranslationSubject` with `ranking_item` extends the SSE payload schema.
 
-On `content_translation_updated` for `ranking_item`:
+Actual current behavior on `content_translation_updated` for `ranking_item`:
 
-- Invalidate the specific `contentTranslation` query.
-- Invalidate active ranking item queries for the conversation.
-- Invalidate MaxDiff results queries for the conversation.
-- Invalidate lifecycle item queries for completed/canceled lists.
-- Do not force current voting card text to update mid-selection.
+- The generic `contentTranslation` query for the subject/target language is invalidated. This is enough for the open dialog request flow to receive completed translations.
+- Failed events are published to the shared translation-failure handler.
+- Active MaxDiff item queries for the conversation are invalidated.
+- MaxDiff result/completed/canceled local list state refreshes for the affected conversation.
+
+Active MaxDiff voting cards use a current-candidate-set display snapshot, so these invalidations do not force visible card text to update mid-selection.
 
 The existing event topic can remain conversation-scoped:
 
@@ -915,7 +956,7 @@ Backend tests:
 - Completed translation can be initially shown when viewer does not understand source language.
 - Completed translation stays original-first when viewer understands source language.
 - Stale translation metadata is ignored.
-- MaxDiff item fetch/results include backend-selected `title`, optional `bodyHtml`, source version, and translation control/status metadata from ranking item content.
+- MaxDiff item fetch/results include `displayContent` with backend-selected `{ title, bodyHtml? }`, `sourceVersion`, and translation control/status metadata from ranking item content, without duplicate sibling rendered `title`/`body` fields.
 - GitHub sync avoids new content rows when title/bodyHtml/body plaintext did not change.
 
 Worker tests:
@@ -945,20 +986,20 @@ Migration tests:
 
 ## Suggested Milestones
 
-1. Refactor rich-text body write paths and backend/domain naming to use `bodyHtml` plus `bodyPlainText`, following the opinion pattern.
-2. Add/backfill plaintext body columns where needed, using nullable-first/backfill/non-null migrations for legacy data.
-3. Refactor conversation family/config: `conversation_type = polis | ranking`, mandatory subtype config pointers, and backfilled Polis/ranking config rows.
-4. Move subtype/source fields out of `conversation`: Polis analysis config, ranking score/source config, and import metadata. Leave deprecated `schema.ts` comments on old columns; do not drop them.
-5. Add method-neutral ranking item storage alongside MaxDiff item storage and backfill it.
-6. Refactor naming boundaries across services so shared concepts use `ranking` and BWS-specific concepts keep `maxdiff`.
-7. Add source-language metadata and `public_id` on ranking item content.
-8. Add `ranking_item_content_translation` and `content_translation_work` support.
-9. Backend content-selection helpers and MaxDiff item/result endpoints return read-existing backend-selected ranking item fields.
-10. Content-translation worker support for `ranking_item`.
-11. Lazy item-dialog translation request and SSE cache invalidation.
-12. Optional eager seed-item scheduling.
-13. Optional capped GitHub eager scheduling.
-14. Later cleanup migration drops deprecated columns/tables only when explicitly requested.
-15. Later pairwise implementation reuses ranking item content and adds only pairwise observation/session storage.
+1. Done: Refactor rich-text body write paths and backend/domain naming to use HTML plus plaintext where needed, following the opinion pattern.
+2. Done except final constraints: Add/backfill plaintext body columns where needed. Plaintext null-pair/check constraints are deferred until after the explicit backfill and reviewed generated migration.
+3. Done: Refactor conversation family/config to `conversation_type = polis | ranking`, subtype config pointers, and backfilled Pol.is/ranking config rows.
+4. Done except final cleanup: Move subtype/source fields out of `conversation`. Pol.is analysis config, ranking score/source config, and import metadata are active in config/source tables; deprecated legacy columns remain until an explicit cleanup migration.
+5. Done: Add method-neutral ranking item storage alongside MaxDiff item storage and backfill it.
+6. Mostly done: Refactor naming boundaries across services so shared concepts use `ranking`; BWS-specific public endpoints use `/ranking/bws/*` while older internal DTO/component/table names still use `MaxDiff` until a separate broad rename.
+7. Done: Add source-language metadata and `public_id` on ranking item content.
+8. Done: Add `ranking_item_content_translation` and `content_translation_work` support.
+9. Done: Backend content-selection helpers and MaxDiff item/result endpoints return read-existing backend-selected ranking item `displayContent`.
+10. Done: Content-translation worker support for `ranking_item`.
+11. Done: Lazy item-dialog translation request works, generic `contentTranslation` query invalidation works, MaxDiff item/result/lifecycle views refresh on ranking-item SSE events, and active voting cards keep a stable candidate-set display snapshot.
+12. Done: Manual seed-item translations are eagerly scheduled during API conversation creation.
+13. Decided no for now: GitHub-backed ranking items use lazy request/display flows rather than capped eager scheduling.
+14. Pending later cleanup: Drop deprecated columns/tables only when explicitly requested.
+15. Future: Pairwise implementation reuses ranking item content and adds only pairwise observation/session storage.
 
 Each milestone should keep code type-safe and names domain-accurate. Prefer extracting small generic helpers over copy-paste, but keep table-specific and subject-specific adapters explicit.

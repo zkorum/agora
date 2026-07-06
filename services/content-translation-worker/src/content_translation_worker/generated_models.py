@@ -216,11 +216,6 @@ class EventSlug(StrEnum):
     devconnect_2025 = "devconnect-2025"
 
 
-class ImportMethod(StrEnum):
-    url = "url"
-    csv = "csv"
-
-
 class ProjectContentTranslationSourceKind(StrEnum):
     manual = "manual"
     machine = "machine"
@@ -391,7 +386,6 @@ class Conversation(Base):
             native_enum=True,
         ),
     )
-    current_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_indexed: Mapped[bool] = mapped_column(Boolean, server_default="true")
     participation_mode: Mapped[ParticipationMode] = mapped_column(
         SaEnum(
@@ -414,22 +408,6 @@ class Conversation(Base):
     is_edited: Mapped[bool] = mapped_column(Boolean, server_default="false")
     requires_event_ticket: Mapped[EventSlug | None] = mapped_column(
         SaEnum(EventSlug, name="event_slug", values_callable=_enum_values, native_enum=True),
-        nullable=True,
-    )
-    ai_labeling_enabled: Mapped[bool] = mapped_column(Boolean, server_default="true")
-    analysis_data_generation: Mapped[int] = mapped_column(Integer, server_default="0")
-    preferred_opinion_group_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    import_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    import_conversation_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    import_export_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    import_created_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    import_author: Mapped[str | None] = mapped_column(Text, nullable=True)
-    import_method: Mapped[ImportMethod | None] = mapped_column(
-        SaEnum(ImportMethod, name="import_method", values_callable=_enum_values, native_enum=True),
-        nullable=True,
-    )
-    external_source_config: Mapped[Any | None] = mapped_column(
-        JSON(none_as_null=True),
         nullable=True,
     )
     created_at: Mapped[datetime] = mapped_column(DateTime)

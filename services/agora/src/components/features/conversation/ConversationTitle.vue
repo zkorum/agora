@@ -66,7 +66,7 @@ const { t } = useComponentI18n<ConversationTitleTranslations>(
 const isMaxDiffConversation = computed(
   () =>
     props.conversationTypeConfig.conversationType === "ranking" &&
-    props.conversationTypeConfig.rankingMode === "maxdiff"
+    props.conversationTypeConfig.rankingMode === "bws"
 );
 const displayedProjectTitle = computed(() => {
   const projectContext = props.projectContext;

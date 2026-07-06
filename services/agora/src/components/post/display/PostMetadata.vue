@@ -106,7 +106,11 @@ import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
 import { useShareActions } from "src/composables/share/useShareActions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { ExternalSourceConfig, ParticipationMode } from "src/shared/types/zod";
+import type {
+  ConversationTypeConfig,
+  ExternalSourceConfig,
+  ParticipationMode,
+} from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import type { ContentAction } from "src/utils/actions/core/types";
 import { useContentActions } from "src/utils/actions/definitions/content-actions";
@@ -144,7 +148,7 @@ const props = withDefaults(defineProps<{
   participationMode: ParticipationMode;
   isClosed: boolean;
   conversationTitle: string;
-  conversationType: string;
+  conversationTypeConfig: ConversationTypeConfig;
   externalSourceConfig: ExternalSourceConfig | null;
   showIdentityCard?: boolean;
   projectSlug?: string;
@@ -187,6 +191,14 @@ const $q = useQuasar();
 const notify = useNotify();
 const { getEmbedUrl, getConversationUrl } = useConversationUrl();
 const shareActions = useShareActions();
+const isMaxDiffConversation = computed(
+  () =>
+    props.conversationTypeConfig.conversationType === "ranking" &&
+    props.conversationTypeConfig.rankingMode === "bws"
+);
+const isRankingConversation = computed(
+  () => props.conversationTypeConfig.conversationType === "ranking"
+);
 
 const conversationRouteContext = computed<ConversationRouteContext>(() => {
   if (props.projectSlug !== undefined) {
@@ -381,7 +393,7 @@ async function conversationDeletedCallback(): Promise<void> {
 
 function clickedMoreIcon() {
   const showSyncGitHub =
-    props.conversationType === "maxdiff" &&
+    isMaxDiffConversation.value &&
     props.externalSourceConfig?.sourceType === "github_issue";
 
   postActions.showPostActions(
@@ -408,7 +420,7 @@ function clickedMoreIcon() {
         showCloseDialog.value = true;
       },
       isConversationClosed: props.isClosed,
-      isConversationExportAvailable: props.conversationType !== "maxdiff",
+      isConversationExportAvailable: !isRankingConversation.value,
       conversationDeletedCallback,
     },
   );

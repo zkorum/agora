@@ -45,8 +45,9 @@
               @keydown.enter="navigateToConversation"
               @keydown.space="navigateToConversation"
             >
-              <PostDetails
-                :conversation-data="conversationQuery.data.value"
+              <TranslatedPostContent
+                :extended-post-data="conversationQuery.data.value.conversationData"
+                :initial-display-content="conversationQuery.data.value.displayContent"
                 :compact-mode="true"
               />
             </div>
@@ -93,7 +94,7 @@ import ExportHistoryList from "src/components/conversation/export/ExportHistoryL
 import RequestExportButton from "src/components/conversation/export/RequestExportButton.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
-import PostDetails from "src/components/post/PostDetails.vue";
+import TranslatedPostContent from "src/components/post/display/TranslatedPostContent.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import PullToRefresh from "src/components/ui/PullToRefresh.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
@@ -232,8 +233,8 @@ async function handleRequestExport(): Promise<void> {
       const reasonMessages: Record<typeof result.reason, string> = {
         active_export_in_progress: t("errorActiveExportInProgress"),
         conversation_not_found: t("errorConversationNotFound"),
-        unsupported_conversation_type: t("errorUnsupportedConversationType"),
         no_opinions: t("errorNoOpinions"),
+        unsupported_conversation_type: t("errorUnsupportedConversationType"),
       };
       showNotifyMessage(reasonMessages[result.reason]);
       return;

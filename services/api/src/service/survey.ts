@@ -197,7 +197,7 @@ function isMaxdiffConversation({
 }): boolean {
     return (
         conversation.conversationType === "ranking" &&
-        conversation.rankingMode === "maxdiff"
+        conversation.rankingMode === "bws"
     );
 }
 

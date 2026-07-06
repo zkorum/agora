@@ -287,7 +287,7 @@ const isActionBarLoading = computed(
 const isMaxDiffConversation = computed(() => {
   const metadata = loadedConversationData.value.metadata;
   return (
-    metadata.conversationType === "ranking" && metadata.rankingMode === "maxdiff"
+    metadata.conversationType === "ranking" && metadata.rankingMode === "bws"
   );
 });
 const isInitialLoading = computed(

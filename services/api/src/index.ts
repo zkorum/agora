@@ -103,9 +103,9 @@ import {
 } from "./service/maxdiff.js";
 import { generateCandidateSets } from "./service/maxdiffRouting.js";
 import {
-    fetchMaxdiffItems,
-    updateMaxdiffItemLifecycle,
-} from "./service/maxdiffItem.js";
+    fetchRankingItems,
+    updateRankingItemLifecycle,
+} from "./service/rankingItem.js";
 import type { RankingItemDisplayPreferences } from "./service/rankingItemDisplay.js";
 import {
     verifyWebhookSignature,
@@ -2444,11 +2444,11 @@ server.after(() => {
         },
     });
 
-    // --- MaxDiff (Best-Worst Scaling) ---
+    // --- Ranking / Best-Worst Scaling ---
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/maxdiff/save`,
+        url: `/api/${apiVersion}/ranking/bws/save`,
         schema: {
             body: Dto.maxdiffSaveRequest,
             response: {
@@ -2494,7 +2494,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/maxdiff/load`,
+        url: `/api/${apiVersion}/ranking/bws/load`,
         schema: {
             body: Dto.maxdiffLoadRequest,
             response: {
@@ -2535,7 +2535,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/maxdiff/results`,
+        url: `/api/${apiVersion}/ranking/bws/results`,
         schema: {
             body: Dto.maxdiffResultsRequest,
             response: {
@@ -2559,7 +2559,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/maxdiff/items/fetch`,
+        url: `/api/${apiVersion}/ranking/bws/items/fetch`,
         schema: {
             body: Dto.maxdiffItemsFetchRequest,
             response: {
@@ -2571,7 +2571,7 @@ server.after(() => {
                 request,
                 conversationSlugId: request.body.conversationSlugId,
             });
-            return await fetchMaxdiffItems({
+            return await fetchRankingItems({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
                 displayPreferences,
@@ -2582,7 +2582,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/maxdiff/items/lifecycle/update`,
+        url: `/api/${apiVersion}/ranking/bws/items/lifecycle/update`,
         schema: {
             body: Dto.maxdiffItemLifecycleUpdateRequest,
         },
@@ -2594,7 +2594,7 @@ server.after(() => {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                 },
             );
-            await updateMaxdiffItemLifecycle({
+            await updateRankingItemLifecycle({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
                 itemSlugId: request.body.itemSlugId,
@@ -2608,7 +2608,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/maxdiff/sync`,
+        url: `/api/${apiVersion}/ranking/bws/sync`,
         config: {
             rateLimit: maxdiffConnectorRateLimitConfig,
         },
@@ -2650,7 +2650,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/maxdiff/github/preview`,
+        url: `/api/${apiVersion}/ranking/bws/github/preview`,
         config: {
             rateLimit: maxdiffConnectorRateLimitConfig,
         },

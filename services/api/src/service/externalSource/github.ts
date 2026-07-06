@@ -7,6 +7,7 @@ import {
     rankingItemTable,
     rankingItemContentTable,
     rankingItemExternalSourceTable,
+    rankingConversationConfigTable,
     organizationMembershipTable,
     projectOrganizationOwnershipTable,
 } from "@/shared-backend/schema.js";
@@ -182,19 +183,28 @@ export async function handleIssueWebhook({
     const issue = payload.issue;
     const externalId = buildExternalId({ repo, issueNumber: issue.number });
 
-    // Find all maxdiff conversations that track this repo
+    // Find all MaxDiff ranking conversations that track this repo.
     const conversations = await db
         .select({
             id: conversationTable.id,
             projectId: conversationTable.projectId,
             slugId: conversationTable.slugId,
             currentContentId: conversationTable.currentContentId,
-            externalSourceConfig: conversationTable.externalSourceConfig,
+            externalSourceConfig:
+                rankingConversationConfigTable.externalSourceConfig,
         })
         .from(conversationTable)
+        .innerJoin(
+            rankingConversationConfigTable,
+            eq(
+                rankingConversationConfigTable.id,
+                conversationTable.rankingConfigId,
+            ),
+        )
         .where(
             and(
-                eq(conversationTable.conversationType, "maxdiff"),
+                eq(conversationTable.conversationType, "ranking"),
+                eq(rankingConversationConfigTable.rankingMode, "bws"),
                 eq(conversationTable.isClosed, false),
             ),
         );
@@ -347,6 +357,7 @@ async function upsertItemFromGitHubIssue({
                 db: tx,
                 tx,
                 conversationId,
+                conversationSlugId,
                 conversationContentId,
                 authorId,
                 title: issue.title,
@@ -633,10 +644,19 @@ export async function syncGitHubIssues({
             id: conversationTable.id,
             currentContentId: conversationTable.currentContentId,
             projectId: conversationTable.projectId,
-            externalSourceConfig: conversationTable.externalSourceConfig,
+            externalSourceConfig:
+                rankingConversationConfigTable.externalSourceConfig,
             conversationType: conversationTable.conversationType,
+            rankingMode: rankingConversationConfigTable.rankingMode,
         })
         .from(conversationTable)
+        .leftJoin(
+            rankingConversationConfigTable,
+            eq(
+                rankingConversationConfigTable.id,
+                conversationTable.rankingConfigId,
+            ),
+        )
         .where(eq(conversationTable.slugId, conversationSlugId));
 
     if (conversationRows.length === 0) {
@@ -653,7 +673,10 @@ export async function syncGitHubIssues({
         message: "Missing conversation_manage_integrations capability",
     });
 
-    if (conversation.conversationType !== "maxdiff") {
+    if (
+        conversation.conversationType !== "ranking" ||
+        conversation.rankingMode !== "bws"
+    ) {
         throw new Error("Sync is only available for MaxDiff conversations");
     }
 

@@ -60,7 +60,7 @@ export const zodParticipationMode = z.enum([
     "guest",
 ]);
 export const zodConversationType = z.enum(["polis", "ranking"]);
-export const zodRankingMode = z.enum(["maxdiff"]);
+export const zodRankingMode = z.enum(["bws"]);
 export const zodConversationTypeConfig = z.discriminatedUnion(
     "conversationType",
     [

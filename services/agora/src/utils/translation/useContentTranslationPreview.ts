@@ -11,6 +11,7 @@ import {
   zodConversationContentVariant,
   zodOpinionContentVariant,
   zodSurveyQuestionContentVariant,
+  zodTitleBodyContentVariant,
 } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
 import type { ContentTranslationRequestMode } from "src/utils/api/contentTranslation/useContentTranslationQueries";
@@ -66,6 +67,12 @@ function isSameContentTranslationSubject({
   if (left.kind === "project" && right.kind === "project") {
     return left.projectSlug === right.projectSlug;
   }
+  if (left.kind === "ranking_item" && right.kind === "ranking_item") {
+    return (
+      left.conversationSlugId === right.conversationSlugId &&
+      left.itemSlugId === right.itemSlugId
+    );
+  }
 
   return false;
 }
@@ -97,6 +104,16 @@ export interface SurveyQuestionContentTranslationPreview {
   translationStatus: LocalizedContentTranslationStatus;
   translatedQuestionText: string;
   translatedOptions: { optionSlugId: string; optionText: string }[];
+}
+
+export interface RankingItemContentTranslationPreview {
+  isAvailable: boolean;
+  isLoadingInitialTranslation: boolean;
+  mode: ContentTranslationDisplayMode;
+  sourceLanguageLabel: string | undefined;
+  translationStatus: LocalizedContentTranslationStatus;
+  translatedTitle: string;
+  translatedBody: string | undefined;
 }
 
 interface ContentTranslationController {
@@ -499,6 +516,59 @@ export function useSurveyQuestionContentTranslationPreview({
         translatedOptions: translatedVariant.success
           ? translatedVariant.data.options
           : [],
+      };
+    }
+  );
+
+  return {
+    preview,
+    setMode: controller.setMode,
+  };
+}
+
+export function useRankingItemContentTranslationPreview({
+  subject,
+  sourceLanguageCode,
+  enabled,
+}: {
+  subject: MaybeRefOrGetter<
+    Extract<ContentTranslationSubject, { kind: "ranking_item" }>
+  >;
+  sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
+  enabled: MaybeRefOrGetter<boolean>;
+}) {
+  const controller = useContentTranslationController({
+    subject,
+    sourceLanguageCode,
+    enabled,
+  });
+
+  const preview = computed<RankingItemContentTranslationPreview | undefined>(
+    () => {
+      if (!controller.isAvailable.value) {
+        return undefined;
+      }
+      const response = controller.query.data.value;
+      const rawTranslatedVariant =
+        response?.success === true &&
+        response.subject.kind === "ranking_item" &&
+        response.content.kind === "translatable"
+          ? response.content.variants.translated
+          : undefined;
+      const translatedVariant =
+        zodTitleBodyContentVariant.safeParse(rawTranslatedVariant);
+      return {
+        isAvailable: true,
+        isLoadingInitialTranslation: controller.isLoadingInitialTranslation.value,
+        mode: controller.mode.value,
+        sourceLanguageLabel: controller.sourceLanguageLabel.value,
+        translationStatus: controller.translationStatus.value,
+        translatedTitle: translatedVariant.success
+          ? translatedVariant.data.title
+          : "",
+        translatedBody: translatedVariant.success
+          ? translatedVariant.data.bodyHtml
+          : undefined,
       };
     }
   );

@@ -1,6 +1,12 @@
 import { storeToRefs } from "pinia";
-import type { SurveyResultsAggregatedResponse } from "src/shared/types/dto";
-import type { ExtendedConversation, PolisClusters } from "src/shared/types/zod";
+import type {
+  ConversationContentFetchResponse,
+  SurveyResultsAggregatedResponse,
+} from "src/shared/types/dto";
+import type {
+  ExtendedConversationDisplayData,
+  PolisClusters,
+} from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import {
   getUpdatedAnalysisRouteQuery,
@@ -47,7 +53,8 @@ export interface AnalysisReportExposed {
 }
 
 interface ReportFrame {
-  conversation: ExtendedConversation;
+  conversation: ExtendedConversationDisplayData;
+  conversationDisplayContent: ConversationContentFetchResponse;
   analysis: AnalysisData;
   surveyResults: SurveyResultsAggregatedResponse;
 }
@@ -83,9 +90,11 @@ export function useConversationReport({
     analysisView,
     checkpointViewSnapshotId,
     aiLabelingEnabled: computed(
-      () => conversationQuery.data.value?.metadata.aiLabelingEnabled
+      () => conversationQuery.data.value?.conversationData.metadata.aiLabelingEnabled
     ),
-    voteCount: computed(() => conversationQuery.data.value?.metadata.voteCount),
+    voteCount: computed(
+      () => conversationQuery.data.value?.conversationData.metadata.voteCount
+    ),
     enabled: computed(
       () => isAuthInitialized.value && conversationQuery.data.value !== undefined
     ),
@@ -104,19 +113,21 @@ export function useConversationReport({
   const allStatementsOrder = ref<ReportAllStatementsOrder>("newest");
 
   const liveReportFrame = computed<ReportFrame | undefined>(() => {
-    const conversation = conversationQuery.data.value;
+    const conversation = conversationQuery.data.value?.conversationData;
+    const conversationDisplayContent = conversationQuery.data.value?.displayContent;
     const analysis = analysisQuery.data.value;
     const surveyResults = surveyResultsQuery.data.value;
 
     if (
       conversation === undefined ||
+      conversationDisplayContent === undefined ||
       analysis === undefined ||
       surveyResults === undefined
     ) {
       return undefined;
     }
 
-    return { conversation, analysis, surveyResults };
+    return { conversation, conversationDisplayContent, analysis, surveyResults };
   });
 
   const frozenReportFrame = ref<ReportFrame | undefined>(undefined);
@@ -218,7 +229,11 @@ export function useConversationReport({
   const hasData = computed(() => liveReportFrame.value !== undefined);
   const analysisReportRef = ref<AnalysisReportExposed | null>(null);
   const reportFileName = computed(() => {
-    const title = reportFrame.value?.conversation.payload.title ?? "analysis";
+    const displayContent = reportFrame.value?.conversationDisplayContent;
+    const title =
+      displayContent?.status === "available"
+        ? displayContent.content.title
+        : "analysis";
     const sanitized = title
       .replace(/[^a-zA-Z0-9\s-]/g, "")
       .replace(/\s+/g, "-")

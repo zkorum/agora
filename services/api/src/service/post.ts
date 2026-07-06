@@ -3,6 +3,7 @@ import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgre
 import {
     opinionTable,
     conversationContentTable,
+    conversationImportSourceTable,
     conversationTable,
     polisConversationConfigTable,
     rankingConversationConfigTable,
@@ -293,16 +294,31 @@ export async function createNewPost({
                 createdAt: now,
                 updatedAt: now,
                 lastReactedAt: now,
+            })
+            .returning({ conversationId: conversationTable.id });
+
+        const insertedConversationId = insertPostResponse[0].conversationId;
+
+        if (
+            importUrl !== undefined ||
+            importConversationUrl !== undefined ||
+            importExportUrl !== undefined ||
+            importCreatedAt !== undefined ||
+            importAuthor !== undefined ||
+            importMethod !== undefined
+        ) {
+            await tx.insert(conversationImportSourceTable).values({
+                conversationId: insertedConversationId,
                 importUrl,
                 importConversationUrl,
                 importExportUrl,
                 importCreatedAt,
                 importAuthor,
                 importMethod,
-            })
-            .returning({ conversationId: conversationTable.id });
-
-        const insertedConversationId = insertPostResponse[0].conversationId;
+                createdAt: now,
+                updatedAt: now,
+            });
+        }
 
         const conversationContentTableResponse = await tx
             .insert(conversationContentTable)

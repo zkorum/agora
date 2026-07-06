@@ -13,11 +13,11 @@
 <script setup lang="ts">
 import ConversationAnalysisTab from "src/components/post/ConversationAnalysisTab.vue";
 import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
-import type { ExtendedConversation } from "src/shared/types/zod";
+import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 
 const props = defineProps<{
-  conversationData: ExtendedConversation;
+  conversationData: ExtendedConversationDisplayData;
   hasConversationData: boolean;
   navigateToDiscoverTab: () => void;
   conversationScrollContext: ConversationScrollContext;

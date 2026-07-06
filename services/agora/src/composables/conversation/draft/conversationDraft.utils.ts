@@ -47,6 +47,7 @@ export function createEmptyDraft(): ConversationDraft {
 
     // Conversation Type
     conversationType: "polis",
+    rankingMode: undefined,
 
     // Publishing Options
     postAs: {

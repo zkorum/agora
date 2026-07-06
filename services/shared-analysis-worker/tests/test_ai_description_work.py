@@ -87,6 +87,7 @@ from agora_analysis_worker_shared.generated_models import (
     OpinionGroupLineageDescriptionWork,
     OpinionGroupVariant,
     ParticipationMode,
+    PolisConversationConfig,
     RealtimeEventOutbox,
     SpokenLanguageCode,
     VoteEnumSimple,
@@ -119,9 +120,10 @@ def _insert_non_processable_ai_work_state(
             slug_id="abc12345",
             project_id=1,
             current_content_id=40,
+            polis_config_id=10,
+            ranking_config_id=None,
             dynamic_translation_enabled=True,
             language_settings_source=ConversationLanguageSettingsSource.conversation_override,
-            current_ranking_score_id=None,
             is_indexed=True,
             participation_mode=ParticipationMode.account_required,
             conversation_type=ConversationType.polis,
@@ -129,19 +131,19 @@ def _insert_non_processable_ai_work_state(
             is_closed=False,
             is_edited=False,
             requires_event_ticket=None,
-            ai_labeling_enabled=True,
-            analysis_data_generation=1,
-            preferred_opinion_group_count=None,
-            import_url=None,
-            import_conversation_url=None,
-            import_export_url=None,
-            import_created_at=None,
-            import_author=None,
-            import_method=None,
-            external_source_config=None,
             created_at=NOW,
             updated_at=NOW,
             last_reacted_at=NOW,
+        )
+    )
+    session.add(
+        PolisConversationConfig(
+            id=10,
+            ai_labeling_enabled=True,
+            analysis_data_generation=1,
+            preferred_opinion_group_count=None,
+            created_at=NOW,
+            updated_at=NOW,
         )
     )
     session.add(
@@ -1108,7 +1110,8 @@ def test_first_pass_claiming_uses_materialized_auto_and_facilitator_work() -> No
         _insert_effective_conversation_target_language(session)
         conversation = session.execute(select(Conversation)).scalar_one()
         conversation.current_content_id = 40
-        conversation.preferred_opinion_group_count = 2
+        config = session.execute(select(PolisConversationConfig)).scalar_one()
+        config.preferred_opinion_group_count = 2
         view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
         view_snapshot.preferred_opinion_group_count = 2
         result = session.execute(select(AnalysisSnapshotResult)).scalar_one()
@@ -1434,8 +1437,8 @@ def test_first_pass_finalization_blocks_pending_translation_after_generation_adv
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
         _insert_effective_conversation_target_language(session)
-        conversation = session.execute(select(Conversation)).scalar_one()
-        conversation.analysis_data_generation = 2
+        config = session.execute(select(PolisConversationConfig)).scalar_one()
+        config.analysis_data_generation = 2
         translation_work = session.execute(
             select(OpinionGroupDescriptionTranslationWork)
         ).scalar_one()
@@ -2231,8 +2234,8 @@ def test_completion_releases_stale_unactivated_first_pass_after_new_votes() -> N
         blocked_running_generation = blocked_state.running_data_generation
         blocked_persisted_snapshot_id = blocked_state.persisted_analysis_snapshot_id
         blocked_lease_token = blocked_state.lease_token
-        conversation = session.execute(select(Conversation)).scalar_one()
-        conversation.analysis_data_generation = 2
+        config = session.execute(select(PolisConversationConfig)).scalar_one()
+        config.analysis_data_generation = 2
         session.commit()
 
     stale_schedules = complete_computed_analysis_work_items_batch(

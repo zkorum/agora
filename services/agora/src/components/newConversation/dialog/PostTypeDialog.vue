@@ -15,7 +15,7 @@ import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogCon
 import ZKDialogOptionsList from "src/components/ui-library/ZKDialogOptionsList.vue";
 import type { ConversationImportSettings } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { ConversationType } from "src/shared/types/zod";
+import type { ConversationTypeConfig } from "src/shared/types/zod";
 import { computed } from "vue";
 
 import {
@@ -25,7 +25,7 @@ import {
 
 interface ModeChangeConfig {
   importType: "polis-url" | "csv-import" | null;
-  conversationType: ConversationType;
+  conversationTypeConfig: ConversationTypeConfig;
 }
 
 const props = defineProps<{
@@ -46,7 +46,7 @@ const importSettings = defineModel<ConversationImportSettings>(
   "importSettings",
   { required: true }
 );
-const conversationType = defineModel<ConversationType>("conversationType", {
+const conversationTypeConfig = defineModel<ConversationTypeConfig>("conversationTypeConfig", {
   required: true,
 });
 
@@ -89,14 +89,26 @@ const postTypeOptions = computed(() => {
 const selectedValue = computed(() => {
   if (importSettings.value.importType === "polis-url") return "polis-url";
   if (importSettings.value.importType === "csv-import") return "csv-import";
-  return conversationType.value === "maxdiff" ? "maxdiff" : "regular";
+  return conversationTypeConfig.value.conversationType === "ranking" &&
+    conversationTypeConfig.value.rankingMode === "bws"
+    ? "maxdiff"
+    : "regular";
 });
 
 const configMap: Record<string, ModeChangeConfig> = {
-  regular: { importType: null, conversationType: "polis" },
-  maxdiff: { importType: null, conversationType: "maxdiff" },
-  "polis-url": { importType: "polis-url", conversationType: "polis" },
-  "csv-import": { importType: "csv-import", conversationType: "polis" },
+  regular: { importType: null, conversationTypeConfig: { conversationType: "polis" } },
+  maxdiff: {
+    importType: null,
+    conversationTypeConfig: { conversationType: "ranking", rankingMode: "bws" },
+  },
+  "polis-url": {
+    importType: "polis-url",
+    conversationTypeConfig: { conversationType: "polis" },
+  },
+  "csv-import": {
+    importType: "csv-import",
+    conversationTypeConfig: { conversationType: "polis" },
+  },
 };
 
 function handleOptionSelected(option: {
@@ -110,7 +122,10 @@ function handleOptionSelected(option: {
 
   emit(
     "modeChangeRequested",
-    configMap[option.value] ?? { importType: null, conversationType: "polis" }
+    configMap[option.value] ?? {
+      importType: null,
+      conversationTypeConfig: { conversationType: "polis" },
+    }
   );
 }
 </script>

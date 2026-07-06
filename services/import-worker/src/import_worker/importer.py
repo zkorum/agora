@@ -21,6 +21,7 @@ from import_worker.generated_models import (
     Conversation,
     ConversationContent,
     ConversationImport,
+    ConversationImportSource,
     ConversationTranslationTargetLanguage,
     ConversationViewSnapshot,
     ConversationViewSnapshotReasonEnum,
@@ -31,6 +32,7 @@ from import_worker.generated_models import (
     OpinionContent,
     OpinionGroupSpec,
     OpinionModeration,
+    PolisConversationConfig,
     User,
     Vote,
     VoteContent,
@@ -413,6 +415,21 @@ def _create_conversation(
     import_url = request.polis_url if request.type == "url" else None
     language_target_policy = request.form_data.language_target_policy
 
+    polis_config_row = session.execute(
+        sqlalchemy_insert(PolisConversationConfig)
+        .values(
+            ai_labeling_enabled=request.form_data.ai_labeling_enabled,
+            preferred_opinion_group_count=None
+            if preferred_opinion_group_count is None
+            else preferred_opinion_group_count.root,
+            created_at=now,
+            updated_at=now,
+        )
+        .returning(PolisConversationConfig.id),
+    ).first()
+    if polis_config_row is None:
+        raise RuntimeError("Failed to create Polis conversation config")
+
     conversation_row = session.execute(
         sqlalchemy_insert(Conversation)
         .values(
@@ -421,22 +438,13 @@ def _create_conversation(
             is_indexed=request.form_data.is_indexed,
             participation_mode=request.form_data.participation_mode.value,
             conversation_type="polis",
+            polis_config_id=polis_config_row.id,
             is_importing=True,
             requires_event_ticket=request.form_data.requires_event_ticket,
-            ai_labeling_enabled=request.form_data.ai_labeling_enabled,
-            preferred_opinion_group_count=None
-            if preferred_opinion_group_count is None
-            else preferred_opinion_group_count.root,
             current_content_id=None,
             created_at=now,
             updated_at=now,
             last_reacted_at=now,
-            import_url=import_url,
-            import_conversation_url=conversation_url,
-            import_export_url=report_url,
-            import_created_at=_timestamp_from_polis(imported.conversation_data.created),
-            import_author=imported.conversation_data.ownername,
-            import_method=request.type,
             dynamic_translation_enabled=language_target_policy.dynamic_translation_enabled,
             language_settings_source=language_target_policy.source,
         )
@@ -445,6 +453,20 @@ def _create_conversation(
     if conversation_row is None:
         raise RuntimeError("Failed to create conversation")
     conversation_id = conversation_row.id
+
+    session.execute(
+        sqlalchemy_insert(ConversationImportSource).values(
+            conversation_id=conversation_id,
+            import_url=import_url,
+            import_conversation_url=conversation_url,
+            import_export_url=report_url,
+            import_created_at=_timestamp_from_polis(imported.conversation_data.created),
+            import_author=imported.conversation_data.ownername,
+            import_method=request.type,
+            created_at=now,
+            updated_at=now,
+        ),
+    )
 
     content_row = session.execute(
         sqlalchemy_insert(ConversationContent)
@@ -921,10 +943,11 @@ def _update_counts_and_schedule(
     now = now_zero_ms()
     conversation_row = session.execute(
         select(
-            Conversation.analysis_data_generation,
+            PolisConversationConfig.analysis_data_generation,
             Conversation.current_content_id,
             Conversation.is_closed,
         )
+        .join(PolisConversationConfig, PolisConversationConfig.id == Conversation.polis_config_id)
         .where(Conversation.id == conversation_id)
         .with_for_update(),
     ).first()
@@ -932,8 +955,13 @@ def _update_counts_and_schedule(
         raise RuntimeError(f"Missing imported conversation {conversation_id}")
     data_generation = conversation_row.analysis_data_generation + 1
     session.execute(
-        update(Conversation)
-        .where(Conversation.id == conversation_id)
+        update(PolisConversationConfig)
+        .where(
+            PolisConversationConfig.id
+            == select(Conversation.polis_config_id)
+            .where(Conversation.id == conversation_id)
+            .scalar_subquery()
+        )
         .values(
             analysis_data_generation=data_generation,
         ),
@@ -1043,7 +1071,9 @@ def _is_analysis_terminal_for_import(
     conversation_id: int,
 ) -> bool:
     conversation_row = session.execute(
-        select(Conversation.analysis_data_generation).where(Conversation.id == conversation_id),
+        select(PolisConversationConfig.analysis_data_generation)
+        .join(Conversation, Conversation.polis_config_id == PolisConversationConfig.id)
+        .where(Conversation.id == conversation_id),
     ).first()
     if conversation_row is None:
         return False
