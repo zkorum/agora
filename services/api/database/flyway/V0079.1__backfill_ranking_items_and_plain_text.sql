@@ -51,7 +51,7 @@ SELECT
     c.created_at,
     c.updated_at
 FROM conversation c
-WHERE c.conversation_type = 'maxdiff'
+WHERE c.conversation_type = 'ranking'
   AND c.ranking_config_id IS NULL
   AND NOT EXISTS (
       SELECT 1
@@ -61,7 +61,7 @@ WHERE c.conversation_type = 'maxdiff'
 
 UPDATE conversation c
 SET ranking_config_id = c.id
-WHERE c.conversation_type = 'maxdiff'
+WHERE c.conversation_type = 'ranking'
   AND c.ranking_config_id IS NULL
   AND EXISTS (
       SELECT 1
