@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { eq, and, sql, asc, isNull } from "drizzle-orm";
+import { eq, and, sql, asc, isNotNull, isNull } from "drizzle-orm";
 import {
     conversationTable,
     rankingItemTable,
@@ -67,7 +67,7 @@ export function verifyWebhookSignature({
     signature,
     secret,
 }: {
-    payload: string;
+    payload: string | Buffer;
     signature: string;
     secret: string;
 }): boolean {
@@ -657,7 +657,13 @@ export async function syncGitHubIssues({
                 conversationTable.rankingConfigId,
             ),
         )
-        .where(eq(conversationTable.slugId, conversationSlugId));
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+            ),
+        );
 
     if (conversationRows.length === 0) {
         throw new Error("Conversation not found");

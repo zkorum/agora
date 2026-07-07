@@ -21,7 +21,7 @@ import {
     zodOpinionModerationAction,
     zodConversationModerationProperties,
     zodOpinionModerationProperties,
-    zodCommentFeedFilter,
+    zodPublicCommentFeedFilter,
     zodUserReportReason,
     zodUserReportExplanation,
     zodUserReportItem,
@@ -535,7 +535,7 @@ export class Dto {
     static fetchOpinionsRequest = z
         .object({
             conversationSlugId: zodSlugId, // z.object() does not exist :(
-            filter: zodCommentFeedFilter,
+            filter: zodPublicCommentFeedFilter,
             clusterKey: zodPolisKey.optional(),
         })
         .strict();

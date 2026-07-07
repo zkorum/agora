@@ -18,7 +18,7 @@ import type {
     UserIdPerParticipantId,
 } from "@/utils/dataStructure.js";
 import { httpErrors } from "@fastify/sensible";
-import { and, eq, inArray, sql, SQL } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, sql, SQL } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonComment, useCommonPost } from "./common.js";
 import { isUserInSelectedOpinionGroup } from "./opinionGroupAnalysis.js";
@@ -211,6 +211,9 @@ export async function getUserVotesForPostSlugIds({
         .where(
             and(
                 inArray(conversationTable.slugId, uniquePostSlugIds),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+                isNotNull(opinionTable.currentContentId),
                 eq(voteTable.authorId, userId),
             ),
         );

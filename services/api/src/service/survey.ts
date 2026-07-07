@@ -1091,7 +1091,13 @@ async function getConversationAccessContextBySlugId({
                 conversationTable.rankingConfigId,
             ),
         )
-        .where(eq(conversationTable.slugId, conversationSlugId))
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+            ),
+        )
         .limit(1);
 
     const conversation = rows.at(0);

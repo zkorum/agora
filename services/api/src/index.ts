@@ -41,6 +41,7 @@ import {
     type ZodTypeProvider,
 } from "fastify-type-provider-zod";
 import fs from "fs";
+import { Transform } from "node:stream";
 import type { z } from "zod";
 import { config, log, server } from "./app.js";
 import * as authService from "@/service/auth.js";
@@ -242,7 +243,7 @@ import {
     projectTable,
     projectTranslationTargetLanguageTable,
 } from "./shared-backend/schema.js";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
 
 type ContentTranslationResponse = z.infer<
     typeof Dto.contentTranslationResponse
@@ -575,7 +576,13 @@ async function getContentTranslationAvailabilityForConversation({
                 isNull(conversationTranslationTargetLanguageTable.deletedAt),
             ),
         )
-        .where(eq(conversationTable.slugId, conversationSlugId));
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+            ),
+        );
 
     const firstRow = rows.at(0);
     if (firstRow === undefined) {
@@ -1459,6 +1466,56 @@ async function verifyUcanAndKnownDeviceStatus(
 const apiVersion = "v1";
 const REALTIME_REPLAY_BATCH_LIMIT = 100;
 const REALTIME_REPLAY_MAX_EVENTS = 1_000;
+const GITHUB_WEBHOOK_PATH = `/api/${apiVersion}/webhook/github`;
+const rawRequestBodies = new WeakMap<FastifyRequest, Buffer>();
+
+type RawRequestBodyCaptureStream = Transform & {
+    receivedEncodedLength: number;
+};
+
+function isRequestPath({
+    request,
+    path,
+}: {
+    request: FastifyRequest;
+    path: string;
+}): boolean {
+    const requestUrl = new URL(request.originalUrl, SERVER_URL);
+    return requestUrl.pathname === path;
+}
+
+function createRawRequestBodyCaptureStream({
+    request,
+    payload,
+}: {
+    request: FastifyRequest;
+    payload: NodeJS.ReadableStream;
+}): RawRequestBodyCaptureStream {
+    const chunks: Buffer[] = [];
+
+    const captureStream = Object.assign(new Transform({
+        transform(chunk: Buffer, _encoding, callback) {
+            chunks.push(chunk);
+            captureStream.receivedEncodedLength += chunk.length;
+            callback(null, chunk);
+        },
+        flush(callback) {
+            rawRequestBodies.set(request, Buffer.concat(chunks));
+            callback();
+        },
+    }), { receivedEncodedLength: 0 });
+
+    return payload.pipe(captureStream);
+}
+
+server.addHook("preParsing", (request, _reply, payload, done) => {
+    if (!isRequestPath({ request, path: GITHUB_WEBHOOK_PATH })) {
+        done(null, payload);
+        return;
+    }
+
+    done(null, createRawRequestBodyCaptureStream({ request, payload }));
+});
 
 async function requireSiteOrgAdmin(request: FastifyRequest): Promise<string> {
     const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(db, request, {
@@ -2709,7 +2766,10 @@ server.after(() => {
                 );
             }
 
-            const rawBody = JSON.stringify(request.body);
+            const rawBody = rawRequestBodies.get(request);
+            if (rawBody === undefined) {
+                throw server.httpErrors.badRequest("Missing raw webhook body");
+            }
             if (
                 !verifyWebhookSignature({
                     payload: rawBody,
@@ -3753,14 +3813,19 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            await verifyUcanAndKnownDeviceStatus(db, request, {
-                expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-            });
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
 
             const status =
                 await conversationImportService.getConversationImportStatus({
                     db: db,
                     importSlugId: request.body.importSlugId,
+                    userId: deviceStatus.userId,
                 });
 
             if (status === null) {

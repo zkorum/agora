@@ -5,6 +5,7 @@ import {
     count,
     desc,
     eq,
+    isNotNull,
     isNull,
     lt,
     lte,
@@ -230,7 +231,12 @@ async function findConversationRecord({
             conversationContentTable,
             eq(conversationTable.currentContentId, conversationContentTable.id),
         )
-        .where(eq(conversationTable.slugId, conversationSlugId))
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+            ),
+        )
         .limit(1);
 
     return conversations[0];
@@ -295,9 +301,10 @@ async function getOpinionCount({
         .where(
             and(
                 eq(opinionTable.conversationId, conversationId),
+                isNotNull(opinionTable.currentContentId),
                 or(
                     isNull(opinionModerationTable.moderationAction),
-                    ne(opinionModerationTable.moderationAction, "move"),
+                    ne(opinionModerationTable.moderationAction, "hide"),
                 ),
             ),
         );

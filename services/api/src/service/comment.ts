@@ -55,6 +55,7 @@ import {
     isNull,
     isNotNull,
     ne,
+    or,
     SQL,
     inArray,
 } from "drizzle-orm";
@@ -278,6 +279,8 @@ export async function isPersonalNonSeedOpinionAuthoredByUser({
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 eq(opinionTable.slugId, opinionSlugId),
                 eq(opinionTable.authorId, userId),
                 isNotNull(opinionTable.currentContentId),
@@ -547,11 +550,15 @@ export async function fetchOpinionsByPostId({
         case "my_votes": {
             // TypeScript knows personalizationUserId is defined here due to early check
             shouldJoinVoteTable = true;
-            // Show only voted opinions (regardless of moderation status)
+            // Show only visible voted opinions. Hidden opinions are moderator-only.
             // Filter by currentContentId to exclude cancelled votes (currentContentId = NULL when cancelled)
             whereClause = and(
                 whereClause,
                 isNotNull(voteTable.currentContentId),
+                or(
+                    isNull(opinionModerationTable.id),
+                    ne(opinionModerationTable.moderationAction, "hide"),
+                ),
             );
             // Sort by most recent votes first
             orderByClause = [desc(voteTable.updatedAt), desc(voteTable.id)];
@@ -809,7 +816,13 @@ export async function fetchCommentStatsByConversationSlugId({
                 conversationViewSnapshotTable.conversationId,
             ),
         )
-        .where(eq(conversationTable.slugId, conversationSlugId))
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+            ),
+        )
         .orderBy(
             desc(conversationViewSnapshotTable.createdAt),
             desc(conversationViewSnapshotTable.id),
@@ -933,7 +946,13 @@ export async function fetchOpinionsByOpinionSlugIdList({
         .where(
             and(
                 inArray(opinionTable.slugId, opinionSlugIdList),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 eq(userTable.isDeleted, false),
+                or(
+                    isNull(opinionModerationTable.id),
+                    ne(opinionModerationTable.moderationAction, "hide"),
+                ),
             ),
         );
 
@@ -1821,6 +1840,8 @@ async function fetchSelectedOpinionGroupCandidateById({
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 isNotNull(conversationViewSnapshotTable.activatedAt),
                 isNotNull(conversationViewSnapshotTable.analysisSnapshotId),
                 eq(analysisSnapshotResultTable.outcome, "success"),
@@ -2677,7 +2698,13 @@ async function getPostIdFromPostSlugId(
             id: conversationTable.id,
         })
         .from(conversationTable)
-        .where(eq(conversationTable.slugId, postSlugId));
+        .where(
+            and(
+                eq(conversationTable.slugId, postSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+            ),
+        );
     if (postTableResponse.length != 1) {
         throw httpErrors.notFound(
             "Failed to locate post slug ID: " + postSlugId,

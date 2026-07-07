@@ -97,6 +97,7 @@ export async function markImportFailed({
 interface GetImportStatusParams {
     db: PostgresDatabase;
     importSlugId: string;
+    userId: string;
 }
 
 interface GetConversationImportAccessStateParams {
@@ -168,7 +169,7 @@ interface ImportStatusResult {
 export async function getImportStatus(
     params: GetImportStatusParams,
 ): Promise<ImportStatusResult | null> {
-    const { db, importSlugId } = params;
+    const { db, importSlugId, userId } = params;
 
     const result = await db
         .select({
@@ -183,7 +184,12 @@ export async function getImportStatus(
             conversationTable,
             eq(conversationImportTable.conversationId, conversationTable.id),
         )
-        .where(eq(conversationImportTable.slugId, importSlugId))
+        .where(
+            and(
+                eq(conversationImportTable.slugId, importSlugId),
+                eq(conversationImportTable.userId, userId),
+            ),
+        )
         .limit(1);
 
     if (result.length === 0) {

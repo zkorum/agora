@@ -630,6 +630,7 @@ async function fetchConversationSource({
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
                 isNotNull(conversationTable.currentContentId),
             ),
         )
@@ -671,6 +672,8 @@ async function fetchOpinionSource({
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 eq(opinionTable.slugId, opinionSlugId),
                 isNotNull(opinionTable.currentContentId),
             ),
@@ -715,6 +718,8 @@ async function fetchSurveyQuestionSource({
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 eq(surveyQuestionTable.slugId, questionSlugId),
                 isNotNull(surveyQuestionTable.currentContentId),
             ),
@@ -796,6 +801,8 @@ async function fetchRankingItemSource({
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 eq(rankingItemTable.slugId, itemSlugId),
                 isNotNull(rankingItemTable.currentContentId),
             ),
@@ -1049,6 +1056,8 @@ async function fetchMaterializedConversationTargetLanguageCodes({
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 eq(conversationTable.dynamicTranslationEnabled, true),
                 isNull(conversationTranslationTargetLanguageTable.deletedAt),
             ),
@@ -1269,6 +1278,8 @@ async function fetchSeedOpinionSources({
             and(
                 eq(opinionTable.conversationId, conversationId),
                 eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 eq(opinionTable.isSeed, true),
                 isNotNull(opinionTable.currentContentId),
             ),
@@ -1339,6 +1350,8 @@ async function fetchCurrentSurveyQuestionSources({
             and(
                 eq(surveyQuestionTable.conversationId, conversationId),
                 eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 isNotNull(surveyQuestionTable.currentContentId),
             ),
         )

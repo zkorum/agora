@@ -27,6 +27,8 @@ export interface ApiV1AdministratorOrganizationAddUserOrganizationMappingPostReq
     'username': string;
     'organizationName': string;
 }
+
+
 export interface ApiV1AdministratorOrganizationCreateOrganizationPostRequest {
     'organizationName': string;
     'organizationSlug': string;
@@ -2561,7 +2563,7 @@ export const ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum = {
 
 export type ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum];
 export const ApiV1ConversationCreatePostRequestOneOf1RankingModeEnum = {
-    Bws: 'bws',
+    Maxdiff: 'maxdiff',
 } as const;
 
 export type ApiV1ConversationCreatePostRequestOneOf1RankingModeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1RankingModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1RankingModeEnum];
@@ -3112,7 +3114,7 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ConversationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ConversationTypeEnum];
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum = {
-    Bws: 'bws',
+    Maxdiff: 'maxdiff',
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum];
@@ -14505,5 +14507,3 @@ export class DefaultApi extends BaseAPI {
         return DefaultApiFp(this.configuration).apiV1WebhookGithubPost(options).then((request) => request(this.axios, this.basePath));
     }
 }
-
-

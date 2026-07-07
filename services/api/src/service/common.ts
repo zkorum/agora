@@ -740,6 +740,7 @@ export function useCommonPost() {
                 and(
                     eq(conversationTable.slugId, conversationSlugId),
                     eq(conversationTable.isImporting, false),
+                    isNotNull(conversationTable.currentContentId),
                 ),
             );
         if (postTableResponse.length === 0) {
@@ -807,7 +808,18 @@ export function useCommonComment() {
                 commentId: opinionTable.id,
             })
             .from(opinionTable)
-            .where(eq(opinionTable.slugId, commentSlugId));
+            .innerJoin(
+                conversationTable,
+                eq(conversationTable.id, opinionTable.conversationId),
+            )
+            .where(
+                and(
+                    eq(opinionTable.slugId, commentSlugId),
+                    isNotNull(opinionTable.currentContentId),
+                    eq(conversationTable.isImporting, false),
+                    isNotNull(conversationTable.currentContentId),
+                ),
+            );
 
         if (commentTableResponse.length != 1) {
             throw httpErrors.notFound(
@@ -841,7 +853,13 @@ export function useCommonComment() {
                     conversationTable,
                     eq(conversationTable.id, opinionTable.conversationId),
                 )
-                .where(eq(opinionTable.slugId, opinionSlugId));
+                .where(
+                    and(
+                        eq(opinionTable.slugId, opinionSlugId),
+                        eq(conversationTable.isImporting, false),
+                        isNotNull(conversationTable.currentContentId),
+                    ),
+                );
 
         // Try read replica first
         let opinionTableResponse = await queryOpinion(db);

@@ -269,6 +269,7 @@ export async function requestUrlImport(
 interface GetConversationImportStatusParams {
     db: PostgresDatabase;
     importSlugId: string;
+    userId: string;
 }
 
 /**

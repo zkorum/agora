@@ -19,7 +19,17 @@ import type {
     NotificationItem,
 } from "@/shared/types/zod.js";
 import { zodNotificationItem } from "@/shared/types/zod.js";
-import { and, desc, eq, inArray, isNull, lt, or, type SQL } from "drizzle-orm";
+import {
+    and,
+    desc,
+    eq,
+    inArray,
+    isNotNull,
+    isNull,
+    lt,
+    or,
+    type SQL,
+} from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
@@ -211,8 +221,12 @@ export async function getNotifications({
                 eq(userTable.id, notificationNewOpinionTable.authorId),
             )
             .where(
-                buildWhereClause(
-                    eq(notificationTable.notificationType, "new_opinion"),
+                and(
+                    buildWhereClause(
+                        eq(notificationTable.notificationType, "new_opinion"),
+                    ),
+                    eq(conversationTable.isImporting, false),
+                    isNotNull(conversationTable.currentContentId),
                 ),
             )
             .orderBy(orderByClause)
@@ -286,8 +300,12 @@ export async function getNotifications({
                 ),
             )
             .where(
-                buildWhereClause(
-                    eq(notificationTable.notificationType, "opinion_vote"),
+                and(
+                    buildWhereClause(
+                        eq(notificationTable.notificationType, "opinion_vote"),
+                    ),
+                    eq(conversationTable.isImporting, false),
+                    isNotNull(conversationTable.currentContentId),
                 ),
             )
             .orderBy(orderByClause)
@@ -627,7 +645,13 @@ async function buildExportNotification(
                     conversationTable.currentContentId,
                 ),
             )
-            .where(eq(notificationTable.slugId, notificationSlugId))
+            .where(
+                and(
+                    eq(notificationTable.slugId, notificationSlugId),
+                    eq(conversationTable.isImporting, false),
+                    isNotNull(conversationTable.currentContentId),
+                ),
+            )
             .limit(1);
 
         if (result.length !== 1) {
@@ -724,7 +748,13 @@ async function buildVoteNotification(
                 conversationTable,
                 eq(conversationTable.id, conversationId),
             )
-            .where(eq(notificationTable.slugId, notificationSlugId))
+            .where(
+                and(
+                    eq(notificationTable.slugId, notificationSlugId),
+                    eq(conversationTable.isImporting, false),
+                    isNotNull(conversationTable.currentContentId),
+                ),
+            )
             .limit(1);
 
         if (
@@ -792,7 +822,13 @@ async function buildOpinionNotification(
                 eq(conversationTable.id, conversationId),
             )
             .leftJoin(userTable, eq(userTable.id, opinionAuthorId))
-            .where(eq(notificationTable.slugId, notificationSlugId))
+            .where(
+                and(
+                    eq(notificationTable.slugId, notificationSlugId),
+                    eq(conversationTable.isImporting, false),
+                    isNotNull(conversationTable.currentContentId),
+                ),
+            )
             .limit(1);
 
         if (

@@ -524,6 +524,7 @@ export async function updateRankingItemLifecycle({
             and(
                 eq(rankingItemTable.slugId, itemSlugId),
                 eq(rankingItemTable.conversationId, conversationId),
+                isNotNull(rankingItemTable.currentContentId),
             ),
         );
 

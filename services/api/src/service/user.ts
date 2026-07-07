@@ -165,10 +165,14 @@ export async function getUserComments({
                               ),
                           ),
                           isNotNull(opinionTable.currentContentId),
+                          eq(conversationTable.isImporting, false),
+                          isNotNull(conversationTable.currentContentId),
                       )
                     : and(
                           eq(opinionTable.authorId, userId),
                           isNotNull(opinionTable.currentContentId),
+                          eq(conversationTable.isImporting, false),
+                          isNotNull(conversationTable.currentContentId),
                       ),
             )
             .orderBy(desc(opinionTable.createdAt), desc(opinionTable.id));
@@ -394,6 +398,8 @@ export async function getUserVotes({
                 // votes that were cast on deleted opinions will be deleted via cascade delete later
                 // and they are already ignored for counts, so we don't cancel them
                 isNotNull(opinionTable.currentContentId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
             ),
         )
         .orderBy(desc(voteTable.updatedAt), desc(voteTable.id));

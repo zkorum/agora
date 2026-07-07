@@ -1,5 +1,5 @@
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { httpErrors } from "@fastify/sensible";
 import {
     conversationExportRequestTable,
@@ -36,7 +36,13 @@ export async function getExportReadinessForConversation({
             conversationType: conversationTable.conversationType,
         })
         .from(conversationTable)
-        .where(eq(conversationTable.slugId, conversationSlugId))
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+            ),
+        )
         .limit(1);
 
     if (conversation.length === 0) {

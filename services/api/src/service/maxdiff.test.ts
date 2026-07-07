@@ -1,6 +1,59 @@
 import { describe, it, expect } from "vitest";
 import { normalizeScores } from "@/service/maxdiff.js";
 import { parseResultRows } from "@/utils/maxdiffParsing.js";
+import { zodMaxdiffComparison } from "@/shared/types/zod.js";
+
+describe("zodMaxdiffComparison", () => {
+    it("accepts valid comparisons", () => {
+        expect(
+            zodMaxdiffComparison.safeParse({
+                best: "A",
+                worst: "C",
+                set: ["A", "B", "C"],
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects invalid best-worst choices", () => {
+        expect(
+            zodMaxdiffComparison.safeParse({
+                best: "A",
+                worst: "A",
+                set: ["A", "B"],
+            }).success,
+        ).toBe(false);
+    });
+
+    it("rejects choices outside the candidate set", () => {
+        expect(
+            zodMaxdiffComparison.safeParse({
+                best: "A",
+                worst: "C",
+                set: ["A", "B"],
+            }).success,
+        ).toBe(false);
+    });
+
+    it("rejects duplicate candidate set items", () => {
+        expect(
+            zodMaxdiffComparison.safeParse({
+                best: "A",
+                worst: "B",
+                set: ["A", "B", "B"],
+            }).success,
+        ).toBe(false);
+    });
+
+    it("rejects entity IDs with surrounding whitespace", () => {
+        expect(
+            zodMaxdiffComparison.safeParse({
+                best: " A",
+                worst: "B",
+                set: [" A", "B"],
+            }).success,
+        ).toBe(false);
+    });
+});
 
 describe("parseResultRows", () => {
     it("extracts per-user comparisons from rows", () => {

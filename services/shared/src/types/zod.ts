@@ -540,8 +540,7 @@ export const zodConversationDataWithResult = z
     })
     .strict();
 export const zodCount = z.number().int().nonnegative();
-export const zodCommentFeedFilter = z.enum([
-    "hidden",
+export const zodPublicCommentFeedFilter = z.enum([
     "moderated",
     "new",
     "discover",
@@ -2076,7 +2075,7 @@ export type ConversationModerationProperties = z.infer<
 export type OpinionModerationProperties = z.infer<
     typeof zodOpinionModerationProperties
 >;
-export type CommentFeedFilter = z.infer<typeof zodCommentFeedFilter>;
+export type CommentFeedFilter = z.infer<typeof zodPublicCommentFeedFilter>;
 export type UserMuteAction = z.infer<typeof zodUserMuteAction>;
 export type UserMuteItem = z.infer<typeof zodUserMuteItem>;
 export type Username = z.infer<typeof zodUsername>;
@@ -2180,11 +2179,51 @@ export type GrantablePremiumFeature = z.infer<
 >;
 
 // MaxDiff (Best-Worst Scaling) types
-export const zodMaxdiffComparison = z.object({
-    best: z.string(),
-    worst: z.string(),
-    set: z.array(z.string()),
+const zodMaxdiffEntityId = z.string().min(1).refine((id) => id.trim() === id, {
+    message: "MaxDiff entity IDs must not have leading or trailing whitespace",
 });
+
+const zodMaxdiffCandidateSet = z.array(zodMaxdiffEntityId).min(2).superRefine(
+    (candidateSet, ctx) => {
+        if (new Set(candidateSet).size !== candidateSet.length) {
+            ctx.addIssue({
+                code: "custom",
+                message: "MaxDiff candidate set must not contain duplicate items",
+            });
+        }
+    },
+);
+
+export const zodMaxdiffComparison = z
+    .object({
+        best: zodMaxdiffEntityId,
+        worst: zodMaxdiffEntityId,
+        set: zodMaxdiffCandidateSet,
+    })
+    .strict()
+    .superRefine((comparison, ctx) => {
+        if (comparison.best === comparison.worst) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["worst"],
+                message: "MaxDiff best and worst choices must be different",
+            });
+        }
+        if (!comparison.set.includes(comparison.best)) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["best"],
+                message: "MaxDiff best choice must be in the candidate set",
+            });
+        }
+        if (!comparison.set.includes(comparison.worst)) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["worst"],
+                message: "MaxDiff worst choice must be in the candidate set",
+            });
+        }
+    });
 export type MaxDiffComparison = z.infer<typeof zodMaxdiffComparison>;
 
 // Pairwise comparison types

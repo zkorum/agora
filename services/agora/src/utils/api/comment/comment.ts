@@ -143,6 +143,10 @@ export function useBackendCommentApi() {
     filter: CommentTabFilters,
     clusterKey: PolisKey | undefined
   ): Promise<DisplayedOpinionItem[]> {
+    if (filter === "hidden") {
+      return await fetchHiddenCommentsForPost(postSlugId);
+    }
+
     const params: ApiV1OpinionFetchByConversationPostRequest = {
       conversationSlugId: postSlugId,
       filter: filter,

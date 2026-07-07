@@ -35,7 +35,13 @@ export async function getPostSlugIdLastCursor({
                 createdAt: conversationTable.createdAt,
             })
             .from(conversationTable)
-            .where(eq(conversationTable.slugId, lastSlugId));
+            .where(
+                and(
+                    eq(conversationTable.slugId, lastSlugId),
+                    eq(conversationTable.isImporting, false),
+                    isNotNull(conversationTable.currentContentId),
+                ),
+            );
         if (selectResponse.length == 1) {
             lastCursor = selectResponse[0];
         } else {
@@ -65,6 +71,7 @@ export async function fetchFeed({
     const whereClause: SQL | undefined = and(
         eq(conversationTable.isIndexed, true),
         eq(conversationTable.isImporting, false),
+        isNotNull(conversationTable.currentContentId),
     );
 
     const { fetchPostItems } = useCommonPost();
@@ -120,6 +127,7 @@ export async function getTopEngagementSlugIds({
             and(
                 eq(conversationTable.isIndexed, true),
                 eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 isNotNull(conversationViewSnapshotTable.activatedAt),
             ),
         )

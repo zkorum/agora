@@ -250,6 +250,8 @@ export async function fetchAnalysisCheckpointsByConversationSlugId({
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 isNotNull(conversationViewSnapshotTable.activatedAt),
             ),
         )
@@ -622,6 +624,8 @@ export async function ensureAiDescriptionLocaleRequestForConversationViewSnapsho
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 eq(conversationViewSnapshotTable.id, conversationViewSnapshotId),
                 isNotNull(conversationViewSnapshotTable.activatedAt),
                 eq(opinionGroupCandidateTable.outcome, "success"),
