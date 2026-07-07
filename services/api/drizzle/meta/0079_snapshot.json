@@ -1,5 +1,5 @@
 {
-  "id": "48664dcf-cf98-4571-a50b-8ec402b599ff",
+  "id": "ce1747a6-6179-4721-a028-2e729f529c7a",
   "prevId": "e6d573db-9e7d-450a-8bfc-68095a4abd75",
   "version": "7",
   "dialect": "postgresql",
@@ -7101,6 +7101,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "last_error_at": {
+          "name": "last_error_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "non_retryable_ai_description_epoch": {
           "name": "non_retryable_ai_description_epoch",
           "type": "integer",
@@ -7288,6 +7294,12 @@
         },
         "lease_expires_at": {
           "name": "lease_expires_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error_at": {
+          "name": "last_error_at",
           "type": "timestamp (0)",
           "primaryKey": false,
           "notNull": false

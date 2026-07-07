@@ -1,6 +1,6 @@
 {
-  "id": "6d1dec48-b2a4-4efe-ade7-5a00b70733df",
-  "prevId": "48664dcf-cf98-4571-a50b-8ec402b599ff",
+  "id": "c8ae0996-8425-492f-b7c9-3295dfd4e7fb",
+  "prevId": "ce1747a6-6179-4721-a028-2e729f529c7a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1711,6 +1711,10 @@
         "conversation_content_translation_source_metadata_check": {
           "name": "conversation_content_translation_source_metadata_check",
           "value": "((\"conversation_content_translation\".\"source_language_provider\" IS NULL AND \"conversation_content_translation\".\"source_raw_language_code\" IS NULL) OR (\"conversation_content_translation\".\"source_language_provider\" IS NOT NULL AND \"conversation_content_translation\".\"source_raw_language_code\" IS NOT NULL))"
+        },
+        "conversation_content_translation_body_plain_text_pair_check": {
+          "name": "conversation_content_translation_body_plain_text_pair_check",
+          "value": "((\"conversation_content_translation\".\"translated_body\" IS NULL AND \"conversation_content_translation\".\"translated_body_plain_text\" IS NULL) OR (\"conversation_content_translation\".\"translated_body\" IS NOT NULL AND \"conversation_content_translation\".\"translated_body_plain_text\" IS NOT NULL))"
         }
       },
       "isRLSEnabled": false
@@ -3148,12 +3152,6 @@
           "notNull": true,
           "default": "'conversation_override'"
         },
-        "current_ranking_score_id": {
-          "name": "current_ranking_score_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "is_indexed": {
           "name": "is_indexed",
           "type": "boolean",
@@ -3202,69 +3200,6 @@
           "name": "requires_event_ticket",
           "type": "event_slug",
           "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "ai_labeling_enabled": {
-          "name": "ai_labeling_enabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "analysis_data_generation": {
-          "name": "analysis_data_generation",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "preferred_opinion_group_count": {
-          "name": "preferred_opinion_group_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "import_url": {
-          "name": "import_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "import_conversation_url": {
-          "name": "import_conversation_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "import_export_url": {
-          "name": "import_export_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "import_created_at": {
-          "name": "import_created_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "import_author": {
-          "name": "import_author",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "import_method": {
-          "name": "import_method",
-          "type": "import_method",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "external_source_config": {
-          "name": "external_source_config",
-          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -3436,19 +3371,6 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "conversation_current_ranking_score_id_ranking_score_id_fk": {
-          "name": "conversation_current_ranking_score_id_ranking_score_id_fk",
-          "tableFrom": "conversation",
-          "tableTo": "ranking_score",
-          "columnsFrom": [
-            "current_ranking_score_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -3480,21 +3402,10 @@
           "columns": [
             "ranking_config_id"
           ]
-        },
-        "conversation_current_ranking_score_id_unique": {
-          "name": "conversation_current_ranking_score_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "current_ranking_score_id"
-          ]
         }
       },
       "policies": {},
       "checkConstraints": {
-        "conversation_preferred_opinion_group_count_check": {
-          "name": "conversation_preferred_opinion_group_count_check",
-          "value": "\"conversation\".\"preferred_opinion_group_count\" IS NULL OR \"conversation\".\"preferred_opinion_group_count\" >= 2"
-        },
         "conversation_subtype_config_check": {
           "name": "conversation_subtype_config_check",
           "value": "((\"conversation\".\"conversation_type\" = 'polis' AND \"conversation\".\"polis_config_id\" IS NOT NULL AND \"conversation\".\"ranking_config_id\" IS NULL) OR (\"conversation\".\"conversation_type\" = 'ranking' AND \"conversation\".\"ranking_config_id\" IS NOT NULL AND \"conversation\".\"polis_config_id\" IS NULL))"
@@ -4886,410 +4797,6 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.maxdiff_item_content": {
-      "name": "maxdiff_item_content",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "maxdiff_item_content_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "maxdiff_item_id": {
-          "name": "maxdiff_item_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "conversation_content_id": {
-          "name": "conversation_content_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "title": {
-          "name": "title",
-          "type": "varchar(200)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "body": {
-          "name": "body",
-          "type": "varchar(3000)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "maxdiff_item_content_maxdiff_item_id_maxdiff_item_id_fk": {
-          "name": "maxdiff_item_content_maxdiff_item_id_maxdiff_item_id_fk",
-          "tableFrom": "maxdiff_item_content",
-          "tableTo": "maxdiff_item",
-          "columnsFrom": [
-            "maxdiff_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "maxdiff_item_content_conversation_content_id_conversation_content_id_fk": {
-          "name": "maxdiff_item_content_conversation_content_id_conversation_content_id_fk",
-          "tableFrom": "maxdiff_item_content",
-          "tableTo": "conversation_content",
-          "columnsFrom": [
-            "conversation_content_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.maxdiff_item_external_source": {
-      "name": "maxdiff_item_external_source",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "maxdiff_item_external_source_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "maxdiff_item_id": {
-          "name": "maxdiff_item_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "conversation_id": {
-          "name": "conversation_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "source_type": {
-          "name": "source_type",
-          "type": "external_source_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "external_id": {
-          "name": "external_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "external_url": {
-          "name": "external_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "external_metadata": {
-          "name": "external_metadata",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_synced_at": {
-          "name": "last_synced_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "maxdiff_external_source_dedup_idx": {
-          "name": "maxdiff_external_source_dedup_idx",
-          "columns": [
-            {
-              "expression": "external_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "maxdiff_item_external_source_maxdiff_item_id_maxdiff_item_id_fk": {
-          "name": "maxdiff_item_external_source_maxdiff_item_id_maxdiff_item_id_fk",
-          "tableFrom": "maxdiff_item_external_source",
-          "tableTo": "maxdiff_item",
-          "columnsFrom": [
-            "maxdiff_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "maxdiff_item_external_source_conversation_id_conversation_id_fk": {
-          "name": "maxdiff_item_external_source_conversation_id_conversation_id_fk",
-          "tableFrom": "maxdiff_item_external_source",
-          "tableTo": "conversation",
-          "columnsFrom": [
-            "conversation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "maxdiff_item_external_source_maxdiff_item_id_unique": {
-          "name": "maxdiff_item_external_source_maxdiff_item_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "maxdiff_item_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.maxdiff_item": {
-      "name": "maxdiff_item",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "maxdiff_item_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "slug_id": {
-          "name": "slug_id",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "author_id": {
-          "name": "author_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "conversation_id": {
-          "name": "conversation_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "current_content_id": {
-          "name": "current_content_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "is_seed": {
-          "name": "is_seed",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "lifecycle_status": {
-          "name": "lifecycle_status",
-          "type": "maxdiff_lifecycle_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'active'"
-        },
-        "snapshot_score": {
-          "name": "snapshot_score",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "snapshot_rank": {
-          "name": "snapshot_rank",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "snapshot_participant_count": {
-          "name": "snapshot_participant_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "maxdiff_item_conversation_active_idx": {
-          "name": "maxdiff_item_conversation_active_idx",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "current_content_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "maxdiff_item_lifecycle_idx": {
-          "name": "maxdiff_item_lifecycle_idx",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "lifecycle_status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "maxdiff_item_author_id_user_id_fk": {
-          "name": "maxdiff_item_author_id_user_id_fk",
-          "tableFrom": "maxdiff_item",
-          "tableTo": "user",
-          "columnsFrom": [
-            "author_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "maxdiff_item_conversation_id_conversation_id_fk": {
-          "name": "maxdiff_item_conversation_id_conversation_id_fk",
-          "tableFrom": "maxdiff_item",
-          "tableTo": "conversation",
-          "columnsFrom": [
-            "conversation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "maxdiff_item_slug_id_unique": {
-          "name": "maxdiff_item_slug_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "slug_id"
-          ]
-        }
-      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -7105,6 +6612,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "last_error_at": {
+          "name": "last_error_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "non_retryable_ai_description_epoch": {
           "name": "non_retryable_ai_description_epoch",
           "type": "integer",
@@ -7292,6 +6805,12 @@
         },
         "lease_expires_at": {
           "name": "lease_expires_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error_at": {
+          "name": "last_error_at",
           "type": "timestamp (0)",
           "primaryKey": false,
           "notNull": false
@@ -9564,7 +9083,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "polis_conversation_config_preferred_opinion_group_count_check": {
+          "name": "polis_conversation_config_preferred_opinion_group_count_check",
+          "value": "\"polis_conversation_config\".\"preferred_opinion_group_count\" IS NULL OR \"polis_conversation_config\".\"preferred_opinion_group_count\" >= 2"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.premium_feature_entitlement": {
@@ -10315,6 +9839,10 @@
         "project_content_translation_source_metadata_check": {
           "name": "project_content_translation_source_metadata_check",
           "value": "((\"project_content_translation\".\"source_language_provider\" IS NULL AND \"project_content_translation\".\"source_raw_language_code\" IS NULL) OR (\"project_content_translation\".\"source_language_provider\" IS NOT NULL AND \"project_content_translation\".\"source_raw_language_code\" IS NOT NULL))"
+        },
+        "project_content_translation_body_plain_text_pair_check": {
+          "name": "project_content_translation_body_plain_text_pair_check",
+          "value": "((\"project_content_translation\".\"translated_body\" IS NULL AND \"project_content_translation\".\"translated_body_plain_text\" IS NULL) OR (\"project_content_translation\".\"translated_body\" IS NOT NULL AND \"project_content_translation\".\"translated_body_plain_text\" IS NOT NULL))"
         }
       },
       "isRLSEnabled": false
@@ -11359,6 +10887,10 @@
         "ranking_item_content_source_metadata_check": {
           "name": "ranking_item_content_source_metadata_check",
           "value": "((\"ranking_item_content\".\"source_language_provider\" IS NULL AND \"ranking_item_content\".\"source_raw_language_code\" IS NULL) OR (\"ranking_item_content\".\"source_language_provider\" IS NOT NULL AND \"ranking_item_content\".\"source_raw_language_code\" IS NOT NULL))"
+        },
+        "ranking_item_content_body_plain_text_pair_check": {
+          "name": "ranking_item_content_body_plain_text_pair_check",
+          "value": "((\"ranking_item_content\".\"body\" IS NULL AND \"ranking_item_content\".\"body_plain_text\" IS NULL) OR (\"ranking_item_content\".\"body\" IS NOT NULL AND \"ranking_item_content\".\"body_plain_text\" IS NOT NULL))"
         }
       },
       "isRLSEnabled": false
@@ -11486,6 +11018,10 @@
         "ranking_item_content_translation_source_metadata_check": {
           "name": "ranking_item_content_translation_source_metadata_check",
           "value": "((\"ranking_item_content_translation\".\"source_language_provider\" IS NULL AND \"ranking_item_content_translation\".\"source_raw_language_code\" IS NULL) OR (\"ranking_item_content_translation\".\"source_language_provider\" IS NOT NULL AND \"ranking_item_content_translation\".\"source_raw_language_code\" IS NOT NULL))"
+        },
+        "ranking_item_content_translation_body_plain_text_pair_check": {
+          "name": "ranking_item_content_translation_body_plain_text_pair_check",
+          "value": "((\"ranking_item_content_translation\".\"translated_body_html\" IS NULL AND \"ranking_item_content_translation\".\"translated_body_plain_text\" IS NULL) OR (\"ranking_item_content_translation\".\"translated_body_html\" IS NOT NULL AND \"ranking_item_content_translation\".\"translated_body_plain_text\" IS NOT NULL))"
         }
       },
       "isRLSEnabled": false
@@ -11791,15 +11327,17 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "ranking_item_current_content_id_ranking_item_content_id_fk": {
-          "name": "ranking_item_current_content_id_ranking_item_content_id_fk",
+        "ranking_item_current_content_owned_by_item_fk": {
+          "name": "ranking_item_current_content_owned_by_item_fk",
           "tableFrom": "ranking_item",
           "tableTo": "ranking_item_content",
           "columnsFrom": [
-            "current_content_id"
+            "current_content_id",
+            "id"
           ],
           "columnsTo": [
-            "id"
+            "id",
+            "ranking_item_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -15259,16 +14797,6 @@
       "values": [
         "lingua",
         "google_translate"
-      ]
-    },
-    "public.maxdiff_lifecycle_status": {
-      "name": "maxdiff_lifecycle_status",
-      "schema": "public",
-      "values": [
-        "active",
-        "completed",
-        "in_progress",
-        "canceled"
       ]
     },
     "public.moderation_reason_enum": {

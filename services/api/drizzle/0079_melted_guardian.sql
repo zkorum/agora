@@ -104,6 +104,10 @@ ALTER TABLE "conversation_content_translation" ADD COLUMN "translated_body_plain
 ALTER TABLE "conversation" ADD COLUMN "polis_config_id" integer;--> statement-breakpoint
 ALTER TABLE "conversation" ADD COLUMN "ranking_config_id" integer;--> statement-breakpoint
 ALTER TABLE "opinion_content_translation" ADD COLUMN "translated_content_plain_text" text;--> statement-breakpoint
+ALTER TABLE "opinion_group_description_translation_work" ADD COLUMN "last_error_at" timestamp (0);--> statement-breakpoint
+ALTER TABLE "opinion_group_lineage_description_work" ADD COLUMN "last_error_at" timestamp (0);--> statement-breakpoint
+UPDATE "opinion_group_description_translation_work" SET "last_error_at" = "updated_at" WHERE "last_error_code" IS NOT NULL AND "last_error_at" IS NULL;--> statement-breakpoint
+UPDATE "opinion_group_lineage_description_work" SET "last_error_at" = "updated_at" WHERE "last_error_code" IS NOT NULL AND "last_error_at" IS NULL;--> statement-breakpoint
 ALTER TABLE "project_content_translation" ADD COLUMN "translated_body_plain_text" text;--> statement-breakpoint
 ALTER TABLE "survey_answer" ADD COLUMN "text_value_plain_text" text;--> statement-breakpoint
 ALTER TABLE "conversation_import_source" ADD CONSTRAINT "conversation_import_source_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

@@ -67,7 +67,7 @@ def main() -> None:
     worker_id = f"ai-desc:{uuid.uuid4()}"
     log.info(
         "%s Starting worker_id=%s claim_batch=%d ai=%d lease_ttl=%ds "
-        "heartbeat=%ds recovery=%ds",
+        "heartbeat=%ds recovery=%ds retry_cooldown=%ds",
         LOG_PREFIX,
         worker_id,
         settings.db_claim_batch_size,
@@ -75,6 +75,7 @@ def main() -> None:
         settings.lease_ttl_seconds,
         settings.heartbeat_interval_seconds,
         settings.running_recovery_interval_seconds,
+        settings.retry_cooldown_seconds,
     )
 
     try:
@@ -168,7 +169,7 @@ def main() -> None:
                     LOG_PREFIX,
                     len(materialized_ids),
                 )
-            claimable_ids = fetch_claimable_ai_description_work_conversation_ids(
+            read_scan_ids = fetch_claimable_ai_description_work_conversation_ids(
                 read_engine,
                 limit=settings.db_claim_batch_size,
                 ai_description_epoch=settings.ai_description_epoch,
@@ -176,9 +177,21 @@ def main() -> None:
                 include_lineage_descriptions=True,
                 include_translations=False,
                 require_activated_view_snapshot=True,
+                retry_cooldown_seconds=settings.retry_cooldown_seconds,
             )
-            read_scan_ids = claimable_ids
-            claimable_ids = sorted({*claimable_ids, *materialized_ids})[
+            primary_scan_ids: list[int] = []
+            if materialized_ids:
+                primary_scan_ids = fetch_claimable_ai_description_work_conversation_ids(
+                    primary_engine,
+                    limit=settings.db_claim_batch_size,
+                    ai_description_epoch=settings.ai_description_epoch,
+                    translation_enabled=False,
+                    include_lineage_descriptions=True,
+                    include_translations=False,
+                    require_activated_view_snapshot=True,
+                    retry_cooldown_seconds=settings.retry_cooldown_seconds,
+                )
+            claimable_ids = sorted({*read_scan_ids, *primary_scan_ids})[
                 : settings.db_claim_batch_size
             ]
         except Exception:
@@ -189,11 +202,12 @@ def main() -> None:
             time.sleep(settings.worker_poll_idle_sleep_seconds)
             continue
 
-        log.info(
+        log.debug(
             "%s Found claimable lineage conversation(s) read_scan_count=%d "
-            "materialized_count=%d selected_count=%d selected_ids=%s",
+            "primary_scan_count=%d materialized_count=%d selected_count=%d selected_ids=%s",
             LOG_PREFIX,
             len(read_scan_ids),
+            len(primary_scan_ids),
             len(materialized_ids),
             len(claimable_ids),
             ",".join(str(conversation_id) for conversation_id in claimable_ids),
@@ -210,6 +224,7 @@ def main() -> None:
                 claim_limit=settings.db_claim_batch_size,
                 max_workers=settings.max_ai_description_concurrency,
                 ai_description_epoch=settings.ai_description_epoch,
+                retry_cooldown_seconds=settings.retry_cooldown_seconds,
                 description_generator=description_generator,
                 description_translator=None,
                 claim_lineage_descriptions=True,

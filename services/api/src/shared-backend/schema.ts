@@ -4200,6 +4200,10 @@ export const opinionGroupDescriptionTranslationWorkTable = pgTable(
             mode: "date",
             precision: 0,
         }),
+        lastErrorAt: timestamp("last_error_at", {
+            mode: "date",
+            precision: 0,
+        }),
         nonRetryableAiDescriptionEpoch: integer(
             "non_retryable_ai_description_epoch",
         ),
@@ -4358,6 +4362,10 @@ export const opinionGroupLineageDescriptionWorkTable = pgTable(
         leaseOwner: varchar("lease_owner", { length: 100 }),
         leaseToken: varchar("lease_token", { length: 100 }),
         leaseExpiresAt: timestamp("lease_expires_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        lastErrorAt: timestamp("last_error_at", {
             mode: "date",
             precision: 0,
         }),

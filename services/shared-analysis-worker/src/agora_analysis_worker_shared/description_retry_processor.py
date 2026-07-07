@@ -9,6 +9,8 @@ from agora_analysis_worker_shared.ai_description_lease_heartbeat import (
     start_ai_description_lease_heartbeat,
 )
 from agora_analysis_worker_shared.ai_description_work import (
+    AI_DESCRIPTION_NON_RETRYABLE_ERROR_CODE,
+    AI_DESCRIPTION_RETRYABLE_ERROR_CODE,
     DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE,
     AiDescriptionWorkResult,
     ClaimedDescriptionTranslationWorkItem,
@@ -103,6 +105,7 @@ def process_ai_description_conversation_ids(
     claim_limit: int,
     max_workers: int,
     ai_description_epoch: int,
+    retry_cooldown_seconds: int,
     description_generator: DescriptionGenerator,
     description_translator: DescriptionTranslator | None,
     claim_lineage_descriptions: bool,
@@ -152,6 +155,7 @@ def process_ai_description_conversation_ids(
         claim_lineage_descriptions=claim_lineage_descriptions,
         claim_translations=claim_translations,
         require_activated_view_snapshot=True,
+        retry_cooldown_seconds=retry_cooldown_seconds,
     )
     if not claims:
         log.debug(
@@ -189,15 +193,14 @@ def process_ai_description_conversation_ids(
                 primary_engine,
                 claim=claim,
                 ai_description_epoch=ai_description_epoch,
-                error_code="ai_description_non_retryable",
+                error_code=AI_DESCRIPTION_NON_RETRYABLE_ERROR_CODE,
                 error_message=str(error),
                 require_activated_view_snapshot=True,
             )
 
         if _is_expected_simulated_retryable_error(error):
             log.warning(
-                "%s Expected simulated retryable %s failure conversationSlugId=%s "
-                "locale=%s %s: %s",
+                "%s Expected simulated retryable %s failure conversationSlugId=%s locale=%s %s: %s",
                 log_prefix,
                 _claim_kind(claim),
                 claim.conversation_slug_id,
@@ -217,7 +220,7 @@ def process_ai_description_conversation_ids(
         return retry_ai_description_locale_work_item(
             primary_engine,
             claim=claim,
-            error_code="ai_description_retryable",
+            error_code=AI_DESCRIPTION_RETRYABLE_ERROR_CODE,
             error_message=str(error),
             require_activated_view_snapshot=True,
         )
@@ -310,9 +313,7 @@ def process_ai_description_conversation_ids(
                 )
                 processable_claims.append(claim)
             except Exception as error:
-                retry_schedules.append(
-                    (claim, process_claim_error(claim=claim, error=error))
-                )
+                retry_schedules.append((claim, process_claim_error(claim=claim, error=error)))
 
         if not processable_claims:
             return retry_schedules, DescriptionTranslationBatchProcessResult(
