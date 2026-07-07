@@ -1,6 +1,5 @@
 CREATE TYPE "public"."ranking_item_lifecycle_status" AS ENUM('active', 'completed', 'in_progress', 'canceled');--> statement-breakpoint
 CREATE TYPE "public"."ranking_mode" AS ENUM('bws');--> statement-breakpoint
-ALTER TYPE "public"."content_translation_source_kind" ADD VALUE 'ranking_item';--> statement-breakpoint
 CREATE TABLE "conversation_import_source" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_import_source_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"conversation_id" integer NOT NULL,
