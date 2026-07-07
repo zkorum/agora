@@ -1,5 +1,5 @@
 {
-  "id": "ce1747a6-6179-4721-a028-2e729f529c7a",
+  "id": "43e9a2df-9138-4a67-a7a1-ccca5bacc347",
   "prevId": "e6d573db-9e7d-450a-8bfc-68095a4abd75",
   "version": "7",
   "dialect": "postgresql",
@@ -10042,6 +10042,13 @@
             "cycle": false
           }
         },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
         "project_id": {
           "name": "project_id",
           "type": "integer",
@@ -10141,7 +10148,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "project_content_public_id_unique": {
+          "name": "project_content_public_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "public_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "project_content_source_metadata_check": {
@@ -15061,7 +15076,7 @@
       "schema": "public",
       "values": [
         "polis",
-        "maxdiff"
+        "ranking"
       ]
     },
     "public.conversation_view_snapshot_checkpoint_reason_enum": {

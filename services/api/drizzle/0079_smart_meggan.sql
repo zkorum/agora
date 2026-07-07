@@ -1,6 +1,6 @@
 CREATE TYPE "public"."ranking_item_lifecycle_status" AS ENUM('active', 'completed', 'in_progress', 'canceled');--> statement-breakpoint
--- V0079 is branch-local and has not shipped, so create the persisted ranking subtype as bws directly.
 CREATE TYPE "public"."ranking_mode" AS ENUM('bws');--> statement-breakpoint
+ALTER TYPE "public"."content_translation_source_kind" ADD VALUE 'ranking_item';--> statement-breakpoint
 CREATE TABLE "conversation_import_source" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_import_source_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"conversation_id" integer NOT NULL,
@@ -99,6 +99,13 @@ CREATE TABLE "ranking_item" (
 );
 --> statement-breakpoint
 ALTER TABLE "content_translation_work" DROP CONSTRAINT "content_translation_work_source_check";--> statement-breakpoint
+ALTER TABLE "conversation" ALTER COLUMN "conversation_type" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "conversation" ALTER COLUMN "conversation_type" SET DEFAULT 'polis'::text;--> statement-breakpoint
+UPDATE "conversation" SET "conversation_type" = 'ranking' WHERE "conversation_type" = 'maxdiff';--> statement-breakpoint
+DROP TYPE "public"."conversation_type";--> statement-breakpoint
+CREATE TYPE "public"."conversation_type" AS ENUM('polis', 'ranking');--> statement-breakpoint
+ALTER TABLE "conversation" ALTER COLUMN "conversation_type" SET DEFAULT 'polis'::"public"."conversation_type";--> statement-breakpoint
+ALTER TABLE "conversation" ALTER COLUMN "conversation_type" SET DATA TYPE "public"."conversation_type" USING "conversation_type"::"public"."conversation_type";--> statement-breakpoint
 ALTER TABLE "content_translation_work" ADD COLUMN "ranking_item_content_id" integer;--> statement-breakpoint
 ALTER TABLE "conversation_content_translation" ADD COLUMN "translated_body_plain_text" text;--> statement-breakpoint
 ALTER TABLE "conversation" ADD COLUMN "polis_config_id" integer;--> statement-breakpoint
@@ -106,8 +113,7 @@ ALTER TABLE "conversation" ADD COLUMN "ranking_config_id" integer;--> statement-
 ALTER TABLE "opinion_content_translation" ADD COLUMN "translated_content_plain_text" text;--> statement-breakpoint
 ALTER TABLE "opinion_group_description_translation_work" ADD COLUMN "last_error_at" timestamp (0);--> statement-breakpoint
 ALTER TABLE "opinion_group_lineage_description_work" ADD COLUMN "last_error_at" timestamp (0);--> statement-breakpoint
-UPDATE "opinion_group_description_translation_work" SET "last_error_at" = "updated_at" WHERE "last_error_code" IS NOT NULL AND "last_error_at" IS NULL;--> statement-breakpoint
-UPDATE "opinion_group_lineage_description_work" SET "last_error_at" = "updated_at" WHERE "last_error_code" IS NOT NULL AND "last_error_at" IS NULL;--> statement-breakpoint
+ALTER TABLE "project_content" ADD COLUMN "public_id" uuid DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
 ALTER TABLE "project_content_translation" ADD COLUMN "translated_body_plain_text" text;--> statement-breakpoint
 ALTER TABLE "survey_answer" ADD COLUMN "text_value_plain_text" text;--> statement-breakpoint
 ALTER TABLE "conversation_import_source" ADD CONSTRAINT "conversation_import_source_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -129,4 +135,5 @@ ALTER TABLE "conversation" ADD CONSTRAINT "conversation_ranking_config_id_rankin
 CREATE UNIQUE INDEX "content_translation_work_ranking_item_unique" ON "content_translation_work" USING btree ("ranking_item_content_id","display_language_code") WHERE ("content_translation_work"."source_kind" = 'ranking_item' AND "content_translation_work"."ranking_item_content_id" is not null);--> statement-breakpoint
 ALTER TABLE "conversation" ADD CONSTRAINT "conversation_polis_config_id_unique" UNIQUE("polis_config_id");--> statement-breakpoint
 ALTER TABLE "conversation" ADD CONSTRAINT "conversation_ranking_config_id_unique" UNIQUE("ranking_config_id");--> statement-breakpoint
+ALTER TABLE "project_content" ADD CONSTRAINT "project_content_public_id_unique" UNIQUE("public_id");--> statement-breakpoint
 ALTER TABLE "content_translation_work" ADD CONSTRAINT "content_translation_work_source_check" CHECK ((("content_translation_work"."source_kind" = 'conversation' AND "content_translation_work"."conversation_id" is not null AND "content_translation_work"."project_content_id" is null AND "content_translation_work"."conversation_content_id" is not null AND "content_translation_work"."opinion_content_id" is null AND "content_translation_work"."survey_question_content_id" is null AND "content_translation_work"."survey_question_option_content_ids" is null AND "content_translation_work"."ranking_item_content_id" is null) OR ("content_translation_work"."source_kind" = 'project' AND "content_translation_work"."conversation_id" is null AND "content_translation_work"."project_content_id" is not null AND "content_translation_work"."conversation_content_id" is null AND "content_translation_work"."opinion_content_id" is null AND "content_translation_work"."survey_question_content_id" is null AND "content_translation_work"."survey_question_option_content_ids" is null AND "content_translation_work"."ranking_item_content_id" is null) OR ("content_translation_work"."source_kind" = 'opinion' AND "content_translation_work"."conversation_id" is not null AND "content_translation_work"."project_content_id" is null AND "content_translation_work"."conversation_content_id" is null AND "content_translation_work"."opinion_content_id" is not null AND "content_translation_work"."survey_question_content_id" is null AND "content_translation_work"."survey_question_option_content_ids" is null AND "content_translation_work"."ranking_item_content_id" is null) OR ("content_translation_work"."source_kind" = 'survey_question' AND "content_translation_work"."conversation_id" is not null AND "content_translation_work"."project_content_id" is null AND "content_translation_work"."conversation_content_id" is null AND "content_translation_work"."opinion_content_id" is null AND "content_translation_work"."survey_question_content_id" is not null AND "content_translation_work"."survey_question_option_content_ids" is not null AND "content_translation_work"."ranking_item_content_id" is null) OR ("content_translation_work"."source_kind" = 'ranking_item' AND "content_translation_work"."conversation_id" is not null AND "content_translation_work"."project_content_id" is null AND "content_translation_work"."conversation_content_id" is null AND "content_translation_work"."opinion_content_id" is null AND "content_translation_work"."survey_question_content_id" is null AND "content_translation_work"."survey_question_option_content_ids" is null AND "content_translation_work"."ranking_item_content_id" is not null)));
