@@ -6,6 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from agora_analysis_worker_shared.config import (
+    DEFAULT_AWS_FIRST_PASS_READ_TIMEOUT_SECONDS,
     DEFAULT_AWS_RETRY_WORKER_READ_TIMEOUT_SECONDS,
     MATH_UPDATER_ENV_PREFIX,
     AiDescriptionWorkerSettings,
@@ -148,8 +149,14 @@ def test_settings_accepts_valid_minimal_config(
     assert settings.lease_ttl_seconds == 45
     assert settings.heartbeat_interval_seconds == 15
     assert settings.running_recovery_interval_seconds == 10
-    assert settings.aws_ai_label_summary_read_timeout_seconds == 12.0
-    assert settings.aws_description_translation_read_timeout_seconds == 12.0
+    assert (
+        settings.aws_ai_label_summary_read_timeout_seconds
+        == DEFAULT_AWS_FIRST_PASS_READ_TIMEOUT_SECONDS
+    )
+    assert (
+        settings.aws_description_translation_read_timeout_seconds
+        == DEFAULT_AWS_FIRST_PASS_READ_TIMEOUT_SECONDS
+    )
     assert settings.google_cloud_translation_timeout_seconds == 10.0
 
 

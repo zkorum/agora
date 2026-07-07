@@ -13,7 +13,8 @@ from pydantic_settings import (
 DEFAULT_VALKEY_URL: AnyUrl = TypeAdapter(AnyUrl).validate_python(
     "valkey://localhost:6379",
 )
-DEFAULT_AWS_RETRY_WORKER_READ_TIMEOUT_SECONDS = 12.0
+DEFAULT_AWS_FIRST_PASS_READ_TIMEOUT_SECONDS = 40.0
+DEFAULT_AWS_RETRY_WORKER_READ_TIMEOUT_SECONDS = 60.0
 log = logging.getLogger(__name__)
 ALLOWED_VALKEY_SCHEMES = {"valkey", "valkeys", "redis", "rediss"}
 MATH_UPDATER_ENV_PREFIX = "MATH_UPDATER_"
@@ -240,8 +241,14 @@ class Settings(BaseSettings):
         min_length=1,
     )
     aws_client_connect_timeout_seconds: float = Field(default=2.0, gt=0)
-    aws_ai_label_summary_read_timeout_seconds: float = Field(default=12.0, gt=0)
-    aws_description_translation_read_timeout_seconds: float = Field(default=12.0, gt=0)
+    aws_ai_label_summary_read_timeout_seconds: float = Field(
+        default=DEFAULT_AWS_FIRST_PASS_READ_TIMEOUT_SECONDS,
+        gt=0,
+    )
+    aws_description_translation_read_timeout_seconds: float = Field(
+        default=DEFAULT_AWS_FIRST_PASS_READ_TIMEOUT_SECONDS,
+        gt=0,
+    )
     aws_secret_read_timeout_seconds: float = Field(default=5.0, gt=0)
 
     aws_secret_region: str | None = Field(default=None, min_length=1)
