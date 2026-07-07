@@ -236,16 +236,21 @@ if (!isTabAvailable(currentTab.value)) {
   currentTab.value = "Summary";
 }
 
-const tabLabelMap: Record<string, string> = {
-  Summary: t("tabSummary"),
-  Me: t("tabMe"),
-  Results: t("tabResults"),
-  Completed: t("tabCompleted"),
-  Canceled: t("tabCanceled"),
-};
+const tabTranslationKeys = {
+  Summary: "tabSummary",
+  Me: "tabMe",
+  Results: "tabResults",
+  Completed: "tabCompleted",
+  Canceled: "tabCanceled",
+} satisfies Record<MaxDiffShortcutItem, keyof MaxDiffResultsTabTranslations>;
 
 function getTabLabel(item: string): string {
-  return tabLabelMap[item] ?? item;
+  const parsed = maxdiffShortcutItemSchema.safeParse(item);
+  if (!parsed.success) {
+    return item;
+  }
+
+  return t(tabTranslationKeys[parsed.data]);
 }
 
 function onTabChange(value: string): void {
