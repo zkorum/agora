@@ -101,7 +101,18 @@ def main() -> None:
     if translator_bundle is None:
         log.info("%s Description translation disabled", LOG_PREFIX)
         return
-    log.info("%s Description translation mode=%s", LOG_PREFIX, translator_bundle.mode)
+    log.info(
+        "%s Description translation mode=%s bedrock_model=%s bedrock_region=%s "
+        "connect_timeout=%ss bedrock_read_timeout=%ss google_timeout=%ss concurrency=%d",
+        LOG_PREFIX,
+        translator_bundle.mode,
+        settings.aws_description_translation_model_id,
+        settings.aws_description_translation_region,
+        settings.aws_client_connect_timeout_seconds,
+        settings.aws_description_translation_read_timeout_seconds,
+        settings.google_cloud_translation_timeout_seconds,
+        settings.max_ai_description_concurrency,
+    )
 
     primary_engine = create_ready_postgres_engine(
         connection_string=settings.connection_string,
@@ -182,6 +193,7 @@ def main() -> None:
                 include_translations=True,
                 require_activated_view_snapshot=True,
             )
+            read_scan_ids = claimable_ids
             claimable_ids = sorted({*claimable_ids, *materialized_ids})[
                 : settings.db_claim_batch_size
             ]
@@ -193,9 +205,12 @@ def main() -> None:
             time.sleep(settings.worker_poll_idle_sleep_seconds)
             continue
 
-        log.debug(
-            "%s Found claimable translation conversation(s) source=read_replica count=%d ids=%s",
+        log.info(
+            "%s Found claimable translation conversation(s) read_scan_count=%d "
+            "materialized_count=%d selected_count=%d selected_ids=%s",
             LOG_PREFIX,
+            len(read_scan_ids),
+            len(materialized_ids),
             len(claimable_ids),
             ",".join(str(conversation_id) for conversation_id in claimable_ids),
         )

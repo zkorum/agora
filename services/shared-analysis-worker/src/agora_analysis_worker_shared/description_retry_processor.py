@@ -240,12 +240,32 @@ def process_ai_description_conversation_ids(
 
         if not processable_claims:
             return retry_schedules, set()
+        provider_started_at = time.perf_counter()
+        log.info(
+            "%s Starting lineage provider batch claim_count=%d conversationSlugIds=%s "
+            "lineageIds=%s",
+            log_prefix,
+            len(processable_claims),
+            ",".join(sorted({claim.conversation_slug_id for claim in processable_claims})),
+            ",".join(str(claim.lineage_id) for claim in processable_claims),
+        )
         try:
             result = process_lineage_description_work_items_batch(
                 primary_engine,
                 claims=processable_claims,
                 generate_descriptions=description_generator,
                 require_activated_view_snapshot=True,
+            )
+            log.info(
+                "%s Finished lineage provider batch claim_count=%d generated_count=%d "
+                "missing_count=%d elapsed_ms=%.1f conversationSlugIds=%s lineageIds=%s",
+                log_prefix,
+                len(processable_claims),
+                len(result.generated_lineage_ids),
+                len(result.missing_lineage_ids),
+                (time.perf_counter() - provider_started_at) * 1000,
+                ",".join(sorted({claim.conversation_slug_id for claim in processable_claims})),
+                ",".join(str(claim.lineage_id) for claim in processable_claims),
             )
             if result.missing_lineage_ids:
                 missing_lineage_ids = set(result.missing_lineage_ids)
@@ -259,6 +279,15 @@ def process_ai_description_conversation_ids(
                 )
             return retry_schedules, set(result.generated_lineage_ids)
         except Exception as error:
+            log.warning(
+                "%s Failed lineage provider batch claim_count=%d elapsed_ms=%.1f "
+                "conversationSlugIds=%s lineageIds=%s",
+                log_prefix,
+                len(processable_claims),
+                (time.perf_counter() - provider_started_at) * 1000,
+                ",".join(sorted({claim.conversation_slug_id for claim in processable_claims})),
+                ",".join(str(claim.lineage_id) for claim in processable_claims),
+            )
             return [
                 (claim, process_claim_error(claim=claim, error=error))
                 for claim in processable_claims
@@ -290,6 +319,16 @@ def process_ai_description_conversation_ids(
                 schedules=[],
                 translated_description_ids=[],
             )
+        provider_started_at = time.perf_counter()
+        log.info(
+            "%s Starting translation provider batch claim_count=%d conversationSlugIds=%s "
+            "descriptionIds=%s locales=%s",
+            log_prefix,
+            len(processable_claims),
+            ",".join(sorted({claim.conversation_slug_id for claim in processable_claims})),
+            ",".join(str(claim.description_id) for claim in processable_claims),
+            ",".join(sorted({claim.locale for claim in processable_claims})),
+        )
 
         translator = description_translator
         if translator is None:
@@ -314,6 +353,17 @@ def process_ai_description_conversation_ids(
                 translate_descriptions=translator,
                 require_activated_view_snapshot=True,
             )
+            log.info(
+                "%s Finished translation provider batch claim_count=%d translated_count=%d "
+                "missing_count=%d elapsed_ms=%.1f conversationSlugIds=%s descriptionIds=%s",
+                log_prefix,
+                len(processable_claims),
+                len(result.translated_description_ids),
+                len(result.missing_description_ids),
+                (time.perf_counter() - provider_started_at) * 1000,
+                ",".join(sorted({claim.conversation_slug_id for claim in processable_claims})),
+                ",".join(str(claim.description_id) for claim in processable_claims),
+            )
             if result.missing_description_ids:
                 missing_description_ids = set(result.missing_description_ids)
                 missing_error = DescriptionOutputError(
@@ -325,6 +375,16 @@ def process_ai_description_conversation_ids(
                     if claim.description_id in missing_description_ids
                 )
         except Exception as error:
+            log.warning(
+                "%s Failed translation provider batch claim_count=%d elapsed_ms=%.1f "
+                "conversationSlugIds=%s descriptionIds=%s locales=%s",
+                log_prefix,
+                len(processable_claims),
+                (time.perf_counter() - provider_started_at) * 1000,
+                ",".join(sorted({claim.conversation_slug_id for claim in processable_claims})),
+                ",".join(str(claim.description_id) for claim in processable_claims),
+                ",".join(sorted({claim.locale for claim in processable_claims})),
+            )
             retry_schedules.extend(
                 (claim, process_claim_error(claim=claim, error=error))
                 for claim in processable_claims

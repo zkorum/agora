@@ -90,9 +90,16 @@ def main() -> None:
         log.info("%s AI description generation disabled", LOG_PREFIX)
         return
     log.info(
-        "%s AI description generation enabled provider_mode=%s",
+        "%s AI description generation enabled provider_mode=%s model=%s region=%s "
+        "connect_timeout=%ss read_timeout=%ss max_tokens=%d concurrency=%d",
         LOG_PREFIX,
         "simulation" if settings.ai_description_simulation_enabled else "bedrock",
+        settings.aws_ai_label_summary_model_id,
+        settings.aws_ai_label_summary_region,
+        settings.aws_client_connect_timeout_seconds,
+        settings.aws_ai_label_summary_read_timeout_seconds,
+        settings.aws_ai_label_summary_max_tokens,
+        settings.max_ai_description_concurrency,
     )
 
     primary_engine = create_ready_postgres_engine(
@@ -170,6 +177,7 @@ def main() -> None:
                 include_translations=False,
                 require_activated_view_snapshot=True,
             )
+            read_scan_ids = claimable_ids
             claimable_ids = sorted({*claimable_ids, *materialized_ids})[
                 : settings.db_claim_batch_size
             ]
@@ -181,9 +189,12 @@ def main() -> None:
             time.sleep(settings.worker_poll_idle_sleep_seconds)
             continue
 
-        log.debug(
-            "%s Found claimable lineage conversation(s) source=read_replica count=%d ids=%s",
+        log.info(
+            "%s Found claimable lineage conversation(s) read_scan_count=%d "
+            "materialized_count=%d selected_count=%d selected_ids=%s",
             LOG_PREFIX,
+            len(read_scan_ids),
+            len(materialized_ids),
             len(claimable_ids),
             ",".join(str(conversation_id) for conversation_id in claimable_ids),
         )

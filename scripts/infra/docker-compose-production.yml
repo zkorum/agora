@@ -85,6 +85,7 @@ services:
       AI_DESCRIPTION_RETRY_WORKER_CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
       AI_DESCRIPTION_RETRY_WORKER_CONNECTION_STRING_READ: "postgres://postgres:CHANGEME@postgres-replica:5432/agora"
       AI_DESCRIPTION_RETRY_WORKER_VALKEY_URL: "valkey://valkey:6379"
+      AI_DESCRIPTION_RETRY_WORKER_AWS_AI_LABEL_SUMMARY_READ_TIMEOUT_SECONDS: "12.0"
     stop_grace_period: 10m
     restart: unless-stopped
     logging:
@@ -99,6 +100,7 @@ services:
       DESCRIPTION_TRANSLATION_RETRY_WORKER_CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
       DESCRIPTION_TRANSLATION_RETRY_WORKER_CONNECTION_STRING_READ: "postgres://postgres:CHANGEME@postgres-replica:5432/agora"
       DESCRIPTION_TRANSLATION_RETRY_WORKER_VALKEY_URL: "valkey://valkey:6379"
+      DESCRIPTION_TRANSLATION_RETRY_WORKER_AWS_DESCRIPTION_TRANSLATION_READ_TIMEOUT_SECONDS: "12.0"
       DESCRIPTION_TRANSLATION_RETRY_WORKER_GOOGLE_APPLICATION_CREDENTIALS: "/secrets/service-account.json"
     volumes:
       - ./<name of service account>.json:/secrets/service-account.json:ro

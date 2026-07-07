@@ -6,6 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from agora_analysis_worker_shared.config import (
+    DEFAULT_AWS_RETRY_WORKER_READ_TIMEOUT_SECONDS,
     MATH_UPDATER_ENV_PREFIX,
     AiDescriptionWorkerSettings,
     DescriptionTranslationWorkerSettings,
@@ -338,6 +339,26 @@ def test_ai_description_retry_worker_settings_read_service_prefix(
 
     assert settings.connection_string == VALID_DSN
     assert settings.bedrock_label_summary_configured is False
+    assert (
+        settings.aws_ai_label_summary_read_timeout_seconds
+        == DEFAULT_AWS_RETRY_WORKER_READ_TIMEOUT_SECONDS
+    )
+
+
+def test_ai_description_retry_worker_timeout_env_overrides_default(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+    tmp_path.joinpath(".env").write_text(
+        f"AI_DESCRIPTION_RETRY_WORKER_CONNECTION_STRING={VALID_DSN}\n"
+        "AI_DESCRIPTION_RETRY_WORKER_AWS_AI_LABEL_SUMMARY_READ_TIMEOUT_SECONDS=75\n",
+        encoding="utf-8",
+    )
+
+    settings = AiDescriptionWorkerSettings()
+
+    assert settings.aws_ai_label_summary_read_timeout_seconds == 75.0
 
 
 def test_description_translation_retry_worker_settings_read_service_prefix(
@@ -354,3 +375,23 @@ def test_description_translation_retry_worker_settings_read_service_prefix(
     settings = DescriptionTranslationWorkerSettings()
 
     assert settings.connection_string == worker_dsn
+    assert (
+        settings.aws_description_translation_read_timeout_seconds
+        == DEFAULT_AWS_RETRY_WORKER_READ_TIMEOUT_SECONDS
+    )
+
+
+def test_description_translation_retry_worker_timeout_env_overrides_default(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+    tmp_path.joinpath(".env").write_text(
+        f"DESCRIPTION_TRANSLATION_RETRY_WORKER_CONNECTION_STRING={VALID_DSN}\n"
+        "DESCRIPTION_TRANSLATION_RETRY_WORKER_AWS_DESCRIPTION_TRANSLATION_READ_TIMEOUT_SECONDS=75\n",
+        encoding="utf-8",
+    )
+
+    settings = DescriptionTranslationWorkerSettings()
+
+    assert settings.aws_description_translation_read_timeout_seconds == 75.0

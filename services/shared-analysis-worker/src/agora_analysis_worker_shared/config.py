@@ -13,6 +13,7 @@ from pydantic_settings import (
 DEFAULT_VALKEY_URL: AnyUrl = TypeAdapter(AnyUrl).validate_python(
     "valkey://localhost:6379",
 )
+DEFAULT_AWS_RETRY_WORKER_READ_TIMEOUT_SECONDS = 12.0
 log = logging.getLogger(__name__)
 ALLOWED_VALKEY_SCHEMES = {"valkey", "valkeys", "redis", "rediss"}
 MATH_UPDATER_ENV_PREFIX = "MATH_UPDATER_"
@@ -351,10 +352,18 @@ class _LayeredPythonWorkerSettings(Settings):
 
 class AiDescriptionWorkerSettings(_LayeredPythonWorkerSettings):
     worker_env_prefix: ClassVar[str] = "AI_DESCRIPTION_RETRY_WORKER_"
+    aws_ai_label_summary_read_timeout_seconds: float = Field(
+        default=DEFAULT_AWS_RETRY_WORKER_READ_TIMEOUT_SECONDS,
+        gt=0,
+    )
 
 
 class DescriptionTranslationWorkerSettings(_LayeredPythonWorkerSettings):
     worker_env_prefix: ClassVar[str] = "DESCRIPTION_TRANSLATION_RETRY_WORKER_"
+    aws_description_translation_read_timeout_seconds: float = Field(
+        default=DEFAULT_AWS_RETRY_WORKER_READ_TIMEOUT_SECONDS,
+        gt=0,
+    )
 
 
 def validate_ai_description_config(settings: Settings) -> None:
