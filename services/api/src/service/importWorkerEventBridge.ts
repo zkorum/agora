@@ -1,17 +1,15 @@
 import { log } from "@/app.js";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
+import { zodNotificationItem } from "@/shared/types/zod.js";
 import { zodImportWorkerEvent } from "./importQueueContract.js";
-import { broadcastImportNotification } from "./notification.js";
 import type { RealtimeSSEManager } from "./realtimeSSE.js";
 import type { ValkeyRef } from "./valkeyRef.js";
-import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 
 export interface ImportWorkerEventBridge {
     shutdown: () => void;
 }
 
 interface CreateImportWorkerEventBridgeParams {
-    db: PostgresDatabase;
     valkeyRef: ValkeyRef;
     realtimeSSEManager: RealtimeSSEManager;
     pollIntervalMs: number;
@@ -19,7 +17,6 @@ interface CreateImportWorkerEventBridgeParams {
 }
 
 export function createImportWorkerEventBridge({
-    db,
     valkeyRef,
     realtimeSSEManager,
     pollIntervalMs,
@@ -28,7 +25,7 @@ export function createImportWorkerEventBridge({
     let pollTimer: NodeJS.Timeout | undefined;
     let pollInProgress: Promise<void> | null = null;
 
-    async function processEvent(rawItem: unknown): Promise<void> {
+    function processEvent(rawItem: unknown): void {
         const parsed = zodImportWorkerEvent.safeParse(rawItem);
         if (!parsed.success) {
             log.warn(
@@ -38,14 +35,45 @@ export function createImportWorkerEventBridge({
         }
 
         const event = parsed.data;
-        await broadcastImportNotification(
-            realtimeSSEManager,
-            db,
-            event.userId,
-            event.notificationSlugId,
-            event.importId,
-            event.conversationId,
-        );
+        const baseNotification = {
+            slugId: event.notificationSlugId,
+            createdAt: event.notificationCreatedAt,
+            isRead: event.notificationIsRead,
+            routeTarget: {
+                type: "import" as const,
+                importSlugId: event.importSlugId,
+                conversationSlugId: event.conversationSlugId,
+            },
+        };
+        const notificationItem: unknown =
+            event.failureReason !== undefined
+                ? {
+                      ...baseNotification,
+                      type: "import_failed",
+                      failureReason: event.failureReason,
+                  }
+                : event.conversationSlugId !== undefined
+                  ? {
+                        ...baseNotification,
+                        type: "import_completed",
+                        conversationTitle: event.conversationTitle,
+                    }
+                  : {
+                        ...baseNotification,
+                        type: "import_started",
+                    };
+
+        const validationResult = zodNotificationItem.safeParse(notificationItem);
+        if (validationResult.success) {
+            realtimeSSEManager.broadcastToUser(
+                event.userId,
+                validationResult.data,
+            );
+        } else {
+            log.warn(
+                `[ImportWorkerEventBridge] Skipping invalid notification event: ${validationResult.error.message}`,
+            );
+        }
 
         if (event.broadcastNewConversation) {
             realtimeSSEManager.broadcastToAllExcept({
@@ -77,7 +105,7 @@ export function createImportWorkerEventBridge({
         for (const item of items) {
             try {
                 const parsedItem: unknown = JSON.parse(String(item));
-                await processEvent(parsedItem);
+                processEvent(parsedItem);
             } catch (error) {
                 log.error(
                     error,

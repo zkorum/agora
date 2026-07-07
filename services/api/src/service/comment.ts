@@ -2865,6 +2865,7 @@ export async function postNewOpinion(
         opinionContentId: number;
         opinionContentPublicId: string;
         opinionItem: OpinionItem;
+        displayedOpinionItem: DisplayedOpinionItem;
     }> => {
         const insertCommentResponse = await transactionDb
             .insert(opinionTable)
@@ -2948,16 +2949,33 @@ export async function postNewOpinion(
             moderation: { status: "unmoderated" },
             isSeed,
         };
+        const displayedOpinionItem: DisplayedOpinionItem = {
+            ...opinionItem,
+            displayContent: {
+                sourceVersion: opinionContentPublicId,
+                status: "available",
+                mode: "original",
+                content: { content: commentBody },
+                translationControl: null,
+            },
+        };
 
         return {
             opinionId,
             opinionContentId: commentContentTableId,
             opinionContentPublicId,
             opinionItem,
+            displayedOpinionItem,
         };
     };
 
-    const { opinionId, opinionContentId, opinionContentPublicId, opinionItem } =
+    const {
+        opinionId,
+        opinionContentId,
+        opinionContentPublicId,
+        opinionItem,
+        displayedOpinionItem,
+    } =
         tx !== undefined
             ? await persistNewOpinion(tx)
             : await db.transaction(async (transactionDb) => {
@@ -3011,6 +3029,10 @@ export async function postNewOpinion(
                 opinionAuthorId: participationContext.participantId,
                 opinionId,
                 conversationId: participationContext.conversationId,
+                conversationSlugId,
+                opinionSlugId,
+                opinionContent: commentBody,
+                username: opinionItem.username,
                 realtimeSSEManager,
             });
         }
@@ -3032,6 +3054,7 @@ export async function postNewOpinion(
         success: true,
         opinionSlugId: opinionSlugId,
         opinionItem,
+        displayedOpinionItem,
     };
 }
 

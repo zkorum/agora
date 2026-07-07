@@ -113,7 +113,7 @@ interface ScheduleEagerProjectContentTranslationParams {
     log: Pick<BaseLogger, "info" | "error">;
 }
 
-interface ScheduleEagerCreatedConversationContentTranslationParams {
+interface ScheduleEagerKnownConversationContentTranslationParams {
     db: PostgresDatabase;
     conversationSource: ConversationContentSource;
     targetLanguagePolicy: TranslationTargetLanguagePolicy;
@@ -202,7 +202,7 @@ export interface RankingItemContentSource {
     sourceLanguageConfidence: number | null;
 }
 
-interface ProjectContentSource {
+export interface ProjectContentSource {
     projectId: number;
     projectSlug: string;
     dynamicTranslationEnabled: boolean;
@@ -1243,7 +1243,7 @@ async function hasProjectContentTranslation({
     );
 }
 
-async function fetchSeedOpinionSources({
+export async function fetchSeedOpinionSources({
     db,
     conversationId,
     conversationSlugId,
@@ -1287,7 +1287,7 @@ async function fetchSeedOpinionSources({
         .orderBy(asc(opinionTable.id));
 }
 
-async function fetchCurrentSurveyQuestionSources({
+export async function fetchCurrentSurveyQuestionSources({
     db,
     conversationId,
     conversationSlugId,
@@ -1493,7 +1493,7 @@ export async function scheduleEagerContentTranslationForConversation({
     });
 }
 
-export async function createEagerContentTranslationWorkForCreatedConversation({
+export async function createEagerContentTranslationWorkForKnownConversation({
     db,
     conversationSource,
     targetLanguagePolicy,
@@ -1502,7 +1502,7 @@ export async function createEagerContentTranslationWorkForCreatedConversation({
     rankingItemSources,
     now,
     log,
-}: ScheduleEagerCreatedConversationContentTranslationParams): Promise<number[]> {
+}: ScheduleEagerKnownConversationContentTranslationParams): Promise<number[]> {
     return await createEagerContentTranslationWorkForConversationSources({
         db,
         conversationSource,
@@ -1526,7 +1526,7 @@ async function createEagerContentTranslationWorkForConversationSources({
     now,
     log,
     checkExistingTranslations,
-}: ScheduleEagerCreatedConversationContentTranslationParams & {
+}: ScheduleEagerKnownConversationContentTranslationParams & {
     checkExistingTranslations: boolean;
 }): Promise<number[]> {
     const conversationSlugId = conversationSource.conversationSlugId;
@@ -1816,6 +1816,76 @@ export async function enqueueEagerContentTranslationWork({
             "[ContentTranslation] Queued translation work",
         );
     }
+}
+
+export async function createEagerContentTranslationWorkForKnownProject({
+    db,
+    source,
+    targetLanguagePolicy,
+    now,
+    log,
+}: {
+    db: PostgresDatabase;
+    source: ProjectContentSource;
+    targetLanguagePolicy: TranslationTargetLanguagePolicy;
+    now: Date;
+    log: Pick<BaseLogger, "info">;
+}): Promise<number[]> {
+    if (!source.dynamicTranslationEnabled) {
+        return [];
+    }
+    const targetLanguageCodes = targetLanguagePolicy.effectiveTargetLanguageCodes;
+    if (targetLanguageCodes.length === 0) {
+        return [];
+    }
+
+    const workIds: number[] = [];
+    for (const targetLanguageCode of targetLanguageCodes) {
+        if (
+            !shouldTranslateContent({
+                sourceLanguageCode: source.sourceLanguageCode,
+                sourceRawLanguageCode: source.sourceRawLanguageCode,
+                targetLanguageCode,
+            })
+        ) {
+            continue;
+        }
+
+        const input = {
+            conversationId: null,
+            sourceKind: "project" as const,
+            projectContentId: source.contentId,
+            targetLanguageCode,
+        };
+        const translationExists = await hasProjectContentTranslation({
+            db,
+            source,
+            targetLanguageCode,
+        });
+        if (translationExists) {
+            await markExistingTranslationWorkCompleted({
+                db,
+                input,
+                now,
+                log,
+            });
+            continue;
+        }
+
+        const work = await ensureTranslationWork({
+            db,
+            input,
+            translationExists: false,
+            now,
+            priority: CONTENT_TRANSLATION_QUEUE_PRIORITIES.eagerVisible,
+            log,
+        });
+        if (work.shouldQueue) {
+            workIds.push(work.workId);
+        }
+    }
+
+    return workIds;
 }
 
 export async function scheduleEagerContentTranslationForProject({

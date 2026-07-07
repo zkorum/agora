@@ -2668,7 +2668,38 @@ export async function saveSurveyAnswer({
         throw httpErrors.badRequest("Invalid survey answer payload");
     }
 
-    await db.transaction(async (tx) => {
+    const loadNextSurveyTransition = async ({
+        db: transactionDb,
+    }: {
+        db: PostgresJsDatabase;
+    }): Promise<{
+        nextSurveyState: SurveyParticipantState;
+        nextSurveyGate: SurveyGateDetails;
+    }> => {
+        const nextSurveyState = await loadSurveyParticipantState({
+            db: transactionDb,
+            conversationId: conversation.conversationId,
+            participantId,
+        });
+        const nextSurveyGate = deriveSurveyGate({
+            surveyState: nextSurveyState,
+            participantId,
+        });
+        const justCompleted =
+            previousSurveyGate.status !== "complete_valid" &&
+            nextSurveyGate.status === "complete_valid";
+
+        if (justCompleted && nextSurveyState.response !== undefined) {
+            await transactionDb
+                .update(surveyResponseTable)
+                .set({ completedAt: now, updatedAt: now })
+                .where(eq(surveyResponseTable.id, nextSurveyState.response.id));
+        }
+
+        return { nextSurveyState, nextSurveyGate };
+    };
+
+    const surveyTransition = await db.transaction(async (tx) => {
         const surveyResponseRows = await tx
             .select({
                 id: surveyResponseTable.id,
@@ -2758,7 +2789,7 @@ export async function saveSurveyAnswer({
                         .set({ deletedAt: now, updatedAt: now })
                         .where(eq(surveyAnswerTable.id, existingAnswerId));
                 }
-                return;
+                return await loadNextSurveyTransition({ db: tx });
             }
 
             let surveyAnswerId = existingAnswerId;
@@ -2805,7 +2836,7 @@ export async function saveSurveyAnswer({
                         isNull(surveyAnswerOptionTable.deletedAt),
                     ),
                 );
-            return;
+            return await loadNextSurveyTransition({ db: tx });
         }
 
         const textValueHtml =
@@ -2884,27 +2915,14 @@ export async function saveSurveyAnswer({
                 );
             }
         }
+
+        return await loadNextSurveyTransition({ db: tx });
     });
 
-    const nextSurveyState = await loadSurveyParticipantState({
-        db,
-        conversationId: conversation.conversationId,
-        participantId,
-    });
-    const nextSurveyGate = deriveSurveyGate({
-        surveyState: nextSurveyState,
-        participantId,
-    });
+    const { nextSurveyGate } = surveyTransition;
     const justCompleted =
         previousSurveyGate.status !== "complete_valid" &&
         nextSurveyGate.status === "complete_valid";
-
-    if (justCompleted && nextSurveyState.response !== undefined) {
-        await db
-            .update(surveyResponseTable)
-            .set({ completedAt: now, updatedAt: now })
-            .where(eq(surveyResponseTable.id, nextSurveyState.response.id));
-    }
 
     if (
         shouldRecomputeAnalysisForSurveyTransition({
@@ -2997,7 +3015,7 @@ export async function withdrawSurveyResponse({
     }
     const surveyResponseId = previousSurveyState.response.id;
 
-    await db.transaction(async (tx) => {
+    const surveyTransition = await db.transaction(async (tx) => {
         await softDeleteSurveyResponseAnswers({
             db: tx,
             surveyResponseId,
@@ -3008,17 +3026,20 @@ export async function withdrawSurveyResponse({
             .update(surveyResponseTable)
             .set({ withdrawnAt: now, completedAt: null, updatedAt: now })
             .where(eq(surveyResponseTable.id, surveyResponseId));
+
+        const nextSurveyState = await loadSurveyParticipantState({
+            db: tx,
+            conversationId: conversation.conversationId,
+            participantId,
+        });
+        const nextSurveyGate = deriveSurveyGate({
+            surveyState: nextSurveyState,
+            participantId,
+        });
+        return { nextSurveyGate };
     });
 
-    const nextSurveyState = await loadSurveyParticipantState({
-        db,
-        conversationId: conversation.conversationId,
-        participantId,
-    });
-    const nextSurveyGate = deriveSurveyGate({
-        surveyState: nextSurveyState,
-        participantId,
-    });
+    const { nextSurveyGate } = surveyTransition;
 
     if (
         shouldRecomputeAnalysisForSurveyTransition({
@@ -3092,8 +3113,8 @@ export async function updateSurveyConfigByAuthor({
         conversationId: conversation.conversationId,
     });
 
-    const surveyConfigUpdateEffect = await db.transaction(async (tx) => {
-        return await setSurveyConfigForConversation({
+    const surveyConfigUpdate = await db.transaction(async (tx) => {
+        const surveyConfigUpdateEffect = await setSurveyConfigForConversation({
             db: tx,
             conversationSlugId,
             conversationId: conversation.conversationId,
@@ -3103,10 +3124,30 @@ export async function updateSurveyConfigByAuthor({
             useGoogleLanguageDetection:
                 multilingualSetting.dynamicTranslationEnabled,
         });
+
+        const activeSurveyConfig = await getActiveSurveyConfigRecord({
+            db: tx,
+            conversationId: conversation.conversationId,
+        });
+        if (activeSurveyConfig === undefined) {
+            throw httpErrors.internalServerError("Survey config was not persisted");
+        }
+
+        return {
+            surveyConfigUpdateEffect,
+            currentRevision: activeSurveyConfig.currentRevision,
+            surveyGate: await getSurveyGateSummary({
+                db: tx,
+                conversationId: conversation.conversationId,
+                participantId: userId,
+            }),
+        };
     });
 
     if (
-        shouldRecomputeAnalysisForSurveyConfigChange(surveyConfigUpdateEffect)
+        shouldRecomputeAnalysisForSurveyConfigChange(
+            surveyConfigUpdate.surveyConfigUpdateEffect,
+        )
     ) {
         await refreshConversationAnalysisForSurveyChange({
             db,
@@ -3115,21 +3156,9 @@ export async function updateSurveyConfigByAuthor({
         });
     }
 
-    const activeSurveyConfig = await getActiveSurveyConfigRecord({
-        db,
-        conversationId: conversation.conversationId,
-    });
-    if (activeSurveyConfig === undefined) {
-        throw httpErrors.internalServerError("Survey config was not persisted");
-    }
-
     return {
-        currentRevision: activeSurveyConfig.currentRevision,
-        surveyGate: await getSurveyGateSummary({
-            db,
-            conversationId: conversation.conversationId,
-            participantId: userId,
-        }),
+        currentRevision: surveyConfigUpdate.currentRevision,
+        surveyGate: surveyConfigUpdate.surveyGate,
     };
 }
 
@@ -3145,7 +3174,9 @@ export async function deleteSurveyConfigByAuthor({
     userId: string;
     now: Date;
     valkey?: Valkey;
-}): Promise<void> {
+}): Promise<{
+    surveyGate: SurveyGateSummary;
+}> {
     const conversation = await getConversationAccessContextBySlugId({
         db,
         conversationSlugId,
@@ -3157,18 +3188,29 @@ export async function deleteSurveyConfigByAuthor({
         capability: "conversation_update",
         message: "Missing conversation_update capability",
     });
-    const surveyConfigUpdateEffect = await db.transaction(async (tx) => {
-        return await setSurveyConfigForConversation({
+    const surveyConfigDeleteResult = await db.transaction(async (tx) => {
+        const surveyConfigUpdateEffect = await setSurveyConfigForConversation({
             db: tx,
             conversationSlugId,
             conversationId: conversation.conversationId,
             surveyConfig: null,
             now,
         });
+
+        return {
+            surveyConfigUpdateEffect,
+            surveyGate: await getSurveyGateSummary({
+                db: tx,
+                conversationId: conversation.conversationId,
+                participantId: userId,
+            }),
+        };
     });
 
     if (
-        shouldRecomputeAnalysisForSurveyConfigChange(surveyConfigUpdateEffect)
+        shouldRecomputeAnalysisForSurveyConfigChange(
+            surveyConfigDeleteResult.surveyConfigUpdateEffect,
+        )
     ) {
         await refreshConversationAnalysisForSurveyChange({
             db,
@@ -3176,6 +3218,10 @@ export async function deleteSurveyConfigByAuthor({
             valkey,
         });
     }
+
+    return {
+        surveyGate: surveyConfigDeleteResult.surveyGate,
+    };
 }
 
 export function surveyAnswerToPlainText({

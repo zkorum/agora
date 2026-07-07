@@ -1,7 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import type { GetConversationExportStatusResponse } from "src/shared/types/dto";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
+import { axiosInstance } from "../client";
 import { useBackendConversationExportApi } from "./conversationExport";
+
+const EXPORT_STATUS_POLL_INTERVAL_MS = 2000;
+const EXPORT_STATUS_TRANSIENT_NOT_FOUND_GRACE_MS = 30_000;
+
+function is404Error(error: unknown): boolean {
+  return axiosInstance.isAxiosError(error) && error.response?.status === 404;
+}
 
 export function useExportHistoryQuery({
   conversationSlugId,
@@ -28,10 +37,22 @@ export function useRequestExportMutation() {
   return useMutation({
     mutationFn: (conversationSlugId: string) =>
       requestNewExport(conversationSlugId),
-    onSuccess: (_data, variables) => {
-      // Invalidate export history to show the new export request
+    onSuccess: (data, variables) => {
+      if (data.success && data.status === "queued") {
+        const status: GetConversationExportStatusResponse = {
+          status: "processing",
+          exportSlugId: data.exportSlugId,
+          conversationSlugId: variables,
+          createdAt: data.createdAt,
+          expiresAt: data.expiresAt,
+        };
+        queryClient.setQueryData(["exportStatus", data.exportSlugId], status);
+      }
+
+      // Mark export history stale without replacing the visible list with a stale replica read.
       void queryClient.invalidateQueries({
         queryKey: ["exportHistory", variables],
+        refetchType: "none",
       });
     },
     retry: false,
@@ -66,11 +87,14 @@ export function useDeleteExportMutation() {
 export function useExportStatusQuery({
   exportSlugId,
   enabled = true,
+  allowTransientNotFound = false,
 }: {
   exportSlugId: string;
   enabled?: MaybeRefOrGetter<boolean>;
+  allowTransientNotFound?: MaybeRefOrGetter<boolean>;
 }) {
   const { fetchExportStatus } = useBackendConversationExportApi();
+  let firstNotFoundAt: number | undefined;
 
   return useQuery({
     queryKey: ["exportStatus", exportSlugId],
@@ -78,8 +102,28 @@ export function useExportStatusQuery({
     enabled: computed(() => toValue(enabled) && exportSlugId.length > 0),
     staleTime: 0, // Always stale
     refetchInterval: (query) => {
+      if (is404Error(query.state.error)) {
+        if (!toValue(allowTransientNotFound)) {
+          return false;
+        }
+
+        const now = Date.now();
+        firstNotFoundAt ??= now;
+        if (
+          now - firstNotFoundAt >
+          EXPORT_STATUS_TRANSIENT_NOT_FOUND_GRACE_MS
+        ) {
+          return false;
+        }
+
+        return EXPORT_STATUS_POLL_INTERVAL_MS;
+      }
+
+      firstNotFoundAt = undefined;
       // Auto-refetch every 2 seconds if status is processing
-      return query.state.data?.status === "processing" ? 2000 : false;
+      return query.state.data?.status === "processing"
+        ? EXPORT_STATUS_POLL_INTERVAL_MS
+        : false;
     },
     retry: false,
   });

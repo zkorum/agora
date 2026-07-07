@@ -59,6 +59,21 @@ To grant a user moderator status, set the `is_moderator` column to true in the `
 
 ## Integrations
 
+### MaxDiff GitHub Connector
+
+The MaxDiff/BWS GitHub connector uses `GITHUB_ACCESS_TOKEN` for issue preview and sync requests.
+
+Production tokens must be GitHub fine-grained personal access tokens with these constraints:
+
+- Repository access: only `zkorum/agora`
+- Permissions: read-only `Issues` and read-only `Metadata`
+- No write permissions
+- No access to other repositories
+
+`GITHUB_WEBHOOK_SECRET` and `GITHUB_ACCESS_TOKEN` must either both be set or both be unset. Configure production values as deployment secrets, not in committed files.
+
+Connector usage is additionally gated by `IS_MAXDIFF_GITHUB_ORG_ONLY`, `MAXDIFF_GITHUB_ALLOWED_ORGS`, and `MAXDIFF_GITHUB_ALLOWED_USERS`; these control which Agora users or organizations may use the connector, not which GitHub repositories the token can access.
+
 ### LLM Integration
 
 LLM Integration cannot be tested locally by design, since it relies on an external cloud service and running a model locally is expensive.

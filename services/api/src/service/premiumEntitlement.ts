@@ -147,6 +147,24 @@ function hasAccessForMode({
     return addDays(entitlement.expiresAt, PREMIUM_EDIT_GRACE_DAYS) > now;
 }
 
+function isEntitlementActiveForCreation({
+    startsAt,
+    expiresAt,
+    revokedAt,
+    now,
+}: {
+    startsAt: Date;
+    expiresAt: Date | null;
+    revokedAt: Date | null | undefined;
+    now: Date;
+}): boolean {
+    return (
+        startsAt <= now &&
+        revokedAt == null &&
+        (expiresAt === null || expiresAt > now)
+    );
+}
+
 function getEditAccessEnd(entitlement: EntitlementRow): Date | undefined {
     if (entitlement.expiresAt === null) {
         return undefined;
@@ -1051,13 +1069,13 @@ export async function createPremiumFeatureEntitlement({
         return;
     }
 
-    const hasPremiumAnalysisAccess = await hasPremiumFeatureAccess({
-        db,
-        subject,
-        feature: PREMIUM_ANALYSIS_FEATURE,
+    const newPremiumAnalysisAccess = isEntitlementActiveForCreation({
+        startsAt,
+        expiresAt,
+        revokedAt: null,
         now,
     });
-    if (!hasPremiumAnalysisAccess) {
+    if (!newPremiumAnalysisAccess) {
         return;
     }
 
@@ -1155,13 +1173,13 @@ export async function updatePremiumFeatureEntitlement({
         return;
     }
 
-    const hasPremiumAnalysisAccess = await hasPremiumFeatureAccess({
-        db,
-        subject,
-        feature: PREMIUM_ANALYSIS_FEATURE,
+    const newPremiumAnalysisAccess = isEntitlementActiveForCreation({
+        startsAt,
+        expiresAt,
+        revokedAt: finalRevokedAt,
         now,
     });
-    if (!hasPremiumAnalysisAccess) {
+    if (!newPremiumAnalysisAccess) {
         return;
     }
 

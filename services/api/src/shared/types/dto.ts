@@ -1281,7 +1281,7 @@ export class Dto {
     static surveyConfigUpdateResponse = z
         .object({
             currentRevision: z.number().int().positive(),
-            surveyGate: zodSurveyGateSummary.optional(),
+            surveyGate: zodSurveyGateSummary,
         })
         .strict();
     static surveyConfigDeleteRequest = z
@@ -1292,6 +1292,7 @@ export class Dto {
     static surveyConfigDeleteResponse = z
         .object({
             success: z.literal(true),
+            surveyGate: zodSurveyGateSummary,
         })
         .strict();
     static createOpinionRequest = z
@@ -1307,6 +1308,7 @@ export class Dto {
                 success: z.literal(true),
                 opinionSlugId: z.string(),
                 opinionItem: zodOpinionItem,
+                displayedOpinionItem: zodDisplayedOpinionItem,
             })
             .strict(),
         z
@@ -2191,6 +2193,8 @@ export class Dto {
                 success: z.literal(true),
                 status: z.literal("queued"),
                 exportSlugId: zodSlugId,
+                createdAt: zodDateTimeFlexible,
+                expiresAt: zodDateTimeFlexible,
             })
             .strict(),
         // Success case: cooldown active

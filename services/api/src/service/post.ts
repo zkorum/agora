@@ -67,7 +67,7 @@ import {
     sourceLanguageToDisplayLanguage,
 } from "./translationLanguageSetting.js";
 import {
-    createEagerContentTranslationWorkForCreatedConversation,
+    createEagerContentTranslationWorkForKnownConversation,
     type ConversationContentSource,
     type OpinionContentSource,
     type RankingItemContentSource,
@@ -466,7 +466,7 @@ export async function createNewPost({
         }
 
         eagerContentTranslationWorkIds =
-            await createEagerContentTranslationWorkForCreatedConversation({
+            await createEagerContentTranslationWorkForKnownConversation({
                 db: tx,
                 conversationSource,
                 targetLanguagePolicy,

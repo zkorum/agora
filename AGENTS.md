@@ -530,6 +530,17 @@ if (probabilities.length !== types.length) {
 - Data from untyped sources (raw SQL, environment variables)
 - Legacy code integration where types cannot be guaranteed
 
+### Avoid Replica-Lag Read-After-Write Bugs
+
+The API uses read replicas for ordinary reads, so code that writes data and then immediately reads it back through the normal `db` handle can observe stale state. Prefer designs that avoid the follow-up read entirely:
+
+- Use `.returning()` from inserts/updates for IDs, timestamps, and updated fields
+- Build downstream DTOs, queue payloads, notifications, and cache seeds from values already known in the request, transaction, or returned rows
+- If a follow-up read is genuinely needed, perform it inside the same write transaction or otherwise ensure it uses a fresh writer-side view
+- Do not add primary-read fallbacks as the first solution; use them only when the data cannot reasonably be carried forward or rebuilt from known values
+
+Example: after creating a notification row, prefer broadcasting the SSE payload from the inserted row plus known conversation/opinion data rather than inserting and then rereading the notification through a replica-routed query.
+
 ### Prefer `async`/`await` Over `.then()` Chains
 
 Always use `async`/`await` for asynchronous code. Do not use `.then()` or `.catch()` chains. This makes control flow easier to follow, error handling more consistent, and avoids nesting.

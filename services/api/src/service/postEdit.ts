@@ -1,5 +1,6 @@
 // Edit conversation functionality
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
+import { log } from "@/app.js";
 import {
     conversationContentTable,
     conversationTable,
@@ -65,6 +66,13 @@ import {
     sourceLanguageToDisplayLanguage,
 } from "./translationLanguageSetting.js";
 import { normalizeUserRichTextInput } from "./richText.js";
+import {
+    createEagerContentTranslationWorkForKnownConversation,
+    fetchCurrentSurveyQuestionSources,
+    fetchSeedOpinionSources,
+    type ConversationContentSource,
+    type SurveyQuestionContentSource,
+} from "./contentTranslation.js";
 
 interface GetConversationForEditProps {
     db: PostgresDatabase;
@@ -282,12 +290,18 @@ interface UpdateConversationProps {
     };
 }
 
+type UpdateConversationServiceResponse =
+    | Exclude<UpdateConversationResponse, { success: true }>
+    | (Extract<UpdateConversationResponse, { success: true }> & {
+          eagerContentTranslationWorkIds: number[];
+      });
+
 export async function updateConversation({
     db,
     userId,
     googleCloudCredentials,
     data,
-}: UpdateConversationProps): Promise<UpdateConversationResponse> {
+}: UpdateConversationProps): Promise<UpdateConversationServiceResponse> {
     const {
         conversationSlugId,
         conversationTitle,
@@ -354,6 +368,13 @@ export async function updateConversation({
                 currentBody: conversationContentTable.body,
                 currentSourceLanguageCode:
                     conversationContentTable.sourceLanguageCode,
+                currentSourceRawLanguageCode:
+                    conversationContentTable.sourceRawLanguageCode,
+                currentSourceLanguageProvider:
+                    conversationContentTable.sourceLanguageProvider,
+                currentSourceLanguageConfidence:
+                    conversationContentTable.sourceLanguageConfidence,
+                currentContentPublicId: conversationContentTable.publicId,
                 moderationAction: conversationModerationTable.moderationAction,
             })
             .from(conversationTable)
@@ -427,7 +448,11 @@ export async function updateConversation({
         }
 
         // Check if conversation was deleted
-        if (conversation.currentContentId === null) {
+        if (
+            conversation.currentContentId === null ||
+            conversation.currentContentPublicId === null ||
+            conversation.currentTitle === null
+        ) {
             return { success: false, reason: "not_found" } as const;
         }
 
@@ -622,6 +647,7 @@ export async function updateConversation({
 
         // Create new conversation content
         let newContentId: number | undefined;
+        let newContentPublicId: string | undefined;
         if (contentChanged) {
             const sourceLanguageMetadata =
                 await getBlockSourceLanguageMetadata();
@@ -638,9 +664,11 @@ export async function updateConversation({
                 })
                 .returning({
                     conversationContentId: conversationContentTable.id,
+                    publicId: conversationContentTable.publicId,
                 });
 
             newContentId = newContentResult[0].conversationContentId;
+            newContentPublicId = newContentResult[0].publicId;
         }
 
         const conversationUpdateValues: {
@@ -687,10 +715,11 @@ export async function updateConversation({
                 .where(eq(polisConversationConfigTable.id, conversation.polisConfigId));
         }
 
+        let surveySources: SurveyQuestionContentSource[] = [];
         if (surveyConfig !== undefined) {
             const sourceLanguageMetadata =
                 await getBlockSourceLanguageMetadata();
-            await setSurveyConfigForConversation({
+            const surveyUpdateEffect = await setSurveyConfigForConversation({
                 db: tx,
                 conversationSlugId: data.conversationSlugId,
                 conversationId,
@@ -700,21 +729,56 @@ export async function updateConversation({
                 useGoogleLanguageDetection: requestedDynamicTranslationEnabled,
                 sourceLanguageMetadata,
             });
+            surveySources = surveyUpdateEffect.currentQuestionSources;
         }
 
+        let refreshedSourceLanguageMetadata: ContentLanguageMetadata | undefined;
         if (
             !contentChanged &&
             requestedDynamicTranslationEnabled &&
             (!currentMultilingualSetting.dynamicTranslationEnabled ||
                 surveyConfig !== undefined)
         ) {
-            await refreshCurrentConversationOwnedContentLanguageMetadata({
-                db: tx,
-                conversationId,
-                googleCloudCredentials,
-                useGoogleLanguageDetection: requestedDynamicTranslationEnabled,
-            });
+            if (surveyConfig !== undefined) {
+                refreshedSourceLanguageMetadata =
+                    await getBlockSourceLanguageMetadata();
+                await tx
+                    .update(conversationContentTable)
+                    .set(
+                        contentLanguageMetadataUpdateValues(
+                            refreshedSourceLanguageMetadata,
+                        ),
+                    )
+                    .where(
+                        eq(
+                            conversationContentTable.id,
+                            conversation.currentContentId,
+                        ),
+                    );
+            } else {
+                refreshedSourceLanguageMetadata =
+                    await refreshCurrentConversationOwnedContentLanguageMetadata({
+                        db: tx,
+                        conversationId,
+                        googleCloudCredentials,
+                        useGoogleLanguageDetection: requestedDynamicTranslationEnabled,
+                    });
+            }
         }
+
+        const updatedSourceLanguageMetadata =
+            refreshedSourceLanguageMetadata ??
+            (contentChanged || surveyConfig !== undefined
+                ? await getBlockSourceLanguageMetadata()
+                : {
+                      sourceLanguageCode: conversation.currentSourceLanguageCode,
+                      sourceRawLanguageCode:
+                          conversation.currentSourceRawLanguageCode,
+                      sourceLanguageProvider:
+                          conversation.currentSourceLanguageProvider,
+                      sourceLanguageConfidence:
+                          conversation.currentSourceLanguageConfidence,
+                  });
 
         const effectiveMultilingualSetting =
             inheritedProjectLanguageSettings === undefined
@@ -729,10 +793,7 @@ export async function updateConversation({
                       multilingualSettings: effectiveMultilingualSetting,
                       detectedTargetLanguageCode: sourceLanguageToDisplayLanguage({
                           sourceLanguageCode:
-                              contentChanged || surveyConfig !== undefined
-                                  ? (await getBlockSourceLanguageMetadata())
-                                        .sourceLanguageCode
-                                  : conversation.currentSourceLanguageCode,
+                              updatedSourceLanguageMetadata.sourceLanguageCode,
                       }),
                   })
                 : getProjectTranslationTargetLanguagePolicy({
@@ -759,8 +820,64 @@ export async function updateConversation({
             });
         }
 
+        if (
+            targetLanguagePolicy.dynamicTranslationEnabled &&
+            targetLanguagePolicy.effectiveTargetLanguageCodes.length > 0
+        ) {
+            if (
+                surveyConfig !== null &&
+                (surveyConfig === undefined || surveySources.length === 0)
+            ) {
+                surveySources = await fetchCurrentSurveyQuestionSources({
+                    db: tx,
+                    conversationId,
+                    conversationSlugId: data.conversationSlugId,
+                });
+            }
+        }
+
+        const conversationSource: ConversationContentSource = {
+            conversationId,
+            conversationSlugId: data.conversationSlugId,
+            projectId: conversation.projectId,
+            languageSettingsSource,
+            dynamicTranslationEnabled: targetLanguagePolicy.dynamicTranslationEnabled,
+            contentId: newContentId ?? conversation.currentContentId,
+            publicId: newContentPublicId ?? conversation.currentContentPublicId,
+            title: conversationTitle,
+            body: sanitizedBody ?? null,
+            sourceLanguageCode: updatedSourceLanguageMetadata.sourceLanguageCode,
+            sourceRawLanguageCode:
+                updatedSourceLanguageMetadata.sourceRawLanguageCode,
+            sourceLanguageProvider:
+                updatedSourceLanguageMetadata.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                updatedSourceLanguageMetadata.sourceLanguageConfidence,
+        };
+        const seedOpinionSources =
+            targetLanguagePolicy.dynamicTranslationEnabled &&
+            targetLanguagePolicy.effectiveTargetLanguageCodes.length > 0
+                ? await fetchSeedOpinionSources({
+                      db: tx,
+                      conversationId,
+                      conversationSlugId: data.conversationSlugId,
+                  })
+                : [];
+        const eagerContentTranslationWorkIds =
+            await createEagerContentTranslationWorkForKnownConversation({
+                db: tx,
+                conversationSource,
+                targetLanguagePolicy,
+                surveySources,
+                seedOpinionSources,
+                rankingItemSources: [],
+                now,
+                log,
+            });
+
         return {
             success: true,
+            eagerContentTranslationWorkIds,
             conversationId,
             conversationSlugId,
             didUpdateConversationSettings: conversationSettingsChanged,
@@ -787,5 +904,8 @@ export async function updateConversation({
         return result;
     }
 
-    return { success: true };
+    return {
+        success: true,
+        eagerContentTranslationWorkIds: result.eagerContentTranslationWorkIds,
+    };
 }

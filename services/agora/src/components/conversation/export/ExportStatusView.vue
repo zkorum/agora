@@ -297,6 +297,7 @@ import { useRouter } from "vue-router";
 
 interface Props {
   exportSlugId: string;
+  allowTransientNotFound: boolean;
 }
 
 const { t } = useComponentI18n<ExportStatusViewTranslations>(
@@ -317,6 +318,7 @@ const formatDateTime = useLocalizedDateTimeFormatter();
 const exportStatusQuery = useExportStatusQuery({
   exportSlugId: props.exportSlugId,
   enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
+  allowTransientNotFound: computed(() => props.allowTransientNotFound),
 });
 
 const deleteExportMutation = useDeleteExportMutation();

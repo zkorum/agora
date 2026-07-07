@@ -554,6 +554,8 @@ interface ExportRequestNotificationRecord {
     slugId: string;
     userId: string;
     conversationId: number;
+    conversationSlugId: string;
+    conversationTitle: string;
     failureReason: ExportFailureReason | null;
     cancellationReason: ExportCancellationReason | null;
 }
@@ -568,11 +570,19 @@ interface RequestConversationExportParams {
 type RequestCreationResult =
     | { status: "active_export_in_progress" }
     | { status: "cooldown_active"; cooldownEndsAt: Date }
-    | { status: "queued"; requestId: number; exportSlugId: string };
+    | {
+          status: "queued";
+          requestId: number;
+          exportSlugId: string;
+          createdAt: Date;
+          expiresAt: Date;
+      };
 
 interface CreateRequestResult {
     requestId: number;
     exportSlugId: string;
+    createdAt: Date;
+    expiresAt: Date;
 }
 
 function getExpiresAt({ now }: { now: Date }): Date {
@@ -690,6 +700,7 @@ async function createRequest({
 }): Promise<CreateRequestResult | undefined> {
     for (let attempt = 0; attempt < 5; attempt += 1) {
         const slugId = generateRandomSlugId();
+        const expiresAt = getExpiresAt({ now });
         const inserted = await db
             .insert(conversationExportRequestTable)
             .values({
@@ -698,7 +709,7 @@ async function createRequest({
                 generationId,
                 userId,
                 status: "processing",
-                expiresAt: getExpiresAt({ now }),
+                expiresAt,
                 createdAt: now,
                 updatedAt: now,
             })
@@ -709,6 +720,8 @@ async function createRequest({
             return {
                 requestId: inserted[0].id,
                 exportSlugId: slugId,
+                createdAt: now,
+                expiresAt,
             };
         }
 
@@ -863,6 +876,8 @@ export async function requestConversationExport({
                 status: "queued",
                 requestId: request.requestId,
                 exportSlugId: request.exportSlugId,
+                createdAt: request.createdAt,
+                expiresAt: request.expiresAt,
             };
         },
     );
@@ -885,6 +900,8 @@ export async function requestConversationExport({
         exportRequestId: creationResult.requestId,
         exportSlugId: creationResult.exportSlugId,
         conversationId: conversation.id,
+        conversationSlugId: conversation.slugId,
+        conversationTitle: conversation.title,
         type: "export_started",
         realtimeSSEManager,
     });
@@ -893,6 +910,8 @@ export async function requestConversationExport({
         success: true,
         status: "queued",
         exportSlugId: creationResult.exportSlugId,
+        createdAt: creationResult.createdAt,
+        expiresAt: creationResult.expiresAt,
     };
 }
 
@@ -1661,11 +1680,21 @@ async function getProcessingRequestsForGeneration({
             slugId: conversationExportRequestTable.slugId,
             userId: conversationExportRequestTable.userId,
             conversationId: conversationExportRequestTable.conversationId,
+            conversationSlugId: conversationTable.slugId,
+            conversationTitle: conversationContentTable.title,
             failureReason: conversationExportRequestTable.failureReason,
             cancellationReason:
                 conversationExportRequestTable.cancellationReason,
         })
         .from(conversationExportRequestTable)
+        .innerJoin(
+            conversationTable,
+            eq(conversationTable.id, conversationExportRequestTable.conversationId),
+        )
+        .innerJoin(
+            conversationContentTable,
+            eq(conversationContentTable.id, conversationTable.currentContentId),
+        )
         .where(
             and(
                 eq(conversationExportRequestTable.generationId, generationId),
@@ -1808,6 +1837,8 @@ async function notifyRequests({
             exportRequestId: request.id,
             exportSlugId: request.slugId,
             conversationId: request.conversationId,
+            conversationSlugId: request.conversationSlugId,
+            conversationTitle: request.conversationTitle,
             type,
             failureReason: request.failureReason ?? undefined,
             cancellationReason: request.cancellationReason ?? undefined,

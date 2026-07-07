@@ -64,6 +64,11 @@ import {
     sourceLanguageToDisplayLanguage,
 } from "../translationLanguageSetting.js";
 import { normalizeUserRichTextInput } from "../richText.js";
+import {
+    createEagerContentTranslationWorkForKnownProject,
+    type ProjectContentSource,
+} from "../contentTranslation.js";
+import { log } from "@/app.js";
 
 type ProjectOrganizationAttributionRole =
     CreateProjectAttributionRequest["role"];
@@ -71,8 +76,23 @@ type ProjectOrganizationAttributionRole =
 type UpdateProjectLanguageSettingsServiceResponse =
     | (Extract<UpdateProjectLanguageSettingsResponse, { success: true }> & {
           projectId: number;
+          eagerContentTranslationWorkIds: number[];
       })
     | Extract<UpdateProjectLanguageSettingsResponse, { success: false }>;
+
+type CreateProjectServiceResponse =
+    | Exclude<CreateProjectResponse, { success: true }>
+    | (Extract<CreateProjectResponse, { success: true }> & {
+          projectId: number;
+          eagerContentTranslationWorkIds: number[];
+      });
+
+type UpdateProjectServiceResponse =
+    | Exclude<UpdateProjectResponse, { success: true }>
+    | (Extract<UpdateProjectResponse, { success: true }> & {
+          projectId: number;
+          eagerContentTranslationWorkIds: number[];
+      });
 
 interface OrganizationRecord {
     id: number;
@@ -936,7 +956,7 @@ export async function createProject({
     db: PostgresJsDatabase;
     data: CreateProjectRequest;
     googleCloudCredentials: GoogleCloudCredentials | undefined;
-}): Promise<CreateProjectResponse> {
+}): Promise<CreateProjectServiceResponse> {
     const existingProject = await db
         .select({ id: projectTable.id })
         .from(projectTable)
@@ -1018,6 +1038,17 @@ export async function createProject({
         languageSettings: data.languageSettings,
         canUseDynamicTranslation: true,
     });
+    const targetLanguagePolicy = getProjectTranslationTargetLanguagePolicy({
+        languageSettings: {
+            dynamicTranslationEnabled:
+                normalizedLanguageSettings.dynamicTranslationEnabled,
+            defaultLanguageCode:
+                sourceLanguageToDisplayLanguage({
+                    sourceLanguageCode: projectLanguageMetadata.sourceLanguageCode,
+                }) ?? getImplicitDefaultDisplayLanguage(),
+            targetLanguageCodes: normalizedLanguageSettings.targetLanguageCodes,
+        },
+    });
     const sourceSubtitleRequired = projectSubtitleRequiresLocalization(
         data.subtitle,
     );
@@ -1072,13 +1103,33 @@ export async function createProject({
                         projectLanguageMetadata,
                     ),
                 })
-                .returning({ contentId: projectContentTable.id });
+                .returning({
+                    contentId: projectContentTable.id,
+                    publicId: projectContentTable.publicId,
+                });
             const insertedContent = insertedContents.at(0);
             if (insertedContent === undefined) {
                 throw httpErrors.internalServerError(
                     "Failed to create project content",
                 );
             }
+            const projectSource: ProjectContentSource = {
+                projectId: insertedProject.projectId,
+                projectSlug: data.projectSlug,
+                dynamicTranslationEnabled:
+                    targetLanguagePolicy.dynamicTranslationEnabled,
+                contentId: insertedContent.contentId,
+                publicId: insertedContent.publicId,
+                title: data.projectTitle,
+                subtitle: normalizeOptionalString(data.subtitle),
+                body: sanitizedProjectBody.body ?? null,
+                sourceLanguageCode: projectLanguageMetadata.sourceLanguageCode,
+                sourceRawLanguageCode: projectLanguageMetadata.sourceRawLanguageCode,
+                sourceLanguageProvider:
+                    projectLanguageMetadata.sourceLanguageProvider,
+                sourceLanguageConfidence:
+                    projectLanguageMetadata.sourceLanguageConfidence,
+            };
 
             await syncProjectBannerLocalizations({
                 db: tx,
@@ -1242,10 +1293,20 @@ export async function createProject({
                 });
             }
 
+            const eagerContentTranslationWorkIds =
+                await createEagerContentTranslationWorkForKnownProject({
+                    db: tx,
+                    source: projectSource,
+                    targetLanguagePolicy,
+                    now: new Date(),
+                    log,
+                });
+
             return {
                 success: true,
                 projectId: insertedProject.projectId,
                 projectSlug: data.projectSlug,
+                eagerContentTranslationWorkIds,
             };
         });
     } catch (error) {
@@ -1874,11 +1935,12 @@ export async function updateProject({
     db: PostgresJsDatabase;
     data: UpdateProjectRequest;
     googleCloudCredentials: GoogleCloudCredentials | undefined;
-}): Promise<UpdateProjectResponse> {
+}): Promise<UpdateProjectServiceResponse> {
     const projectRows = await db
         .select({
             projectId: projectTable.id,
             currentContentId: projectTable.currentContentId,
+            currentContentPublicId: projectContentTable.publicId,
             dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
             currentTitle: projectContentTable.title,
             currentBody: projectContentTable.body,
@@ -2005,9 +2067,20 @@ export async function updateProject({
             sourceLanguageProvider: project.sourceLanguageProvider,
             sourceLanguageConfidence: project.sourceLanguageConfidence,
         };
+    const targetLanguagePolicy = getProjectTranslationTargetLanguagePolicy({
+        languageSettings: {
+            dynamicTranslationEnabled:
+                normalizedLanguageSettings.dynamicTranslationEnabled,
+            defaultLanguageCode:
+                sourceLanguageToDisplayLanguage({
+                    sourceLanguageCode: sourceLanguageMetadata.sourceLanguageCode,
+                }) ?? getImplicitDefaultDisplayLanguage(),
+            targetLanguageCodes: normalizedLanguageSettings.targetLanguageCodes,
+        },
+    });
 
     try {
-        await db.transaction(async (tx) => {
+        const eagerContentTranslationWorkIds = await db.transaction(async (tx) => {
             const now = new Date();
             const updatedProjects = await tx
                 .update(projectTable)
@@ -2024,6 +2097,8 @@ export async function updateProject({
                 throw httpErrors.notFound("Project not found");
             }
 
+            let projectContentId = project.currentContentId;
+            let projectContentPublicId = project.currentContentPublicId;
             if (project.currentContentId === null) {
                 const insertedContents = await tx
                     .insert(projectContentTable)
@@ -2040,13 +2115,18 @@ export async function updateProject({
                                 UNKNOWN_CONTENT_LANGUAGE_METADATA,
                         ),
                     })
-                    .returning({ contentId: projectContentTable.id });
+                    .returning({
+                        contentId: projectContentTable.id,
+                        publicId: projectContentTable.publicId,
+                    });
                 const insertedContent = insertedContents.at(0);
                 if (insertedContent === undefined) {
                     throw httpErrors.internalServerError(
                         "Failed to create project content",
                     );
                 }
+                projectContentId = insertedContent.contentId;
+                projectContentPublicId = insertedContent.publicId;
                 await tx
                     .update(projectTable)
                     .set({ currentContentId: insertedContent.contentId })
@@ -2119,6 +2199,29 @@ export async function updateProject({
                     now,
                 });
             }
+
+            if (projectContentId === null || projectContentPublicId === null) {
+                throw httpErrors.internalServerError(
+                    "Project content was not persisted",
+                );
+            }
+
+            const projectSource: ProjectContentSource = {
+                projectId: project.projectId,
+                projectSlug: data.projectSlug,
+                dynamicTranslationEnabled:
+                    targetLanguagePolicy.dynamicTranslationEnabled,
+                contentId: projectContentId,
+                publicId: projectContentPublicId,
+                title: data.projectTitle,
+                subtitle: normalizeOptionalString(data.subtitle),
+                body: sanitizedProjectBody.body ?? null,
+                sourceLanguageCode: sourceLanguageMetadata.sourceLanguageCode,
+                sourceRawLanguageCode: sourceLanguageMetadata.sourceRawLanguageCode,
+                sourceLanguageProvider: sourceLanguageMetadata.sourceLanguageProvider,
+                sourceLanguageConfidence:
+                    sourceLanguageMetadata.sourceLanguageConfidence,
+            };
 
             await tx
                 .update(projectOrganizationOwnershipTable)
@@ -2349,7 +2452,22 @@ export async function updateProject({
                     externalOrganizationId: null,
                 });
             }
+
+            return await createEagerContentTranslationWorkForKnownProject({
+                db: tx,
+                source: projectSource,
+                targetLanguagePolicy,
+                now,
+                log,
+            });
         });
+
+        return {
+            success: true,
+            projectId: project.projectId,
+            projectSlug: data.projectSlug,
+            eagerContentTranslationWorkIds,
+        };
     } catch (error) {
         if (isUniqueViolation(error)) {
             return {
@@ -2361,11 +2479,6 @@ export async function updateProject({
         throw error;
     }
 
-    return {
-        success: true,
-        projectId: project.projectId,
-        projectSlug: data.projectSlug,
-    };
 }
 
 export async function updateProjectLanguageSettings({
@@ -2420,16 +2533,22 @@ export async function updateProjectLanguageSettings({
         };
     }
 
-    const languageSettingsUpdated = await db.transaction(async (tx) => {
+    const languageSettingsUpdate = await db.transaction(async (tx) => {
         const now = new Date();
         const currentContentRows = await tx
             .select({
                 contentId: projectContentTable.id,
+                publicId: projectContentTable.publicId,
                 title: projectContentTable.title,
                 subtitle: projectContentTable.subtitle,
                 body: projectContentTable.body,
                 bodyPlainText: projectContentTable.bodyPlainText,
                 sourceLanguageCode: projectContentTable.sourceLanguageCode,
+                sourceRawLanguageCode: projectContentTable.sourceRawLanguageCode,
+                sourceLanguageProvider:
+                    projectContentTable.sourceLanguageProvider,
+                sourceLanguageConfidence:
+                    projectContentTable.sourceLanguageConfidence,
             })
             .from(projectTable)
             .innerJoin(
@@ -2464,7 +2583,7 @@ export async function updateProjectLanguageSettings({
 
         if (!normalizedLanguageSettings.dynamicTranslationEnabled) {
             if (currentContent === undefined) {
-                return false;
+                return { success: false as const };
             }
 
             const bodyPlainText =
@@ -2483,7 +2602,7 @@ export async function updateProjectLanguageSettings({
                         projectBodyRequiresLocalization(bodyPlainText),
                 }))
             ) {
-                return false;
+                return { success: false as const };
             }
         }
 
@@ -2554,17 +2673,60 @@ export async function updateProjectLanguageSettings({
             now,
         });
 
-        return true;
+        if (currentContent === undefined) {
+            return { success: true as const, eagerContentTranslationWorkIds: [] };
+        }
+
+        const sourceLanguageMetadataForWork = sourceLanguageMetadata ?? {
+            sourceLanguageCode: currentContent.sourceLanguageCode,
+            sourceRawLanguageCode: currentContent.sourceRawLanguageCode,
+            sourceLanguageProvider: currentContent.sourceLanguageProvider,
+            sourceLanguageConfidence: currentContent.sourceLanguageConfidence,
+        };
+        const projectSource: ProjectContentSource = {
+            projectId: project.projectId,
+            projectSlug: data.projectSlug,
+            dynamicTranslationEnabled:
+                inheritedTargetLanguagePolicy.dynamicTranslationEnabled,
+            contentId: currentContent.contentId,
+            publicId: currentContent.publicId,
+            title: currentContent.title,
+            subtitle: currentContent.subtitle,
+            body: currentContent.body,
+            sourceLanguageCode: sourceLanguageMetadataForWork.sourceLanguageCode,
+            sourceRawLanguageCode: sourceLanguageMetadataForWork.sourceRawLanguageCode,
+            sourceLanguageProvider:
+                sourceLanguageMetadataForWork.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                sourceLanguageMetadataForWork.sourceLanguageConfidence,
+        };
+
+        return {
+            success: true as const,
+            eagerContentTranslationWorkIds:
+                await createEagerContentTranslationWorkForKnownProject({
+                    db: tx,
+                    source: projectSource,
+                    targetLanguagePolicy: inheritedTargetLanguagePolicy,
+                    now,
+                    log,
+                }),
+        };
     });
 
-    if (!languageSettingsUpdated) {
+    if (!languageSettingsUpdate.success) {
         return {
             success: false,
             reason: "missing_manual_project_content_localization",
         };
     }
 
-    return { success: true, projectId: project.projectId };
+    return {
+        success: true,
+        projectId: project.projectId,
+        eagerContentTranslationWorkIds:
+            languageSettingsUpdate.eagerContentTranslationWorkIds,
+    };
 }
 
 export async function updateProjectExternalOrganizationLocalization({

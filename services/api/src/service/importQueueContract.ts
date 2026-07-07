@@ -1,4 +1,8 @@
-import { zodEventSlug, zodParticipationMode } from "@/shared/types/zod.js";
+import {
+    zodEventSlug,
+    zodImportFailureReason,
+    zodParticipationMode,
+} from "@/shared/types/zod.js";
 import { ZodSupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { z } from "zod";
 import type { CsvFiles } from "./csvImport.js";
@@ -113,8 +117,14 @@ export const zodImportNotificationEvent = withJsonSchemaId(
             type: z.literal("import_notification"),
             userId: z.string(),
             notificationSlugId: z.string(),
+            notificationCreatedAt: z.string(),
+            notificationIsRead: z.boolean(),
             importId: z.number().int(),
+            importSlugId: z.string(),
             conversationId: z.number().int().nullable(),
+            conversationSlugId: z.string().optional(),
+            conversationTitle: z.string().optional(),
+            failureReason: zodImportFailureReason.optional(),
             broadcastNewConversation: z.boolean().default(false),
         })
         .strict(),

@@ -5,9 +5,12 @@ import {
 } from "@/shared-backend/schema.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
-import type { ExportFailureReason } from "@/shared/types/zod.js";
+import {
+    type ExportFailureReason,
+    type NotificationItem,
+    zodNotificationItem,
+} from "@/shared/types/zod.js";
 import type { RealtimeSSEManager } from "../realtimeSSE.js";
-import { broadcastExportNotification } from "../notification.js";
 
 type ExportNotificationType =
     | "export_started"
@@ -25,6 +28,8 @@ interface CreateExportNotificationParams {
     exportRequestId: number;
     exportSlugId: string;
     conversationId: number;
+    conversationSlugId: string;
+    conversationTitle: string;
     type: ExportNotificationType;
     failureReason?: ExportFailureReason;
     cancellationReason?: ExportCancellationReason;
@@ -40,6 +45,8 @@ export async function createExportNotification({
     exportRequestId,
     exportSlugId,
     conversationId,
+    conversationSlugId,
+    conversationTitle,
     type,
     failureReason,
     cancellationReason,
@@ -58,6 +65,8 @@ export async function createExportNotification({
             })
             .returning({
                 notificationId: notificationTable.id,
+                createdAt: notificationTable.createdAt,
+                isRead: notificationTable.isRead,
             });
 
         const notificationId = notificationRecord.notificationId;
@@ -76,13 +85,45 @@ export async function createExportNotification({
             `Created ${type} notification for user ${userId}, export ${exportSlugId}`,
         );
 
-        // Broadcast notification via SSE (don't await to avoid blocking)
-        void broadcastExportNotification(
-            realtimeSSEManager,
-            db,
-            userId,
-            notificationSlugId,
-        );
+        const baseNotification = {
+            slugId: notificationSlugId,
+            createdAt: notificationRecord.createdAt,
+            isRead: notificationRecord.isRead,
+            routeTarget: {
+                type: "export" as const,
+                conversationSlugId,
+                exportSlugId,
+            },
+            conversationTitle,
+        };
+        const notificationItem: Extract<NotificationItem, { type: typeof type }> =
+            type === "export_failed"
+                ? {
+                      ...baseNotification,
+                      type,
+                      failureReason,
+                  }
+                : type === "export_cancelled"
+                  ? {
+                        ...baseNotification,
+                        type,
+                        cancellationReason:
+                            cancellationReason ?? "Export was cancelled",
+                    }
+                  : {
+                        ...baseNotification,
+                        type,
+                    };
+
+        const validationResult = zodNotificationItem.safeParse(notificationItem);
+        if (validationResult.success) {
+            realtimeSSEManager?.broadcastToUser(userId, validationResult.data);
+        } else {
+            log.error(
+                validationResult.error,
+                `Failed to validate export notification ${notificationSlugId} before broadcast`,
+            );
+        }
     } catch (error: unknown) {
         // Don't fail the export if notification creation fails
         log.error(

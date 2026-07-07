@@ -293,6 +293,7 @@ async function handleRequestExport(): Promise<void> {
         conversationSlugId: conversationSlugId.value,
         exportId: result.exportSlugId,
       },
+      query: { fresh: "1" },
     });
   } catch (error) {
     console.error("[Export] Failed to request export:", error);

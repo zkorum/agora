@@ -959,7 +959,6 @@ log.info(
 );
 
 const importWorkerEventBridge = createImportWorkerEventBridge({
-    db,
     valkeyRef: queueValkeyRef,
     realtimeSSEManager,
     pollIntervalMs: config.IMPORT_BUFFER_FLUSH_INTERVAL_MS,
@@ -2526,7 +2525,7 @@ server.after(() => {
             if (!participationCheck.success) {
                 return participationCheck;
             }
-            const { conversationId } = await saveMaxdiffResult({
+            const { items, uncertainty } = await saveMaxdiffResult({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
                 userId: participationCheck.participantId,
@@ -2534,10 +2533,6 @@ server.after(() => {
                 comparisons: request.body.comparisons,
                 isComplete: request.body.isComplete,
                 valkey: queueValkeyRef.current,
-            });
-            const { items, uncertainty } = await computeGlobalUncertainty({
-                db,
-                conversationId,
             });
             const candidateSets = generateCandidateSets({
                 userComparisons: request.body.comparisons,
@@ -4004,12 +3999,11 @@ server.after(() => {
 
             if (updateResult.success) {
                 try {
-                    await contentTranslationService.scheduleEagerContentTranslationForConversation(
+                    await contentTranslationService.enqueueEagerContentTranslationWork(
                         {
-                            db,
                             valkey: queueValkeyRef.current,
                             queueScript: contentTranslationQueueScript,
-                            conversationSlugId: request.body.conversationSlugId,
+                            workIds: updateResult.eagerContentTranslationWorkIds,
                             now: nowZeroMs(),
                             log,
                         },
@@ -4020,6 +4014,9 @@ server.after(() => {
                         `[ContentTranslation] Failed to schedule eager work for conversationSlugId=${request.body.conversationSlugId}`,
                     );
                 }
+
+                reply.send({ success: true });
+                return;
             }
 
             reply.send(updateResult);
@@ -4252,14 +4249,18 @@ server.after(() => {
                     },
                 },
             );
-            await surveyService.deleteSurveyConfigByAuthor({
-                db,
-                conversationSlugId: request.body.conversationSlugId,
-                userId: deviceStatus.userId,
-                now: nowZeroMs(),
-                valkey: queueValkeyRef.current,
-            });
-            return { success: true as const };
+            const surveyConfigDeleteResult =
+                await surveyService.deleteSurveyConfigByAuthor({
+                    db,
+                    conversationSlugId: request.body.conversationSlugId,
+                    userId: deviceStatus.userId,
+                    now: nowZeroMs(),
+                    valkey: queueValkeyRef.current,
+                });
+            return {
+                success: true as const,
+                surveyGate: surveyConfigDeleteResult.surveyGate,
+            };
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({
@@ -4612,12 +4613,11 @@ server.after(() => {
             });
             if (result.success) {
                 try {
-                    await contentTranslationService.scheduleEagerContentTranslationForProject(
+                    await contentTranslationService.enqueueEagerContentTranslationWork(
                         {
-                            db,
                             valkey: queueValkeyRef.current,
                             queueScript: contentTranslationQueueScript,
-                            projectId: result.projectId,
+                            workIds: result.eagerContentTranslationWorkIds,
                             now: nowZeroMs(),
                             log,
                         },
@@ -4628,6 +4628,11 @@ server.after(() => {
                         `[ContentTranslation] Failed to schedule eager work for projectId=${String(result.projectId)}`,
                     );
                 }
+                return {
+                    success: true as const,
+                    projectId: result.projectId,
+                    projectSlug: result.projectSlug,
+                };
             }
             return result;
         },
@@ -4654,12 +4659,11 @@ server.after(() => {
             }
 
             try {
-                await contentTranslationService.scheduleEagerContentTranslationForProject(
+                await contentTranslationService.enqueueEagerContentTranslationWork(
                     {
-                        db,
                         valkey: queueValkeyRef.current,
                         queueScript: contentTranslationQueueScript,
-                        projectId: result.projectId,
+                        workIds: result.eagerContentTranslationWorkIds,
                         now: nowZeroMs(),
                         log,
                     },
@@ -4711,12 +4715,11 @@ server.after(() => {
             });
             if (result.success) {
                 try {
-                    await contentTranslationService.scheduleEagerContentTranslationForProject(
+                    await contentTranslationService.enqueueEagerContentTranslationWork(
                         {
-                            db,
                             valkey: queueValkeyRef.current,
                             queueScript: contentTranslationQueueScript,
-                            projectId: result.projectId,
+                            workIds: result.eagerContentTranslationWorkIds,
                             now: nowZeroMs(),
                             log,
                         },
@@ -4727,6 +4730,11 @@ server.after(() => {
                         `[ContentTranslation] Failed to schedule eager work for projectId=${String(result.projectId)}`,
                     );
                 }
+                return {
+                    success: true as const,
+                    projectId: result.projectId,
+                    projectSlug: result.projectSlug,
+                };
             }
             return result;
         },

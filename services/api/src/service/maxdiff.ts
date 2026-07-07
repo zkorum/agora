@@ -151,7 +151,11 @@ export async function saveMaxdiffResult({
     comparisons,
     isComplete,
     valkey,
-}: SaveMaxdiffResultProps): Promise<{ conversationId: number }> {
+}: SaveMaxdiffResultProps): Promise<{
+    conversationId: number;
+    items: string[];
+    uncertainty: Map<string, number>;
+}> {
     const { id: conversationId } =
         await useCommonPost().getPostMetadataFromSlugId({
             db,
@@ -191,7 +195,7 @@ export async function saveMaxdiffResult({
     now.setMilliseconds(0);
 
     // Transaction: upsert JSONB + soft-delete/insert normalized comparisons atomically.
-    await db.transaction(async (tx) => {
+    const { items, uncertainty } = await db.transaction(async (tx) => {
         const [result] = await tx
             .insert(maxdiffResultTable)
             .values({
@@ -238,6 +242,11 @@ export async function saveMaxdiffResult({
                 })),
             );
         }
+
+        return await computeGlobalUncertainty({
+            db: tx,
+            conversationId,
+        });
     });
 
     // Mark conversation as dirty for the scoring worker to pick up.
@@ -257,7 +266,7 @@ export async function saveMaxdiffResult({
             });
     }
 
-    return { conversationId };
+    return { conversationId, items, uncertainty };
 }
 
 // --- Load ---

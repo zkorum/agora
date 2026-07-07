@@ -13,6 +13,7 @@ from sqlalchemy import insert as sqlalchemy_insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from import_worker.csv_import import build_import_from_csv
+from import_worker.generated_import_contracts import FailureReason
 from import_worker.generated_models import (
     AnalysisWorkState,
     ContentTranslationSourceKind,
@@ -1116,7 +1117,12 @@ def complete_ready_imports(session: Session) -> list[ImportNotificationEvent]:
             ConversationImport.slug_id,
             ConversationImport.user_id,
             ConversationImport.conversation_id,
-        ).where(
+            Conversation.slug_id.label("conversation_slug_id"),
+            ConversationContent.title.label("conversation_title"),
+        )
+        .join(Conversation, Conversation.id == ConversationImport.conversation_id)
+        .join(ConversationContent, ConversationContent.id == Conversation.current_content_id)
+        .where(
             and_(
                 ConversationImport.status == "processing",
                 ConversationImport.conversation_id.is_not(None),
@@ -1143,7 +1149,12 @@ def complete_ready_imports(session: Session) -> list[ImportNotificationEvent]:
             .where(ConversationImport.id == row.id)
             .values(status="completed", updated_at=now),
         )
-        notification_slug_id, _ = _create_import_notification(
+        (
+            notification_slug_id,
+            _,
+            notification_created_at,
+            notification_is_read,
+        ) = _create_import_notification(
             session,
             user_id=row.user_id,
             import_id=row.id,
@@ -1155,8 +1166,14 @@ def complete_ready_imports(session: Session) -> list[ImportNotificationEvent]:
                 type="import_notification",
                 userId=str(row.user_id),
                 notificationSlugId=notification_slug_id,
+                notificationCreatedAt=notification_created_at.isoformat(),
+                notificationIsRead=notification_is_read,
                 importId=row.id,
+                importSlugId=row.slug_id,
                 conversationId=conversation_id,
+                conversationSlugId=row.conversation_slug_id,
+                conversationTitle=row.conversation_title,
+                failureReason=None,
                 broadcastNewConversation=True,
             ),
         )
@@ -1240,12 +1257,12 @@ def _create_import_notification(
     import_id: int,
     conversation_id: int | None,
     notification_type: str,
-) -> tuple[str, int]:
+) -> tuple[str, int, datetime, bool]:
     notification_slug_id = generate_random_slug_id()
     notification_row = session.execute(
         sqlalchemy_insert(Notification)
         .values(slug_id=notification_slug_id, user_id=user_id, notification_type=notification_type)
-        .returning(Notification.id),
+        .returning(Notification.id, Notification.created_at, Notification.is_read),
     ).first()
     if notification_row is None:
         raise RuntimeError("Failed to create import notification")
@@ -1256,7 +1273,12 @@ def _create_import_notification(
             conversation_id=conversation_id,
         ),
     )
-    return notification_slug_id, notification_row.id
+    return (
+        notification_slug_id,
+        notification_row.id,
+        notification_row.created_at,
+        notification_row.is_read,
+    )
 
 
 def _get_import_user_id(session: Session, *, import_slug_id: str) -> uuid.UUID:
@@ -1455,7 +1477,7 @@ def mark_import_failed(
     from import_worker.queue import ImportNotificationEvent
 
     row = session.execute(
-        select(ConversationImport.id, ConversationImport.user_id).where(
+        select(ConversationImport.id, ConversationImport.slug_id, ConversationImport.user_id).where(
             ConversationImport.slug_id == import_slug_id,
         ),
     ).first()
@@ -1467,7 +1489,12 @@ def mark_import_failed(
         .where(ConversationImport.slug_id == import_slug_id)
         .values(status="failed", failure_reason=failure_reason, updated_at=now_zero_ms()),
     )
-    notification_slug_id, _ = _create_import_notification(
+    (
+        notification_slug_id,
+        _,
+        notification_created_at,
+        notification_is_read,
+    ) = _create_import_notification(
         session,
         user_id=row.user_id,
         import_id=row.id,
@@ -1479,8 +1506,14 @@ def mark_import_failed(
         type="import_notification",
         userId=str(row.user_id),
         notificationSlugId=notification_slug_id,
+        notificationCreatedAt=notification_created_at.isoformat(),
+        notificationIsRead=notification_is_read,
         importId=row.id,
+        importSlugId=row.slug_id,
         conversationId=None,
+        conversationSlugId=None,
+        conversationTitle=None,
+        failureReason=FailureReason(failure_reason),
         broadcastNewConversation=False,
     )
 
@@ -1521,7 +1554,12 @@ def cleanup_stale_imports(
     )
     events: list[ImportNotificationEvent] = []
     for row in stale_rows:
-        notification_slug_id, _ = _create_import_notification(
+        (
+            notification_slug_id,
+            _,
+            notification_created_at,
+            notification_is_read,
+        ) = _create_import_notification(
             session,
             user_id=row.user_id,
             import_id=row.id,
@@ -1533,8 +1571,14 @@ def cleanup_stale_imports(
                 type="import_notification",
                 userId=str(row.user_id),
                 notificationSlugId=notification_slug_id,
+                notificationCreatedAt=notification_created_at.isoformat(),
+                notificationIsRead=notification_is_read,
                 importId=row.id,
+                importSlugId=row.slug_id,
                 conversationId=None,
+                conversationSlugId=None,
+                conversationTitle=None,
+                failureReason=FailureReason.timeout,
                 broadcastNewConversation=False,
             ),
         )
