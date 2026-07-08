@@ -1115,6 +1115,7 @@ export function useRealtimeSSE({
         }),
         refetchType: "active",
       });
+      publishContentTranslationUpdated(data);
       return;
     }
     if (data.subject.kind === "survey_question") {

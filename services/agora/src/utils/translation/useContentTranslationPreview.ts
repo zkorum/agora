@@ -21,18 +21,24 @@ import { useNotify } from "src/utils/ui/notify";
 import type { MaybeRefOrGetter } from "vue";
 import { computed, onScopeDispose, ref, toValue, watch } from "vue";
 
+import { useBoundedTranslationPolling } from "./boundedTranslationPolling";
 import {
   type ContentTranslationDisplayMode,
   getContentTranslationSourceLanguageLabel,
   getLanguageDisplayName,
 } from "./contentTranslation";
-import { subscribeToContentTranslationFailed } from "./contentTranslationEvents";
+import {
+  subscribeToContentTranslationFailed,
+  subscribeToContentTranslationUpdated,
+} from "./contentTranslationEvents";
 import {
   type ContentTranslationPreviewTranslations,
   contentTranslationPreviewTranslations,
 } from "./useContentTranslationPreview.i18n";
 
 const TRANSLATION_WAIT_TIMEOUT_MS = 30_000;
+const TRANSLATION_COMPLETION_POLL_INTERVAL_MS = 500;
+const TRANSLATION_COMPLETION_POLL_MAX_DURATION_MS = 5_000;
 
 function isRateLimitError(error: unknown): boolean {
   return isAxiosError(error) && error.response?.status === 429;
@@ -153,12 +159,21 @@ function useContentTranslationController({
   const requestMode = computed<ContentTranslationRequestMode>(() =>
     hasRequestedTranslation.value ? "queue_if_missing" : "read_existing"
   );
+  const completionPolling = useBoundedTranslationPolling({
+    intervalMs: TRANSLATION_COMPLETION_POLL_INTERVAL_MS,
+    maxDurationMs: TRANSLATION_COMPLETION_POLL_MAX_DURATION_MS,
+    onTimeout: () => {
+      resetToOriginal();
+      showNotifyMessage(t("translationTimedOut"));
+    },
+  });
 
   const query = useContentTranslationQuery({
     subject,
     targetLanguageCode: displayLanguage,
     requestMode,
     enabled: computed(() => toValue(enabled)),
+    refetchInterval: completionPolling.refetchInterval,
   });
 
   const isLoadingInitialTranslation = computed(() => {
@@ -251,6 +266,7 @@ function useContentTranslationController({
   }
 
   function resetToOriginal(): void {
+    completionPolling.stop();
     modePreference.value = "original";
     hasRequestedTranslation.value = false;
   }
@@ -301,7 +317,7 @@ function useContentTranslationController({
     }
   }
 
-  function isFailedEventForCurrentRequest(
+  function isEventForCurrentRequest(
     data: SSEContentTranslationUpdatedData
   ): boolean {
     return (
@@ -316,7 +332,7 @@ function useContentTranslationController({
 
   const unsubscribeFailedEvents = subscribeToContentTranslationFailed(
     (data) => {
-      if (!isFailedEventForCurrentRequest(data)) {
+      if (!isEventForCurrentRequest(data)) {
         return;
       }
       clearWaitTimeout();
@@ -324,6 +340,21 @@ function useContentTranslationController({
       showNotifyMessage(t("translationFailed"));
     }
   );
+
+  const unsubscribeUpdatedEvents = subscribeToContentTranslationUpdated((data) => {
+    if (!isEventForCurrentRequest(data)) {
+      return;
+    }
+    clearWaitTimeout();
+    void query.refetch();
+    completionPolling.start();
+  });
+
+  watch([translationStatus, translatedVariant], ([status, variant]) => {
+    if (status === "completed" && variant !== undefined) {
+      completionPolling.stop();
+    }
+  });
 
   watch(translationStatus, (status) => {
     if (status === "pending" || status === "running") {
@@ -358,6 +389,8 @@ function useContentTranslationController({
 
   onScopeDispose(() => {
     clearWaitTimeout();
+    completionPolling.stop();
+    unsubscribeUpdatedEvents();
     unsubscribeFailedEvents();
   });
 

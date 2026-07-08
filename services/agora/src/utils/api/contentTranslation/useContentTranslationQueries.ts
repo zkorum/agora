@@ -142,11 +142,13 @@ export function useContentTranslationQuery({
   targetLanguageCode,
   requestMode,
   enabled = true,
+  refetchInterval = false,
 }: {
   subject: MaybeRefOrGetter<ContentTranslationSubject>;
   targetLanguageCode: MaybeRefOrGetter<SupportedDisplayLanguageCodes>;
   requestMode: MaybeRefOrGetter<ContentTranslationRequestMode>;
   enabled?: MaybeRefOrGetter<boolean>;
+  refetchInterval?: MaybeRefOrGetter<number | false>;
 }) {
   const { requestContentTranslation } = useBackendContentTranslationApi();
   const { updateAuthState } = useBackendAuthApi();
@@ -170,6 +172,7 @@ export function useContentTranslationQuery({
       return response;
     },
     enabled: computed(() => toValue(enabled)),
+    refetchInterval: computed(() => toValue(refetchInterval)),
     retry: false,
   });
 }
@@ -180,12 +183,14 @@ export function useConversationContentQuery({
   mode,
   requestMode,
   enabled = true,
+  refetchInterval = false,
 }: {
   conversationSlugId: MaybeRefOrGetter<string>;
   sourceVersion: MaybeRefOrGetter<string | undefined>;
   mode: MaybeRefOrGetter<ConversationContentMode>;
   requestMode: MaybeRefOrGetter<ContentTranslationRequestMode>;
   enabled?: MaybeRefOrGetter<boolean>;
+  refetchInterval?: MaybeRefOrGetter<number | false>;
 }) {
   const { fetchConversationContent } = useBackendContentTranslationApi();
   const { updateAuthState } = useBackendAuthApi();
@@ -212,6 +217,7 @@ export function useConversationContentQuery({
       return response;
     },
     enabled: computed(() => toValue(enabled) && toValue(sourceVersion) !== undefined),
+    refetchInterval: computed(() => toValue(refetchInterval)),
     retry: false,
   });
 }
