@@ -66,7 +66,7 @@ type CreateNewCommentResult =
 
 export function useBackendCommentApi() {
   const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
-  const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(
+  const { isGuestOrLoggedIn } = storeToRefs(
     useAuthenticationStore()
   );
   const { updateAuthState } = useBackendAuthApi();
@@ -306,7 +306,9 @@ export function useBackendCommentApi() {
         freshness: params.freshness,
       };
 
-    if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
+    await waitForAuthInitialization();
+
+    if (isGuestOrLoggedIn.value) {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameManifestByConversationPost(
           requestParams
@@ -349,7 +351,9 @@ export function useBackendCommentApi() {
         freshness: params.freshness,
       };
 
-    if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
+    await waitForAuthInitialization();
+
+    if (isGuestOrLoggedIn.value) {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameGroupsByFramePost(
           requestParams
@@ -392,7 +396,9 @@ export function useBackendCommentApi() {
         freshness: params.freshness,
       };
 
-    if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
+    await waitForAuthInitialization();
+
+    if (isGuestOrLoggedIn.value) {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost(
           requestParams
@@ -437,7 +443,9 @@ export function useBackendCommentApi() {
         freshness: params.freshness,
       };
 
-    if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
+    await waitForAuthInitialization();
+
+    if (isGuestOrLoggedIn.value) {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameOpinionListByFramePost(
           requestParams
