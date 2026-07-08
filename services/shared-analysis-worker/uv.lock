@@ -22,20 +22,24 @@ dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
     { name = "pydantic-settings" },
-    { name = "red-dwarf" },
-    { name = "scikit-learn" },
     { name = "sqlalchemy", extra = ["postgresql-psycopg"] },
     { name = "valkey" },
     { name = "zstandard" },
 ]
 
 [package.optional-dependencies]
+analysis = [
+    { name = "red-dwarf" },
+    { name = "scikit-learn" },
+]
 dev = [
     { name = "basedpyright" },
     { name = "boto3-stubs", extra = ["bedrock-runtime"] },
     { name = "pandas-stubs" },
     { name = "pytest" },
+    { name = "red-dwarf" },
     { name = "ruff" },
+    { name = "scikit-learn" },
 ]
 
 [package.metadata]
@@ -51,14 +55,16 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.12" },
     { name = "pydantic-settings", specifier = ">=2.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
-    { name = "red-dwarf", git = "https://github.com/nicobao/red-dwarf.git?rev=6563d9c91ddc4a284adc65620ce033020733d28b" },
+    { name = "red-dwarf", marker = "extra == 'analysis'", git = "https://github.com/nicobao/red-dwarf.git?rev=6563d9c91ddc4a284adc65620ce033020733d28b" },
+    { name = "red-dwarf", marker = "extra == 'dev'", git = "https://github.com/nicobao/red-dwarf.git?rev=6563d9c91ddc4a284adc65620ce033020733d28b" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9" },
-    { name = "scikit-learn", specifier = ">=1.7,<2" },
+    { name = "scikit-learn", marker = "extra == 'analysis'", specifier = ">=1.7,<2" },
+    { name = "scikit-learn", marker = "extra == 'dev'", specifier = ">=1.7,<2" },
     { name = "sqlalchemy", extras = ["postgresql-psycopg"], specifier = ">=2.0" },
     { name = "valkey", specifier = ">=6.0" },
     { name = "zstandard", specifier = ">=0.23" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["analysis", "dev"]
 
 [[package]]
 name = "annotated-types"

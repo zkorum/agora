@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Python opinion-groups analysis worker"
 requires-python = ">=3.13"
 dependencies = [
-    "agora-shared-analysis-worker",
+    "agora-shared-analysis-worker[analysis]",
 ]
 
 [tool.uv]
