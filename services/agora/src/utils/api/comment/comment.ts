@@ -29,7 +29,7 @@ import type {
   PolisKey,
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { watch } from "vue";
+import { waitForAuthInitialization } from "src/utils/auth/waitForAuthInitialization";
 
 import { useBackendAuthApi } from "../auth";
 import { api } from "../client";
@@ -66,7 +66,7 @@ type CreateNewCommentResult =
 
 export function useBackendCommentApi() {
   const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
-  const { isGuestOrLoggedIn, isAuthInitialized } = storeToRefs(
+  const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(
     useAuthenticationStore()
   );
   const { updateAuthState } = useBackendAuthApi();
@@ -91,21 +91,6 @@ export function useBackendCommentApi() {
     }
 
     return result.data;
-  }
-
-  async function waitForAuthInitialization(): Promise<void> {
-    if (isAuthInitialized.value) {
-      return;
-    }
-
-    await new Promise<void>((resolve) => {
-      const stop = watch(isAuthInitialized, (initialized) => {
-        if (initialized) {
-          stop();
-          resolve();
-        }
-      });
-    });
   }
 
   async function fetchHiddenCommentsForPost(
