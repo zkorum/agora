@@ -27,8 +27,6 @@ export interface ApiV1AdministratorOrganizationAddUserOrganizationMappingPostReq
     'username': string;
     'organizationName': string;
 }
-
-
 export interface ApiV1AdministratorOrganizationCreateOrganizationPostRequest {
     'organizationName': string;
     'organizationSlug': string;
@@ -1374,8 +1372,8 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf1Ini
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf1InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf1InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf1InitialModeEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf1Variants {
-    'original': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfContent;
-    'translated'?: ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1Content;
+    'original': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfContent;
+    'translated'?: ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1Content;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf2 {
     'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf2KindEnum;
@@ -1397,11 +1395,11 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf2Ini
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf2InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf2InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf2InitialModeEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf2Variants {
-    'original'?: ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfContent;
-    'translated': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1Content;
+    'original'?: ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfContent;
+    'translated': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1Content;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOfVariants {
-    'original': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfContent;
+    'original': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfContent;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf2 {
     'success': boolean;
@@ -2563,7 +2561,7 @@ export const ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum = {
 
 export type ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum];
 export const ApiV1ConversationCreatePostRequestOneOf1RankingModeEnum = {
-    Maxdiff: 'maxdiff',
+    Bws: 'bws',
 } as const;
 
 export type ApiV1ConversationCreatePostRequestOneOf1RankingModeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1RankingModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1RankingModeEnum];
@@ -2787,6 +2785,8 @@ export interface ApiV1ConversationExportRequestPost200Response {
     'success': boolean;
     'status': ApiV1ConversationExportRequestPost200ResponseStatusEnum;
     'exportSlugId': string;
+    'createdAt': string;
+    'expiresAt': string;
     'cooldownEndsAt': string;
     'reason': ApiV1ConversationExportRequestPost200ResponseReasonEnum;
 }
@@ -2809,6 +2809,8 @@ export interface ApiV1ConversationExportRequestPost200ResponseAnyOf {
     'success': boolean;
     'status': ApiV1ConversationExportRequestPost200ResponseAnyOfStatusEnum;
     'exportSlugId': string;
+    'createdAt': string;
+    'expiresAt': string;
 }
 
 export const ApiV1ConversationExportRequestPost200ResponseAnyOfStatusEnum = {
@@ -3114,7 +3116,7 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ConversationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ConversationTypeEnum];
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum = {
-    Maxdiff: 'maxdiff',
+    Bws: 'bws',
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum];
@@ -4415,6 +4417,7 @@ export interface ApiV1OpinionCreatePost200ResponseOneOf {
     'success': boolean;
     'opinionSlugId': string;
     'opinionItem': ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem;
+    'displayedOpinionItem': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItem;
 }
 export interface ApiV1OpinionCreatePost200ResponseOneOf1 {
     'success': boolean;
@@ -4436,6 +4439,87 @@ export const ApiV1OpinionCreatePost200ResponseOneOf1ReasonEnum = {
 
 export type ApiV1OpinionCreatePost200ResponseOneOf1ReasonEnum = typeof ApiV1OpinionCreatePost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1OpinionCreatePost200ResponseOneOf1ReasonEnum];
 
+export interface ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItem {
+    'opinionSlugId': string;
+    'createdAt': string;
+    'updatedAt': string;
+    'opinion': string;
+    'sourceLanguageCode': string | null;
+    'numParticipants': number;
+    'numAgrees': number;
+    'numDisagrees': number;
+    'numPasses': number;
+    'username': string;
+    'moderation': ApiV1ModerationOpinionGetPost200Response;
+    'isSeed': boolean;
+    'displayContent': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContent;
+}
+export interface ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContent {
+    'sourceVersion': string;
+    'status': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentStatusEnum;
+    'mode': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentModeEnum;
+    'content': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1Content;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentStatusEnum = {
+    NotRequested: 'not_requested',
+    Pending: 'pending',
+    Running: 'running',
+    Failed: 'failed',
+} as const;
+
+export type ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentStatusEnum = typeof ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentStatusEnum[keyof typeof ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentStatusEnum];
+export const ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentModeEnum = typeof ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentModeEnum[keyof typeof ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentModeEnum];
+
+export interface ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf {
+    'sourceVersion': string;
+    'status': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfStatusEnum;
+    'mode': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfModeEnum;
+    'content': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfContent;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfStatusEnum = {
+    Available: 'available',
+} as const;
+
+export type ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfStatusEnum = typeof ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfStatusEnum[keyof typeof ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfStatusEnum];
+export const ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfModeEnum = {
+    Original: 'original',
+} as const;
+
+export type ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfModeEnum = typeof ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfModeEnum[keyof typeof ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfModeEnum];
+
+export interface ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1 {
+    'sourceVersion': string;
+    'status': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1StatusEnum;
+    'mode': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1ModeEnum;
+    'content': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1Content;
+    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1StatusEnum = {
+    Available: 'available',
+} as const;
+
+export type ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1StatusEnum = typeof ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1StatusEnum[keyof typeof ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1StatusEnum];
+export const ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1ModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1ModeEnum = typeof ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1ModeEnum[keyof typeof ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1ModeEnum];
+
+export interface ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1Content {
+    'content': string;
+}
+export interface ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfContent {
+    'content': string;
+}
 export interface ApiV1OpinionCreatePostRequest {
     'conversationSlugId': string;
     'opinionBody': string;
@@ -5014,87 +5098,6 @@ export const ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequestKindEnum
 
 export type ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequestKindEnum = typeof ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequestKindEnum[keyof typeof ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequestKindEnum];
 
-export interface ApiV1OpinionFetchByConversationPost200ResponseInner {
-    'opinionSlugId': string;
-    'createdAt': string;
-    'updatedAt': string;
-    'opinion': string;
-    'sourceLanguageCode': string | null;
-    'numParticipants': number;
-    'numAgrees': number;
-    'numDisagrees': number;
-    'numPasses': number;
-    'username': string;
-    'moderation': ApiV1ModerationOpinionGetPost200Response;
-    'isSeed': boolean;
-    'displayContent': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContent;
-}
-export interface ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContent {
-    'sourceVersion': string;
-    'status': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentStatusEnum;
-    'mode': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentModeEnum;
-    'content': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1Content;
-    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
-}
-
-export const ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentStatusEnum = {
-    NotRequested: 'not_requested',
-    Pending: 'pending',
-    Running: 'running',
-    Failed: 'failed',
-} as const;
-
-export type ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentStatusEnum = typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentStatusEnum[keyof typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentStatusEnum];
-export const ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentModeEnum = {
-    Translated: 'translated',
-} as const;
-
-export type ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentModeEnum = typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentModeEnum[keyof typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentModeEnum];
-
-export interface ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf {
-    'sourceVersion': string;
-    'status': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfStatusEnum;
-    'mode': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfModeEnum;
-    'content': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfContent;
-    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
-}
-
-export const ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfStatusEnum = {
-    Available: 'available',
-} as const;
-
-export type ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfStatusEnum = typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfStatusEnum[keyof typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfStatusEnum];
-export const ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfModeEnum = {
-    Original: 'original',
-} as const;
-
-export type ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfModeEnum = typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfModeEnum[keyof typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfModeEnum];
-
-export interface ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1 {
-    'sourceVersion': string;
-    'status': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1StatusEnum;
-    'mode': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1ModeEnum;
-    'content': ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1Content;
-    'translationControl': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfTranslationControl | null;
-}
-
-export const ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1StatusEnum = {
-    Available: 'available',
-} as const;
-
-export type ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1StatusEnum = typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1StatusEnum[keyof typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1StatusEnum];
-export const ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1ModeEnum = {
-    Translated: 'translated',
-} as const;
-
-export type ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1ModeEnum = typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1ModeEnum[keyof typeof ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1ModeEnum];
-
-export interface ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOf1Content {
-    'content': string;
-}
-export interface ApiV1OpinionFetchByConversationPost200ResponseInnerDisplayContentAnyOfContent {
-    'content': string;
-}
 export interface ApiV1OpinionFetchByConversationPostRequest {
     'conversationSlugId': string;
     'filter': ApiV1OpinionFetchByConversationPostRequestFilterEnum;
@@ -5102,7 +5105,6 @@ export interface ApiV1OpinionFetchByConversationPostRequest {
 }
 
 export const ApiV1OpinionFetchByConversationPostRequestFilterEnum = {
-    Hidden: 'hidden',
     Moderated: 'moderated',
     New: 'new',
     Discover: 'discover',
@@ -5624,15 +5626,10 @@ export type ApiV1RankingBwsItemsLifecycleUpdatePostRequestNewStatusEnum = typeof
 
 export interface ApiV1RankingBwsLoadPost200Response {
     'ranking': Array<string> | null;
-    'comparisons': Array<ApiV1RankingBwsLoadPost200ResponseComparisonsInner> | null;
+    'comparisons': Array<ApiV1RankingBwsSavePostRequestComparisonsInner> | null;
     'isComplete': boolean;
     'candidateSets': Array<Array<string>>;
     'perUserScores': Array<ApiV1RankingBwsLoadPost200ResponsePerUserScoresInner> | null;
-}
-export interface ApiV1RankingBwsLoadPost200ResponseComparisonsInner {
-    'best': string;
-    'worst': string;
-    'set': Array<string>;
 }
 export interface ApiV1RankingBwsLoadPost200ResponsePerUserScoresInner {
     'entitySlugId': string;
@@ -5852,7 +5849,7 @@ export interface ApiV1SurveyCompletionCountsPost200ResponseCounts {
 }
 export interface ApiV1SurveyConfigUpdatePost200Response {
     'currentRevision': number;
-    'surveyGate'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteractionSurveyGate;
+    'surveyGate': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteractionSurveyGate;
 }
 export interface ApiV1SurveyConfigUpdatePostRequest {
     'conversationSlugId': string;
@@ -11809,7 +11806,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest: ApiV1OpinionFetchByConversationPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1OpinionFetchByConversationPost200ResponseInner>>> {
+        async apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest: ApiV1OpinionFetchByConversationPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItem>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1OpinionFetchByConversationPost']?.[localVarOperationServerIndex]?.url;
@@ -11821,7 +11818,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1OpinionFetchBySlugIdListPost(apiV1OpinionFetchBySlugIdListPostRequest: ApiV1OpinionFetchBySlugIdListPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1OpinionFetchByConversationPost200ResponseInner>>> {
+        async apiV1OpinionFetchBySlugIdListPost(apiV1OpinionFetchBySlugIdListPostRequest: ApiV1OpinionFetchBySlugIdListPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItem>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1OpinionFetchBySlugIdListPost(apiV1OpinionFetchBySlugIdListPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1OpinionFetchBySlugIdListPost']?.[localVarOperationServerIndex]?.url;
@@ -11845,7 +11842,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest: ApiV1OpinionFetchHiddenByConversationPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1OpinionFetchByConversationPost200ResponseInner>>> {
+        async apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest: ApiV1OpinionFetchHiddenByConversationPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItem>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1OpinionFetchHiddenByConversationPost']?.[localVarOperationServerIndex]?.url;
@@ -12096,7 +12093,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1SurveyConfigDeletePost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationClosePost200ResponseOneOf>> {
+        async apiV1SurveyConfigDeletePost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1SurveyResponseWithdrawPost200ResponseOneOf>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1SurveyConfigDeletePost(apiV1ModerationConversationWithdrawPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1SurveyConfigDeletePost']?.[localVarOperationServerIndex]?.url;
@@ -12975,7 +12972,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest: ApiV1OpinionFetchByConversationPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1OpinionFetchByConversationPost200ResponseInner>> {
+        apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest: ApiV1OpinionFetchByConversationPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItem>> {
             return localVarFp.apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
@@ -12984,7 +12981,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1OpinionFetchBySlugIdListPost(apiV1OpinionFetchBySlugIdListPostRequest: ApiV1OpinionFetchBySlugIdListPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1OpinionFetchByConversationPost200ResponseInner>> {
+        apiV1OpinionFetchBySlugIdListPost(apiV1OpinionFetchBySlugIdListPostRequest: ApiV1OpinionFetchBySlugIdListPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItem>> {
             return localVarFp.apiV1OpinionFetchBySlugIdListPost(apiV1OpinionFetchBySlugIdListPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
@@ -13002,7 +12999,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest: ApiV1OpinionFetchHiddenByConversationPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1OpinionFetchByConversationPost200ResponseInner>> {
+        apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest: ApiV1OpinionFetchHiddenByConversationPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItem>> {
             return localVarFp.apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
@@ -13190,7 +13187,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1SurveyConfigDeletePost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationClosePost200ResponseOneOf> {
+        apiV1SurveyConfigDeletePost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1SurveyResponseWithdrawPost200ResponseOneOf> {
             return localVarFp.apiV1SurveyConfigDeletePost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
@@ -14507,3 +14504,6 @@ export class DefaultApi extends BaseAPI {
         return DefaultApiFp(this.configuration).apiV1WebhookGithubPost(options).then((request) => request(this.axios, this.basePath));
     }
 }
+
+
+

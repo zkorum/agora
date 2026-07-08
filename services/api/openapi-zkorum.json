@@ -2528,7 +2528,7 @@
                                                                     "rankingMode": {
                                                                         "type": "string",
                                                                         "enum": [
-                                                                            "maxdiff"
+                                                                            "bws"
                                                                         ]
                                                                     }
                                                                 },
@@ -7543,7 +7543,7 @@
                                                             "rankingMode": {
                                                                 "type": "string",
                                                                 "enum": [
-                                                                    "maxdiff"
+                                                                    "bws"
                                                                 ]
                                                             }
                                                         },
@@ -9188,7 +9188,7 @@
                                                                     "rankingMode": {
                                                                         "type": "string",
                                                                         "enum": [
-                                                                            "maxdiff"
+                                                                            "bws"
                                                                         ]
                                                                     }
                                                                 },
@@ -9628,15 +9628,19 @@
                                             "type": "object",
                                             "properties": {
                                                 "best": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "minLength": 1
                                                 },
                                                 "worst": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "minLength": 1
                                                 },
                                                 "set": {
+                                                    "minItems": 2,
                                                     "type": "array",
                                                     "items": {
-                                                        "type": "string"
+                                                        "type": "string",
+                                                        "minLength": 1
                                                     }
                                                 }
                                             },
@@ -9644,7 +9648,8 @@
                                                 "best",
                                                 "worst",
                                                 "set"
-                                            ]
+                                            ],
+                                            "additionalProperties": false
                                         }
                                     },
                                     "isComplete": {
@@ -9774,15 +9779,19 @@
                                                 "type": "object",
                                                 "properties": {
                                                     "best": {
-                                                        "type": "string"
+                                                        "type": "string",
+                                                        "minLength": 1
                                                     },
                                                     "worst": {
-                                                        "type": "string"
+                                                        "type": "string",
+                                                        "minLength": 1
                                                     },
                                                     "set": {
+                                                        "minItems": 2,
                                                         "type": "array",
                                                         "items": {
-                                                            "type": "string"
+                                                            "type": "string",
+                                                            "minLength": 1
                                                         }
                                                     }
                                                 },
@@ -10906,12 +10915,373 @@
                                                         "isSeed"
                                                     ],
                                                     "additionalProperties": false
+                                                },
+                                                "displayedOpinionItem": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "opinionSlugId": {
+                                                            "type": "string",
+                                                            "maxLength": 10
+                                                        },
+                                                        "createdAt": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        "updatedAt": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        "opinion": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 3000
+                                                        },
+                                                        "sourceLanguageCode": {
+                                                            "nullable": true,
+                                                            "type": "string"
+                                                        },
+                                                        "numParticipants": {
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                            "maximum": 9007199254740991
+                                                        },
+                                                        "numAgrees": {
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                            "maximum": 9007199254740991
+                                                        },
+                                                        "numDisagrees": {
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                            "maximum": 9007199254740991
+                                                        },
+                                                        "numPasses": {
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                            "maximum": 9007199254740991
+                                                        },
+                                                        "username": {
+                                                            "type": "string"
+                                                        },
+                                                        "moderation": {
+                                                            "oneOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "status": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "moderated"
+                                                                            ]
+                                                                        },
+                                                                        "action": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "move",
+                                                                                "hide"
+                                                                            ]
+                                                                        },
+                                                                        "reason": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "misleading",
+                                                                                "antisocial",
+                                                                                "illegal",
+                                                                                "doxing",
+                                                                                "sexual",
+                                                                                "spam"
+                                                                            ]
+                                                                        },
+                                                                        "explanation": {
+                                                                            "type": "string",
+                                                                            "maxLength": 1000
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "format": "date-time"
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "format": "date-time"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "status",
+                                                                        "action",
+                                                                        "reason",
+                                                                        "explanation",
+                                                                        "createdAt",
+                                                                        "updatedAt"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "status": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "unmoderated"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "status"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            ]
+                                                        },
+                                                        "isSeed": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "displayContent": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "sourceVersion": {
+                                                                            "type": "string",
+                                                                            "format": "uuid",
+                                                                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "available"
+                                                                            ]
+                                                                        },
+                                                                        "mode": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "original"
+                                                                            ]
+                                                                        },
+                                                                        "content": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "content": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 3000
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "content"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        },
+                                                                        "translationControl": {
+                                                                            "nullable": true,
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "status": {
+                                                                                    "type": "string",
+                                                                                    "enum": [
+                                                                                        "not_requested",
+                                                                                        "pending",
+                                                                                        "running",
+                                                                                        "failed",
+                                                                                        "completed"
+                                                                                    ]
+                                                                                },
+                                                                                "sourceLanguageLabel": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1
+                                                                                },
+                                                                                "alternateMode": {
+                                                                                    "type": "string",
+                                                                                    "enum": [
+                                                                                        "original",
+                                                                                        "translated"
+                                                                                    ]
+                                                                                },
+                                                                                "canRequestAlternate": {
+                                                                                    "type": "boolean"
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "status",
+                                                                                "alternateMode",
+                                                                                "canRequestAlternate"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "sourceVersion",
+                                                                        "status",
+                                                                        "mode",
+                                                                        "content",
+                                                                        "translationControl"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "sourceVersion": {
+                                                                            "type": "string",
+                                                                            "format": "uuid",
+                                                                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "available"
+                                                                            ]
+                                                                        },
+                                                                        "mode": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "translated"
+                                                                            ]
+                                                                        },
+                                                                        "content": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "content": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "content"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        },
+                                                                        "translationControl": {
+                                                                            "nullable": true,
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "status": {
+                                                                                    "type": "string",
+                                                                                    "enum": [
+                                                                                        "not_requested",
+                                                                                        "pending",
+                                                                                        "running",
+                                                                                        "failed",
+                                                                                        "completed"
+                                                                                    ]
+                                                                                },
+                                                                                "sourceLanguageLabel": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1
+                                                                                },
+                                                                                "alternateMode": {
+                                                                                    "type": "string",
+                                                                                    "enum": [
+                                                                                        "original",
+                                                                                        "translated"
+                                                                                    ]
+                                                                                },
+                                                                                "canRequestAlternate": {
+                                                                                    "type": "boolean"
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "status",
+                                                                                "alternateMode",
+                                                                                "canRequestAlternate"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "sourceVersion",
+                                                                        "status",
+                                                                        "mode",
+                                                                        "content",
+                                                                        "translationControl"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "sourceVersion": {
+                                                                            "type": "string",
+                                                                            "format": "uuid",
+                                                                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "not_requested",
+                                                                                "pending",
+                                                                                "running",
+                                                                                "failed"
+                                                                            ]
+                                                                        },
+                                                                        "translationControl": {
+                                                                            "nullable": true,
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "status": {
+                                                                                    "type": "string",
+                                                                                    "enum": [
+                                                                                        "not_requested",
+                                                                                        "pending",
+                                                                                        "running",
+                                                                                        "failed",
+                                                                                        "completed"
+                                                                                    ]
+                                                                                },
+                                                                                "sourceLanguageLabel": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1
+                                                                                },
+                                                                                "alternateMode": {
+                                                                                    "type": "string",
+                                                                                    "enum": [
+                                                                                        "original",
+                                                                                        "translated"
+                                                                                    ]
+                                                                                },
+                                                                                "canRequestAlternate": {
+                                                                                    "type": "boolean"
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "status",
+                                                                                "alternateMode",
+                                                                                "canRequestAlternate"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "sourceVersion",
+                                                                        "status",
+                                                                        "translationControl"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "opinionSlugId",
+                                                        "createdAt",
+                                                        "updatedAt",
+                                                        "opinion",
+                                                        "sourceLanguageCode",
+                                                        "numParticipants",
+                                                        "numAgrees",
+                                                        "numDisagrees",
+                                                        "numPasses",
+                                                        "username",
+                                                        "moderation",
+                                                        "isSeed",
+                                                        "displayContent"
+                                                    ],
+                                                    "additionalProperties": false
                                                 }
                                             },
                                             "required": [
                                                 "success",
                                                 "opinionSlugId",
-                                                "opinionItem"
+                                                "opinionItem",
+                                                "displayedOpinionItem"
                                             ],
                                             "additionalProperties": false
                                         },
@@ -10979,7 +11349,6 @@
                                     "filter": {
                                         "type": "string",
                                         "enum": [
-                                            "hidden",
                                             "moderated",
                                             "new",
                                             "discover",
@@ -14785,7 +15154,7 @@
                                             "rankingMode": {
                                                 "type": "string",
                                                 "enum": [
-                                                    "maxdiff"
+                                                    "bws"
                                                 ]
                                             },
                                             "externalSourceConfig": {
@@ -16926,7 +17295,7 @@
                                                                         "rankingMode": {
                                                                             "type": "string",
                                                                             "enum": [
-                                                                                "maxdiff"
+                                                                                "bws"
                                                                             ]
                                                                         }
                                                                     },
@@ -20179,7 +20548,8 @@
                                         }
                                     },
                                     "required": [
-                                        "currentRevision"
+                                        "currentRevision",
+                                        "surveyGate"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -20224,10 +20594,42 @@
                                             "enum": [
                                                 true
                                             ]
+                                        },
+                                        "surveyGate": {
+                                            "type": "object",
+                                            "properties": {
+                                                "hasSurvey": {
+                                                    "type": "boolean"
+                                                },
+                                                "isOptional": {
+                                                    "type": "boolean"
+                                                },
+                                                "canParticipate": {
+                                                    "type": "boolean"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "no_survey",
+                                                        "not_started",
+                                                        "in_progress",
+                                                        "needs_update",
+                                                        "complete_valid"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "hasSurvey",
+                                                "isOptional",
+                                                "canParticipate",
+                                                "status"
+                                            ],
+                                            "additionalProperties": false
                                         }
                                     },
                                     "required": [
-                                        "success"
+                                        "success",
+                                        "surveyGate"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -31186,12 +31588,22 @@
                                                 "exportSlugId": {
                                                     "type": "string",
                                                     "maxLength": 10
+                                                },
+                                                "createdAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "expiresAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 }
                                             },
                                             "required": [
                                                 "success",
                                                 "status",
-                                                "exportSlugId"
+                                                "exportSlugId",
+                                                "createdAt",
+                                                "expiresAt"
                                             ],
                                             "additionalProperties": false
                                         },
