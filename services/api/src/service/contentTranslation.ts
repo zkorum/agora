@@ -53,8 +53,10 @@ import {
     buildTranslationMetadata,
     hasCompleteSurveyQuestionTranslation,
     shouldQueueTranslationWork,
+    toMissingContentTranslationStatus,
 } from "./contentTranslationContent.js";
 import type { ContentTranslationRequestMode } from "./contentTranslationContent.js";
+import type { MissingContentTranslationStatus } from "./contentTranslationContent.js";
 import {
     getConversationOverrideTranslationTargetLanguagePolicy,
     getProjectTranslationTargetLanguagePolicy,
@@ -297,6 +299,92 @@ function getTranslationWorkLogFields(input: TranslationWorkInput) {
     };
 }
 
+function getTranslationWorkSourceWhere(input: TranslationWorkInput) {
+    if (input.sourceKind === "project") {
+        return eq(contentTranslationWorkTable.projectContentId, input.projectContentId);
+    }
+    if (input.sourceKind === "conversation") {
+        return eq(
+            contentTranslationWorkTable.conversationContentId,
+            input.sourceContentId,
+        );
+    }
+    if (input.sourceKind === "opinion") {
+        return eq(contentTranslationWorkTable.opinionContentId, input.sourceContentId);
+    }
+    if (input.sourceKind === "ranking_item") {
+        return eq(
+            contentTranslationWorkTable.rankingItemContentId,
+            input.rankingItemContentId,
+        );
+    }
+    return and(
+        eq(
+            contentTranslationWorkTable.surveyQuestionContentId,
+            input.surveyQuestionContentId,
+        ),
+        eq(
+            contentTranslationWorkTable.surveyQuestionOptionContentIds,
+            input.surveyQuestionOptionContentIds,
+        ),
+    );
+}
+
+async function fetchMissingContentTranslationStatus({
+    db,
+    input,
+}: {
+    db: PostgresDatabase;
+    input: TranslationWorkInput;
+}): Promise<MissingContentTranslationStatus | undefined> {
+    const rows = await db
+        .select({ status: contentTranslationWorkTable.status })
+        .from(contentTranslationWorkTable)
+        .where(
+            and(
+                eq(contentTranslationWorkTable.sourceKind, input.sourceKind),
+                getTranslationWorkSourceWhere(input),
+                eq(
+                    contentTranslationWorkTable.displayLanguageCode,
+                    input.targetLanguageCode,
+                ),
+            ),
+        )
+        .limit(1);
+    const row = rows.at(0);
+    return row === undefined
+        ? undefined
+        : toMissingContentTranslationStatus(row.status);
+}
+
+async function resolveMissingContentTranslationStatus({
+    db,
+    input,
+    translationExists,
+    requestMode,
+}: {
+    db: PostgresDatabase;
+    input: TranslationWorkInput;
+    translationExists: boolean;
+    requestMode: ContentTranslationRequestMode;
+}): Promise<MissingContentTranslationStatus> {
+    if (translationExists) {
+        return "not_requested";
+    }
+    if (requestMode === "queue_if_missing") {
+        return "pending";
+    }
+    return (
+        (await fetchMissingContentTranslationStatus({ db, input })) ?? "not_requested"
+    );
+}
+
+function getSurveyQuestionOptionContentIds(
+    source: SurveyQuestionContentSource,
+): number[] {
+    return source.options.map((option) => option.contentId).sort((a, b) => a - b);
+}
+
 async function ensureTranslationWork({
     db,
     input,
@@ -312,29 +400,6 @@ async function ensureTranslationWork({
     priority: ContentTranslationQueuePriority;
     log: Pick<BaseLogger, "info">;
 }): Promise<{ workId: number; shouldQueue: boolean }> {
-    const sourceWhere =
-        input.sourceKind === "project"
-            ? eq(contentTranslationWorkTable.projectContentId, input.projectContentId)
-            : input.sourceKind === "conversation"
-            ? eq(contentTranslationWorkTable.conversationContentId, input.sourceContentId)
-            : input.sourceKind === "opinion"
-              ? eq(contentTranslationWorkTable.opinionContentId, input.sourceContentId)
-              : input.sourceKind === "ranking_item"
-                ? eq(
-                      contentTranslationWorkTable.rankingItemContentId,
-                      input.rankingItemContentId,
-                  )
-              : and(
-                    eq(
-                        contentTranslationWorkTable.surveyQuestionContentId,
-                        input.surveyQuestionContentId,
-                    ),
-                    eq(
-                        contentTranslationWorkTable.surveyQuestionOptionContentIds,
-                        input.surveyQuestionOptionContentIds,
-                    ),
-                );
-
     const existingRows = await db
         .select({
             id: contentTranslationWorkTable.id,
@@ -345,7 +410,7 @@ async function ensureTranslationWork({
         .where(
             and(
                 eq(contentTranslationWorkTable.sourceKind, input.sourceKind),
-                sourceWhere,
+                getTranslationWorkSourceWhere(input),
                 eq(
                     contentTranslationWorkTable.displayLanguageCode,
                     input.targetLanguageCode,
@@ -362,6 +427,30 @@ async function ensureTranslationWork({
             existing.priorityRank,
             priority,
         );
+        if (existing.status === "running" && !completedTranslationExists) {
+            await db
+                .update(contentTranslationWorkTable)
+                .set({
+                    priorityRank: nextPriorityRank,
+                    requestedAt: now,
+                    updatedAt: now,
+                })
+                .where(eq(contentTranslationWorkTable.id, existing.id));
+            log.info(
+                {
+                    workId: existing.id,
+                    ...getTranslationWorkLogFields(input),
+                    previousStatus: existing.status,
+                    previousPriorityRank: existing.priorityRank,
+                    nextPriorityRank,
+                    queueMode: getContentTranslationQueueMode(priority),
+                    translationExists,
+                    shouldQueue: false,
+                },
+                "[ContentTranslation] Reused running translation work row",
+            );
+            return { workId: existing.id, shouldQueue: false };
+        }
         await db
             .update(contentTranslationWorkTable)
             .set({
@@ -455,29 +544,6 @@ async function markExistingTranslationWorkCompleted({
     now: Date;
     log: Pick<BaseLogger, "info">;
 }): Promise<void> {
-    const sourceWhere =
-        input.sourceKind === "project"
-            ? eq(contentTranslationWorkTable.projectContentId, input.projectContentId)
-            : input.sourceKind === "conversation"
-            ? eq(contentTranslationWorkTable.conversationContentId, input.sourceContentId)
-            : input.sourceKind === "opinion"
-              ? eq(contentTranslationWorkTable.opinionContentId, input.sourceContentId)
-              : input.sourceKind === "ranking_item"
-                ? eq(
-                      contentTranslationWorkTable.rankingItemContentId,
-                      input.rankingItemContentId,
-                  )
-              : and(
-                    eq(
-                        contentTranslationWorkTable.surveyQuestionContentId,
-                        input.surveyQuestionContentId,
-                    ),
-                    eq(
-                        contentTranslationWorkTable.surveyQuestionOptionContentIds,
-                        input.surveyQuestionOptionContentIds,
-                    ),
-                );
-
     const updatedRows = await db
         .update(contentTranslationWorkTable)
         .set({
@@ -494,7 +560,7 @@ async function markExistingTranslationWorkCompleted({
         .where(
             and(
                 eq(contentTranslationWorkTable.sourceKind, input.sourceKind),
-                sourceWhere,
+                getTranslationWorkSourceWhere(input),
                 eq(
                     contentTranslationWorkTable.displayLanguageCode,
                     input.targetLanguageCode,
@@ -575,7 +641,7 @@ async function queueMissingTranslationWork({
                 ...getTranslationWorkLogFields(input),
                 queueMode: getContentTranslationQueueMode(priority),
             },
-            "[ContentTranslation] Translation work already completed",
+            "[ContentTranslation] Translation work not queued",
         );
         return;
     }
@@ -958,7 +1024,7 @@ async function hasSurveyQuestionTranslation({
         return false;
     }
 
-    const optionContentIds = source.options.map((option) => option.contentId);
+    const optionContentIds = getSurveyQuestionOptionContentIds(source);
     if (optionContentIds.length === 0) {
         return true;
     }
@@ -1431,7 +1497,7 @@ async function ensureEagerTranslationWork({
                     CONTENT_TRANSLATION_QUEUE_PRIORITIES.eagerVisible,
                 ),
             },
-            "[ContentTranslation] Translation work already completed",
+            "[ContentTranslation] Translation work not queued",
         );
         return undefined;
     }
@@ -1651,9 +1717,8 @@ async function createEagerContentTranslationWorkForConversationSources({
                         conversationId: source.conversationId,
                         sourceKind: "survey_question",
                         surveyQuestionContentId: source.contentId,
-                        surveyQuestionOptionContentIds: source.options.map(
-                            (option) => option.contentId,
-                        ),
+                        surveyQuestionOptionContentIds:
+                            getSurveyQuestionOptionContentIds(source),
                         targetLanguageCode,
                         sourceLanguageCode: source.sourceLanguageCode,
                         sourceRawLanguageCode: source.sourceRawLanguageCode,
@@ -1671,9 +1736,8 @@ async function createEagerContentTranslationWorkForConversationSources({
                     conversationId: source.conversationId,
                     sourceKind: "survey_question",
                     surveyQuestionContentId: source.contentId,
-                    surveyQuestionOptionContentIds: source.options.map(
-                        (option) => option.contentId,
-                    ),
+                    surveyQuestionOptionContentIds:
+                        getSurveyQuestionOptionContentIds(source),
                     targetLanguageCode,
                 },
                 translationExists: false,
@@ -2066,6 +2130,25 @@ async function buildSurveyQuestionResponse({
                 row.translatedOptionText,
             ]),
     );
+    const translationExists =
+        freshQuestionTranslation !== undefined &&
+        source.options.every((option) =>
+            translatedOptionsByContentId.has(option.contentId),
+        );
+    const missingTranslationStatus = translationExists
+        ? "not_requested"
+        : await resolveMissingContentTranslationStatus({
+              db,
+              input: {
+                  conversationId: source.conversationId,
+                  sourceKind: "survey_question",
+                  surveyQuestionContentId: source.contentId,
+                  surveyQuestionOptionContentIds: optionContentIds,
+                  targetLanguageCode,
+              },
+              translationExists,
+              requestMode,
+          });
     return buildLocalizedSurveyQuestionContent({
         source,
         translation:
@@ -2084,7 +2167,7 @@ async function buildSurveyQuestionResponse({
                       translatedOptionsByContentId,
                   },
         targetLanguageCode,
-        requestMode,
+        missingTranslationStatus,
     });
 }
 
@@ -2180,10 +2263,17 @@ async function buildConversationResponse({
                 ...buildTranslationMetadata({
                     targetLanguageCode,
                     sourceMetadata: source,
-                    status:
-                        requestMode === "read_existing"
-                            ? "not_requested"
-                            : "pending",
+                    status: await resolveMissingContentTranslationStatus({
+                        db,
+                        input: {
+                            conversationId: source.conversationId,
+                            sourceKind: "conversation",
+                            sourceContentId: source.contentId,
+                            targetLanguageCode,
+                        },
+                        translationExists: false,
+                        requestMode,
+                    }),
                 }),
             },
             variants: {
@@ -2307,8 +2397,17 @@ async function buildProjectResponse({
                 ...buildTranslationMetadata({
                     targetLanguageCode,
                     sourceMetadata: source,
-                    status:
-                        requestMode === "read_existing" ? "not_requested" : "pending",
+                    status: await resolveMissingContentTranslationStatus({
+                        db,
+                        input: {
+                            conversationId: null,
+                            sourceKind: "project",
+                            projectContentId: source.contentId,
+                            targetLanguageCode,
+                        },
+                        translationExists: false,
+                        requestMode,
+                    }),
                 }),
             },
             variants: {
@@ -2373,7 +2472,20 @@ async function buildRankingItemResponse({
         source,
         translation: freshTranslation,
         targetLanguageCode,
-        requestMode,
+        missingTranslationStatus:
+            freshTranslation === undefined
+                ? await resolveMissingContentTranslationStatus({
+                      db,
+                      input: {
+                          conversationId: source.conversationId,
+                          sourceKind: "ranking_item",
+                          rankingItemContentId: source.contentId,
+                          targetLanguageCode,
+                      },
+                      translationExists: false,
+                      requestMode,
+                  })
+                : "not_requested",
     });
 }
 
@@ -2463,10 +2575,17 @@ async function buildOpinionResponse({
                 ...buildTranslationMetadata({
                     targetLanguageCode,
                     sourceMetadata: source,
-                    status:
-                        requestMode === "read_existing"
-                            ? "not_requested"
-                            : "pending",
+                    status: await resolveMissingContentTranslationStatus({
+                        db,
+                        input: {
+                            conversationId: source.conversationId,
+                            sourceKind: "opinion",
+                            sourceContentId: source.contentId,
+                            targetLanguageCode,
+                        },
+                        translationExists: false,
+                        requestMode,
+                    }),
                 }),
             },
             variants: {
@@ -2536,9 +2655,8 @@ export async function requestContentTranslation({
                     conversationId: source.conversationId,
                     sourceKind: "survey_question",
                     surveyQuestionContentId: source.contentId,
-                    surveyQuestionOptionContentIds: source.options.map(
-                        (option) => option.contentId,
-                    ),
+                    surveyQuestionOptionContentIds:
+                        getSurveyQuestionOptionContentIds(source),
                     targetLanguageCode,
                 },
                 translationExists,
@@ -2885,9 +3003,8 @@ export async function requestSurveyQuestionContentTranslation({
                 conversationId: source.conversationId,
                 sourceKind: "survey_question",
                 surveyQuestionContentId: source.contentId,
-                surveyQuestionOptionContentIds: source.options.map(
-                    (option) => option.contentId,
-                ),
+                surveyQuestionOptionContentIds:
+                    getSurveyQuestionOptionContentIds(source),
                 targetLanguageCode,
             },
             translationExists,

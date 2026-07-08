@@ -13,6 +13,16 @@ import type {
 } from "@/shared/languages.js";
 
 export type ContentTranslationRequestMode = "read_existing" | "queue_if_missing";
+export type MissingContentTranslationStatus = Exclude<
+    LocalizedContentTranslationStatus,
+    "completed"
+>;
+
+export function toMissingContentTranslationStatus(
+    status: MissingContentTranslationStatus | "completed",
+): MissingContentTranslationStatus {
+    return status === "completed" ? "not_requested" : status;
+}
 
 export interface SurveyQuestionLocalizedContentSource {
     conversationSlugId: string;
@@ -172,12 +182,12 @@ export function buildLocalizedSurveyQuestionContent({
     source,
     translation,
     targetLanguageCode,
-    requestMode,
+    missingTranslationStatus,
 }: {
     source: SurveyQuestionLocalizedContentSource;
     translation: SurveyQuestionTranslationSource | undefined;
     targetLanguageCode: SupportedDisplayLanguageCodes;
-    requestMode: ContentTranslationRequestMode;
+    missingTranslationStatus: MissingContentTranslationStatus;
 }): {
     subject: Extract<ContentTranslationSubject, { kind: "survey_question" }>;
     content: LocalizedSurveyQuestionContent;
@@ -241,10 +251,9 @@ export function buildLocalizedSurveyQuestionContent({
             initialMode: "original",
             translation: {
                 ...buildTranslationMetadata({
-                        targetLanguageCode,
-                        sourceMetadata: translation ?? source,
-                        status:
-                            requestMode === "read_existing" ? "not_requested" : "pending",
+                    targetLanguageCode,
+                    sourceMetadata: translation ?? source,
+                    status: missingTranslationStatus,
                 }),
             },
             variants: {
@@ -258,12 +267,12 @@ export function buildLocalizedRankingItemContent({
     source,
     translation,
     targetLanguageCode,
-    requestMode,
+    missingTranslationStatus,
 }: {
     source: RankingItemLocalizedContentSource;
     translation: RankingItemTranslationSource | undefined;
     targetLanguageCode: SupportedDisplayLanguageCodes;
-    requestMode: ContentTranslationRequestMode;
+    missingTranslationStatus: MissingContentTranslationStatus;
 }): {
     subject: Extract<ContentTranslationSubject, { kind: "ranking_item" }>;
     content: LocalizedRankingItemContent;
@@ -310,7 +319,7 @@ export function buildLocalizedRankingItemContent({
             translation: buildTranslationMetadata({
                 targetLanguageCode,
                 sourceMetadata: source,
-                status: requestMode === "read_existing" ? "not_requested" : "pending",
+                status: missingTranslationStatus,
             }),
             variants: {
                 original,

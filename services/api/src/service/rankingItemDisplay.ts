@@ -1,6 +1,9 @@
 import { and, eq, inArray } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { rankingItemContentTranslationTable } from "@/shared-backend/schema.js";
+import {
+    contentTranslationWorkTable,
+    rankingItemContentTranslationTable,
+} from "@/shared-backend/schema.js";
 import type { RankingItemDisplayedContent } from "@/shared/types/zod.js";
 import type {
     SupportedDisplayLanguageCodes,
@@ -10,6 +13,7 @@ import { translationSourceMatchesCurrentSource } from "@/shared-backend/translat
 import {
     buildLocalizedRankingItemContent,
     type RankingItemLocalizedContentSource,
+    toMissingContentTranslationStatus,
 } from "./contentTranslationContent.js";
 import { toRankingItemDisplayContent } from "./conversationContent.js";
 
@@ -83,13 +87,53 @@ export async function buildRankingItemDisplayContentByContentId({
         }
     }
 
+    const workRows = preferences.translationAllowed
+        ? await db
+              .select({
+                  rankingItemContentId:
+                      contentTranslationWorkTable.rankingItemContentId,
+                  status: contentTranslationWorkTable.status,
+              })
+              .from(contentTranslationWorkTable)
+              .where(
+                  and(
+                      eq(contentTranslationWorkTable.sourceKind, "ranking_item"),
+                      inArray(
+                          contentTranslationWorkTable.rankingItemContentId,
+                          sources.map((source) => source.contentId),
+                      ),
+                      eq(
+                          contentTranslationWorkTable.displayLanguageCode,
+                          preferences.targetLanguage,
+                      ),
+                  ),
+              )
+        : [];
+    const missingTranslationStatusByContentId = new Map(
+        workRows.flatMap((row) =>
+            row.rankingItemContentId === null
+                ? []
+                : [
+                      [
+                          row.rankingItemContentId,
+                          toMissingContentTranslationStatus(row.status),
+                      ] as const,
+                  ],
+        ),
+    );
+
     const displayContentByContentId = new Map<number, RankingItemDisplayedContent>();
     for (const source of sources) {
+        const translation = translationsByContentId.get(source.contentId);
         const { content } = buildLocalizedRankingItemContent({
             source,
-            translation: translationsByContentId.get(source.contentId),
+            translation,
             targetLanguageCode: preferences.targetLanguage,
-            requestMode: "read_existing",
+            missingTranslationStatus:
+                translation === undefined
+                    ? (missingTranslationStatusByContentId.get(source.contentId) ??
+                      "not_requested")
+                    : "not_requested",
         });
         displayContentByContentId.set(
             source.contentId,

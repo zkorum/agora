@@ -8,6 +8,7 @@ import type {
 } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
 import {
+  type ContentTranslationRequestMode,
   type ConversationContentMode,
   useConversationContentQuery,
   useConversationDisplayContentCache,
@@ -23,7 +24,10 @@ import {
   getConversationLanguageSettingSourceLanguageCode,
   isSameContentLanguage,
 } from "./contentTranslation";
-import { subscribeToContentTranslationUpdated } from "./contentTranslationEvents";
+import {
+  subscribeToContentTranslationFailed,
+  subscribeToContentTranslationUpdated,
+} from "./contentTranslationEvents";
 import {
   type ContentTranslationPreviewTranslations,
   contentTranslationPreviewTranslations,
@@ -78,6 +82,12 @@ export function useConversationDisplayContent({
   const requestedMode = computed<ConversationContentMode>(
     () => modePreference.value ?? "original"
   );
+  const shouldQueueNextTranslatedRequest = ref(false);
+  const requestMode = computed<ContentTranslationRequestMode>(() =>
+    shouldQueueNextTranslatedRequest.value && requestedMode.value === "translated"
+      ? "queue_if_missing"
+      : "read_existing"
+  );
   const completionPolling = useBoundedTranslationPolling({
     intervalMs: TRANSLATION_COMPLETION_POLL_INTERVAL_MS,
     maxDurationMs: TRANSLATION_COMPLETION_POLL_MAX_DURATION_MS,
@@ -90,14 +100,26 @@ export function useConversationDisplayContent({
     conversationSlugId,
     sourceVersion,
     mode: requestedMode,
-    requestMode: computed(() =>
-      requestedMode.value === "translated" ? "queue_if_missing" : "read_existing"
-    ),
+    requestMode,
     enabled: computed(
       () => modePreference.value !== undefined && toValue(conversationData) !== undefined
     ),
     refetchInterval: completionPolling.refetchInterval,
   });
+
+  function resetToOriginal(): void {
+    completionPolling.stop();
+    shouldQueueNextTranslatedRequest.value = false;
+    modePreference.value = "original";
+  }
+
+  function handleTranslationFailure(): void {
+    if (modePreference.value !== "translated") {
+      return;
+    }
+    resetToOriginal();
+    showNotifyMessage(t("translationFailed"));
+  }
 
   const activeDisplayContent = computed<ConversationContentFetchResponse | undefined>(
     () => {
@@ -165,9 +187,19 @@ export function useConversationDisplayContent({
         mode: "translated",
         isFetching: requestedContentQuery.isFetching.value,
       });
-    const translationStatus = isWaitingForTranslatedContent
-      ? "pending"
-      : translationControl.status;
+    const hasTranslatedContent =
+      displayContent.status === "available" &&
+      displayContent.mode === "translated" &&
+      modePreference.value !== "original";
+    let translationStatus: LocalizedContentTranslationStatus =
+      translationControl.status;
+    if (
+      translationControl.status !== "failed" &&
+      (isWaitingForTranslatedContent ||
+        (modePreference.value === "translated" && !hasTranslatedContent))
+    ) {
+      translationStatus = "pending";
+    }
 
     const sourceLanguageLabel = getContentTranslationSourceLanguageLabel({
       sourceLanguage: undefined,
@@ -188,16 +220,14 @@ export function useConversationDisplayContent({
       };
     }
 
-    const isTranslatedContent =
-      displayContent.mode === "translated" && modePreference.value !== "original";
     return {
       isAvailable: true,
       isLoadingInitialTranslation: false,
-      mode: isTranslatedContent ? "translated" : "original",
+      mode: hasTranslatedContent ? "translated" : "original",
       sourceLanguageLabel,
       translationStatus,
-      translatedTitle: isTranslatedContent ? displayContent.content.title : "",
-      translatedBody: isTranslatedContent ? displayContent.content.body : undefined,
+      translatedTitle: hasTranslatedContent ? displayContent.content.title : "",
+      translatedBody: hasTranslatedContent ? displayContent.content.body : undefined,
     };
   });
 
@@ -230,7 +260,18 @@ export function useConversationDisplayContent({
   });
 
   function setTranslationMode(mode: ContentTranslationDisplayMode): void {
+    completionPolling.stop();
+    if (mode !== "translated") {
+      shouldQueueNextTranslatedRequest.value = false;
+      modePreference.value = mode;
+      return;
+    }
+    const shouldRefetchCurrentMode = modePreference.value === "translated";
+    shouldQueueNextTranslatedRequest.value = true;
     modePreference.value = mode;
+    if (shouldRefetchCurrentMode) {
+      void requestedContentQuery.refetch();
+    }
   }
 
   const unsubscribeUpdatedEvents = subscribeToContentTranslationUpdated((data) => {
@@ -244,6 +285,18 @@ export function useConversationDisplayContent({
     }
     void requestedContentQuery.refetch();
     completionPolling.start();
+  });
+
+  const unsubscribeFailedEvents = subscribeToContentTranslationFailed((data) => {
+    if (
+      modePreference.value !== "translated" ||
+      data.targetLanguageCode !== displayLanguage.value ||
+      data.subject.kind !== "conversation" ||
+      data.subject.conversationSlugId !== conversationSlugId.value
+    ) {
+      return;
+    }
+    handleTranslationFailure();
   });
 
   function isDisplayContentForMode({
@@ -264,8 +317,18 @@ export function useConversationDisplayContent({
 
   watch([displayLanguage, sortedSpokenLanguageKey], () => {
     completionPolling.stop();
+    shouldQueueNextTranslatedRequest.value = false;
     modePreference.value = undefined;
   });
+
+  watch(
+    () => requestedContentQuery.isFetching.value,
+    (isFetching, wasFetching) => {
+      if (wasFetching && !isFetching) {
+        shouldQueueNextTranslatedRequest.value = false;
+      }
+    }
+  );
 
   watch(
     () => requestedContentQuery.data.value,
@@ -279,9 +342,19 @@ export function useConversationDisplayContent({
     }
   );
 
+  watch(
+    () => translationPreview.value?.translationStatus,
+    (status) => {
+      if (status === "failed") {
+        handleTranslationFailure();
+      }
+    }
+  );
+
   onScopeDispose(() => {
     completionPolling.stop();
     unsubscribeUpdatedEvents();
+    unsubscribeFailedEvents();
   });
 
   return {

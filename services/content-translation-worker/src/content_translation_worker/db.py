@@ -346,7 +346,11 @@ class ClaimedContentTranslationWork:
 @dataclass(frozen=True)
 class ProcessWorkResult:
     work_id: int
-    status: Literal["completed", "failed", "missing_source"]
+    status: Literal["completed", "failed", "missing_source", "lost_lease"]
+
+
+class LostContentTranslationWorkLeaseError(RuntimeError):
+    pass
 
 
 @dataclass(frozen=True)
@@ -880,13 +884,20 @@ def process_claimed_work(
             return ProcessWorkResult(work_id=claim.id, status="failed")
         _mark_completed(session, claim=claim)
         return ProcessWorkResult(work_id=claim.id, status="completed")
+    except LostContentTranslationWorkLeaseError as error:
+        log.warning("[Worker] %s", error)
+        return ProcessWorkResult(work_id=claim.id, status="lost_lease")
     except Exception as error:
-        _mark_failed(
-            session,
-            claim=claim,
-            error_code=error.__class__.__name__,
-            error_message=str(error),
-        )
+        try:
+            _mark_failed(
+                session,
+                claim=claim,
+                error_code=error.__class__.__name__,
+                error_message=str(error),
+            )
+        except LostContentTranslationWorkLeaseError as lease_error:
+            log.warning("[Worker] %s", lease_error)
+            return ProcessWorkResult(work_id=claim.id, status="lost_lease")
         return ProcessWorkResult(work_id=claim.id, status="failed")
 
 
@@ -2146,7 +2157,7 @@ def _update_claimed_work(
     )
     if updated_id is None:
         msg = f"Lost lease while updating content translation work {claim.id}"
-        raise RuntimeError(msg)
+        raise LostContentTranslationWorkLeaseError(msg)
 
 
 def _insert_translation_event(
