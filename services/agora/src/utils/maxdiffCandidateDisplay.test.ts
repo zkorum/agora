@@ -70,21 +70,12 @@ describe("createMaxDiffCandidateDisplaySnapshot", () => {
     }
   });
 
-  it("creates a safe slug fallback when a candidate item is missing", () => {
+  it("omits missing candidate items from the display snapshot", () => {
     const snapshot = createMaxDiffCandidateDisplaySnapshot({
       candidateSlugIds: ["missing"],
       itemBySlugId: new Map(),
     });
 
-    expect(snapshot).toHaveLength(1);
-    expect(snapshot[0]).toMatchObject({
-      slugId: "missing",
-      title: "missing",
-      body: null,
-      externalUrl: null,
-    });
-    expect(snapshot[0]?.displayContent.sourceVersion).toBe(
-      "00000000-0000-4000-8000-000000000000"
-    );
+    expect(snapshot).toEqual([]);
   });
 });

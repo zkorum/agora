@@ -37,27 +37,17 @@ export function createMaxDiffCandidateDisplaySnapshot({
   candidateSlugIds: readonly string[];
   itemBySlugId: ReadonlyMap<string, MaxDiffCandidateDisplayItem>;
 }): MaxDiffCandidateDisplayItem[] {
-  return candidateSlugIds.map((slugId) => {
+  const snapshot: MaxDiffCandidateDisplayItem[] = [];
+  for (const slugId of candidateSlugIds) {
     const item = itemBySlugId.get(slugId);
-    if (item !== undefined) {
-      return {
-        ...item,
-        displayContent: cloneRankingItemDisplayedContent(item.displayContent),
-      };
+    if (item === undefined) {
+      continue;
     }
 
-    return {
-      slugId,
-      title: slugId,
-      body: null,
-      displayContent: {
-        sourceVersion: "00000000-0000-4000-8000-000000000000",
-        status: "available",
-        mode: "original",
-        content: { title: slugId },
-        translationControl: null,
-      },
-      externalUrl: null,
-    };
-  });
+    snapshot.push({
+      ...item,
+      displayContent: cloneRankingItemDisplayedContent(item.displayContent),
+    });
+  }
+  return snapshot;
 }
