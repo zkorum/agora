@@ -13,6 +13,7 @@ import {
     projectOrganizationOwnershipTable,
 } from "@/shared-backend/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
+import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import type {
     ConversationMetadata,
     ExtendedConversationPayload,
@@ -53,6 +54,7 @@ import {
     DEFAULT_CONVERSATION_MULTILINGUAL_SETTING,
     getConversationMultilingualSettingsByConversationId,
 } from "./conversationMultilingual.js";
+import { fetchConversationProjectContexts } from "./projectPage.js";
 
 function requireJoinedRankingMode({
     conversationId,
@@ -262,6 +264,7 @@ export function useCommonPost() {
         removeMutedAuthors: boolean;
         baseImageServiceUrl: string;
         sortAlgorithm: FeedSortAlgorithm;
+        currentDisplayLanguage: SupportedDisplayLanguageCodes;
     }
 
     async function fetchPostItems({
@@ -274,6 +277,7 @@ export function useCommonPost() {
         removeMutedAuthors,
         baseImageServiceUrl,
         sortAlgorithm,
+        currentDisplayLanguage,
     }: FetchPostItemsProps): Promise<ExtendedConversationPerSlugId> {
         let postItems;
 
@@ -417,20 +421,27 @@ export function useCommonPost() {
             postItems = await postItemsQuery;
         }
 
-        const latestViewSnapshotCountsByConversationId =
-            await fetchLatestConversationViewSnapshotCountsByConversationId({
+        const conversationIds = postItems.map((postItem) => postItem.conversationId);
+        const conversationSlugIds = postItems.map((postItem) => postItem.slugId);
+        const [
+            latestViewSnapshotCountsByConversationId,
+            multilingualSettingsByConversationId,
+            projectContextsBySlugId,
+        ] = await Promise.all([
+            fetchLatestConversationViewSnapshotCountsByConversationId({
                 db,
-                conversationIds: postItems.map(
-                    (postItem) => postItem.conversationId,
-                ),
-            });
-        const multilingualSettingsByConversationId =
-            await getConversationMultilingualSettingsByConversationId({
+                conversationIds,
+            }),
+            getConversationMultilingualSettingsByConversationId({
                 db,
-                conversationIds: postItems.map(
-                    (postItem) => postItem.conversationId,
-                ),
-            });
+                conversationIds,
+            }),
+            fetchConversationProjectContexts({
+                db,
+                conversationSlugIds,
+                currentDisplayLanguage,
+            }),
+        ]);
 
         if (sortAlgorithm == "following") {
             postItems.sort((post1, post2) => {
@@ -557,6 +568,7 @@ export function useCommonPost() {
                     );
                     return parsed.success ? parsed.data : null;
                 })(),
+                projectContext: projectContextsBySlugId.get(postItem.slugId),
                 importInfo:
                     postItem.importUrl !== null ||
                     postItem.importConversationUrl !== null ||

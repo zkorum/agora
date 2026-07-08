@@ -2,7 +2,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface ConversationProjectContextPillTranslations {
   partOfProject: string;
-  openProjectView: string;
+  openProject: string;
 }
 
 export const conversationProjectContextPillTranslations: Record<
@@ -11,46 +11,46 @@ export const conversationProjectContextPillTranslations: Record<
 > = {
   en: {
     partOfProject: "Part of",
-    openProjectView: "Open project view",
+    openProject: "Open",
   },
   ar: {
     partOfProject: "جزء من",
-    openProjectView: "افتح عرض المشروع",
+    openProject: "افتح",
   },
   es: {
     partOfProject: "Parte de",
-    openProjectView: "Abrir vista del proyecto",
+    openProject: "Abrir",
   },
   fa: {
     partOfProject: "بخشی از",
-    openProjectView: "باز کردن نمای پروژه",
+    openProject: "باز کردن",
   },
   he: {
     partOfProject: "חלק מתוך",
-    openProjectView: "פתח תצוגת פרויקט",
+    openProject: "פתח",
   },
   fr: {
     partOfProject: "Fait partie de",
-    openProjectView: "Ouvrir la vue projet",
+    openProject: "Ouvrir",
   },
   "zh-Hans": {
     partOfProject: "属于",
-    openProjectView: "打开项目视图",
+    openProject: "打开",
   },
   "zh-Hant": {
     partOfProject: "屬於",
-    openProjectView: "開啟專案視圖",
+    openProject: "開啟",
   },
   ja: {
     partOfProject: "所属プロジェクト",
-    openProjectView: "プロジェクト表示を開く",
+    openProject: "開く",
   },
   ky: {
     partOfProject: "Долбоордун бөлүгү",
-    openProjectView: "Долбоор көрүнүшүн ачуу",
+    openProject: "Ачуу",
   },
   ru: {
     partOfProject: "Часть проекта",
-    openProjectView: "Открыть вид проекта",
+    openProject: "Открыть",
   },
 };

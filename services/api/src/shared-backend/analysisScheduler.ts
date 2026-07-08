@@ -139,7 +139,7 @@ export async function scheduleAnalysisUpdate({
             .where(eq(conversationTable.id, conversationId))
             // FK checks from analysis workers take KEY SHARE on conversation.
             // NO KEY UPDATE still serializes schedulers without blocking them.
-            .for("no key update");
+            .for("no key update", { of: conversationTable });
 
         if (conversations.length === 0) {
             throw new Error(

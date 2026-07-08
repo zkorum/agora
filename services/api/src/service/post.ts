@@ -73,7 +73,6 @@ import {
     type RankingItemContentSource,
     type SurveyQuestionContentSource,
 } from "./contentTranslation.js";
-import { fetchConversationProjectContext } from "./projectPage.js";
 
 const MAX_CONVERSATION_SEED_ITEMS = 50;
 
@@ -527,6 +526,7 @@ export async function fetchPostBySlugId({
         removeMutedAuthors: false,
         baseImageServiceUrl,
         sortAlgorithm: "new",
+        currentDisplayLanguage: currentDisplayLanguage ?? "en",
     });
 
     if (postData.size === 0) {
@@ -547,27 +547,14 @@ export async function fetchPostBySlugId({
         db,
         conversationSlugId,
     });
-    const [surveyGate, projectContext] = await Promise.all([
-        getSurveyGateSummary({
-            db,
-            conversationId,
-            participantId: personalizedUserId,
-        }),
-        currentDisplayLanguage === undefined
-            ? Promise.resolve(undefined)
-            : fetchConversationProjectContext({
-                  db,
-                  conversationSlugId,
-                  currentDisplayLanguage,
-              }),
-    ]);
+    const surveyGate = await getSurveyGateSummary({
+        db,
+        conversationId,
+        participantId: personalizedUserId,
+    });
 
     return {
         ...firstPost,
-        metadata: {
-            ...firstPost.metadata,
-            projectContext,
-        },
         interaction: {
             ...firstPost.interaction,
             surveyGate,

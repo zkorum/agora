@@ -1,10 +1,14 @@
 #!/usr/bin/env npx tsx
 
-import { and, asc, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, eq, gt, isNotNull, isNull } from "drizzle-orm";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { pathToFileURL } from "node:url";
 import { createPostgresClient } from "../src/shared-backend/db.js";
 import { sharedConfigSchema } from "../src/shared-backend/config.js";
+import {
+    initializeGoogleCloudCredentials,
+    type GoogleCloudCredentials,
+} from "../src/shared-backend/googleCloudAuth.js";
 import {
     conversationContentTable,
     conversationContentTranslationTable,
@@ -17,13 +21,38 @@ import {
     surveyAnswerTable,
 } from "../src/shared-backend/schema.js";
 import { htmlToCountedText } from "../src/shared-app-api/html.js";
+import {
+    contentLanguageMetadataUpdateValues,
+    resolveContentLanguageMetadata,
+} from "../src/service/contentLanguageMetadata.js";
 
 const BATCH_SIZE = 500;
+const REQUIRED_ENV_EXAMPLE = [
+    "CONNECTION_STRING=postgres://...",
+    "",
+    "GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/google-service-account.json",
+    "GOOGLE_CLOUD_TRANSLATION_LOCATION=us-central1",
+    "GOOGLE_CLOUD_TRANSLATION_ENDPOINT=translate.googleapis.com",
+].join("\n");
+const REQUIRED_ENV_KEYS = [
+    "CONNECTION_STRING",
+    "GOOGLE_APPLICATION_CREDENTIALS",
+    "GOOGLE_CLOUD_TRANSLATION_LOCATION",
+    "GOOGLE_CLOUD_TRANSLATION_ENDPOINT",
+] as const;
 
-// One-time migration helper for the rich-text/plain-text split.
+// One-time migration helper for the rich-text/plain-text split and legacy
+// ranking-item language metadata.
 // Run manually with `pnpm backfill:rich-text-plain-text` after V0079.1 has
-// copied legacy ranking rows into ranking_item* tables and before V0081 adds
-// strict body/plain-text pair constraints. Keep this script until every
+// copied legacy ranking rows into ranking_item* tables and before V0080 adds
+// strict body/plain-text pair constraints / V0081 drops maxdiff_* tables.
+// Required env:
+// CONNECTION_STRING=postgres://...
+//
+// GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/google-service-account.json
+// GOOGLE_CLOUD_TRANSLATION_LOCATION=us-central1
+// GOOGLE_CLOUD_TRANSLATION_ENDPOINT=translate.googleapis.com
+// Keep this script until every
 // deployed environment has successfully applied V0081; remove it after that
 // migration is no longer pending anywhere.
 //
@@ -53,6 +82,12 @@ interface BackfillTarget {
     updatePlainText: (db: Db, row: BackfillRow) => Promise<void>;
 }
 
+interface RankingItemLanguageBackfillRow {
+    id: number;
+    title: string;
+    bodyPlainText: string | null;
+}
+
 function rowsWithHtml(rows: { id: number; html: string | null }[]): BackfillRow[] {
     return rows.flatMap((row) =>
         row.html === null ? [] : [{ id: row.id, html: row.html }],
@@ -60,6 +95,10 @@ function rowsWithHtml(rows: { id: number; html: string | null }[]): BackfillRow[
 }
 
 const noopClearStalePlainText = (): Promise<number> => Promise.resolve(0);
+
+function isNonEmptyString(value: string | undefined): boolean {
+    return value !== undefined && value.trim().length > 0;
+}
 
 const targets: BackfillTarget[] = [
     {
@@ -434,6 +473,37 @@ const targets: BackfillTarget[] = [
     },
 ];
 
+function requireBackfillEnv({ env }: { env: NodeJS.ProcessEnv }): void {
+    const missingKeys = REQUIRED_ENV_KEYS.filter((key) => !isNonEmptyString(env[key]));
+
+    if (missingKeys.length === 0) {
+        return;
+    }
+
+    throw new Error(
+        [
+            "[RichTextPlainTextBackfill] Missing required env var(s):",
+            missingKeys.map((key) => `- ${key}`).join("\n"),
+            "",
+            "Expected env block:",
+            REQUIRED_ENV_EXAMPLE,
+        ].join("\n"),
+    );
+}
+
+function buildRankingItemLanguageDetectionCorpus({
+    title,
+    bodyPlainText,
+}: {
+    title: string;
+    bodyPlainText: string | null;
+}): string {
+    return [title, bodyPlainText]
+        .map((text) => text?.trim() ?? "")
+        .filter((text) => text.length > 0)
+        .join("\n\n");
+}
+
 async function backfillTarget({
     db,
     target,
@@ -467,8 +537,80 @@ async function backfillTarget({
     }
 }
 
+async function backfillRankingItemLanguageMetadata({
+    db,
+    googleCloudCredentials,
+}: {
+    db: Db;
+    googleCloudCredentials: GoogleCloudCredentials;
+}): Promise<number> {
+    let processedCount = 0;
+    let lastSeenId = 0;
+    for (;;) {
+        const rows: RankingItemLanguageBackfillRow[] = await db
+            .select({
+                id: rankingItemContentTable.id,
+                title: rankingItemContentTable.title,
+                bodyPlainText: rankingItemContentTable.bodyPlainText,
+            })
+            .from(rankingItemContentTable)
+            .where(
+                and(
+                    gt(rankingItemContentTable.id, lastSeenId),
+                    isNull(rankingItemContentTable.sourceLanguageProvider),
+                    isNull(rankingItemContentTable.sourceRawLanguageCode),
+                ),
+            )
+            .orderBy(asc(rankingItemContentTable.id))
+            .limit(BATCH_SIZE);
+
+        if (rows.length === 0) {
+            return processedCount;
+        }
+
+        for (const row of rows) {
+            lastSeenId = row.id;
+            const corpus = buildRankingItemLanguageDetectionCorpus({
+                title: row.title,
+                bodyPlainText: row.bodyPlainText,
+            });
+            const sourceLanguageMetadata = await resolveContentLanguageMetadata({
+                text: corpus,
+                googleText: corpus,
+                googleCloudCredentials,
+                useGoogleLanguageDetection: true,
+            });
+
+            await db
+                .update(rankingItemContentTable)
+                .set(contentLanguageMetadataUpdateValues(sourceLanguageMetadata))
+                .where(
+                    and(
+                        eq(rankingItemContentTable.id, row.id),
+                        isNull(rankingItemContentTable.sourceLanguageProvider),
+                        isNull(rankingItemContentTable.sourceRawLanguageCode),
+                    ),
+                );
+        }
+
+        processedCount += rows.length;
+        log.info(
+            `[RichTextPlainTextBackfill] ranking item language metadata: processed ${String(processedCount)} row(s)`,
+        );
+    }
+}
+
 async function main(): Promise<void> {
+    requireBackfillEnv({ env: process.env });
     const config = sharedConfigSchema.parse(process.env);
+    const googleCloudCredentials = await initializeGoogleCloudCredentials({
+        googleCloudServiceAccountAwsSecretKey: undefined,
+        awsSecretRegion: undefined,
+        googleApplicationCredentialsPath: config.GOOGLE_APPLICATION_CREDENTIALS,
+        googleCloudTranslationLocation: config.GOOGLE_CLOUD_TRANSLATION_LOCATION,
+        googleCloudTranslationEndpoint: config.GOOGLE_CLOUD_TRANSLATION_ENDPOINT,
+        log,
+    });
     const client = await createPostgresClient(config, log);
     const db = drizzle(client);
 
@@ -479,6 +621,14 @@ async function main(): Promise<void> {
                 `[RichTextPlainTextBackfill] ${target.label}: completed with ${String(updatedCount)} row(s) updated`,
             );
         }
+        const processedLanguageMetadataCount =
+            await backfillRankingItemLanguageMetadata({
+                db,
+                googleCloudCredentials,
+            });
+        log.info(
+            `[RichTextPlainTextBackfill] ranking item language metadata: completed with ${String(processedLanguageMetadataCount)} row(s) processed`,
+        );
     } finally {
         await client.end({ timeout: 5 });
     }

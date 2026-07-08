@@ -119,30 +119,27 @@
 
       <div class="candidates-grid-wrapper">
         <div class="candidates-grid" :class="{ 'candidates-transitioning': isTransitioning }">
-          <button
+          <div
             v-for="slugId in candidates"
             :key="slugId"
             class="candidate-card"
+            role="button"
+            tabindex="0"
             :class="{
               'selected-best': selectedBest === slugId,
               'selected-worst': selectedWorst === slugId,
             }"
             @click="handleCandidateClick(slugId)"
+            @keydown.enter.prevent="handleCandidateClick(slugId)"
+            @keydown.space.prevent="handleCandidateClick(slugId)"
           >
-            <div
-              ref="candidateContentElements"
-              class="candidate-content-wrapper"
-            >
-              <ZKHtmlContent
-                :html-body="candidateItemContentMap.get(slugId) ?? slugId"
-                :compact-mode="false"
-                :enable-links="false"
-                content-role="title"
-              />
-              <span v-if="candidateItemBySlugId.get(slugId)?.body" class="candidate-body-inline">
-                — {{ htmlToCountedText(candidateItemBySlugId.get(slugId)?.body ?? "") }}
-              </span>
-            </div>
+            <MaxDiffCandidateCardContent
+              ref="candidateContentComponents"
+              :conversation-slug-id="conversationSlugId"
+              :item="candidateItemBySlugId.get(slugId)"
+              :fallback-text="slugId"
+              @content-changed="checkTruncation"
+            />
             <div class="candidate-label">
               <span v-if="selectedBest === slugId" class="label-best">
                 {{ t("mostImportant") }}
@@ -151,7 +148,7 @@
                 {{ t("leastImportant") }}
               </span>
             </div>
-          </button>
+          </div>
         </div>
         <div v-if="showTransitionSpinner" class="transition-spinner-overlay">
           <q-spinner-dots color="primary" size="2.5rem" />
@@ -241,12 +238,10 @@ import AnalysisActionButton from "src/components/post/analysis/common/AnalysisAc
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
-import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
 import type { RegisterChildRefreshHandler } from "src/composables/conversation/useConversationParentState";
 import { useParticipationGate } from "src/composables/conversation/useParticipationGate";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { htmlToCountedText } from "src/shared/shared";
 import type {
   ExtendedConversationDisplayData,
   MaxDiffComparison,
@@ -273,6 +268,7 @@ import { getRankingItemDisplayText } from "src/utils/translation/useRankingItemD
 import { useNotify } from "src/utils/ui/notify";
 import { computed, inject, nextTick, onActivated, onBeforeUnmount, onDeactivated, ref, triggerRef, watch } from "vue";
 
+import MaxDiffCandidateCardContent from "./MaxDiffCandidateCardContent.vue";
 import MaxDiffStatementDialog from "./MaxDiffStatementDialog.vue";
 import {
   type MaxDiffVotingTabTranslations,
@@ -407,14 +403,6 @@ const itemBySlugId = computed(() => {
 
 const candidateItems = ref<MaxDiffCandidateDisplayItem[]>([]);
 
-const candidateItemContentMap = computed(() => {
-  const map = new Map<string, string>();
-  for (const item of candidateItems.value) {
-    map.set(item.slugId, item.title);
-  }
-  return map;
-});
-
 const candidateItemBySlugId = computed(() => {
   const map = new Map<string, MaxDiffCandidateDisplayItem>();
   for (const item of candidateItems.value) {
@@ -537,14 +525,16 @@ function openVotingDialog(slugId: string): void {
 
 // Truncation detection for candidate cards
 const truncatedCards = ref(new Set<string>());
-const candidateContentElements = ref<HTMLElement[]>([]);
+const candidateContentComponents = ref<
+  Array<{ isTruncated: () => boolean }>
+>([]);
 
 function checkTruncation(): void {
   const newSet = new Set<string>();
-  for (const [index, el] of candidateContentElements.value.entries()) {
+  for (const [index, component] of candidateContentComponents.value.entries()) {
     const slugId = candidates.value[index];
     if (slugId === undefined) continue;
-    if (el.scrollHeight > el.clientHeight + 1) {
+    if (component.isTruncated()) {
       newSet.add(slugId);
     }
   }

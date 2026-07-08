@@ -5,6 +5,7 @@ import {
 import { storeToRefs } from "pinia";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
+import { useLanguageStore } from "src/stores/language";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
 import { useBackendPostApi } from "./post";
@@ -17,9 +18,14 @@ export function useFeedQuery({
   const { fetchRecentPost } = useBackendPostApi();
   const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
   const { currentHomeFeedTab } = storeToRefs(useHomeFeedStore());
+  const { displayLanguage } = storeToRefs(useLanguageStore());
 
   return useQuery({
-    queryKey: ["feed", computed(() => currentHomeFeedTab.value)],
+    queryKey: [
+      "feed",
+      computed(() => currentHomeFeedTab.value),
+      computed(() => displayLanguage.value),
+    ],
     queryFn: async () => {
       const response = await fetchRecentPost({
         loadPersonalizedData: isGuestOrLoggedIn.value,

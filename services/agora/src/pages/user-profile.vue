@@ -75,6 +75,7 @@ import {
 } from "src/composables/ui/useLocalizedDateTime";
 import { isNetworkOffline } from "src/composables/useNetworkStatus";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useLanguageStore } from "src/stores/language";
 import { useUserStore } from "src/stores/user";
 import { onActivated, ref, watch } from "vue";
 import { useRoute } from "vue-router";
@@ -91,6 +92,7 @@ const { isActive } = usePageLayout({ enableFooter: false, reducedWidth: true, ad
 const { loadUserProfile } = useUserStore();
 const authStore = useAuthenticationStore();
 const { isGuest, isAuthInitialized } = storeToRefs(authStore);
+const { displayLanguage } = storeToRefs(useLanguageStore());
 
 interface CustomTab {
   route: "/user-profile/conversations/" | "/user-profile/opinions/";
@@ -141,6 +143,12 @@ onActivated(() => {
 watch(isAuthInitialized, (initialized) => {
   if (initialized && !hasLoadedOnce.value) {
     void initialize();
+  }
+});
+
+watch(displayLanguage, () => {
+  if (hasLoadedOnce.value && isAuthInitialized.value) {
+    void loadUserProfile();
   }
 });
 
