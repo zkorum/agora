@@ -29,6 +29,7 @@ import type {
   PolisKey,
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { waitForAuthInitialization } from "src/utils/auth/waitForAuthInitialization";
 
 import { useBackendAuthApi } from "../auth";
 import { api } from "../client";
@@ -65,7 +66,7 @@ type CreateNewCommentResult =
 
 export function useBackendCommentApi() {
   const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
-  const { isGuestOrLoggedIn, isAuthInitialized } = storeToRefs(
+  const { isGuestOrLoggedIn } = storeToRefs(
     useAuthenticationStore()
   );
   const { updateAuthState } = useBackendAuthApi();
@@ -154,8 +155,9 @@ export function useBackendCommentApi() {
       clusterKey: clusterKey,
     };
 
-    // Use authenticated endpoint only if auth is initialized AND user is logged in/guest
-    if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
+    await waitForAuthInitialization();
+
+    if (isGuestOrLoggedIn.value) {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1OpinionFetchByConversationPost(
           params
@@ -258,6 +260,26 @@ export function useBackendCommentApi() {
       opinionSlugIdList: opinionSlugIdList,
     };
 
+    await waitForAuthInitialization();
+
+    if (isGuestOrLoggedIn.value) {
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1OpinionFetchBySlugIdListPost(
+          params
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1OpinionFetchBySlugIdListPost(
+        params,
+        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
+      );
+
+      return Dto.getOpinionBySlugIdListResponse.parse(response.data);
+    }
+
     const response = await DefaultApiFactory(
       undefined,
       undefined,
@@ -284,7 +306,9 @@ export function useBackendCommentApi() {
         freshness: params.freshness,
       };
 
-    if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
+    await waitForAuthInitialization();
+
+    if (isGuestOrLoggedIn.value) {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameManifestByConversationPost(
           requestParams
@@ -327,7 +351,9 @@ export function useBackendCommentApi() {
         freshness: params.freshness,
       };
 
-    if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
+    await waitForAuthInitialization();
+
+    if (isGuestOrLoggedIn.value) {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameGroupsByFramePost(
           requestParams
@@ -370,7 +396,9 @@ export function useBackendCommentApi() {
         freshness: params.freshness,
       };
 
-    if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
+    await waitForAuthInitialization();
+
+    if (isGuestOrLoggedIn.value) {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost(
           requestParams
@@ -415,7 +443,9 @@ export function useBackendCommentApi() {
         freshness: params.freshness,
       };
 
-    if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
+    await waitForAuthInitialization();
+
+    if (isGuestOrLoggedIn.value) {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameOpinionListByFramePost(
           requestParams
