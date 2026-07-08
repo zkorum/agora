@@ -22,6 +22,7 @@ import type {
   SurveyConfig,
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { waitForAuthInitialization } from "src/utils/auth/waitForAuthInitialization";
 
 import { api } from "../client";
 import type { AxiosErrorResponse, AxiosSuccessResponse } from "../common";
@@ -33,7 +34,7 @@ export function useBackendSurveyApi() {
     createAxiosErrorResponse,
     createRawAxiosRequestConfig,
   } = useCommonApi();
-  const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(
+  const { isGuestOrLoggedIn } = storeToRefs(
     useAuthenticationStore()
   );
 
@@ -44,7 +45,9 @@ export function useBackendSurveyApi() {
     url: string;
     options: RawAxiosRequestConfig;
   }): Promise<RawAxiosRequestConfig> {
-    if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
+    await waitForAuthInitialization();
+
+    if (isGuestOrLoggedIn.value) {
       const encodedUcan = await buildEncodedUcan(url, options);
       return createRawAxiosRequestConfig({ encodedUcan });
     }
