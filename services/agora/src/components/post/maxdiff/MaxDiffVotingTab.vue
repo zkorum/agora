@@ -137,7 +137,7 @@
               ref="candidateContentComponents"
               :conversation-slug-id="conversationSlugId"
               :item="candidateItemBySlugId.get(slugId)"
-              :fallback-text="slugId"
+              fallback-text=""
               @content-changed="checkTruncation"
             />
             <div class="candidate-label">
@@ -616,7 +616,7 @@ watch(
 );
 
 // Detect truncated candidate cards after DOM updates
-watch(candidates, () => {
+watch([candidates, itemBySlugId], () => {
   updateCandidateItemSnapshot();
   void nextTick(checkTruncation);
 });

@@ -894,6 +894,7 @@ def process_claimed_work(
 class ConversationSource:
     conversation_slug_id: str
     content_id: int
+    public_id: uuid.UUID
     title: str
     body: str | None
     source_language_code: str | None
@@ -907,6 +908,7 @@ class OpinionSource:
     conversation_slug_id: str
     opinion_slug_id: str
     content_id: int
+    public_id: uuid.UUID
     content: str
     source_language_code: str | None
     source_raw_language_code: str | None
@@ -930,6 +932,7 @@ class SurveyQuestionSource:
     conversation_slug_id: str
     question_slug_id: str
     content_id: int
+    public_id: uuid.UUID
     question_text: str
     source_language_code: str | None
     source_raw_language_code: str | None
@@ -1016,6 +1019,7 @@ def _fetch_conversation_source(
         select(
             Conversation.slug_id,
             ConversationContent.id,
+            ConversationContent.public_id,
             ConversationContent.title,
             ConversationContent.body,
             ConversationContent.source_language_code,
@@ -1037,6 +1041,7 @@ def _fetch_conversation_source(
     return ConversationSource(
         conversation_slug_id=row.slug_id,
         content_id=row.id,
+        public_id=row.public_id,
         title=row.title,
         body=row.body,
         source_language_code=row.source_language_code,
@@ -1056,6 +1061,7 @@ def _fetch_opinion_source(
             Conversation.slug_id.label("conversation_slug_id"),
             Opinion.slug_id.label("opinion_slug_id"),
             OpinionContent.id,
+            OpinionContent.public_id,
             OpinionContent.content,
             OpinionContent.source_language_code,
             OpinionContent.source_raw_language_code,
@@ -1078,6 +1084,7 @@ def _fetch_opinion_source(
         conversation_slug_id=row.conversation_slug_id,
         opinion_slug_id=row.opinion_slug_id,
         content_id=row.id,
+        public_id=row.public_id,
         content=row.content,
         source_language_code=row.source_language_code,
         source_raw_language_code=row.source_raw_language_code,
@@ -1097,6 +1104,7 @@ def _fetch_survey_question_source(
             Conversation.slug_id.label("conversation_slug_id"),
             SurveyQuestion.slug_id.label("question_slug_id"),
             SurveyQuestionContent.id,
+            SurveyQuestionContent.public_id,
             SurveyQuestionContent.question_text,
             SurveyQuestionContent.source_language_code,
             SurveyQuestionContent.source_raw_language_code,
@@ -1142,6 +1150,7 @@ def _fetch_survey_question_source(
         conversation_slug_id=row.conversation_slug_id,
         question_slug_id=row.question_slug_id,
         content_id=row.id,
+        public_id=row.public_id,
         question_text=row.question_text,
         source_language_code=row.source_language_code,
         source_raw_language_code=row.source_raw_language_code,
@@ -1997,7 +2006,7 @@ def _insert_conversation_translation_event(
         conversation_slug_id=source.conversation_slug_id,
         target_language_code=target_language_code,
         status=status,
-        source_version=f"conversation_content:{source.content_id}",
+        source_version=source.public_id,
     )
 
 
@@ -2018,7 +2027,7 @@ def _insert_opinion_translation_event(
         conversation_slug_id=source.conversation_slug_id,
         target_language_code=target_language_code,
         status=status,
-        source_version=f"opinion_content:{source.content_id}",
+        source_version=source.public_id,
     )
 
 
@@ -2029,7 +2038,6 @@ def _insert_survey_question_translation_event(
     target_language_code: str,
     status: Literal["completed", "failed"],
 ) -> None:
-    option_content_ids = ",".join(str(option.content_id) for option in source.options)
     _insert_translation_event(
         session,
         subject={
@@ -2040,9 +2048,7 @@ def _insert_survey_question_translation_event(
         conversation_slug_id=source.conversation_slug_id,
         target_language_code=target_language_code,
         status=status,
-        source_version=(
-            f"survey_question_content:{source.content_id}:option_content:{option_content_ids}"
-        ),
+        source_version=source.public_id,
     )
 
 
@@ -2063,7 +2069,7 @@ def _insert_ranking_item_translation_event(
         conversation_slug_id=source.conversation_slug_id,
         target_language_code=target_language_code,
         status=status,
-        source_version=str(source.public_id),
+        source_version=source.public_id,
     )
 
 
@@ -2150,7 +2156,7 @@ def _insert_translation_event(
     conversation_slug_id: str,
     target_language_code: str,
     status: Literal["completed", "failed"],
-    source_version: str,
+    source_version: uuid.UUID,
 ) -> None:
     timestamp_ms = int(datetime.now(UTC).timestamp() * 1000)
     event_data = build_content_translation_event_data(
