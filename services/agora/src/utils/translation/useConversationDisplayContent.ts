@@ -170,9 +170,17 @@ export function useConversationDisplayContent({
         mode: "translated",
         isFetching: requestedContentQuery.isFetching.value,
       });
-    const translationStatus = isWaitingForTranslatedContent
-      ? "pending"
-      : translationControl.status;
+    const hasTranslatedContent =
+      displayContent.status === "available" &&
+      displayContent.mode === "translated" &&
+      modePreference.value !== "original";
+    const translationStatus =
+      isWaitingForTranslatedContent ||
+      (modePreference.value === "translated" &&
+        !hasTranslatedContent &&
+        translationControl.status !== "failed")
+        ? "pending"
+        : translationControl.status;
 
     const sourceLanguageLabel = getContentTranslationSourceLanguageLabel({
       sourceLanguage: undefined,
@@ -193,16 +201,14 @@ export function useConversationDisplayContent({
       };
     }
 
-    const isTranslatedContent =
-      displayContent.mode === "translated" && modePreference.value !== "original";
     return {
       isAvailable: true,
       isLoadingInitialTranslation: false,
-      mode: isTranslatedContent ? "translated" : "original",
+      mode: hasTranslatedContent ? "translated" : "original",
       sourceLanguageLabel,
       translationStatus,
-      translatedTitle: isTranslatedContent ? displayContent.content.title : "",
-      translatedBody: isTranslatedContent ? displayContent.content.body : undefined,
+      translatedTitle: hasTranslatedContent ? displayContent.content.title : "",
+      translatedBody: hasTranslatedContent ? displayContent.content.body : undefined,
     };
   });
 

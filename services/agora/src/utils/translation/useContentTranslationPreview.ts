@@ -211,6 +211,14 @@ function useContentTranslationController({
       return "failed";
     }
     if (content?.kind === "translatable") {
+      if (
+        hasRequestedTranslation.value &&
+        modePreference.value === "translated" &&
+        content.variants.translated === undefined &&
+        content.translation.status !== "failed"
+      ) {
+        return "pending";
+      }
       return content.translation.status;
     }
     return "pending";
