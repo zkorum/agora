@@ -4,6 +4,7 @@ import {
     buildLocalizedSurveyQuestionContent,
     hasCompleteSurveyQuestionTranslation,
     shouldQueueTranslationWork,
+    toMissingContentTranslationStatus,
     type RankingItemLocalizedContentSource,
     type RankingItemTranslationSource,
     type SurveyQuestionLocalizedContentSource,
@@ -87,6 +88,13 @@ describe("content translation pure content helpers", () => {
         ).toBe(true);
     });
 
+    it("does not expose completed work without content as pending", () => {
+        expect(toMissingContentTranslationStatus("pending")).toBe("pending");
+        expect(toMissingContentTranslationStatus("running")).toBe("running");
+        expect(toMissingContentTranslationStatus("failed")).toBe("failed");
+        expect(toMissingContentTranslationStatus("completed")).toBe("not_requested");
+    });
+
     it("requires question and every current option translation", () => {
         expect(
             hasCompleteSurveyQuestionTranslation({
@@ -123,7 +131,7 @@ describe("content translation pure content helpers", () => {
                 translatedOptionsByContentId: new Map([[21, "Parcs"]]),
             },
             targetLanguageCode: "fr",
-            requestMode: "queue_if_missing",
+            missingTranslationStatus: "pending",
         });
 
         expect(result).toEqual({
@@ -175,7 +183,7 @@ describe("content translation pure content helpers", () => {
                 ]),
             },
             targetLanguageCode: "fr",
-            requestMode: "read_existing",
+            missingTranslationStatus: "not_requested",
         });
 
         expect(result.content.initialMode).toBe("translated");
@@ -206,7 +214,7 @@ describe("content translation pure content helpers", () => {
             source: rankingItemSource,
             translation: rankingItemTranslation,
             targetLanguageCode: "fr",
-            requestMode: "read_existing",
+            missingTranslationStatus: "not_requested",
         });
 
         expect(result.subject).toEqual({
@@ -231,28 +239,17 @@ describe("content translation pure content helpers", () => {
         });
     });
 
-    it("uses request mode for missing ranking item translation status", () => {
-        const readExisting = buildLocalizedRankingItemContent({
+    it("uses explicit missing ranking item translation status", () => {
+        const result = buildLocalizedRankingItemContent({
             source: rankingItemSource,
             translation: undefined,
             targetLanguageCode: "fr",
-            requestMode: "read_existing",
-        });
-        const queueIfMissing = buildLocalizedRankingItemContent({
-            source: rankingItemSource,
-            translation: undefined,
-            targetLanguageCode: "fr",
-            requestMode: "queue_if_missing",
+            missingTranslationStatus: "failed",
         });
 
-        expect(readExisting.content).toMatchObject({
+        expect(result.content).toMatchObject({
             initialMode: "original",
-            translation: { status: "not_requested" },
-            variants: { original: { title: "Source title" } },
-        });
-        expect(queueIfMissing.content).toMatchObject({
-            initialMode: "original",
-            translation: { status: "pending" },
+            translation: { status: "failed" },
             variants: { original: { title: "Source title" } },
         });
     });

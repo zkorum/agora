@@ -24,7 +24,10 @@ import {
   getConversationLanguageSettingSourceLanguageCode,
   isSameContentLanguage,
 } from "./contentTranslation";
-import { subscribeToContentTranslationUpdated } from "./contentTranslationEvents";
+import {
+  subscribeToContentTranslationFailed,
+  subscribeToContentTranslationUpdated,
+} from "./contentTranslationEvents";
 import {
   type ContentTranslationPreviewTranslations,
   contentTranslationPreviewTranslations,
@@ -104,6 +107,20 @@ export function useConversationDisplayContent({
     refetchInterval: completionPolling.refetchInterval,
   });
 
+  function resetToOriginal(): void {
+    completionPolling.stop();
+    shouldQueueNextTranslatedRequest.value = false;
+    modePreference.value = "original";
+  }
+
+  function handleTranslationFailure(): void {
+    if (modePreference.value !== "translated") {
+      return;
+    }
+    resetToOriginal();
+    showNotifyMessage(t("translationFailed"));
+  }
+
   const activeDisplayContent = computed<ConversationContentFetchResponse | undefined>(
     () => {
       const requestedDisplayContent = requestedContentQuery.data.value;
@@ -174,13 +191,15 @@ export function useConversationDisplayContent({
       displayContent.status === "available" &&
       displayContent.mode === "translated" &&
       modePreference.value !== "original";
-    const translationStatus =
-      isWaitingForTranslatedContent ||
-      (modePreference.value === "translated" &&
-        !hasTranslatedContent &&
-        translationControl.status !== "failed")
-        ? "pending"
-        : translationControl.status;
+    let translationStatus: LocalizedContentTranslationStatus =
+      translationControl.status;
+    if (
+      translationControl.status !== "failed" &&
+      (isWaitingForTranslatedContent ||
+        (modePreference.value === "translated" && !hasTranslatedContent))
+    ) {
+      translationStatus = "pending";
+    }
 
     const sourceLanguageLabel = getContentTranslationSourceLanguageLabel({
       sourceLanguage: undefined,
@@ -268,6 +287,18 @@ export function useConversationDisplayContent({
     completionPolling.start();
   });
 
+  const unsubscribeFailedEvents = subscribeToContentTranslationFailed((data) => {
+    if (
+      modePreference.value !== "translated" ||
+      data.targetLanguageCode !== displayLanguage.value ||
+      data.subject.kind !== "conversation" ||
+      data.subject.conversationSlugId !== conversationSlugId.value
+    ) {
+      return;
+    }
+    handleTranslationFailure();
+  });
+
   function isDisplayContentForMode({
     displayContent,
     mode,
@@ -311,9 +342,19 @@ export function useConversationDisplayContent({
     }
   );
 
+  watch(
+    () => translationPreview.value?.translationStatus,
+    (status) => {
+      if (status === "failed") {
+        handleTranslationFailure();
+      }
+    }
+  );
+
   onScopeDispose(() => {
     completionPolling.stop();
     unsubscribeUpdatedEvents();
+    unsubscribeFailedEvents();
   });
 
   return {
