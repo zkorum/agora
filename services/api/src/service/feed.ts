@@ -6,6 +6,7 @@ import type {
     ExtendedConversationPerSlugId,
     FeedSortAlgorithm,
 } from "@/shared/types/zod.js";
+import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { and, desc, eq, isNotNull, SQL } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
@@ -57,6 +58,7 @@ interface FetchFeedProps {
     personalizationUserId?: string;
     baseImageServiceUrl: string;
     sortAlgorithm: FeedSortAlgorithm;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }
 
 export async function fetchFeed({
@@ -64,6 +66,7 @@ export async function fetchFeed({
     personalizationUserId,
     baseImageServiceUrl,
     sortAlgorithm,
+    currentDisplayLanguage,
 }: FetchFeedProps): Promise<FetchFeedResponse> {
     const targetFetchLimit = 1000;
 
@@ -86,6 +89,7 @@ export async function fetchFeed({
         removeMutedAuthors: true,
         baseImageServiceUrl,
         sortAlgorithm,
+        currentDisplayLanguage,
     });
 
     const topSlugIdList = Array.from(conversations.keys()).slice(

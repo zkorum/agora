@@ -1,39 +1,62 @@
 <template>
-  <SpaLink :to="projectConversationRoute" class="project-context-pill">
+  <span
+    v-if="interactive"
+    class="project-context-pill"
+  >
     <span class="project-context-pill__label">
       {{ t("partOfProject") }}
       <strong class="project-context-pill__title">{{ projectTitle }}</strong>
     </span>
-    <span class="project-context-pill__cta">
-      {{ t("openProjectView") }}
+    <a
+      :href="projectConversationHref"
+      class="project-context-pill__cta"
+      target="_blank"
+      rel="noopener noreferrer"
+      @click.stop
+    >
+      {{ t("openProject") }}
       <q-icon name="mdi-open-in-new" size="0.9rem" aria-hidden="true" />
-    </span>
-  </SpaLink>
+    </a>
+  </span>
+  <span
+    v-else
+    class="project-context-text"
+    @click.stop.prevent
+  >
+    {{ t("partOfProject") }}
+    <strong class="project-context-text__title">{{ projectTitle }}</strong>
+  </span>
 </template>
 
 <script setup lang="ts">
-import SpaLink from "src/components/ui-library/SpaLink.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { computed } from "vue";
-import type { RouteLocationRaw } from "vue-router";
+import { type RouteLocationRaw, useRouter } from "vue-router";
 
 import {
   type ConversationProjectContextPillTranslations,
   conversationProjectContextPillTranslations,
 } from "./ConversationProjectContextPill.i18n";
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   projectSlug: string;
   projectTitle: string;
   conversationSlugId: string;
-}>();
+  interactive?: boolean;
+}>(), {
+  interactive: true,
+});
 
 const { t } = useComponentI18n<ConversationProjectContextPillTranslations>(
   conversationProjectContextPillTranslations
 );
+const router = useRouter();
 const projectConversationRoute = computed<RouteLocationRaw>(() => ({
   path: `/project/${props.projectSlug}/conversation/${props.conversationSlugId}/`,
 }));
+const projectConversationHref = computed(
+  () => router.resolve(projectConversationRoute.value).href
+);
 </script>
 
 <style scoped lang="scss">
@@ -41,10 +64,11 @@ const projectConversationRoute = computed<RouteLocationRaw>(() => ({
   display: inline-flex;
   max-width: 100%;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.45rem;
   border: 1px solid rgba($primary, 0.22);
-  border-radius: 999px;
-  padding: 0.25rem 0.3rem 0.25rem 0.6rem;
+  border-radius: 6px;
+  padding-block: 0.25rem;
+  padding-inline: 0.55rem 0.35rem;
   background: rgba($primary, 0.08);
   color: rgba($ink-darkest, 0.72);
   font-size: 0.78rem;
@@ -58,23 +82,27 @@ const projectConversationRoute = computed<RouteLocationRaw>(() => ({
 }
 
 .project-context-pill:hover,
-.project-context-pill:focus-visible {
+.project-context-pill:focus-within {
   border-color: rgba($primary, 0.42);
   box-shadow: 0 0.35rem 0.9rem rgba($primary, 0.12);
-  outline: none;
   transform: translateY(-1px);
 }
 
 .project-context-pill__label {
   display: inline-flex;
+  flex: 1 1 auto;
   min-width: 0;
   align-items: center;
   gap: 0.25rem;
+  overflow: hidden;
 }
 
 .project-context-pill__title {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
-  max-width: min(15rem, 42vw);
+  max-width: min(16rem, 44vw);
   color: $ink-darkest;
   font-weight: var(--font-weight-bold);
   text-overflow: ellipsis;
@@ -86,20 +114,48 @@ const projectConversationRoute = computed<RouteLocationRaw>(() => ({
   flex: 0 0 auto;
   align-items: center;
   gap: 0.25rem;
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 0.25rem 0.45rem;
   background: white;
   color: $primary;
   font-size: 0.72rem;
   font-weight: var(--font-weight-bold);
   box-shadow: inset 0 0 0 1px rgba($primary, 0.16);
+  text-decoration: none;
   white-space: nowrap;
+}
+
+.project-context-pill__cta:focus-visible {
+  outline: 2px solid rgba($primary, 0.36);
+  outline-offset: 2px;
+}
+
+.project-context-text {
+  display: inline;
+  max-width: 100%;
+  color: $color-text-weak;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.project-context-text__title {
+  color: $ink-darkest;
+  font-weight: var(--font-weight-semibold);
 }
 
 @media (max-width: 420px) {
   .project-context-pill {
-    width: 100%;
-    justify-content: space-between;
+    gap: 0.35rem;
+    padding-inline: 0.45rem 0.25rem;
+  }
+
+  .project-context-pill__title {
+    max-width: min(12rem, 36vw);
+  }
+
+  .project-context-pill__cta {
+    padding: 0.2rem 0.35rem;
   }
 }
 </style>

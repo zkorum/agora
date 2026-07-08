@@ -4,7 +4,11 @@ import {
   type CreateConversationTranslations,
   createConversationTranslations,
 } from "src/pages/conversation/new/create/index.i18n";
-import { type CreateNewConversationResponse,Dto } from "src/shared/types/dto";
+import {
+  type CreateNewConversationRequest,
+  type CreateNewConversationResponse,
+  Dto,
+} from "src/shared/types/dto";
 import type { SurveyConfig } from "src/shared/types/zod";
 import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
@@ -30,6 +34,87 @@ type CreateConversationFailureReason = Extract<
   { success: false }
 >["reason"];
 
+type BuildCreateConversationRequestResult =
+  | {
+      success: true;
+      request: CreateNewConversationRequest;
+    }
+  | {
+      success: false;
+    };
+
+function buildBaseCreateConversationRequest({
+  conversationDraft,
+}: {
+  conversationDraft: ConversationDraft;
+}) {
+  return {
+    conversationTitle: conversationDraft.title,
+    conversationBody:
+      conversationDraft.content === "" ? undefined : conversationDraft.content,
+    conversationBodyPlainText: conversationDraft.contentPlainText,
+    projectSlug: conversationDraft.selectedProjectSlug,
+    languageSettingsSource:
+      conversationDraft.selectedProjectSlug !== undefined &&
+      conversationDraft.inheritProjectLanguages
+        ? "project_inherited"
+        : "conversation_override",
+    multilingualSetting: conversationDraft.multilingualSetting,
+    postAsOrganization: conversationDraft.postAs.postAsOrganization
+      ? conversationDraft.postAs.organizationName
+      : "",
+    isIndexed: !conversationDraft.isPrivate,
+    participationMode: conversationDraft.participationMode,
+    seedOpinionList: conversationDraft.seedOpinions,
+    requiresEventTicket: conversationDraft.requiresEventTicket,
+  };
+}
+
+function buildCreateConversationRequest({
+  conversationDraft,
+  surveyConfig,
+}: {
+  conversationDraft: ConversationDraft;
+  surveyConfig: SurveyConfig | null;
+}): BuildCreateConversationRequestResult {
+  const baseCreateRequest = buildBaseCreateConversationRequest({
+    conversationDraft,
+  });
+
+  if (conversationDraft.conversationType === "ranking") {
+    return {
+      success: true,
+      request: Dto.createNewConversationRequest.parse({
+        ...baseCreateRequest,
+        conversationType: conversationDraft.conversationType,
+        rankingMode: conversationDraft.rankingMode,
+        externalSourceConfig: conversationDraft.externalSourceConfig,
+      }),
+    };
+  }
+
+  const normalizedSurveyConfigResult = buildSurveyConfigForSave({
+    surveyConfig,
+  });
+
+  if (!normalizedSurveyConfigResult.success) {
+    return {
+      success: false,
+    };
+  }
+
+  return {
+    success: true,
+    request: Dto.createNewConversationRequest.parse({
+      ...baseCreateRequest,
+      conversationType: conversationDraft.conversationType,
+      aiLabelingEnabled: conversationDraft.aiLabelingEnabled,
+      preferredOpinionGroupCount: conversationDraft.preferredOpinionGroupCount,
+      surveyConfig: normalizedSurveyConfigResult.surveyConfig,
+    }),
+  };
+}
+
 export function usePublishConversationDraft() {
   const router = useRouter();
   const navigationStore = useNavigationStore();
@@ -51,45 +136,19 @@ export function usePublishConversationDraft() {
     onInvalidSurvey,
     beforeSuccessNavigation,
   }: PublishConversationDraftParams): Promise<boolean> {
-    const normalizedSurveyConfigResult = buildSurveyConfigForSave({
-      surveyConfig,
-    });
-    if (!normalizedSurveyConfigResult.success) {
-      showNotifyMessage(invalidSurveyMessage);
-      onInvalidSurvey?.();
-      return false;
-    }
-
     try {
-      const createRequest = Dto.createNewConversationRequest.parse({
-        conversationTitle: conversationDraft.title,
-        conversationBody:
-          conversationDraft.content === "" ? undefined : conversationDraft.content,
-        conversationBodyPlainText: conversationDraft.contentPlainText,
-        projectSlug: conversationDraft.selectedProjectSlug,
-        languageSettingsSource:
-          conversationDraft.selectedProjectSlug !== undefined &&
-          conversationDraft.inheritProjectLanguages
-            ? "project_inherited"
-            : "conversation_override",
-        multilingualSetting: conversationDraft.multilingualSetting,
-        postAsOrganization: conversationDraft.postAs.postAsOrganization
-          ? conversationDraft.postAs.organizationName
-          : "",
-        isIndexed: !conversationDraft.isPrivate,
-        participationMode: conversationDraft.participationMode,
-        conversationType: conversationDraft.conversationType,
-        ...(conversationDraft.conversationType === "ranking"
-          ? { rankingMode: conversationDraft.rankingMode }
-          : {}),
-        seedOpinionList: conversationDraft.seedOpinions,
-        requiresEventTicket: conversationDraft.requiresEventTicket,
-        aiLabelingEnabled: conversationDraft.aiLabelingEnabled,
-        preferredOpinionGroupCount: conversationDraft.preferredOpinionGroupCount,
-        externalSourceConfig: conversationDraft.externalSourceConfig,
-        surveyConfig: normalizedSurveyConfigResult.surveyConfig,
+      const createRequestResult = buildCreateConversationRequest({
+        conversationDraft,
+        surveyConfig,
       });
-      const response = await createNewPost(createRequest);
+
+      if (!createRequestResult.success) {
+        showNotifyMessage(invalidSurveyMessage);
+        onInvalidSurvey?.();
+        return false;
+      }
+
+      const response = await createNewPost(createRequestResult.request);
 
       if (response.status !== "success") {
         handleAxiosErrorStatusCodes({
@@ -115,7 +174,10 @@ export function usePublishConversationDraft() {
         return false;
       }
 
-      if (conversationDraft.externalSourceConfig !== null) {
+      if (
+        conversationDraft.conversationType === "ranking" &&
+        conversationDraft.externalSourceConfig !== null
+      ) {
         await syncMaxDiff({
           conversationSlugId: response.data.conversationSlugId,
         });
@@ -132,7 +194,8 @@ export function usePublishConversationDraft() {
       });
 
       return true;
-    } catch {
+    } catch (error) {
+      console.error("Failed to publish conversation draft", error);
       showNotifyMessage(defaultErrorMessage);
       return false;
     }

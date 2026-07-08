@@ -1833,6 +1833,7 @@ server.after(() => {
                     : undefined,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                 sortAlgorithm: request.body.sortAlgorithm,
+                currentDisplayLanguage: getRequestDisplayLanguage({ request }),
             });
         },
     });
@@ -2414,6 +2415,7 @@ server.after(() => {
                 userId: deviceStatus.userId,
                 lastPostSlugId: request.body.lastConversationSlugId,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                currentDisplayLanguage: getRequestDisplayLanguage({ request }),
                 limit: 10,
             });
             return Array.from(conversationsMap.values());

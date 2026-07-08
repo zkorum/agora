@@ -11,6 +11,7 @@ import {
     eventTicketTable,
 } from "@/shared-backend/schema.js";
 import type { GetUserProfileResponse } from "@/shared/types/dto.js";
+import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import type {
     OpinionItem,
     ExtendedOpinion,
@@ -247,6 +248,7 @@ interface GetUserPostProps {
     userId: string;
     lastPostSlugId?: string;
     baseImageServiceUrl: string;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
     limit?: number;
 }
 
@@ -294,6 +296,7 @@ export async function getUserPosts({
     userId,
     lastPostSlugId,
     baseImageServiceUrl,
+    currentDisplayLanguage,
     limit,
 }: GetUserPostProps): Promise<ExtendedConversationPerSlugId> {
     try {
@@ -349,6 +352,7 @@ export async function getUserPosts({
                 removeMutedAuthors: false,
                 baseImageServiceUrl,
                 sortAlgorithm: "new",
+                currentDisplayLanguage,
             });
 
         return conversations;

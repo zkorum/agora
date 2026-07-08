@@ -35,10 +35,9 @@
           size="medium"
           :conversation-type-config="extendedPostData.metadata"
           :external-source-config="extendedPostData.metadata.externalSourceConfig"
-          :project-context="
-            compactMode ? undefined : extendedPostData.metadata.projectContext
-          "
+          :project-context="extendedPostData.metadata.projectContext"
           :project-context-title-mode="contentTranslation?.mode ?? 'original'"
+          :project-context-interactive="!compactMode"
         />
       </div>
 

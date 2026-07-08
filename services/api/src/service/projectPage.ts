@@ -107,6 +107,10 @@ interface ProjectBaseRow {
     sourceLanguageConfidence: number | null;
 }
 
+interface ConversationProjectBaseRow extends ProjectBaseRow {
+    conversationSlugId: string;
+}
+
 interface ConversationDisplayCounts {
     conversationId: number;
     opinionCount: number;
@@ -171,6 +175,10 @@ interface ProjectActivityContentTranslationRow {
     translatedBody: string | null;
     translatedBodyPlainText: string | null;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+}
+
+interface ProjectContentTranslationRow extends ProjectContentTranslationResolutionRow {
+    projectContentId: number;
 }
 
 function optionalText(value: string | null): string | undefined {
@@ -311,15 +319,21 @@ async function fetchProjectBaseBySlug({
     return project;
 }
 
-async function fetchProjectBaseByConversationSlug({
+async function fetchProjectBasesByConversationSlug({
     db,
-    conversationSlugId,
+    conversationSlugIds,
 }: {
     db: PostgresJsDatabase;
-    conversationSlugId: string;
-}): Promise<ProjectBaseRow | undefined> {
-    const rows = await db
+    conversationSlugIds: readonly string[];
+}): Promise<ConversationProjectBaseRow[]> {
+    const uniqueConversationSlugIds = Array.from(new Set(conversationSlugIds));
+    if (uniqueConversationSlugIds.length === 0) {
+        return [];
+    }
+
+    return await db
         .select({
+            conversationSlugId: conversationTable.slugId,
             projectId: projectTable.id,
             projectContentId: projectContentTable.id,
             projectContentPublicId: projectContentTable.publicId,
@@ -343,16 +357,13 @@ async function fetchProjectBaseByConversationSlug({
         )
         .where(
             and(
-                eq(conversationTable.slugId, conversationSlugId),
+                inArray(conversationTable.slugId, uniqueConversationSlugIds),
                 eq(projectTable.directoryVisibility, "listed"),
                 isNull(projectTable.autoProvisionedForOrganizationId),
                 isNull(projectTable.deletedAt),
                 isNull(projectContentTable.deletedAt),
             ),
-        )
-        .limit(1);
-
-    return rows.at(0);
+        );
 }
 
 async function fetchProjectTargetLanguages({
@@ -362,16 +373,48 @@ async function fetchProjectTargetLanguages({
     db: PostgresJsDatabase;
     projectId: number;
 }): Promise<SupportedDisplayLanguageCodes[]> {
+    const languagesByProjectId = await fetchProjectTargetLanguagesByProjectId({
+        db,
+        projectIds: [projectId],
+    });
+    return languagesByProjectId.get(projectId) ?? [];
+}
+
+async function fetchProjectTargetLanguagesByProjectId({
+    db,
+    projectIds,
+}: {
+    db: PostgresJsDatabase;
+    projectIds: readonly number[];
+}): Promise<Map<number, SupportedDisplayLanguageCodes[]>> {
+    const uniqueProjectIds = Array.from(new Set(projectIds));
+    if (uniqueProjectIds.length === 0) {
+        return new Map();
+    }
+
     const rows = await db
-        .select({ languageCode: projectTranslationTargetLanguageTable.languageCode })
+        .select({
+            projectId: projectTranslationTargetLanguageTable.projectId,
+            languageCode: projectTranslationTargetLanguageTable.languageCode,
+        })
         .from(projectTranslationTargetLanguageTable)
         .where(
             and(
-                eq(projectTranslationTargetLanguageTable.projectId, projectId),
+                inArray(projectTranslationTargetLanguageTable.projectId, uniqueProjectIds),
                 isNull(projectTranslationTargetLanguageTable.deletedAt),
             ),
         );
-    return rows.map((row) => row.languageCode);
+
+    const languagesByProjectId = new Map<
+        number,
+        SupportedDisplayLanguageCodes[]
+    >();
+    for (const row of rows) {
+        const languages = languagesByProjectId.get(row.projectId) ?? [];
+        languages.push(row.languageCode);
+        languagesByProjectId.set(row.projectId, languages);
+    }
+    return languagesByProjectId;
 }
 
 function buildProjectPageLanguageOptions({
@@ -678,6 +721,58 @@ async function fetchResolvedProjectContent({
         additionalLanguageCodes,
         translationStatus,
     });
+}
+
+async function fetchProjectContentTranslationsByContentId({
+    db,
+    projectContentIds,
+}: {
+    db: PostgresJsDatabase;
+    projectContentIds: readonly number[];
+}): Promise<Map<number, ProjectContentTranslationResolutionRow[]>> {
+    const uniqueProjectContentIds = Array.from(new Set(projectContentIds));
+    if (uniqueProjectContentIds.length === 0) {
+        return new Map();
+    }
+
+    const rows: ProjectContentTranslationRow[] = await db
+        .select({
+            projectContentId: projectContentTranslationTable.projectContentId,
+            languageCode: projectContentTranslationTable.displayLanguageCode,
+            title: projectContentTranslationTable.translatedTitle,
+            subtitle: projectContentTranslationTable.translatedSubtitle,
+            body: projectContentTranslationTable.translatedBody,
+            sourceKind: projectContentTranslationTable.sourceKind,
+            sourceLanguageCode: projectContentTranslationTable.sourceLanguageCode,
+        })
+        .from(projectContentTranslationTable)
+        .where(
+            and(
+                inArray(
+                    projectContentTranslationTable.projectContentId,
+                    uniqueProjectContentIds,
+                ),
+                isNull(projectContentTranslationTable.deletedAt),
+            ),
+        );
+
+    const rowsByContentId = new Map<
+        number,
+        ProjectContentTranslationResolutionRow[]
+    >();
+    for (const row of rows) {
+        const projectRows = rowsByContentId.get(row.projectContentId) ?? [];
+        projectRows.push({
+            languageCode: row.languageCode,
+            title: row.title,
+            subtitle: row.subtitle,
+            body: row.body,
+            sourceKind: row.sourceKind,
+            sourceLanguageCode: row.sourceLanguageCode,
+        });
+        rowsByContentId.set(row.projectContentId, projectRows);
+    }
+    return rowsByContentId;
 }
 
 export function toProjectDisplayContent({
@@ -1909,42 +2004,71 @@ export async function fetchConversationProjectContext({
     conversationSlugId: string;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }): Promise<ConversationProjectContext | undefined> {
-    const project = await fetchProjectBaseByConversationSlug({
+    const projectContexts = await fetchConversationProjectContexts({
         db,
-        conversationSlugId,
+        conversationSlugIds: [conversationSlugId],
+        currentDisplayLanguage,
     });
-    if (project === undefined) {
-        return undefined;
+    return projectContexts.get(conversationSlugId);
+}
+
+export async function fetchConversationProjectContexts({
+    db,
+    conversationSlugIds,
+    currentDisplayLanguage,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugIds: readonly string[];
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
+}): Promise<Map<string, ConversationProjectContext>> {
+    const projects = await fetchProjectBasesByConversationSlug({
+        db,
+        conversationSlugIds,
+    });
+    if (projects.length === 0) {
+        return new Map();
     }
 
-    const defaultLanguageCode = getProjectDefaultDisplayLanguage({
-        sourceLanguageCode: project.sourceLanguageCode,
-    });
-    const additionalLanguageCodes = await fetchProjectTargetLanguages({
-        db,
-        projectId: project.projectId,
-    });
-    const { preferredContentLanguage } = resolvePreferredContentLanguage({
-        displayLanguage: currentDisplayLanguage,
-        defaultContentLanguage: defaultLanguageCode,
-        configuredContentLanguages: additionalLanguageCodes,
-    });
-    const content = await fetchResolvedProjectContent({
-        db,
-        project,
-        languageCandidateSet: getLanguageCandidateSet({
-            effectiveLanguageCode: preferredContentLanguage,
-            defaultLanguageCode,
-        }),
-        effectiveLanguageCode: preferredContentLanguage,
-        additionalLanguageCodes,
-        includeTranslationStatus: false,
-    });
+    const [additionalLanguagesByProjectId, translationsByContentId] =
+        await Promise.all([
+            fetchProjectTargetLanguagesByProjectId({
+                db,
+                projectIds: projects.map((project) => project.projectId),
+            }),
+            fetchProjectContentTranslationsByContentId({
+                db,
+                projectContentIds: projects.map(
+                    (project) => project.projectContentId,
+                ),
+            }),
+        ]);
 
-    return {
-        projectSlug: project.projectSlug,
-        originalProjectTitle: content.originalTitle,
-        translatedProjectTitle: content.translatedTitle,
-        conversationSlugId,
-    };
+    const contexts = new Map<string, ConversationProjectContext>();
+    for (const project of projects) {
+        const defaultLanguageCode = getProjectDefaultDisplayLanguage({
+            sourceLanguageCode: project.sourceLanguageCode,
+        });
+        const additionalLanguageCodes =
+            additionalLanguagesByProjectId.get(project.projectId) ?? [];
+        const { preferredContentLanguage } = resolvePreferredContentLanguage({
+            displayLanguage: currentDisplayLanguage,
+            defaultContentLanguage: defaultLanguageCode,
+            configuredContentLanguages: additionalLanguageCodes,
+        });
+        const content = resolveProjectContentForDisplay({
+            project,
+            translationRows:
+                translationsByContentId.get(project.projectContentId) ?? [],
+            effectiveLanguageCode: preferredContentLanguage,
+            additionalLanguageCodes,
+        });
+
+        contexts.set(project.conversationSlugId, {
+            projectSlug: project.projectSlug,
+            originalProjectTitle: content.originalTitle,
+            translatedProjectTitle: content.translatedTitle,
+            conversationSlugId: project.conversationSlugId,
+        });
+    }
+    return contexts;
 }
