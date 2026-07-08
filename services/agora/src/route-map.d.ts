@@ -296,9 +296,23 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dev/conversation-project-context': RouteRecordInfo<
+      '/dev/conversation-project-context',
+      '/dev/conversation-project-context',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/dev/long-rich-text-disclosure': RouteRecordInfo<
       '/dev/long-rich-text-disclosure',
       '/dev/long-rich-text-disclosure',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/dev/maxdiff-translation': RouteRecordInfo<
+      '/dev/maxdiff-translation',
+      '/dev/maxdiff-translation',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -956,9 +970,21 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/dev/conversation-project-context.vue': {
+      routes:
+        | '/dev/conversation-project-context'
+      views:
+        | never
+    }
     'src/pages/dev/long-rich-text-disclosure.vue': {
       routes:
         | '/dev/long-rich-text-disclosure'
+      views:
+        | never
+    }
+    'src/pages/dev/maxdiff-translation.vue': {
+      routes:
+        | '/dev/maxdiff-translation'
       views:
         | never
     }

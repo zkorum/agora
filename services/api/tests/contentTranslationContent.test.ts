@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+    buildLocalizedRankingItemContent,
     buildLocalizedSurveyQuestionContent,
     hasCompleteSurveyQuestionTranslation,
     shouldQueueTranslationWork,
+    type RankingItemLocalizedContentSource,
+    type RankingItemTranslationSource,
     type SurveyQuestionLocalizedContentSource,
 } from "../src/service/contentTranslationContent.js";
 
@@ -39,6 +42,28 @@ const surveyQuestionSource: SurveyQuestionLocalizedContentSource = {
         },
     ],
 };
+
+const rankingItemSource = {
+    conversationSlugId: "conv1234",
+    itemSlugId: "item1234",
+    contentId: 42,
+    publicId: "00000000-0000-4000-8000-000000000042",
+    title: "Source title",
+    bodyHtml: "<p>Source body</p>",
+    sourceLanguageCode: "en",
+    sourceRawLanguageCode: "en",
+    sourceLanguageProvider: null,
+    sourceLanguageConfidence: 1,
+} satisfies RankingItemLocalizedContentSource;
+
+const rankingItemTranslation = {
+    translatedTitle: "Titre traduit",
+    translatedBodyHtml: "<p>Corps traduit</p>",
+    sourceLanguageCode: "en",
+    sourceRawLanguageCode: "en",
+    sourceLanguageProvider: null,
+    sourceLanguageConfidence: 1,
+} satisfies RankingItemTranslationSource;
 
 describe("content translation pure content helpers", () => {
     it("queues only when missing content is explicitly requested", () => {
@@ -173,6 +198,62 @@ describe("content translation pure content helpers", () => {
                     { optionSlugId: "opt00002", optionText: "Bibliotheques" },
                 ],
             },
+        });
+    });
+
+    it("returns completed translated ranking item content", () => {
+        const result = buildLocalizedRankingItemContent({
+            source: rankingItemSource,
+            translation: rankingItemTranslation,
+            targetLanguageCode: "fr",
+            requestMode: "read_existing",
+        });
+
+        expect(result.subject).toEqual({
+            kind: "ranking_item",
+            conversationSlugId: "conv1234",
+            itemSlugId: "item1234",
+        });
+        expect(result.content).toMatchObject({
+            sourceVersion: "00000000-0000-4000-8000-000000000042",
+            initialMode: "translated",
+            translation: { targetLanguageCode: "fr", status: "completed" },
+            variants: {
+                original: {
+                    title: "Source title",
+                    bodyHtml: "<p>Source body</p>",
+                },
+                translated: {
+                    title: "Titre traduit",
+                    bodyHtml: "<p>Corps traduit</p>",
+                },
+            },
+        });
+    });
+
+    it("uses request mode for missing ranking item translation status", () => {
+        const readExisting = buildLocalizedRankingItemContent({
+            source: rankingItemSource,
+            translation: undefined,
+            targetLanguageCode: "fr",
+            requestMode: "read_existing",
+        });
+        const queueIfMissing = buildLocalizedRankingItemContent({
+            source: rankingItemSource,
+            translation: undefined,
+            targetLanguageCode: "fr",
+            requestMode: "queue_if_missing",
+        });
+
+        expect(readExisting.content).toMatchObject({
+            initialMode: "original",
+            translation: { status: "not_requested" },
+            variants: { original: { title: "Source title" } },
+        });
+        expect(queueIfMissing.content).toMatchObject({
+            initialMode: "original",
+            translation: { status: "pending" },
+            variants: { original: { title: "Source title" } },
         });
     });
 });

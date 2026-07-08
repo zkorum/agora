@@ -4,7 +4,7 @@
       <template #left>
         <BackButton @click="handleBack" />
         <span v-if="isSticky && hasConversationData" class="navbar-title">
-          {{ loadedConversationData.payload.title }}
+          {{ displayedConversationTitle }}
         </span>
       </template>
     </DefaultMenuBar>
@@ -35,6 +35,7 @@
           <div class="container standardStyle">
             <TranslatedPostContent
               :extended-post-data="loadedConversationData"
+              :initial-display-content="loadedConversationDisplayContent"
               :compact-mode="false"
               @open-moderation-history="openModerationHistory()"
               @conversation-deleted="handleConversationDeleted"
@@ -63,16 +64,14 @@
                 :conversation-slug-id="
                   loadedConversationData.metadata.conversationSlugId
                 "
-                :conversation-title="loadedConversationData.payload.title"
+                :conversation-title="displayedConversationTitle"
                 :author-username="
                   loadedConversationData.metadata.authorUsername
                 "
                 :on-same-tab-click="
                   () => handleSameTabActionBarClick()
                 "
-                :conversation-type="
-                  loadedConversationData.metadata.conversationType
-                "
+                :conversation-type-config="loadedConversationData.metadata"
                 :has-survey="
                   loadedConversationData.interaction.surveyGate?.hasSurvey ===
                   true
@@ -85,7 +84,7 @@
             <div
               v-if="
                 currentTab === 'comment' &&
-                loadedConversationData.metadata.conversationType !== 'maxdiff'
+                !isMaxDiffConversation
               "
               class="dropdownSlot"
             >
@@ -132,9 +131,7 @@
             </div>
 
             <FloatingBottomContainer
-              v-if="
-                loadedConversationData.metadata.conversationType !== 'maxdiff'
-              "
+              v-if="!isMaxDiffConversation"
             >
               <CommentComposer
                 ref="commentComposerRef"
@@ -200,6 +197,7 @@ import {
   getConversationPath,
   normalConversationRouteContext,
 } from "src/utils/router/conversationRouteContext";
+import { useConversationDisplayContent } from "src/utils/translation/useConversationDisplayContent";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -246,8 +244,10 @@ const {
   route,
   conversationQuery,
   conversationData,
+  conversationDisplayContent,
   hasConversationData,
   loadedConversationData,
+  loadedConversationDisplayContent,
   currentTab,
   isCurrentTabLoading,
   moderationHistoryTrigger,
@@ -264,6 +264,13 @@ const {
   conversationScrollContext,
   pendingScrollOverride,
 } = useConversationParentState(conversationConfig);
+
+const {
+  displayedTitle: displayedConversationTitle,
+} = useConversationDisplayContent({
+  conversationData,
+  initialDisplayContent: conversationDisplayContent,
+});
 
 const {
   actionBarStats,
@@ -292,6 +299,13 @@ const isActionBarLoading = computed(
     isLoadingCheckpointStats.value ||
     isLoadingCommentStats.value
 );
+
+const isMaxDiffConversation = computed(() => {
+  const metadata = loadedConversationData.value.metadata;
+  return (
+    metadata.conversationType === "ranking" && metadata.rankingMode === "bws"
+  );
+});
 
 function getActionBarStatsFromMetadata(): ConversationActionBarStats {
   const metadata = loadedConversationData.value.metadata;

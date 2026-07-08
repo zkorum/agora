@@ -17,6 +17,7 @@
     "dependencies": {
         "cborg": "^5.0.1",
         "countries-list": "^3.3.0",
+        "html-entities": "^2.6.0",
         "i": "^0.3.7",
         "keystore-idb": "^0.15.5",
         "libphonenumber-js": "^1.12.41",

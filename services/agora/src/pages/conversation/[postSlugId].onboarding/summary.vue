@@ -5,7 +5,10 @@
     :show-close-button="true"
   >
     <template #body>
-      <ConversationSurveyOnboardingHero :conversation-data="conversationData" />
+      <ConversationSurveyOnboardingHero
+        :conversation-data="conversationData"
+        :initial-display-content="conversationDisplayContent"
+      />
     </template>
 
     <template #footer>
@@ -148,6 +151,7 @@ const { t } = useComponentI18n<ConversationSurveySummaryTranslations>(
 
 const {
   conversationData,
+  conversationDisplayContent,
   conversationSlugId,
   surveyStatus,
   surveyForm,

@@ -10,7 +10,10 @@
 
     <WidthWrapper :enable="true">
       <div class="export-status-page">
-        <ExportStatusView :export-slug-id="exportSlugId" />
+        <ExportStatusView
+          :export-slug-id="exportSlugId"
+          :allow-transient-not-found="allowTransientNotFound"
+        />
       </div>
     </WidthWrapper>
   </div>
@@ -50,6 +53,8 @@ const conversationSlugId = computed(() => {
 const exportSlugId = computed(() => {
   return getSingleRouteParam(route.params.exportId);
 });
+
+const allowTransientNotFound = computed(() => route.query.fresh === "1");
 
 // Redirect if export feature is disabled
 if (processEnv.VITE_EXPORT_CONVOS_ENABLED === "false") {

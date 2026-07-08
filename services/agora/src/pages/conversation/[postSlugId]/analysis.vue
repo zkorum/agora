@@ -1,6 +1,6 @@
 <template>
   <MaxDiffResultsTab
-    v-if="props.conversationData.metadata.conversationType === 'maxdiff'"
+    v-if="isMaxDiffConversation"
     :conversation-data="props.conversationData"
     :navigate-to-voting-tab="props.navigateToDiscoverTab"
   />
@@ -21,13 +21,14 @@ import ConversationAnalysisTab from "src/components/post/ConversationAnalysisTab
 import MaxDiffResultsTab from "src/components/post/maxdiff/MaxDiffResultsTab.vue";
 import type { ConversationActionBarStats } from "src/composables/conversation/useConversationActionBarStats";
 import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
-import type { ExtendedConversation } from "src/shared/types/zod";
+import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
+import { computed } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
 const props = withDefaults(
   defineProps<{
-    conversationData: ExtendedConversation;
+    conversationData: ExtendedConversationDisplayData;
     hasConversationData: boolean;
     navigateToDiscoverTab: () => void;
     conversationScrollContext: ConversationScrollContext;
@@ -42,6 +43,12 @@ const props = withDefaults(
 const emit = defineEmits<{
   analysisLivePauseStats: [stats: ConversationActionBarStats | undefined];
 }>();
+
+const isMaxDiffConversation = computed(
+  () =>
+    props.conversationData.metadata.conversationType === "ranking" &&
+    props.conversationData.metadata.rankingMode === "bws"
+);
 
 </script>
 

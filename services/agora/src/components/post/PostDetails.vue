@@ -27,7 +27,7 @@
           :conversation-slug-id="conversationData.metadata.conversationSlugId"
           :conversation-title="conversationData.payload.title"
           :author-username="conversationData.metadata.authorUsername"
-          :conversation-type="conversationData.metadata.conversationType"
+          :conversation-type-config="conversationData.metadata"
           :has-survey="
             conversationData.interaction.surveyGate?.hasSurvey === true
           "

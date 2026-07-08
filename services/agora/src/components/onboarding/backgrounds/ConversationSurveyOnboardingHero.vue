@@ -12,7 +12,8 @@
 </template>
 
 <script setup lang="ts">
-import type { ExtendedConversation } from "src/shared/types/zod";
+import type { ConversationContentFetchResponse } from "src/shared/types/dto";
+import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
 import { useConversationDisplayContent } from "src/utils/translation/useConversationDisplayContent";
 import { computed } from "vue";
 
@@ -20,15 +21,18 @@ import ConversationSurveyHero from "./ConversationSurveyHero.vue";
 import DefaultImageExample from "./DefaultImageExample.vue";
 
 const props = defineProps<{
-  conversationData?: ExtendedConversation;
+  conversationData?: ExtendedConversationDisplayData;
+  initialDisplayContent?: ConversationContentFetchResponse;
 }>();
 
-const extendedConversation = computed(() => props.conversationData);
+const conversationData = computed(() => props.conversationData);
+const initialDisplayContent = computed(() => props.initialDisplayContent);
 const {
   displayedTitle: displayedConversationTitle,
   translationPreview,
   setTranslationMode,
 } = useConversationDisplayContent({
-  extendedConversation,
+  conversationData,
+  initialDisplayContent,
 });
 </script>

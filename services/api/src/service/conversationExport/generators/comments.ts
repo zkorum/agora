@@ -1,4 +1,13 @@
-import { and, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
+import {
+    and,
+    desc,
+    eq,
+    inArray,
+    isNotNull,
+    isNull,
+    ne,
+    or,
+} from "drizzle-orm";
 import sanitizeHtml from "sanitize-html";
 import {
     analysisSnapshotOpinionTable,
@@ -41,6 +50,15 @@ interface CommentExportOpinion {
     moderationAction: string | null;
 }
 
+const HIDDEN_MODERATION_ACTION = "hide";
+const MOVED_MODERATION_ACTION = "move";
+
+function isHiddenOpinion(
+    opinion: Pick<CommentExportOpinion, "moderationAction">,
+): boolean {
+    return opinion.moderationAction === HIDDEN_MODERATION_ACTION;
+}
+
 /**
  * Strip all HTML tags from content for CSV export.
  * Converts HTML to plain text while preserving line breaks.
@@ -76,32 +94,33 @@ export function buildCommentRows({
     opinions: CommentExportOpinion[];
     participantMap: ExportParticipantMap;
 }): Record<string, string | number | null>[] {
-    return opinions.map((opinion, index) => {
-        const authorId = participantMap.getOrCreateExportParticipantId({
-            userId: opinion.authorId,
-        });
+    return opinions
+        .filter((opinion) => !isHiddenOpinion(opinion))
+        .map((opinion, index) => {
+            const authorId = participantMap.getOrCreateExportParticipantId({
+                userId: opinion.authorId,
+            });
 
-        return {
-            timestamp: Math.floor(opinion.createdAt.getTime() / 1000),
-            datetime: formatDatetime(opinion.createdAt),
-            "comment-id": index, // Remap comment_id to 0-based index
-            "author-id": authorId, // Remap author_id to 0-based index per conversation
-            agrees: opinion.numAgrees,
-            disagrees: opinion.numDisagrees,
-            passes: opinion.numPasses,
-            votes: opinion.numAgrees + opinion.numDisagrees + opinion.numPasses,
-            moderated:
-                opinion.moderationId === null
-                    ? 0 // unmoderated
-                    : opinion.moderationAction === "hide"
-                      ? -1 // banned/hidden
-                      : opinion.moderationAction === "move"
-                        ? -1 // moved (also treated as banned)
-                        : 1, // approved (fallback, though no explicit "approve" action exists)
-            comment_text:
-                opinion.contentPlainText ?? stripHtmlForCsv(opinion.content),
-        };
-    });
+            return {
+                timestamp: Math.floor(opinion.createdAt.getTime() / 1000),
+                datetime: formatDatetime(opinion.createdAt),
+                "comment-id": index, // Remap comment_id to 0-based index
+                "author-id": authorId, // Remap author_id to 0-based index per conversation
+                agrees: opinion.numAgrees,
+                disagrees: opinion.numDisagrees,
+                passes: opinion.numPasses,
+                votes:
+                    opinion.numAgrees + opinion.numDisagrees + opinion.numPasses,
+                moderated:
+                    opinion.moderationId === null
+                        ? 0 // unmoderated
+                        : opinion.moderationAction === MOVED_MODERATION_ACTION
+                          ? -1 // moved opinions remain in moderation history
+                          : 1, // approved (fallback, though no explicit "approve" action exists)
+                comment_text:
+                    opinion.contentPlainText ?? stripHtmlForCsv(opinion.content),
+            };
+        });
 }
 
 /**
@@ -141,7 +160,8 @@ export const commentsGenerator: CsvGenerator = {
         }
         const latestViewSnapshot = latestViewSnapshotRows[0];
 
-        // Fetch all opinions for this conversation with moderation status
+        // Hidden opinions are moderator-only. Moved opinions stay in the
+        // Sensemaker moderation history as moderated=-1.
         const opinions = await db
             .select({
                 opinionId: opinionTable.id,
@@ -164,7 +184,18 @@ export const commentsGenerator: CsvGenerator = {
                     isNull(opinionModerationTable.deletedAt),
                 ),
             )
-            .where(eq(opinionTable.conversationId, conversationId))
+            .where(
+                and(
+                    eq(opinionTable.conversationId, conversationId),
+                    or(
+                        isNull(opinionModerationTable.id),
+                        ne(
+                            opinionModerationTable.moderationAction,
+                            HIDDEN_MODERATION_ACTION,
+                        ),
+                    ),
+                ),
+            )
             .orderBy(opinionTable.createdAt);
 
         const opinionCountsById = new Map<
@@ -227,7 +258,7 @@ export const commentsGenerator: CsvGenerator = {
 
         return {
             csvBuffer,
-            recordCount: opinions.length,
+            recordCount: rows.length,
         };
     },
 };

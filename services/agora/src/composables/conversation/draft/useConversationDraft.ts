@@ -19,6 +19,7 @@ import type {
   ExternalSourceConfig,
   ParticipationMode,
   PreferredOpinionGroupCount,
+  RankingMode,
   SurveyConfig,
 } from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
@@ -57,6 +58,7 @@ export interface UseConversationDraftReturn {
   inheritProjectLanguages: Ref<boolean>;
   seedOpinions: Ref<string[]>;
   conversationType: Ref<ConversationType>;
+  rankingMode: Ref<RankingMode | undefined>;
   isPrivate: Ref<boolean>;
   participationMode: Ref<ParticipationMode>;
   requiresEventTicket: Ref<EventSlug | undefined>;
@@ -137,6 +139,11 @@ export function useConversationDraft(
   const inheritProjectLanguages = ref(initialDraft.inheritProjectLanguages);
   const seedOpinions = ref<string[]>([...initialDraft.seedOpinions]);
   const conversationType = ref<ConversationType>(initialDraft.conversationType);
+  const rankingMode = ref<RankingMode | undefined>(
+    initialDraft.conversationType === "ranking"
+      ? initialDraft.rankingMode
+      : undefined
+  );
   const isPrivate = ref(initialDraft.isPrivate);
   const participationMode = ref<ParticipationMode>(initialDraft.participationMode);
   const requiresEventTicket = ref<EventSlug | undefined>(
@@ -176,6 +183,7 @@ export function useConversationDraft(
       inheritProjectLanguages: inheritProjectLanguages.value,
       seedOpinions: [...seedOpinions.value],
       conversationType: conversationType.value,
+      rankingMode: rankingMode.value,
       isPrivate: isPrivate.value,
       participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
@@ -200,7 +208,19 @@ export function useConversationDraft(
         store.conversationDraft.inheritProjectLanguages =
           newSnapshot.inheritProjectLanguages;
         store.conversationDraft.seedOpinions = newSnapshot.seedOpinions;
-        store.conversationDraft.conversationType = newSnapshot.conversationType;
+        if (newSnapshot.conversationType === "ranking") {
+          store.conversationDraft = {
+            ...store.conversationDraft,
+            conversationType: "ranking",
+            rankingMode: newSnapshot.rankingMode ?? "bws",
+          };
+        } else {
+          store.conversationDraft = {
+            ...store.conversationDraft,
+            conversationType: "polis",
+            rankingMode: undefined,
+          };
+        }
         store.conversationDraft.isPrivate = newSnapshot.isPrivate;
         store.conversationDraft.participationMode = newSnapshot.participationMode;
         store.conversationDraft.requiresEventTicket =
@@ -448,7 +468,8 @@ export function useConversationDraft(
 
     // Check conversation type changes
     const hasConversationTypeChanges =
-      conversationType.value !== emptyDraft.conversationType;
+      conversationType.value !== emptyDraft.conversationType ||
+      rankingMode.value !== emptyDraft.rankingMode;
 
     // Check post-as settings changes
     const hasPostAsChanges =
@@ -518,6 +539,7 @@ export function useConversationDraft(
     inheritProjectLanguages.value = emptyDraft.inheritProjectLanguages;
     seedOpinions.value = [];
     conversationType.value = emptyDraft.conversationType;
+    rankingMode.value = emptyDraft.rankingMode;
     isPrivate.value = emptyDraft.isPrivate;
     participationMode.value = emptyDraft.participationMode;
     requiresEventTicket.value = emptyDraft.requiresEventTicket;
@@ -603,6 +625,7 @@ export function useConversationDraft(
     inheritProjectLanguages,
     seedOpinions,
     conversationType,
+    rankingMode,
     isPrivate,
     participationMode,
     requiresEventTicket,

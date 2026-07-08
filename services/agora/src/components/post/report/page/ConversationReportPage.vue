@@ -62,7 +62,7 @@
               v-model:all-statements-order="allStatementsOrder"
               :items-per-page="itemsPerPage"
               :conversation-slug-id="conversationSlugId"
-              :conversation-title="reportFrame.conversation.payload.title"
+              :conversation-title="getReportConversationTitle(reportFrame)"
               :author-username="reportFrame.conversation.metadata.authorUsername"
               :conversation-organization-name="
                 reportFrame.conversation.metadata.organization?.name ?? ''
@@ -105,6 +105,7 @@ import {
   type ReportPageTranslations,
   reportPageTranslations,
 } from "src/pages/conversation/[conversationSlugId]/report.i18n";
+import type { ConversationContentFetchResponse } from "src/shared/types/dto";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import {
   getConversationAnalysisRoute,
@@ -167,6 +168,15 @@ const analysisFallbackRoute = computed(() =>
     query: analysisRouteQuery.value,
   })
 );
+
+function getReportConversationTitle(reportFrame: {
+  conversationDisplayContent: ConversationContentFetchResponse;
+}): string {
+  const { conversationDisplayContent } = reportFrame;
+  return conversationDisplayContent.status === "available"
+    ? conversationDisplayContent.content.title
+    : "";
+}
 const isNarrowScreen = computed(() => $q.screen.xs);
 
 async function handleNarrowBack(): Promise<void> {

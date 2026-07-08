@@ -14,6 +14,7 @@
       v-model:selected-language="selectedLanguage"
       :project="projectConversationData.project"
       :conversation-data="loadedConversationData"
+      :initial-display-content="loadedConversationDisplayContent"
       :language-options="projectConversationData.languageOptions"
       @conversation-deleted="handleConversationDeleted"
     >
@@ -29,10 +30,10 @@
             :total-vote-count="displayedActionBarStats.totalVoteCount"
             :is-loading="isActionBarLoading"
             :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
-            :conversation-title="loadedConversationData.payload.title"
+            :conversation-title="displayedConversationTitle"
             :author-username="loadedConversationData.metadata.authorUsername"
             :on-same-tab-click="handleSameTabActionBarClick"
-            :conversation-type="loadedConversationData.metadata.conversationType"
+            :conversation-type-config="loadedConversationData.metadata"
             :has-survey="loadedConversationData.interaction.surveyGate?.hasSurvey === true"
             :enable-route-navigation="true"
             :conversation-route-context="conversationRouteContext"
@@ -41,11 +42,11 @@
       </template>
 
       <template #conversation-toolbar>
-        <CommentSortingSelector
-          v-if="
-            currentTab === 'comment' &&
-            loadedConversationData.metadata.conversationType !== 'maxdiff'
-          "
+          <CommentSortingSelector
+            v-if="
+              currentTab === 'comment' &&
+              !isMaxDiffConversation
+            "
           :filter-value="commentFilter"
           :moderated-opinion-count="loadedConversationData.metadata.moderatedOpinionCount"
           :hidden-opinion-count="loadedConversationData.metadata.hiddenOpinionCount"
@@ -88,7 +89,7 @@
     <FloatingBottomContainer
       v-if="
         hasConversationData &&
-        loadedConversationData.metadata.conversationType !== 'maxdiff'
+        !isMaxDiffConversation
       "
       :anchor-element="actionBarElement ?? undefined"
       :respect-drawer-offset="false"
@@ -136,6 +137,7 @@ import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { getScrollTop } from "src/utils/html/scroll";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import { getSingleRouteParam } from "src/utils/router/params";
+import { useConversationDisplayContent } from "src/utils/translation/useConversationDisplayContent";
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
@@ -198,8 +200,10 @@ const {
   route: conversationRoute,
   conversationQuery,
   conversationData,
+  conversationDisplayContent,
   hasConversationData,
   loadedConversationData,
+  loadedConversationDisplayContent,
   currentTab,
   isCurrentTabLoading,
   moderationHistoryTrigger,
@@ -214,6 +218,11 @@ const {
   conversationScrollContext,
   pendingScrollOverride,
 } = useConversationParentState(conversationConfig);
+
+const { displayedTitle: displayedConversationTitle } = useConversationDisplayContent({
+  conversationData,
+  initialDisplayContent: conversationDisplayContent,
+});
 
 const projectConversationQuery = useQuery({
   queryKey: computed(() => [
@@ -275,6 +284,12 @@ const isActionBarLoading = computed(
     isLoadingCheckpointStats.value ||
     isLoadingCommentStats.value
 );
+const isMaxDiffConversation = computed(() => {
+  const metadata = loadedConversationData.value.metadata;
+  return (
+    metadata.conversationType === "ranking" && metadata.rankingMode === "bws"
+  );
+});
 const isInitialLoading = computed(
   () =>
     (conversationQuery.isPending.value && !hasConversationData.value) ||

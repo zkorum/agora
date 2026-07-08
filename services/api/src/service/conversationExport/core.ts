@@ -5,6 +5,7 @@ import {
     count,
     desc,
     eq,
+    isNotNull,
     isNull,
     lt,
     lte,
@@ -207,6 +208,7 @@ interface ConversationExportConversationRecord {
     slugId: string;
     title: string;
     projectId: number;
+    conversationType: typeof conversationTable.$inferSelect.conversationType;
 }
 
 async function findConversationRecord({
@@ -222,13 +224,19 @@ async function findConversationRecord({
             slugId: conversationTable.slugId,
             title: conversationContentTable.title,
             projectId: conversationTable.projectId,
+            conversationType: conversationTable.conversationType,
         })
         .from(conversationTable)
         .innerJoin(
             conversationContentTable,
             eq(conversationTable.currentContentId, conversationContentTable.id),
         )
-        .where(eq(conversationTable.slugId, conversationSlugId))
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+            ),
+        )
         .limit(1);
 
     return conversations[0];
@@ -253,6 +261,26 @@ async function getConversationRecord({
     return conversation;
 }
 
+function isConversationExportSupported({
+    conversation,
+}: {
+    conversation: ConversationExportConversationRecord;
+}): boolean {
+    return conversation.conversationType !== "ranking";
+}
+
+function assertConversationExportSupported({
+    conversation,
+}: {
+    conversation: ConversationExportConversationRecord;
+}): void {
+    if (!isConversationExportSupported({ conversation })) {
+        throw httpErrors.badRequest(
+            "Conversation export is not supported for prioritization conversations",
+        );
+    }
+}
+
 async function getOpinionCount({
     db,
     conversationId,
@@ -273,9 +301,10 @@ async function getOpinionCount({
         .where(
             and(
                 eq(opinionTable.conversationId, conversationId),
+                isNotNull(opinionTable.currentContentId),
                 or(
                     isNull(opinionModerationTable.moderationAction),
-                    ne(opinionModerationTable.moderationAction, "move"),
+                    ne(opinionModerationTable.moderationAction, "hide"),
                 ),
             ),
         );
@@ -525,6 +554,8 @@ interface ExportRequestNotificationRecord {
     slugId: string;
     userId: string;
     conversationId: number;
+    conversationSlugId: string;
+    conversationTitle: string;
     failureReason: ExportFailureReason | null;
     cancellationReason: ExportCancellationReason | null;
 }
@@ -539,11 +570,19 @@ interface RequestConversationExportParams {
 type RequestCreationResult =
     | { status: "active_export_in_progress" }
     | { status: "cooldown_active"; cooldownEndsAt: Date }
-    | { status: "queued"; requestId: number; exportSlugId: string };
+    | {
+          status: "queued";
+          requestId: number;
+          exportSlugId: string;
+          createdAt: Date;
+          expiresAt: Date;
+      };
 
 interface CreateRequestResult {
     requestId: number;
     exportSlugId: string;
+    createdAt: Date;
+    expiresAt: Date;
 }
 
 function getExpiresAt({ now }: { now: Date }): Date {
@@ -661,6 +700,7 @@ async function createRequest({
 }): Promise<CreateRequestResult | undefined> {
     for (let attempt = 0; attempt < 5; attempt += 1) {
         const slugId = generateRandomSlugId();
+        const expiresAt = getExpiresAt({ now });
         const inserted = await db
             .insert(conversationExportRequestTable)
             .values({
@@ -669,7 +709,7 @@ async function createRequest({
                 generationId,
                 userId,
                 status: "processing",
-                expiresAt: getExpiresAt({ now }),
+                expiresAt,
                 createdAt: now,
                 updatedAt: now,
             })
@@ -680,6 +720,8 @@ async function createRequest({
             return {
                 requestId: inserted[0].id,
                 exportSlugId: slugId,
+                createdAt: now,
+                expiresAt,
             };
         }
 
@@ -730,6 +772,10 @@ export async function requestConversationExport({
     });
     if (conversation === undefined) {
         return { success: false, reason: "conversation_not_found" };
+    }
+
+    if (!isConversationExportSupported({ conversation })) {
+        return { success: false, reason: "unsupported_conversation_type" };
     }
 
     const exportAccessLevel =
@@ -830,6 +876,8 @@ export async function requestConversationExport({
                 status: "queued",
                 requestId: request.requestId,
                 exportSlugId: request.exportSlugId,
+                createdAt: request.createdAt,
+                expiresAt: request.expiresAt,
             };
         },
     );
@@ -852,6 +900,8 @@ export async function requestConversationExport({
         exportRequestId: creationResult.requestId,
         exportSlugId: creationResult.exportSlugId,
         conversationId: conversation.id,
+        conversationSlugId: conversation.slugId,
+        conversationTitle: conversation.title,
         type: "export_started",
         realtimeSSEManager,
     });
@@ -860,6 +910,8 @@ export async function requestConversationExport({
         success: true,
         status: "queued",
         exportSlugId: creationResult.exportSlugId,
+        createdAt: creationResult.createdAt,
+        expiresAt: creationResult.expiresAt,
     };
 }
 
@@ -1173,6 +1225,16 @@ export async function getConversationExportHistory({
     conversationSlugId,
     userId,
 }: GetConversationExportHistoryParams): Promise<GetConversationExportHistoryResponse> {
+    const conversation = await findConversationRecord({
+        db,
+        conversationSlugId,
+    });
+    if (conversation === undefined) {
+        return [];
+    }
+
+    assertConversationExportSupported({ conversation });
+
     const exports = await db
         .select({
             exportSlugId: conversationExportRequestTable.slugId,
@@ -1618,11 +1680,21 @@ async function getProcessingRequestsForGeneration({
             slugId: conversationExportRequestTable.slugId,
             userId: conversationExportRequestTable.userId,
             conversationId: conversationExportRequestTable.conversationId,
+            conversationSlugId: conversationTable.slugId,
+            conversationTitle: conversationContentTable.title,
             failureReason: conversationExportRequestTable.failureReason,
             cancellationReason:
                 conversationExportRequestTable.cancellationReason,
         })
         .from(conversationExportRequestTable)
+        .innerJoin(
+            conversationTable,
+            eq(conversationTable.id, conversationExportRequestTable.conversationId),
+        )
+        .innerJoin(
+            conversationContentTable,
+            eq(conversationContentTable.id, conversationTable.currentContentId),
+        )
         .where(
             and(
                 eq(conversationExportRequestTable.generationId, generationId),
@@ -1765,6 +1837,8 @@ async function notifyRequests({
             exportRequestId: request.id,
             exportSlugId: request.slugId,
             conversationId: request.conversationId,
+            conversationSlugId: request.conversationSlugId,
+            conversationTitle: request.conversationTitle,
             type,
             failureReason: request.failureReason ?? undefined,
             cancellationReason: request.cancellationReason ?? undefined,

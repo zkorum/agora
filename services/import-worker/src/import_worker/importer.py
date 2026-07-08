@@ -13,6 +13,7 @@ from sqlalchemy import insert as sqlalchemy_insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from import_worker.csv_import import build_import_from_csv
+from import_worker.generated_import_contracts import FailureReason
 from import_worker.generated_models import (
     AnalysisWorkState,
     ContentTranslationSourceKind,
@@ -21,6 +22,7 @@ from import_worker.generated_models import (
     Conversation,
     ConversationContent,
     ConversationImport,
+    ConversationImportSource,
     ConversationTranslationTargetLanguage,
     ConversationViewSnapshot,
     ConversationViewSnapshotReasonEnum,
@@ -31,6 +33,7 @@ from import_worker.generated_models import (
     OpinionContent,
     OpinionGroupSpec,
     OpinionModeration,
+    PolisConversationConfig,
     User,
     Vote,
     VoteContent,
@@ -413,6 +416,21 @@ def _create_conversation(
     import_url = request.polis_url if request.type == "url" else None
     language_target_policy = request.form_data.language_target_policy
 
+    polis_config_row = session.execute(
+        sqlalchemy_insert(PolisConversationConfig)
+        .values(
+            ai_labeling_enabled=request.form_data.ai_labeling_enabled,
+            preferred_opinion_group_count=None
+            if preferred_opinion_group_count is None
+            else preferred_opinion_group_count.root,
+            created_at=now,
+            updated_at=now,
+        )
+        .returning(PolisConversationConfig.id),
+    ).first()
+    if polis_config_row is None:
+        raise RuntimeError("Failed to create Polis conversation config")
+
     conversation_row = session.execute(
         sqlalchemy_insert(Conversation)
         .values(
@@ -421,22 +439,13 @@ def _create_conversation(
             is_indexed=request.form_data.is_indexed,
             participation_mode=request.form_data.participation_mode.value,
             conversation_type="polis",
+            polis_config_id=polis_config_row.id,
             is_importing=True,
             requires_event_ticket=request.form_data.requires_event_ticket,
-            ai_labeling_enabled=request.form_data.ai_labeling_enabled,
-            preferred_opinion_group_count=None
-            if preferred_opinion_group_count is None
-            else preferred_opinion_group_count.root,
             current_content_id=None,
             created_at=now,
             updated_at=now,
             last_reacted_at=now,
-            import_url=import_url,
-            import_conversation_url=conversation_url,
-            import_export_url=report_url,
-            import_created_at=_timestamp_from_polis(imported.conversation_data.created),
-            import_author=imported.conversation_data.ownername,
-            import_method=request.type,
             dynamic_translation_enabled=language_target_policy.dynamic_translation_enabled,
             language_settings_source=language_target_policy.source,
         )
@@ -445,6 +454,20 @@ def _create_conversation(
     if conversation_row is None:
         raise RuntimeError("Failed to create conversation")
     conversation_id = conversation_row.id
+
+    session.execute(
+        sqlalchemy_insert(ConversationImportSource).values(
+            conversation_id=conversation_id,
+            import_url=import_url,
+            import_conversation_url=conversation_url,
+            import_export_url=report_url,
+            import_created_at=_timestamp_from_polis(imported.conversation_data.created),
+            import_author=imported.conversation_data.ownername,
+            import_method=request.type,
+            created_at=now,
+            updated_at=now,
+        ),
+    )
 
     content_row = session.execute(
         sqlalchemy_insert(ConversationContent)
@@ -921,10 +944,11 @@ def _update_counts_and_schedule(
     now = now_zero_ms()
     conversation_row = session.execute(
         select(
-            Conversation.analysis_data_generation,
+            PolisConversationConfig.analysis_data_generation,
             Conversation.current_content_id,
             Conversation.is_closed,
         )
+        .join(PolisConversationConfig, PolisConversationConfig.id == Conversation.polis_config_id)
         .where(Conversation.id == conversation_id)
         .with_for_update(),
     ).first()
@@ -932,8 +956,13 @@ def _update_counts_and_schedule(
         raise RuntimeError(f"Missing imported conversation {conversation_id}")
     data_generation = conversation_row.analysis_data_generation + 1
     session.execute(
-        update(Conversation)
-        .where(Conversation.id == conversation_id)
+        update(PolisConversationConfig)
+        .where(
+            PolisConversationConfig.id
+            == select(Conversation.polis_config_id)
+            .where(Conversation.id == conversation_id)
+            .scalar_subquery()
+        )
         .values(
             analysis_data_generation=data_generation,
         ),
@@ -1043,7 +1072,9 @@ def _is_analysis_terminal_for_import(
     conversation_id: int,
 ) -> bool:
     conversation_row = session.execute(
-        select(Conversation.analysis_data_generation).where(Conversation.id == conversation_id),
+        select(PolisConversationConfig.analysis_data_generation)
+        .join(Conversation, Conversation.polis_config_id == PolisConversationConfig.id)
+        .where(Conversation.id == conversation_id),
     ).first()
     if conversation_row is None:
         return False
@@ -1086,7 +1117,12 @@ def complete_ready_imports(session: Session) -> list[ImportNotificationEvent]:
             ConversationImport.slug_id,
             ConversationImport.user_id,
             ConversationImport.conversation_id,
-        ).where(
+            Conversation.slug_id.label("conversation_slug_id"),
+            ConversationContent.title.label("conversation_title"),
+        )
+        .join(Conversation, Conversation.id == ConversationImport.conversation_id)
+        .join(ConversationContent, ConversationContent.id == Conversation.current_content_id)
+        .where(
             and_(
                 ConversationImport.status == "processing",
                 ConversationImport.conversation_id.is_not(None),
@@ -1113,7 +1149,12 @@ def complete_ready_imports(session: Session) -> list[ImportNotificationEvent]:
             .where(ConversationImport.id == row.id)
             .values(status="completed", updated_at=now),
         )
-        notification_slug_id, _ = _create_import_notification(
+        (
+            notification_slug_id,
+            _,
+            notification_created_at,
+            notification_is_read,
+        ) = _create_import_notification(
             session,
             user_id=row.user_id,
             import_id=row.id,
@@ -1125,8 +1166,14 @@ def complete_ready_imports(session: Session) -> list[ImportNotificationEvent]:
                 type="import_notification",
                 userId=str(row.user_id),
                 notificationSlugId=notification_slug_id,
+                notificationCreatedAt=notification_created_at.isoformat(),
+                notificationIsRead=notification_is_read,
                 importId=row.id,
+                importSlugId=row.slug_id,
                 conversationId=conversation_id,
+                conversationSlugId=row.conversation_slug_id,
+                conversationTitle=row.conversation_title,
+                failureReason=None,
                 broadcastNewConversation=True,
             ),
         )
@@ -1210,12 +1257,12 @@ def _create_import_notification(
     import_id: int,
     conversation_id: int | None,
     notification_type: str,
-) -> tuple[str, int]:
+) -> tuple[str, int, datetime, bool]:
     notification_slug_id = generate_random_slug_id()
     notification_row = session.execute(
         sqlalchemy_insert(Notification)
         .values(slug_id=notification_slug_id, user_id=user_id, notification_type=notification_type)
-        .returning(Notification.id),
+        .returning(Notification.id, Notification.created_at, Notification.is_read),
     ).first()
     if notification_row is None:
         raise RuntimeError("Failed to create import notification")
@@ -1226,7 +1273,12 @@ def _create_import_notification(
             conversation_id=conversation_id,
         ),
     )
-    return notification_slug_id, notification_row.id
+    return (
+        notification_slug_id,
+        notification_row.id,
+        notification_row.created_at,
+        notification_row.is_read,
+    )
 
 
 def _get_import_user_id(session: Session, *, import_slug_id: str) -> uuid.UUID:
@@ -1425,7 +1477,7 @@ def mark_import_failed(
     from import_worker.queue import ImportNotificationEvent
 
     row = session.execute(
-        select(ConversationImport.id, ConversationImport.user_id).where(
+        select(ConversationImport.id, ConversationImport.slug_id, ConversationImport.user_id).where(
             ConversationImport.slug_id == import_slug_id,
         ),
     ).first()
@@ -1437,7 +1489,12 @@ def mark_import_failed(
         .where(ConversationImport.slug_id == import_slug_id)
         .values(status="failed", failure_reason=failure_reason, updated_at=now_zero_ms()),
     )
-    notification_slug_id, _ = _create_import_notification(
+    (
+        notification_slug_id,
+        _,
+        notification_created_at,
+        notification_is_read,
+    ) = _create_import_notification(
         session,
         user_id=row.user_id,
         import_id=row.id,
@@ -1449,8 +1506,14 @@ def mark_import_failed(
         type="import_notification",
         userId=str(row.user_id),
         notificationSlugId=notification_slug_id,
+        notificationCreatedAt=notification_created_at.isoformat(),
+        notificationIsRead=notification_is_read,
         importId=row.id,
+        importSlugId=row.slug_id,
         conversationId=None,
+        conversationSlugId=None,
+        conversationTitle=None,
+        failureReason=FailureReason(failure_reason),
         broadcastNewConversation=False,
     )
 
@@ -1491,7 +1554,12 @@ def cleanup_stale_imports(
     )
     events: list[ImportNotificationEvent] = []
     for row in stale_rows:
-        notification_slug_id, _ = _create_import_notification(
+        (
+            notification_slug_id,
+            _,
+            notification_created_at,
+            notification_is_read,
+        ) = _create_import_notification(
             session,
             user_id=row.user_id,
             import_id=row.id,
@@ -1503,8 +1571,14 @@ def cleanup_stale_imports(
                 type="import_notification",
                 userId=str(row.user_id),
                 notificationSlugId=notification_slug_id,
+                notificationCreatedAt=notification_created_at.isoformat(),
+                notificationIsRead=notification_is_read,
                 importId=row.id,
+                importSlugId=row.slug_id,
                 conversationId=None,
+                conversationSlugId=None,
+                conversationTitle=None,
+                failureReason=FailureReason.timeout,
                 broadcastNewConversation=False,
             ),
         )

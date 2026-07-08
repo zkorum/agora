@@ -156,6 +156,7 @@ export async function requestConversationImport(
             db,
             userId,
             importId: createImportResult.importId,
+            importSlugId: createImportResult.importSlugId,
             conversationId: null,
             type: "import_started",
             realtimeSSEManager,
@@ -169,6 +170,9 @@ export async function requestConversationImport(
 
     return { importSlugId: createImportResult.importSlugId };
 }
+
+export const getConversationImportAccessState =
+    database.getConversationImportAccessState;
 
 interface RequestUrlImportParams {
     db: PostgresDatabase;
@@ -249,6 +253,7 @@ export async function requestUrlImport(
             db,
             userId,
             importId: createImportResult.importId,
+            importSlugId: createImportResult.importSlugId,
             conversationId: null,
             type: "import_started",
             realtimeSSEManager,
@@ -266,6 +271,7 @@ export async function requestUrlImport(
 interface GetConversationImportStatusParams {
     db: PostgresDatabase;
     importSlugId: string;
+    userId: string;
 }
 
 /**

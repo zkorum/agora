@@ -54,6 +54,7 @@ type CreateNewCommentResult =
       success: true;
       opinionSlugId: string;
       opinionItem: OpinionItem;
+      displayedOpinionItem: DisplayedOpinionItem;
       authStateChanged: boolean;
       needsCacheRefresh: boolean;
     }
@@ -143,6 +144,10 @@ export function useBackendCommentApi() {
     filter: CommentTabFilters,
     clusterKey: PolisKey | undefined
   ): Promise<DisplayedOpinionItem[]> {
+    if (filter === "hidden") {
+      return await fetchHiddenCommentsForPost(postSlugId);
+    }
+
     const params: ApiV1OpinionFetchByConversationPostRequest = {
       conversationSlugId: postSlugId,
       filter: filter,
@@ -217,6 +222,7 @@ export function useBackendCommentApi() {
         success: true,
         opinionSlugId: data.opinionSlugId,
         opinionItem: data.opinionItem,
+        displayedOpinionItem: data.displayedOpinionItem,
         authStateChanged,
         needsCacheRefresh,
       };

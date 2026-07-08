@@ -5,7 +5,10 @@
     :show-close-button="true"
   >
     <template #body>
-      <ConversationSurveyOnboardingHero :conversation-data="conversationData" />
+      <ConversationSurveyOnboardingHero
+        :conversation-data="conversationData"
+        :initial-display-content="conversationDisplayContent"
+      />
     </template>
 
     <template #footer>
@@ -81,7 +84,7 @@ if (
   });
 }
 
-const { conversationSlugId, conversationData, surveyForm } =
+const { conversationSlugId, conversationData, conversationDisplayContent, surveyForm } =
   useConversationSurveyState({ conversationSlugId: routeConversationSlugId });
 
 const surveyStepTotal = computed(() => {

@@ -11,22 +11,24 @@
     <PullToRefresh @refresh="handleRefresh">
       <WidthWrapper :enable="true">
         <div class="export-page">
-          <!-- Active Export Banner -->
-          <ActiveExportBanner
-            v-if="readinessQuery.data.value?.status === 'active'"
-            :export-slug-id="readinessQuery.data.value.exportSlugId"
-            :conversation-slug-id="conversationSlugId"
-          />
+          <template v-if="isExportPageAvailable">
+            <!-- Active Export Banner -->
+            <ActiveExportBanner
+              v-if="readinessQuery.data.value?.status === 'active'"
+              :export-slug-id="readinessQuery.data.value.exportSlugId"
+              :conversation-slug-id="conversationSlugId"
+            />
 
-          <!-- Cooldown Banner -->
-          <CooldownBanner
-            v-if="readinessQuery.data.value?.status === 'cooldown'"
-            :cooldown-ends-at="
-              readinessQuery.data.value.cooldownEndsAt.toISOString()
-            "
-            :last-export-slug-id="readinessQuery.data.value.lastExportSlugId"
-            :conversation-slug-id="conversationSlugId"
-          />
+            <!-- Cooldown Banner -->
+            <CooldownBanner
+              v-if="readinessQuery.data.value?.status === 'cooldown'"
+              :cooldown-ends-at="
+                readinessQuery.data.value.cooldownEndsAt.toISOString()
+              "
+              :last-export-slug-id="readinessQuery.data.value.lastExportSlugId"
+              :conversation-slug-id="conversationSlugId"
+            />
+          </template>
 
           <AsyncStateHandler
             :query="conversationQuery"
@@ -43,37 +45,40 @@
               @keydown.enter="navigateToConversation"
               @keydown.space="navigateToConversation"
             >
-              <PostDetails
-                :conversation-data="conversationQuery.data.value"
+              <TranslatedPostContent
+                :extended-post-data="conversationQuery.data.value.conversationData"
+                :initial-display-content="conversationQuery.data.value.displayContent"
                 :compact-mode="true"
               />
             </div>
           </AsyncStateHandler>
 
-          <section class="export-actions">
-            <p class="page-description">
-              {{ t("pageDescription") }}
-            </p>
+          <template v-if="isExportPageAvailable">
+            <section class="export-actions">
+              <p class="page-description">
+                {{ t("pageDescription") }}
+              </p>
 
-            <RequestExportButton
-              :disabled="readinessQuery.data.value?.status !== 'ready'"
-              :aria-label="t('requestExportAriaLabel')"
-              @request="handleRequestExport"
-            />
-          </section>
+              <RequestExportButton
+                :disabled="readinessQuery.data.value?.status !== 'ready'"
+                :aria-label="t('requestExportAriaLabel')"
+                @request="handleRequestExport"
+              />
+            </section>
 
-          <section
-            class="export-history-section"
-            aria-labelledby="previous-exports-heading"
-          >
-            <h2 id="previous-exports-heading" class="section-title">
-              {{ t("previousExports") }}
-            </h2>
-            <ExportHistoryList
-              :conversation-slug-id="conversationSlugId"
-              :export-history-query="exportHistoryQuery"
-            />
-          </section>
+            <section
+              class="export-history-section"
+              aria-labelledby="previous-exports-heading"
+            >
+              <h2 id="previous-exports-heading" class="section-title">
+                {{ t("previousExports") }}
+              </h2>
+              <ExportHistoryList
+                :conversation-slug-id="conversationSlugId"
+                :export-history-query="exportHistoryQuery"
+              />
+            </section>
+          </template>
         </div>
       </WidthWrapper>
     </PullToRefresh>
@@ -89,7 +94,7 @@ import ExportHistoryList from "src/components/conversation/export/ExportHistoryL
 import RequestExportButton from "src/components/conversation/export/RequestExportButton.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
-import PostDetails from "src/components/post/PostDetails.vue";
+import TranslatedPostContent from "src/components/post/display/TranslatedPostContent.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import PullToRefresh from "src/components/ui/PullToRefresh.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
@@ -105,7 +110,7 @@ import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { processEnv } from "src/utils/processEnv";
 import { getSingleRouteParam } from "src/utils/router/params";
 import { useNotify } from "src/utils/ui/notify";
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import {
@@ -141,14 +146,45 @@ const conversationQuery = useConversationQuery({
   enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
 });
 
+const isPrioritizationConversation = computed(() => {
+  return (
+    conversationQuery.data.value?.conversationData.metadata.conversationType ===
+    "ranking"
+  );
+});
+
+const isExportPageAvailable = computed(
+  () =>
+    isAuthInitialized.value &&
+    isGuestOrLoggedIn.value &&
+    conversationQuery.data.value !== undefined &&
+    !isPrioritizationConversation.value
+);
+
+watch(
+  isPrioritizationConversation,
+  (isPrioritization) => {
+    if (!isPrioritization) {
+      return;
+    }
+
+    showNotifyMessage(t("errorUnsupportedConversationType"));
+    void router.replace({
+      name: "/conversation/[postSlugId]/",
+      params: { postSlugId: conversationSlugId.value },
+    });
+  },
+  { immediate: true }
+);
+
 const exportHistoryQuery = useExportHistoryQuery({
   conversationSlugId: conversationSlugId.value,
-  enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
+  enabled: isExportPageAvailable,
 });
 
 const readinessQuery = useExportReadinessQuery({
   conversationSlugId: conversationSlugId.value,
-  enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
+  enabled: isExportPageAvailable,
 });
 
 const requestExportMutation = useRequestExportMutation();
@@ -168,12 +204,16 @@ function handleRefresh(done: () => void): void {
 
   const minDelay = new Promise((resolve) => setTimeout(resolve, 500));
 
-  void Promise.all([
+  const refreshPromises: Promise<unknown>[] = [
     conversationQuery.refetch(),
-    exportHistoryQuery.refetch(),
-    readinessQuery.refetch(),
     minDelay,
-  ]).finally(() => {
+  ];
+
+  if (isExportPageAvailable.value) {
+    refreshPromises.push(exportHistoryQuery.refetch(), readinessQuery.refetch());
+  }
+
+  void Promise.all(refreshPromises).finally(() => {
     done();
   });
 }
@@ -194,6 +234,7 @@ async function handleRequestExport(): Promise<void> {
         active_export_in_progress: t("errorActiveExportInProgress"),
         conversation_not_found: t("errorConversationNotFound"),
         no_opinions: t("errorNoOpinions"),
+        unsupported_conversation_type: t("errorUnsupportedConversationType"),
       };
       showNotifyMessage(reasonMessages[result.reason]);
       return;
@@ -252,6 +293,7 @@ async function handleRequestExport(): Promise<void> {
         conversationSlugId: conversationSlugId.value,
         exportId: result.exportSlugId,
       },
+      query: { fresh: "1" },
     });
   } catch (error) {
     console.error("[Export] Failed to request export:", error);

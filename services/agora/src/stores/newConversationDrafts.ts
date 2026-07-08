@@ -123,7 +123,8 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
 
     // Check conversation type changes
     const hasConversationTypeChanges =
-      current.conversationType !== emptyDraft.conversationType;
+      current.conversationType !== emptyDraft.conversationType ||
+      current.rankingMode !== emptyDraft.rankingMode;
 
     // Check post-as settings changes
     const hasPostAsChanges =

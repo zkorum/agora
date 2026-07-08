@@ -1,11 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import type {
-  ApiV1MaxdiffItemsFetchPost200ResponseItemsInner,
-  ApiV1MaxdiffLoadPost200Response,
-} from "src/api";
-import type { MaxDiffSaveResponse } from "src/shared/types/dto";
+import { storeToRefs } from "pinia";
+import type { ApiV1RankingBwsLoadPost200Response } from "src/api";
+import type { MaxDiffItem, MaxDiffSaveResponse } from "src/shared/types/dto";
 import type { ParticipationBlockedReason } from "src/shared/types/zod";
 import type { ExtendedConversation, MaxDiffComparison } from "src/shared/types/zod";
+import { useLanguageStore } from "src/stores/language";
 import type { MaxDiffState } from "src/utils/maxdiff";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
@@ -20,15 +19,16 @@ export function useMaxDiffItemsQuery({
   enabled: MaybeRefOrGetter<boolean>;
 }) {
   const { fetchMaxDiffItems } = useMaxDiffApi();
+  const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
 
   return useQuery({
     queryKey: [
       "maxdiff-items",
       computed(() => toValue(conversationSlugId)),
+      computed(() => displayLanguage.value),
+      computed(() => spokenLanguages.value.join(",")),
     ],
-    queryFn: async (): Promise<
-      ApiV1MaxdiffItemsFetchPost200ResponseItemsInner[]
-    > => {
+    queryFn: async (): Promise<MaxDiffItem[]> => {
       const response = await fetchMaxDiffItems({
         conversationSlugId: toValue(conversationSlugId),
         lifecycleFilter: "active",
@@ -59,7 +59,7 @@ export function useMaxDiffLoadQuery({
       "maxdiff-load",
       computed(() => toValue(conversationSlugId)),
     ],
-    queryFn: async (): Promise<ApiV1MaxdiffLoadPost200Response> => {
+    queryFn: async (): Promise<ApiV1RankingBwsLoadPost200Response> => {
       const response = await loadMaxDiffResult({
         conversationSlugId: toValue(conversationSlugId),
       });
@@ -173,7 +173,7 @@ export function useMaxDiffSaveMutation({
 
       // Write saved state directly to cache instead of invalidating
       // (avoids read replica lag returning stale data before buffer flushes)
-      queryClient.setQueryData<ApiV1MaxdiffLoadPost200Response>(
+      queryClient.setQueryData<ApiV1RankingBwsLoadPost200Response>(
         ["maxdiff-load", slugId],
         (old) => ({
           ranking: variables.ranking,

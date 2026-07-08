@@ -35,7 +35,7 @@ import type {
   ConversationScrollContext,
   RegisterChildRefreshHandler,
 } from "src/composables/conversation/useConversationParentState";
-import type { ExtendedConversation } from "src/shared/types/zod";
+import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
 import {
   parseAnalysisViewQuery,
   parseCheckpointQuery,
@@ -66,7 +66,7 @@ import AnalysisPage from "./analysis/AnalysisPage.vue";
 
 const props = withDefaults(
   defineProps<{
-    conversationData: ExtendedConversation;
+    conversationData: ExtendedConversationDisplayData;
     hasConversationData: boolean;
     showReportButton?: boolean;
     reportRouteOverride?: RouteLocationRaw;

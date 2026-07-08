@@ -89,10 +89,18 @@ export function useConversationParentState({
 
   const conversationData = computed(() => {
     const data = conversationQuery.data.value;
-    if (!data || data.metadata.conversationSlugId === "") {
+    if (!data || data.conversationData.metadata.conversationSlugId === "") {
       return undefined;
     }
-    return data;
+    return data.conversationData;
+  });
+
+  const conversationDisplayContent = computed(() => {
+    const data = conversationQuery.data.value;
+    if (!data || data.conversationData.metadata.conversationSlugId === "") {
+      return undefined;
+    }
+    return data.displayContent;
   });
 
   const hasConversationData = computed(
@@ -108,6 +116,16 @@ export function useConversationParentState({
       );
     }
     return data;
+  });
+
+  const loadedConversationDisplayContent = computed(() => {
+    const displayContent = conversationDisplayContent.value;
+    if (!displayContent) {
+      throw new Error(
+        "[ConversationParentState] Accessed conversation display content before loaded"
+      );
+    }
+    return displayContent;
   });
 
   const { invalidateUserVotes } = useInvalidateVoteQueries();
@@ -378,8 +396,10 @@ export function useConversationParentState({
     route,
     conversationQuery,
     conversationData,
+    conversationDisplayContent,
     hasConversationData,
     loadedConversationData,
+    loadedConversationDisplayContent,
     currentTab,
     isCurrentTabLoading,
     moderationHistoryTrigger,

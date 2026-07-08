@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from agora_analysis_worker_shared.ai_description_work import (
+    AI_DESCRIPTION_NON_RETRYABLE_ERROR_CODE,
+    AI_DESCRIPTION_RETRYABLE_ERROR_CODE,
     DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE,
     CandidateLocaleRequestRow,
     ClaimedDescriptionTranslationWorkItem,
@@ -87,6 +89,7 @@ from agora_analysis_worker_shared.generated_models import (
     OpinionGroupLineageDescriptionWork,
     OpinionGroupVariant,
     ParticipationMode,
+    PolisConversationConfig,
     RealtimeEventOutbox,
     SpokenLanguageCode,
     VoteEnumSimple,
@@ -119,9 +122,10 @@ def _insert_non_processable_ai_work_state(
             slug_id="abc12345",
             project_id=1,
             current_content_id=40,
+            polis_config_id=10,
+            ranking_config_id=None,
             dynamic_translation_enabled=True,
             language_settings_source=ConversationLanguageSettingsSource.conversation_override,
-            current_ranking_score_id=None,
             is_indexed=True,
             participation_mode=ParticipationMode.account_required,
             conversation_type=ConversationType.polis,
@@ -129,19 +133,19 @@ def _insert_non_processable_ai_work_state(
             is_closed=False,
             is_edited=False,
             requires_event_ticket=None,
-            ai_labeling_enabled=True,
-            analysis_data_generation=1,
-            preferred_opinion_group_count=None,
-            import_url=None,
-            import_conversation_url=None,
-            import_export_url=None,
-            import_created_at=None,
-            import_author=None,
-            import_method=None,
-            external_source_config=None,
             created_at=NOW,
             updated_at=NOW,
             last_reacted_at=NOW,
+        )
+    )
+    session.add(
+        PolisConversationConfig(
+            id=10,
+            ai_labeling_enabled=True,
+            analysis_data_generation=1,
+            preferred_opinion_group_count=None,
+            created_at=NOW,
+            updated_at=NOW,
         )
     )
     session.add(
@@ -418,9 +422,7 @@ def test_label_summary_partial_retry_stops_after_timeout() -> None:
 def _insert_attempted_eager_translation_work(session: Session) -> None:
     existing_work_by_locale = {
         work.locale: work
-        for work in session.execute(
-            select(OpinionGroupDescriptionTranslationWork)
-        ).scalars()
+        for work in session.execute(select(OpinionGroupDescriptionTranslationWork)).scalars()
     }
     next_id = 10_000
     for locale in SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES:
@@ -452,9 +454,7 @@ def _insert_attempted_eager_translation_work(session: Session) -> None:
 def _insert_all_eager_translations(session: Session) -> None:
     existing_locales = {
         translation.locale
-        for translation in session.execute(
-            select(OpinionGroupDescriptionTranslation)
-        ).scalars()
+        for translation in session.execute(select(OpinionGroupDescriptionTranslation)).scalars()
     }
     next_id = 20_000
     for locale in SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES:
@@ -890,9 +890,9 @@ def test_process_translation_work_items_batch_rejects_output_mismatch() -> None:
         )
 
     with Session(engine) as session:
-        translation_count = session.execute(
-            select(OpinionGroupDescriptionTranslation)
-        ).scalars().all()
+        translation_count = (
+            session.execute(select(OpinionGroupDescriptionTranslation)).scalars().all()
+        )
         translation_work = session.execute(
             select(OpinionGroupDescriptionTranslationWork)
         ).scalar_one()
@@ -998,18 +998,14 @@ def test_requested_translation_materializes_without_effective_target_language() 
     )
 
     with Session(engine) as session:
-        target_rows = session.execute(
-            select(ConversationTranslationTargetLanguage)
-        ).scalars().all()
-        translation_work_rows = session.execute(
-            select(OpinionGroupDescriptionTranslationWork)
-        ).scalars().all()
+        target_rows = session.execute(select(ConversationTranslationTargetLanguage)).scalars().all()
+        translation_work_rows = (
+            session.execute(select(OpinionGroupDescriptionTranslationWork)).scalars().all()
+        )
 
     assert conversation_ids == [10]
     assert target_rows == []
-    assert [(row.description_id, row.locale) for row in translation_work_rows] == [
-        (501, "fr")
-    ]
+    assert [(row.description_id, row.locale) for row in translation_work_rows] == [(501, "fr")]
 
 
 def test_pending_eager_translation_blocks_snapshot_activation() -> None:
@@ -1063,9 +1059,9 @@ def test_claiming_first_pass_work_does_not_activate_snapshot() -> None:
 
     with Session(engine) as session:
         view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
-        checkpoint_reasons = session.execute(
-            select(ConversationViewSnapshotCheckpointReason)
-        ).scalars().all()
+        checkpoint_reasons = (
+            session.execute(select(ConversationViewSnapshotCheckpointReason)).scalars().all()
+        )
 
     assert len(claims) == 1
     assert view_snapshot.activated_at is None
@@ -1108,7 +1104,8 @@ def test_first_pass_claiming_uses_materialized_auto_and_facilitator_work() -> No
         _insert_effective_conversation_target_language(session)
         conversation = session.execute(select(Conversation)).scalar_one()
         conversation.current_content_id = 40
-        conversation.preferred_opinion_group_count = 2
+        config = session.execute(select(PolisConversationConfig)).scalar_one()
+        config.preferred_opinion_group_count = 2
         view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
         view_snapshot.preferred_opinion_group_count = 2
         result = session.execute(select(AnalysisSnapshotResult)).scalar_one()
@@ -1257,11 +1254,15 @@ def test_first_pass_claiming_uses_materialized_auto_and_facilitator_work() -> No
     )
 
     with Session(engine) as session:
-        work_rows = session.execute(
-            select(OpinionGroupLineageDescriptionWork).order_by(
-                OpinionGroupLineageDescriptionWork.source_candidate_id
+        work_rows = (
+            session.execute(
+                select(OpinionGroupLineageDescriptionWork).order_by(
+                    OpinionGroupLineageDescriptionWork.source_candidate_id
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
 
     assert {
         claim.source_candidate_id
@@ -1434,8 +1435,8 @@ def test_first_pass_finalization_blocks_pending_translation_after_generation_adv
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
         _insert_effective_conversation_target_language(session)
-        conversation = session.execute(select(Conversation)).scalar_one()
-        conversation.analysis_data_generation = 2
+        config = session.execute(select(PolisConversationConfig)).scalar_one()
+        config.analysis_data_generation = 2
         translation_work = session.execute(
             select(OpinionGroupDescriptionTranslationWork)
         ).scalar_one()
@@ -1544,8 +1545,9 @@ def test_first_pass_finalization_ignores_ready_translation_work() -> None:
         conversation.current_content_id = 40
         _insert_attempted_eager_translation_work(session)
         translation_work = session.execute(
-            select(OpinionGroupDescriptionTranslationWork)
-            .where(OpinionGroupDescriptionTranslationWork.locale == "fr")
+            select(OpinionGroupDescriptionTranslationWork).where(
+                OpinionGroupDescriptionTranslationWork.locale == "fr"
+            )
         ).scalar_one()
         translation_work.attempt_count = 0
         session.add(
@@ -1613,9 +1615,11 @@ def test_activation_does_not_publish_content_count_snapshots() -> None:
     )
 
     with Session(engine) as session:
-        snapshots = session.execute(
-            select(ConversationViewSnapshot).order_by(ConversationViewSnapshot.id)
-        ).scalars().all()
+        snapshots = (
+            session.execute(select(ConversationViewSnapshot).order_by(ConversationViewSnapshot.id))
+            .scalars()
+            .all()
+        )
 
     assert result.activated_view_snapshot_ids == [20]
     assert snapshots[0].activated_at is not None
@@ -1949,6 +1953,248 @@ def test_translation_retry_fallback_does_not_activate_first_pass_snapshot() -> N
     assert translation_work.lease_token is None
 
 
+def test_retry_cooldown_blocks_recent_failed_lineage_work() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
+        view_snapshot.activated_at = NOW
+        lineage = session.execute(select(OpinionGroupLineage)).scalar_one()
+        lineage.system_description_id = None
+        lineage_work = session.execute(select(OpinionGroupLineageDescriptionWork)).scalar_one()
+        lineage_work.last_error_code = AI_DESCRIPTION_RETRYABLE_ERROR_CODE
+        lineage_work.last_error_at = datetime.now(UTC)
+        session.commit()
+
+    cooldown_claimable_ids = fetch_claimable_ai_description_work_conversation_ids(
+        engine,
+        limit=10,
+        ai_description_epoch=1,
+        translation_enabled=False,
+        include_lineage_descriptions=True,
+        include_translations=False,
+        require_activated_view_snapshot=True,
+        retry_cooldown_seconds=300,
+    )
+    cooldown_claims = claim_ai_description_locale_work_items_batch(
+        engine,
+        worker_id="worker-1",
+        conversation_ids=[10],
+        lease_ttl_seconds=60,
+        limit=10,
+        ai_description_epoch=1,
+        translation_enabled=False,
+        claim_lineage_descriptions=True,
+        claim_translations=False,
+        require_activated_view_snapshot=True,
+        retry_cooldown_seconds=300,
+    )
+
+    with Session(engine) as session:
+        lineage_work = session.execute(select(OpinionGroupLineageDescriptionWork)).scalar_one()
+        lineage_work.last_error_at = datetime.now(UTC) - timedelta(seconds=301)
+        session.commit()
+
+    expired_cooldown_claimable_ids = fetch_claimable_ai_description_work_conversation_ids(
+        engine,
+        limit=10,
+        ai_description_epoch=1,
+        translation_enabled=False,
+        include_lineage_descriptions=True,
+        include_translations=False,
+        require_activated_view_snapshot=True,
+        retry_cooldown_seconds=300,
+    )
+    expired_cooldown_claims = claim_ai_description_locale_work_items_batch(
+        engine,
+        worker_id="worker-1",
+        conversation_ids=[10],
+        lease_ttl_seconds=60,
+        limit=10,
+        ai_description_epoch=1,
+        translation_enabled=False,
+        claim_lineage_descriptions=True,
+        claim_translations=False,
+        require_activated_view_snapshot=True,
+        retry_cooldown_seconds=300,
+    )
+
+    assert cooldown_claimable_ids == []
+    assert cooldown_claims == []
+    assert expired_cooldown_claimable_ids == [10]
+    assert len(expired_cooldown_claims) == 1
+    assert isinstance(expired_cooldown_claims[0], ClaimedLineageDescriptionWorkItem)
+
+
+def test_retry_cooldown_blocks_recent_failed_translation_work() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
+        view_snapshot.activated_at = NOW
+        translation_work = session.execute(
+            select(OpinionGroupDescriptionTranslationWork)
+        ).scalar_one()
+        translation_work.last_error_code = AI_DESCRIPTION_RETRYABLE_ERROR_CODE
+        translation_work.last_error_at = datetime.now(UTC)
+        session.commit()
+
+    cooldown_claimable_ids = fetch_claimable_ai_description_work_conversation_ids(
+        engine,
+        limit=10,
+        ai_description_epoch=1,
+        translation_enabled=True,
+        include_lineage_descriptions=False,
+        include_translations=True,
+        require_activated_view_snapshot=True,
+        retry_cooldown_seconds=300,
+    )
+    cooldown_claims = claim_ai_description_locale_work_items_batch(
+        engine,
+        worker_id="worker-1",
+        conversation_ids=[10],
+        lease_ttl_seconds=60,
+        limit=10,
+        ai_description_epoch=1,
+        translation_enabled=True,
+        claim_lineage_descriptions=False,
+        claim_translations=True,
+        require_activated_view_snapshot=True,
+        retry_cooldown_seconds=300,
+    )
+
+    with Session(engine) as session:
+        translation_work = session.execute(
+            select(OpinionGroupDescriptionTranslationWork)
+        ).scalar_one()
+        translation_work.last_error_at = datetime.now(UTC) - timedelta(seconds=301)
+        session.commit()
+
+    expired_cooldown_claimable_ids = fetch_claimable_ai_description_work_conversation_ids(
+        engine,
+        limit=10,
+        ai_description_epoch=1,
+        translation_enabled=True,
+        include_lineage_descriptions=False,
+        include_translations=True,
+        require_activated_view_snapshot=True,
+        retry_cooldown_seconds=300,
+    )
+    expired_cooldown_claims = claim_ai_description_locale_work_items_batch(
+        engine,
+        worker_id="worker-1",
+        conversation_ids=[10],
+        lease_ttl_seconds=60,
+        limit=10,
+        ai_description_epoch=1,
+        translation_enabled=True,
+        claim_lineage_descriptions=False,
+        claim_translations=True,
+        require_activated_view_snapshot=True,
+        retry_cooldown_seconds=300,
+    )
+
+    assert cooldown_claimable_ids == []
+    assert cooldown_claims == []
+    assert expired_cooldown_claimable_ids == [10]
+    assert len(expired_cooldown_claims) == 1
+    assert isinstance(expired_cooldown_claims[0], ClaimedDescriptionTranslationWorkItem)
+
+
+def test_retry_cooldown_does_not_block_non_retryable_lineage_after_epoch_bump() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
+        view_snapshot.activated_at = NOW
+        lineage = session.execute(select(OpinionGroupLineage)).scalar_one()
+        lineage.system_description_id = None
+        lineage_work = session.execute(select(OpinionGroupLineageDescriptionWork)).scalar_one()
+        lineage_work.last_error_code = AI_DESCRIPTION_NON_RETRYABLE_ERROR_CODE
+        lineage_work.last_error_at = datetime.now(UTC)
+        lineage_work.non_retryable_ai_description_epoch = 1
+        session.commit()
+
+    claimable_ids = fetch_claimable_ai_description_work_conversation_ids(
+        engine,
+        limit=10,
+        ai_description_epoch=2,
+        translation_enabled=False,
+        include_lineage_descriptions=True,
+        include_translations=False,
+        require_activated_view_snapshot=True,
+        retry_cooldown_seconds=300,
+    )
+    claims = claim_ai_description_locale_work_items_batch(
+        engine,
+        worker_id="worker-1",
+        conversation_ids=[10],
+        lease_ttl_seconds=60,
+        limit=10,
+        ai_description_epoch=2,
+        translation_enabled=False,
+        claim_lineage_descriptions=True,
+        claim_translations=False,
+        require_activated_view_snapshot=True,
+        retry_cooldown_seconds=300,
+    )
+
+    assert claimable_ids == [10]
+    assert len(claims) == 1
+    assert isinstance(claims[0], ClaimedLineageDescriptionWorkItem)
+
+
+def test_retry_cooldown_does_not_block_non_retryable_translation_after_epoch_bump() -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()
+        view_snapshot.activated_at = NOW
+        translation_work = session.execute(
+            select(OpinionGroupDescriptionTranslationWork)
+        ).scalar_one()
+        translation_work.last_error_code = AI_DESCRIPTION_NON_RETRYABLE_ERROR_CODE
+        translation_work.last_error_at = datetime.now(UTC)
+        translation_work.non_retryable_ai_description_epoch = 1
+        session.commit()
+
+    claimable_ids = fetch_claimable_ai_description_work_conversation_ids(
+        engine,
+        limit=10,
+        ai_description_epoch=2,
+        translation_enabled=True,
+        include_lineage_descriptions=False,
+        include_translations=True,
+        require_activated_view_snapshot=True,
+        retry_cooldown_seconds=300,
+    )
+    claims = claim_ai_description_locale_work_items_batch(
+        engine,
+        worker_id="worker-1",
+        conversation_ids=[10],
+        lease_ttl_seconds=60,
+        limit=10,
+        ai_description_epoch=2,
+        translation_enabled=True,
+        claim_lineage_descriptions=False,
+        claim_translations=True,
+        require_activated_view_snapshot=True,
+        retry_cooldown_seconds=300,
+    )
+
+    assert claimable_ids == [10]
+    assert len(claims) == 1
+    assert isinstance(claims[0], ClaimedDescriptionTranslationWorkItem)
+
+
 def test_stale_non_checkpoint_retry_work_is_not_claimable() -> None:
     engine = _create_engine()
     with Session(engine) as session:
@@ -2231,8 +2477,8 @@ def test_completion_releases_stale_unactivated_first_pass_after_new_votes() -> N
         blocked_running_generation = blocked_state.running_data_generation
         blocked_persisted_snapshot_id = blocked_state.persisted_analysis_snapshot_id
         blocked_lease_token = blocked_state.lease_token
-        conversation = session.execute(select(Conversation)).scalar_one()
-        conversation.analysis_data_generation = 2
+        config = session.execute(select(PolisConversationConfig)).scalar_one()
+        config.analysis_data_generation = 2
         session.commit()
 
     stale_schedules = complete_computed_analysis_work_items_batch(

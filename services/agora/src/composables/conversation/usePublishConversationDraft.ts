@@ -4,7 +4,7 @@ import {
   type CreateConversationTranslations,
   createConversationTranslations,
 } from "src/pages/conversation/new/create/index.i18n";
-import type { CreateNewConversationResponse } from "src/shared/types/dto";
+import { type CreateNewConversationResponse,Dto } from "src/shared/types/dto";
 import type { SurveyConfig } from "src/shared/types/zod";
 import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
@@ -61,11 +61,11 @@ export function usePublishConversationDraft() {
     }
 
     try {
-      const response = await createNewPost({
-        postTitle: conversationDraft.title,
-        postBody:
+      const createRequest = Dto.createNewConversationRequest.parse({
+        conversationTitle: conversationDraft.title,
+        conversationBody:
           conversationDraft.content === "" ? undefined : conversationDraft.content,
-        postBodyPlainText: conversationDraft.contentPlainText,
+        conversationBodyPlainText: conversationDraft.contentPlainText,
         projectSlug: conversationDraft.selectedProjectSlug,
         languageSettingsSource:
           conversationDraft.selectedProjectSlug !== undefined &&
@@ -73,12 +73,15 @@ export function usePublishConversationDraft() {
             ? "project_inherited"
             : "conversation_override",
         multilingualSetting: conversationDraft.multilingualSetting,
-        postAsOrganizationName: conversationDraft.postAs.postAsOrganization
+        postAsOrganization: conversationDraft.postAs.postAsOrganization
           ? conversationDraft.postAs.organizationName
           : "",
         isIndexed: !conversationDraft.isPrivate,
         participationMode: conversationDraft.participationMode,
         conversationType: conversationDraft.conversationType,
+        ...(conversationDraft.conversationType === "ranking"
+          ? { rankingMode: conversationDraft.rankingMode }
+          : {}),
         seedOpinionList: conversationDraft.seedOpinions,
         requiresEventTicket: conversationDraft.requiresEventTicket,
         aiLabelingEnabled: conversationDraft.aiLabelingEnabled,
@@ -86,6 +89,7 @@ export function usePublishConversationDraft() {
         externalSourceConfig: conversationDraft.externalSourceConfig,
         surveyConfig: normalizedSurveyConfigResult.surveyConfig,
       });
+      const response = await createNewPost(createRequest);
 
       if (response.status !== "success") {
         handleAxiosErrorStatusCodes({

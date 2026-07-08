@@ -47,4 +47,56 @@ describe("buildCommentRows", () => {
             "timestamp,datetime,comment-id,author-id,agrees,disagrees,passes,votes,moderated,comment_text",
         );
     });
+
+    it("omits hidden opinions but keeps moved opinions as moderated", () => {
+        const rows = buildCommentRows({
+            opinions: [
+                {
+                    authorId: "user-1",
+                    content: "Visible",
+                    contentPlainText: null,
+                    createdAt: new Date("2026-01-02T03:04:05.000Z"),
+                    numAgrees: 1,
+                    numDisagrees: 0,
+                    numPasses: 0,
+                    moderationId: null,
+                    moderationAction: null,
+                },
+                {
+                    authorId: "user-2",
+                    content: "Moved",
+                    contentPlainText: null,
+                    createdAt: new Date("2026-01-02T03:05:05.000Z"),
+                    numAgrees: 0,
+                    numDisagrees: 1,
+                    numPasses: 0,
+                    moderationId: 1,
+                    moderationAction: "move",
+                },
+                {
+                    authorId: "user-3",
+                    content: "Hidden",
+                    contentPlainText: null,
+                    createdAt: new Date("2026-01-02T03:06:05.000Z"),
+                    numAgrees: 0,
+                    numDisagrees: 0,
+                    numPasses: 1,
+                    moderationId: 2,
+                    moderationAction: "hide",
+                },
+            ],
+            participantMap: createExportParticipantMap(),
+        });
+
+        expect(rows).toHaveLength(2);
+        expect(rows.map((row) => row.comment_text)).toEqual([
+            "Visible",
+            "Moved",
+        ]);
+        expect(rows[1]).toMatchObject({
+            "comment-id": 1,
+            moderated: -1,
+            comment_text: "Moved",
+        });
+    });
 });

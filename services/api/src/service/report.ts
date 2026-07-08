@@ -13,7 +13,7 @@ import {
     conversationReportTable,
     userTable,
 } from "@/shared-backend/schema.js";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNotNull } from "drizzle-orm";
 import type { FetchUserReportsByPostSlugIdResponse } from "@/shared/types/dto.js";
 
 interface CreateUserReportByPostSlugIdProps {
@@ -100,7 +100,13 @@ export async function fetchUserReportsByPostSlugId({
             userTable,
             eq(userTable.id, conversationReportTable.authorId),
         )
-        .where(eq(conversationTable.slugId, postSlugId))
+        .where(
+            and(
+                eq(conversationTable.slugId, postSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+            ),
+        )
         .orderBy(desc(conversationReportTable.createdAt));
 
     const userReportItemList: UserReportItem[] = [];
@@ -140,8 +146,19 @@ export async function fetchUserReportsByCommentSlugId({
             opinionTable,
             eq(opinionTable.id, opinionReportTable.opinionId),
         )
+        .innerJoin(
+            conversationTable,
+            eq(conversationTable.id, opinionTable.conversationId),
+        )
         .innerJoin(userTable, eq(userTable.id, opinionReportTable.authorId))
-        .where(eq(opinionTable.slugId, commentSlugId))
+        .where(
+            and(
+                eq(opinionTable.slugId, commentSlugId),
+                isNotNull(opinionTable.currentContentId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+            ),
+        )
         .orderBy(desc(opinionReportTable.createdAt));
 
     const userReportItemList: UserReportItem[] = [];

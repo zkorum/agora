@@ -22,6 +22,7 @@ import {
     conversationViewSnapshotTable,
     userTable,
     opinionModerationTable,
+    polisConversationConfigTable,
     userMutePreferenceTable,
     voteTable,
 } from "@/shared-backend/schema.js";
@@ -54,6 +55,7 @@ import {
     isNull,
     isNotNull,
     ne,
+    or,
     SQL,
     inArray,
 } from "drizzle-orm";
@@ -86,12 +88,13 @@ import type {
 } from "@/utils/dataStructure.js";
 import { nowZeroMs } from "@/shared/util.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
-import { htmlToCountedText, validateRichTextInput } from "@/shared/shared.js";
+import { htmlToCountedText } from "@/shared/shared.js";
 import {
     getOpinionGroupAnalysisSelection,
     getSelectedOpinionGroupCandidate,
 } from "./opinionGroupAnalysis.js";
 import { ensureAiDescriptionLocaleRequestForConversationViewSnapshot } from "./conversationViewSnapshot.js";
+import { normalizeUserRichTextInput } from "./richText.js";
 import { alias } from "drizzle-orm/pg-core";
 import {
     type SupportedDisplayLanguageCodes,
@@ -276,6 +279,8 @@ export async function isPersonalNonSeedOpinionAuthoredByUser({
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 eq(opinionTable.slugId, opinionSlugId),
                 eq(opinionTable.authorId, userId),
                 isNotNull(opinionTable.currentContentId),
@@ -545,11 +550,15 @@ export async function fetchOpinionsByPostId({
         case "my_votes": {
             // TypeScript knows personalizationUserId is defined here due to early check
             shouldJoinVoteTable = true;
-            // Show only voted opinions (regardless of moderation status)
+            // Show only visible voted opinions. Hidden opinions are moderator-only.
             // Filter by currentContentId to exclude cancelled votes (currentContentId = NULL when cancelled)
             whereClause = and(
                 whereClause,
                 isNotNull(voteTable.currentContentId),
+                or(
+                    isNull(opinionModerationTable.id),
+                    ne(opinionModerationTable.moderationAction, "hide"),
+                ),
             );
             // Sort by most recent votes first
             orderByClause = [desc(voteTable.updatedAt), desc(voteTable.id)];
@@ -807,7 +816,13 @@ export async function fetchCommentStatsByConversationSlugId({
                 conversationViewSnapshotTable.conversationId,
             ),
         )
-        .where(eq(conversationTable.slugId, conversationSlugId))
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+            ),
+        )
         .orderBy(
             desc(conversationViewSnapshotTable.createdAt),
             desc(conversationViewSnapshotTable.id),
@@ -931,7 +946,13 @@ export async function fetchOpinionsByOpinionSlugIdList({
         .where(
             and(
                 inArray(opinionTable.slugId, opinionSlugIdList),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 eq(userTable.isDeleted, false),
+                or(
+                    isNull(opinionModerationTable.id),
+                    ne(opinionModerationTable.moderationAction, "hide"),
+                ),
             ),
         );
 
@@ -1744,11 +1765,15 @@ async function fetchSelectedOpinionGroupCandidateById({
             resultId: analysisSnapshotResultTable.id,
             candidateId: opinionGroupCandidateTable.id,
             groupCount: opinionGroupVariantTable.groupCount,
-            aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+            aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
             checkpointReasonId:
                 conversationViewSnapshotCheckpointReasonTable.id,
         })
         .from(conversationTable)
+        .innerJoin(
+            polisConversationConfigTable,
+            eq(polisConversationConfigTable.id, conversationTable.polisConfigId),
+        )
         .innerJoin(
             conversationViewSnapshotTable,
             and(
@@ -1815,6 +1840,8 @@ async function fetchSelectedOpinionGroupCandidateById({
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 isNotNull(conversationViewSnapshotTable.activatedAt),
                 isNotNull(conversationViewSnapshotTable.analysisSnapshotId),
                 eq(analysisSnapshotResultTable.outcome, "success"),
@@ -2671,7 +2698,13 @@ async function getPostIdFromPostSlugId(
             id: conversationTable.id,
         })
         .from(conversationTable)
-        .where(eq(conversationTable.slugId, postSlugId));
+        .where(
+            and(
+                eq(conversationTable.slugId, postSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+            ),
+        );
     if (postTableResponse.length != 1) {
         throw httpErrors.notFound(
             "Failed to locate post slug ID: " + postSlugId,
@@ -2750,34 +2783,25 @@ export async function postNewOpinion(
         participantId: string;
     }
 
+    let contentPlainText: string;
     try {
-        commentBody = processUserGeneratedHtml(commentBody, false, "input");
+        const normalizationResult = normalizeUserRichTextInput({
+            html: commentBody,
+            plainText: opinionPlainText,
+            validationMode: "opinion",
+            logLabel: "[OpinionPlainText] Frontend/backend plain text mismatch",
+        });
+        if (!normalizationResult.success) {
+            return normalizationResult;
+        }
+        commentBody = normalizationResult.content.html;
+        contentPlainText = normalizationResult.content.plainText;
     } catch (error) {
         if (error instanceof Error) {
             throw httpErrors.badRequest(error.message);
         } else {
             throw httpErrors.badRequest("Error while sanitizing request body");
         }
-    }
-
-    const validationResult = validateRichTextInput({
-        htmlString: commentBody,
-        mode: "opinion",
-    });
-    if (!validationResult.success) {
-        return validationResult;
-    }
-
-    commentBody = processUserGeneratedHtml(commentBody, true, "input");
-    const contentPlainText = htmlToCountedText(commentBody);
-    if (contentPlainText !== opinionPlainText) {
-        log.info(
-            {
-                frontendPlainTextChars: opinionPlainText.length,
-                serverPlainTextChars: contentPlainText.length,
-            },
-            "[OpinionPlainText] Frontend/backend plain text mismatch",
-        );
     }
     const participationContext:
         | ParticipationContext
@@ -2841,6 +2865,7 @@ export async function postNewOpinion(
         opinionContentId: number;
         opinionContentPublicId: string;
         opinionItem: OpinionItem;
+        displayedOpinionItem: DisplayedOpinionItem;
     }> => {
         const insertCommentResponse = await transactionDb
             .insert(opinionTable)
@@ -2924,16 +2949,33 @@ export async function postNewOpinion(
             moderation: { status: "unmoderated" },
             isSeed,
         };
+        const displayedOpinionItem: DisplayedOpinionItem = {
+            ...opinionItem,
+            displayContent: {
+                sourceVersion: opinionContentPublicId,
+                status: "available",
+                mode: "original",
+                content: { content: commentBody },
+                translationControl: null,
+            },
+        };
 
         return {
             opinionId,
             opinionContentId: commentContentTableId,
             opinionContentPublicId,
             opinionItem,
+            displayedOpinionItem,
         };
     };
 
-    const { opinionId, opinionContentId, opinionContentPublicId, opinionItem } =
+    const {
+        opinionId,
+        opinionContentId,
+        opinionContentPublicId,
+        opinionItem,
+        displayedOpinionItem,
+    } =
         tx !== undefined
             ? await persistNewOpinion(tx)
             : await db.transaction(async (transactionDb) => {
@@ -2987,6 +3029,10 @@ export async function postNewOpinion(
                 opinionAuthorId: participationContext.participantId,
                 opinionId,
                 conversationId: participationContext.conversationId,
+                conversationSlugId,
+                opinionSlugId,
+                opinionContent: commentBody,
+                username: opinionItem.username,
                 realtimeSSEManager,
             });
         }
@@ -3008,6 +3054,7 @@ export async function postNewOpinion(
         success: true,
         opinionSlugId: opinionSlugId,
         opinionItem,
+        displayedOpinionItem,
     };
 }
 

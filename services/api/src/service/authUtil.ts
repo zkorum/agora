@@ -10,7 +10,7 @@ import {
     userTable,
     zkPassportTable,
 } from "@/shared-backend/schema.js";
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt, isNotNull, isNull } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import type { IsLoggedInResponse } from "@/shared/types/dto-auth.js";
 import { normalizeEmail } from "@/shared/types/zod-email.js";
@@ -578,7 +578,13 @@ export async function canModerateConversation({
             conversationId: conversationTable.id,
         })
         .from(conversationTable)
-        .where(eq(conversationTable.slugId, conversationSlugId))
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+            ),
+        )
         .limit(1);
 
     if (conversation.length === 0) {
@@ -618,7 +624,14 @@ export async function canModerateConversationByOpinionSlugId({
             conversationTable,
             eq(conversationTable.id, opinionTable.conversationId),
         )
-        .where(eq(opinionTable.slugId, opinionSlugId))
+        .where(
+            and(
+                eq(opinionTable.slugId, opinionSlugId),
+                isNotNull(opinionTable.currentContentId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+            ),
+        )
         .limit(1);
 
     if (opinionResult.length === 0) {

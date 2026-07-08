@@ -530,6 +530,17 @@ if (probabilities.length !== types.length) {
 - Data from untyped sources (raw SQL, environment variables)
 - Legacy code integration where types cannot be guaranteed
 
+### Avoid Replica-Lag Read-After-Write Bugs
+
+The API uses read replicas for ordinary reads, so code that writes data and then immediately reads it back through the normal `db` handle can observe stale state. Prefer designs that avoid the follow-up read entirely:
+
+- Use `.returning()` from inserts/updates for IDs, timestamps, and updated fields
+- Build downstream DTOs, queue payloads, notifications, and cache seeds from values already known in the request, transaction, or returned rows
+- If a follow-up read is genuinely needed, perform it inside the same write transaction or otherwise ensure it uses a fresh writer-side view
+- Do not add primary-read fallbacks as the first solution; use them only when the data cannot reasonably be carried forward or rebuilt from known values
+
+Example: after creating a notification row, prefer broadcasting the SSE payload from the inserted row plus known conversation/opinion data rather than inserting and then rereading the notification through a replica-routed query.
+
 ### Prefer `async`/`await` Over `.then()` Chains
 
 Always use `async`/`await` for asynchronous code. Do not use `.then()` or `.catch()` chains. This makes control flow easier to follow, error handling more consistent, and avoids nesting.
@@ -581,6 +592,59 @@ function processImport(files: Partial<Record<string, string>>): void {
 ```
 
 **Key principle:** Parsing returns a new value with a more precise type. Validation returns a boolean and requires unsafe casting. Parsing makes invalid states unrepresentable in the type system.
+
+### Use Parsed DTOs as Downstream Types
+
+When an API endpoint has a shared Zod DTO schema with important type-level invariants, parse or safe-parse the request/response at the boundary and consider passing the parsed value downstream. This is especially important for `z.discriminatedUnion()` or other correlated/special shapes that can be weakened or flattened by OpenAPI-generated client types. Do not recreate a parallel TypeScript interface or duplicate those invariants in service/composable props.
+
+Do not apply this mechanically to every DTO. For simple flat request/response shapes where generated OpenAPI types preserve the useful structure, normal explicit parameter objects are fine.
+
+Be careful when changing DTO shapes used by the OpenAPI generator: generated API client types can be temporarily out of sync with the source Zod schemas until `make generate` has run, and some Zod semantics may not round-trip perfectly through OpenAPI. When editing these paths, check both the source DTO schema and generated client/shared copies before relying on either type.
+
+**Preferred approach:**
+
+```typescript
+const request = Dto.createNewConversationRequest.parse({
+  conversationTitle,
+  conversationType: "ranking",
+  rankingMode: "maxdiff",
+  // ...other fields
+});
+
+await createNewPost({ db, request });
+```
+
+Then downstream code should accept the parsed DTO type:
+
+```typescript
+async function createNewPost({
+  db,
+  request,
+}: {
+  db: PostgresDatabase;
+  request: CreateNewConversationRequest;
+}) {
+  if (request.conversationType === "ranking") {
+    // TypeScript knows request.rankingMode exists here.
+    useRankingMode(request.rankingMode);
+  }
+}
+```
+
+**Avoid:**
+
+```typescript
+interface CreateNewPostProps {
+  conversationType: ConversationType;
+  rankingMode?: RankingMode;
+}
+
+if (conversationType === "ranking" && rankingMode === undefined) {
+  throw new Error("Missing ranking mode");
+}
+```
+
+Use `z.discriminatedUnion()` in the DTO schema when fields are correlated, such as `conversationType: "ranking"` requiring `rankingMode`. This makes invalid combinations unrepresentable after parsing and lets TypeScript narrow correctly throughout downstream code.
 
 ### Functional Programming Style: Closure Pattern (Zustand-style)
 
@@ -746,7 +810,11 @@ In Vue components, prefer **explicit props drilling** over `inject`/`provide` fo
 
 ### Vue Props: Prefer Required Nullable Props
 
-For Vue component props, prefer `prop: T | undefined` over `prop?: T`. Optional props can hide typos because a mistyped binding may simply omit the intended prop. A required prop whose value may be `undefined` forces every caller to wire the prop by name while still representing absent data.
+For Vue component props, prefer required `prop: T | undefined` over optional `prop?: T`. Optional props can hide typos because a mistyped binding may simply omit the intended prop. A required prop whose value may be `undefined` forces every caller to wire the prop by name while still representing absent data. Callers should pass `some-value-or-undefined` explicitly, not rely on omitted props, when absence is part of the component contract.
+
+### Undefined Over Null in App Code
+
+Prefer `undefined` for absent optional values in frontend and backend application code. In backend service/DAO mappers, normalize database `null` values with `toUnionUndefined()` when the internal or frontend-facing shape represents absence. DTOs sent to the frontend should use `undefined` or omit absent optional fields unless the DTO contract intentionally requires `null`. Use `null` where it is required by the database schema, external APIs, or existing DTO contracts, and convert explicitly at those boundaries.
 
 ### Logging Guidelines
 

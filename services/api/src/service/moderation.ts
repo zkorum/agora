@@ -14,7 +14,7 @@ import type {
     ConversationModerationProperties,
     ModerationReason,
 } from "@/shared/types/zod.js";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/util.js";
 import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
@@ -187,6 +187,8 @@ export async function fetchModerationReportByPostSlugId({
         .where(
             and(
                 eq(conversationTable.slugId, postSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 isNull(conversationModerationTable.deletedAt),
             ),
         );
@@ -230,9 +232,16 @@ export async function fetchModerationReportByCommentSlugId({
             opinionTable,
             eq(opinionTable.id, opinionModerationTable.opinionId),
         )
+        .innerJoin(
+            conversationTable,
+            eq(conversationTable.id, opinionTable.conversationId),
+        )
         .where(
             and(
                 eq(opinionTable.slugId, commentSlugId),
+                isNotNull(opinionTable.currentContentId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 isNull(opinionModerationTable.deletedAt),
             ),
         );

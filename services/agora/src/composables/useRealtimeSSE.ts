@@ -25,12 +25,13 @@ import { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { fetchAnalysisDataWithCache } from "src/utils/api/comment/useCommentQueries";
 import { useCommonApi } from "src/utils/api/common";
 import {
-  type ContentTranslationResponse,
+  type ProjectContentFetchResponse,
   useBackendContentTranslationApi,
 } from "src/utils/api/contentTranslation/contentTranslation";
 import {
   getConversationContentQueryPrefix,
   getConversationDisplayContentQueryPrefix,
+  getProjectContentQueryKey,
 } from "src/utils/api/contentTranslation/useContentTranslationQueries";
 import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
@@ -40,7 +41,10 @@ import {
   parseRawSSEFrame,
   splitCompleteSSEFrames,
 } from "src/utils/sse/frameParser";
-import { publishContentTranslationFailed } from "src/utils/translation/contentTranslationEvents";
+import {
+  publishContentTranslationFailed,
+  publishContentTranslationUpdated,
+} from "src/utils/translation/contentTranslationEvents";
 import { useNotify } from "src/utils/ui/notify";
 import { type MaybeRefOrGetter, onUnmounted, ref, toValue, watch } from "vue";
 
@@ -82,11 +86,6 @@ type ProjectContentTranslationUpdatedData = Omit<
 > & {
   subject: Extract<SSEContentTranslationUpdatedData["subject"], { kind: "project" }>;
 };
-
-type ProjectContentTranslationResponse = Extract<
-  ContentTranslationResponse,
-  { success: true; subject: { kind: "project" } }
->;
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
@@ -277,7 +276,7 @@ export function useRealtimeSSE({
       }),
   });
   const { refreshAuthState } = useBackendAuthApi();
-  const { requestContentTranslation } = useBackendContentTranslationApi();
+  const { fetchProjectContent } = useBackendContentTranslationApi();
   const { showNotifyMessage } = useNotify();
   const { t } = useComponentI18n<RealtimeSSETranslations>(
     realtimeSSETranslations
@@ -1123,44 +1122,54 @@ export function useRealtimeSSE({
         queryKey: ["survey-form", data.subject.conversationSlugId],
         refetchType: "active",
       });
+      publishContentTranslationUpdated(data);
+      return;
     }
+    if (data.subject.kind === "ranking_item") {
+      void queryClient.invalidateQueries({
+        queryKey: ["maxdiff-items", data.subject.conversationSlugId],
+        refetchType: "active",
+      });
+    }
+    publishContentTranslationUpdated(data);
   }
 
   async function updateProjectPageContentTranslation(
     data: ProjectContentTranslationUpdatedData
   ): Promise<void> {
     if (data.status === "failed") {
-      updateProjectPageMachineTranslationStatus({ data, status: "failed" });
+      updateProjectPageDisplayContentStatus({ data, status: "failed" });
       return;
     }
 
-    let response: ContentTranslationResponse;
+    let response: ProjectContentFetchResponse;
     try {
-      response = await requestContentTranslation({
-        subject: data.subject,
-        targetLanguageCode: data.targetLanguageCode,
+      response = await fetchProjectContent({
+        projectSlug: data.subject.projectSlug,
+        sourceVersion: data.sourceVersion,
+        mode: "translated",
         requestMode: "read_existing",
       });
     } catch (error) {
       console.warn("Failed to fetch project translation after SSE update", error);
-      updateProjectPageMachineTranslationStatus({ data, status: data.status });
-      return;
-    }
-    if (
-      !isProjectContentTranslationResponse(response) ||
-      response.content.kind !== "translatable" ||
-      response.content.translation.status !== "completed"
-    ) {
-      updateProjectPageMachineTranslationStatus({ data, status: data.status });
       return;
     }
 
-    const translation = response.content.translation;
-    const translatedContent = response.content.variants.translated;
-    if (translatedContent === undefined) {
-      updateProjectPageMachineTranslationStatus({ data, status: data.status });
+    if (response.status !== "available") {
+      updateProjectPageDisplayContentStatus({ data, status: response.status });
       return;
     }
+
+    queryClient.setQueryData<ProjectContentFetchResponse>(
+      getProjectContentQueryKey({
+        projectSlug: data.subject.projectSlug,
+        sourceVersion: data.sourceVersion,
+        mode: "translated",
+        targetLanguageCode: data.targetLanguageCode,
+        spokenLanguages: languageStore.spokenLanguages,
+      }),
+      response
+    );
 
     queryClient.setQueriesData<FetchProjectPageResponse>(
       {
@@ -1170,61 +1179,67 @@ export function useRealtimeSSE({
         if (previousData === undefined) {
           return previousData;
         }
-        if (
-          previousData.project.machineTranslation?.targetLanguageCode !==
-          data.targetLanguageCode
-        ) {
-          return previousData;
-        }
         return {
           ...previousData,
           project: {
             ...previousData.project,
-            title: translatedContent.title,
-            subtitle: translatedContent.subtitle,
-            bodyHtml: translatedContent.bodyHtml,
-            machineTranslation: {
-              targetLanguageCode: data.targetLanguageCode,
-              sourceLanguageCode: translation.sourceLanguageCode,
-              sourceLanguageLabel: translation.sourceLanguageLabel,
-              status: "completed",
-              translatedContent,
-            },
+            displayContent: response,
           },
         };
       }
     );
   }
 
-  function updateProjectPageMachineTranslationStatus({
+  function updateProjectPageDisplayContentStatus({
     data,
     status,
   }: {
     data: ProjectContentTranslationUpdatedData;
-    status: "completed" | "failed";
+    status: Exclude<ProjectContentFetchResponse["status"], "available">;
   }): void {
     queryClient.setQueriesData<FetchProjectPageResponse>(
       {
         predicate: (query) => isProjectPageQueryForTranslation({ queryKey: query.queryKey, data }),
       },
       (previousData) => {
-        const machineTranslation = previousData?.project.machineTranslation;
-        if (previousData === undefined || machineTranslation === undefined) {
+        const displayContent = previousData?.project.displayContent;
+        if (previousData === undefined || displayContent === undefined) {
           return previousData;
         }
-        if (machineTranslation.targetLanguageCode !== data.targetLanguageCode) {
+        const translationControl = displayContent.translationControl;
+        if (
+          translationControl === null ||
+          displayContent.sourceVersion !== data.sourceVersion
+        ) {
           return previousData;
         }
-        return {
-          ...previousData,
-          project: {
-            ...previousData.project,
-            machineTranslation: {
-              ...machineTranslation,
-              status,
-            },
-          },
+        const nextTranslationControl = {
+          ...translationControl,
+          status,
         };
+
+        return displayContent.status === "available"
+          ? {
+              ...previousData,
+              project: {
+                ...previousData.project,
+                displayContent: {
+                  ...displayContent,
+                  translationControl: nextTranslationControl,
+                },
+              },
+            }
+          : {
+              ...previousData,
+              project: {
+                ...previousData.project,
+                displayContent: {
+                  ...displayContent,
+                  status,
+                  translationControl: nextTranslationControl,
+                },
+              },
+            };
       }
     );
   }
@@ -1238,7 +1253,8 @@ export function useRealtimeSSE({
   }): boolean {
     return (
       queryKey[0] === "projectPage" &&
-      queryKey[1] === data.subject.projectSlug
+      queryKey[1] === data.subject.projectSlug &&
+      queryKey[2] === data.targetLanguageCode
     );
   }
 
@@ -1246,12 +1262,6 @@ export function useRealtimeSSE({
     data: SSEContentTranslationUpdatedData
   ): data is ProjectContentTranslationUpdatedData {
     return data.subject.kind === "project";
-  }
-
-  function isProjectContentTranslationResponse(
-    response: ContentTranslationResponse
-  ): response is ProjectContentTranslationResponse {
-    return response.success && response.subject.kind === "project";
   }
 
   function updateConversationCountsFromAnalysisEvent(

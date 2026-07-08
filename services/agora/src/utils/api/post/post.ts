@@ -6,10 +6,11 @@ import {
 } from "src/api";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
-  ConversationContentFetchResponse,
   ConversationLanguageSettingsSource,
+  CreateNewConversationRequest,
   CreateNewConversationResponse,
   GetConversationCreateProjectOptionsResponse,
+  GetConversationResponse,
   ImportConversationResponse,
   ImportCsvConversationResponse,
 } from "src/shared/types/dto";
@@ -22,14 +23,11 @@ import type {
 import { Dto } from "src/shared/types/dto";
 import type {
   ConversationMultilingualSetting,
-  ConversationType,
   EventSlug,
   ExtendedConversation,
-  ExternalSourceConfig,
   FeedSortAlgorithm,
   ParticipationMode,
   PreferredOpinionGroupCount,
-  SurveyConfig,
 } from "src/shared/types/zod";
 import { zodExtendedConversationData } from "src/shared/types/zod";
 import { CSV_UPLOAD_FIELD_NAMES } from "src/shared-app-api/csvUpload";
@@ -48,6 +46,12 @@ import {
   postApiTranslations,
 } from "./post.i18n";
 
+type ReadyConversationResponse = Extract<
+  GetConversationResponse,
+  { status: "ready" }
+>;
+type FetchConversationBySlugIdResult = Omit<ReadyConversationResponse, "status">;
+
 export function useBackendPostApi() {
   const {
     buildEncodedUcan,
@@ -60,9 +64,21 @@ export function useBackendPostApi() {
 
   const router = useRouter();
 
-  interface FetchConversationBySlugIdResult {
-    conversationData: ExtendedConversation;
-    displayContent: ConversationContentFetchResponse;
+  async function handleGetConversationResponse(
+    data: GetConversationResponse
+  ): Promise<FetchConversationBySlugIdResult> {
+    if (data.status === "importing") {
+      await router.replace({
+        name: "/conversation/import/[importSlugId]",
+        params: { importSlugId: data.importSlugId },
+      });
+      throw new Error("Conversation import is still processing");
+    }
+
+    return {
+      conversationData: data.conversationData,
+      displayContent: data.displayContent,
+    };
   }
 
   function createInternalPostData(
@@ -89,10 +105,7 @@ export function useBackendPostApi() {
         const response = await api.post(url, params);
         const data = Dto.getConversationResponse.parse(response.data);
 
-        return {
-          conversationData: createInternalPostData(data.conversationData),
-          displayContent: data.displayContent,
-        };
+        return await handleGetConversationResponse(data);
       } else {
         const encodedUcan = await buildEncodedUcan(url, options);
         const response = await api.post(url, params, {
@@ -102,10 +115,7 @@ export function useBackendPostApi() {
         });
         const data = Dto.getConversationResponse.parse(response.data);
 
-        return {
-          conversationData: createInternalPostData(data.conversationData),
-          displayContent: data.displayContent,
-        };
+        return await handleGetConversationResponse(data);
       }
     } catch (error) {
       if (axiosInstance.isAxiosError(error) && error.status === 404) {
@@ -116,17 +126,6 @@ export function useBackendPostApi() {
       }
       throw error;
     }
-  }
-
-  async function fetchPostBySlugId(
-    postSlugId: string,
-    loadPersonalizedData: boolean
-  ): Promise<ExtendedConversation> {
-    const result = await fetchConversationBySlugIdWithDisplayContent({
-      postSlugId,
-      loadPersonalizedData,
-    });
-    return result.conversationData;
   }
 
   type FetchRecentPostSuccessResponse = AxiosSuccessResponse<FetchFeedResponse>;
@@ -195,25 +194,6 @@ export function useBackendPostApi() {
       console.error(e);
       return createAxiosErrorResponse(e);
     }
-  }
-
-  interface CreateNewPostProps {
-    postTitle: string;
-    postBody: string | undefined;
-    postBodyPlainText: string;
-    projectSlug?: string;
-    languageSettingsSource: ConversationLanguageSettingsSource;
-    multilingualSetting: ConversationMultilingualSetting;
-    postAsOrganizationName: string;
-    isIndexed: boolean;
-    participationMode: ParticipationMode;
-    conversationType: ConversationType;
-    seedOpinionList: string[];
-    requiresEventTicket?: EventSlug;
-    aiLabelingEnabled: boolean;
-    preferredOpinionGroupCount: PreferredOpinionGroupCount;
-    externalSourceConfig?: ExternalSourceConfig | null;
-    surveyConfig?: SurveyConfig | null;
   }
 
   async function fetchConversationCreateProjectOptions({
@@ -375,43 +355,11 @@ export function useBackendPostApi() {
     }
   }
 
-  async function createNewPost({
-    postTitle,
-    postBody,
-    postBodyPlainText,
-    projectSlug,
-    languageSettingsSource,
-    multilingualSetting,
-    postAsOrganizationName,
-    isIndexed,
-    participationMode,
-    conversationType,
-    seedOpinionList,
-    requiresEventTicket,
-    aiLabelingEnabled,
-    preferredOpinionGroupCount,
-    externalSourceConfig,
-    surveyConfig,
-  }: CreateNewPostProps): Promise<CreateNewPostResponse> {
+  async function createNewPost(
+    request: CreateNewConversationRequest
+  ): Promise<CreateNewPostResponse> {
     try {
-      const params = Dto.createNewConversationRequest.parse({
-        conversationTitle: postTitle,
-        conversationBody: postBody,
-        conversationBodyPlainText: postBodyPlainText,
-        projectSlug,
-        languageSettingsSource,
-        multilingualSetting,
-        isIndexed: isIndexed,
-        participationMode: participationMode,
-        conversationType: conversationType,
-        postAsOrganization: postAsOrganizationName,
-        seedOpinionList: seedOpinionList,
-        requiresEventTicket,
-        aiLabelingEnabled,
-        preferredOpinionGroupCount,
-        externalSourceConfig: externalSourceConfig ?? undefined,
-        surveyConfig: surveyConfig ?? undefined,
-      });
+      const params = Dto.createNewConversationRequest.parse(request);
       const url = "/api/v1/conversation/create";
       const options = { method: "POST" };
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -634,7 +582,6 @@ export function useBackendPostApi() {
   return {
     createNewPost,
     fetchRecentPost,
-    fetchPostBySlugId,
     fetchConversationBySlugIdWithDisplayContent,
     createInternalPostData,
     deletePostBySlugId,

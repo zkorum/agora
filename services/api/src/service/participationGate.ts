@@ -6,6 +6,7 @@ import type {
     EventSlug,
     ParticipationBlockedReason,
     ParticipationMode,
+    RankingMode,
     SurveyGateStatus,
 } from "@/shared/types/zod.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
@@ -40,6 +41,7 @@ export interface CheckConversationParticipationSuccess {
     conversationId: number;
     conversationContentId: number;
     conversationType: ConversationType;
+    rankingMode: RankingMode | null;
     participantId: string;
     participationMode: ParticipationMode;
     requiresEventTicket: EventSlug | null;
@@ -327,6 +329,7 @@ export async function checkConversationParticipation({
         conversationId: metadata.id,
         conversationContentId: metadata.contentId,
         conversationType: metadata.conversationType,
+        rankingMode: metadata.rankingMode,
         participantId,
         participationMode: metadata.participationMode,
         requiresEventTicket: metadata.requiresEventTicket,

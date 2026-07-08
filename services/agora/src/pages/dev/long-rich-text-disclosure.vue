@@ -101,7 +101,7 @@
             :conversation-title="conversationPreview.payload.title"
             :author-username="conversationPreview.metadata.authorUsername"
             :on-same-tab-click="noop"
-            :conversation-type="conversationPreview.metadata.conversationType"
+            :conversation-type-config="conversationPreview.metadata"
             :enable-route-navigation="false"
           />
 
@@ -566,10 +566,10 @@ function getTranslatedStatementOpinion(statement: OpinionItem): string {
 function getStatementDisplayContent(
   statement: OpinionItem
 ): DisplayedOpinionItem["displayContent"] {
-  const contentId = getStatementContentId(statement);
+  const sourceVersion = getStatementContentId(statement);
   if (!translationState.value.isAvailable) {
     return {
-      contentId,
+      sourceVersion,
       status: "available",
       mode: "original",
       content: { content: statement.opinion },
@@ -579,7 +579,7 @@ function getStatementDisplayContent(
 
   if (translationState.value.translationStatus === "pending") {
     return {
-      contentId,
+      sourceVersion,
       status: "pending",
       translationControl: {
         status: "pending",
@@ -592,7 +592,7 @@ function getStatementDisplayContent(
 
   const mode = translationState.value.initialMode;
   return {
-    contentId,
+    sourceVersion,
     status: "available",
     mode,
     content: {

@@ -56,6 +56,7 @@
 
 <script setup lang="ts">
 import OrganizationImage from "src/components/account/OrganizationImage.vue";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { computed } from "vue";
 
 import { translateProjectPageText } from "./projectPageI18n";
@@ -75,21 +76,22 @@ type ProjectAttributionSectionEntry = Pick<
 const props = defineProps<{
   title: string;
   entries: readonly ProjectAttributionSectionEntry[];
-  languageCode: string;
+  languageCode: SupportedDisplayLanguageCodes;
 }>();
 
 type SafeProjectAttributionSectionEntry = ProjectAttributionSectionEntry & {
   safeWebsiteUrl: string | undefined;
 };
 
-const safeEntries = computed<readonly SafeProjectAttributionSectionEntry[]>(() =>
-  props.entries.map((entry) => ({
-    ...entry,
-    safeWebsiteUrl:
-      entry.websiteUrl === undefined
-        ? undefined
-        : getSafeProjectWebHref(entry.websiteUrl),
-  }))
+const safeEntries = computed<readonly SafeProjectAttributionSectionEntry[]>(
+  () =>
+    props.entries.map((entry) => ({
+      ...entry,
+      safeWebsiteUrl:
+        entry.websiteUrl === undefined
+          ? undefined
+          : getSafeProjectWebHref(entry.websiteUrl),
+    }))
 );
 
 interface EntryLinkAttributes {

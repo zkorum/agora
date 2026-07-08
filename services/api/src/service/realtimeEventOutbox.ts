@@ -616,6 +616,8 @@ export async function fetchConversationAnalysisUpdatedEventForLatestViewSnapshot
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
                 isNotNull(conversationViewSnapshotTable.activatedAt),
                 isNotNull(conversationViewSnapshotTable.analysisSnapshotId),
             ),

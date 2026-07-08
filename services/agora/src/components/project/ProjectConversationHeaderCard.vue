@@ -10,7 +10,7 @@
             :to="projectRoute"
             class="project-conversation-header-card__breadcrumb-link"
           >
-            {{ project.title }}
+            {{ projectTitle }}
           </SpaLink>
           <q-icon
             :name="breadcrumbIcon"
@@ -21,7 +21,9 @@
           <span class="project-conversation-header-card__breadcrumb-current">
             {{ t({ key: "conversationType" }) }}
           </span>
-          <span class="project-conversation-header-card__breadcrumb-separator">•</span>
+          <span class="project-conversation-header-card__breadcrumb-separator"
+            >•</span
+          >
           <ContentMetadataLine
             :created-at="conversationData.metadata.createdAt"
             :is-edited="conversationData.metadata.isEdited"
@@ -37,13 +39,19 @@
             :created-at="new Date(conversationData.metadata.createdAt)"
             :is-edited="conversationData.metadata.isEdited"
             :post-slug-id="conversationData.metadata.conversationSlugId"
-            :organization-url="conversationData.metadata.organization?.imageUrl ?? ''"
-            :organization-name="conversationData.metadata.organization?.name ?? ''"
+            :organization-url="
+              conversationData.metadata.organization?.imageUrl ?? ''
+            "
+            :organization-name="
+              conversationData.metadata.organization?.name ?? ''
+            "
             :participation-mode="conversationData.metadata.participationMode"
             :is-closed="conversationData.metadata.isClosed"
-            :conversation-title="conversationData.payload.title"
-            :conversation-type="conversationData.metadata.conversationType"
-            :external-source-config="conversationData.metadata.externalSourceConfig ?? null"
+            :conversation-title="displayedTitle"
+            :conversation-type-config="conversationData.metadata"
+            :external-source-config="
+              conversationData.metadata.externalSourceConfig ?? null
+            "
             :show-identity-card="false"
             :project-slug="project.slug"
             @conversation-deleted="emit('conversationDeleted')"
@@ -65,8 +73,12 @@
           :is-private="!conversationData.metadata.isIndexed"
           :title="displayedTitle"
           size="medium"
-          :conversation-type="conversationData.metadata.conversationType"
-          :external-source-config="conversationData.metadata.externalSourceConfig ?? null"
+          :conversation-type-config="conversationData.metadata"
+          :external-source-config="
+            conversationData.metadata.externalSourceConfig ?? null
+          "
+          :project-context="undefined"
+          project-context-title-mode="original"
         />
       </div>
 
@@ -94,33 +106,40 @@
     </div>
 
     <div
-      v-if="project.attributions.length > 0"
-      class="project-conversation-header-card__mobile-attributions"
+      v-if="hasMobileProjectDetails"
+      class="project-conversation-header-card__mobile-project-details"
     >
       <button
         type="button"
-        class="project-conversation-header-card__mobile-attributions-button"
-        @click="showMobileAttributions = true"
+        class="project-conversation-header-card__mobile-project-details-button"
+        :class="{
+          'project-conversation-header-card__mobile-project-details-button--without-logos':
+            !hasMobileProjectDetailLogos,
+        }"
+        @click="showMobileProjectDetails = true"
       >
         <span
-          class="project-conversation-header-card__mobile-attribution-logos"
+          v-if="hasMobileProjectDetailLogos"
+          class="project-conversation-header-card__mobile-project-details-logos"
           aria-hidden="true"
         >
           <span
             v-for="entry in mobileAttributionPreviewEntries"
             :key="`${entry.role}-${entry.displayName}`"
-            class="project-conversation-header-card__mobile-attribution-logo"
+            class="project-conversation-header-card__mobile-project-details-logo"
             :class="{
-              'project-conversation-header-card__mobile-attribution-logo--image':
+              'project-conversation-header-card__mobile-project-details-logo--image':
                 entry.imageUrl !== undefined,
             }"
             :style="
-              entry.imageUrl === undefined ? logoStyle(entry.accentColor) : undefined
+              entry.imageUrl === undefined
+                ? logoStyle(entry.accentColor)
+                : undefined
             "
           >
             <OrganizationImage
               v-if="entry.imageUrl !== undefined"
-              class="project-conversation-header-card__mobile-attribution-logo-image"
+              class="project-conversation-header-card__mobile-project-details-logo-image"
               height="100%"
               :organization-image-url="entry.imageUrl"
               :organization-name="entry.displayName"
@@ -130,41 +149,34 @@
 
           <span
             v-if="mobileAttributionHiddenCount > 0"
-            class="project-conversation-header-card__mobile-attribution-logo project-conversation-header-card__mobile-attribution-logo--more"
+            class="project-conversation-header-card__mobile-project-details-logo project-conversation-header-card__mobile-project-details-logo--more"
           >
             +{{ mobileAttributionHiddenCount }}
           </span>
         </span>
 
-        <span class="project-conversation-header-card__mobile-attribution-summary">
-          {{ mobileAttributionSummary }}
+        <span
+          class="project-conversation-header-card__mobile-project-details-summary"
+        >
+          {{ mobileProjectDetailsSummary }}
         </span>
 
         <q-icon
           :name="breadcrumbIcon"
           size="1.1rem"
-          class="project-conversation-header-card__mobile-attribution-chevron"
+          class="project-conversation-header-card__mobile-project-details-chevron"
           aria-hidden="true"
         />
       </button>
     </div>
 
-    <q-dialog v-model="showMobileAttributions" position="bottom">
+    <q-dialog v-model="showMobileProjectDetails" position="bottom">
       <ZKBottomDialogContainer :title="t({ key: 'behindThisTitle' })">
-        <ProjectAttributionSection
-          :title="t({ key: 'sponsorsTitle' })"
-          :entries="sponsorAttributions"
+        <ProjectDetailsAside
+          :attributions="project.attributions"
+          :contact="project.contact"
           :language-code="selectedLanguage"
-        />
-        <ProjectAttributionSection
-          :title="t({ key: 'projectOwnersTitle' })"
-          :entries="projectOwnerAttributions"
-          :language-code="selectedLanguage"
-        />
-        <ProjectAttributionSection
-          :title="t({ key: 'partnersTitle' })"
-          :entries="partnerAttributions"
-          :language-code="selectedLanguage"
+          :show-attribution-title="false"
         />
       </ZKBottomDialogContainer>
     </q-dialog>
@@ -190,12 +202,17 @@ import {
   parseSupportedDisplayLanguageOrUndefined,
   type SupportedDisplayLanguageCodes,
 } from "src/shared/languages";
-import type { ExtendedConversation, ParticipationMode } from "src/shared/types/zod";
+import type { ConversationContentFetchResponse } from "src/shared/types/dto";
+import type {
+  ExtendedConversation,
+  ExtendedConversationDisplayData,
+  ParticipationMode,
+} from "src/shared/types/zod";
 import { useConversationDisplayContent } from "src/utils/translation/useConversationDisplayContent";
 import { computed, ref } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
-import ProjectAttributionSection from "./ProjectAttributionSection.vue";
+import ProjectDetailsAside from "./ProjectDetailsAside.vue";
 import {
   type ProjectPageTranslations,
   translateProjectPageText,
@@ -211,7 +228,8 @@ interface ProjectConversationStatusBadge {
 
 const props = defineProps<{
   project: ProjectPageData;
-  conversationData: ExtendedConversation;
+  conversationData: ExtendedConversation | ExtendedConversationDisplayData;
+  initialDisplayContent?: ConversationContentFetchResponse;
   selectedLanguage: SupportedDisplayLanguageCodes;
 }>();
 
@@ -219,7 +237,7 @@ const emit = defineEmits<{
   conversationDeleted: [];
 }>();
 
-const showMobileAttributions = ref(false);
+const showMobileProjectDetails = ref(false);
 const selectedSupportedLanguage = computed(
   () => parseSupportedDisplayLanguageOrUndefined(props.selectedLanguage) ?? "en"
 );
@@ -229,17 +247,34 @@ const userIdentityText = computed<UserIdentityCardTranslations>(
 const projectRoute = computed<RouteLocationRaw>(() => ({
   path: `/project/${props.project.slug}`,
 }));
+const projectTitle = computed(() =>
+  props.project.displayContent.status === "available"
+    ? props.project.displayContent.content.title
+    : ""
+);
 const projectTextDirection = computed(() =>
   getLanguageTextDirection(props.selectedLanguage)
 );
 const breadcrumbIcon = computed(() =>
-  projectTextDirection.value === "rtl" ? "mdi-chevron-left" : "mdi-chevron-right"
+  projectTextDirection.value === "rtl"
+    ? "mdi-chevron-left"
+    : "mdi-chevron-right"
 );
 const extendedConversation = computed(() => props.conversationData);
-const { displayedTitle, displayedBody, translationPreview, setTranslationMode } =
-  useConversationDisplayContent({
-    extendedConversation,
-  });
+const initialDisplayContent = computed(() => props.initialDisplayContent);
+const fallbackPayload = computed(() =>
+  "payload" in props.conversationData ? props.conversationData.payload : undefined
+);
+const {
+  displayedTitle,
+  displayedBody,
+  translationPreview,
+  setTranslationMode,
+} = useConversationDisplayContent({
+  conversationData: extendedConversation,
+  initialDisplayContent,
+  fallbackPayload,
+});
 const projectOwnerAttributions = computed(() =>
   filterAttributions("project_owner")
 );
@@ -253,25 +288,41 @@ const orderedAttributions = computed(() => [
 const mobileAttributionPreviewEntries = computed(() =>
   orderedAttributions.value.slice(0, 4)
 );
+const hasMobileProjectDetailLogos = computed(
+  () => mobileAttributionPreviewEntries.value.length > 0
+);
 const mobileAttributionHiddenCount = computed(() =>
   Math.max(
-    orderedAttributions.value.length - mobileAttributionPreviewEntries.value.length,
+    orderedAttributions.value.length -
+      mobileAttributionPreviewEntries.value.length,
     0
   )
 );
-const mobileAttributionSummary = computed(() => {
+const hasMobileProjectDetails = computed(
+  () =>
+    props.project.attributions.length > 0 || props.project.contact !== undefined
+);
+const mobileProjectDetailsSummary = computed(() => {
   const leadEntry =
     projectOwnerAttributions.value.at(0) ?? orderedAttributions.value.at(0);
-  if (leadEntry === undefined) {
-    return "";
+  if (leadEntry !== undefined) {
+    const otherCount = orderedAttributions.value.length - 1;
+    if (otherCount <= 0) {
+      return leadEntry.displayName;
+    }
+
+    return `${leadEntry.displayName} & ${otherCount.toString()} others`;
   }
 
-  const otherCount = orderedAttributions.value.length - 1;
-  if (otherCount <= 0) {
-    return leadEntry.displayName;
-  }
+  return projectContactName.value;
+});
+const projectContactName = computed(() => {
+  const contact = props.project.contact;
+  if (contact === undefined) return "";
 
-  return `${leadEntry.displayName} & ${otherCount.toString()} others`;
+  return [contact.firstName, contact.lastName]
+    .filter((part): part is string => part !== undefined)
+    .join(" ");
 });
 const participationStatusBadge = computed<ProjectConversationStatusBadge>(() =>
   getParticipationStatusBadge(props.conversationData.metadata.participationMode)
@@ -419,7 +470,7 @@ function t({
 .project-conversation-header-card__breadcrumb-separator {
   color: $ink-light;
   font-size: 0.75rem;
-  font-weight: var(--font-weight-regular);
+  font-weight: var(--font-weight-normal);
   line-height: 1.2;
   opacity: 0.65;
 }
@@ -473,7 +524,7 @@ function t({
   line-height: 1.65;
 }
 
-.project-conversation-header-card__mobile-attributions {
+.project-conversation-header-card__mobile-project-details {
   display: none;
   padding: 0;
   border: 1px solid $sky-lighter;
@@ -482,7 +533,7 @@ function t({
   box-shadow: 0 0.35rem 1rem rgba(10, 7, 20, 0.04);
 }
 
-.project-conversation-header-card__mobile-attributions-button {
+.project-conversation-header-card__mobile-project-details-button {
   width: 100%;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -497,12 +548,16 @@ function t({
   cursor: pointer;
 }
 
-.project-conversation-header-card__mobile-attribution-logos {
+.project-conversation-header-card__mobile-project-details-button--without-logos {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.project-conversation-header-card__mobile-project-details-logos {
   display: flex;
   min-width: 4.1rem;
 }
 
-.project-conversation-header-card__mobile-attribution-logo {
+.project-conversation-header-card__mobile-project-details-logo {
   width: 1.55rem;
   height: 1.55rem;
   display: grid;
@@ -520,20 +575,20 @@ function t({
   }
 }
 
-.project-conversation-header-card__mobile-attribution-logo--image,
-.project-conversation-header-card__mobile-attribution-logo--more {
+.project-conversation-header-card__mobile-project-details-logo--image,
+.project-conversation-header-card__mobile-project-details-logo--more {
   background: white;
   color: $ink-light;
 }
 
-.project-conversation-header-card__mobile-attribution-logo-image {
+.project-conversation-header-card__mobile-project-details-logo-image {
   width: 100%;
   max-width: 100%;
   display: block;
   object-fit: contain;
 }
 
-.project-conversation-header-card__mobile-attribution-summary {
+.project-conversation-header-card__mobile-project-details-summary {
   overflow: hidden;
   color: $ink-light;
   font-size: 0.84rem;
@@ -543,12 +598,12 @@ function t({
   white-space: nowrap;
 }
 
-.project-conversation-header-card__mobile-attribution-chevron {
+.project-conversation-header-card__mobile-project-details-chevron {
   color: $sky-dark;
 }
 
 @media (max-width: 860px) {
-  .project-conversation-header-card__mobile-attributions {
+  .project-conversation-header-card__mobile-project-details {
     display: grid;
   }
 }

@@ -18,8 +18,10 @@
               :is-private="!isIndexed"
               :title="conversationTitle"
               size="medium"
-              conversation-type="polis"
+              :conversation-type-config="{ conversationType: 'polis' }"
               :external-source-config="null"
+              :project-context="undefined"
+              project-context-title-mode="original"
             />
           </div>
           <div @click.stop.prevent>

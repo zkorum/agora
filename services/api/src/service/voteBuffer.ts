@@ -74,6 +74,7 @@ import {
     voteTable,
     voteContentTable,
     opinionTable,
+    opinionContentTable,
     conversationTable,
 } from "@/shared-backend/schema.js";
 import { zodVotingAction, type VotingOption } from "@/shared/types/zod.js";
@@ -870,13 +871,27 @@ export function createVoteBuffer({
                     // Batch query opinion metadata (authorId + isSeed)
                     const opinionIds = Array.from(votesPerOpinion.keys());
                     const opinionMetadata = await db
-                        .select({
-                            id: opinionTable.id,
-                            authorId: opinionTable.authorId,
-                            isSeed: opinionTable.isSeed,
-                        })
-                        .from(opinionTable)
-                        .where(inArray(opinionTable.id, opinionIds));
+                            .select({
+                                id: opinionTable.id,
+                                authorId: opinionTable.authorId,
+                                isSeed: opinionTable.isSeed,
+                                opinionSlugId: opinionTable.slugId,
+                                opinionContent: opinionContentTable.content,
+                                conversationSlugId: conversationTable.slugId,
+                            })
+                            .from(opinionTable)
+                            .innerJoin(
+                                opinionContentTable,
+                                eq(
+                                    opinionContentTable.id,
+                                    opinionTable.currentContentId,
+                                ),
+                            )
+                            .innerJoin(
+                                conversationTable,
+                                eq(conversationTable.id, opinionTable.conversationId),
+                            )
+                            .where(inArray(opinionTable.id, opinionIds));
 
                     const opinionMetadataMap = new Map(
                         opinionMetadata.map((o) => [o.id, o]),
@@ -905,6 +920,10 @@ export function createVoteBuffer({
                                     recipientUserIds,
                                     opinionId,
                                     conversationId: voteData.conversationId,
+                                    conversationSlugId:
+                                        opinion.conversationSlugId,
+                                    opinionSlugId: opinion.opinionSlugId,
+                                    opinionContent: opinion.opinionContent,
                                     numVotes: voteData.voterIds.size,
                                     isSeed: true,
                                     realtimeSSEManager,
@@ -923,6 +942,10 @@ export function createVoteBuffer({
                                     recipientUserIds: [opinion.authorId],
                                     opinionId,
                                     conversationId: voteData.conversationId,
+                                    conversationSlugId:
+                                        opinion.conversationSlugId,
+                                    opinionSlugId: opinion.opinionSlugId,
+                                    opinionContent: opinion.opinionContent,
                                     numVotes: externalVoteCount,
                                     isSeed: false,
                                     realtimeSSEManager,

@@ -16,7 +16,7 @@
           :key="selectedBannerImageUrl"
           class="project-page-view__banner-image"
           :src="selectedBannerImageUrl"
-          :alt="t('bannerImageAlt', { title: project.title })"
+            :alt="t('bannerImageAlt', { title: displayedProjectContent.title })"
         />
         <div class="project-page-view__banner-grid"></div>
         <div
@@ -133,7 +133,7 @@
               >
                 <ProjectActivityCard
                   v-for="activity in activities"
-                  :key="activity.slug"
+                  :key="getProjectActivityIdentity(activity)"
                   :activity="activity"
                   :project-slug="project.slug"
                   :language-code="selectedLanguage"
@@ -159,46 +159,13 @@
             </q-infinite-scroll>
           </section>
 
-          <aside
+          <ProjectDetailsAside
             class="project-page-view__aside"
-            :aria-label="t('projectDetailsAriaLabel')"
-          >
-            <section
-              class="project-page-view__info-section project-page-view__info-section--attributions"
-            >
-              <h2 class="project-page-view__aside-title">
-                {{ t("behindThisTitle") }}
-              </h2>
-              <ProjectAttributionSection
-                :title="t('sponsorsTitle')"
-                :entries="sponsorAttributions"
-                :language-code="selectedLanguage"
-              />
-              <ProjectAttributionSection
-                :title="t('projectOwnersTitle')"
-                :entries="projectOwnerAttributions"
-                :language-code="selectedLanguage"
-              />
-              <ProjectAttributionSection
-                :title="t('partnersTitle')"
-                :entries="partnerAttributions"
-                :language-code="selectedLanguage"
-              />
-            </section>
-
-            <section
-              v-if="project.contact !== undefined"
-              class="project-page-view__info-section project-page-view__info-section--contact"
-            >
-              <h2 class="project-page-view__aside-title">
-                {{ t("projectContactTitle") }}
-              </h2>
-              <ProjectContactCard
-                :contact="project.contact"
-                :language-code="selectedLanguage"
-              />
-            </section>
-          </aside>
+            :attributions="project.attributions"
+            :contact="project.contact"
+            :language-code="selectedLanguage"
+            :show-attribution-title="true"
+          />
         </div>
 
         <ProjectPageFooter :language-code="selectedLanguage" />
@@ -208,43 +175,31 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import ZKLiveStatusDot from "src/components/ui-library/ZKLiveStatusDot.vue";
-import type {
-  SupportedDisplayLanguageCodes,
-  SupportedSpokenLanguageCodes,
-} from "src/shared/languages";
-import {
-  getLanguageTextDirection,
-  parseSupportedSpokenLanguageOrUndefined,
-} from "src/shared/languages";
-import { toUnionUndefined } from "src/shared/shared";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+import { getLanguageTextDirection } from "src/shared/languages";
 import type { LocalizedContentTranslationStatus } from "src/shared/types/zod";
-import { useLanguageStore } from "src/stores/language";
+import { useProjectContentQuery } from "src/utils/api/contentTranslation/useContentTranslationQueries";
 import {
   type ContentTranslationDisplayMode,
-  getContentTranslationSourceLanguageLabel,
-  resolveContentTranslationState,
 } from "src/utils/translation/contentTranslation";
-import { computed } from "vue";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
 import ProjectActivityCard from "./ProjectActivityCard.vue";
-import ProjectAttributionSection from "./ProjectAttributionSection.vue";
-import ProjectContactCard from "./ProjectContactCard.vue";
+import ProjectDetailsAside from "./ProjectDetailsAside.vue";
 import ProjectLanguageSelect from "./ProjectLanguageSelect.vue";
 import ProjectPageFooter from "./ProjectPageFooter.vue";
 import {
   type ProjectPageTranslations,
   translateProjectPageText,
 } from "./projectPageI18n";
-import type {
-  ProjectActivity,
-  ProjectAttribution,
-  ProjectLanguageOption,
-  ProjectPageData,
+import {
+  getProjectActivityIdentity,
+  type ProjectActivity,
+  type ProjectLanguageOption,
+  type ProjectPageData,
 } from "./projectPageTypes";
 
 type ConsultationStatus = "none" | "live" | "closed";
@@ -254,17 +209,12 @@ const props = defineProps<{
   activities: readonly ProjectActivity[];
   canLoadMoreActivities: boolean;
   isLoadingMoreActivities: boolean;
-  isRequestingProjectTranslation: boolean;
   languageOptions: readonly ProjectLanguageOption[];
 }>();
 const emit = defineEmits<{
   loadMoreActivities: [done: () => void];
-  requestProjectTranslation: [
-    targetLanguageCode: SupportedDisplayLanguageCodes,
-  ];
 }>();
 
-const { spokenLanguages } = storeToRefs(useLanguageStore());
 const projectTranslationModePreference = ref<
   ContentTranslationDisplayMode | undefined
 >();
@@ -282,57 +232,40 @@ const selectedBannerImageUrl = computed(() => {
   return props.project.bannerImageUrl;
 });
 
-const projectMachineTranslation = computed(() => {
-  const machineTranslation = props.project.machineTranslation;
-  if (
-    machineTranslation === undefined ||
-    machineTranslation.targetLanguageCode !== selectedLanguage.value
-  ) {
-    return undefined;
-  }
-
-  return machineTranslation;
-});
-const projectTranslationInitialMode = computed<ContentTranslationDisplayMode>(
-  () => {
-    const machineTranslation = projectMachineTranslation.value;
-    if (
-      machineTranslation?.status !== "completed" ||
-      machineTranslation.translatedContent === undefined
-    ) {
-      return "original";
-    }
-    const sourceLanguageCode = getProjectMachineTranslationSourceLanguageCode(
-      machineTranslation.sourceLanguageCode
-    );
-
-    return resolveContentTranslationState({
-      dynamicTranslationEnabled: true,
-      sourceLanguageCode,
-      displayLanguage: machineTranslation.targetLanguageCode,
-      spokenLanguages: spokenLanguages.value,
-      supportedTargetLanguageCodes: [machineTranslation.targetLanguageCode],
-      hasTranslatedContent: true,
-    }).initialMode;
-  }
+const requestedProjectContentMode = computed<ContentTranslationDisplayMode>(
+  () =>
+    projectTranslationModePreference.value ??
+    (props.project.displayContent.status === "available"
+      ? props.project.displayContent.mode
+      : "original")
 );
+const requestedProjectContentQuery = useProjectContentQuery({
+  projectSlug: computed(() => props.project.slug),
+  sourceVersion: computed(() => props.project.displayContent.sourceVersion),
+  mode: requestedProjectContentMode,
+  requestMode: computed(() =>
+    requestedProjectContentMode.value === "translated"
+      ? "queue_if_missing"
+      : "read_existing"
+  ),
+  enabled: computed(() => projectTranslationModePreference.value !== undefined),
+});
+const activeProjectDisplayContent = computed(() => {
+  if (
+    projectTranslationModePreference.value !== undefined &&
+    requestedProjectContentQuery.data.value !== undefined
+  ) {
+    return requestedProjectContentQuery.data.value;
+  }
+
+  return props.project.displayContent;
+});
 const projectTranslationMode = computed<ContentTranslationDisplayMode>({
   get: () =>
-    projectTranslationModePreference.value ??
-    projectTranslationInitialMode.value,
+    activeProjectDisplayContent.value.status === "available"
+      ? activeProjectDisplayContent.value.mode
+      : requestedProjectContentMode.value,
   set: (mode) => {
-    const machineTranslation = projectMachineTranslation.value;
-    if (machineTranslation === undefined) {
-      return;
-    }
-    if (
-      mode === "translated" &&
-      (machineTranslation.status !== "completed" ||
-        machineTranslation.translatedContent === undefined)
-    ) {
-      emit("requestProjectTranslation", machineTranslation.targetLanguageCode);
-      return;
-    }
     projectTranslationModePreference.value = mode;
   },
 });
@@ -343,58 +276,35 @@ const projectTranslationControl = computed<
     }
   | undefined
 >(() => {
-  const machineTranslation = projectMachineTranslation.value;
-  if (machineTranslation === undefined) {
+  const translationControl = activeProjectDisplayContent.value.translationControl;
+  if (translationControl === null) {
     return undefined;
   }
+
   return {
-    sourceLanguageLabel: getContentTranslationSourceLanguageLabel({
-      sourceLanguage: undefined,
-      fallbackLanguageCode: machineTranslation.sourceLanguageCode,
-      fallbackLabel: machineTranslation.sourceLanguageLabel,
-      displayLanguage: machineTranslation.targetLanguageCode,
-    }),
-    status: props.isRequestingProjectTranslation
+    sourceLanguageLabel: translationControl.sourceLanguageLabel,
+    status: requestedProjectContentQuery.isFetching.value
       ? "pending"
-      : machineTranslation.status,
+      : translationControl.status,
   };
 });
 const displayedProjectContent = computed(() => {
-  const machineTranslation = projectMachineTranslation.value;
-  if (machineTranslation === undefined) {
-    return {
-      title: props.project.title,
-      subtitle: props.project.subtitle,
-      bodyHtml: props.project.bodyHtml,
-    };
+  const displayContent = activeProjectDisplayContent.value;
+  if (displayContent.status === "available") {
+    return displayContent.content;
   }
 
-  if (
-    projectTranslationMode.value === "translated" &&
-    machineTranslation.status === "completed" &&
-    machineTranslation.translatedContent !== undefined
-  ) {
-    return machineTranslation.translatedContent;
-  }
-
-  return props.project.originalContent;
+  return props.project.displayContent.status === "available"
+    ? props.project.displayContent.content
+    : { title: "" };
 });
 
-const projectOwnerAttributions = computed(() =>
-  filterAttributions("project_owner")
-);
-const sponsorAttributions = computed(() => filterAttributions("sponsor"));
-const partnerAttributions = computed(() => filterAttributions("partner"));
 const consultationStatus = computed<ConsultationStatus>(() => {
   if (props.activities.length === 0) {
     return "none";
   }
 
-  if (
-    props.activities.some(
-      (activity) => activity.kind === "conversation" && !activity.isClosed
-    )
-  ) {
+  if (props.activities.some((activity) => !activity.isClosed)) {
     return "live";
   }
 
@@ -424,16 +334,18 @@ const activityListKey = computed(() => {
   return [
     props.project.slug,
     props.activities.length,
-    firstActivity?.slug ?? "none",
-    lastActivity?.slug ?? "none",
+    firstActivity === undefined
+      ? "none"
+      : getProjectActivityIdentity(firstActivity),
+    lastActivity === undefined ? "none" : getProjectActivityIdentity(lastActivity),
   ].join(":");
 });
 
 watch(
   () => [
     props.project.slug,
-    props.project.machineTranslation?.targetLanguageCode,
-    props.project.machineTranslation?.status,
+    props.project.displayContent.sourceVersion,
+    props.project.displayContent.status,
   ],
   () => {
     projectTranslationModePreference.value = undefined;
@@ -451,12 +363,6 @@ function t(
   });
 }
 
-function filterAttributions(
-  role: ProjectAttribution["role"]
-): readonly ProjectAttribution[] {
-  return props.project.attributions.filter((entry) => entry.role === role);
-}
-
 function onActivitiesLoad(_index: number, done: () => void): void {
   if (!props.canLoadMoreActivities || props.isLoadingMoreActivities) {
     done();
@@ -466,16 +372,6 @@ function onActivitiesLoad(_index: number, done: () => void): void {
   emit("loadMoreActivities", done);
 }
 
-function getProjectMachineTranslationSourceLanguageCode(
-  sourceLanguageCode: string | null | undefined
-): SupportedSpokenLanguageCodes | undefined {
-  const normalizedSourceLanguageCode = toUnionUndefined(sourceLanguageCode);
-  if (normalizedSourceLanguageCode === undefined) {
-    return undefined;
-  }
-
-  return parseSupportedSpokenLanguageOrUndefined(normalizedSourceLanguageCode);
-}
 </script>
 
 <style scoped lang="scss">
@@ -699,9 +595,7 @@ h2 {
   white-space: nowrap;
 }
 
-.project-page-view__activity-list,
-.project-page-view__aside,
-.project-page-view__info-section {
+.project-page-view__activity-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -735,33 +629,6 @@ h2 {
 .project-page-view__aside {
   position: sticky;
   top: 5.2rem;
-  gap: 2.35rem;
-}
-
-.project-page-view__info-section {
-  gap: 0;
-}
-
-.project-page-view__info-section--attributions {
-  .project-page-view__aside-title + .project-attribution-section {
-    margin-top: 0.9rem;
-  }
-
-  .project-attribution-section + .project-attribution-section {
-    margin-top: 1.15rem;
-  }
-}
-
-.project-page-view__info-section--contact {
-  gap: 0.65rem;
-}
-
-.project-page-view__aside-title {
-  margin: 0 0 0.1rem;
-  color: $ink-light;
-  font-size: 1rem;
-  font-weight: var(--font-weight-semibold);
-  letter-spacing: -0.01em;
 }
 
 @media (max-width: 860px) {

@@ -7,7 +7,7 @@
     <div class="container">
       <ZKTab
         :icon-code="
-          props.conversationType === 'maxdiff'
+          isMaxDiffConversation
             ? 'mdi:sort-numeric-ascending'
             : 'meteor-icons:comment'
         "
@@ -37,7 +37,7 @@
 <script setup lang="ts">
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { ConversationType } from "src/shared/types/zod";
+import type { ConversationTypeConfig } from "src/shared/types/zod";
 import {
   type ConversationRouteContext,
   getConversationAnalysisRoute,
@@ -60,13 +60,12 @@ const props = withDefaults(
     isLoading?: boolean;
     conversationSlugId: string;
     onSameTabClick?: () => void;
-    conversationType?: ConversationType;
+    conversationTypeConfig: ConversationTypeConfig;
     enableRouteNavigation: boolean;
     conversationRouteContext?: ConversationRouteContext;
   }>(),
   {
     onSameTabClick: undefined,
-    conversationType: "polis",
     conversationRouteContext: () => normalConversationRouteContext,
   }
 );
@@ -78,6 +77,11 @@ const { t } = useComponentI18n<InteractionTabTranslations>(
 
 const route = useRoute();
 const router = useRouter();
+const isMaxDiffConversation = computed(
+  () =>
+    props.conversationTypeConfig.conversationType === "ranking" &&
+    props.conversationTypeConfig.rankingMode === "bws"
+);
 
 // Track whether we can use router.back() to return to comment tab
 const canGoBackToComment = ref(false);

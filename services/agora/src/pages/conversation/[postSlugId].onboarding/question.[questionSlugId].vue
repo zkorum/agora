@@ -6,7 +6,10 @@
     :pin-footer-to-bottom="false"
   >
     <template #body>
-      <ConversationSurveyOnboardingHero :conversation-data="conversationData" />
+      <ConversationSurveyOnboardingHero
+        :conversation-data="conversationData"
+        :initial-display-content="conversationDisplayContent"
+      />
     </template>
 
     <template #footer>
@@ -228,6 +231,7 @@ const { t } = useComponentI18n<ConversationSurveyQuestionTranslations>(
 
 const {
   conversationData,
+  conversationDisplayContent,
   conversationSlugId,
   surveyStatus,
   surveyForm,
@@ -381,6 +385,7 @@ watch(
       selectedSingleOptionSlugId.value = null;
       selectedMultiOptionSlugIds.value = [];
       textValueHtml.value = "";
+      textValuePlain.value = "";
       return;
     }
 
@@ -400,6 +405,7 @@ watch(
             ? [...currentChoiceAnswer.optionSlugIds]
             : [];
         textValueHtml.value = "";
+        textValuePlain.value = "";
         break;
       }
       case "free_text":
@@ -408,6 +414,10 @@ watch(
         textValueHtml.value =
           currentQuestion.currentAnswer?.questionType === "free_text"
             ? currentQuestion.currentAnswer.textValueHtml
+            : "";
+        textValuePlain.value =
+          currentQuestion.currentAnswer?.questionType === "free_text"
+            ? currentQuestion.currentAnswer.textValuePlainText
             : "";
         break;
     }
@@ -533,6 +543,7 @@ const draftAnswer = computed(() => {
     selectedSingleOptionSlugId: selectedSingleOptionSlugId.value,
     selectedMultiOptionSlugIds: selectedMultiOptionSlugIds.value,
     textValueHtml: textValueHtml.value,
+    textValuePlainText: textValuePlain.value,
   });
 });
 
@@ -678,7 +689,7 @@ const freeTextCharacterCount = computed(() => {
   }
 
   return getSurveyFreeTextCharacterCount({
-    textValueHtml: textValueHtml.value,
+    textValuePlainText: textValuePlain.value,
   });
 });
 

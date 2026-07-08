@@ -56,11 +56,13 @@ describe("areSurveyAnswersEqual", () => {
       selectedSingleOptionSlugId: null,
       selectedMultiOptionSlugIds: [],
       textValueHtml: "34",
+      textValuePlainText: "34",
     });
 
     expect(normalizedAnswer).toEqual({
       questionType: "free_text",
       textValueHtml: "34",
+      textValuePlainText: "34",
     });
     expect(
       isSurveyAnswerSubmittable({
@@ -74,6 +76,7 @@ describe("areSurveyAnswersEqual", () => {
         answer: {
           questionType: "free_text",
           textValueHtml: "12a",
+          textValuePlainText: "12a",
         },
       })
     ).toBe(false);

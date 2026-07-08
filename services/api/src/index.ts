@@ -41,6 +41,7 @@ import {
     type ZodTypeProvider,
 } from "fastify-type-provider-zod";
 import fs from "fs";
+import { Transform } from "node:stream";
 import type { z } from "zod";
 import { config, log, server } from "./app.js";
 import * as authService from "@/service/auth.js";
@@ -103,9 +104,10 @@ import {
 } from "./service/maxdiff.js";
 import { generateCandidateSets } from "./service/maxdiffRouting.js";
 import {
-    fetchMaxdiffItems,
-    updateMaxdiffItemLifecycle,
-} from "./service/maxdiffItem.js";
+    fetchRankingItems,
+    updateRankingItemLifecycle,
+} from "./service/rankingItem.js";
+import type { RankingItemDisplayPreferences } from "./service/rankingItemDisplay.js";
 import {
     verifyWebhookSignature,
     parseWebhookPayload,
@@ -241,7 +243,7 @@ import {
     projectTable,
     projectTranslationTargetLanguageTable,
 } from "./shared-backend/schema.js";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
 
 type ContentTranslationResponse = z.infer<
     typeof Dto.contentTranslationResponse
@@ -574,7 +576,13 @@ async function getContentTranslationAvailabilityForConversation({
                 isNull(conversationTranslationTargetLanguageTable.deletedAt),
             ),
         )
-        .where(eq(conversationTable.slugId, conversationSlugId));
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+            ),
+        );
 
     const firstRow = rows.at(0);
     if (firstRow === undefined) {
@@ -951,7 +959,6 @@ log.info(
 );
 
 const importWorkerEventBridge = createImportWorkerEventBridge({
-    db,
     valkeyRef: queueValkeyRef,
     realtimeSSEManager,
     pollIntervalMs: config.IMPORT_BUFFER_FLUSH_INTERVAL_MS,
@@ -1253,6 +1260,40 @@ function getRequestDisplayLanguage({
         : "en";
 }
 
+async function getRankingItemDisplayPreferences({
+    request,
+    conversationSlugId,
+}: {
+    request: FastifyRequest;
+    conversationSlugId: string;
+}): Promise<RankingItemDisplayPreferences> {
+    const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+    const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+    const languagePreferences = deviceStatus.isKnown
+        ? await getLanguagePreferences({
+              db,
+              userId: deviceStatus.userId,
+              request: {
+                  currentDisplayLanguage: headerDisplayLanguage,
+              },
+          })
+        : {
+              displayLanguage: headerDisplayLanguage,
+              spokenLanguages: [headerDisplayLanguage],
+          };
+    const preferredContentTranslation =
+        await getPreferredContentTranslationAvailabilityForConversation({
+            conversationSlugId,
+            displayLanguage: languagePreferences.displayLanguage,
+        });
+    return {
+        displayLanguage: languagePreferences.displayLanguage,
+        targetLanguage: preferredContentTranslation.targetLanguageCode,
+        spokenLanguages: languagePreferences.spokenLanguages,
+        translationAllowed: preferredContentTranslation.isAllowed,
+    };
+}
+
 async function sendLatestSubscribedConversationAnalysisEvent({
     reply,
     conversationSlugId,
@@ -1424,6 +1465,56 @@ async function verifyUcanAndKnownDeviceStatus(
 const apiVersion = "v1";
 const REALTIME_REPLAY_BATCH_LIMIT = 100;
 const REALTIME_REPLAY_MAX_EVENTS = 1_000;
+const GITHUB_WEBHOOK_PATH = `/api/${apiVersion}/webhook/github`;
+const rawRequestBodies = new WeakMap<FastifyRequest, Buffer>();
+
+type RawRequestBodyCaptureStream = Transform & {
+    receivedEncodedLength: number;
+};
+
+function isRequestPath({
+    request,
+    path,
+}: {
+    request: FastifyRequest;
+    path: string;
+}): boolean {
+    const requestUrl = new URL(request.originalUrl, SERVER_URL);
+    return requestUrl.pathname === path;
+}
+
+function createRawRequestBodyCaptureStream({
+    request,
+    payload,
+}: {
+    request: FastifyRequest;
+    payload: NodeJS.ReadableStream;
+}): RawRequestBodyCaptureStream {
+    const chunks: Buffer[] = [];
+
+    const captureStream = Object.assign(new Transform({
+        transform(chunk: Buffer, _encoding, callback) {
+            chunks.push(chunk);
+            captureStream.receivedEncodedLength += chunk.length;
+            callback(null, chunk);
+        },
+        flush(callback) {
+            rawRequestBodies.set(request, Buffer.concat(chunks));
+            callback();
+        },
+    }), { receivedEncodedLength: 0 });
+
+    return payload.pipe(captureStream);
+}
+
+server.addHook("preParsing", (request, _reply, payload, done) => {
+    if (!isRequestPath({ request, path: GITHUB_WEBHOOK_PATH })) {
+        done(null, payload);
+        return;
+    }
+
+    done(null, createRawRequestBodyCaptureStream({ request, payload }));
+});
 
 async function requireSiteOrgAdmin(request: FastifyRequest): Promise<string> {
     const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(db, request, {
@@ -1808,6 +1899,95 @@ server.after(() => {
                 db,
                 request: request.body,
                 currentDisplayLanguage: getRequestDisplayLanguage({ request }),
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/project/content/fetch`,
+        schema: {
+            body: Dto.projectContentFetchRequest,
+            response: {
+                200: Dto.projectContentFetchResponse,
+            },
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUcan(request);
+            const now = nowZeroMs();
+            const userAgent = request.headers["user-agent"] ?? "Unknown device";
+            const deviceStatus = await authUtilService.getDeviceStatus({
+                db,
+                didWrite,
+                now,
+            });
+            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const requesterUserId = deviceStatus.isKnown
+                ? deviceStatus.userId
+                : (
+                      await authService.createGuestUser({
+                          db,
+                          didWrite,
+                          now,
+                          userAgent,
+                          currentDisplayLanguage: headerDisplayLanguage,
+                      })
+                  ).userId;
+            const languagePreferences = await getLanguagePreferences({
+                db,
+                userId: requesterUserId,
+                request: {
+                    currentDisplayLanguage: headerDisplayLanguage,
+                },
+            });
+            const availability = await getContentTranslationAvailabilityForProject({
+                projectSlug: request.body.projectSlug,
+                targetLanguageCode: languagePreferences.displayLanguage,
+            });
+            const queueValkey = queueValkeyRef.current;
+            const content = await contentTranslationService.requestProjectContentTranslation({
+                db,
+                valkey: queueValkey,
+                queueScript: contentTranslationQueueScript,
+                projectSlug: request.body.projectSlug,
+                sourceVersion: request.body.sourceVersion,
+                targetLanguageCode: languagePreferences.displayLanguage,
+                requestMode:
+                    request.body.mode === "translated" && availability.isAllowed
+                        ? request.body.requestMode
+                        : "read_existing",
+                now,
+                log,
+                beforeQueueTranslationWork: async () => {
+                    if (queueValkey === undefined) {
+                        throw server.httpErrors.serviceUnavailable(
+                            "Content translation rate limiter is unavailable",
+                        );
+                    }
+                    const rateLimit = await consumeContentTranslationUserRateLimit({
+                        valkey: queueValkey,
+                        script: contentTranslationUserRateLimitScript,
+                        userId: requesterUserId,
+                        maxRequests: CONTENT_TRANSLATION_USER_RATE_LIMIT_MAX,
+                        windowMs: CONTENT_TRANSLATION_USER_RATE_LIMIT_WINDOW_MS,
+                    });
+                    if (!rateLimit.isAllowed) {
+                        throw server.httpErrors.createError(
+                            429,
+                            `Content translation rate limit exceeded. Retry after ${String(Math.ceil(rateLimit.retryAfterMs / 1000))}s`,
+                        );
+                    }
+                },
+            });
+            if (content === undefined) {
+                throw server.httpErrors.notFound("Project content not found");
+            }
+            return projectPageService.toProjectDisplayContent({
+                content: content.content,
+                mode: request.body.mode,
+                translationAllowed: availability.isAllowed,
+                displayLanguage: languagePreferences.displayLanguage,
+                spokenLanguages: languagePreferences.spokenLanguages,
             });
         },
     });
@@ -2320,11 +2500,11 @@ server.after(() => {
         },
     });
 
-    // --- MaxDiff (Best-Worst Scaling) ---
+    // --- Ranking / Best-Worst Scaling ---
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/maxdiff/save`,
+        url: `/api/${apiVersion}/ranking/bws/save`,
         schema: {
             body: Dto.maxdiffSaveRequest,
             response: {
@@ -2345,7 +2525,7 @@ server.after(() => {
             if (!participationCheck.success) {
                 return participationCheck;
             }
-            const { conversationId } = await saveMaxdiffResult({
+            const { items, uncertainty } = await saveMaxdiffResult({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
                 userId: participationCheck.participantId,
@@ -2353,10 +2533,6 @@ server.after(() => {
                 comparisons: request.body.comparisons,
                 isComplete: request.body.isComplete,
                 valkey: queueValkeyRef.current,
-            });
-            const { items, uncertainty } = await computeGlobalUncertainty({
-                db,
-                conversationId,
             });
             const candidateSets = generateCandidateSets({
                 userComparisons: request.body.comparisons,
@@ -2370,7 +2546,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/maxdiff/load`,
+        url: `/api/${apiVersion}/ranking/bws/load`,
         schema: {
             body: Dto.maxdiffLoadRequest,
             response: {
@@ -2411,7 +2587,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/maxdiff/results`,
+        url: `/api/${apiVersion}/ranking/bws/results`,
         schema: {
             body: Dto.maxdiffResultsRequest,
             response: {
@@ -2419,9 +2595,14 @@ server.after(() => {
             },
         },
         handler: async (request) => {
+            const displayPreferences = await getRankingItemDisplayPreferences({
+                request,
+                conversationSlugId: request.body.conversationSlugId,
+            });
             return await getMaxdiffResults({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
+                displayPreferences,
                 lifecycleFilter: request.body.lifecycleFilter,
                 valkey: queueValkeyRef.current,
             });
@@ -2430,7 +2611,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/maxdiff/items/fetch`,
+        url: `/api/${apiVersion}/ranking/bws/items/fetch`,
         schema: {
             body: Dto.maxdiffItemsFetchRequest,
             response: {
@@ -2438,9 +2619,14 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            return await fetchMaxdiffItems({
+            const displayPreferences = await getRankingItemDisplayPreferences({
+                request,
+                conversationSlugId: request.body.conversationSlugId,
+            });
+            return await fetchRankingItems({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
+                displayPreferences,
                 lifecycleFilter: request.body.lifecycleFilter,
             });
         },
@@ -2448,7 +2634,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/maxdiff/items/lifecycle/update`,
+        url: `/api/${apiVersion}/ranking/bws/items/lifecycle/update`,
         schema: {
             body: Dto.maxdiffItemLifecycleUpdateRequest,
         },
@@ -2460,7 +2646,7 @@ server.after(() => {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                 },
             );
-            await updateMaxdiffItemLifecycle({
+            await updateRankingItemLifecycle({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
                 itemSlugId: request.body.itemSlugId,
@@ -2474,7 +2660,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/maxdiff/sync`,
+        url: `/api/${apiVersion}/ranking/bws/sync`,
         config: {
             rateLimit: maxdiffConnectorRateLimitConfig,
         },
@@ -2516,7 +2702,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/maxdiff/github/preview`,
+        url: `/api/${apiVersion}/ranking/bws/github/preview`,
         config: {
             rateLimit: maxdiffConnectorRateLimitConfig,
         },
@@ -2575,7 +2761,10 @@ server.after(() => {
                 );
             }
 
-            const rawBody = JSON.stringify(request.body);
+            const rawBody = rawRequestBodies.get(request);
+            if (rawBody === undefined) {
+                throw server.httpErrors.badRequest("Missing raw webhook body");
+            }
             if (
                 !verifyWebhookSignature({
                     payload: rawBody,
@@ -3034,6 +3223,9 @@ server.after(() => {
             },
         },
         handler: async (request, reply) => {
+            const createConversationRequest = Dto.createNewConversationRequest.parse(
+                request.body,
+            );
             const { didWrite, deviceStatus } =
                 await verifyUcanAndKnownDeviceStatus(db, request, {
                     expectedKnownDeviceStatus: {
@@ -3051,27 +3243,30 @@ server.after(() => {
                 });
 
             const hasSurvey =
-                (request.body.surveyConfig?.questions.length ?? 0) > 0;
+                createConversationRequest.conversationType === "polis" &&
+                (createConversationRequest.surveyConfig?.questions.length ?? 0) > 0;
             const createTargetResult = await resolveConversationCreateTargetResult({
                 db,
                 userId: deviceStatus.userId,
-                postAsOrganizationSlug: request.body.postAsOrganization,
-                projectSlug: request.body.projectSlug,
+                postAsOrganizationSlug: createConversationRequest.postAsOrganization,
+                projectSlug: createConversationRequest.projectSlug,
                 autoProvisionedDefaultLanguage,
             });
             if (!createTargetResult.success) {
                 return createTargetResult;
             }
             if (
-                request.body.languageSettingsSource === "project_inherited" &&
-                request.body.projectSlug === undefined
+                createConversationRequest.languageSettingsSource ===
+                    "project_inherited" &&
+                createConversationRequest.projectSlug === undefined
             ) {
                 throw server.httpErrors.badRequest(
                     "Project language inheritance requires a selected project",
                 );
             }
             const projectLanguageSettings =
-                request.body.languageSettingsSource === "project_inherited"
+                createConversationRequest.languageSettingsSource ===
+                "project_inherited"
                     ? await getProjectLanguageSettings({
                           db,
                           projectId: createTargetResult.target.projectId,
@@ -3079,23 +3274,30 @@ server.after(() => {
                     : undefined;
             const premiumMultilingualSetting =
                 projectLanguageSettings === undefined
-                    ? request.body.multilingualSetting
+                    ? createConversationRequest.multilingualSetting
                     : getManualMultilingualSettingsFromProjectLanguageSettings({
                           languageSettings: projectLanguageSettings,
                       });
             const premiumFeatures =
                 premiumEntitlementService.getPremiumFeaturesFromCreateRequest({
-                    requiresEventTicket: request.body.requiresEventTicket,
+                    requiresEventTicket:
+                        createConversationRequest.requiresEventTicket,
                     hasSurvey,
                     preferredOpinionGroupCount:
-                        request.body.preferredOpinionGroupCount,
+                        createConversationRequest.conversationType === "polis"
+                            ? createConversationRequest.preferredOpinionGroupCount
+                            : null,
                     multilingualSetting: premiumMultilingualSetting,
                 });
 
-            if (request.body.externalSourceConfig != null) {
+            if (
+                createConversationRequest.conversationType === "ranking" &&
+                createConversationRequest.externalSourceConfig != null
+            ) {
                 assertMaxdiffGitHubAllowed({
                     userId: deviceStatus.userId,
-                    postAsOrganization: request.body.postAsOrganization,
+                    postAsOrganization:
+                        createConversationRequest.postAsOrganization,
                 });
             }
 
@@ -3114,29 +3316,12 @@ server.after(() => {
 
             const createResult = await postService.createNewPost({
                 db: db,
-                conversationTitle: request.body.conversationTitle,
-                conversationBody: request.body.conversationBody ?? null,
-                conversationBodyPlainText:
-                    request.body.conversationBodyPlainText,
+                request: createConversationRequest,
                 authorId: deviceStatus.userId,
                 didWrite: didWrite,
-                postAsOrganization: request.body.postAsOrganization,
-                projectSlug: request.body.projectSlug,
                 createTarget: createTargetResult.target,
-                languageSettingsSource: request.body.languageSettingsSource,
                 autoProvisionedDefaultLanguage,
-                isIndexed: request.body.isIndexed,
-                participationMode: request.body.participationMode,
-                conversationType: request.body.conversationType,
                 isImporting: false,
-                seedOpinionList: request.body.seedOpinionList,
-                requiresEventTicket: request.body.requiresEventTicket,
-                aiLabelingEnabled: request.body.aiLabelingEnabled,
-                preferredOpinionGroupCount:
-                    request.body.preferredOpinionGroupCount,
-                externalSourceConfig: request.body.externalSourceConfig ?? null,
-                surveyConfig: request.body.surveyConfig ?? null,
-                multilingualSetting: request.body.multilingualSetting,
                 googleCloudCredentials,
             });
 
@@ -3623,14 +3808,19 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            await verifyUcanAndKnownDeviceStatus(db, request, {
-                expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-            });
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
 
             const status =
                 await conversationImportService.getConversationImportStatus({
                     db: db,
                     importSlugId: request.body.importSlugId,
+                    userId: deviceStatus.userId,
                 });
 
             if (status === null) {
@@ -3652,6 +3842,30 @@ server.after(() => {
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+            const importAccessState =
+                await conversationImportService.getConversationImportAccessState({
+                    db,
+                    conversationSlugId: request.body.conversationSlugId,
+                    userId: deviceStatus.isKnown ? deviceStatus.userId : undefined,
+                });
+            switch (importAccessState.status) {
+                case "not_found":
+                case "importing_not_visible":
+                    throw server.httpErrors.notFound("Conversation not found");
+                case "importing": {
+                    const response: GetConversationResponse = {
+                        status: "importing",
+                        importSlugId: importAccessState.importSlugId,
+                    };
+                    return response;
+                }
+                case "ready":
+                    break;
+                default: {
+                    const exhaustiveCheck: never = importAccessState;
+                    return exhaustiveCheck;
+                }
+            }
             const headerDisplayLanguage = getRequestDisplayLanguage({
                 request,
             });
@@ -3674,6 +3888,7 @@ server.after(() => {
                     ? deviceStatus.userId
                     : undefined,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                currentDisplayLanguage: languagePreferences.displayLanguage,
             });
             const preferredContentTranslation =
                 await getPreferredContentTranslationAvailabilityForConversation({
@@ -3702,7 +3917,11 @@ server.after(() => {
             }
 
             const response: GetConversationResponse = {
-                conversationData: postItem,
+                status: "ready",
+                conversationData: {
+                    metadata: postItem.metadata,
+                    interaction: postItem.interaction,
+                },
                 displayContent:
                     conversationContentService.toInitialConversationDisplayContent(
                         {
@@ -3780,12 +3999,11 @@ server.after(() => {
 
             if (updateResult.success) {
                 try {
-                    await contentTranslationService.scheduleEagerContentTranslationForConversation(
+                    await contentTranslationService.enqueueEagerContentTranslationWork(
                         {
-                            db,
                             valkey: queueValkeyRef.current,
                             queueScript: contentTranslationQueueScript,
-                            conversationSlugId: request.body.conversationSlugId,
+                            workIds: updateResult.eagerContentTranslationWorkIds,
                             now: nowZeroMs(),
                             log,
                         },
@@ -3796,6 +4014,9 @@ server.after(() => {
                         `[ContentTranslation] Failed to schedule eager work for conversationSlugId=${request.body.conversationSlugId}`,
                     );
                 }
+
+                reply.send({ success: true });
+                return;
             }
 
             reply.send(updateResult);
@@ -4028,14 +4249,18 @@ server.after(() => {
                     },
                 },
             );
-            await surveyService.deleteSurveyConfigByAuthor({
-                db,
-                conversationSlugId: request.body.conversationSlugId,
-                userId: deviceStatus.userId,
-                now: nowZeroMs(),
-                valkey: queueValkeyRef.current,
-            });
-            return { success: true as const };
+            const surveyConfigDeleteResult =
+                await surveyService.deleteSurveyConfigByAuthor({
+                    db,
+                    conversationSlugId: request.body.conversationSlugId,
+                    userId: deviceStatus.userId,
+                    now: nowZeroMs(),
+                    valkey: queueValkeyRef.current,
+                });
+            return {
+                success: true as const,
+                surveyGate: surveyConfigDeleteResult.surveyGate,
+            };
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({
@@ -4388,12 +4613,11 @@ server.after(() => {
             });
             if (result.success) {
                 try {
-                    await contentTranslationService.scheduleEagerContentTranslationForProject(
+                    await contentTranslationService.enqueueEagerContentTranslationWork(
                         {
-                            db,
                             valkey: queueValkeyRef.current,
                             queueScript: contentTranslationQueueScript,
-                            projectId: result.projectId,
+                            workIds: result.eagerContentTranslationWorkIds,
                             now: nowZeroMs(),
                             log,
                         },
@@ -4404,6 +4628,11 @@ server.after(() => {
                         `[ContentTranslation] Failed to schedule eager work for projectId=${String(result.projectId)}`,
                     );
                 }
+                return {
+                    success: true as const,
+                    projectId: result.projectId,
+                    projectSlug: result.projectSlug,
+                };
             }
             return result;
         },
@@ -4430,12 +4659,11 @@ server.after(() => {
             }
 
             try {
-                await contentTranslationService.scheduleEagerContentTranslationForProject(
+                await contentTranslationService.enqueueEagerContentTranslationWork(
                     {
-                        db,
                         valkey: queueValkeyRef.current,
                         queueScript: contentTranslationQueueScript,
-                        projectId: result.projectId,
+                        workIds: result.eagerContentTranslationWorkIds,
                         now: nowZeroMs(),
                         log,
                     },
@@ -4487,12 +4715,11 @@ server.after(() => {
             });
             if (result.success) {
                 try {
-                    await contentTranslationService.scheduleEagerContentTranslationForProject(
+                    await contentTranslationService.enqueueEagerContentTranslationWork(
                         {
-                            db,
                             valkey: queueValkeyRef.current,
                             queueScript: contentTranslationQueueScript,
-                            projectId: result.projectId,
+                            workIds: result.eagerContentTranslationWorkIds,
                             now: nowZeroMs(),
                             log,
                         },
@@ -4503,6 +4730,11 @@ server.after(() => {
                         `[ContentTranslation] Failed to schedule eager work for projectId=${String(result.projectId)}`,
                     );
                 }
+                return {
+                    success: true as const,
+                    projectId: result.projectId,
+                    projectSlug: result.projectSlug,
+                };
             }
             return result;
         },
@@ -5308,7 +5540,7 @@ server.after(() => {
                         valkey: queueValkey,
                         queueScript: contentTranslationQueueScript,
                         conversationSlugId: request.body.conversationSlugId,
-                        contentId: request.body.contentId,
+                        sourceVersion: request.body.sourceVersion,
                         targetLanguageCode:
                             preferredContentTranslation.targetLanguageCode,
                         requestMode:

@@ -9,7 +9,7 @@
 
 import type {
   ConversationMultilingualSetting,
-  ConversationType,
+  ConversationTypeConfig,
   EventSlug,
   ExternalSourceConfig,
   ParticipationMode,
@@ -50,7 +50,7 @@ export interface ConversationImportSettings {
 /**
  * Represents a draft of a conversation post with all its configuration options
  */
-export interface ConversationDraft {
+export interface ConversationDraftBase {
   // Basic Content
   /** The title/subject of the conversation post */
   title: string;
@@ -68,8 +68,10 @@ export interface ConversationDraft {
   seedOpinions: string[];
 
   // Conversation Type
-  /** The type of conversation: "polis" for standard agree/disagree voting, "maxdiff" for best-worst scaling */
-  conversationType: ConversationType;
+  /** The broad conversation family. Ranking subtypes are represented by rankingMode. */
+  conversationType: ConversationTypeConfig["conversationType"];
+  /** Ranking subtype; currently only "bws" is supported. */
+  rankingMode?: Extract<ConversationTypeConfig, { conversationType: "ranking" }>["rankingMode"];
 
   // Publishing Options
   postAs: PostAsSettings;
@@ -99,6 +101,12 @@ export interface ConversationDraft {
   // Import Settings
   importSettings: ConversationImportSettings;
 }
+
+export type ConversationDraft = Omit<
+  ConversationDraftBase,
+  "conversationType" | "rankingMode"
+> &
+  ConversationTypeConfig;
 
 /**
  * Type for conversation import method

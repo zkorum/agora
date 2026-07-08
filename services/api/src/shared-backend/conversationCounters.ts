@@ -241,14 +241,13 @@ export async function scheduleConversationAnalysisRefresh({
     doUpdateLastReactedAt?: boolean;
     queueStrategy?: AnalysisQueueStrategy;
 }): Promise<void> {
-    // MaxDiff counters are owned by the scoring worker (Python).
-    // Skip here -- the worker updates counters alongside scoring.
+    // Ranking counters are owned by ranking/scoring workers, not the Pol.is math updater.
     const convType = await db
         .select({ conversationType: conversationTable.conversationType })
         .from(conversationTable)
         .where(eq(conversationTable.id, conversationId));
 
-    if (convType[0]?.conversationType === "maxdiff") {
+    if (convType[0]?.conversationType === "ranking") {
         return;
     }
 

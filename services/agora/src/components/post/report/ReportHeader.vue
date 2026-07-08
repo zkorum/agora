@@ -148,7 +148,7 @@ const formattedDate = computed(() => {
 .stat-of {
   margin-left: 0.25em;
   font-size: 0.8rem;
-  font-weight: var(--font-weight-regular);
+  font-weight: var(--font-weight-normal);
   color: #b8b5bf;
 }
 

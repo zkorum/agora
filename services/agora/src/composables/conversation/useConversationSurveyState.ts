@@ -43,7 +43,12 @@ export function useConversationSurveyState({
     }),
   });
 
-  const conversationData = computed(() => conversationQuery.data.value);
+  const conversationData = computed(
+    () => conversationQuery.data.value?.conversationData
+  );
+  const conversationDisplayContent = computed(
+    () => conversationQuery.data.value?.displayContent
+  );
   const surveyForm = computed(() => {
     return resolveSurveyForm({
       surveyStatus: surveyStatus.value,
@@ -107,6 +112,7 @@ export function useConversationSurveyState({
     surveyStatusQuery,
     surveyFormQuery,
     conversationData,
+    conversationDisplayContent,
     surveyStatus,
     surveyForm,
     requirementState,

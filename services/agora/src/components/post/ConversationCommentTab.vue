@@ -30,7 +30,7 @@ import type {
   RegisterChildRefreshHandler,
   SubmittedCommentData,
 } from "src/composables/conversation/useConversationParentState";
-import type { ExtendedConversation } from "src/shared/types/zod";
+import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import {
@@ -55,7 +55,7 @@ import CommentSection from "./comments/CommentSection.vue";
 
 // Props from parent
 const props = defineProps<{
-  conversationData: ExtendedConversation;
+  conversationData: ExtendedConversationDisplayData;
   hasConversationData: boolean;
   moderationHistoryTrigger: number;
   commentFilter: CommentFilterOptions;

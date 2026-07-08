@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import {
+  type QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/vue-query";
 import type {
   SurveyFormFetchResponse,
   SurveyStatusCheckResponse,
@@ -8,8 +13,10 @@ import {
   type SurveyAnswerSubmission,
   type SurveyConfig,
   type SurveyGateSummary,
+  type SurveyRouteResolution,
 } from "src/shared/types/zod";
 import { useBackendAuthApi } from "src/utils/api/auth";
+import { isSurveyAnswerSubmittable } from "src/utils/survey/answer";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
@@ -17,16 +24,76 @@ import { updateConversationQueryCache } from "../post/useConversationQuery";
 import { useBackendSurveyApi } from "./survey";
 
 export type SurveyFormData = Extract<SurveyFormFetchResponse, { success: true }>;
+type SurveyFormQuestion = SurveyFormData["questions"][number];
 
-function updateSurveyGateViewerCaches({
+function deriveSurveyRouteResolutionFromForm({
+  surveyGate,
+  surveyForm,
+}: {
+  surveyGate: SurveyGateSummary;
+  surveyForm: SurveyFormData | undefined;
+}): SurveyRouteResolution | undefined {
+  if (!surveyGate.hasSurvey) {
+    return { kind: "none" };
+  }
+  if (surveyGate.status === "complete_valid") {
+    return { kind: "summary" };
+  }
+  if (surveyForm === undefined) {
+    return undefined;
+  }
+
+  const incompleteQuestion = surveyForm.questions.find((question) => {
+    return !question.isCurrentAnswerValid && !question.isPassed;
+  });
+  if (incompleteQuestion?.questionSlugId !== undefined) {
+    return {
+      kind: "question",
+      questionSlugId: incompleteQuestion.questionSlugId,
+    };
+  }
+
+  const hasRequiredQuestion = surveyForm.questions.some((question) => {
+    return question.isRequired;
+  });
+  if (!hasRequiredQuestion) {
+    return { kind: "none" };
+  }
+
+  const firstQuestionSlugId = surveyForm.questions[0]?.questionSlugId;
+  return firstQuestionSlugId === undefined
+    ? { kind: "none" }
+    : { kind: "question", questionSlugId: firstQuestionSlugId };
+}
+
+function getCachedSurveyForm({
+  queryClient,
+  conversationSlugId,
+}: {
+  queryClient: QueryClient;
+  conversationSlugId: string;
+}): SurveyFormData | undefined {
+  const formEntries = queryClient.getQueriesData<SurveyFormData>({
+    queryKey: ["survey-form", conversationSlugId],
+  });
+  return formEntries.find((entry) => entry[1] !== undefined)?.[1];
+}
+
+function updateSurveyStatusCache({
   queryClient,
   conversationSlugId,
   surveyGate,
 }: {
-  queryClient: ReturnType<typeof useQueryClient>;
+  queryClient: QueryClient;
   conversationSlugId: string;
   surveyGate: SurveyGateSummary;
 }): void {
+  const cachedSurveyForm = getCachedSurveyForm({ queryClient, conversationSlugId });
+  const routeResolution = deriveSurveyRouteResolutionFromForm({
+    surveyGate,
+    surveyForm: cachedSurveyForm,
+  });
+
   queryClient.setQueriesData<SurveyStatusCheckResponse>(
     { queryKey: ["survey-status", conversationSlugId] },
     (oldData) => {
@@ -37,9 +104,22 @@ function updateSurveyGateViewerCaches({
       return {
         ...oldData,
         surveyGate,
+        routeResolution: routeResolution ?? oldData.routeResolution,
       };
     }
   );
+}
+
+function updateSurveyGateViewerCaches({
+  queryClient,
+  conversationSlugId,
+  surveyGate,
+}: {
+  queryClient: QueryClient;
+  conversationSlugId: string;
+  surveyGate: SurveyGateSummary;
+}): void {
+  updateSurveyStatusCache({ queryClient, conversationSlugId, surveyGate });
 
   updateConversationQueryCache({
     queryClient,
@@ -54,27 +134,137 @@ function updateSurveyGateViewerCaches({
   });
 }
 
-async function invalidateSurveyViewerQueries({
+function removeSurveyFormCaches({
+  queryClient,
+  conversationSlugId,
+}: {
+  queryClient: QueryClient;
+  conversationSlugId: string;
+}): void {
+  queryClient.removeQueries({ queryKey: ["survey-form", conversationSlugId] });
+}
+
+function updateSurveyQuestionWithSubmittedAnswer({
+  question,
+  answer,
+}: {
+  question: SurveyFormQuestion;
+  answer: SurveyAnswerSubmission | null;
+}): SurveyFormQuestion {
+  if (answer === null) {
+    return {
+      ...question,
+      currentAnswer: undefined,
+      isPassed: !question.isRequired,
+      isMissingRequired: question.isRequired,
+      isStale: false,
+      isCurrentAnswerValid: false,
+      answeredQuestionSemanticVersion: question.isRequired
+        ? undefined
+        : question.currentSemanticVersion,
+    };
+  }
+
+  const isCurrentAnswerValid = isSurveyAnswerSubmittable({ question, answer });
+  return {
+    ...question,
+    currentAnswer: answer,
+    isPassed: false,
+    isMissingRequired: question.isRequired && !isCurrentAnswerValid,
+    isStale: false,
+    isCurrentAnswerValid,
+    answeredQuestionSemanticVersion: question.currentSemanticVersion,
+  };
+}
+
+function updateSurveyFormAnswerCaches({
+  queryClient,
+  conversationSlugId,
+  questionSlugId,
+  answer,
+  surveyGate,
+}: {
+  queryClient: QueryClient;
+  conversationSlugId: string;
+  questionSlugId: string;
+  answer: SurveyAnswerSubmission | null;
+  surveyGate: SurveyGateSummary;
+}): void {
+  queryClient.setQueriesData<SurveyFormData>(
+    { queryKey: ["survey-form", conversationSlugId] },
+    (oldData) => {
+      if (oldData === undefined) {
+        return oldData;
+      }
+
+      return {
+        ...oldData,
+        surveyGate,
+        questions: oldData.questions.map((question) => {
+          if (question.questionSlugId !== questionSlugId) {
+            return question;
+          }
+          return updateSurveyQuestionWithSubmittedAnswer({ question, answer });
+        }),
+      };
+    }
+  );
+}
+
+function clearSurveyFormAnswerCaches({
+  queryClient,
+  conversationSlugId,
+  surveyGate,
+}: {
+  queryClient: QueryClient;
+  conversationSlugId: string;
+  surveyGate: SurveyGateSummary;
+}): void {
+  queryClient.setQueriesData<SurveyFormData>(
+    { queryKey: ["survey-form", conversationSlugId] },
+    (oldData) => {
+      if (oldData === undefined) {
+        return oldData;
+      }
+
+      return {
+        ...oldData,
+        surveyGate,
+        questions: oldData.questions.map((question) => ({
+          ...question,
+          currentAnswer: undefined,
+          isPassed: false,
+          isMissingRequired: question.isRequired,
+          isStale: false,
+          isCurrentAnswerValid: false,
+          answeredQuestionSemanticVersion: undefined,
+        })),
+      };
+    }
+  );
+}
+
+async function markSurveyViewerQueriesStale({
   queryClient,
   conversationSlugId,
   includeDerivedSurveyQueries = false,
 }: {
-  queryClient: ReturnType<typeof useQueryClient>;
+  queryClient: QueryClient;
   conversationSlugId: string;
   includeDerivedSurveyQueries?: boolean;
 }): Promise<void> {
   const invalidations = [
     queryClient.invalidateQueries({
       queryKey: ["survey-form", conversationSlugId],
-      refetchType: "all",
+      refetchType: "none",
     }),
     queryClient.invalidateQueries({
       queryKey: ["survey-status", conversationSlugId],
-      refetchType: "all",
+      refetchType: "none",
     }),
     queryClient.invalidateQueries({
       queryKey: ["conversation", conversationSlugId],
-      refetchType: "all",
+      refetchType: "none",
     }),
     queryClient.invalidateQueries({
       queryKey: ["feed"],
@@ -86,11 +276,11 @@ async function invalidateSurveyViewerQueries({
     invalidations.push(
       queryClient.invalidateQueries({
         queryKey: ["survey-completion-counts", conversationSlugId],
-        refetchType: "all",
+        refetchType: "none",
       }),
       queryClient.invalidateQueries({
         queryKey: ["survey-results-aggregated", conversationSlugId],
-        refetchType: "all",
+        refetchType: "none",
       })
     );
   }
@@ -247,7 +437,7 @@ export function useSurveyAnswerSaveMutation({
       }
       return response.data;
     },
-    onSuccess: async (data) => {
+    onSuccess: async (data, variables) => {
       if (!data.success) {
         return;
       }
@@ -255,7 +445,19 @@ export function useSurveyAnswerSaveMutation({
       await updateAuthState({ partialLoginStatus: { isKnown: true } });
 
       const slugId = toValue(conversationSlugId);
-      await invalidateSurveyViewerQueries({
+      updateSurveyFormAnswerCaches({
+        queryClient,
+        conversationSlugId: slugId,
+        questionSlugId: variables.questionSlugId,
+        answer: variables.answer,
+        surveyGate: data.surveyGate,
+      });
+      updateSurveyGateViewerCaches({
+        queryClient,
+        conversationSlugId: slugId,
+        surveyGate: data.surveyGate,
+      });
+      await markSurveyViewerQueriesStale({
         queryClient,
         conversationSlugId: slugId,
       });
@@ -291,7 +493,17 @@ export function useSurveyWithdrawMutation({
       await updateAuthState({ partialLoginStatus: { isKnown: true } });
 
       const slugId = toValue(conversationSlugId);
-      await invalidateSurveyViewerQueries({
+      clearSurveyFormAnswerCaches({
+        queryClient,
+        conversationSlugId: slugId,
+        surveyGate: data.surveyGate,
+      });
+      updateSurveyGateViewerCaches({
+        queryClient,
+        conversationSlugId: slugId,
+        surveyGate: data.surveyGate,
+      });
+      await markSurveyViewerQueriesStale({
         queryClient,
         conversationSlugId: slugId,
       });
@@ -321,15 +533,14 @@ export function useSurveyConfigUpdateMutation({
     },
     onSuccess: async (data) => {
       const slugId = toValue(conversationSlugId);
-      if (data.surveyGate !== undefined) {
-        updateSurveyGateViewerCaches({
-          queryClient,
-          conversationSlugId: slugId,
-          surveyGate: data.surveyGate,
-        });
-      }
+      removeSurveyFormCaches({ queryClient, conversationSlugId: slugId });
+      updateSurveyGateViewerCaches({
+        queryClient,
+        conversationSlugId: slugId,
+        surveyGate: data.surveyGate,
+      });
 
-      await invalidateSurveyViewerQueries({
+      await markSurveyViewerQueriesStale({
         queryClient,
         conversationSlugId: slugId,
         includeDerivedSurveyQueries: true,
@@ -357,10 +568,17 @@ export function useSurveyConfigDeleteMutation({
       }
       return response.data;
     },
-    onSuccess: async () => {
-      await invalidateSurveyViewerQueries({
+    onSuccess: async (data) => {
+      const slugId = toValue(conversationSlugId);
+      removeSurveyFormCaches({ queryClient, conversationSlugId: slugId });
+      updateSurveyGateViewerCaches({
         queryClient,
-        conversationSlugId: toValue(conversationSlugId),
+        conversationSlugId: slugId,
+        surveyGate: data.surveyGate,
+      });
+      await markSurveyViewerQueriesStale({
+        queryClient,
+        conversationSlugId: slugId,
         includeDerivedSurveyQueries: true,
       });
     },

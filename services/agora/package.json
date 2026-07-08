@@ -57,6 +57,7 @@
     "axios": "^1.16.0",
     "buffer": "^6.0.3",
     "cborg": "^5.1.1",
+    "html-entities": "^2.6.0",
     "html2canvas": "^1.4.1",
     "inapp-spy": "^5.0.9",
     "jspdf": "^4.2.1",

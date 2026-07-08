@@ -31,6 +31,16 @@
         />
 
         <q-btn-toggle
+          v-model="activityAccessScenario"
+          unelevated
+          no-caps
+          toggle-color="primary"
+          color="white"
+          text-color="primary"
+          :options="activityAccessScenarioOptions"
+        />
+
+        <q-btn-toggle
           v-model="contactScenario"
           unelevated
           no-caps
@@ -79,9 +89,7 @@
       :activities="activities"
       :can-load-more-activities="false"
       :is-loading-more-activities="false"
-      :is-requesting-project-translation="false"
       :language-options="languageOptions"
-      @request-project-translation="ignoreProjectTranslationRequest"
     />
   </div>
 </template>
@@ -100,6 +108,7 @@ import { computed, ref } from "vue";
 
 type ContactScenario = "email" | "web" | "both";
 type ActivityStatusScenario = "mixed" | "closed" | "empty";
+type ActivityAccessScenario = "public" | "mixed" | "invitation-only";
 type ActivityVolumeScenario = "default" | "many" | "lots";
 type BodyLengthScenario =
   | "normal"
@@ -114,18 +123,23 @@ type DevAttributionKey =
 type DevProjectAttribution = ProjectPageData["attributions"][number] & {
   devKey?: DevAttributionKey;
 };
-type BaseDevActivity = Omit<
-  ProjectActivity,
-  | "bodyPlainText"
-  | "dynamicTranslationEnabled"
-  | "machineTranslation"
-  | "originalContent"
-  | "sourceLanguageCode"
-  | "title"
->;
+type BaseDevActivity = {
+  devSlugIdBase: string;
+  conversationType: ProjectActivity["conversationType"];
+  isIndexed: boolean;
+  isClosed: boolean;
+  createdAt: Date;
+  isEdited: boolean;
+  stats: ProjectActivity["stats"];
+};
 type BaseDevProjectData = Omit<
   ProjectPageData,
-  "activityCount" | "attributions" | "contact" | "participantCount" | "voteCount"
+  | "activityCount"
+  | "attributions"
+  | "contact"
+  | "displayContent"
+  | "participantCount"
+  | "voteCount"
 >;
 
 usePageLayout({
@@ -136,6 +150,7 @@ usePageLayout({
 
 const contactScenario = ref<ContactScenario>("both");
 const activityStatusScenario = ref<ActivityStatusScenario>("mixed");
+const activityAccessScenario = ref<ActivityAccessScenario>("mixed");
 const activityVolumeScenario = ref<ActivityVolumeScenario>("default");
 const bodyLengthScenario = ref<BodyLengthScenario>("normal");
 const selectedLanguage = ref<SupportedDisplayLanguageCodes>("en");
@@ -157,6 +172,15 @@ const activityStatusScenarioOptions: {
   { label: "Live + closed", value: "mixed" },
   { label: "Closed only", value: "closed" },
   { label: "No activities", value: "empty" },
+];
+
+const activityAccessScenarioOptions: {
+  label: string;
+  value: ActivityAccessScenario;
+}[] = [
+  { label: "Public only", value: "public" },
+  { label: "Mixed access", value: "mixed" },
+  { label: "Invitation-only", value: "invitation-only" },
 ];
 
 const activityVolumeScenarioOptions: {
@@ -259,6 +283,12 @@ const projectContentByLanguage = {
     longBodyPlainText: string;
   }
 >;
+
+const projectSourceVersionByLanguage = {
+  en: "00000000-0000-4000-8000-000000000001",
+  ky: "00000000-0000-4000-8000-000000000002",
+  ru: "00000000-0000-4000-8000-000000000003",
+} satisfies Record<ProjectPageLanguage, string>;
 
 const languageOptions: readonly ProjectLanguageOption[] = [
   {
@@ -465,41 +495,45 @@ const activityLocalizationByLanguage = {
 } satisfies Record<
   ProjectPageLanguage,
   readonly [
-    Pick<ProjectActivity, "title" | "bodyPlainText">,
-    Pick<ProjectActivity, "title" | "bodyPlainText">,
-    Pick<ProjectActivity, "title" | "bodyPlainText">,
-    Pick<ProjectActivity, "title" | "bodyPlainText">,
+    { title: string; bodyPlainText: string },
+    { title: string; bodyPlainText: string },
+    { title: string; bodyPlainText: string },
+    { title: string; bodyPlainText: string },
   ]
 >;
 
 const baseActivities = [
   {
-    slug: "voices-for-change-share-ideas",
-    kind: "conversation",
+    devSlugIdBase: "voices-for-change-share-ideas",
+    conversationType: "polis",
+    isIndexed: true,
     isClosed: false,
     createdAt: new Date("2026-04-03T12:00:00.000Z"),
     isEdited: false,
     stats: { opinionCount: 62, participantCount: 214, voteCount: 1238 },
   },
   {
-    slug: "voices-for-change-rank-priorities",
-    kind: "vote",
+    devSlugIdBase: "voices-for-change-rank-priorities",
+    conversationType: "ranking",
+    isIndexed: true,
     isClosed: false,
     createdAt: new Date("2026-04-10T12:00:00.000Z"),
     isEdited: false,
     stats: { opinionCount: 18, participantCount: 188, voteCount: 941 },
   },
   {
-    slug: "voices-for-change-youth-access",
-    kind: "conversation",
+    devSlugIdBase: "voices-for-change-youth-access",
+    conversationType: "polis",
+    isIndexed: true,
     isClosed: true,
     createdAt: new Date("2026-03-20T12:00:00.000Z"),
     isEdited: true,
     stats: { opinionCount: 34, participantCount: 126, voteCount: 438 },
   },
   {
-    slug: "voices-for-change-final-feedback",
-    kind: "vote",
+    devSlugIdBase: "voices-for-change-final-feedback",
+    conversationType: "ranking",
+    isIndexed: false,
     isClosed: true,
     createdAt: new Date("2026-03-28T12:00:00.000Z"),
     isEdited: false,
@@ -565,17 +599,6 @@ const baseAttributions = [
 
 const baseProject = {
   slug: "amplify-civil-society-kyrgyzstan",
-  title: "Amplify: Civil Society Collaboration",
-  subtitle: "Local to national solutions in Kyrgyzstan",
-  bodyHtml:
-    "A consultation gathering ideas from civil-society organizations, community members, and public institutions to identify shared priorities and practical solutions across Kyrgyzstan.",
-  originalContent: {
-    title: "Amplify: Civil Society Collaboration",
-    subtitle: "Local to national solutions in Kyrgyzstan",
-    bodyHtml:
-      "A consultation gathering ideas from civil-society organizations, community members, and public institutions to identify shared priorities and practical solutions across Kyrgyzstan.",
-  },
-  machineTranslation: undefined,
   bannerVariant: "blue",
   bannerImageUrl: projectBannerImageUrlsByLanguage.en,
 } satisfies BaseDevProjectData;
@@ -613,7 +636,11 @@ const activities = computed<readonly ProjectActivity[]>(() => {
     scenarioActivities = generatedActivities;
   }
 
-  const localizedActivities = scenarioActivities.map(
+  const accessScenarioActivities = scenarioActivities.map((activity, activityIndex) =>
+    applyActivityAccessScenario({ activity, activityIndex })
+  );
+
+  const localizedActivities = accessScenarioActivities.map(
     (activity, activityIndex) =>
       localizeActivity({
         activity,
@@ -622,11 +649,18 @@ const activities = computed<readonly ProjectActivity[]>(() => {
         useGeneratedActivityLabels,
       })
   );
+  const orderedLocalizedActivities = localizedActivities.toSorted(
+    compareProjectPageActivityOrder
+  );
 
   const activitiesWithBodyLength = hasLongActivityBodies({
     scenario: bodyLengthScenario.value,
   })
-    ? localizedActivities.map((activity, activityIndex) => {
+    ? orderedLocalizedActivities.map((activity, activityIndex) => {
+        if (activity.displayContent.status !== "available") {
+          return activity;
+        }
+
         const bodyPlainText = createLongActivityBody({
           activity,
           activityIndex,
@@ -634,14 +668,14 @@ const activities = computed<readonly ProjectActivity[]>(() => {
         });
         return {
           ...activity,
-          bodyPlainText,
-          originalContent: {
-            ...activity.originalContent,
+          displayContent: createActivityDisplayContent({
+            sourceVersion: activity.displayContent.sourceVersion,
+            title: activity.displayContent.content.title,
             bodyPlainText,
-          },
+          }),
         };
       })
-    : localizedActivities;
+    : orderedLocalizedActivities;
 
   if (activityStatusScenario.value === "closed") {
     return activitiesWithBodyLength.map((activity) => ({
@@ -659,19 +693,19 @@ const project = computed<ProjectPageData>(() => ({
     attributions: baseAttributions,
     language: selectedProjectLanguage.value,
   }),
-  title: projectContent.value.title,
-  subtitle: projectContent.value.subtitle,
-  bodyHtml: hasLongProjectBody({ scenario: bodyLengthScenario.value })
-    ? projectContent.value.longBodyPlainText
-    : projectContent.value.bodyPlainText,
-  originalContent: {
-    title: projectContent.value.title,
-    subtitle: projectContent.value.subtitle,
-    bodyHtml: hasLongProjectBody({ scenario: bodyLengthScenario.value })
-      ? projectContent.value.longBodyPlainText
-      : projectContent.value.bodyPlainText,
+  displayContent: {
+    sourceVersion: projectSourceVersionByLanguage[selectedProjectLanguage.value],
+    status: "available",
+    mode: "original",
+    content: {
+      title: projectContent.value.title,
+      subtitle: projectContent.value.subtitle,
+      bodyHtml: hasLongProjectBody({ scenario: bodyLengthScenario.value })
+        ? projectContent.value.longBodyPlainText
+        : projectContent.value.bodyPlainText,
+    },
+    translationControl: null,
   },
-  machineTranslation: undefined,
   bannerImageUrl: projectBannerImageUrlsByLanguage[selectedProjectLanguage.value],
   participantCount: calculateParticipantCount({ activities: activities.value }),
   voteCount: calculateVoteCount({ activities: activities.value }),
@@ -739,8 +773,6 @@ function localizeAttributions({
   });
 }
 
-function ignoreProjectTranslationRequest(): void {}
-
 function localizeActivity({
   activity,
   activityIndex,
@@ -759,32 +791,72 @@ function localizeActivity({
   const activityNumber = activityIndex + 1;
   const roundNumber = Math.floor(activityIndex / baseActivities.length) + 1;
 
-  return {
-    ...activity,
-    title: useGeneratedActivityLabels
-      ? `${localization.title} ${activityNumber.toString()}`
-      : localization.title,
-    bodyPlainText: useGeneratedActivityLabels
-      ? `${localization.bodyPlainText} ${localizedGeneratedActivitySuffix({
-          language,
-          roundNumber,
-        })}`
-      : localization.bodyPlainText,
-    originalContent: {
-      title: useGeneratedActivityLabels
-        ? `${localization.title} ${activityNumber.toString()}`
-        : localization.title,
-      bodyPlainText: useGeneratedActivityLabels
-        ? `${localization.bodyPlainText} ${localizedGeneratedActivitySuffix({
-            language,
-            roundNumber,
-          })}`
-        : localization.bodyPlainText,
-    },
-    sourceLanguageCode: language,
-    dynamicTranslationEnabled: false,
-    machineTranslation: undefined,
+  const title = useGeneratedActivityLabels
+    ? `${localization.title} ${activityNumber.toString()}`
+    : localization.title;
+  const bodyPlainText = useGeneratedActivityLabels
+    ? `${localization.bodyPlainText} ${localizedGeneratedActivitySuffix({
+        language,
+        roundNumber,
+      })}`
+    : localization.bodyPlainText;
+
+  const activityContent = {
+    conversationType: activity.conversationType,
+    isClosed: activity.isClosed,
+    createdAt: activity.createdAt,
+    isEdited: activity.isEdited,
+    stats: activity.stats,
+    displayContent: createActivityDisplayContent({
+      sourceVersion: createDevActivitySourceVersion({
+        language,
+        activityIndex,
+      }),
+      title,
+      bodyPlainText,
+    }),
   };
+
+  return activity.isIndexed
+    ? {
+        ...activityContent,
+        isIndexed: true,
+        slugId: activity.devSlugIdBase,
+      }
+    : {
+        ...activityContent,
+        isIndexed: false,
+      };
+}
+
+function applyActivityAccessScenario({
+  activity,
+  activityIndex,
+}: {
+  activity: BaseDevActivity;
+  activityIndex: number;
+}): BaseDevActivity {
+  switch (activityAccessScenario.value) {
+    case "public":
+      return { ...activity, isIndexed: true };
+    case "invitation-only":
+      return { ...activity, isIndexed: false };
+    case "mixed":
+      return activityIndex === 1
+        ? { ...activity, isIndexed: false }
+        : activity;
+  }
+}
+
+function compareProjectPageActivityOrder(
+  firstActivity: Pick<ProjectActivity, "createdAt" | "isIndexed">,
+  secondActivity: Pick<ProjectActivity, "createdAt" | "isIndexed">
+): number {
+  if (firstActivity.isIndexed !== secondActivity.isIndexed) {
+    return firstActivity.isIndexed ? -1 : 1;
+  }
+
+  return secondActivity.createdAt.getTime() - firstActivity.createdAt.getTime();
 }
 
 function localizedGeneratedActivitySuffix({
@@ -849,9 +921,50 @@ function createLongActivityBody({
     ],
   } satisfies Record<ProjectPageLanguage, readonly string[]>;
 
-  return [activity.bodyPlainText, ...extraSentencesByLanguage[language]].join(
-    " "
-  );
+  const bodyPlainText =
+    activity.displayContent.status === "available"
+      ? activity.displayContent.content.bodyPlainText
+      : "";
+
+  return [
+    bodyPlainText,
+    ...extraSentencesByLanguage[language],
+  ].join(" ");
+}
+
+function createActivityDisplayContent({
+  sourceVersion,
+  title,
+  bodyPlainText,
+}: {
+  sourceVersion: string;
+  title: string;
+  bodyPlainText: string;
+}): ProjectActivity["displayContent"] {
+  return {
+    sourceVersion,
+    status: "available",
+    mode: "original",
+    content: { title, bodyPlainText },
+    translationControl: null,
+  };
+}
+
+function createDevActivitySourceVersion({
+  language,
+  activityIndex,
+}: {
+  language: ProjectPageLanguage;
+  activityIndex: number;
+}): string {
+  const languageOffset = { en: 1, ky: 2, ru: 3 } satisfies Record<
+    ProjectPageLanguage,
+    number
+  >;
+  const sourceIndex = languageOffset[language] * 1000 + activityIndex + 1;
+  return `00000000-0000-4000-8000-${sourceIndex
+    .toString()
+    .padStart(12, "0")}`;
 }
 
 function createGeneratedActivity({
@@ -864,7 +977,7 @@ function createGeneratedActivity({
 
   return {
     ...baseActivity,
-    slug: `${baseActivity.slug}-${activityNumber}`,
+    devSlugIdBase: `${baseActivity.devSlugIdBase}-${activityNumber}`,
     isClosed: activityIndex % 5 === 2 || activityIndex % 7 === 4,
     stats: {
       opinionCount: baseActivity.stats.opinionCount + (activityIndex % 9) * 3,

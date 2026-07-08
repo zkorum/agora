@@ -1,23 +1,19 @@
 // Edit conversation functionality
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
+import { log } from "@/app.js";
 import {
     conversationContentTable,
     conversationTable,
     conversationModerationTable,
     organizationTable,
+    polisConversationConfigTable,
     projectContentTable,
     projectOrganizationOwnershipTable,
     projectTable,
 } from "@/shared-backend/schema.js";
 import { and, eq, isNull } from "drizzle-orm";
-import { log } from "@/app.js";
 import { httpErrors } from "@fastify/sensible";
-import {
-    htmlToCountedText,
-    toUnionUndefined,
-    validateRichTextInput,
-} from "@/shared/shared.js";
-import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
+import { toUnionUndefined } from "@/shared/shared.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import {
     getActiveSurveyConfigRecord,
@@ -69,6 +65,14 @@ import {
     normalizeInheritedConversationMultilingualSettings,
     sourceLanguageToDisplayLanguage,
 } from "./translationLanguageSetting.js";
+import { normalizeUserRichTextInput } from "./richText.js";
+import {
+    createEagerContentTranslationWorkForKnownConversation,
+    fetchCurrentSurveyQuestionSources,
+    fetchSeedOpinionSources,
+    type ConversationContentSource,
+    type SurveyQuestionContentSource,
+} from "./contentTranslation.js";
 
 interface GetConversationForEditProps {
     db: PostgresDatabase;
@@ -100,9 +104,9 @@ export async function getConversationForEdit({
             participationMode: conversationTable.participationMode,
             conversationType: conversationTable.conversationType,
             requiresEventTicket: conversationTable.requiresEventTicket,
-            aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+            aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
             preferredOpinionGroupCount:
-                conversationTable.preferredOpinionGroupCount,
+                polisConversationConfigTable.preferredOpinionGroupCount,
             postAsOrganizationName: organizationTable.displayName,
             autoProvisionedForUserId:
                 organizationTable.autoProvisionedForUserId,
@@ -140,6 +144,10 @@ export async function getConversationForEdit({
                 projectOrganizationOwnershipTable.organizationId,
                 organizationTable.id,
             ),
+        )
+        .leftJoin(
+            polisConversationConfigTable,
+            eq(polisConversationConfigTable.id, conversationTable.polisConfigId),
         )
         .leftJoin(
             conversationModerationTable,
@@ -255,10 +263,10 @@ export async function getConversationForEdit({
         isIndexed: conversation.isIndexed,
         participationMode: conversation.participationMode,
         requiresEventTicket: toUnionUndefined(conversation.requiresEventTicket),
-        aiLabelingEnabled: conversation.aiLabelingEnabled,
+        aiLabelingEnabled: conversation.aiLabelingEnabled ?? false,
         preferredOpinionGroupCount:
             editPermissions.canUseAnalysisVariantsPreference
-                ? conversation.preferredOpinionGroupCount
+                ? (conversation.preferredOpinionGroupCount ?? null)
                 : null,
         postAsOrganizationName: toUnionUndefined(
             conversation.autoProvisionedForUserId === null
@@ -282,12 +290,18 @@ interface UpdateConversationProps {
     };
 }
 
+type UpdateConversationServiceResponse =
+    | Exclude<UpdateConversationResponse, { success: true }>
+    | (Extract<UpdateConversationResponse, { success: true }> & {
+          eagerContentTranslationWorkIds: number[];
+      });
+
 export async function updateConversation({
     db,
     userId,
     googleCloudCredentials,
     data,
-}: UpdateConversationProps): Promise<UpdateConversationResponse> {
+}: UpdateConversationProps): Promise<UpdateConversationServiceResponse> {
     const {
         conversationSlugId,
         conversationTitle,
@@ -303,16 +317,22 @@ export async function updateConversation({
         surveyConfig,
     } = data;
 
-    // Sanitize HTML body if provided (backend security layer)
     let sanitizedBody = conversationBody;
     let bodyPlainText = "";
     if (sanitizedBody != null) {
         try {
-            sanitizedBody = processUserGeneratedHtml(
-                sanitizedBody,
-                false,
-                "input",
-            );
+            const normalizationResult = normalizeUserRichTextInput({
+                html: sanitizedBody,
+                plainText: conversationBodyPlainText,
+                validationMode: "conversation",
+                logLabel:
+                    "[ConversationPlainText] Frontend/backend plain text mismatch on update",
+            });
+            if (!normalizationResult.success) {
+                return normalizationResult;
+            }
+            sanitizedBody = normalizationResult.content.html;
+            bodyPlainText = normalizationResult.content.plainText;
         } catch (error) {
             if (error instanceof Error) {
                 throw httpErrors.badRequest(error.message);
@@ -321,26 +341,6 @@ export async function updateConversation({
                     "Error while sanitizing request body",
                 );
             }
-        }
-
-        const validationResult = validateRichTextInput({
-            htmlString: sanitizedBody,
-            mode: "conversation",
-        });
-        if (!validationResult.success) {
-            return validationResult;
-        }
-
-        sanitizedBody = processUserGeneratedHtml(sanitizedBody, true, "input");
-        bodyPlainText = htmlToCountedText(sanitizedBody);
-        if (bodyPlainText !== conversationBodyPlainText) {
-            log.info(
-                {
-                    frontendPlainTextChars: conversationBodyPlainText.length,
-                    serverPlainTextChars: bodyPlainText.length,
-                },
-                "[ConversationPlainText] Frontend/backend plain text mismatch on update",
-            );
         }
     }
 
@@ -354,19 +354,27 @@ export async function updateConversation({
                 organizationName: organizationTable.displayName,
                 currentContentId: conversationTable.currentContentId,
                 conversationType: conversationTable.conversationType,
+                polisConfigId: conversationTable.polisConfigId,
                 isIndexed: conversationTable.isIndexed,
                 participationMode: conversationTable.participationMode,
                 requiresEventTicket: conversationTable.requiresEventTicket,
-                aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+                aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
                 isClosed: conversationTable.isClosed,
                 currentPreferredOpinionGroupCount:
-                    conversationTable.preferredOpinionGroupCount,
+                    polisConversationConfigTable.preferredOpinionGroupCount,
                 currentLanguageSettingsSource:
                     conversationTable.languageSettingsSource,
                 currentTitle: conversationContentTable.title,
                 currentBody: conversationContentTable.body,
                 currentSourceLanguageCode:
                     conversationContentTable.sourceLanguageCode,
+                currentSourceRawLanguageCode:
+                    conversationContentTable.sourceRawLanguageCode,
+                currentSourceLanguageProvider:
+                    conversationContentTable.sourceLanguageProvider,
+                currentSourceLanguageConfidence:
+                    conversationContentTable.sourceLanguageConfidence,
+                currentContentPublicId: conversationContentTable.publicId,
                 moderationAction: conversationModerationTable.moderationAction,
             })
             .from(conversationTable)
@@ -393,6 +401,10 @@ export async function updateConversation({
                     projectOrganizationOwnershipTable.organizationId,
                     organizationTable.id,
                 ),
+            )
+            .leftJoin(
+                polisConversationConfigTable,
+                eq(polisConversationConfigTable.id, conversationTable.polisConfigId),
             )
             .leftJoin(
                 conversationModerationTable,
@@ -436,7 +448,11 @@ export async function updateConversation({
         }
 
         // Check if conversation was deleted
-        if (conversation.currentContentId === null) {
+        if (
+            conversation.currentContentId === null ||
+            conversation.currentContentPublicId === null ||
+            conversation.currentTitle === null
+        ) {
             return { success: false, reason: "not_found" } as const;
         }
 
@@ -600,13 +616,13 @@ export async function updateConversation({
             updatedPreferredOpinionGroupCount !==
             conversation.currentPreferredOpinionGroupCount;
         const updatedAiLabelingEnabled =
-            aiLabelingEnabled ?? conversation.aiLabelingEnabled;
+            aiLabelingEnabled ?? conversation.aiLabelingEnabled ?? true;
         const conversationSettingsChanged =
             isIndexed !== conversation.isIndexed ||
             participationMode !== conversation.participationMode ||
             (requiresEventTicket ?? null) !==
                 conversation.requiresEventTicket ||
-            updatedAiLabelingEnabled !== conversation.aiLabelingEnabled ||
+            updatedAiLabelingEnabled !== (conversation.aiLabelingEnabled ?? true) ||
             preferredOpinionGroupCountChanged ||
             languageSettingsSource !== conversation.currentLanguageSettingsSource;
 
@@ -631,6 +647,7 @@ export async function updateConversation({
 
         // Create new conversation content
         let newContentId: number | undefined;
+        let newContentPublicId: string | undefined;
         if (contentChanged) {
             const sourceLanguageMetadata =
                 await getBlockSourceLanguageMetadata();
@@ -647,9 +664,11 @@ export async function updateConversation({
                 })
                 .returning({
                     conversationContentId: conversationContentTable.id,
+                    publicId: conversationContentTable.publicId,
                 });
 
             newContentId = newContentResult[0].conversationContentId;
+            newContentPublicId = newContentResult[0].publicId;
         }
 
         const conversationUpdateValues: {
@@ -657,8 +676,6 @@ export async function updateConversation({
             isIndexed: boolean;
             participationMode: typeof participationMode;
             requiresEventTicket: typeof requiresEventTicket | null;
-            aiLabelingEnabled: boolean;
-            preferredOpinionGroupCount?: typeof preferredOpinionGroupCount;
             languageSettingsSource: typeof languageSettingsSource;
             updatedAt: Date;
             isEdited?: boolean;
@@ -666,7 +683,6 @@ export async function updateConversation({
             isIndexed: isIndexed,
             participationMode: participationMode,
             requiresEventTicket: requiresEventTicket ?? null,
-            aiLabelingEnabled: updatedAiLabelingEnabled,
             languageSettingsSource,
             updatedAt: new Date(),
         };
@@ -676,21 +692,34 @@ export async function updateConversation({
             conversationUpdateValues.isEdited = true;
         }
 
-        if (preferredOpinionGroupCountChanged) {
-            conversationUpdateValues.preferredOpinionGroupCount =
-                updatedPreferredOpinionGroupCount;
-        }
-
         // Update conversation with new content and settings
         await tx
             .update(conversationTable)
             .set(conversationUpdateValues)
             .where(eq(conversationTable.id, conversationId));
 
+        if (
+            conversation.conversationType === "polis" &&
+            conversation.polisConfigId !== null &&
+            (updatedAiLabelingEnabled !==
+                (conversation.aiLabelingEnabled ?? true) ||
+                preferredOpinionGroupCountChanged)
+        ) {
+            await tx
+                .update(polisConversationConfigTable)
+                .set({
+                    aiLabelingEnabled: updatedAiLabelingEnabled,
+                    preferredOpinionGroupCount: updatedPreferredOpinionGroupCount,
+                    updatedAt: now,
+                })
+                .where(eq(polisConversationConfigTable.id, conversation.polisConfigId));
+        }
+
+        let surveySources: SurveyQuestionContentSource[] = [];
         if (surveyConfig !== undefined) {
             const sourceLanguageMetadata =
                 await getBlockSourceLanguageMetadata();
-            await setSurveyConfigForConversation({
+            const surveyUpdateEffect = await setSurveyConfigForConversation({
                 db: tx,
                 conversationSlugId: data.conversationSlugId,
                 conversationId,
@@ -700,21 +729,56 @@ export async function updateConversation({
                 useGoogleLanguageDetection: requestedDynamicTranslationEnabled,
                 sourceLanguageMetadata,
             });
+            surveySources = surveyUpdateEffect.currentQuestionSources;
         }
 
+        let refreshedSourceLanguageMetadata: ContentLanguageMetadata | undefined;
         if (
             !contentChanged &&
             requestedDynamicTranslationEnabled &&
             (!currentMultilingualSetting.dynamicTranslationEnabled ||
                 surveyConfig !== undefined)
         ) {
-            await refreshCurrentConversationOwnedContentLanguageMetadata({
-                db: tx,
-                conversationId,
-                googleCloudCredentials,
-                useGoogleLanguageDetection: requestedDynamicTranslationEnabled,
-            });
+            if (surveyConfig !== undefined) {
+                refreshedSourceLanguageMetadata =
+                    await getBlockSourceLanguageMetadata();
+                await tx
+                    .update(conversationContentTable)
+                    .set(
+                        contentLanguageMetadataUpdateValues(
+                            refreshedSourceLanguageMetadata,
+                        ),
+                    )
+                    .where(
+                        eq(
+                            conversationContentTable.id,
+                            conversation.currentContentId,
+                        ),
+                    );
+            } else {
+                refreshedSourceLanguageMetadata =
+                    await refreshCurrentConversationOwnedContentLanguageMetadata({
+                        db: tx,
+                        conversationId,
+                        googleCloudCredentials,
+                        useGoogleLanguageDetection: requestedDynamicTranslationEnabled,
+                    });
+            }
         }
+
+        const updatedSourceLanguageMetadata =
+            refreshedSourceLanguageMetadata ??
+            (contentChanged || surveyConfig !== undefined
+                ? await getBlockSourceLanguageMetadata()
+                : {
+                      sourceLanguageCode: conversation.currentSourceLanguageCode,
+                      sourceRawLanguageCode:
+                          conversation.currentSourceRawLanguageCode,
+                      sourceLanguageProvider:
+                          conversation.currentSourceLanguageProvider,
+                      sourceLanguageConfidence:
+                          conversation.currentSourceLanguageConfidence,
+                  });
 
         const effectiveMultilingualSetting =
             inheritedProjectLanguageSettings === undefined
@@ -729,10 +793,7 @@ export async function updateConversation({
                       multilingualSettings: effectiveMultilingualSetting,
                       detectedTargetLanguageCode: sourceLanguageToDisplayLanguage({
                           sourceLanguageCode:
-                              contentChanged || surveyConfig !== undefined
-                                  ? (await getBlockSourceLanguageMetadata())
-                                        .sourceLanguageCode
-                                  : conversation.currentSourceLanguageCode,
+                              updatedSourceLanguageMetadata.sourceLanguageCode,
                       }),
                   })
                 : getProjectTranslationTargetLanguagePolicy({
@@ -759,8 +820,64 @@ export async function updateConversation({
             });
         }
 
+        if (
+            targetLanguagePolicy.dynamicTranslationEnabled &&
+            targetLanguagePolicy.effectiveTargetLanguageCodes.length > 0
+        ) {
+            if (
+                surveyConfig !== null &&
+                (surveyConfig === undefined || surveySources.length === 0)
+            ) {
+                surveySources = await fetchCurrentSurveyQuestionSources({
+                    db: tx,
+                    conversationId,
+                    conversationSlugId: data.conversationSlugId,
+                });
+            }
+        }
+
+        const conversationSource: ConversationContentSource = {
+            conversationId,
+            conversationSlugId: data.conversationSlugId,
+            projectId: conversation.projectId,
+            languageSettingsSource,
+            dynamicTranslationEnabled: targetLanguagePolicy.dynamicTranslationEnabled,
+            contentId: newContentId ?? conversation.currentContentId,
+            publicId: newContentPublicId ?? conversation.currentContentPublicId,
+            title: conversationTitle,
+            body: sanitizedBody ?? null,
+            sourceLanguageCode: updatedSourceLanguageMetadata.sourceLanguageCode,
+            sourceRawLanguageCode:
+                updatedSourceLanguageMetadata.sourceRawLanguageCode,
+            sourceLanguageProvider:
+                updatedSourceLanguageMetadata.sourceLanguageProvider,
+            sourceLanguageConfidence:
+                updatedSourceLanguageMetadata.sourceLanguageConfidence,
+        };
+        const seedOpinionSources =
+            targetLanguagePolicy.dynamicTranslationEnabled &&
+            targetLanguagePolicy.effectiveTargetLanguageCodes.length > 0
+                ? await fetchSeedOpinionSources({
+                      db: tx,
+                      conversationId,
+                      conversationSlugId: data.conversationSlugId,
+                  })
+                : [];
+        const eagerContentTranslationWorkIds =
+            await createEagerContentTranslationWorkForKnownConversation({
+                db: tx,
+                conversationSource,
+                targetLanguagePolicy,
+                surveySources,
+                seedOpinionSources,
+                rankingItemSources: [],
+                now,
+                log,
+            });
+
         return {
             success: true,
+            eagerContentTranslationWorkIds,
             conversationId,
             conversationSlugId,
             didUpdateConversationSettings: conversationSettingsChanged,
@@ -787,5 +904,8 @@ export async function updateConversation({
         return result;
     }
 
-    return { success: true };
+    return {
+        success: true,
+        eagerContentTranslationWorkIds: result.eagerContentTranslationWorkIds,
+    };
 }

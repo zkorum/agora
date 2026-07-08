@@ -41,32 +41,41 @@ export async function createImportRecord(
     for (let attempt = 0; attempt < MAX_IMPORT_RECORD_ATTEMPTS; attempt += 1) {
         const importSlugId = generateRandomSlugId();
         const now = new Date();
-        const result = await db
-            .insert(conversationImportTable)
-            .values({
-                slugId: importSlugId,
-                userId: userId,
-                status: "processing",
-                createdAt: now,
-                updatedAt: now,
-            })
-            .onConflictDoNothing()
-            .returning({ id: conversationImportTable.id });
+        const result = await db.transaction(async (tx) => {
+            const insertedRows = await tx
+                .insert(conversationImportTable)
+                .values({
+                    slugId: importSlugId,
+                    userId: userId,
+                    status: "processing",
+                    createdAt: now,
+                    updatedAt: now,
+                })
+                .onConflictDoNothing()
+                .returning({ id: conversationImportTable.id });
 
-        if (result.length === 1) {
-            return {
-                status: "created",
-                importId: result[0].id,
-                importSlugId,
-            };
-        }
+            const inserted = insertedRows.at(0);
+            if (inserted !== undefined) {
+                return {
+                    status: "created" as const,
+                    importId: inserted.id,
+                    importSlugId,
+                };
+            }
 
-        const activeImport = await getActiveImportForUser({ db, userId });
-        if (activeImport !== null) {
-            return {
-                status: "active_import_exists",
-                importSlugId: activeImport.importSlugId,
-            };
+            const activeImport = await getActiveImportForUser({ db: tx, userId });
+            if (activeImport !== null) {
+                return {
+                    status: "active_import_exists" as const,
+                    importSlugId: activeImport.importSlugId,
+                };
+            }
+
+            return { status: "retry" as const };
+        });
+
+        if (result.status !== "retry") {
+            return result;
         }
     }
 
@@ -97,6 +106,61 @@ export async function markImportFailed({
 interface GetImportStatusParams {
     db: PostgresDatabase;
     importSlugId: string;
+    userId: string;
+}
+
+interface GetConversationImportAccessStateParams {
+    db: PostgresDatabase;
+    conversationSlugId: string;
+    userId?: string;
+}
+
+export type ConversationImportAccessState =
+    | { status: "not_found" }
+    | { status: "ready" }
+    | { status: "importing"; importSlugId: string }
+    | { status: "importing_not_visible" };
+
+export async function getConversationImportAccessState({
+    db,
+    conversationSlugId,
+    userId,
+}: GetConversationImportAccessStateParams): Promise<ConversationImportAccessState> {
+    const conversationRows = await db
+        .select({
+            conversationId: conversationTable.id,
+            isImporting: conversationTable.isImporting,
+        })
+        .from(conversationTable)
+        .where(eq(conversationTable.slugId, conversationSlugId))
+        .limit(1);
+
+    const conversation = conversationRows.at(0);
+    if (conversation === undefined) {
+        return { status: "not_found" };
+    }
+    if (!conversation.isImporting) {
+        return { status: "ready" };
+    }
+    if (userId === undefined) {
+        return { status: "importing_not_visible" };
+    }
+
+    const importRows = await db
+        .select({ importSlugId: conversationImportTable.slugId })
+        .from(conversationImportTable)
+        .where(
+            and(
+                eq(conversationImportTable.conversationId, conversation.conversationId),
+                eq(conversationImportTable.userId, userId),
+            ),
+        )
+        .limit(1);
+
+    const importRow = importRows.at(0);
+    return importRow === undefined
+        ? { status: "importing_not_visible" }
+        : { status: "importing", importSlugId: importRow.importSlugId };
 }
 
 interface ImportStatusResult {
@@ -114,7 +178,7 @@ interface ImportStatusResult {
 export async function getImportStatus(
     params: GetImportStatusParams,
 ): Promise<ImportStatusResult | null> {
-    const { db, importSlugId } = params;
+    const { db, importSlugId, userId } = params;
 
     const result = await db
         .select({
@@ -129,14 +193,15 @@ export async function getImportStatus(
             conversationTable,
             eq(conversationImportTable.conversationId, conversationTable.id),
         )
-        .where(eq(conversationImportTable.slugId, importSlugId))
+        .where(
+            and(
+                eq(conversationImportTable.slugId, importSlugId),
+                eq(conversationImportTable.userId, userId),
+            ),
+        )
         .limit(1);
 
-    if (result.length === 0) {
-        return null;
-    }
-
-    return result[0];
+    return result.at(0) ?? null;
 }
 
 interface GetActiveImportForUserParams {

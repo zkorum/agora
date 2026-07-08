@@ -2,10 +2,10 @@
   <EmbedLayout ref="embedLayoutRef">
     <div v-if="hasConversationData">
       <div class="container">
-        <PostContent
+        <TranslatedPostContent
           :extended-post-data="loadedConversationData"
+          :initial-display-content="loadedConversationDisplayContent"
           :compact-mode="false"
-          :content-translation="undefined"
           @open-moderation-history="openModerationHistory()"
           @verified="(payload) => handleTicketVerified(payload)"
         />
@@ -26,10 +26,10 @@
           :total-vote-count="displayedActionBarStats.totalVoteCount"
           :is-loading="isActionBarLoading"
           :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
-          :conversation-title="loadedConversationData.payload.title"
+          :conversation-title="displayedConversationTitle"
           :author-username="loadedConversationData.metadata.authorUsername"
           :on-same-tab-click="() => handleSameTabActionBarClick()"
-          :conversation-type="loadedConversationData.metadata.conversationType"
+          :conversation-type-config="loadedConversationData.metadata"
           :has-survey="loadedConversationData.interaction.surveyGate?.hasSurvey === true"
           :enable-route-navigation="true"
           :conversation-route-context="conversationRouteContext"
@@ -60,7 +60,7 @@
         </div>
 
         <FloatingBottomContainer
-          v-if="loadedConversationData.metadata.conversationType !== 'maxdiff'"
+          v-if="!isMaxDiffConversation"
         >
           <CommentComposer
             :post-slug-id="loadedConversationData.metadata.conversationSlugId"
@@ -79,7 +79,7 @@
 <script setup lang="ts">
 import FloatingBottomContainer from "src/components/navigation/FloatingBottomContainer.vue";
 import CommentComposer from "src/components/post/comments/CommentComposer.vue";
-import PostContent from "src/components/post/display/PostContent.vue";
+import TranslatedPostContent from "src/components/post/display/TranslatedPostContent.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
 import {
   type ConversationActionBarStats,
@@ -91,6 +91,7 @@ import { useStickyObserver } from "src/composables/ui/useStickyObserver";
 import EmbedLayout from "src/layouts/EmbedLayout.vue";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
+import { useConversationDisplayContent } from "src/utils/translation/useConversationDisplayContent";
 import { computed, ref } from "vue";
 
 const embedLayoutRef = ref<{ containerElement: HTMLElement | null } | null>(null);
@@ -102,8 +103,10 @@ const { sentinelElement, headerHeight } = useStickyObserver();
 const {
   route,
   conversationData,
+  conversationDisplayContent,
   hasConversationData,
   loadedConversationData,
+  loadedConversationDisplayContent,
   currentTab,
   isCurrentTabLoading,
   moderationHistoryTrigger,
@@ -125,6 +128,11 @@ const {
   ],
   routeContext: conversationRouteContext,
   scrollContainer,
+});
+
+const { displayedTitle: displayedConversationTitle } = useConversationDisplayContent({
+  conversationData,
+  initialDisplayContent: conversationDisplayContent,
 });
 
 const {
@@ -153,6 +161,13 @@ const isActionBarLoading = computed(
     isLoadingCheckpointStats.value ||
     isLoadingCommentStats.value
 );
+
+const isMaxDiffConversation = computed(() => {
+  const metadata = loadedConversationData.value.metadata;
+  return (
+    metadata.conversationType === "ranking" && metadata.rankingMode === "bws"
+  );
+});
 
 function getActionBarStatsFromMetadata(): ConversationActionBarStats {
   const metadata = loadedConversationData.value.metadata;

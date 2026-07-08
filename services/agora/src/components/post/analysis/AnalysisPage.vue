@@ -525,18 +525,23 @@ const polisTabItems = computed<ShortcutItem[]>(() => [
   ...(props.hasSurvey ? (["Survey"] as ShortcutItem[]) : []),
 ]);
 
-const polisTabLabelMap: Record<string, string> = {
-  Summary: tShortcut("summary"),
-  Me: tShortcut("me"),
-  Groups: tShortcut("groups"),
-  Agreements: tShortcut("agreements"),
-  Disagreements: tShortcut("disagreements"),
-  Divisive: tShortcut("divisive"),
-  Survey: tShortcut("survey"),
-};
+const polisTabTranslationKeys = {
+  Summary: "summary",
+  Me: "me",
+  Groups: "groups",
+  Agreements: "agreements",
+  Disagreements: "disagreements",
+  Divisive: "divisive",
+  Survey: "survey",
+} satisfies Record<ShortcutItem, keyof ShortcutBarTranslations>;
 
 function getPolisTabLabel(item: string): string {
-  return polisTabLabelMap[item] ?? item;
+  const parsed = shortcutItemSchema.safeParse(item);
+  if (!parsed.success) {
+    return item;
+  }
+
+  return tShortcut(polisTabTranslationKeys[parsed.data]);
 }
 
 function onTabChange(value: string): void {

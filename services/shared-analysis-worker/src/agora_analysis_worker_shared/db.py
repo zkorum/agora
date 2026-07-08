@@ -43,6 +43,7 @@ from agora_analysis_worker_shared.generated_models import (
     OpinionGroupVariant,
     OpinionModeration,
     OpinionModerationAction,
+    PolisConversationConfig,
     PremiumFeatureEntitlement,
     ProjectOrganizationOwnership,
     RealtimeEventOutbox,
@@ -503,6 +504,18 @@ class _NewGroupForLineage:
     representative_opinions: frozenset[RepresentativeOpinionKey]
 
 
+def _current_analysis_generation_subquery() -> ColumnElement[int]:
+    conversation = aliased(Conversation)
+    polis_config = aliased(PolisConversationConfig)
+
+    return (
+        select(polis_config.analysis_data_generation)
+        .join(conversation, conversation.polis_config_id == polis_config.id)
+        .where(conversation.id == AnalysisWorkState.conversation_id)
+        .scalar_subquery()
+    )
+
+
 def claim_work_items_batch(
     engine: Engine,
     *,
@@ -604,12 +617,13 @@ def _claim_work_items_batch(
                 expired_unpersisted_condition,
             ),
             AnalysisWorkState.persisted_analysis_snapshot_id.is_(None),
-            Conversation.analysis_data_generation
+            PolisConversationConfig.analysis_data_generation
             > AnalysisWorkState.last_completed_data_generation,
             ~active_running_work_exists,
             or_(
                 AnalysisWorkState.non_retryable_generation.is_(None),
-                Conversation.analysis_data_generation > AnalysisWorkState.non_retryable_generation,
+                PolisConversationConfig.analysis_data_generation
+                > AnalysisWorkState.non_retryable_generation,
                 analysis_engine_epoch
                 > func.coalesce(
                     AnalysisWorkState.non_retryable_analysis_engine_epoch,
@@ -618,8 +632,16 @@ def _claim_work_items_batch(
             ),
         )
         claimable_query = (
-            select(AnalysisWorkState, Conversation)
+            select(
+                AnalysisWorkState,
+                Conversation,
+                PolisConversationConfig.analysis_data_generation,
+            )
             .join(Conversation, Conversation.id == AnalysisWorkState.conversation_id)
+            .join(
+                PolisConversationConfig,
+                PolisConversationConfig.id == Conversation.polis_config_id,
+            )
             .where(
                 and_(
                     AnalysisWorkState.conversation_id == conversation_id,
@@ -640,7 +662,7 @@ def _claim_work_items_batch(
         if claimable_row is None:
             continue
 
-        work_state, conversation = claimable_row
+        work_state, conversation, analysis_data_generation = claimable_row
         is_resume_claim = (
             work_state.running_data_generation is not None
             and work_state.persisted_analysis_snapshot_id is not None
@@ -679,7 +701,7 @@ def _claim_work_items_batch(
             )
             continue
 
-        data_generation = conversation.analysis_data_generation
+        data_generation = analysis_data_generation
         lease_token = f"{worker_id}:{uuid.uuid4()}"
         attempt_count = (
             work_state.attempt_count + 1 if work_state.attempt_generation == data_generation else 1
@@ -720,11 +742,7 @@ def complete_non_processable_work_items_batch(
         return []
 
     unique_conversation_ids = sorted(set(conversation_ids))
-    current_generation = (
-        select(Conversation.analysis_data_generation)
-        .where(Conversation.id == AnalysisWorkState.conversation_id)
-        .scalar_subquery()
-    )
+    current_generation = _current_analysis_generation_subquery()
     conversation_current_content_id = (
         select(Conversation.current_content_id)
         .where(Conversation.id == AnalysisWorkState.conversation_id)
@@ -867,11 +885,7 @@ def fetch_claimable_work_conversation_ids(
     limit: int,
     analysis_engine_epoch: int,
 ) -> list[int]:
-    current_generation = (
-        select(Conversation.analysis_data_generation)
-        .where(Conversation.id == AnalysisWorkState.conversation_id)
-        .scalar_subquery()
-    )
+    current_generation = _current_analysis_generation_subquery()
     query = (
         select(AnalysisWorkState.conversation_id)
         .where(
@@ -924,7 +938,7 @@ def _fetch_vote_input_rows_batch(
     query = (
         select(
             Opinion.conversation_id,
-            Conversation.analysis_data_generation,
+            PolisConversationConfig.analysis_data_generation,
             Vote.author_id,
             Opinion.id.label("opinion_id"),
             Opinion.current_content_id.label("opinion_content_id"),
@@ -934,6 +948,7 @@ def _fetch_vote_input_rows_batch(
         .join(VoteContent, VoteContent.id == Vote.current_content_id)
         .join(Opinion, Opinion.id == Vote.opinion_id)
         .join(Conversation, Conversation.id == Opinion.conversation_id)
+        .join(PolisConversationConfig, PolisConversationConfig.id == Conversation.polis_config_id)
         .join(User, User.id == Vote.author_id)
         .outerjoin(OpinionModeration, OpinionModeration.opinion_id == Vote.opinion_id)
         .where(
@@ -1763,10 +1778,12 @@ def _fetch_conversation_view_snapshot_state_by_id(
         select(
             Conversation.id,
             Conversation.current_content_id,
-            Conversation.ai_labeling_enabled,
+            PolisConversationConfig.ai_labeling_enabled,
             Conversation.is_closed,
-            Conversation.preferred_opinion_group_count,
-        ).where(Conversation.id.in_(sorted(set(conversation_ids))))
+            PolisConversationConfig.preferred_opinion_group_count,
+        )
+        .join(PolisConversationConfig, PolisConversationConfig.id == Conversation.polis_config_id)
+        .where(Conversation.id.in_(sorted(set(conversation_ids))))
     ).all()
     return {
         row.id: _ConversationViewSnapshotState(
@@ -3284,11 +3301,7 @@ def persist_empty_vote_matrix_results_batch(
             {claim.id: claim.data_generation for claim in claims},
             value=AnalysisWorkState.id,
         )
-        current_generation = (
-            select(Conversation.analysis_data_generation)
-            .where(Conversation.id == AnalysisWorkState.conversation_id)
-            .scalar_subquery()
-        )
+        current_generation = _current_analysis_generation_subquery()
         newer_generation_exists = current_generation > completed_generation
         work_state_update = (
             update(AnalysisWorkState)
@@ -3946,12 +3959,7 @@ def complete_computed_analysis_work_items_batch(
         {claim.id: claim.data_generation for claim in claims},
         value=AnalysisWorkState.id,
     )
-    current_generation = (
-        select(Conversation.analysis_data_generation)
-        .where(Conversation.id == AnalysisWorkState.conversation_id)
-        .scalar_subquery()
-    )
-    newer_generation_exists = current_generation > completed_generation
+    current_generation = _current_analysis_generation_subquery()
     completion_filters: list[ColumnElement[bool]] = [
         AnalysisWorkState.id.in_([claim.id for claim in claims]),
         tuple_(AnalysisWorkState.id, AnalysisWorkState.lease_token).in_(
@@ -4013,19 +4021,36 @@ def complete_computed_analysis_work_items_batch(
             updated_at=func.now(),
         )
         .returning(
+            AnalysisWorkState.id,
             AnalysisWorkState.conversation_id,
-            newer_generation_exists.label("newer_generation_exists"),
         )
     )
 
     with Session(engine) as session:
         _lock_owned_work_states(session=session, claims=claims)
         completed_rows = session.execute(work_state_update).all()
+        completed_row_ids = [row.id for row in completed_rows]
+        completed_generation_by_id = {claim.id: claim.data_generation for claim in claims}
+        newer_generation_conversation_ids: list[int] = []
+        if completed_row_ids:
+            for row_id, conversation_id, analysis_data_generation in session.execute(
+                select(
+                    AnalysisWorkState.id,
+                    AnalysisWorkState.conversation_id,
+                    PolisConversationConfig.analysis_data_generation,
+                )
+                .join(Conversation, Conversation.id == AnalysisWorkState.conversation_id)
+                .join(
+                    PolisConversationConfig,
+                    PolisConversationConfig.id == Conversation.polis_config_id,
+                )
+                .where(AnalysisWorkState.id.in_(completed_row_ids))
+            ):
+                if analysis_data_generation > completed_generation_by_id[row_id]:
+                    newer_generation_conversation_ids.append(conversation_id)
         session.commit()
 
-    newer_generation_count = sum(
-        1 for row in completed_rows if row.newer_generation_exists
-    )
+    newer_generation_count = len(newer_generation_conversation_ids)
     log.info(
         "[MathUpdaterDB] Completed computed analysis work rows=%d newer_generation=%d "
         "claims=%s",
@@ -4041,11 +4066,7 @@ def complete_computed_analysis_work_items_batch(
             len(claims),
             _format_claims_for_log(claims),
         )
-    return [
-        row.conversation_id
-        for row in completed_rows
-        if row.newer_generation_exists
-    ]
+    return newer_generation_conversation_ids
 
 
 def release_retryable_work_items_batch(
@@ -4063,11 +4084,7 @@ def release_retryable_work_items_batch(
         {claim.id: claim.data_generation for claim in claims},
         value=AnalysisWorkState.id,
     )
-    current_generation = (
-        select(Conversation.analysis_data_generation)
-        .where(Conversation.id == AnalysisWorkState.conversation_id)
-        .scalar_subquery()
-    )
+    current_generation = _current_analysis_generation_subquery()
     query = (
         update(AnalysisWorkState)
         .where(
@@ -4128,11 +4145,7 @@ def mark_non_retryable_work_items_batch(
         {claim.id: claim.data_generation for claim in claims},
         value=AnalysisWorkState.id,
     )
-    current_generation = (
-        select(Conversation.analysis_data_generation)
-        .where(Conversation.id == AnalysisWorkState.conversation_id)
-        .scalar_subquery()
-    )
+    current_generation = _current_analysis_generation_subquery()
     newer_generation_exists = current_generation > failed_generation
     query = (
         update(AnalysisWorkState)

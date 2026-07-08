@@ -12,7 +12,7 @@
           :is-loading="isLoading"
           :conversation-slug-id="conversationSlugId"
           :on-same-tab-click="props.onSameTabClick"
-          :conversation-type="props.conversationType"
+          :conversation-type-config="props.conversationTypeConfig"
           :enable-route-navigation="props.enableRouteNavigation"
           :conversation-route-context="props.conversationRouteContext"
         />
@@ -87,7 +87,7 @@
 import { copyToClipboard, useQuasar } from "quasar";
 import { useShareActions } from "src/composables/share/useShareActions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { ConversationType } from "src/shared/types/zod";
+import type { ConversationTypeConfig } from "src/shared/types/zod";
 import type { ContentAction } from "src/utils/actions/core/types";
 import {
   type ConversationRouteContext,
@@ -122,14 +122,13 @@ const props = withDefaults(
     conversationTitle: string;
     authorUsername: string;
     onSameTabClick?: () => void;
-    conversationType?: ConversationType;
+    conversationTypeConfig: ConversationTypeConfig;
     enableRouteNavigation: boolean;
     conversationRouteContext?: ConversationRouteContext;
   }>(),
   {
     hasSurvey: false,
     onSameTabClick: undefined,
-    conversationType: "polis",
     conversationRouteContext: () => normalConversationRouteContext,
   }
 );
@@ -149,9 +148,14 @@ const shareActions = useShareActions();
 const showVoteBreakdown = ref(false);
 const showParticipantBreakdown = ref(false);
 const notify = useNotify();
+const isMaxDiffConversation = computed(
+  () =>
+    props.conversationTypeConfig.conversationType === "ranking" &&
+    props.conversationTypeConfig.rankingMode === "bws"
+);
 
 const votesExplanation = computed(() => {
-  if (props.conversationType === "maxdiff") {
+  if (isMaxDiffConversation.value) {
     return t("maxdiffVotesExplanation");
   }
 
@@ -164,7 +168,7 @@ const votesExplanation = computed(() => {
 });
 
 const participantsExplanation = computed(() => {
-  if (props.conversationType === "maxdiff") {
+  if (isMaxDiffConversation.value) {
     return t("maxdiffParticipantsExplanation");
   }
 

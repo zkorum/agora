@@ -46,6 +46,9 @@ export function extractPolisIdFromUrl(url: string): PolisId {
         throw new Error("Polis URL is empty");
     }
     const urlObject = new URL(url); // can throw
+    if (urlObject.protocol !== "https:") {
+        throw new Error(`Polis URL ${url} must use HTTPS`);
+    }
     const hostname = urlObject.hostname.toLowerCase();
     const isDeepGovHostname = hasHostnameSuffix({
         hostname,

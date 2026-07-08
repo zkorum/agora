@@ -11,8 +11,8 @@
       :organization-name="extendedPostData.metadata.organization?.name || ''"
       :participation-mode="extendedPostData.metadata.participationMode"
       :is-closed="extendedPostData.metadata.isClosed"
-      :conversation-title="extendedPostData.payload.title"
-      :conversation-type="extendedPostData.metadata.conversationType"
+      :conversation-title="effectiveDisplayedTitle"
+      :conversation-type-config="extendedPostData.metadata"
       :external-source-config="extendedPostData.metadata.externalSourceConfig ?? null"
       @open-moderation-history="$emit('openModerationHistory')"
       @conversation-deleted="$emit('conversationDeleted')"
@@ -31,22 +31,26 @@
 
         <ConversationTitle
           :is-private="!extendedPostData.metadata.isIndexed"
-          :title="displayedTitle"
+          :title="effectiveDisplayedTitle"
           size="medium"
-          :conversation-type="extendedPostData.metadata.conversationType"
+          :conversation-type-config="extendedPostData.metadata"
           :external-source-config="extendedPostData.metadata.externalSourceConfig"
+          :project-context="
+            compactMode ? undefined : extendedPostData.metadata.projectContext
+          "
+          :project-context-title-mode="contentTranslation?.mode ?? 'original'"
         />
       </div>
 
       <div
         v-if="
-          displayedBody != undefined &&
-          displayedBody.length > 0
+          effectiveDisplayedBody != undefined &&
+          effectiveDisplayedBody.length > 0
         "
         class="bodyDiv"
       >
         <ZKHtmlContent
-          :html-body="displayedBody"
+          :html-body="effectiveDisplayedBody"
           :compact-mode="compactMode"
           :enable-links="compactMode ? false : true"
           :desktop-collapsed-line-count="18"
@@ -80,6 +84,7 @@
 import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
 import type {
   ExtendedConversation,
+  ExtendedConversationDisplayData,
   LocalizedContentTranslationStatus,
 } from "src/shared/types/zod";
 import type { ContentTranslationDisplayMode } from "src/utils/translation/contentTranslation";
@@ -102,9 +107,11 @@ interface PostContentTranslationPreview {
 }
 
 const props = defineProps<{
-  extendedPostData: ExtendedConversation;
+  extendedPostData: ExtendedConversation | ExtendedConversationDisplayData;
   compactMode: boolean;
   contentTranslation: PostContentTranslationPreview | undefined;
+  displayedTitle?: string;
+  displayedBody?: string;
 }>();
 
 const emit = defineEmits<{
@@ -114,24 +121,24 @@ const emit = defineEmits<{
   "update:contentTranslationMode": [mode: ContentTranslationDisplayMode];
 }>();
 
-const displayedTitle = computed(() => {
-  if (props.contentTranslation?.isLoadingInitialTranslation === true) {
-    return "";
+const effectiveDisplayedTitle = computed(() => {
+  if (props.displayedTitle !== undefined) {
+    return props.displayedTitle;
   }
-  if (props.contentTranslation?.mode === "translated") {
-    return props.contentTranslation.translatedTitle;
-  }
-  return props.extendedPostData.payload.title;
+
+  return "payload" in props.extendedPostData
+    ? props.extendedPostData.payload.title
+    : "";
 });
 
-const displayedBody = computed(() => {
-  if (props.contentTranslation?.isLoadingInitialTranslation === true) {
-    return undefined;
+const effectiveDisplayedBody = computed(() => {
+  if (props.displayedBody !== undefined) {
+    return props.displayedBody;
   }
-  if (props.contentTranslation?.mode === "translated") {
-    return props.contentTranslation.translatedBody;
-  }
-  return props.extendedPostData.payload.body;
+
+  return "payload" in props.extendedPostData
+    ? props.extendedPostData.payload.body
+    : undefined;
 });
 
 const ImportedConversationIndicator = defineAsyncComponent(

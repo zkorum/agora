@@ -14,12 +14,12 @@
 
 <script setup lang="ts">
 import ConversationCommentTab from "src/components/post/ConversationCommentTab.vue";
-import type { ExtendedConversation } from "src/shared/types/zod";
+import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 
 const { onViewAnalysis } = defineProps<{
-  conversationData: ExtendedConversation;
+  conversationData: ExtendedConversationDisplayData;
   hasConversationData: boolean;
   moderationHistoryTrigger: number;
   commentFilter: CommentFilterOptions;

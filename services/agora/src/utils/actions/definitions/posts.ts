@@ -21,6 +21,7 @@ interface PostActionTranslations {
   moderate: string;
   userReports: string;
   exportConversation: string;
+  openInAgora: string;
   syncGitHub: string;
   openConversation: string;
   closeConversation: string;
@@ -39,11 +40,13 @@ export function getPostActions({
   deletePostCallback,
   editConversationCallback,
   exportConversationCallback,
+  openInAgoraCallback,
   shareCallback,
   syncGitHubCallback,
   openConversationCallback,
   closeConversationCallback,
   isConversationClosed,
+  isConversationExportAvailable,
   translations,
 }: {
   reportPostCallback: () => void;
@@ -55,11 +58,13 @@ export function getPostActions({
   deletePostCallback: () => void | Promise<void>;
   editConversationCallback: () => void | Promise<void>;
   exportConversationCallback: () => void | Promise<void>;
+  openInAgoraCallback: (() => void | Promise<void>) | null;
   shareCallback: () => void | Promise<void>;
   syncGitHubCallback: (() => void | Promise<void>) | null;
   openConversationCallback: () => void | Promise<void>;
   closeConversationCallback: () => void | Promise<void>;
   isConversationClosed: boolean;
+  isConversationExportAvailable: boolean;
   translations: PostActionTranslations;
 }): ContentAction[] {
   const actions: ContentAction[] = [
@@ -127,10 +132,24 @@ export function getPostActions({
       // Use !== "false" instead of === "true" so export is enabled by default
       // when the env var is not set (Zod defaults don't apply at runtime)
       isVisible: (context: ContentActionContext) =>
+        isConversationExportAvailable &&
         context.isLoggedIn &&
         !context.isEmbeddedMode &&
         processEnv.VITE_EXPORT_CONVOS_ENABLED !== "false",
     },
+    ...(openInAgoraCallback === null
+      ? []
+      : [
+          {
+            id: "openInAgora",
+            label: translations.openInAgora,
+            icon: "mdi-open-in-app",
+            trailingIcon: "mdi-open-in-new",
+            handler: openInAgoraCallback,
+            isVisible: (context: ContentActionContext) =>
+              !context.isEmbeddedMode,
+          },
+        ]),
     {
       id: "moderationHistory",
       label: translations.moderationHistory,
@@ -198,11 +217,13 @@ export function getAvailablePostActions({
   deletePostCallback,
   editConversationCallback,
   exportConversationCallback,
+  openInAgoraCallback,
   shareCallback,
   syncGitHubCallback,
   openConversationCallback,
   closeConversationCallback,
   isConversationClosed,
+  isConversationExportAvailable,
   translations,
 }: {
   context: ContentActionContext;
@@ -215,11 +236,13 @@ export function getAvailablePostActions({
   deletePostCallback: () => void | Promise<void>;
   editConversationCallback: () => void | Promise<void>;
   exportConversationCallback: () => void | Promise<void>;
+  openInAgoraCallback: (() => void | Promise<void>) | null;
   shareCallback: () => void | Promise<void>;
   syncGitHubCallback: (() => void | Promise<void>) | null;
   openConversationCallback: () => void | Promise<void>;
   closeConversationCallback: () => void | Promise<void>;
   isConversationClosed: boolean;
+  isConversationExportAvailable: boolean;
   translations: PostActionTranslations;
 }): ContentAction[] {
   const allActions = getPostActions({
@@ -232,11 +255,13 @@ export function getAvailablePostActions({
     deletePostCallback,
     editConversationCallback,
     exportConversationCallback,
+    openInAgoraCallback,
     shareCallback,
     syncGitHubCallback,
     openConversationCallback,
     closeConversationCallback,
     isConversationClosed,
+    isConversationExportAvailable,
     translations,
   });
 

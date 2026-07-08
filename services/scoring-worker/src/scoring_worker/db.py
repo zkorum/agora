@@ -17,10 +17,11 @@ from sqlalchemy.orm import Session
 from scoring_worker.generated_models import (
     Conversation,
     MaxdiffComparison,
-    MaxdiffItem,
-    MaxdiffLifecycleStatus,
     MaxdiffResult,
     MaxdiffUserEntityScore,
+    RankingConversationConfig,
+    RankingItem,
+    RankingItemLifecycleStatus,
     RankingScore,
     RankingScoreEntity,
     SurveyAnswer,
@@ -372,14 +373,14 @@ def fetch_active_items_batch(
     if not conversation_ids:
         return {}
 
-    stmt = select(MaxdiffItem.conversation_id, MaxdiffItem.slug_id).where(
+    stmt = select(RankingItem.conversation_id, RankingItem.slug_id).where(
         and_(
-            MaxdiffItem.conversation_id.in_(conversation_ids),
-            MaxdiffItem.current_content_id.is_not(None),
-            MaxdiffItem.lifecycle_status.in_(
+            RankingItem.conversation_id.in_(conversation_ids),
+            RankingItem.current_content_id.is_not(None),
+            RankingItem.lifecycle_status.in_(
                 [
-                    MaxdiffLifecycleStatus.active,
-                    MaxdiffLifecycleStatus.in_progress,
+                    RankingItemLifecycleStatus.active,
+                    RankingItemLifecycleStatus.in_progress,
                 ]
             ),
         ),
@@ -585,13 +586,17 @@ def write_scores_batch(
 
             # Conditional update: only if our ID is newer
             session.execute(
-                update(Conversation)
+                update(RankingConversationConfig)
                 .where(
                     and_(
+                        RankingConversationConfig.id == Conversation.ranking_config_id,
                         Conversation.id == conv_id,
                         (
-                            Conversation.current_ranking_score_id.is_(None)
-                            | (Conversation.current_ranking_score_id < ranking_score.id)
+                            RankingConversationConfig.current_ranking_score_id.is_(None)
+                            | (
+                                RankingConversationConfig.current_ranking_score_id
+                                < ranking_score.id
+                            )
                         ),
                     ),
                 )
@@ -639,8 +644,14 @@ def clear_scores_batch(
         return
     with Session(engine) as session:
         session.execute(
-            update(Conversation)
-            .where(Conversation.id.in_(conversation_ids))
+            update(RankingConversationConfig)
+            .where(
+                RankingConversationConfig.id.in_(
+                    select(Conversation.ranking_config_id).where(
+                        Conversation.id.in_(conversation_ids)
+                    )
+                )
+            )
             .values(current_ranking_score_id=None),
         )
         session.commit()
@@ -801,13 +812,18 @@ def reconcile_unscored_conversations(engine: Engine) -> list[int]:
             Conversation,
             Conversation.id == MaxdiffResult.conversation_id,
         )
+        .join(
+            RankingConversationConfig,
+            RankingConversationConfig.id == Conversation.ranking_config_id,
+        )
         .outerjoin(
             RankingScore,
-            RankingScore.id == Conversation.current_ranking_score_id,
+            RankingScore.id == RankingConversationConfig.current_ranking_score_id,
         )
         .where(
             and_(
-                Conversation.conversation_type == "maxdiff",
+                Conversation.conversation_type == "ranking",
+                RankingConversationConfig.ranking_mode == "bws",
                 (
                     RankingScore.computed_at.is_(None)
                     | (MaxdiffResult.updated_at > RankingScore.computed_at)

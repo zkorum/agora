@@ -37,6 +37,28 @@
       </p>
     </SpaLink>
 
+    <SpaLink to="/dev/conversation-project-context" class="route-card">
+      <div class="route-card-header">
+        <i class="pi pi-link section-icon"></i>
+        <span>Conversation project context</span>
+      </div>
+      <p class="route-card-description">
+        Test the real conversation header project-context pill with mismatched
+        project and conversation translation support.
+      </p>
+    </SpaLink>
+
+    <SpaLink to="/dev/maxdiff-translation" class="route-card">
+      <div class="route-card-header">
+        <i class="pi pi-language section-icon"></i>
+        <span>MaxDiff translation</span>
+      </div>
+      <p class="route-card-description">
+        Test ranking-item display content, translated result updates, item dialogs,
+        and active candidate-card text freezing.
+      </p>
+    </SpaLink>
+
     <SpaLink to="/dev/project-conversation-report-layout" class="route-card">
       <div class="route-card-header">
         <i class="pi pi-chart-bar section-icon"></i>

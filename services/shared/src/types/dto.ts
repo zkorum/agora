@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
     zodExtendedConversationData,
+    zodExtendedConversationDisplayData,
     zodSlugId,
     zodOpinionItem,
     zodDisplayedOpinionItem,
@@ -20,7 +21,7 @@ import {
     zodOpinionModerationAction,
     zodConversationModerationProperties,
     zodOpinionModerationProperties,
-    zodCommentFeedFilter,
+    zodPublicCommentFeedFilter,
     zodUserReportReason,
     zodUserReportExplanation,
     zodUserReportItem,
@@ -48,6 +49,7 @@ import {
     zodRichTextValidationFailureReason,
     zodMaxdiffComparison,
     zodConversationType,
+    zodRankingMode,
     zodConversationEffectiveMultilingualSetting,
     zodConversationLanguageSettingOutput,
     zodContentLanguageMetadataOutput,
@@ -72,13 +74,16 @@ import {
     zodLocalizedConversationContent,
     zodLocalizedOpinionContent,
     zodLocalizedProjectContent,
+    zodLocalizedRankingItemContent,
     zodLocalizedSurveyQuestionContent,
     zodLocalizedContentDisplayMode,
     zodConversationDisplayedContent,
-    zodProjectContentVariant,
+    zodRankingItemDisplayedContent,
+    zodProjectDisplayedContent,
     zodSurveyQuestionDisplayedContent,
     zodProjectOrganizationAttributionRole,
     zodProjectSlug,
+    createZodDisplayedContent,
 } from "./zod.js";
 import { zodEmail } from "./zod-email.js";
 import { zodPolisVoteRecord } from "./polis.js";
@@ -214,11 +219,26 @@ const zodContentTranslationProjectResponse = z
     })
     .strict();
 
+const zodContentTranslationRankingItemResponse = z
+    .object({
+        success: z.literal(true),
+        subject: z
+            .object({
+                kind: z.literal("ranking_item"),
+                conversationSlugId: zodSlugId,
+                itemSlugId: zodSlugId,
+            })
+            .strict(),
+        content: zodLocalizedRankingItemContent,
+    })
+    .strict();
+
 const zodContentTranslationResponse = z.union([
     zodContentTranslationConversationResponse,
     zodContentTranslationOpinionResponse,
     zodContentTranslationSurveyQuestionResponse,
     zodContentTranslationProjectResponse,
+    zodContentTranslationRankingItemResponse,
     z
         .object({
             success: z.literal(false),
@@ -352,6 +372,17 @@ const zodProjectContentLocalization = z
                 path: ["body"],
             });
         }
+        if (
+            localization.body !== undefined &&
+            localization.bodyPlainText === undefined
+        ) {
+            context.addIssue({
+                code: "custom",
+                message:
+                    "Project content localization body plain text is required when body HTML is provided",
+                path: ["bodyPlainText"],
+            });
+        }
     });
 const zodProjectContentLocalizations = z
     .array(zodProjectContentLocalization)
@@ -389,7 +420,7 @@ const zodAdminProjectOption = z
     .strict();
 const zodProjectPageActivityCursor = z
     .object({
-        status: z.enum(["open", "closed"]),
+        isIndexed: z.boolean(),
         createdAt: zodDateTimeFlexible,
         conversationId: z.number().int().positive(),
     })
@@ -410,28 +441,17 @@ const zodProjectPageActivityContentVariant = z
         bodyPlainText: zodConversationBodyPlainTextInput.default(""),
     })
     .strict();
-const zodProjectPageActivityMachineTranslation = z
+const zodProjectPageActivityDisplayedContent = createZodDisplayedContent(
+    zodProjectPageActivityContentVariant,
+    zodProjectPageActivityContentVariant,
+);
+const zodProjectPageActivityBase = z
     .object({
-        targetLanguageCode: ZodSupportedDisplayLanguageCodes,
-        sourceLanguageCode: ZodSupportedSpokenLanguageCodes.nullable().optional(),
-        sourceLanguageLabel: z.string().min(1).optional(),
-        status: z.enum(["not_requested", "pending", "running", "failed", "completed"]),
-        translatedContent: zodProjectPageActivityContentVariant.optional(),
-    })
-    .strict();
-const zodProjectPageActivity = z
-    .object({
-        slug: zodSlugId,
-        kind: z.enum(["conversation", "vote"]),
+        conversationType: zodConversationType,
         isClosed: z.boolean(),
         createdAt: zodDateTimeFlexible,
         isEdited: z.boolean(),
-        title: zodConversationTitle,
-        bodyPlainText: zodConversationBodyPlainTextInput.default(""),
-        originalContent: zodProjectPageActivityContentVariant,
-        sourceLanguageCode: ZodSupportedSpokenLanguageCodes.nullable().optional(),
-        dynamicTranslationEnabled: z.boolean(),
-        machineTranslation: zodProjectPageActivityMachineTranslation.optional(),
+        displayContent: zodProjectPageActivityDisplayedContent,
         stats: z
             .object({
                 opinionCount: z.number().int().nonnegative(),
@@ -441,6 +461,19 @@ const zodProjectPageActivity = z
             .strict(),
     })
     .strict();
+const zodProjectPageActivity = z.discriminatedUnion("isIndexed", [
+    zodProjectPageActivityBase
+        .extend({
+            isIndexed: z.literal(true),
+            slugId: zodSlugId,
+        })
+        .strict(),
+    zodProjectPageActivityBase
+        .extend({
+            isIndexed: z.literal(false),
+        })
+        .strict(),
+]);
 const zodProjectPageAttribution = z
     .object({
         role: zodProjectOrganizationAttributionRole,
@@ -463,23 +496,10 @@ const zodProjectPageContact = z
         websiteUrl: z.url().optional(),
     })
     .strict();
-const zodProjectPageMachineTranslation = z
-    .object({
-        targetLanguageCode: ZodSupportedDisplayLanguageCodes,
-        sourceLanguageCode: z.string().nullable().optional(),
-        sourceLanguageLabel: z.string().min(1).optional(),
-        status: z.enum(["not_requested", "pending", "running", "failed", "completed"]),
-        translatedContent: zodProjectContentVariant.optional(),
-    })
-    .strict();
 const zodProjectPageProject = z
     .object({
         slug: zodProjectSlug,
-        title: zodProjectTitle,
-        subtitle: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
-        bodyHtml: zodConversationBodyOutput.optional(),
-        originalContent: zodProjectContentVariant,
-        machineTranslation: zodProjectPageMachineTranslation.optional(),
+        displayContent: zodProjectDisplayedContent,
         bannerVariant: z.enum(["blue", "purple", "green"]),
         bannerImageUrl: z.url().optional(),
         participantCount: z.number().int().nonnegative(),
@@ -515,7 +535,7 @@ export class Dto {
     static fetchOpinionsRequest = z
         .object({
             conversationSlugId: zodSlugId, // z.object() does not exist :(
-            filter: zodCommentFeedFilter,
+            filter: zodPublicCommentFeedFilter,
             clusterKey: zodPolisKey.optional(),
         })
         .strict();
@@ -730,7 +750,7 @@ export class Dto {
         })
         .strict();
     static fetchHiddenOpinionsResponse = z.array(zodDisplayedOpinionItem);
-    static createNewConversationRequest = z
+    static createNewConversationBaseRequest = z
         .object({
             conversationTitle: zodConversationTitle,
             conversationBody: zodConversationBodyInput,
@@ -745,17 +765,28 @@ export class Dto {
             ),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
-            conversationType: zodConversationType,
             multilingualSetting: zodConversationMultilingualSetting,
             seedOpinionList: z.array(zodOpinionContentInput).max(50),
             requiresEventTicket: zodEventSlug.optional(),
-            aiLabelingEnabled: z.boolean().default(true),
-            preferredOpinionGroupCount:
-                zodPreferredOpinionGroupCount.default(null),
-            externalSourceConfig: zodExternalSourceConfig.nullable().optional(),
-            surveyConfig: zodSurveyConfig.nullable().optional(),
         })
         .strict();
+    static createNewConversationRequest = z.discriminatedUnion(
+        "conversationType",
+        [
+            Dto.createNewConversationBaseRequest.extend({
+                conversationType: z.literal("polis"),
+                aiLabelingEnabled: z.boolean().default(true),
+                preferredOpinionGroupCount:
+                    zodPreferredOpinionGroupCount.default(null),
+                surveyConfig: zodSurveyConfig.nullable().optional(),
+            }).strict(),
+            Dto.createNewConversationBaseRequest.extend({
+                conversationType: z.literal("ranking"),
+                rankingMode: zodRankingMode,
+                externalSourceConfig: zodExternalSourceConfig.nullable().optional(),
+            }).strict(),
+        ],
+    );
     static createNewConversationResponse = z.discriminatedUnion("success", [
         z
             .object({
@@ -1006,12 +1037,21 @@ export class Dto {
             conversationSlugId: zodSlugId,
         })
         .strict();
-    static getConversationResponse = z
-        .object({
-            conversationData: zodExtendedConversationData,
-            displayContent: zodConversationDisplayedContent,
-        })
-        .strict();
+    static getConversationResponse = z.discriminatedUnion("status", [
+        z
+            .object({
+                status: z.literal("ready"),
+                conversationData: zodExtendedConversationDisplayData,
+                displayContent: zodConversationDisplayedContent,
+            })
+            .strict(),
+        z
+            .object({
+                status: z.literal("importing"),
+                importSlugId: zodSlugId,
+            })
+            .strict(),
+    ]);
     static getConversationForEditRequest = z
         .object({
             conversationSlugId: zodSlugId,
@@ -1116,7 +1156,7 @@ export class Dto {
     static conversationContentFetchRequest = z
         .object({
             conversationSlugId: zodSlugId,
-            contentId: z.uuid(),
+            sourceVersion: z.uuid(),
             mode: zodConversationContentMode,
             requestMode: zodConversationContentRequestMode,
         })
@@ -1240,7 +1280,7 @@ export class Dto {
     static surveyConfigUpdateResponse = z
         .object({
             currentRevision: z.number().int().positive(),
-            surveyGate: zodSurveyGateSummary.optional(),
+            surveyGate: zodSurveyGateSummary,
         })
         .strict();
     static surveyConfigDeleteRequest = z
@@ -1251,6 +1291,7 @@ export class Dto {
     static surveyConfigDeleteResponse = z
         .object({
             success: z.literal(true),
+            surveyGate: zodSurveyGateSummary,
         })
         .strict();
     static createOpinionRequest = z
@@ -1266,6 +1307,7 @@ export class Dto {
                 success: z.literal(true),
                 opinionSlugId: z.string(),
                 opinionItem: zodOpinionItem,
+                displayedOpinionItem: zodDisplayedOpinionItem,
             })
             .strict(),
         z
@@ -1704,6 +1746,15 @@ export class Dto {
         })
         .strict()
         .superRefine((request, context) => {
+            if (request.body !== undefined && request.bodyPlainText === undefined) {
+                context.addIssue({
+                    code: "custom",
+                    message:
+                        "Project body plain text is required when body HTML is provided",
+                    path: ["bodyPlainText"],
+                });
+            }
+
             const targetLanguageCodes = new Set(
                 request.languageSettings.targetLanguageCodes,
             );
@@ -1900,6 +1951,15 @@ export class Dto {
             nextActivityCursor: zodProjectPageActivityCursor.optional(),
         })
         .strict();
+    static projectContentFetchRequest = z
+        .object({
+            projectSlug: zodProjectSlug,
+            sourceVersion: z.uuid(),
+            mode: zodConversationContentMode,
+            requestMode: zodConversationContentRequestMode,
+        })
+        .strict();
+    static projectContentFetchResponse = zodProjectDisplayedContent;
     static fetchProjectConversationPageRequest = z
         .object({
             projectSlug: zodProjectSlug,
@@ -2132,6 +2192,8 @@ export class Dto {
                 success: z.literal(true),
                 status: z.literal("queued"),
                 exportSlugId: zodSlugId,
+                createdAt: zodDateTimeFlexible,
+                expiresAt: zodDateTimeFlexible,
             })
             .strict(),
         // Success case: cooldown active
@@ -2150,6 +2212,7 @@ export class Dto {
                     "active_export_in_progress",
                     "conversation_not_found",
                     "no_opinions",
+                    "unsupported_conversation_type",
                 ]),
             })
             .strict(),
@@ -2295,8 +2358,7 @@ export class Dto {
         .strict();
     static maxdiffResultItem = z.object({
         itemSlugId: z.string(),
-        title: z.string(),
-        body: z.string().nullable(),
+        displayContent: zodRankingItemDisplayedContent,
         avgRank: z.number().nullable(),
         score: z.number().nullable(),
         participantCount: z.number(),
@@ -2318,8 +2380,7 @@ export class Dto {
         .strict();
     static maxdiffItem = z.object({
         slugId: z.string(),
-        title: z.string(),
-        body: z.string().nullable(),
+        displayContent: zodRankingItemDisplayedContent,
         lifecycleStatus: zodMaxdiffLifecycleStatus,
         externalUrl: z.string().nullable(),
         snapshotScore: z.number().nullable(),
@@ -2589,6 +2650,12 @@ export type FetchProjectPageActivitiesRequest = z.infer<
 >;
 export type FetchProjectPageActivitiesResponse = z.infer<
     typeof Dto.fetchProjectPageActivitiesResponse
+>;
+export type ProjectContentFetchRequest = z.infer<
+    typeof Dto.projectContentFetchRequest
+>;
+export type ProjectContentFetchResponse = z.infer<
+    typeof Dto.projectContentFetchResponse
 >;
 export type FetchProjectConversationPageRequest = z.infer<
     typeof Dto.fetchProjectConversationPageRequest

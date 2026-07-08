@@ -82,7 +82,7 @@
           :conversation-slug-id="conversation.slugId"
           :conversation-title="conversation.title"
           author-username="project-team"
-          :conversation-type="conversation.conversationType"
+          :conversation-type-config="{ conversationType: 'polis' }"
           :enable-route-navigation="false"
         />
       </template>
@@ -336,15 +336,18 @@ const project = computed<ProjectPageData>(() => {
 
   return {
     slug: "voices-for-change",
-    title: content.title,
-    subtitle: content.subtitle,
-    bodyHtml: content.bodyHtml,
-    originalContent: {
-      title: content.title,
-      subtitle: content.subtitle,
-      bodyHtml: content.bodyHtml,
+    displayContent: {
+      sourceVersion:
+        projectSourceVersionByLanguage[activeScenarioLanguage.value],
+      status: "available",
+      mode: "original",
+      content: {
+        title: content.title,
+        subtitle: content.subtitle,
+        bodyHtml: content.bodyHtml,
+      },
+      translationControl: null,
     },
-    machineTranslation: undefined,
     bannerVariant: "blue",
     bannerImageUrl:
       projectBannerImageUrlsByLanguage[activeScenarioLanguage.value],
@@ -363,6 +366,12 @@ const project = computed<ProjectPageData>(() => {
     },
   };
 });
+
+const projectSourceVersionByLanguage = {
+  en: "00000000-0000-4000-8000-000000000101",
+  ky: "00000000-0000-4000-8000-000000000102",
+  ru: "00000000-0000-4000-8000-000000000103",
+} satisfies Record<ProjectConversationDevLanguage, string>;
 
 interface ProjectConversationPreview {
   slugId: string;
@@ -655,7 +664,7 @@ function createCommentItems({ count }: { count: number }): DisplayedOpinionItem[
       updatedAt: now,
       opinion: `<p>${content}</p>`,
       displayContent: {
-        contentId: `00000000-0000-4000-8000-${sequenceNumber.toString().padStart(12, "0")}`,
+        sourceVersion: `00000000-0000-4000-8000-${sequenceNumber.toString().padStart(12, "0")}`,
         status: "available",
         mode: "original",
         content: { content: `<p>${content}</p>` },

@@ -112,6 +112,13 @@ class MinimalImportRequest(BaseModel):
     user_id: str = Field(..., alias="userId")
 
 
+class FailureReason(StrEnum):
+    processing_error = "processing_error"
+    timeout = "timeout"
+    server_restart = "server_restart"
+    invalid_data_format = "invalid_data_format"
+
+
 class ImportWorkerEvent(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
@@ -120,8 +127,14 @@ class ImportWorkerEvent(BaseModel):
     type: Literal["import_notification"]
     user_id: str = Field(..., alias="userId")
     notification_slug_id: str = Field(..., alias="notificationSlugId")
+    notification_created_at: str = Field(..., alias="notificationCreatedAt")
+    notification_is_read: bool = Field(..., alias="notificationIsRead")
     import_id: int = Field(..., alias="importId")
+    import_slug_id: str = Field(..., alias="importSlugId")
     conversation_id: int | None = Field(..., alias="conversationId")
+    conversation_slug_id: str | None = Field(None, alias="conversationSlugId")
+    conversation_title: str | None = Field(None, alias="conversationTitle")
+    failure_reason: FailureReason | None = Field(None, alias="failureReason")
     broadcast_new_conversation: bool = Field(False, alias="broadcastNewConversation")
 
 

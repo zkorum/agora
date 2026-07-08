@@ -4,8 +4,15 @@ import {
   useQueryClient,
 } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
-import type { ConversationContentFetchResponse } from "src/shared/types/dto";
+import type {
+  ConversationContentFetchResponse,
+  GetConversationResponse,
+} from "src/shared/types/dto";
 import type { ExtendedConversation } from "src/shared/types/zod";
+import {
+  zodExtendedConversationData,
+  zodExtendedConversationDisplayData,
+} from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
 import {
@@ -16,16 +23,33 @@ import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
 import { useBackendPostApi } from "./post";
 
+type ReadyConversationResponse = Extract<
+  GetConversationResponse,
+  { status: "ready" }
+>;
+export type ConversationDetail = Omit<ReadyConversationResponse, "status">;
+export type ConversationDetailData = ReadyConversationResponse["conversationData"];
+
+type ConversationCacheData = ExtendedConversation | ConversationDetailData;
+type ConversationCacheEntry = ExtendedConversation | ConversationDetail;
+
+function isConversationDetail(
+  conversation: ConversationCacheEntry
+): conversation is ConversationDetail {
+  return "conversationData" in conversation && "displayContent" in conversation;
+}
+
 function preserveNewerSnapshotMetadata({
   fetchedConversation,
   cachedConversation,
 }: {
-  fetchedConversation: ExtendedConversation;
-  cachedConversation: ExtendedConversation | undefined;
-}): ExtendedConversation {
+  fetchedConversation: ConversationDetail;
+  cachedConversation: ConversationDetail | undefined;
+}): ConversationDetail {
   const cachedSnapshotId =
-    cachedConversation?.metadata.conversationViewSnapshotId;
-  const fetchedSnapshotId = fetchedConversation.metadata.conversationViewSnapshotId;
+    cachedConversation?.conversationData.metadata.conversationViewSnapshotId;
+  const fetchedSnapshotId =
+    fetchedConversation.conversationData.metadata.conversationViewSnapshotId;
 
   if (
     cachedConversation === undefined ||
@@ -38,17 +62,26 @@ function preserveNewerSnapshotMetadata({
 
   return {
     ...fetchedConversation,
-    metadata: {
-      ...fetchedConversation.metadata,
-      conversationViewSnapshotId: cachedSnapshotId,
-      opinionCount: cachedConversation.metadata.opinionCount,
-      voteCount: cachedConversation.metadata.voteCount,
-      participantCount: cachedConversation.metadata.participantCount,
-      totalOpinionCount: cachedConversation.metadata.totalOpinionCount,
-      totalVoteCount: cachedConversation.metadata.totalVoteCount,
-      totalParticipantCount: cachedConversation.metadata.totalParticipantCount,
-      moderatedOpinionCount: cachedConversation.metadata.moderatedOpinionCount,
-      hiddenOpinionCount: cachedConversation.metadata.hiddenOpinionCount,
+    conversationData: {
+      ...fetchedConversation.conversationData,
+      metadata: {
+        ...fetchedConversation.conversationData.metadata,
+        conversationViewSnapshotId: cachedSnapshotId,
+        opinionCount: cachedConversation.conversationData.metadata.opinionCount,
+        voteCount: cachedConversation.conversationData.metadata.voteCount,
+        participantCount:
+          cachedConversation.conversationData.metadata.participantCount,
+        totalOpinionCount:
+          cachedConversation.conversationData.metadata.totalOpinionCount,
+        totalVoteCount:
+          cachedConversation.conversationData.metadata.totalVoteCount,
+        totalParticipantCount:
+          cachedConversation.conversationData.metadata.totalParticipantCount,
+        moderatedOpinionCount:
+          cachedConversation.conversationData.metadata.moderatedOpinionCount,
+        hiddenOpinionCount:
+          cachedConversation.conversationData.metadata.hiddenOpinionCount,
+      },
     },
   };
 }
@@ -62,26 +95,44 @@ export function updateConversationQueryCache({
   queryClient: QueryClient;
   conversationSlugId: string;
   updateConversation: (
-    conversation: ExtendedConversation
-  ) => ExtendedConversation;
-  fallbackConversation?: ExtendedConversation;
+    conversation: ConversationCacheData
+  ) => ConversationCacheData;
+  fallbackConversation?: ConversationCacheEntry;
 }): void {
   const queryKey = ["conversation", conversationSlugId];
 
-  queryClient.setQueriesData<ExtendedConversation>({ queryKey }, (oldData) => {
+  const updateCacheEntry = (
+    conversation: ConversationCacheEntry
+  ): ConversationCacheEntry => {
+    if (isConversationDetail(conversation)) {
+      return {
+        ...conversation,
+        conversationData: zodExtendedConversationDisplayData.parse(
+          updateConversation(conversation.conversationData)
+        ),
+      };
+    }
+
+    return zodExtendedConversationData.parse(updateConversation(conversation));
+  };
+
+  queryClient.setQueriesData<ConversationCacheEntry>({ queryKey }, (oldData) => {
     if (!oldData) {
       return oldData;
     }
 
-    return updateConversation(oldData);
+    return updateCacheEntry(oldData);
   });
 
   if (
-    fallbackConversation?.metadata.conversationSlugId === conversationSlugId
+    fallbackConversation !== undefined &&
+    (isConversationDetail(fallbackConversation)
+      ? fallbackConversation.conversationData.metadata.conversationSlugId
+      : fallbackConversation.metadata.conversationSlugId) === conversationSlugId
   ) {
     queryClient.setQueryData(
       queryKey,
-      updateConversation(fallbackConversation)
+      updateCacheEntry(fallbackConversation)
     );
   }
 }
@@ -114,7 +165,7 @@ export function useConversationQuery({
         postSlugId: slugId,
         loadPersonalizedData: isGuestOrLoggedIn.value,
       });
-      const cachedConversation = queryClient.getQueryData<ExtendedConversation>([
+      const cachedConversation = queryClient.getQueryData<ConversationDetail>([
         "conversation",
         slugId,
       ]);
@@ -130,7 +181,7 @@ export function useConversationQuery({
         queryClient.setQueryData<ConversationContentFetchResponse>(
           getConversationContentQueryKey({
             conversationSlugId: slugId,
-            contentId: fetchedConversation.displayContent.contentId,
+            sourceVersion: fetchedConversation.displayContent.sourceVersion,
             mode: fetchedConversation.displayContent.mode,
             targetLanguageCode,
             spokenLanguages: requestedSpokenLanguages,
@@ -140,7 +191,7 @@ export function useConversationQuery({
       }
 
       return preserveNewerSnapshotMetadata({
-        fetchedConversation: fetchedConversation.conversationData,
+        fetchedConversation,
         cachedConversation,
       });
     },

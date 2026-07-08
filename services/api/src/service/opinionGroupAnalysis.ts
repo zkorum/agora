@@ -5,6 +5,7 @@ import {
     conversationViewSnapshotCheckpointReasonTable,
     analysisSpecTable,
     conversationTable,
+    polisConversationConfigTable,
     opinionGroupCandidateAssessmentTable,
     opinionGroupCandidateTable,
     opinionGroupDescriptionTable,
@@ -231,9 +232,16 @@ async function getEmptyAnalysisSelectionContext({
                   .select({
                       projectId: conversationTable.projectId,
                       preferredGroupCount:
-                          conversationTable.preferredOpinionGroupCount,
+                          polisConversationConfigTable.preferredOpinionGroupCount,
                   })
                   .from(conversationTable)
+                  .leftJoin(
+                      polisConversationConfigTable,
+                      eq(
+                          polisConversationConfigTable.id,
+                          conversationTable.polisConfigId,
+                      ),
+                  )
                   .where(conversationFilter)
                   .limit(1)
             : await db
@@ -748,9 +756,9 @@ export async function getOpinionGroupAnalysisSelection({
             projectId: conversationTable.projectId,
             preferredOpinionGroupCount:
                 checkpointViewSnapshotId === undefined
-                    ? conversationTable.preferredOpinionGroupCount
+                    ? polisConversationConfigTable.preferredOpinionGroupCount
                     : conversationViewSnapshotTable.preferredOpinionGroupCount,
-            aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+            aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
             viewSnapshotId: conversationViewSnapshotTable.id,
             surveyAggregateSnapshotId:
                 conversationViewSnapshotTable.surveyAggregateSnapshotId,
@@ -778,6 +786,10 @@ export async function getOpinionGroupAnalysisSelection({
                 conversationViewSnapshotTable.conversationId,
                 conversationTable.id,
             ),
+        )
+        .innerJoin(
+            polisConversationConfigTable,
+            eq(polisConversationConfigTable.id, conversationTable.polisConfigId),
         )
         .innerJoin(
             analysisSnapshotTable,

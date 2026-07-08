@@ -19,7 +19,17 @@ import type {
     NotificationItem,
 } from "@/shared/types/zod.js";
 import { zodNotificationItem } from "@/shared/types/zod.js";
-import { and, desc, eq, inArray, isNull, lt, or, type SQL } from "drizzle-orm";
+import {
+    and,
+    desc,
+    eq,
+    inArray,
+    isNotNull,
+    isNull,
+    lt,
+    or,
+    type SQL,
+} from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
@@ -211,8 +221,12 @@ export async function getNotifications({
                 eq(userTable.id, notificationNewOpinionTable.authorId),
             )
             .where(
-                buildWhereClause(
-                    eq(notificationTable.notificationType, "new_opinion"),
+                and(
+                    buildWhereClause(
+                        eq(notificationTable.notificationType, "new_opinion"),
+                    ),
+                    eq(conversationTable.isImporting, false),
+                    isNotNull(conversationTable.currentContentId),
                 ),
             )
             .orderBy(orderByClause)
@@ -286,8 +300,12 @@ export async function getNotifications({
                 ),
             )
             .where(
-                buildWhereClause(
-                    eq(notificationTable.notificationType, "opinion_vote"),
+                and(
+                    buildWhereClause(
+                        eq(notificationTable.notificationType, "opinion_vote"),
+                    ),
+                    eq(conversationTable.isImporting, false),
+                    isNotNull(conversationTable.currentContentId),
                 ),
             )
             .orderBy(orderByClause)
@@ -585,249 +603,6 @@ export async function getNotifications({
     };
 }
 
-/**
- * Helper function to build an export notification from database data
- * Fetches only the necessary data for a single notification
- */
-async function buildExportNotification(
-    db: PostgresJsDatabase,
-    notificationSlugId: string,
-): Promise<NotificationItem | null> {
-    try {
-        const result = await db
-            .select({
-                createdAt: notificationTable.createdAt,
-                isRead: notificationTable.isRead,
-                notificationType: notificationTable.notificationType,
-                conversationSlugId: conversationTable.slugId,
-                conversationTitle: conversationContentTable.title,
-                exportSlugId: notificationExportTable.exportSlugId,
-                failureReason: notificationExportTable.failureReason,
-                cancellationReason: notificationExportTable.cancellationReason,
-            })
-            .from(notificationTable)
-            .leftJoin(
-                notificationExportTable,
-                eq(
-                    notificationExportTable.notificationId,
-                    notificationTable.id,
-                ),
-            )
-            .leftJoin(
-                conversationTable,
-                eq(
-                    conversationTable.id,
-                    notificationExportTable.conversationId,
-                ),
-            )
-            .leftJoin(
-                conversationContentTable,
-                eq(
-                    conversationContentTable.id,
-                    conversationTable.currentContentId,
-                ),
-            )
-            .where(eq(notificationTable.slugId, notificationSlugId))
-            .limit(1);
-
-        if (result.length !== 1) {
-            return null;
-        }
-
-        const data = result[0];
-        const { conversationSlugId, conversationTitle, exportSlugId } = data;
-
-        if (!conversationSlugId || !conversationTitle || !exportSlugId) {
-            return null;
-        }
-
-        const baseNotification = {
-            slugId: notificationSlugId,
-            createdAt: data.createdAt,
-            isRead: data.isRead,
-            routeTarget: createExportRouteTarget({
-                conversationSlugId,
-                exportSlugId,
-            }),
-        };
-
-        switch (data.notificationType) {
-            case "export_started":
-                return {
-                    ...baseNotification,
-                    type: "export_started",
-                    conversationTitle,
-                };
-            case "export_completed":
-                return {
-                    ...baseNotification,
-                    type: "export_completed",
-                    conversationTitle,
-                };
-            case "export_failed":
-                return {
-                    ...baseNotification,
-                    type: "export_failed",
-                    conversationTitle,
-                    ...(data.failureReason && {
-                        failureReason: data.failureReason,
-                    }),
-                };
-            case "export_cancelled":
-                return {
-                    ...baseNotification,
-                    type: "export_cancelled",
-                    conversationTitle,
-                    cancellationReason:
-                        data.cancellationReason ?? "Export was cancelled",
-                };
-            default:
-                return null;
-        }
-    } catch (error) {
-        log.error(
-            error,
-            `Failed to build export notification ${notificationSlugId}`,
-        );
-        return null;
-    }
-}
-
-/**
- * Helper function to build an opinion vote notification from database data
- * Fetches only the necessary data for a single notification
- */
-async function buildVoteNotification(
-    db: PostgresJsDatabase,
-    notificationSlugId: string,
-    opinionId: number,
-    conversationId: number,
-    numVotes: number,
-    isSeed: boolean,
-): Promise<NotificationItem | null> {
-    try {
-        const result = await db
-            .select({
-                createdAt: notificationTable.createdAt,
-                isRead: notificationTable.isRead,
-                conversationSlugId: conversationTable.slugId,
-                opinionSlugId: opinionTable.slugId,
-                opinionContent: opinionContentTable.content,
-            })
-            .from(notificationTable)
-            .leftJoin(opinionTable, eq(opinionTable.id, opinionId))
-            .leftJoin(
-                opinionContentTable,
-                eq(opinionContentTable.id, opinionTable.currentContentId),
-            )
-            .leftJoin(
-                conversationTable,
-                eq(conversationTable.id, conversationId),
-            )
-            .where(eq(notificationTable.slugId, notificationSlugId))
-            .limit(1);
-
-        if (
-            result.length === 1 &&
-            result[0].conversationSlugId &&
-            result[0].opinionSlugId &&
-            result[0].opinionContent
-        ) {
-            return {
-                type: "opinion_vote",
-                slugId: notificationSlugId,
-                createdAt: result[0].createdAt,
-                isRead: result[0].isRead,
-                message: useCommonPost().createCompactHtmlBody(
-                    result[0].opinionContent,
-                ),
-                routeTarget: {
-                    type: "opinion",
-                    conversationSlugId: result[0].conversationSlugId,
-                    opinionSlugId: result[0].opinionSlugId,
-                },
-                numVotes: numVotes,
-                isSeed: isSeed,
-            };
-        }
-        return null;
-    } catch (error) {
-        log.error(
-            error,
-            `Failed to build vote notification ${notificationSlugId}`,
-        );
-        return null;
-    }
-}
-
-/**
- * Helper function to build a new opinion notification from database data
- * Fetches only the necessary data for a single notification
- */
-async function buildOpinionNotification(
-    db: PostgresJsDatabase,
-    notificationSlugId: string,
-    opinionId: number,
-    conversationId: number,
-    opinionAuthorId: string,
-): Promise<NotificationItem | null> {
-    try {
-        const result = await db
-            .select({
-                createdAt: notificationTable.createdAt,
-                isRead: notificationTable.isRead,
-                conversationSlugId: conversationTable.slugId,
-                opinionSlugId: opinionTable.slugId,
-                opinionContent: opinionContentTable.content,
-                username: userTable.username,
-            })
-            .from(notificationTable)
-            .leftJoin(opinionTable, eq(opinionTable.id, opinionId))
-            .leftJoin(
-                opinionContentTable,
-                eq(opinionContentTable.id, opinionTable.currentContentId),
-            )
-            .leftJoin(
-                conversationTable,
-                eq(conversationTable.id, conversationId),
-            )
-            .leftJoin(userTable, eq(userTable.id, opinionAuthorId))
-            .where(eq(notificationTable.slugId, notificationSlugId))
-            .limit(1);
-
-        if (
-            result.length === 1 &&
-            result[0].conversationSlugId &&
-            result[0].opinionSlugId &&
-            result[0].opinionContent &&
-            result[0].username
-        ) {
-            return {
-                type: "new_opinion",
-                slugId: notificationSlugId,
-                createdAt: result[0].createdAt,
-                isRead: result[0].isRead,
-                message: useCommonPost().createCompactHtmlBody(
-                    result[0].opinionContent,
-                ),
-                username: result[0].username,
-                routeTarget: {
-                    type: "opinion",
-                    conversationSlugId: result[0].conversationSlugId,
-                    opinionSlugId: result[0].opinionSlugId,
-                },
-            };
-        }
-        return null;
-    } catch (error) {
-        log.error(
-            error,
-            `Failed to build opinion notification ${notificationSlugId}`,
-        );
-        return null;
-    }
-}
-
 interface GetNotificationRecipientsProps {
     db: PostgresJsDatabase;
     conversationId: number;
@@ -911,6 +686,9 @@ interface CreateVoteNotificationsProps {
     recipientUserIds: string[];
     opinionId: number;
     conversationId: number;
+    conversationSlugId: string;
+    opinionSlugId: string;
+    opinionContent: string;
     numVotes: number;
     isSeed: boolean;
     realtimeSSEManager?: RealtimeSSEManager;
@@ -921,155 +699,13 @@ interface InsertNewVoteNotificationProps {
     userId: string;
     opinionId: number;
     conversationId: number;
+    notification: Omit<
+        Extract<NotificationItem, { type: "opinion_vote" }>,
+        "slugId" | "createdAt" | "isRead"
+    >;
     numVotes: number;
     isSeed: boolean;
     realtimeSSEManager?: RealtimeSSEManager;
-}
-
-/**
- * Broadcast a vote notification to a user via SSE
- * Builds notification directly from data and validates before broadcasting
- */
-async function broadcastVoteNotification(
-    realtimeSSEManager: RealtimeSSEManager | undefined,
-    db: PostgresJsDatabase,
-    userId: string,
-    notificationSlugId: string,
-    opinionId: number,
-    conversationId: number,
-    numVotes: number,
-    isSeed: boolean,
-): Promise<void> {
-    if (!realtimeSSEManager) {
-        return;
-    }
-
-    try {
-        const notification = await buildVoteNotification(
-            db,
-            notificationSlugId,
-            opinionId,
-            conversationId,
-            numVotes,
-            isSeed,
-        );
-
-        if (notification) {
-            // Validate notification before broadcasting
-            const validationResult =
-                zodNotificationItem.safeParse(notification);
-            if (validationResult.success) {
-                realtimeSSEManager.broadcastToUser(
-                    userId,
-                    validationResult.data,
-                );
-            } else {
-                log.error(
-                    validationResult.error,
-                    `Failed to validate vote notification ${notificationSlugId} before broadcast`,
-                );
-            }
-        }
-    } catch (error) {
-        log.error(
-            error,
-            `Failed to broadcast vote notification ${notificationSlugId} to user ${userId}`,
-        );
-    }
-}
-
-/**
- * Broadcast an opinion notification to a user via SSE
- * Builds notification directly from data and validates before broadcasting
- */
-async function broadcastOpinionNotification(
-    realtimeSSEManager: RealtimeSSEManager | undefined,
-    db: PostgresJsDatabase,
-    userId: string,
-    notificationSlugId: string,
-    opinionId: number,
-    conversationId: number,
-    opinionAuthorId: string,
-): Promise<void> {
-    if (!realtimeSSEManager) {
-        return;
-    }
-
-    try {
-        const notification = await buildOpinionNotification(
-            db,
-            notificationSlugId,
-            opinionId,
-            conversationId,
-            opinionAuthorId,
-        );
-
-        if (notification) {
-            // Validate notification before broadcasting
-            const validationResult =
-                zodNotificationItem.safeParse(notification);
-            if (validationResult.success) {
-                realtimeSSEManager.broadcastToUser(
-                    userId,
-                    validationResult.data,
-                );
-            } else {
-                log.error(
-                    validationResult.error,
-                    `Failed to validate opinion notification ${notificationSlugId} before broadcast`,
-                );
-            }
-        }
-    } catch (error) {
-        log.error(
-            error,
-            `Failed to broadcast opinion notification ${notificationSlugId} to user ${userId}`,
-        );
-    }
-}
-
-/**
- * Broadcast an export notification to a user via SSE
- * Builds notification directly from data and validates before broadcasting
- */
-export async function broadcastExportNotification(
-    realtimeSSEManager: RealtimeSSEManager | undefined,
-    db: PostgresJsDatabase,
-    userId: string,
-    notificationSlugId: string,
-): Promise<void> {
-    if (!realtimeSSEManager) {
-        return;
-    }
-
-    try {
-        const notification = await buildExportNotification(
-            db,
-            notificationSlugId,
-        );
-
-        if (notification) {
-            // Validate notification before broadcasting
-            const validationResult =
-                zodNotificationItem.safeParse(notification);
-            if (validationResult.success) {
-                realtimeSSEManager.broadcastToUser(
-                    userId,
-                    validationResult.data,
-                );
-            } else {
-                log.error(
-                    validationResult.error,
-                    `Failed to validate export notification ${notificationSlugId} before broadcast`,
-                );
-            }
-        }
-    } catch (error) {
-        log.error(
-            error,
-            `Failed to broadcast export notification ${notificationSlugId} to user ${userId}`,
-        );
-    }
 }
 
 /**
@@ -1245,6 +881,7 @@ async function createVoteNotification({
     userId,
     opinionId,
     conversationId,
+    notification,
     numVotes,
     isSeed,
     realtimeSSEManager,
@@ -1259,29 +896,36 @@ async function createVoteNotification({
         })
         .returning({
             notificationId: notificationTable.id,
+            createdAt: notificationTable.createdAt,
+            isRead: notificationTable.isRead,
         });
 
-    const notificationId = notificationTableResponse[0].notificationId;
+    const insertedNotification = notificationTableResponse[0];
 
     await db.insert(notificationOpinionVoteTable).values({
-        notificationId: notificationId,
+        notificationId: insertedNotification.notificationId,
         opinionId: opinionId,
         conversationId: conversationId,
         numVotes: numVotes,
         isSeed: isSeed,
     });
 
-    // Broadcast notification via SSE (don't await to avoid blocking)
-    void broadcastVoteNotification(
-        realtimeSSEManager,
-        db,
-        userId,
-        notificationSlugId,
-        opinionId,
-        conversationId,
-        numVotes,
-        isSeed,
-    );
+    const notificationItem: NotificationItem = {
+        ...notification,
+        slugId: notificationSlugId,
+        createdAt: insertedNotification.createdAt,
+        isRead: insertedNotification.isRead,
+    };
+
+    const validationResult = zodNotificationItem.safeParse(notificationItem);
+    if (validationResult.success) {
+        realtimeSSEManager?.broadcastToUser(userId, validationResult.data);
+    } else {
+        log.error(
+            validationResult.error,
+            `Failed to validate vote notification ${notificationSlugId} before broadcast`,
+        );
+    }
 
     return notificationSlugId;
 }
@@ -1291,10 +935,25 @@ export async function createVoteNotifications({
     recipientUserIds,
     opinionId,
     conversationId,
+    conversationSlugId,
+    opinionSlugId,
+    opinionContent,
     numVotes,
     isSeed,
     realtimeSSEManager,
 }: CreateVoteNotificationsProps): Promise<void> {
+    const notification = {
+        type: "opinion_vote" as const,
+        message: useCommonPost().createCompactHtmlBody(opinionContent),
+        routeTarget: {
+            type: "opinion" as const,
+            conversationSlugId,
+            opinionSlugId,
+        },
+        numVotes,
+        isSeed,
+    };
+
     for (const userId of recipientUserIds) {
         try {
             await createVoteNotification({
@@ -1302,6 +961,7 @@ export async function createVoteNotifications({
                 userId,
                 opinionId,
                 conversationId,
+                notification,
                 numVotes,
                 isSeed,
                 realtimeSSEManager,
@@ -1321,6 +981,10 @@ interface CreateOpinionNotificationForUserProps {
     opinionAuthorId: string;
     opinionId: number;
     conversationId: number;
+    notification: Omit<
+        Extract<NotificationItem, { type: "new_opinion" }>,
+        "slugId" | "createdAt" | "isRead"
+    >;
     realtimeSSEManager?: RealtimeSSEManager;
 }
 
@@ -1330,6 +994,7 @@ async function createOpinionNotificationForUser({
     opinionAuthorId,
     opinionId,
     conversationId,
+    notification,
     realtimeSSEManager,
 }: CreateOpinionNotificationForUserProps): Promise<string> {
     const notificationSlugId = generateRandomSlugId();
@@ -1342,27 +1007,38 @@ async function createOpinionNotificationForUser({
         })
         .returning({
             notificationId: notificationTable.id,
+            createdAt: notificationTable.createdAt,
+            isRead: notificationTable.isRead,
         });
 
-    const notificationId = notificationTableResponse[0].notificationId;
+    const insertedNotification = notificationTableResponse[0];
 
     await db.insert(notificationNewOpinionTable).values({
-        notificationId: notificationId,
+        notificationId: insertedNotification.notificationId,
         authorId: opinionAuthorId,
-        opinionId: opinionId,
-        conversationId: conversationId,
-    });
-
-    // Broadcast notification via SSE (don't await to avoid blocking)
-    void broadcastOpinionNotification(
-        realtimeSSEManager,
-        db,
-        recipientUserId,
-        notificationSlugId,
         opinionId,
         conversationId,
-        opinionAuthorId,
-    );
+    });
+
+    const notificationItem: NotificationItem = {
+        ...notification,
+        slugId: notificationSlugId,
+        createdAt: insertedNotification.createdAt,
+        isRead: insertedNotification.isRead,
+    };
+
+    const validationResult = zodNotificationItem.safeParse(notificationItem);
+    if (validationResult.success) {
+        realtimeSSEManager?.broadcastToUser(
+            recipientUserId,
+            validationResult.data,
+        );
+    } else {
+        log.error(
+            validationResult.error,
+            `Failed to validate opinion notification ${notificationSlugId} before broadcast`,
+        );
+    }
 
     return notificationSlugId;
 }
@@ -1373,6 +1049,10 @@ interface CreateOpinionNotificationsProps {
     opinionAuthorId: string;
     opinionId: number;
     conversationId: number;
+    conversationSlugId: string;
+    opinionSlugId: string;
+    opinionContent: string;
+    username: string;
     realtimeSSEManager?: RealtimeSSEManager;
 }
 
@@ -1382,8 +1062,23 @@ export async function createOpinionNotifications({
     opinionAuthorId,
     opinionId,
     conversationId,
+    conversationSlugId,
+    opinionSlugId,
+    opinionContent,
+    username,
     realtimeSSEManager,
 }: CreateOpinionNotificationsProps): Promise<void> {
+    const notification = {
+        type: "new_opinion" as const,
+        message: useCommonPost().createCompactHtmlBody(opinionContent),
+        username,
+        routeTarget: {
+            type: "opinion" as const,
+            conversationSlugId,
+            opinionSlugId,
+        },
+    };
+
     for (const recipientUserId of recipientUserIds) {
         try {
             await createOpinionNotificationForUser({
@@ -1392,6 +1087,7 @@ export async function createOpinionNotifications({
                 opinionAuthorId,
                 opinionId,
                 conversationId,
+                notification,
                 realtimeSSEManager,
             });
         } catch (error) {

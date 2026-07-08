@@ -53,10 +53,17 @@ import type {
     ProjectPageLanguageOption,
     ProjectPageProject,
 } from "@/shared/types/dto.js";
+import type {
+    ConversationProjectContext,
+    LanguageDetectionProvider,
+    LocalizedContentTranslationStatus,
+    LocalizedProjectContent,
+    ProjectDisplayedContent,
+} from "@/shared/types/zod.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
-import { htmlToCountedText } from "@/shared-app-api/html.js";
 import { translationSourceMatchesCurrentSource } from "@/shared-backend/translate.js";
-import { getSourceLanguageLabel } from "./contentTranslationContent.js";
+import { buildTranslationMetadata } from "./contentTranslationContent.js";
+import { toDisplayedContent } from "./displayContent.js";
 import {
     getImplicitDefaultDisplayLanguage,
     resolveOrganizationLocalizationRow,
@@ -86,6 +93,7 @@ interface ProjectShellPayload {
 interface ProjectBaseRow {
     projectId: number;
     projectContentId: number;
+    projectContentPublicId: string;
     projectSlug: string;
     projectTitle: string;
     dynamicTranslationEnabled: boolean;
@@ -94,6 +102,9 @@ interface ProjectBaseRow {
     bannerPath: string | null;
     bannerIsFullPath: boolean;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    sourceLanguageProvider: LanguageDetectionProvider | null;
+    sourceLanguageConfidence: number | null;
 }
 
 interface ConversationDisplayCounts {
@@ -103,24 +114,54 @@ interface ConversationDisplayCounts {
     voteCount: number;
 }
 
-type ProjectActivityStatus = ProjectPageActivityCursor["status"];
-type ProjectPageTranslationStatus = NonNullable<
-    ProjectPageProject["machineTranslation"]
->["status"];
+type ProjectPageTranslationStatus = Exclude<
+    LocalizedContentTranslationStatus,
+    "completed"
+>;
+type ProjectActivityDisplayContent = ProjectPageActivity["displayContent"];
+
+export interface ProjectContentResolutionProject {
+    projectContentPublicId: string;
+    projectTitle: string;
+    dynamicTranslationEnabled: boolean;
+    subtitle: string | null;
+    bodyHtml: string | null;
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    sourceLanguageProvider: LanguageDetectionProvider | null;
+    sourceLanguageConfidence: number | null;
+}
+
+export interface ProjectContentTranslationResolutionRow {
+    languageCode: SupportedDisplayLanguageCodes;
+    title: string;
+    subtitle: string | null;
+    body: string | null;
+    sourceKind: "manual" | "machine";
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+}
+
+export interface ResolvedProjectContent {
+    localizedContent: LocalizedProjectContent;
+    originalTitle: string;
+    translatedTitle: string | undefined;
+}
 
 interface ProjectActivityRow {
     conversationId: number;
     conversationContentId: number;
-    slug: string;
+    conversationContentPublicId: string;
+    slugId: string;
+    isIndexed: boolean;
     isClosed: boolean;
     createdAt: Date;
     isEdited: boolean;
-    conversationType: "polis" | "maxdiff";
+    conversationType: "polis" | "ranking";
     title: string;
     bodyPlainText: string | null;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
     dynamicTranslationEnabled: boolean;
-    status: ProjectActivityStatus;
 }
 
 interface ProjectActivityContentTranslationRow {
@@ -128,6 +169,7 @@ interface ProjectActivityContentTranslationRow {
     displayLanguageCode: SupportedDisplayLanguageCodes;
     translatedTitle: string;
     translatedBody: string | null;
+    translatedBodyPlainText: string | null;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
 }
 
@@ -234,6 +276,7 @@ async function fetchProjectBaseBySlug({
         .select({
             projectId: projectTable.id,
             projectContentId: projectContentTable.id,
+            projectContentPublicId: projectContentTable.publicId,
             projectSlug: projectTable.slug,
             projectTitle: projectTable.title,
             dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
@@ -242,6 +285,9 @@ async function fetchProjectBaseBySlug({
             bannerPath: projectContentTable.bannerPath,
             bannerIsFullPath: projectContentTable.bannerIsFullPath,
             sourceLanguageCode: projectContentTable.sourceLanguageCode,
+            sourceRawLanguageCode: projectContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider: projectContentTable.sourceLanguageProvider,
+            sourceLanguageConfidence: projectContentTable.sourceLanguageConfidence,
         })
         .from(projectTable)
         .innerJoin(
@@ -263,6 +309,50 @@ async function fetchProjectBaseBySlug({
         throw httpErrors.notFound("Project not found");
     }
     return project;
+}
+
+async function fetchProjectBaseByConversationSlug({
+    db,
+    conversationSlugId,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+}): Promise<ProjectBaseRow | undefined> {
+    const rows = await db
+        .select({
+            projectId: projectTable.id,
+            projectContentId: projectContentTable.id,
+            projectContentPublicId: projectContentTable.publicId,
+            projectSlug: projectTable.slug,
+            projectTitle: projectTable.title,
+            dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
+            subtitle: projectContentTable.subtitle,
+            bodyHtml: projectContentTable.body,
+            bannerPath: projectContentTable.bannerPath,
+            bannerIsFullPath: projectContentTable.bannerIsFullPath,
+            sourceLanguageCode: projectContentTable.sourceLanguageCode,
+            sourceRawLanguageCode: projectContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider: projectContentTable.sourceLanguageProvider,
+            sourceLanguageConfidence: projectContentTable.sourceLanguageConfidence,
+        })
+        .from(conversationTable)
+        .innerJoin(projectTable, eq(projectTable.id, conversationTable.projectId))
+        .innerJoin(
+            projectContentTable,
+            eq(projectContentTable.id, projectTable.currentContentId),
+        )
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(projectTable.directoryVisibility, "listed"),
+                isNull(projectTable.autoProvisionedForOrganizationId),
+                isNull(projectTable.deletedAt),
+                isNull(projectContentTable.deletedAt),
+            ),
+        )
+        .limit(1);
+
+    return rows.at(0);
 }
 
 async function fetchProjectTargetLanguages({
@@ -311,25 +401,236 @@ function buildProjectPageLanguageOptions({
     );
 }
 
+function projectOriginalContent(project: ProjectContentResolutionProject) {
+    return {
+        title: project.projectTitle,
+        subtitle: optionalText(project.subtitle),
+        bodyHtml: optionalText(project.bodyHtml),
+    };
+}
+
+function canUseProjectMachineTranslation({
+    project,
+    effectiveLanguageCode,
+    additionalLanguageCodes,
+}: {
+    project: ProjectContentResolutionProject;
+    effectiveLanguageCode: SupportedDisplayLanguageCodes;
+    additionalLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+}): boolean {
+    const targetLanguagePolicy = getProjectTranslationTargetLanguagePolicy({
+        languageSettings: {
+            dynamicTranslationEnabled: project.dynamicTranslationEnabled,
+            defaultLanguageCode: getProjectDefaultDisplayLanguage({
+                sourceLanguageCode: project.sourceLanguageCode,
+            }),
+            targetLanguageCodes: additionalLanguageCodes,
+        },
+    });
+    return (
+        targetLanguagePolicy.dynamicTranslationEnabled &&
+        isConfiguredTranslationTargetLanguage({
+            policy: targetLanguagePolicy,
+            targetLanguageCode: effectiveLanguageCode,
+        }) &&
+        shouldTranslateContent({
+            sourceLanguageCode: project.sourceLanguageCode,
+            sourceRawLanguageCode: project.sourceRawLanguageCode,
+            targetLanguageCode: effectiveLanguageCode,
+        })
+    );
+}
+
+export function resolveProjectContentForDisplay({
+    project,
+    translationRows,
+    effectiveLanguageCode,
+    additionalLanguageCodes,
+    translationStatus,
+}: {
+    project: ProjectContentResolutionProject;
+    translationRows: readonly ProjectContentTranslationResolutionRow[];
+    effectiveLanguageCode: SupportedDisplayLanguageCodes;
+    additionalLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+    translationStatus?: ProjectPageTranslationStatus;
+}): ResolvedProjectContent {
+    const original = projectOriginalContent(project);
+    const manualRow = findManualProjectContentTranslationRow({
+        translationRows,
+        effectiveLanguageCode,
+    });
+    if (manualRow !== undefined) {
+        const manualOriginal = {
+            title: manualRow.title,
+            subtitle: optionalText(manualRow.subtitle),
+            bodyHtml: optionalText(manualRow.body),
+        };
+        return {
+            localizedContent: {
+                kind: "original_only",
+                sourceVersion: project.projectContentPublicId,
+                initialMode: "original",
+                variants: { original: manualOriginal },
+            },
+            originalTitle: manualOriginal.title,
+            translatedTitle: undefined,
+        };
+    }
+
+    if (
+        canUseProjectMachineTranslation({
+            project,
+            effectiveLanguageCode,
+            additionalLanguageCodes,
+        })
+    ) {
+        const machineRow = findFreshMachineProjectContentTranslationRow({
+            project,
+            translationRows,
+            effectiveLanguageCode,
+        });
+        if (machineRow !== undefined) {
+            const translated = {
+                title: machineRow.title,
+                subtitle: optionalText(machineRow.subtitle),
+                bodyHtml: optionalText(machineRow.body),
+            };
+            return {
+                localizedContent: {
+                    kind: "translatable",
+                    sourceVersion: project.projectContentPublicId,
+                    initialMode: "translated",
+                    translation: buildTranslationMetadata({
+                        targetLanguageCode: effectiveLanguageCode,
+                        sourceMetadata: project,
+                        status: "completed",
+                    }),
+                    variants: { original, translated },
+                },
+                originalTitle: original.title,
+                translatedTitle: translated.title,
+            };
+        }
+
+        if (translationStatus !== undefined) {
+            return {
+                localizedContent: {
+                    kind: "translatable",
+                    sourceVersion: project.projectContentPublicId,
+                    initialMode: "original",
+                    translation: buildTranslationMetadata({
+                        targetLanguageCode: effectiveLanguageCode,
+                        sourceMetadata: project,
+                        status: translationStatus,
+                    }),
+                    variants: { original },
+                },
+                originalTitle: original.title,
+                translatedTitle: undefined,
+            };
+        }
+    }
+
+    return {
+        localizedContent: {
+            kind: "original_only",
+            sourceVersion: project.projectContentPublicId,
+            initialMode: "original",
+            variants: { original },
+        },
+        originalTitle: original.title,
+        translatedTitle: undefined,
+    };
+}
+
+function findManualProjectContentTranslationRow({
+    translationRows,
+    effectiveLanguageCode,
+}: {
+    translationRows: readonly ProjectContentTranslationResolutionRow[];
+    effectiveLanguageCode: SupportedDisplayLanguageCodes;
+}): ProjectContentTranslationResolutionRow | undefined {
+    const fallbackChain = getDisplayLanguageFallbackChain({
+        languageCode: effectiveLanguageCode,
+    });
+    for (const languageCode of fallbackChain) {
+        const row = translationRows.find(
+            (translationRow) =>
+                translationRow.languageCode === languageCode &&
+                translationRow.sourceKind === "manual",
+        );
+        if (row !== undefined) {
+            return row;
+        }
+    }
+
+    return undefined;
+}
+
+function findFreshMachineProjectContentTranslationRow({
+    project,
+    translationRows,
+    effectiveLanguageCode,
+}: {
+    project: ProjectContentResolutionProject;
+    translationRows: readonly ProjectContentTranslationResolutionRow[];
+    effectiveLanguageCode: SupportedDisplayLanguageCodes;
+}): ProjectContentTranslationResolutionRow | undefined {
+    return translationRows.find(
+        (row) =>
+            row.languageCode === effectiveLanguageCode &&
+            row.sourceKind === "machine" &&
+            translationSourceMatchesCurrentSource({
+                translationSourceLanguageCode: row.sourceLanguageCode,
+                currentSourceLanguageCode: project.sourceLanguageCode,
+            }),
+    );
+}
+
+export function projectContentNeedsTranslationStatus({
+    project,
+    translationRows,
+    effectiveLanguageCode,
+    additionalLanguageCodes,
+}: {
+    project: ProjectContentResolutionProject;
+    translationRows: readonly ProjectContentTranslationResolutionRow[];
+    effectiveLanguageCode: SupportedDisplayLanguageCodes;
+    additionalLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+}): boolean {
+    return (
+        findManualProjectContentTranslationRow({
+            translationRows,
+            effectiveLanguageCode,
+        }) === undefined &&
+        canUseProjectMachineTranslation({
+            project,
+            effectiveLanguageCode,
+            additionalLanguageCodes,
+        }) &&
+        findFreshMachineProjectContentTranslationRow({
+            project,
+            translationRows,
+            effectiveLanguageCode,
+        }) === undefined
+    );
+}
+
 async function fetchResolvedProjectContent({
     db,
     project,
     languageCandidateSet,
     effectiveLanguageCode,
     additionalLanguageCodes,
+    includeTranslationStatus,
 }: {
     db: PostgresJsDatabase;
     project: ProjectBaseRow;
     languageCandidateSet: Set<SupportedDisplayLanguageCodes>;
     effectiveLanguageCode: SupportedDisplayLanguageCodes;
     additionalLanguageCodes: SupportedDisplayLanguageCodes[];
-}): Promise<{
-    title: string;
-    subtitle: string | undefined;
-    bodyHtml: string | undefined;
-    originalContent: ProjectPageProject["originalContent"];
-    machineTranslation: ProjectPageProject["machineTranslation"];
-}> {
+    includeTranslationStatus: boolean;
+}): Promise<ResolvedProjectContent> {
     const languageCandidates = Array.from(languageCandidateSet);
     const translationRows = await db
         .select({
@@ -355,102 +656,155 @@ async function fetchResolvedProjectContent({
             ),
         );
 
-    const originalContent = {
-        title: project.projectTitle,
-        subtitle: optionalText(project.subtitle),
-        bodyHtml: optionalText(project.bodyHtml),
-    };
-    const rowsByLanguage = new Map(
-        translationRows.map((row) => [row.languageCode, row]),
-    );
-    for (const languageCode of getDisplayLanguageFallbackChain({
-        languageCode: effectiveLanguageCode,
-    })) {
-        const row = rowsByLanguage.get(languageCode);
-        if (row?.sourceKind === "manual") {
-            return {
-                title: row.title,
-                subtitle: optionalText(row.subtitle),
-                bodyHtml: optionalText(row.body),
-                originalContent,
-                machineTranslation: undefined,
-            };
-        }
-    }
+    const translationStatus =
+        includeTranslationStatus &&
+        projectContentNeedsTranslationStatus({
+            project,
+            translationRows,
+            effectiveLanguageCode,
+            additionalLanguageCodes,
+        })
+            ? await fetchProjectTranslationWorkStatus({
+                  db,
+                  projectContentId: project.projectContentId,
+                  targetLanguageCode: effectiveLanguageCode,
+              })
+            : undefined;
 
-    const targetLanguagePolicy = getProjectTranslationTargetLanguagePolicy({
-        languageSettings: {
-            dynamicTranslationEnabled: project.dynamicTranslationEnabled,
-            defaultLanguageCode: getProjectDefaultDisplayLanguage({
-                sourceLanguageCode: project.sourceLanguageCode,
-            }),
-            targetLanguageCodes: additionalLanguageCodes,
-        },
+    return resolveProjectContentForDisplay({
+        project,
+        translationRows,
+        effectiveLanguageCode,
+        additionalLanguageCodes,
+        translationStatus,
     });
-    const canUseMachineTranslation =
-        targetLanguagePolicy.dynamicTranslationEnabled &&
-        isConfiguredTranslationTargetLanguage({
-            policy: targetLanguagePolicy,
-            targetLanguageCode: effectiveLanguageCode,
-        }) &&
-        shouldTranslateContent({
-            sourceLanguageCode: project.sourceLanguageCode,
-            sourceRawLanguageCode: null,
-            targetLanguageCode: effectiveLanguageCode,
-        });
-    if (canUseMachineTranslation) {
-        const machineRow = rowsByLanguage.get(effectiveLanguageCode);
-        if (
-            machineRow?.sourceKind === "machine" &&
-            translationSourceMatchesCurrentSource({
-                translationSourceLanguageCode: machineRow.sourceLanguageCode,
-                currentSourceLanguageCode: project.sourceLanguageCode,
-            })
-        ) {
-            const machineTranslation = {
-                targetLanguageCode: effectiveLanguageCode,
-                sourceLanguageCode: machineRow.sourceLanguageCode,
-                sourceLanguageLabel: getSourceLanguageLabel(
-                    machineRow.sourceLanguageCode,
-                ),
-                status: "completed" as const,
-                translatedContent: {
-                    title: machineRow.title,
-                    subtitle: optionalText(machineRow.subtitle),
-                    bodyHtml: optionalText(machineRow.body),
-                },
-            };
-            return {
-                title: machineRow.title,
-                subtitle: optionalText(machineRow.subtitle),
-                bodyHtml: optionalText(machineRow.body),
-                originalContent,
-                machineTranslation,
-            };
-        }
+}
 
-        const status = await fetchProjectTranslationWorkStatus({
-            db,
-            projectContentId: project.projectContentId,
-            targetLanguageCode: effectiveLanguageCode,
-        });
-        return {
-            ...originalContent,
-            originalContent,
-            machineTranslation: {
-                targetLanguageCode: effectiveLanguageCode,
-                sourceLanguageCode: project.sourceLanguageCode,
-                sourceLanguageLabel: getSourceLanguageLabel(project.sourceLanguageCode),
-                status,
-            },
-        };
-    }
+export function toProjectDisplayContent({
+    content,
+    mode,
+    translationAllowed,
+    displayLanguage,
+    spokenLanguages,
+}: {
+    content: LocalizedProjectContent;
+    mode?: "original" | "translated";
+    translationAllowed: boolean;
+    displayLanguage: SupportedDisplayLanguageCodes;
+    spokenLanguages: SupportedSpokenLanguageCodes[];
+}): ProjectDisplayedContent {
+    return toDisplayedContent({
+        content,
+        mode,
+        translationAllowed,
+        displayLanguage,
+        spokenLanguages,
+        buildOriginal: ({ original, translationControl }) => ({
+            sourceVersion: content.sourceVersion,
+            status: "available",
+            mode: "original",
+            content: original,
+            translationControl,
+        }),
+        buildTranslated: ({ translated, translationControl }) => ({
+            sourceVersion: content.sourceVersion,
+            status: "available",
+            mode: "translated",
+            content: translated,
+            translationControl,
+        }),
+        buildUnavailable: ({ status, translationControl }) => ({
+            sourceVersion: content.sourceVersion,
+            status,
+            translationControl,
+        }),
+    });
+}
 
-    return {
-        ...originalContent,
-        originalContent,
-        machineTranslation: undefined,
+function toProjectActivityDisplayContent({
+    row,
+    translation,
+    targetLanguageCode,
+    translationAllowed,
+    displayLanguage,
+}: {
+    row: ProjectActivityRow;
+    translation: ProjectActivityContentTranslationRow | undefined;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+    translationAllowed: boolean;
+    displayLanguage: SupportedDisplayLanguageCodes;
+}): ProjectActivityDisplayContent {
+    const original = {
+        title: row.title,
+        bodyPlainText: row.bodyPlainText ?? "",
     };
+    const translated =
+        translation === undefined
+            ? undefined
+            : {
+                  title: translation.translatedTitle,
+                  bodyPlainText: translation.translatedBodyPlainText ?? "",
+              };
+    const localizedContent =
+        translated === undefined
+            ? {
+                  kind: "translatable" as const,
+                  sourceVersion: row.conversationContentPublicId,
+                  initialMode: "original" as const,
+                  translation: buildTranslationMetadata({
+                      targetLanguageCode,
+                      sourceMetadata: {
+                          sourceLanguageCode: row.sourceLanguageCode,
+                          sourceRawLanguageCode: row.sourceRawLanguageCode,
+                          sourceLanguageProvider: null,
+                          sourceLanguageConfidence: null,
+                      },
+                      status: "not_requested",
+                  }),
+                  variants: { original },
+              }
+            : {
+                  kind: "translatable" as const,
+                  sourceVersion: row.conversationContentPublicId,
+                  initialMode: "translated" as const,
+                  translation: buildTranslationMetadata({
+                      targetLanguageCode,
+                      sourceMetadata: {
+                          sourceLanguageCode: row.sourceLanguageCode,
+                          sourceRawLanguageCode: row.sourceRawLanguageCode,
+                          sourceLanguageProvider: null,
+                          sourceLanguageConfidence: null,
+                      },
+                      status: "completed",
+                  }),
+                  variants: { original, translated },
+              };
+
+    return toDisplayedContent({
+        content: localizedContent,
+        translationAllowed,
+        displayLanguage,
+        spokenLanguages: [],
+        buildOriginal: ({ original: content, translationControl }) => ({
+            sourceVersion: localizedContent.sourceVersion,
+            status: "available",
+            mode: "original",
+            content,
+            translationControl,
+        }),
+        buildTranslated: ({ translated: content, translationControl }) => ({
+            sourceVersion: localizedContent.sourceVersion,
+            status: "available",
+            mode: "translated",
+            content,
+            translationControl,
+        }),
+        buildUnavailable: ({ status, translationControl }) => ({
+            sourceVersion: localizedContent.sourceVersion,
+            status,
+            translationControl,
+        }),
+    });
 }
 
 async function fetchProjectTranslationWorkStatus({
@@ -568,34 +922,24 @@ async function fetchLatestConversationCounts({
     return new Map(rows.map((row) => [row.conversationId, row]));
 }
 
-function statusToIsClosed({
-    status,
-}: {
-    status: ProjectActivityStatus;
-}): boolean {
-    return status === "closed";
-}
-
 function rowToActivityCursor({
     row,
 }: {
     row: ProjectActivityRow;
 }): ProjectPageActivityCursor {
     return {
-        status: row.status,
+        isIndexed: row.isIndexed,
         createdAt: row.createdAt,
         conversationId: row.conversationId,
     };
 }
 
-function getActivityCursorWhereClause({
+function getCreatedBeforeActivityCursorWhereClause({
     activityCursor,
-    status,
 }: {
     activityCursor: ProjectPageActivityCursor | undefined;
-    status: ProjectActivityStatus;
 }): SQL | undefined {
-    if (activityCursor?.status !== status) {
+    if (activityCursor === undefined) {
         return undefined;
     }
     return or(
@@ -607,39 +951,51 @@ function getActivityCursorWhereClause({
     );
 }
 
-function getVisibleProjectConversationWhereClause({
+function getActivityCursorWhereClause({
+    activityCursor,
+}: {
+    activityCursor: ProjectPageActivityCursor | undefined;
+}): SQL | undefined {
+    const createdBeforeCursor = getCreatedBeforeActivityCursorWhereClause({
+        activityCursor,
+    });
+    if (activityCursor === undefined || createdBeforeCursor === undefined) {
+        return undefined;
+    }
+
+    if (activityCursor.isIndexed) {
+        return or(
+            and(eq(conversationTable.isIndexed, true), createdBeforeCursor),
+            eq(conversationTable.isIndexed, false),
+        );
+    }
+
+    return and(eq(conversationTable.isIndexed, false), createdBeforeCursor);
+}
+
+function getProjectPageConversationWhereClause({
     projectId,
     activityCursor,
-    status,
 }: {
     projectId: number;
     activityCursor?: ProjectPageActivityCursor;
-    status?: ProjectActivityStatus;
 }): SQL | undefined {
     return and(
         eq(conversationTable.projectId, projectId),
-        eq(conversationTable.isIndexed, true),
         eq(conversationTable.isImporting, false),
         isNotNull(conversationTable.currentContentId),
-        status === undefined
-            ? undefined
-            : eq(conversationTable.isClosed, statusToIsClosed({ status })),
-        status === undefined
-            ? undefined
-            : getActivityCursorWhereClause({ activityCursor, status }),
+        getActivityCursorWhereClause({ activityCursor }),
     );
 }
 
-async function fetchProjectActivityRowsByStatus({
+async function fetchProjectActivityRows({
     db,
     projectId,
-    status,
     limit,
     activityCursor,
 }: {
     db: PostgresJsDatabase;
     projectId: number;
-    status: ProjectActivityStatus;
     limit: number;
     activityCursor: ProjectPageActivityCursor | undefined;
 }): Promise<ProjectActivityRow[]> {
@@ -650,7 +1006,9 @@ async function fetchProjectActivityRowsByStatus({
         .select({
             conversationId: conversationTable.id,
             conversationContentId: conversationContentTable.id,
-            slug: conversationTable.slugId,
+            conversationContentPublicId: conversationContentTable.publicId,
+            slugId: conversationTable.slugId,
+            isIndexed: conversationTable.isIndexed,
             isClosed: conversationTable.isClosed,
             createdAt: conversationTable.createdAt,
             isEdited: conversationTable.isEdited,
@@ -658,6 +1016,7 @@ async function fetchProjectActivityRowsByStatus({
             title: conversationContentTable.title,
             bodyPlainText: conversationContentTable.bodyPlainText,
             sourceLanguageCode: conversationContentTable.sourceLanguageCode,
+            sourceRawLanguageCode: conversationContentTable.sourceRawLanguageCode,
             dynamicTranslationEnabled: conversationTable.dynamicTranslationEnabled,
         })
         .from(conversationTable)
@@ -666,19 +1025,24 @@ async function fetchProjectActivityRowsByStatus({
             eq(conversationContentTable.id, conversationTable.currentContentId),
         )
         .where(
-            getVisibleProjectConversationWhereClause({
+            getProjectPageConversationWhereClause({
                 projectId,
                 activityCursor,
-                status,
             }),
         )
-        .orderBy(desc(conversationTable.createdAt), desc(conversationTable.id))
+        .orderBy(
+            desc(conversationTable.isIndexed),
+            desc(conversationTable.createdAt),
+            desc(conversationTable.id),
+        )
         .limit(limit);
 
     return rows.map((row) => ({
         conversationId: row.conversationId,
         conversationContentId: row.conversationContentId,
-        slug: row.slug,
+        conversationContentPublicId: row.conversationContentPublicId,
+        slugId: row.slugId,
+        isIndexed: row.isIndexed,
         isClosed: row.isClosed,
         createdAt: row.createdAt,
         isEdited: row.isEdited,
@@ -686,8 +1050,8 @@ async function fetchProjectActivityRowsByStatus({
         title: row.title,
         bodyPlainText: row.bodyPlainText,
         sourceLanguageCode: row.sourceLanguageCode,
+        sourceRawLanguageCode: row.sourceRawLanguageCode,
         dynamicTranslationEnabled: row.dynamicTranslationEnabled,
-        status,
     }));
 }
 
@@ -751,6 +1115,8 @@ async function fetchProjectActivityTranslations({
                 conversationContentTranslationTable.displayLanguageCode,
             translatedTitle: conversationContentTranslationTable.translatedTitle,
             translatedBody: conversationContentTranslationTable.translatedBody,
+            translatedBodyPlainText:
+                conversationContentTranslationTable.translatedBodyPlainText,
             sourceLanguageCode: conversationContentTranslationTable.sourceLanguageCode,
         })
         .from(conversationContentTranslationTable)
@@ -790,38 +1156,14 @@ async function fetchProjectActivities({
     activityLimit: number;
     activityCursor: ProjectPageActivityCursor | undefined;
 }): Promise<FetchProjectPageActivitiesResponse> {
-    const openRows =
-        activityCursor?.status === "closed"
-            ? []
-            : await fetchProjectActivityRowsByStatus({
-                  db,
-                  projectId,
-                  status: "open",
-                  limit: activityLimit + 1,
-                  activityCursor,
-              });
-    const pageRows = openRows.slice(0, activityLimit);
-    const openHasMore = openRows.length > activityLimit;
-
-    let hasMore = openHasMore;
-    if (!openHasMore) {
-        const remainingCount = activityLimit - pageRows.length;
-        const closedLimit = remainingCount > 0 ? remainingCount + 1 : 1;
-        const closedRows = await fetchProjectActivityRowsByStatus({
-            db,
-            projectId,
-            status: "closed",
-            limit: closedLimit,
-            activityCursor:
-                activityCursor?.status === "closed" ? activityCursor : undefined,
-        });
-        if (remainingCount > 0) {
-            pageRows.push(...closedRows.slice(0, remainingCount));
-            hasMore = closedRows.length > remainingCount;
-        } else {
-            hasMore = closedRows.length > 0;
-        }
-    }
+    const rows = await fetchProjectActivityRows({
+        db,
+        projectId,
+        limit: activityLimit + 1,
+        activityCursor,
+    });
+    const pageRows = rows.slice(0, activityLimit);
+    const hasMore = rows.length > activityLimit;
 
     const conversationIds = pageRows.map((row) => row.conversationId);
     const targetLanguagesByConversationId =
@@ -854,10 +1196,6 @@ async function fetchProjectActivities({
     const activities: ProjectPageActivity[] = pageRows.map((row) => {
         const counts = countsByConversationId.get(row.conversationId);
         const translation = translationsByContentId.get(row.conversationContentId);
-        const originalContent = {
-            title: row.title,
-            bodyPlainText: row.bodyPlainText ?? "",
-        };
         const freshTranslation =
             translation !== undefined &&
             translationSourceMatchesCurrentSource({
@@ -866,47 +1204,37 @@ async function fetchProjectActivities({
             })
                 ? translation
                 : undefined;
-        const translatedBodyPlainText =
-            freshTranslation?.translatedBody === null ||
-            freshTranslation?.translatedBody === undefined
-                ? ""
-                : htmlToCountedText(freshTranslation.translatedBody);
-        const translatedContent =
-            freshTranslation === undefined
-                ? undefined
-                : {
-                      title: freshTranslation.translatedTitle,
-                      bodyPlainText: translatedBodyPlainText,
-                  };
-        return {
-            slug: row.slug,
-            kind: row.conversationType === "maxdiff" ? "vote" : "conversation",
+        const targetLanguageCode =
+            preferredLanguageByContentId.get(row.conversationContentId) ??
+            displayLanguage;
+        const activityBase = {
+            conversationType: row.conversationType,
             isClosed: row.isClosed,
             createdAt: row.createdAt,
             isEdited: row.isEdited,
-            title: translatedContent?.title ?? row.title,
-            bodyPlainText: translatedContent?.bodyPlainText ?? row.bodyPlainText ?? "",
-            originalContent,
-            sourceLanguageCode: row.sourceLanguageCode,
-            dynamicTranslationEnabled: row.dynamicTranslationEnabled,
-            machineTranslation:
-                freshTranslation === undefined || translatedContent === undefined
-                    ? undefined
-                    : {
-                          targetLanguageCode: freshTranslation.displayLanguageCode,
-                          sourceLanguageCode: freshTranslation.sourceLanguageCode,
-                          sourceLanguageLabel: getSourceLanguageLabel(
-                              freshTranslation.sourceLanguageCode,
-                          ),
-                          status: "completed",
-                          translatedContent,
-                      },
+            displayContent: toProjectActivityDisplayContent({
+                row,
+                translation: freshTranslation,
+                targetLanguageCode,
+                translationAllowed: row.isIndexed && row.dynamicTranslationEnabled,
+                displayLanguage,
+            }),
             stats: {
                 opinionCount: counts?.opinionCount ?? 0,
                 participantCount: counts?.participantCount ?? 0,
                 voteCount: counts?.voteCount ?? 0,
             },
         };
+        return row.isIndexed
+            ? {
+                  ...activityBase,
+                  isIndexed: true,
+                  slugId: row.slugId,
+              }
+            : {
+                  ...activityBase,
+                  isIndexed: false,
+              };
     });
     const lastRow = pageRows.at(-1);
     return {
@@ -932,7 +1260,7 @@ async function assertVisibleProjectConversation({
         .from(conversationTable)
         .where(
             and(
-                getVisibleProjectConversationWhereClause({ projectId }),
+                getProjectPageConversationWhereClause({ projectId }),
                 eq(conversationTable.slugId, conversationSlugId),
             ),
         )
@@ -975,7 +1303,7 @@ async function fetchProjectAggregateCounts({
             latestSnapshot,
             eq(latestSnapshot.conversationId, conversationTable.id),
         )
-        .where(getVisibleProjectConversationWhereClause({ projectId }));
+        .where(getProjectPageConversationWhereClause({ projectId }));
     return rows.at(0) ?? { activityCount: 0, participantCount: 0, voteCount: 0 };
 }
 
@@ -1419,6 +1747,7 @@ async function buildProjectShellPayload({
                 languageCandidateSet,
                 effectiveLanguageCode: preferredContentLanguage,
                 additionalLanguageCodes,
+                includeTranslationStatus: true,
             }),
             fetchResolvedBannerImageUrl({
                 db,
@@ -1445,11 +1774,12 @@ async function buildProjectShellPayload({
         ]);
     const projectPayload: ProjectPageProject = {
         slug: project.projectSlug,
-        title: content.title,
-        subtitle: content.subtitle,
-        bodyHtml: content.bodyHtml,
-        originalContent: content.originalContent,
-        machineTranslation: content.machineTranslation,
+        displayContent: toProjectDisplayContent({
+            content: content.localizedContent,
+            translationAllowed: true,
+            displayLanguage: currentDisplayLanguage,
+            spokenLanguages: [],
+        }),
         bannerVariant: "blue",
         bannerImageUrl,
         participantCount: aggregateCounts.participantCount,
@@ -1568,4 +1898,53 @@ export async function fetchProjectConversationPage({
         project,
         currentDisplayLanguage,
     });
+}
+
+export async function fetchConversationProjectContext({
+    db,
+    conversationSlugId,
+    currentDisplayLanguage,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
+}): Promise<ConversationProjectContext | undefined> {
+    const project = await fetchProjectBaseByConversationSlug({
+        db,
+        conversationSlugId,
+    });
+    if (project === undefined) {
+        return undefined;
+    }
+
+    const defaultLanguageCode = getProjectDefaultDisplayLanguage({
+        sourceLanguageCode: project.sourceLanguageCode,
+    });
+    const additionalLanguageCodes = await fetchProjectTargetLanguages({
+        db,
+        projectId: project.projectId,
+    });
+    const { preferredContentLanguage } = resolvePreferredContentLanguage({
+        displayLanguage: currentDisplayLanguage,
+        defaultContentLanguage: defaultLanguageCode,
+        configuredContentLanguages: additionalLanguageCodes,
+    });
+    const content = await fetchResolvedProjectContent({
+        db,
+        project,
+        languageCandidateSet: getLanguageCandidateSet({
+            effectiveLanguageCode: preferredContentLanguage,
+            defaultLanguageCode,
+        }),
+        effectiveLanguageCode: preferredContentLanguage,
+        additionalLanguageCodes,
+        includeTranslationStatus: false,
+    });
+
+    return {
+        projectSlug: project.projectSlug,
+        originalProjectTitle: content.originalTitle,
+        translatedProjectTitle: content.translatedTitle,
+        conversationSlugId,
+    };
 }

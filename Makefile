@@ -22,11 +22,13 @@ generate:
 		-v ${PWD}:/local openapitools/openapi-generator-cli generate \
 		-i /local/services/api/openapi-zkorum.json \
 		-g typescript-axios \
+		--global-property apiDocs=false,modelDocs=false \
 		-o /local/services/agora/src/api
 	docker run --rm \
 		-v ${PWD}:/local openapitools/openapi-generator-cli generate \
 		-i /local/services/api/openapi-zkorum.json \
 		-g typescript-axios \
+		--global-property apiDocs=false,modelDocs=false \
 		-o /local/services/load-testing/src/api
 
 sync: sync-all sync-app-api sync-python-artifacts sync-api-test-db-fixtures

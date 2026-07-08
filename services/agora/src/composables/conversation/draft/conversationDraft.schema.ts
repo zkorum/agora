@@ -9,12 +9,12 @@
 import { MAX_LENGTH_CONVERSATION_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
 import {
   zodConversationMultilingualSetting,
-  zodConversationType,
   zodEventSlug,
   zodExternalSourceConfig,
   zodParticipationMode,
   zodPreferredOpinionGroupCount,
   zodProjectSlug,
+  zodRankingMode,
   zodSurveyConfig,
 } from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
@@ -89,6 +89,45 @@ export const zodConversationImportSettings = z.object({
   csvFileMetadata: zodCsvFileMetadataSet,
 });
 
+const zodConversationDraftBase = z.object({
+  // Basic content
+  title: z.string().max(MAX_LENGTH_TITLE),
+  content: z.string(), // Body length validation happens in validateHtmlStringCharacterCount
+  contentPlainText: z.string().default(""),
+  multilingualSetting: zodConversationMultilingualSetting.default({
+    additionalLanguageCodes: [],
+    dynamicTranslationEnabled: false,
+  }),
+  selectedProjectSlug: zodProjectSlug.optional(),
+  inheritProjectLanguages: z.boolean().default(false),
+  seedOpinions: z.array(z.string()),
+
+  // Publishing options
+  postAs: zodPostAsSettings,
+
+  // Privacy settings
+  isPrivate: z.boolean(),
+  participationMode: zodParticipationMode.default("account_required"),
+
+  // Event ticket verification
+  requiresEventTicket: zodEventSlug.optional(),
+
+  // AI labeling
+  aiLabelingEnabled: z.boolean().default(true),
+
+  // Facilitator analysis preference
+  preferredOpinionGroupCount: zodPreferredOpinionGroupCount.default(null),
+
+  // External source (GitHub integration for MaxDiff)
+  externalSourceConfig: zodExternalSourceConfig.nullable().default(null),
+
+  // Survey configuration
+  surveyConfig: zodSurveyConfig.nullable().default(null),
+
+  // Import settings
+  importSettings: zodConversationImportSettings,
+});
+
 /**
  * Zod schema for serializable conversation draft
  * This is the main schema used for localStorage validation
@@ -98,67 +137,47 @@ export const zodSerializableConversationDraft = z.preprocess(
     if (val === null || typeof val !== "object" || Array.isArray(val)) {
       return val;
     }
-    if ("participationMode" in val || !("privateConversationSettings" in val)) {
-      return val;
+    const normalizedLegacyConversationType =
+      "conversationType" in val && val.conversationType === "maxdiff"
+        ? {
+            ...val,
+            conversationType: "ranking",
+            rankingMode: "bws",
+          }
+        : val;
+
+    if (
+      "participationMode" in normalizedLegacyConversationType ||
+      !("privateConversationSettings" in normalizedLegacyConversationType)
+    ) {
+      return normalizedLegacyConversationType;
     }
 
     const legacyPrivateSettings = z
       .object({ participationMode: zodParticipationMode.optional() })
       .passthrough()
-      .safeParse(val.privateConversationSettings);
+      .safeParse(normalizedLegacyConversationType.privateConversationSettings);
     if (
       !legacyPrivateSettings.success ||
       legacyPrivateSettings.data.participationMode === undefined
     ) {
-      return val;
+      return normalizedLegacyConversationType;
     }
 
     return {
-      ...val,
+      ...normalizedLegacyConversationType,
       participationMode: legacyPrivateSettings.data.participationMode,
     };
   },
-  z.object({
-    // Basic content
-    title: z.string().max(MAX_LENGTH_TITLE),
-    content: z.string(), // Body length validation happens in validateHtmlStringCharacterCount
-    contentPlainText: z.string().default(""),
-    multilingualSetting: zodConversationMultilingualSetting.default({
-      additionalLanguageCodes: [],
-      dynamicTranslationEnabled: false,
+  z.discriminatedUnion("conversationType", [
+    zodConversationDraftBase.extend({
+      conversationType: z.literal("polis"),
     }),
-    selectedProjectSlug: zodProjectSlug.optional(),
-    inheritProjectLanguages: z.boolean().default(false),
-    seedOpinions: z.array(z.string()),
-
-    // Conversation type
-    conversationType: zodConversationType.default("polis"),
-
-    // Publishing options
-    postAs: zodPostAsSettings,
-
-    // Privacy settings
-    isPrivate: z.boolean(),
-    participationMode: zodParticipationMode.default("account_required"),
-
-    // Event ticket verification
-    requiresEventTicket: zodEventSlug.optional(),
-
-    // AI labeling
-    aiLabelingEnabled: z.boolean().default(true),
-
-    // Facilitator analysis preference
-    preferredOpinionGroupCount: zodPreferredOpinionGroupCount.default(null),
-
-    // External source (GitHub integration for MaxDiff)
-    externalSourceConfig: zodExternalSourceConfig.nullable().default(null),
-
-    // Survey configuration
-    surveyConfig: zodSurveyConfig.nullable().default(null),
-
-    // Import settings
-    importSettings: zodConversationImportSettings,
-  })
+    zodConversationDraftBase.extend({
+      conversationType: z.literal("ranking"),
+      rankingMode: zodRankingMode,
+    }),
+  ])
 );
 
 // ============================================================================

@@ -129,15 +129,18 @@
             }"
             @click="handleCandidateClick(slugId)"
           >
-            <div :ref="(el) => setContentRef(slugId, el)" class="candidate-content-wrapper">
+            <div
+              ref="candidateContentElements"
+              class="candidate-content-wrapper"
+            >
               <ZKHtmlContent
-                :html-body="itemContentMap.get(slugId) ?? slugId"
+                :html-body="candidateItemContentMap.get(slugId) ?? slugId"
                 :compact-mode="false"
                 :enable-links="false"
                 content-role="title"
               />
-              <span v-if="itemBySlugId.get(slugId)?.body" class="candidate-body-inline">
-                — {{ stripHtml(itemBySlugId.get(slugId)?.body ?? "") }}
+              <span v-if="candidateItemBySlugId.get(slugId)?.body" class="candidate-body-inline">
+                — {{ htmlToCountedText(candidateItemBySlugId.get(slugId)?.body ?? "") }}
               </span>
             </div>
             <div class="candidate-label">
@@ -161,8 +164,9 @@
 
     <MaxDiffStatementDialog
       v-model="showStatementDialog"
-      :title="dialogTitle"
-      :html-body="expandedContent"
+      :conversation-slug-id="conversationSlugId"
+      :item-slug-id="dialogItemSlugId"
+      :display-content="dialogDisplayContent"
       :external-url="dialogExternalUrl"
       :vote-label="dialogVoteLabel"
       :vote-color="dialogVoteColor"
@@ -242,10 +246,12 @@ import { useConversationLoginIntentions } from "src/composables/auth/useConversa
 import type { RegisterChildRefreshHandler } from "src/composables/conversation/useConversationParentState";
 import { useParticipationGate } from "src/composables/conversation/useParticipationGate";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { htmlToCountedText } from "src/shared/shared";
 import type {
-  ExtendedConversation,
+  ExtendedConversationDisplayData,
   MaxDiffComparison,
   ParticipationBlockedReason,
+  RankingItemDisplayedContent,
 } from "src/shared/types/zod";
 import {
   type MaxDiffSaveContext,
@@ -259,8 +265,12 @@ import {
   recordMaxDiffVote,
   restoreMaxDiff,
 } from "src/utils/maxdiff";
+import {
+  createMaxDiffCandidateDisplaySnapshot,
+  type MaxDiffCandidateDisplayItem,
+} from "src/utils/maxdiffCandidateDisplay";
+import { getRankingItemDisplayText } from "src/utils/translation/useRankingItemDisplayContent";
 import { useNotify } from "src/utils/ui/notify";
-import type { ComponentPublicInstance } from "vue";
 import { computed, inject, nextTick, onActivated, onBeforeUnmount, onDeactivated, ref, triggerRef, watch } from "vue";
 
 import MaxDiffStatementDialog from "./MaxDiffStatementDialog.vue";
@@ -270,7 +280,7 @@ import {
 } from "./MaxDiffVotingTab.i18n";
 
 const props = defineProps<{
-  conversationData: ExtendedConversation;
+  conversationData: ExtendedConversationDisplayData;
   hasConversationData: boolean;
   onViewAnalysis: () => void;
 }>();
@@ -370,48 +380,59 @@ onActivated(() => {
 });
 onDeactivated(unregisterRefreshHandler);
 
-interface MaxDiffItemDisplay {
-  slugId: string;
-  title: string;
-  body: string | null;
-  externalUrl: string | null;
-}
-
-const itemList = computed<MaxDiffItemDisplay[]>(() => {
+const itemList = computed<MaxDiffCandidateDisplayItem[]>(() => {
   const data = itemsQuery.data.value;
   if (data === undefined) return [];
-  return data.map((item) => ({
-    slugId: item.slugId,
-    title: item.title,
-    body: item.body ?? null,
-    externalUrl: item.externalUrl ?? null,
-  }));
-});
-
-const itemContentMap = computed(() => {
-  const map = new Map<string, string>();
-  for (const item of itemList.value) {
-    map.set(item.slugId, item.title);
-  }
-  return map;
+  return data.map((item) => {
+    const displayText = getRankingItemDisplayText({
+      displayContent: item.displayContent,
+    });
+    return {
+      slugId: item.slugId,
+      title: displayText.title,
+      body: displayText.body,
+      displayContent: item.displayContent,
+      externalUrl: item.externalUrl ?? null,
+    };
+  });
 });
 
 const itemBySlugId = computed(() => {
-  const map = new Map<string, MaxDiffItemDisplay>();
+  const map = new Map<string, MaxDiffCandidateDisplayItem>();
   for (const item of itemList.value) {
     map.set(item.slugId, item);
   }
   return map;
 });
 
-function stripHtml(html: string): string {
-  const parsedDocument = new DOMParser().parseFromString(html, "text/html");
-  return parsedDocument.body.textContent?.trim() ?? "";
+const candidateItems = ref<MaxDiffCandidateDisplayItem[]>([]);
+
+const candidateItemContentMap = computed(() => {
+  const map = new Map<string, string>();
+  for (const item of candidateItems.value) {
+    map.set(item.slugId, item.title);
+  }
+  return map;
+});
+
+const candidateItemBySlugId = computed(() => {
+  const map = new Map<string, MaxDiffCandidateDisplayItem>();
+  for (const item of candidateItems.value) {
+    map.set(item.slugId, item);
+  }
+  return map;
+});
+
+function updateCandidateItemSnapshot(): void {
+  candidateItems.value = createMaxDiffCandidateDisplaySnapshot({
+    candidateSlugIds: candidates.value,
+    itemBySlugId: itemBySlugId.value,
+  });
 }
 
 function needsDialog(slugId: string): boolean {
   if (truncatedCards.value.has(slugId)) return true;
-  const item = itemBySlugId.value.get(slugId);
+  const item = candidateItemBySlugId.value.get(slugId);
   if (item === undefined) return false;
   if (item.body !== null) return true;
   if (item.externalUrl !== null) return true;
@@ -472,19 +493,19 @@ onBeforeUnmount(() => {
 
 // Statement dialog state
 const showStatementDialog = ref(false);
-const expandedContent = ref("");
 const dialogVoteLabel = ref<string | undefined>(undefined);
 const dialogVoteColor = ref<string | undefined>(undefined);
 const dialogVoteFlat = ref(false);
 const dialogVoteCallback = ref<(() => void) | undefined>(undefined);
 
-const dialogTitle = ref("");
+const dialogItemSlugId = ref<string | undefined>(undefined);
+const dialogDisplayContent = ref<RankingItemDisplayedContent | undefined>(undefined);
 const dialogExternalUrl = ref<string | null>(null);
 
 function openVotingDialog(slugId: string): void {
   const item = itemBySlugId.value.get(slugId);
-  dialogTitle.value = item?.title ?? slugId;
-  expandedContent.value = item?.body ?? "";
+  dialogItemSlugId.value = item?.slugId;
+  dialogDisplayContent.value = item?.displayContent;
   dialogExternalUrl.value = item?.externalUrl ?? null;
 
   if (selectedBest.value === slugId) {
@@ -516,20 +537,13 @@ function openVotingDialog(slugId: string): void {
 
 // Truncation detection for candidate cards
 const truncatedCards = ref(new Set<string>());
-const contentRefs = new Map<string, HTMLElement>();
-
-function setContentRef(
-  slugId: string,
-  el: Element | ComponentPublicInstance | null
-): void {
-  if (el instanceof HTMLElement) {
-    contentRefs.set(slugId, el);
-  }
-}
+const candidateContentElements = ref<HTMLElement[]>([]);
 
 function checkTruncation(): void {
   const newSet = new Set<string>();
-  for (const [slugId, el] of contentRefs) {
+  for (const [index, el] of candidateContentElements.value.entries()) {
+    const slugId = candidates.value[index];
+    if (slugId === undefined) continue;
     if (el.scrollHeight > el.clientHeight + 1) {
       newSet.add(slugId);
     }
@@ -613,6 +627,7 @@ watch(
 
 // Detect truncated candidate cards after DOM updates
 watch(candidates, () => {
+  updateCandidateItemSnapshot();
   void nextTick(checkTruncation);
 });
 

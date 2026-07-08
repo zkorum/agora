@@ -19,7 +19,7 @@
           :conversation-slug-id="conversation.slugId"
           :conversation-title="conversation.title"
           author-username="project-team"
-          :conversation-type="conversation.conversationType"
+          :conversation-type-config="{ conversationType: 'polis' }"
           :enable-route-navigation="false"
           :on-same-tab-click="scrollToActionBar"
         />
@@ -183,17 +183,18 @@ const languageOptions = computed<readonly ProjectLanguageOption[]>(() => [
 
 const project = computed<ProjectPageData>(() => ({
   slug: "voices-for-change",
-  title: "Voices for Change",
-  subtitle: "Civic dialogue in Kyrgyzstan",
-  bodyHtml:
-    "A national consultation gathering ideas from community members, public institutions, and civil-society groups.",
-  originalContent: {
-    title: "Voices for Change",
-    subtitle: "Civic dialogue in Kyrgyzstan",
-    bodyHtml:
-      "A national consultation gathering ideas from community members, public institutions, and civil-society groups.",
+  displayContent: {
+    sourceVersion: "00000000-0000-4000-8000-000000000201",
+    status: "available",
+    mode: "original",
+    content: {
+      title: "Voices for Change",
+      subtitle: "Civic dialogue in Kyrgyzstan",
+      bodyHtml:
+        "A national consultation gathering ideas from community members, public institutions, and civil-society groups.",
+    },
+    translationControl: null,
   },
-  machineTranslation: undefined,
   bannerVariant: "blue",
   bannerImageUrl: `${localProjectAssetBaseUrl}/project-banner-en.png`,
   participantCount: 214,

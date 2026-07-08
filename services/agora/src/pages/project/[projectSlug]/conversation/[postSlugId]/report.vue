@@ -61,7 +61,7 @@
                 v-model:all-statements-order="allStatementsOrder"
                 :items-per-page="itemsPerPage"
                 :conversation-slug-id="conversationSlugId"
-                :conversation-title="reportFrame.conversation.payload.title"
+                :conversation-title="getReportConversationTitle(reportFrame)"
                 :author-username="reportFrame.conversation.metadata.authorUsername"
                 :conversation-organization-name="
                   reportFrame.conversation.metadata.organization?.name ?? ''
@@ -104,14 +104,15 @@ import {
   type ReportPageTranslations,
   reportPageTranslations,
 } from "src/pages/conversation/[conversationSlugId]/report.i18n";
-import type { ExtendedConversation } from "src/shared/types/zod";
+import type { ConversationContentFetchResponse } from "src/shared/types/dto";
+import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import { getConversationAnalysisRoute } from "src/utils/router/conversationRouteContext";
 import { computed } from "vue";
 
 const props = defineProps<{
-  conversationData: ExtendedConversation;
+  conversationData: ExtendedConversationDisplayData;
   conversationRouteContext: ConversationRouteContext;
 }>();
 
@@ -165,6 +166,15 @@ const analysisRoute = computed(() =>
 
 async function handleNarrowBack(): Promise<void> {
   await goBackButtonHandler.safeNavigateBack(analysisRoute.value);
+}
+
+function getReportConversationTitle(reportFrame: {
+  conversationDisplayContent: ConversationContentFetchResponse;
+}): string {
+  const { conversationDisplayContent } = reportFrame;
+  return conversationDisplayContent.status === "available"
+    ? conversationDisplayContent.content.title
+    : "";
 }
 </script>
 
