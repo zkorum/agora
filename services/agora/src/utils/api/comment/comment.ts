@@ -29,6 +29,7 @@ import type {
   PolisKey,
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { watch } from "vue";
 
 import { useBackendAuthApi } from "../auth";
 import { api } from "../client";
@@ -90,6 +91,21 @@ export function useBackendCommentApi() {
     }
 
     return result.data;
+  }
+
+  async function waitForAuthInitialization(): Promise<void> {
+    if (isAuthInitialized.value) {
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      const stop = watch(isAuthInitialized, (initialized) => {
+        if (initialized) {
+          stop();
+          resolve();
+        }
+      });
+    });
   }
 
   async function fetchHiddenCommentsForPost(
@@ -154,8 +170,9 @@ export function useBackendCommentApi() {
       clusterKey: clusterKey,
     };
 
-    // Use authenticated endpoint only if auth is initialized AND user is logged in/guest
-    if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
+    await waitForAuthInitialization();
+
+    if (isGuestOrLoggedIn.value) {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1OpinionFetchByConversationPost(
           params
@@ -257,6 +274,26 @@ export function useBackendCommentApi() {
     const params: ApiV1OpinionFetchBySlugIdListPostRequest = {
       opinionSlugIdList: opinionSlugIdList,
     };
+
+    await waitForAuthInitialization();
+
+    if (isGuestOrLoggedIn.value) {
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1OpinionFetchBySlugIdListPost(
+          params
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1OpinionFetchBySlugIdListPost(
+        params,
+        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
+      );
+
+      return Dto.getOpinionBySlugIdListResponse.parse(response.data);
+    }
 
     const response = await DefaultApiFactory(
       undefined,
