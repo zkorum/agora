@@ -8,6 +8,7 @@ import type {
 } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
 import {
+  type ContentTranslationRequestMode,
   type ConversationContentMode,
   useConversationContentQuery,
   useConversationDisplayContentCache,
@@ -78,6 +79,12 @@ export function useConversationDisplayContent({
   const requestedMode = computed<ConversationContentMode>(
     () => modePreference.value ?? "original"
   );
+  const shouldQueueNextTranslatedRequest = ref(false);
+  const requestMode = computed<ContentTranslationRequestMode>(() =>
+    shouldQueueNextTranslatedRequest.value && requestedMode.value === "translated"
+      ? "queue_if_missing"
+      : "read_existing"
+  );
   const completionPolling = useBoundedTranslationPolling({
     intervalMs: TRANSLATION_COMPLETION_POLL_INTERVAL_MS,
     maxDurationMs: TRANSLATION_COMPLETION_POLL_MAX_DURATION_MS,
@@ -90,9 +97,7 @@ export function useConversationDisplayContent({
     conversationSlugId,
     sourceVersion,
     mode: requestedMode,
-    requestMode: computed(() =>
-      requestedMode.value === "translated" ? "queue_if_missing" : "read_existing"
-    ),
+    requestMode,
     enabled: computed(
       () => modePreference.value !== undefined && toValue(conversationData) !== undefined
     ),
@@ -230,7 +235,18 @@ export function useConversationDisplayContent({
   });
 
   function setTranslationMode(mode: ContentTranslationDisplayMode): void {
+    completionPolling.stop();
+    if (mode !== "translated") {
+      shouldQueueNextTranslatedRequest.value = false;
+      modePreference.value = mode;
+      return;
+    }
+    const shouldRefetchCurrentMode = modePreference.value === "translated";
+    shouldQueueNextTranslatedRequest.value = true;
     modePreference.value = mode;
+    if (shouldRefetchCurrentMode) {
+      void requestedContentQuery.refetch();
+    }
   }
 
   const unsubscribeUpdatedEvents = subscribeToContentTranslationUpdated((data) => {
@@ -264,8 +280,18 @@ export function useConversationDisplayContent({
 
   watch([displayLanguage, sortedSpokenLanguageKey], () => {
     completionPolling.stop();
+    shouldQueueNextTranslatedRequest.value = false;
     modePreference.value = undefined;
   });
+
+  watch(
+    () => requestedContentQuery.isFetching.value,
+    (isFetching, wasFetching) => {
+      if (wasFetching && !isFetching) {
+        shouldQueueNextTranslatedRequest.value = false;
+      }
+    }
+  );
 
   watch(
     () => requestedContentQuery.data.value,

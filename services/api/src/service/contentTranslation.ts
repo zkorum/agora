@@ -362,6 +362,30 @@ async function ensureTranslationWork({
             existing.priorityRank,
             priority,
         );
+        if (existing.status === "running" && !completedTranslationExists) {
+            await db
+                .update(contentTranslationWorkTable)
+                .set({
+                    priorityRank: nextPriorityRank,
+                    requestedAt: now,
+                    updatedAt: now,
+                })
+                .where(eq(contentTranslationWorkTable.id, existing.id));
+            log.info(
+                {
+                    workId: existing.id,
+                    ...getTranslationWorkLogFields(input),
+                    previousStatus: existing.status,
+                    previousPriorityRank: existing.priorityRank,
+                    nextPriorityRank,
+                    queueMode: getContentTranslationQueueMode(priority),
+                    translationExists,
+                    shouldQueue: false,
+                },
+                "[ContentTranslation] Reused running translation work row",
+            );
+            return { workId: existing.id, shouldQueue: false };
+        }
         await db
             .update(contentTranslationWorkTable)
             .set({
@@ -575,7 +599,7 @@ async function queueMissingTranslationWork({
                 ...getTranslationWorkLogFields(input),
                 queueMode: getContentTranslationQueueMode(priority),
             },
-            "[ContentTranslation] Translation work already completed",
+            "[ContentTranslation] Translation work not queued",
         );
         return;
     }
@@ -1431,7 +1455,7 @@ async function ensureEagerTranslationWork({
                     CONTENT_TRANSLATION_QUEUE_PRIORITIES.eagerVisible,
                 ),
             },
-            "[ContentTranslation] Translation work already completed",
+            "[ContentTranslation] Translation work not queued",
         );
         return undefined;
     }

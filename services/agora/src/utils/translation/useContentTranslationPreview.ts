@@ -154,9 +154,7 @@ function useContentTranslationController({
     [...spokenLanguages.value].sort().join("\u0000")
   );
 
-  const requestMode = computed<ContentTranslationRequestMode>(() =>
-    hasRequestedTranslation.value ? "queue_if_missing" : "read_existing"
-  );
+  const requestMode = ref<ContentTranslationRequestMode>("read_existing");
   const translationPolling = useBoundedTranslationPolling({
     intervalMs: TRANSLATION_POLL_INTERVAL_MS,
     maxDurationMs: TRANSLATION_POLL_MAX_DURATION_MS,
@@ -254,9 +252,24 @@ function useContentTranslationController({
         translationStatus.value !== "completed" ||
         translatedVariant.value === undefined
       ) {
+        if (hasRequestedTranslation.value) {
+          translationPolling.start();
+          return;
+        }
+        translationPolling.stop();
+        requestMode.value = "queue_if_missing";
         hasRequestedTranslation.value = true;
-        translationPolling.start();
-        await query.refetch();
+        try {
+          await query.refetch();
+        } finally {
+          requestMode.value = "read_existing";
+        }
+        if (
+          translationStatus.value !== "completed" ||
+          translatedVariant.value === undefined
+        ) {
+          translationPolling.start();
+        }
       }
       return;
     }
@@ -265,11 +278,14 @@ function useContentTranslationController({
 
   function resetToOriginal(): void {
     translationPolling.stop();
+    requestMode.value = "read_existing";
     modePreference.value = "original";
     hasRequestedTranslation.value = false;
   }
 
   watch([displayLanguage, sortedSpokenLanguageKey], () => {
+    translationPolling.stop();
+    requestMode.value = "read_existing";
     modePreference.value = undefined;
     hasRequestedTranslation.value = false;
   });
