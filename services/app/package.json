@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@iconify-json/lucide": "^1.2.104",
+    "@iconify-json/lucide": "^1.2.116",
     "@iconify-json/simple-icons": "^1.2.80",
     "@iconify/tailwind4": "^1.2.3",
     "@playwright/test": "^1.59.1",
@@ -51,10 +51,10 @@
   },
   "dependencies": {
     "@fontsource-variable/albert-sans": "^5.2.8",
-    "@inlang/paraglide-js": "^2.16.1",
+    "@inlang/paraglide-js": "^2.20.2",
     "@justinribeiro/lite-youtube": "^1.9.0",
     "@sentry/sveltekit": "^10.50.0",
-    "bits-ui": "^2.18.0",
+    "bits-ui": "^2.18.1",
     "gray-matter": "^4.0.3",
     "rehype-raw": "^7.0.0",
     "rehype-stringify": "^10.0.1",
