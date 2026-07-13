@@ -17,8 +17,8 @@
     "license": "MPL-2.0",
     "dependencies": {
         "html-entities": "^2.6.0",
-        "libphonenumber-js": "^1.12.41",
-        "sanitize-html": "^2.17.4",
+        "libphonenumber-js": "^1.13.8",
+        "sanitize-html": "^2.17.6",
         "uint8arrays": "^5.1.0",
         "zod": "^4.3.6"
     },
