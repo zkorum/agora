@@ -19,7 +19,7 @@ exclude-newer = "5 days"
 
 [project.optional-dependencies]
 gpu = [
-    "torch>=2.2,<3",
+    "torch>=2.13.0,<3",
 ]
 
 dev = [
