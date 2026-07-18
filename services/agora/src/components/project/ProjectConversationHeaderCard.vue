@@ -174,9 +174,9 @@
       <ZKBottomDialogContainer :title="t({ key: 'behindThisTitle' })">
         <ProjectDetailsAside
           :attributions="project.attributions"
+          attribution-display="without-title"
           :contact="project.contact"
           :language-code="selectedLanguage"
-          :show-attribution-title="false"
         />
       </ZKBottomDialogContainer>
     </q-dialog>

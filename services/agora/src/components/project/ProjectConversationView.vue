@@ -83,9 +83,9 @@
           <ProjectDetailsAside
             class="project-conversation-view__aside"
             :attributions="project.attributions"
+            attribution-display="with-title"
             :contact="project.contact"
             :language-code="selectedLanguage"
-            :show-attribution-title="true"
           />
 
           <ProjectPageFooter

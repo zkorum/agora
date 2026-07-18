@@ -4,10 +4,13 @@
     :aria-label="t('projectDetailsAriaLabel')"
   >
     <section
-      v-if="hasAttributionEntries"
+      v-if="attributionDisplay !== 'hidden' && hasAttributionEntries"
       class="project-details-aside__section project-details-aside__section--attributions"
     >
-      <h2 v-if="showAttributionTitle" class="project-details-aside__title">
+      <h2
+        v-if="attributionDisplay === 'with-title'"
+        class="project-details-aside__title"
+      >
         {{ t("behindThisTitle") }}
       </h2>
 
@@ -62,9 +65,9 @@ interface ProjectDetailsAttributionSection extends ProjectDetailsAttributionSect
 
 const props = defineProps<{
   attributions: readonly ProjectAttribution[];
+  attributionDisplay: "hidden" | "with-title" | "without-title";
   contact: ProjectContact | undefined;
   languageCode: SupportedDisplayLanguageCodes;
-  showAttributionTitle: boolean;
 }>();
 
 const attributionSectionConfigs = [

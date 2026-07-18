@@ -101,7 +101,13 @@
           </div>
         </section>
 
-        <div class="project-page-view__content-grid">
+        <div
+          class="project-page-view__content-grid"
+          :class="{
+            'project-page-view__content-grid--with-aside':
+              project.contact !== undefined,
+          }"
+        >
           <section
             class="project-page-view__activities"
             aria-labelledby="project-activities-title"
@@ -160,11 +166,12 @@
           </section>
 
           <ProjectDetailsAside
+            v-if="project.contact !== undefined"
             class="project-page-view__aside"
             :attributions="project.attributions"
+            attribution-display="hidden"
             :contact="project.contact"
             :language-code="selectedLanguage"
-            :show-attribution-title="true"
           />
         </div>
 
@@ -562,10 +569,16 @@ h1 {
 
 .project-page-view__content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+  max-width: 47rem;
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(1.4rem, 4vw, 2.7rem);
   align-items: start;
   margin-top: 2rem;
+}
+
+.project-page-view__content-grid--with-aside {
+  max-width: none;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
 }
 
 .project-page-view__activities,
@@ -632,7 +645,7 @@ h2 {
 }
 
 @media (max-width: 860px) {
-  .project-page-view__content-grid {
+  .project-page-view__content-grid--with-aside {
     grid-template-columns: 1fr;
   }
 
