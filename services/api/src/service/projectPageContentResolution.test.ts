@@ -172,6 +172,41 @@ describe("resolveProjectContentForDisplay", () => {
         });
     });
 
+    it("localizes translation source language labels for the display language", () => {
+        const resolved = resolveProjectContent({
+            project: {
+                ...baseProject,
+                sourceLanguageCode: "ky",
+                sourceRawLanguageCode: "ky",
+            },
+            effectiveLanguageCode: "ru",
+            additionalLanguageCodes: ["ru"],
+            translationRows: [
+                {
+                    languageCode: "ru",
+                    title: "Машинный заголовок",
+                    subtitle: null,
+                    body: null,
+                    sourceKind: "machine",
+                    sourceLanguageCode: "ky",
+                },
+            ],
+        });
+
+        const displayContent = availableProjectContent(
+            toProjectDisplayContent({
+                content: resolved.localizedContent,
+                translationAllowed: true,
+                displayLanguage: "ru",
+                spokenLanguages: [],
+            }),
+        );
+
+        expect(displayContent.translationControl).toMatchObject({
+            sourceLanguageLabel: "киргизский",
+        });
+    });
+
     it("keeps source content first when the viewer understands the source language", () => {
         const resolved = resolveProjectContent({
             translationRows: [

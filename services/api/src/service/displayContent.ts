@@ -46,24 +46,71 @@ type DisplayableLocalizedContentWithVariants<TOriginal, TTranslated> =
         };
     };
 
-function getSourceLanguageLabel({
-    content,
-}: {
-    content: TranslatableLocalizedContent;
-}): string | undefined {
-    const directLabel = content.translation.sourceLanguageLabel;
-    if (directLabel !== undefined) {
-        return directLabel;
+const languageDisplayNamesByLocale = new Map<
+    SupportedDisplayLanguageCodes,
+    Intl.DisplayNames
+>();
+
+function getLanguageDisplayNames(
+    displayLanguage: SupportedDisplayLanguageCodes,
+): Intl.DisplayNames | undefined {
+    const cachedDisplayNames = languageDisplayNamesByLocale.get(displayLanguage);
+    if (cachedDisplayNames !== undefined) {
+        return cachedDisplayNames;
     }
 
+    try {
+        const displayNames = new Intl.DisplayNames([displayLanguage], {
+            type: "language",
+            fallback: "none",
+        });
+        languageDisplayNamesByLocale.set(displayLanguage, displayNames);
+        return displayNames;
+    } catch {
+        return undefined;
+    }
+}
+
+function getSourceLanguageLabel({
+    content,
+    displayLanguage,
+}: {
+    content: TranslatableLocalizedContent;
+    displayLanguage: SupportedDisplayLanguageCodes;
+}): string | undefined {
     const sourceLanguage = content.translation.sourceLanguage;
     if (sourceLanguage.kind === "recognized") {
-        return sourceLanguage.label;
+        return getLanguageDisplayName({
+            languageCode: sourceLanguage.languageCode,
+            displayLanguage,
+        });
     }
     if (sourceLanguage.kind === "raw") {
-        return sourceLanguage.label ?? sourceLanguage.rawLanguageCode;
+        return (
+            getLanguageDisplayName({
+                languageCode: sourceLanguage.rawLanguageCode,
+                displayLanguage,
+            }) ??
+            sourceLanguage.label ??
+            sourceLanguage.rawLanguageCode
+        );
     }
-    return undefined;
+    return content.translation.sourceLanguageLabel;
+}
+
+function getLanguageDisplayName({
+    languageCode,
+    displayLanguage,
+}: {
+    languageCode: string;
+    displayLanguage: SupportedDisplayLanguageCodes;
+}): string | undefined {
+    const displayNames = getLanguageDisplayNames(displayLanguage);
+    try {
+        return displayNames?.of(languageCode);
+    } catch {
+        return undefined;
+    }
 }
 
 function getSourceLanguageKey({
@@ -161,7 +208,10 @@ function getTranslationControl({
         return null;
     }
 
-    const sourceLanguageLabel = getSourceLanguageLabel({ content });
+    const sourceLanguageLabel = getSourceLanguageLabel({
+        content,
+        displayLanguage,
+    });
     return {
         status: content.translation.status,
         ...(sourceLanguageLabel === undefined ? {} : { sourceLanguageLabel }),

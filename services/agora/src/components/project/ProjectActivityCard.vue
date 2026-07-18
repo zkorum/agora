@@ -160,8 +160,8 @@ const activityIdentity = computed(() => getProjectActivityIdentity(props.activit
 
 const activityLinkTarget = computed(() => {
   if (!props.activity.isIndexed) {
-      return undefined;
-    }
+    return undefined;
+  }
 
   return {
     name: "/project/[projectSlug]/conversation/[postSlugId]/" as const,
@@ -342,6 +342,8 @@ function t(
 }
 
 .project-activity-card__surface {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
@@ -349,6 +351,7 @@ function t(
   border: 1.5px solid rgba($primary, 0.22);
   border-radius: 20px;
   background: white;
+  pointer-events: none;
   box-shadow: 0 0.2rem 1rem rgba(10, 7, 20, 0.04);
   transition:
     border-color 160ms ease,
@@ -421,6 +424,7 @@ function t(
   position: relative;
   z-index: 2;
   margin-bottom: -0.25rem;
+  pointer-events: auto;
 }
 
 h3 {
