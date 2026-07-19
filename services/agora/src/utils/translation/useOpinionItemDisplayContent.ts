@@ -1,5 +1,5 @@
 import { storeToRefs } from "pinia";
-import type { RankingItemDisplayedContent } from "src/shared/types/zod";
+import type { DisplayedOpinionItem } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
 import type { MaybeRefOrGetter } from "vue";
 import { computed, ref, toValue, watch } from "vue";
@@ -8,70 +8,67 @@ import {
   type ContentTranslationDisplayMode,
   getContentTranslationSourceLanguageLabel,
 } from "./contentTranslation";
-import { resolveRankingItemDisplayText } from "./rankingItemDisplayText";
+import { getInitialOpinionDisplayText } from "./opinionItemDisplayText";
 import {
-  type RankingItemContentTranslationPreview,
-  useRankingItemContentTranslationPreview,
+  type OpinionContentTranslationPreview,
+  useOpinionContentTranslationPreview,
 } from "./useContentTranslationPreview";
 
-export function useRankingItemDisplayContent({
+export function useOpinionItemDisplayContent({
   conversationSlugId,
-  itemSlugId,
-  displayContent,
+  opinionItem,
+  interactive = true,
 }: {
   conversationSlugId: MaybeRefOrGetter<string>;
-  itemSlugId: MaybeRefOrGetter<string | undefined>;
-  displayContent: MaybeRefOrGetter<RankingItemDisplayedContent | undefined>;
+  opinionItem: MaybeRefOrGetter<DisplayedOpinionItem>;
+  interactive?: MaybeRefOrGetter<boolean>;
 }) {
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
   const hasRequestedTranslation = ref(false);
-  const resolvedItemSlugId = computed(() => toValue(itemSlugId));
+  const opinionSlugId = computed(() => toValue(opinionItem).opinionSlugId);
   const sourceVersion = computed(
-    () => toValue(displayContent)?.sourceVersion
+    () => toValue(opinionItem).displayContent.sourceVersion
   );
   const spokenLanguageKey = computed(() =>
     [...spokenLanguages.value].sort().join("\u0000")
   );
 
   const translationSubject = computed(() => ({
-    kind: "ranking_item" as const,
+    kind: "opinion" as const,
     conversationSlugId: toValue(conversationSlugId),
-    itemSlugId: resolvedItemSlugId.value ?? "",
+    opinionSlugId: opinionSlugId.value,
+    sourceVersion: sourceVersion.value,
   }));
-
-  const { preview: requestedTranslationPreview, setMode: setRequestedTranslationMode } =
-    useRankingItemContentTranslationPreview({
-      subject: translationSubject,
-      enabled: computed(
-        () =>
-          hasRequestedTranslation.value && resolvedItemSlugId.value !== undefined
-      ),
-      sourceLanguageCode: undefined,
-    });
+  const {
+    preview: requestedTranslationPreview,
+    setMode: setRequestedTranslationMode,
+  } = useOpinionContentTranslationPreview({
+    subject: translationSubject,
+    enabled: computed(
+      () => toValue(interactive) && hasRequestedTranslation.value
+    ),
+    sourceLanguageCode: computed(() => toValue(opinionItem).sourceLanguageCode),
+  });
 
   const initialTranslationPreview = computed<
-    RankingItemContentTranslationPreview | undefined
+    OpinionContentTranslationPreview | undefined
   >(() => {
-    const currentDisplayContent = toValue(displayContent);
-    const translationControl = currentDisplayContent?.translationControl;
-    if (
-      currentDisplayContent === undefined ||
-      translationControl === undefined ||
-      translationControl === null
-    ) {
+    const item = toValue(opinionItem);
+    const displayContent = item.displayContent;
+    const translationControl = displayContent.translationControl;
+    if (translationControl === null) {
       return undefined;
     }
-
     const sourceLanguageLabel = getContentTranslationSourceLanguageLabel({
       sourceLanguage: undefined,
-      fallbackLanguageCode: undefined,
+      fallbackLanguageCode: item.sourceLanguageCode,
       fallbackLabel: translationControl.sourceLanguageLabel,
       displayLanguage: displayLanguage.value,
     });
 
     if (
-      currentDisplayContent.status === "available" &&
-      currentDisplayContent.mode === "translated"
+      displayContent.status === "available" &&
+      displayContent.mode === "translated"
     ) {
       return {
         isAvailable: true,
@@ -79,8 +76,7 @@ export function useRankingItemDisplayContent({
         mode: "translated",
         sourceLanguageLabel,
         translationStatus: translationControl.status,
-        originalContent: undefined,
-        translatedContent: currentDisplayContent.content,
+        translatedOpinion: displayContent.content.content,
       };
     }
 
@@ -90,26 +86,23 @@ export function useRankingItemDisplayContent({
       mode: "original",
       sourceLanguageLabel,
       translationStatus: translationControl.status,
-      originalContent:
-        currentDisplayContent.status === "available"
-          ? currentDisplayContent.content
-          : undefined,
-      translatedContent: undefined,
+      translatedOpinion: "",
     };
   });
 
   const translationPreview = computed(
     () => requestedTranslationPreview.value ?? initialTranslationPreview.value
   );
-
-  const displayedText = computed(() =>
-    resolveRankingItemDisplayText({
-      displayContent: toValue(displayContent),
-      translationPreview: translationPreview.value,
-    })
+  const displayedOpinion = computed(() => {
+    const preview = translationPreview.value;
+    if (preview?.mode === "translated") {
+      return preview.translatedOpinion;
+    }
+    return toValue(opinionItem).opinion;
+  });
+  const initialDisplayedOpinion = computed(() =>
+    getInitialOpinionDisplayText(toValue(opinionItem))
   );
-  const displayedTitle = computed(() => displayedText.value.title);
-  const displayedBody = computed(() => displayedText.value.body ?? "");
 
   function setTranslationMode(mode: ContentTranslationDisplayMode): void {
     hasRequestedTranslation.value = true;
@@ -123,7 +116,7 @@ export function useRankingItemDisplayContent({
   watch(
     [
       () => toValue(conversationSlugId),
-      resolvedItemSlugId,
+      opinionSlugId,
       sourceVersion,
       displayLanguage,
       spokenLanguageKey,
@@ -132,10 +125,9 @@ export function useRankingItemDisplayContent({
   );
 
   return {
-    displayedTitle,
-    displayedBody,
+    displayedOpinion,
+    initialDisplayedOpinion,
     translationPreview,
     setTranslationMode,
-    resetTranslationMode,
   };
 }

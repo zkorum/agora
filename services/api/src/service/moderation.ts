@@ -389,7 +389,6 @@ export function createPostModerationPropertyObject(
 
     if (
         moderationAction != null &&
-        moderationExplanation != null &&
         moderationReason != null &&
         moderationCreatedAt != null &&
         moderationUpdatedAt != null
@@ -397,7 +396,7 @@ export function createPostModerationPropertyObject(
         moderationProperties = {
             status: "moderated",
             action: moderationAction,
-            explanation: moderationExplanation,
+            explanation: moderationExplanation ?? "",
             reason: moderationReason,
             createdAt: moderationCreatedAt,
             updatedAt: moderationUpdatedAt,
@@ -419,7 +418,6 @@ export function createCommentModerationPropertyObject(
 
     if (
         moderationAction != null &&
-        moderationExplanation != null &&
         moderationReason != null &&
         moderationCreatedAt != null &&
         moderationUpdatedAt != null
@@ -427,7 +425,7 @@ export function createCommentModerationPropertyObject(
         moderationProperties = {
             status: "moderated",
             action: moderationAction,
-            explanation: moderationExplanation,
+            explanation: moderationExplanation ?? "",
             reason: moderationReason,
             createdAt: moderationCreatedAt,
             updatedAt: moderationUpdatedAt,

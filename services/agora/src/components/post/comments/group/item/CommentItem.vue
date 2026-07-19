@@ -117,9 +117,6 @@ const emit = defineEmits<{
 }>();
 
 const displayedOpinion = computed(() => {
-  if (props.contentTranslation?.isLoadingInitialTranslation === true) {
-    return "";
-  }
   if (props.contentTranslation?.mode === "translated") {
     return props.contentTranslation.translatedOpinion;
   }

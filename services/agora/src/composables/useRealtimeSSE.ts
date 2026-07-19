@@ -270,6 +270,7 @@ export function useRealtimeSSE({
         checkpointViewSnapshotId: params.checkpointViewSnapshotId,
         aiLabelingEnabled: params.aiLabelingEnabled,
         displayLanguage: params.displayLanguage,
+        spokenLanguages: params.spokenLanguages,
         voteCount: undefined,
         freshness: params.freshness,
         analysisQueryKey: undefined,

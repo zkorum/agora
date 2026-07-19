@@ -246,8 +246,12 @@ export function useConversationReport({
     useReportDownload({
       fileName: reportFileName,
     });
+  const isPreparingReportExport = ref(false);
   const isGeneratingReport = computed(
-    () => isGeneratingZip.value || isGeneratingPdf.value
+    () =>
+      isPreparingReportExport.value ||
+      isGeneratingZip.value ||
+      isGeneratingPdf.value
   );
 
   function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
@@ -327,12 +331,14 @@ export function useConversationReport({
       return;
     }
 
+    isPreparingReportExport.value = true;
     frozenReportFrame.value = frame;
     try {
       await nextTick();
       await download();
     } finally {
       frozenReportFrame.value = undefined;
+      isPreparingReportExport.value = false;
     }
   }
 

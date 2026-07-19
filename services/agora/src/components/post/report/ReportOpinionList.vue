@@ -47,6 +47,7 @@
                 :conversation-organization-name="props.conversationOrganizationName"
                 :compact-mode="false"
                 :enable-links="false"
+                :translation-interactive="translationInteractive"
               />
             </div>
           </td>
@@ -119,6 +120,7 @@ const props = withDefaults(
     conversationSlugId: string;
     conversationAuthorUsername: string;
     conversationOrganizationName: string;
+    translationInteractive?: boolean;
     startRank?: number;
     hideTitle?: boolean;
     emptyMessage?: string;
@@ -128,6 +130,7 @@ const props = withDefaults(
     startRank: 0,
     hideTitle: false,
     emptyMessage: undefined,
+    translationInteractive: true,
   }
 );
 

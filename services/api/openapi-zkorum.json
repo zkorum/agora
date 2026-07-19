@@ -3843,6 +3843,42 @@
                                                                 "enum": [
                                                                     false
                                                                 ]
+                                                            },
+                                                            "alternateContent": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "mode": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "original",
+                                                                            "translated"
+                                                                        ]
+                                                                    },
+                                                                    "content": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "title": {
+                                                                                "type": "string",
+                                                                                "minLength": 1,
+                                                                                "maxLength": 140
+                                                                            },
+                                                                            "bodyPlainText": {
+                                                                                "default": "",
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "title",
+                                                                            "bodyPlainText"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "mode",
+                                                                    "content"
+                                                                ],
+                                                                "additionalProperties": false
                                                             }
                                                         },
                                                         "required": [
@@ -4595,6 +4631,42 @@
                                                                 "enum": [
                                                                     false
                                                                 ]
+                                                            },
+                                                            "alternateContent": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "mode": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "original",
+                                                                            "translated"
+                                                                        ]
+                                                                    },
+                                                                    "content": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "title": {
+                                                                                "type": "string",
+                                                                                "minLength": 1,
+                                                                                "maxLength": 140
+                                                                            },
+                                                                            "bodyPlainText": {
+                                                                                "default": "",
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "title",
+                                                                            "bodyPlainText"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "mode",
+                                                                    "content"
+                                                                ],
+                                                                "additionalProperties": false
                                                             }
                                                         },
                                                         "required": [
@@ -12858,6 +12930,229 @@
                                                                 "isSeed": {
                                                                     "type": "boolean"
                                                                 },
+                                                                "displayContent": {
+                                                                    "anyOf": [
+                                                                        {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "sourceVersion": {
+                                                                                    "type": "string",
+                                                                                    "format": "uuid",
+                                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                                                },
+                                                                                "status": {
+                                                                                    "type": "string",
+                                                                                    "enum": [
+                                                                                        "available"
+                                                                                    ]
+                                                                                },
+                                                                                "mode": {
+                                                                                    "type": "string",
+                                                                                    "enum": [
+                                                                                        "original"
+                                                                                    ]
+                                                                                },
+                                                                                "content": {
+                                                                                    "type": "object",
+                                                                                    "properties": {
+                                                                                        "content": {
+                                                                                            "type": "string",
+                                                                                            "minLength": 1,
+                                                                                            "maxLength": 3000
+                                                                                        }
+                                                                                    },
+                                                                                    "required": [
+                                                                                        "content"
+                                                                                    ],
+                                                                                    "additionalProperties": false
+                                                                                },
+                                                                                "translationControl": {
+                                                                                    "nullable": true,
+                                                                                    "type": "object",
+                                                                                    "properties": {
+                                                                                        "status": {
+                                                                                            "type": "string",
+                                                                                            "enum": [
+                                                                                                "not_requested",
+                                                                                                "pending",
+                                                                                                "running",
+                                                                                                "failed",
+                                                                                                "completed"
+                                                                                            ]
+                                                                                        },
+                                                                                        "sourceLanguageLabel": {
+                                                                                            "type": "string",
+                                                                                            "minLength": 1
+                                                                                        },
+                                                                                        "alternateMode": {
+                                                                                            "type": "string",
+                                                                                            "enum": [
+                                                                                                "original",
+                                                                                                "translated"
+                                                                                            ]
+                                                                                        },
+                                                                                        "canRequestAlternate": {
+                                                                                            "type": "boolean"
+                                                                                        }
+                                                                                    },
+                                                                                    "required": [
+                                                                                        "status",
+                                                                                        "alternateMode",
+                                                                                        "canRequestAlternate"
+                                                                                    ],
+                                                                                    "additionalProperties": false
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "sourceVersion",
+                                                                                "status",
+                                                                                "mode",
+                                                                                "content",
+                                                                                "translationControl"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        },
+                                                                        {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "sourceVersion": {
+                                                                                    "type": "string",
+                                                                                    "format": "uuid",
+                                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                                                },
+                                                                                "status": {
+                                                                                    "type": "string",
+                                                                                    "enum": [
+                                                                                        "available"
+                                                                                    ]
+                                                                                },
+                                                                                "mode": {
+                                                                                    "type": "string",
+                                                                                    "enum": [
+                                                                                        "translated"
+                                                                                    ]
+                                                                                },
+                                                                                "content": {
+                                                                                    "type": "object",
+                                                                                    "properties": {
+                                                                                        "content": {
+                                                                                            "type": "string"
+                                                                                        }
+                                                                                    },
+                                                                                    "required": [
+                                                                                        "content"
+                                                                                    ],
+                                                                                    "additionalProperties": false
+                                                                                },
+                                                                                "translationControl": {
+                                                                                    "nullable": true,
+                                                                                    "type": "object",
+                                                                                    "properties": {
+                                                                                        "status": {
+                                                                                            "type": "string",
+                                                                                            "enum": [
+                                                                                                "not_requested",
+                                                                                                "pending",
+                                                                                                "running",
+                                                                                                "failed",
+                                                                                                "completed"
+                                                                                            ]
+                                                                                        },
+                                                                                        "sourceLanguageLabel": {
+                                                                                            "type": "string",
+                                                                                            "minLength": 1
+                                                                                        },
+                                                                                        "alternateMode": {
+                                                                                            "type": "string",
+                                                                                            "enum": [
+                                                                                                "original",
+                                                                                                "translated"
+                                                                                            ]
+                                                                                        },
+                                                                                        "canRequestAlternate": {
+                                                                                            "type": "boolean"
+                                                                                        }
+                                                                                    },
+                                                                                    "required": [
+                                                                                        "status",
+                                                                                        "alternateMode",
+                                                                                        "canRequestAlternate"
+                                                                                    ],
+                                                                                    "additionalProperties": false
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "sourceVersion",
+                                                                                "status",
+                                                                                "mode",
+                                                                                "content",
+                                                                                "translationControl"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        },
+                                                                        {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "sourceVersion": {
+                                                                                    "type": "string",
+                                                                                    "format": "uuid",
+                                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                                                },
+                                                                                "status": {
+                                                                                    "type": "string",
+                                                                                    "enum": [
+                                                                                        "not_requested",
+                                                                                        "pending",
+                                                                                        "running",
+                                                                                        "failed"
+                                                                                    ]
+                                                                                },
+                                                                                "translationControl": {
+                                                                                    "nullable": true,
+                                                                                    "type": "object",
+                                                                                    "properties": {
+                                                                                        "status": {
+                                                                                            "type": "string",
+                                                                                            "enum": [
+                                                                                                "not_requested",
+                                                                                                "pending",
+                                                                                                "running",
+                                                                                                "failed",
+                                                                                                "completed"
+                                                                                            ]
+                                                                                        },
+                                                                                        "sourceLanguageLabel": {
+                                                                                            "type": "string",
+                                                                                            "minLength": 1
+                                                                                        },
+                                                                                        "alternateMode": {
+                                                                                            "type": "string",
+                                                                                            "enum": [
+                                                                                                "original",
+                                                                                                "translated"
+                                                                                            ]
+                                                                                        },
+                                                                                        "canRequestAlternate": {
+                                                                                            "type": "boolean"
+                                                                                        }
+                                                                                    },
+                                                                                    "required": [
+                                                                                        "status",
+                                                                                        "alternateMode",
+                                                                                        "canRequestAlternate"
+                                                                                    ],
+                                                                                    "additionalProperties": false
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "sourceVersion",
+                                                                                "status",
+                                                                                "translationControl"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    ]
+                                                                },
                                                                 "clustersStats": {
                                                                     "type": "array",
                                                                     "items": {
@@ -12935,6 +13230,7 @@
                                                                 "username",
                                                                 "moderation",
                                                                 "isSeed",
+                                                                "displayContent",
                                                                 "clustersStats",
                                                                 "groupAwareConsensusAgree",
                                                                 "groupAwareConsensusDisagree",
@@ -13423,6 +13719,229 @@
                                                     "isSeed": {
                                                         "type": "boolean"
                                                     },
+                                                    "displayContent": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "sourceVersion": {
+                                                                        "type": "string",
+                                                                        "format": "uuid",
+                                                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "available"
+                                                                        ]
+                                                                    },
+                                                                    "mode": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "original"
+                                                                        ]
+                                                                    },
+                                                                    "content": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "content": {
+                                                                                "type": "string",
+                                                                                "minLength": 1,
+                                                                                "maxLength": 3000
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "content"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    },
+                                                                    "translationControl": {
+                                                                        "nullable": true,
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "status": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "not_requested",
+                                                                                    "pending",
+                                                                                    "running",
+                                                                                    "failed",
+                                                                                    "completed"
+                                                                                ]
+                                                                            },
+                                                                            "sourceLanguageLabel": {
+                                                                                "type": "string",
+                                                                                "minLength": 1
+                                                                            },
+                                                                            "alternateMode": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "original",
+                                                                                    "translated"
+                                                                                ]
+                                                                            },
+                                                                            "canRequestAlternate": {
+                                                                                "type": "boolean"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "status",
+                                                                            "alternateMode",
+                                                                            "canRequestAlternate"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "sourceVersion",
+                                                                    "status",
+                                                                    "mode",
+                                                                    "content",
+                                                                    "translationControl"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "sourceVersion": {
+                                                                        "type": "string",
+                                                                        "format": "uuid",
+                                                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "available"
+                                                                        ]
+                                                                    },
+                                                                    "mode": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "translated"
+                                                                        ]
+                                                                    },
+                                                                    "content": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "content": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "content"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    },
+                                                                    "translationControl": {
+                                                                        "nullable": true,
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "status": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "not_requested",
+                                                                                    "pending",
+                                                                                    "running",
+                                                                                    "failed",
+                                                                                    "completed"
+                                                                                ]
+                                                                            },
+                                                                            "sourceLanguageLabel": {
+                                                                                "type": "string",
+                                                                                "minLength": 1
+                                                                            },
+                                                                            "alternateMode": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "original",
+                                                                                    "translated"
+                                                                                ]
+                                                                            },
+                                                                            "canRequestAlternate": {
+                                                                                "type": "boolean"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "status",
+                                                                            "alternateMode",
+                                                                            "canRequestAlternate"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "sourceVersion",
+                                                                    "status",
+                                                                    "mode",
+                                                                    "content",
+                                                                    "translationControl"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "sourceVersion": {
+                                                                        "type": "string",
+                                                                        "format": "uuid",
+                                                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "not_requested",
+                                                                            "pending",
+                                                                            "running",
+                                                                            "failed"
+                                                                        ]
+                                                                    },
+                                                                    "translationControl": {
+                                                                        "nullable": true,
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "status": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "not_requested",
+                                                                                    "pending",
+                                                                                    "running",
+                                                                                    "failed",
+                                                                                    "completed"
+                                                                                ]
+                                                                            },
+                                                                            "sourceLanguageLabel": {
+                                                                                "type": "string",
+                                                                                "minLength": 1
+                                                                            },
+                                                                            "alternateMode": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "original",
+                                                                                    "translated"
+                                                                                ]
+                                                                            },
+                                                                            "canRequestAlternate": {
+                                                                                "type": "boolean"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "status",
+                                                                            "alternateMode",
+                                                                            "canRequestAlternate"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "sourceVersion",
+                                                                    "status",
+                                                                    "translationControl"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        ]
+                                                    },
                                                     "clustersStats": {
                                                         "type": "array",
                                                         "items": {
@@ -13500,6 +14019,7 @@
                                                     "username",
                                                     "moderation",
                                                     "isSeed",
+                                                    "displayContent",
                                                     "clustersStats",
                                                     "groupAwareConsensusAgree",
                                                     "groupAwareConsensusDisagree",
@@ -26155,12 +26675,18 @@
                                                     "opinionSlugId": {
                                                         "type": "string",
                                                         "maxLength": 10
+                                                    },
+                                                    "sourceVersion": {
+                                                        "type": "string",
+                                                        "format": "uuid",
+                                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                     }
                                                 },
                                                 "required": [
                                                     "kind",
                                                     "conversationSlugId",
-                                                    "opinionSlugId"
+                                                    "opinionSlugId",
+                                                    "sourceVersion"
                                                 ],
                                                 "additionalProperties": false
                                             },

@@ -40,12 +40,12 @@
             >
               <span class="item-number">{{ index + 1 }}</span>
               <div class="item-details">
-                <ZKHtmlContent
+                <MaxDiffItemListContent
                   class="item-content"
-                  :html-body="item.title"
+                  :conversation-slug-id="conversationSlugId"
+                  :item-slug-id="item.slugId"
+                  :display-content="item.displayContent"
                   :compact-mode="compactMode"
-                  :enable-links="false"
-                  content-role="title"
                 />
                 <div v-if="item.score !== null" class="item-meta">
                   <div class="score-bar-container">
@@ -78,10 +78,11 @@ import AnalysisSectionWrapper from "src/components/post/analysis/common/Analysis
 import AnalysisTitleHeader from "src/components/post/analysis/common/AnalysisTitleHeader.vue";
 import CompactFadeContainer from "src/components/post/analysis/common/CompactFadeContainer.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
-import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { htmlToCountedText } from "src/shared/shared";
 import type { RankingItemDisplayedContent } from "src/shared/types/zod";
 import { computed } from "vue";
+
+import MaxDiffItemListContent from "./MaxDiffItemListContent.vue";
 
 export interface MaxDiffListItem {
   slugId: string;
@@ -100,6 +101,7 @@ interface ClickItemData {
 
 const props = defineProps<{
   sectionTitle: string;
+  conversationSlugId: string;
   subtitle: string | null;
   items: MaxDiffListItem[];
   isLoading: boolean;

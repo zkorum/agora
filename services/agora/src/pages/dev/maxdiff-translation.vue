@@ -73,6 +73,7 @@
           they can show the current translated display content.
         </p>
         <MaxDiffItemListSection
+          conversation-slug-id="dev-maxdiff-translation"
           section-title="Community ranking"
           subtitle="Read-only list should update immediately when translation completes."
           :items="resultItems"

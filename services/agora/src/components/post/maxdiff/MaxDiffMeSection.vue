@@ -2,6 +2,7 @@
   <!-- Complete: show ranked list (MaxDiffItemListSection has its own header) -->
   <template v-if="rankingComplete">
     <MaxDiffItemListSection
+      :conversation-slug-id="conversationSlugId"
       :section-title="t('meTitle')"
       :subtitle="t('meSubtitle')"
       :items="rankingItems"
@@ -64,6 +65,7 @@ interface ClickItemData {
 }
 
 const props = defineProps<{
+  conversationSlugId: string;
   loadData: ApiV1RankingBwsLoadPost200Response | undefined;
   allItems: MaxDiffListItem[];
   compactMode: boolean;

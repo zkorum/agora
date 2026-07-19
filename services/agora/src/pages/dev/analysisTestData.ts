@@ -108,6 +108,13 @@ function buildMockAnalysisOpinion({
     updatedAt: new Date("2026-01-01T00:00:00Z"),
     opinion: `${getStatement({ index })}${suffixText}`,
     sourceLanguageCode: null,
+    displayContent: {
+      sourceVersion: "00000000-0000-4000-8000-000000000001",
+      status: "available",
+      mode: "original",
+      content: { content: `${getStatement({ index })}${suffixText}` },
+      translationControl: null,
+    },
     numParticipants: participantCount,
     numAgrees: Math.floor(participantCount * 0.62),
     numDisagrees: Math.floor(participantCount * 0.25),

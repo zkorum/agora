@@ -82,6 +82,7 @@
                 :has-survey="reportFrame.surveyResults.hasSurvey"
                 :survey-rows="reportSurveyRows"
                 :show-survey-toggle="showSurveyToggle"
+                :translation-interactive="!isGeneratingReport"
               />
             </section>
           </AsyncStateHandler>

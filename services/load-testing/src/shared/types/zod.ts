@@ -329,6 +329,7 @@ export const zodContentTranslationSubject = z.discriminatedUnion("kind", [
             kind: z.literal("opinion"),
             conversationSlugId: zodSlugId,
             opinionSlugId: zodSlugId,
+            sourceVersion: z.uuid(),
         })
         .strict(),
     z
@@ -1379,7 +1380,7 @@ export const zodOpinionItem = z
 export const zodDisplayedOpinionItem = zodOpinionItem.extend({
     displayContent: zodOpinionDisplayedContent,
 });
-export const zodAnalysisOpinionItem = zodOpinionItem.extend({
+export const zodAnalysisOpinionItem = zodDisplayedOpinionItem.extend({
     clustersStats: z.array(zodClusterStats),
     groupAwareConsensusAgree: z.number().nonnegative(),
     groupAwareConsensusDisagree: z.number().nonnegative(),

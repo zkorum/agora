@@ -1312,7 +1312,7 @@ export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf {
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1 {
     'success': boolean;
-    'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf1;
+    'subject': ApiV1ContentTranslationRequestPost200ResponseAnyOf1Subject;
     'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf1Content;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1Content {
@@ -1401,6 +1401,18 @@ export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOfVariants {
     'original': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfContent;
 }
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1Subject {
+    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf1SubjectKindEnum;
+    'conversationSlugId': string;
+    'opinionSlugId': string;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf1SubjectKindEnum = {
+    Opinion: 'opinion',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf1SubjectKindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf1SubjectKindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf1SubjectKindEnum];
+
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf2 {
     'success': boolean;
     'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf2;
@@ -2365,6 +2377,7 @@ export interface ApiV1ContentTranslationRequestPostRequestSubjectOneOf1 {
     'kind': ApiV1ContentTranslationRequestPostRequestSubjectOneOf1KindEnum;
     'conversationSlugId': string;
     'opinionSlugId': string;
+    'sourceVersion': string;
 }
 
 export const ApiV1ContentTranslationRequestPostRequestSubjectOneOf1KindEnum = {
@@ -4638,6 +4651,7 @@ export interface ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClust
     'username': string;
     'moderation': ApiV1ModerationOpinionGetPost200Response;
     'isSeed': boolean;
+    'displayContent': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContent;
     'clustersStats': Array<ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerClustersStatsInner>;
     'groupAwareConsensusAgree': number;
     'groupAwareConsensusDisagree': number;
@@ -5296,6 +5310,7 @@ export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1 {
     'displayContent': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContent;
     'stats': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfStats;
     'isIndexed': boolean;
+    'alternateContent'?: ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1AlternateContent;
 }
 
 export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1ConversationTypeEnum = {
@@ -5304,6 +5319,18 @@ export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1Conversati
 } as const;
 
 export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1ConversationTypeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1ConversationTypeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1ConversationTypeEnum];
+
+export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1AlternateContent {
+    'mode': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1AlternateContentModeEnum;
+    'content': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOfContent;
+}
+
+export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1AlternateContentModeEnum = {
+    Original: 'original',
+    Translated: 'translated',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1AlternateContentModeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1AlternateContentModeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1AlternateContentModeEnum];
 
 export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContent {
     'sourceVersion': string;

@@ -708,10 +708,12 @@ async function fetchOpinionSource({
     db,
     conversationSlugId,
     opinionSlugId,
+    sourceVersion,
 }: {
     db: PostgresDatabase;
     conversationSlugId: string;
     opinionSlugId: string;
+    sourceVersion: string;
 }): Promise<OpinionContentSource | undefined> {
     const rows = await db
         .select({
@@ -733,7 +735,10 @@ async function fetchOpinionSource({
         )
         .innerJoin(
             opinionContentTable,
-            eq(opinionContentTable.id, opinionTable.currentContentId),
+            and(
+                eq(opinionContentTable.opinionId, opinionTable.id),
+                eq(opinionContentTable.publicId, sourceVersion),
+            ),
         )
         .where(
             and(
@@ -741,7 +746,6 @@ async function fetchOpinionSource({
                 eq(conversationTable.isImporting, false),
                 isNotNull(conversationTable.currentContentId),
                 eq(opinionTable.slugId, opinionSlugId),
-                isNotNull(opinionTable.currentContentId),
             ),
         )
         .limit(1);
@@ -2541,6 +2545,7 @@ async function buildOpinionResponse({
                 kind: "opinion",
                 conversationSlugId: source.conversationSlugId,
                 opinionSlugId: source.opinionSlugId,
+                sourceVersion: source.publicId,
             },
             content: {
                 kind: "translatable",
@@ -2566,6 +2571,7 @@ async function buildOpinionResponse({
             kind: "opinion",
             conversationSlugId: source.conversationSlugId,
             opinionSlugId: source.opinionSlugId,
+            sourceVersion: source.publicId,
         },
         content: {
             kind: "translatable",
@@ -2780,6 +2786,7 @@ export async function requestContentTranslation({
         db,
         conversationSlugId: subject.conversationSlugId,
         opinionSlugId: subject.opinionSlugId,
+        sourceVersion: subject.sourceVersion,
     });
     if (source === undefined) {
         return undefined;

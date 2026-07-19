@@ -150,6 +150,17 @@ interface OpinionDisplayContentPreferences {
     viewerUserId: string | undefined;
 }
 
+type AnalysisOpinionDisplayContentPreferences = Omit<
+    OpinionDisplayContentPreferences,
+    "viewerUserId"
+>;
+
+type ResolveOpinionDisplayContentPreferences = ({
+    db,
+}: {
+    db: PostgresJsDatabase;
+}) => Promise<AnalysisOpinionDisplayContentPreferences>;
+
 interface OpinionDisplayContentViewerPreferences {
     viewerUserId: string | undefined;
     displayLanguage: SupportedDisplayLanguageCodes;
@@ -167,12 +178,8 @@ interface OpinionContentRow {
 }
 
 interface OpinionContentTranslationRow {
-    opinionContentId: number;
     translatedContent: string;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
-    sourceRawLanguageCode: string | null;
-    sourceLanguageProvider: LanguageDetectionProvider | null;
-    sourceLanguageConfidence: number | null;
 }
 
 type DisplayedOpinionItemPerSlugId = Map<string, DisplayedOpinionItem>;
@@ -283,7 +290,6 @@ export async function isPersonalNonSeedOpinionAuthoredByUser({
                 isNotNull(conversationTable.currentContentId),
                 eq(opinionTable.slugId, opinionSlugId),
                 eq(opinionTable.authorId, userId),
-                isNotNull(opinionTable.currentContentId),
             ),
         )
         .limit(1);
@@ -582,12 +588,6 @@ export async function fetchOpinionsByPostId({
             translatedContent: opinionContentTranslationTable.translatedContent,
             translationSourceLanguageCode:
                 opinionContentTranslationTable.sourceLanguageCode,
-            translationSourceRawLanguageCode:
-                opinionContentTranslationTable.sourceRawLanguageCode,
-            translationSourceLanguageProvider:
-                opinionContentTranslationTable.sourceLanguageProvider,
-            translationSourceLanguageConfidence:
-                opinionContentTranslationTable.sourceLanguageConfidence,
             authorId: opinionTable.authorId,
             numAgrees: countAnalysisSnapshotOpinionTable.numAgrees,
             numDisagrees: countAnalysisSnapshotOpinionTable.numDisagrees,
@@ -717,18 +717,10 @@ export async function fetchOpinionsByPostId({
                         opinionResponse.translatedContent === null
                             ? undefined
                             : {
-                                  opinionContentId:
-                                      opinionResponse.opinionContentId,
                                   translatedContent:
                                       opinionResponse.translatedContent,
                                   sourceLanguageCode:
                                       opinionResponse.translationSourceLanguageCode,
-                                  sourceRawLanguageCode:
-                                      opinionResponse.translationSourceRawLanguageCode,
-                                  sourceLanguageProvider:
-                                      opinionResponse.translationSourceLanguageProvider,
-                                  sourceLanguageConfidence:
-                                      opinionResponse.translationSourceLanguageConfidence,
                               },
                     targetLanguageCode: displayContentPreferences.targetLanguage,
                 }),
@@ -880,12 +872,6 @@ export async function fetchOpinionsByOpinionSlugIdList({
             translatedContent: opinionContentTranslationTable.translatedContent,
             translationSourceLanguageCode:
                 opinionContentTranslationTable.sourceLanguageCode,
-            translationSourceRawLanguageCode:
-                opinionContentTranslationTable.sourceRawLanguageCode,
-            translationSourceLanguageProvider:
-                opinionContentTranslationTable.sourceLanguageProvider,
-            translationSourceLanguageConfidence:
-                opinionContentTranslationTable.sourceLanguageConfidence,
             username: userTable.username,
             isSeed: opinionTable.isSeed,
             moderationAction: opinionModerationTable.moderationAction,
@@ -1041,18 +1027,10 @@ export async function fetchOpinionsByOpinionSlugIdList({
                         commentResponse.translatedContent === null
                             ? undefined
                             : {
-                                  opinionContentId:
-                                      commentResponse.opinionContentId,
                                   translatedContent:
                                       commentResponse.translatedContent,
                                   sourceLanguageCode:
                                       commentResponse.translationSourceLanguageCode,
-                                  sourceRawLanguageCode:
-                                      commentResponse.translationSourceRawLanguageCode,
-                                  sourceLanguageProvider:
-                                      commentResponse.translationSourceLanguageProvider,
-                                  sourceLanguageConfidence:
-                                      commentResponse.translationSourceLanguageConfidence,
                               },
                     targetLanguageCode:
                         displayContentViewerPreferences.displayLanguage,
@@ -1099,11 +1077,18 @@ interface SnapshotGroupMetadata {
 interface SnapshotAnalysisOpinionRow {
     analysisSnapshotOpinionId: number;
     opinionId: number;
+    opinionContentId: number;
+    contentPublicId: string;
     opinionSlugId: string;
     createdAt: Date;
     updatedAt: Date;
     opinion: string;
-    sourceLanguageCode: string | null;
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    sourceLanguageProvider: LanguageDetectionProvider | null;
+    sourceLanguageConfidence: number | null;
+    translatedContent: string | null;
+    translationSourceLanguageCode: SupportedSpokenLanguageCodes | null;
     authorId: string;
     username: string;
     isSeed: boolean;
@@ -1219,11 +1204,19 @@ function getSnapshotAnalysisOpinionSelectFields() {
     return {
         opinionId: opinionTable.id,
         analysisSnapshotOpinionId: analysisSnapshotOpinionTable.id,
+        opinionContentId: opinionContentTable.id,
+        contentPublicId: opinionContentTable.publicId,
         opinionSlugId: opinionTable.slugId,
         createdAt: opinionTable.createdAt,
         updatedAt: opinionTable.updatedAt,
         opinion: opinionContentTable.content,
         sourceLanguageCode: opinionContentTable.sourceLanguageCode,
+        sourceRawLanguageCode: opinionContentTable.sourceRawLanguageCode,
+        sourceLanguageProvider: opinionContentTable.sourceLanguageProvider,
+        sourceLanguageConfidence: opinionContentTable.sourceLanguageConfidence,
+        translatedContent: opinionContentTranslationTable.translatedContent,
+        translationSourceLanguageCode:
+            opinionContentTranslationTable.sourceLanguageCode,
         authorId: opinionTable.authorId,
         username: userTable.username,
         isSeed: opinionTable.isSeed,
@@ -1313,6 +1306,7 @@ async function fetchAnalysisOpinionRowsByIds({
     analysisSnapshotOpinionIds,
     personalizationUserId,
     includeModeratedOpinions,
+    displayContentPreferences,
 }: {
     db: PostgresJsDatabase;
     candidateId: number;
@@ -1320,6 +1314,7 @@ async function fetchAnalysisOpinionRowsByIds({
     analysisSnapshotOpinionIds: number[];
     personalizationUserId?: string;
     includeModeratedOpinions: boolean;
+    displayContentPreferences: AnalysisOpinionDisplayContentPreferences;
 }): Promise<SnapshotAnalysisOpinionRow[]> {
     const uniqueAnalysisSnapshotOpinionIds = Array.from(
         new Set(analysisSnapshotOpinionIds),
@@ -1348,6 +1343,19 @@ async function fetchAnalysisOpinionRowsByIds({
             eq(
                 opinionContentTable.id,
                 analysisSnapshotOpinionTable.opinionContentId,
+            ),
+        )
+        .leftJoin(
+            opinionContentTranslationTable,
+            and(
+                eq(
+                    opinionContentTranslationTable.opinionContentId,
+                    opinionContentTable.id,
+                ),
+                eq(
+                    opinionContentTranslationTable.displayLanguageCode,
+                    displayContentPreferences.targetLanguage,
+                ),
             ),
         )
         .leftJoin(
@@ -1389,6 +1397,7 @@ async function fetchAnalysisOpinionRowsForList({
     personalizationUserId,
     includeModeratedOpinions,
     kind,
+    displayContentPreferences,
 }: {
     db: PostgresJsDatabase;
     candidateId: number;
@@ -1397,6 +1406,7 @@ async function fetchAnalysisOpinionRowsForList({
     personalizationUserId?: string;
     includeModeratedOpinions: boolean;
     kind: AnalysisFrameOpinionListKind;
+    displayContentPreferences: AnalysisOpinionDisplayContentPreferences;
 }): Promise<SnapshotAnalysisOpinionRow[]> {
     const scoreSql = getAnalysisFrameOpinionListScoreSql({
         kind,
@@ -1423,6 +1433,19 @@ async function fetchAnalysisOpinionRowsForList({
             eq(
                 opinionContentTable.id,
                 analysisSnapshotOpinionTable.opinionContentId,
+            ),
+        )
+        .leftJoin(
+            opinionContentTranslationTable,
+            and(
+                eq(
+                    opinionContentTranslationTable.opinionContentId,
+                    opinionContentTable.id,
+                ),
+                eq(
+                    opinionContentTranslationTable.displayLanguageCode,
+                    displayContentPreferences.targetLanguage,
+                ),
             ),
         )
         .leftJoin(
@@ -1509,12 +1532,16 @@ async function buildAnalysisOpinionsByIdFromRows({
     conversationParticipantCount,
     groups,
     opinionRows,
+    displayContentPreferences,
+    viewerUserId,
 }: {
     db: PostgresJsDatabase;
     candidateId: number;
     conversationParticipantCount: number;
     groups: SnapshotGroupMetadata[];
     opinionRows: SnapshotAnalysisOpinionRow[];
+    displayContentPreferences: AnalysisOpinionDisplayContentPreferences;
+    viewerUserId: string | undefined;
 }): Promise<Map<number, AnalysisOpinionItem>> {
     const groupOpinionRows = await fetchGroupOpinionStatsRows({
         db,
@@ -1599,12 +1626,13 @@ async function buildAnalysisOpinionsByIdFromRows({
             row.moderationUpdatedAt,
         );
 
+        const isHiddenModerated = row.moderationAction === "hide";
+        const displayedOpinion = isHiddenModerated
+            ? "[moderated]"
+            : row.opinion;
+
         opinionsById.set(row.opinionId, {
-            opinion:
-                moderationProperties.status === "moderated" &&
-                moderationProperties.action === "hide"
-                    ? "[moderated]"
-                    : row.opinion,
+            opinion: displayedOpinion,
             opinionSlugId: row.opinionSlugId,
             sourceLanguageCode: row.sourceLanguageCode,
             createdAt: row.createdAt,
@@ -1616,6 +1644,39 @@ async function buildAnalysisOpinionsByIdFromRows({
             username: row.username,
             moderation: moderationProperties,
             isSeed: row.isSeed,
+            displayContent: conversationContentService.toOpinionDisplayContent({
+                content: buildLocalizedOpinionContent({
+                    source: {
+                        opinionContentId: row.opinionContentId,
+                        contentPublicId: row.contentPublicId,
+                        comment: displayedOpinion,
+                        sourceLanguageCode: row.sourceLanguageCode,
+                        sourceRawLanguageCode: row.sourceRawLanguageCode,
+                        sourceLanguageProvider: row.sourceLanguageProvider,
+                        sourceLanguageConfidence: row.sourceLanguageConfidence,
+                    },
+                    translation:
+                        isHiddenModerated || row.translatedContent === null
+                            ? undefined
+                            : {
+                                  translatedContent: row.translatedContent,
+                                  sourceLanguageCode:
+                                      row.translationSourceLanguageCode,
+                              },
+                    targetLanguageCode:
+                        displayContentPreferences.targetLanguage,
+                }),
+                translationAllowed:
+                    !isHiddenModerated &&
+                    displayContentPreferences.translationAllowed &&
+                    !isPersonalNonSeedOpinionByViewer({
+                        opinionAuthorId: row.authorId,
+                        viewerUserId,
+                        isSeed: row.isSeed,
+                    }),
+                displayLanguage: displayContentPreferences.displayLanguage,
+                spokenLanguages: displayContentPreferences.spokenLanguages,
+            }),
             clustersStats: clustersStatsByOpinionId.get(row.opinionId) ?? [],
             groupAwareConsensusAgree: row.groupAwareConsensusAgree ?? 0,
             groupAwareConsensusDisagree: row.groupAwareConsensusDisagree ?? 0,
@@ -2185,30 +2246,40 @@ export async function fetchAnalysisFrameGroupsByFrameKey({
     conversationSlugId,
     frameKey,
     personalizationUserId,
+    resolveDisplayContentPreferences,
     freshnessOptions,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
     frameKey: AnalysisFrameKey;
     personalizationUserId?: string;
+    resolveDisplayContentPreferences: ResolveOpinionDisplayContentPreferences;
     freshnessOptions: AnalysisFreshnessOptions | null;
 }): Promise<AnalysisFrameGroups> {
+    const displayContentPreferences = await resolveDisplayContentPreferences({
+        db,
+    });
     const groups = await fetchAnalysisFrameGroupsByFrameKeyFromDb({
         db,
         conversationSlugId,
         frameKey,
         personalizationUserId,
+        displayContentPreferences,
     });
     if (groups !== undefined) {
         return groups;
     }
 
     if (shouldTryPrimaryFallback({ db, freshnessOptions })) {
+        const primaryDb = getPrimaryDb(db);
+        const primaryDisplayContentPreferences =
+            await resolveDisplayContentPreferences({ db: primaryDb });
         const primaryGroups = await fetchAnalysisFrameGroupsByFrameKeyFromDb({
-            db: getPrimaryDb(db),
+            db: primaryDb,
             conversationSlugId,
             frameKey,
             personalizationUserId,
+            displayContentPreferences: primaryDisplayContentPreferences,
         });
         if (primaryGroups !== undefined) {
             return primaryGroups;
@@ -2223,11 +2294,13 @@ async function fetchAnalysisFrameGroupsByFrameKeyFromDb({
     conversationSlugId,
     frameKey,
     personalizationUserId,
+    displayContentPreferences,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
     frameKey: AnalysisFrameKey;
     personalizationUserId?: string;
+    displayContentPreferences: AnalysisOpinionDisplayContentPreferences;
 }): Promise<AnalysisFrameGroups | undefined> {
     const selectedCandidate = await fetchSelectedFrameCandidateByKey({
         db,
@@ -2257,6 +2330,7 @@ async function fetchAnalysisFrameGroupsByFrameKeyFromDb({
         ),
         personalizationUserId,
         includeModeratedOpinions,
+        displayContentPreferences,
     });
     const opinionsById = await buildAnalysisOpinionsByIdFromRows({
         db,
@@ -2264,6 +2338,8 @@ async function fetchAnalysisFrameGroupsByFrameKeyFromDb({
         conversationParticipantCount: selectedCandidate.participantCount,
         groups,
         opinionRows,
+        displayContentPreferences,
+        viewerUserId: personalizationUserId,
     });
     const representativeOpinionIdsByGroupKey =
         buildRepresentativeOpinionIdsByGroupKey({
@@ -2535,12 +2611,14 @@ async function fetchAnalysisFrameOpinionListByFrameKeyFromDb({
     frameKey,
     personalizationUserId,
     kind,
+    displayContentPreferences,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
     frameKey: AnalysisFrameKey;
     personalizationUserId?: string;
     kind: AnalysisFrameOpinionListKind;
+    displayContentPreferences: AnalysisOpinionDisplayContentPreferences;
 }): Promise<AnalysisFrameOpinionList | undefined> {
     const selectedCandidate = await fetchSelectedFrameCandidateByKey({
         db,
@@ -2564,6 +2642,7 @@ async function fetchAnalysisFrameOpinionListByFrameKeyFromDb({
         personalizationUserId,
         includeModeratedOpinions,
         kind,
+        displayContentPreferences,
     });
     const opinionsById = await buildAnalysisOpinionsByIdFromRows({
         db,
@@ -2571,6 +2650,8 @@ async function fetchAnalysisFrameOpinionListByFrameKeyFromDb({
         conversationParticipantCount: selectedCandidate.participantCount,
         groups,
         opinionRows,
+        displayContentPreferences,
+        viewerUserId: personalizationUserId,
     });
     const items: AnalysisOpinionItem[] = [];
     for (const row of opinionRows) {
@@ -2593,6 +2674,7 @@ export async function fetchAnalysisFrameOpinionListByFrameKey({
     frameKey,
     personalizationUserId,
     kind,
+    resolveDisplayContentPreferences,
     freshnessOptions,
 }: {
     db: PostgresJsDatabase;
@@ -2600,27 +2682,36 @@ export async function fetchAnalysisFrameOpinionListByFrameKey({
     frameKey: AnalysisFrameKey;
     personalizationUserId?: string;
     kind: AnalysisFrameOpinionListKind;
+    resolveDisplayContentPreferences: ResolveOpinionDisplayContentPreferences;
     freshnessOptions: AnalysisFreshnessOptions | null;
 }): Promise<AnalysisFrameOpinionList> {
+    const displayContentPreferences = await resolveDisplayContentPreferences({
+        db,
+    });
     const opinionList = await fetchAnalysisFrameOpinionListByFrameKeyFromDb({
         db,
         conversationSlugId,
         frameKey,
         personalizationUserId,
         kind,
+        displayContentPreferences,
     });
     if (opinionList !== undefined) {
         return opinionList;
     }
 
     if (shouldTryPrimaryFallback({ db, freshnessOptions })) {
+        const primaryDb = getPrimaryDb(db);
+        const primaryDisplayContentPreferences =
+            await resolveDisplayContentPreferences({ db: primaryDb });
         const primaryOpinionList =
             await fetchAnalysisFrameOpinionListByFrameKeyFromDb({
-                db: getPrimaryDb(db),
+                db: primaryDb,
                 conversationSlugId,
                 frameKey,
                 personalizationUserId,
                 kind,
+                displayContentPreferences: primaryDisplayContentPreferences,
             });
         if (primaryOpinionList !== undefined) {
             return primaryOpinionList;

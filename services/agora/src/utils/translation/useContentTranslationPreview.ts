@@ -61,7 +61,8 @@ function isSameContentTranslationSubject({
   if (left.kind === "opinion" && right.kind === "opinion") {
     return (
       left.conversationSlugId === right.conversationSlugId &&
-      left.opinionSlugId === right.opinionSlugId
+      left.opinionSlugId === right.opinionSlugId &&
+      left.sourceVersion === right.sourceVersion
     );
   }
   if (left.kind === "survey_question" && right.kind === "survey_question") {
@@ -346,23 +347,50 @@ function useContentTranslationController({
     );
   }
 
-  const unsubscribeFailedEvents = subscribeToContentTranslationFailed(
-    (data) => {
+  let unsubscribeFailedEvents: (() => void) | undefined;
+  let unsubscribeUpdatedEvents: (() => void) | undefined;
+
+  function subscribeToTranslationEvents(): void {
+    if (
+      unsubscribeFailedEvents !== undefined ||
+      unsubscribeUpdatedEvents !== undefined
+    ) {
+      return;
+    }
+    unsubscribeFailedEvents = subscribeToContentTranslationFailed((data) => {
       if (!isEventForCurrentRequest(data)) {
         return;
       }
       resetToOriginal();
       showNotifyMessage(t("translationFailed"));
-    }
-  );
+    });
+    unsubscribeUpdatedEvents = subscribeToContentTranslationUpdated((data) => {
+      if (!isEventForCurrentRequest(data)) {
+        return;
+      }
+      void query.refetch();
+      translationPolling.start();
+    });
+  }
 
-  const unsubscribeUpdatedEvents = subscribeToContentTranslationUpdated((data) => {
-    if (!isEventForCurrentRequest(data)) {
-      return;
-    }
-    void query.refetch();
-    translationPolling.start();
-  });
+  function unsubscribeFromTranslationEvents(): void {
+    unsubscribeUpdatedEvents?.();
+    unsubscribeFailedEvents?.();
+    unsubscribeUpdatedEvents = undefined;
+    unsubscribeFailedEvents = undefined;
+  }
+
+  watch(
+    () => toValue(enabled),
+    (isEnabled) => {
+      if (isEnabled) {
+        subscribeToTranslationEvents();
+      } else {
+        unsubscribeFromTranslationEvents();
+      }
+    },
+    { immediate: true }
+  );
 
   watch([translationStatus, translatedVariant], ([status, variant]) => {
     if (status === "completed" && variant !== undefined) {
@@ -393,8 +421,7 @@ function useContentTranslationController({
 
   onScopeDispose(() => {
     translationPolling.stop();
-    unsubscribeUpdatedEvents();
-    unsubscribeFailedEvents();
+    unsubscribeFromTranslationEvents();
   });
 
   return {

@@ -2034,6 +2034,7 @@ def _insert_opinion_translation_event(
             "kind": "opinion",
             "conversationSlugId": source.conversation_slug_id,
             "opinionSlugId": source.opinion_slug_id,
+            "sourceVersion": str(source.public_id),
         },
         conversation_slug_id=source.conversation_slug_id,
         target_language_code=target_language_code,

@@ -1,6 +1,12 @@
 import type { QueryClient } from "@tanstack/vue-query";
-import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
-import { ZodSupportedDisplayLanguageCodes } from "src/shared/languages";
+import type {
+  SupportedDisplayLanguageCodes,
+  SupportedSpokenLanguageCodes,
+} from "src/shared/languages";
+import {
+  ZodSupportedDisplayLanguageCodes,
+  ZodSupportedSpokenLanguageCodes,
+} from "src/shared/languages";
 import type {
   AnalysisFreshnessRequest,
   SSEConversationAnalysisUpdatedData,
@@ -24,6 +30,7 @@ interface LiveAnalysisQueryParams {
   checkpointViewSnapshotId: number | undefined;
   aiLabelingEnabled: boolean | undefined;
   displayLanguage: SupportedDisplayLanguageCodes;
+  spokenLanguages: SupportedSpokenLanguageCodes[];
 }
 
 interface LiveAnalysisQueryInfo extends LiveAnalysisQueryParams {
@@ -118,6 +125,12 @@ function parseLiveAnalysisQueryParams({
   if (!displayLanguageResult.success) {
     return undefined;
   }
+  const spokenLanguagesResult = ZodSupportedSpokenLanguageCodes.array().safeParse(
+    queryKey[6]
+  );
+  if (!spokenLanguagesResult.success) {
+    return undefined;
+  }
 
   return {
     conversationSlugId,
@@ -125,6 +138,7 @@ function parseLiveAnalysisQueryParams({
     checkpointViewSnapshotId: rawCheckpointViewSnapshotId,
     aiLabelingEnabled: rawAiLabelingEnabled,
     displayLanguage: displayLanguageResult.data,
+    spokenLanguages: spokenLanguagesResult.data,
   };
 }
 
@@ -421,6 +435,7 @@ export function createLiveAnalysisCatchUpController({
         checkpointViewSnapshotId: query.checkpointViewSnapshotId,
         aiLabelingEnabled: query.aiLabelingEnabled,
         displayLanguage: query.displayLanguage,
+        spokenLanguages: query.spokenLanguages,
         freshness,
       });
       queryClient.setQueryData(query.queryKey, analysis);

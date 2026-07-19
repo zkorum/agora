@@ -27,6 +27,7 @@
         class="tabComponent"
       >
         <MaxDiffMeSection
+          :conversation-slug-id="conversationSlugId"
           :load-data="loadQuery.data.value"
           :all-items="resultItems"
           :compact-mode="currentTab === 'Summary'"
@@ -43,6 +44,7 @@
         class="tabComponent"
       >
         <MaxDiffItemListSection
+          :conversation-slug-id="conversationSlugId"
           :section-title="t('title')"
           :subtitle="t('subtitle')"
           :items="resultItems"
@@ -62,6 +64,7 @@
         class="tabComponent"
       >
         <MaxDiffItemListSection
+          :conversation-slug-id="conversationSlugId"
           :section-title="t('tabCompleted')"
           :subtitle="null"
           :items="completedItems"
@@ -81,6 +84,7 @@
         class="tabComponent"
       >
         <MaxDiffItemListSection
+          :conversation-slug-id="conversationSlugId"
           :section-title="t('tabCanceled')"
           :subtitle="null"
           :items="canceledItems"

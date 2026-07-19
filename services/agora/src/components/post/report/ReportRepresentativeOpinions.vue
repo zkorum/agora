@@ -62,6 +62,7 @@
                   :conversation-organization-name="props.conversationOrganizationName"
                   :compact-mode="false"
                   :enable-links="false"
+                  :translation-interactive="translationInteractive"
                 />
               </div>
             </td>
@@ -126,14 +127,21 @@ import {
 } from "./ReportRepresentativeOpinions.i18n";
 import ReportVoteCell from "./ReportVoteCell.vue";
 
-const props = defineProps<{
-  clusters: Partial<PolisClusters>;
-  totalParticipantCount: number;
-  conversationSlugId: string;
-  conversationAuthorUsername: string;
-  conversationOrganizationName: string;
-  singleClusterKey?: PolisKey;
-}>();
+const props = withDefaults(
+  defineProps<{
+    clusters: Partial<PolisClusters>;
+    totalParticipantCount: number;
+    conversationSlugId: string;
+    conversationAuthorUsername: string;
+    conversationOrganizationName: string;
+    singleClusterKey?: PolisKey;
+    translationInteractive?: boolean;
+  }>(),
+  {
+    singleClusterKey: undefined,
+    translationInteractive: true,
+  }
+);
 
 const { t } = useComponentI18n<ReportRepresentativeOpinionsTranslations>(
   reportRepresentativeOpinionsTranslations,

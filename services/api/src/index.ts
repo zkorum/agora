@@ -541,9 +541,11 @@ async function assertMaxdiffGitHubAllowedForConversation({
 }
 
 async function getContentTranslationAvailabilityForConversation({
+    database = db,
     conversationSlugId,
     targetLanguageCode,
 }: {
+    database?: PostgresDatabase;
     conversationSlugId: string;
     targetLanguageCode: SupportedDisplayLanguageCodes;
 }): Promise<{
@@ -551,7 +553,7 @@ async function getContentTranslationAvailabilityForConversation({
     multilingualSetting: ConversationMultilingualSetting;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
 }> {
-    const rows = await db
+    const rows = await database
         .select({
             dynamicTranslationEnabled:
                 conversationTable.dynamicTranslationEnabled,
@@ -590,13 +592,17 @@ async function getContentTranslationAvailabilityForConversation({
             "Content translation subject not found",
         );
     }
-    const multilingualSetting: ConversationMultilingualSetting =
+    const inheritedLanguageSettings =
         firstRow.languageSettingsSource === "project_inherited"
+            ? await getProjectLanguageSettings({
+                  db: database,
+                  projectId: firstRow.projectId,
+              })
+            : undefined;
+    const multilingualSetting: ConversationMultilingualSetting =
+        inheritedLanguageSettings !== undefined
             ? normalizeInheritedConversationMultilingualSettings({
-                  languageSettings: await getProjectLanguageSettings({
-                      db,
-                      projectId: firstRow.projectId,
-                  }),
+                  languageSettings: inheritedLanguageSettings,
               })
             : {
                   dynamicTranslationEnabled: firstRow.dynamicTranslationEnabled,
@@ -608,12 +614,9 @@ async function getContentTranslationAvailabilityForConversation({
         sourceLanguageCode: firstRow.sourceLanguageCode,
     });
     const targetLanguagePolicy =
-        firstRow.languageSettingsSource === "project_inherited"
+        inheritedLanguageSettings !== undefined
             ? getProjectTranslationTargetLanguagePolicy({
-                  languageSettings: await getProjectLanguageSettings({
-                      db,
-                      projectId: firstRow.projectId,
-                  }),
+                  languageSettings: inheritedLanguageSettings,
               })
             : getConversationOverrideTranslationTargetLanguagePolicy({
                   multilingualSettings: {
@@ -641,9 +644,11 @@ async function getContentTranslationAvailabilityForConversation({
 }
 
 async function getPreferredContentTranslationAvailabilityForConversation({
+    database = db,
     conversationSlugId,
     displayLanguage,
 }: {
+    database?: PostgresDatabase;
     conversationSlugId: string;
     displayLanguage: SupportedDisplayLanguageCodes;
 }): Promise<{
@@ -652,12 +657,52 @@ async function getPreferredContentTranslationAvailabilityForConversation({
 }> {
     const displayLanguageAvailability =
         await getContentTranslationAvailabilityForConversation({
+            database,
             conversationSlugId,
             targetLanguageCode: displayLanguage,
         });
     return {
         targetLanguageCode: displayLanguage,
         isAllowed: displayLanguageAvailability.isAllowed,
+    };
+}
+
+async function getOpinionDisplayContentPreferencesForConversation({
+    database = db,
+    conversationSlugId,
+    personalizationUserId,
+    headerDisplayLanguage,
+}: {
+    database?: PostgresDatabase;
+    conversationSlugId: string;
+    personalizationUserId: string | undefined;
+    headerDisplayLanguage: SupportedDisplayLanguageCodes;
+}) {
+    const languagePreferences =
+        personalizationUserId === undefined
+            ? {
+                  displayLanguage: headerDisplayLanguage,
+                  spokenLanguages: [headerDisplayLanguage],
+              }
+            : await getLanguagePreferences({
+                  db: database,
+                  userId: personalizationUserId,
+                  request: {
+                      currentDisplayLanguage: headerDisplayLanguage,
+                  },
+              });
+    const preferredContentTranslation =
+        await getPreferredContentTranslationAvailabilityForConversation({
+            database,
+            conversationSlugId,
+            displayLanguage: languagePreferences.displayLanguage,
+        });
+
+    return {
+        displayLanguage: languagePreferences.displayLanguage,
+        targetLanguage: preferredContentTranslation.targetLanguageCode,
+        spokenLanguages: languagePreferences.spokenLanguages,
+        translationAllowed: preferredContentTranslation.isAllowed,
     };
 }
 
@@ -2960,14 +3005,23 @@ server.after(() => {
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+            const personalizationUserId = deviceStatus.isKnown
+                ? deviceStatus.userId
+                : undefined;
+            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
 
             return await fetchAnalysisFrameGroupsByFrameKey({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
                 frameKey: request.body.frameKey,
-                personalizationUserId: deviceStatus.isKnown
-                    ? deviceStatus.userId
-                    : undefined,
+                personalizationUserId,
+                resolveDisplayContentPreferences: async ({ db: analysisDb }) =>
+                    await getOpinionDisplayContentPreferencesForConversation({
+                        database: analysisDb,
+                        conversationSlugId: request.body.conversationSlugId,
+                        personalizationUserId,
+                        headerDisplayLanguage,
+                    }),
                 freshnessOptions: request.body.freshness,
             });
         },
@@ -3009,15 +3063,24 @@ server.after(() => {
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+            const personalizationUserId = deviceStatus.isKnown
+                ? deviceStatus.userId
+                : undefined;
+            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
 
             return await fetchAnalysisFrameOpinionListByFrameKey({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
                 frameKey: request.body.frameKey,
-                personalizationUserId: deviceStatus.isKnown
-                    ? deviceStatus.userId
-                    : undefined,
+                personalizationUserId,
                 kind: request.body.kind,
+                resolveDisplayContentPreferences: async ({ db: analysisDb }) =>
+                    await getOpinionDisplayContentPreferencesForConversation({
+                        database: analysisDb,
+                        conversationSlugId: request.body.conversationSlugId,
+                        personalizationUserId,
+                        headerDisplayLanguage,
+                    }),
                 freshnessOptions: request.body.freshness,
             });
         },

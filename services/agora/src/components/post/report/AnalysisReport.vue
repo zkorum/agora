@@ -74,6 +74,7 @@
           :conversation-slug-id="conversationSlugId"
           :conversation-author-username="authorUsername"
           :conversation-organization-name="conversationOrganizationName"
+          :translation-interactive="translationInteractive"
           :single-cluster-key="key"
         >
           <template #after-subtitle>
@@ -117,6 +118,7 @@
         :conversation-slug-id="conversationSlugId"
         :conversation-author-username="authorUsername"
         :conversation-organization-name="conversationOrganizationName"
+        :translation-interactive="translationInteractive"
         :empty-message="t('noAgreementsMessage')"
       />
       <ReportFooter
@@ -163,6 +165,7 @@
         :conversation-slug-id="conversationSlugId"
         :conversation-author-username="authorUsername"
         :conversation-organization-name="conversationOrganizationName"
+        :translation-interactive="translationInteractive"
         :start-rank="chunkIdx * effectiveItemsPerPage"
         :hide-title="chunkIdx > 0"
       >
@@ -205,6 +208,7 @@
         :conversation-slug-id="conversationSlugId"
         :conversation-author-username="authorUsername"
         :conversation-organization-name="conversationOrganizationName"
+        :translation-interactive="translationInteractive"
         :empty-message="t('noDisagreementsMessage')"
       />
       <ReportFooter
@@ -251,6 +255,7 @@
         :conversation-slug-id="conversationSlugId"
         :conversation-author-username="authorUsername"
         :conversation-organization-name="conversationOrganizationName"
+        :translation-interactive="translationInteractive"
         :start-rank="chunkIdx * effectiveItemsPerPage"
         :hide-title="chunkIdx > 0"
       >
@@ -293,6 +298,7 @@
         :conversation-slug-id="conversationSlugId"
         :conversation-author-username="authorUsername"
         :conversation-organization-name="conversationOrganizationName"
+        :translation-interactive="translationInteractive"
         :empty-message="t('noDivisiveMessage')"
       />
       <ReportFooter
@@ -339,6 +345,7 @@
         :conversation-slug-id="conversationSlugId"
         :conversation-author-username="authorUsername"
         :conversation-organization-name="conversationOrganizationName"
+        :translation-interactive="translationInteractive"
         :start-rank="chunkIdx * effectiveItemsPerPage"
         :hide-title="chunkIdx > 0"
       >
@@ -550,6 +557,7 @@
         :conversation-slug-id="conversationSlugId"
         :conversation-author-username="authorUsername"
         :conversation-organization-name="conversationOrganizationName"
+        :translation-interactive="translationInteractive"
         :hide-title="true"
         :empty-message="t('noAllStatementsMessage')"
       />
@@ -601,6 +609,7 @@
         :conversation-slug-id="conversationSlugId"
         :conversation-author-username="authorUsername"
         :conversation-organization-name="conversationOrganizationName"
+        :translation-interactive="translationInteractive"
         :start-rank="chunkIdx * effectiveItemsPerPage"
         :hide-title="true"
       >
@@ -692,6 +701,7 @@ const props = defineProps<{
   surveyRows: SurveyAggregateRow[];
   showSurveyToggle?: boolean;
   itemsPerPage?: number;
+  translationInteractive?: boolean;
 }>();
 
 const surveyDisplayMode = defineModel<SurveyResultsDisplayMode>(

@@ -1701,6 +1701,17 @@ function generateMockOpinion({
       mockStatements[index % mockStatements.length]
     }`,
     sourceLanguageCode: null,
+    displayContent: {
+      sourceVersion: "00000000-0000-4000-8000-000000000001",
+      status: "available",
+      mode: "original",
+      content: {
+        content: `Mock #${String(index + 1).padStart(3, "0")}: ${
+          mockStatements[index % mockStatements.length]
+        }`,
+      },
+      translationControl: null,
+    },
     numParticipants: baseNumParticipants * participantScaleMultiplier.value,
     numAgrees: baseNumAgrees * participantScaleMultiplier.value,
     numDisagrees: baseNumDisagrees * participantScaleMultiplier.value,

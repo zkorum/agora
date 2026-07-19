@@ -3,9 +3,21 @@
     <span v-if="isHiddenModerated" class="moderated-placeholder">
       {{ t("hiddenModeratedStatement") }}
     </span>
+    <ContentTranslationControl
+      v-if="
+        !isHiddenModerated &&
+        translationInteractive &&
+        translationPreview !== undefined
+      "
+      :model-value="translationPreview.mode"
+      class="content-translation-interaction"
+      :source-language-label="translationPreview.sourceLanguageLabel"
+      :translation-status="translationPreview.translationStatus"
+      @update:model-value="setTranslationMode"
+    />
     <ZKHtmlContent
-      v-else
-      :html-body="opinionItem.opinion"
+      v-if="!isHiddenModerated"
+      :html-body="renderedOpinion"
       :compact-mode="compactMode"
       :enable-links="enableLinks"
     />
@@ -21,9 +33,11 @@
 
 <script setup lang="ts">
 import CommentModeration from "src/components/post/comments/group/item/CommentModeration.vue";
+import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { AnalysisOpinionItem } from "src/shared/types/zod";
+import { useOpinionItemDisplayContent } from "src/utils/translation/useOpinionItemDisplayContent";
 import { computed } from "vue";
 
 import {
@@ -37,7 +51,8 @@ const props = withDefaults(
     compactMode?: boolean;
     enableLinks?: boolean;
     showModerationWarning?: boolean;
-    postSlugId?: string;
+    translationInteractive?: boolean;
+    postSlugId: string;
     conversationAuthorUsername?: string;
     conversationOrganizationName?: string;
   }>(),
@@ -45,7 +60,7 @@ const props = withDefaults(
     compactMode: false,
     enableLinks: false,
     showModerationWarning: true,
-    postSlugId: "",
+    translationInteractive: true,
     conversationAuthorUsername: "",
     conversationOrganizationName: "",
   }
@@ -53,6 +68,22 @@ const props = withDefaults(
 
 const { t } = useComponentI18n<AnalysisOpinionTextTranslations>(
   analysisOpinionTextTranslations
+);
+const {
+  displayedOpinion,
+  initialDisplayedOpinion,
+  translationPreview,
+  setTranslationMode,
+} =
+  useOpinionItemDisplayContent({
+    conversationSlugId: computed(() => props.postSlugId),
+    opinionItem: computed(() => props.opinionItem),
+    interactive: computed(() => props.translationInteractive),
+  });
+const renderedOpinion = computed(() =>
+  props.translationInteractive
+    ? displayedOpinion.value
+    : initialDisplayedOpinion.value
 );
 
 const isHiddenModerated = computed(

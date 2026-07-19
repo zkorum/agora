@@ -83,6 +83,7 @@
               :has-survey="reportFrame.surveyResults.hasSurvey"
               :survey-rows="reportSurveyRows"
               :show-survey-toggle="showSurveyToggle"
+              :translation-interactive="!isGeneratingReport"
             />
           </AsyncStateHandler>
         </AsyncStateHandler>
@@ -241,6 +242,7 @@ async function handleNarrowBack(): Promise<void> {
 <style lang="scss">
 @media print {
   .no-print,
+  .content-translation-interaction,
   .q-drawer,
   .q-header,
   .q-footer,

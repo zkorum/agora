@@ -64,14 +64,18 @@ async function captureElement({
     onclone: needsClone
       ? (clonedDoc) => {
           if (showCaptureHeaders) {
-            clonedDoc.querySelectorAll(".capture-only").forEach((el) => {
-              (el as HTMLElement).style.display = "block";
-            });
+            clonedDoc
+              .querySelectorAll<HTMLElement>(".capture-only")
+              .forEach((captureHeader) => {
+                captureHeader.style.display = "block";
+              });
           }
           if (showCaptureFooters) {
-            clonedDoc.querySelectorAll(".capture-footer").forEach((el) => {
-              (el as HTMLElement).style.display = "block";
-            });
+            clonedDoc
+              .querySelectorAll<HTMLElement>(".capture-footer")
+              .forEach((captureFooter) => {
+                captureFooter.style.display = "block";
+              });
           }
         }
       : undefined,
