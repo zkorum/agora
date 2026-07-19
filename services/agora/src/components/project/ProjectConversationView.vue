@@ -83,7 +83,6 @@
           <ProjectDetailsAside
             class="project-conversation-view__aside"
             :attributions="project.attributions"
-            attribution-display="with-title"
             :contact="project.contact"
             :language-code="selectedLanguage"
           />
@@ -332,10 +331,6 @@ main {
   gap: 1rem;
 }
 
-.project-conversation-view__action-bar {
-  padding-block: 0.25rem 0;
-}
-
 .project-conversation-view__toolbar {
   display: flex;
   justify-content: flex-end;
@@ -354,6 +349,12 @@ main {
   grid-area: aside;
   position: sticky;
   top: 1.25rem;
+}
+
+@media (min-width: 861px) {
+  .project-conversation-view__aside {
+    padding-block-start: 1rem;
+  }
 }
 
 @media (max-width: 860px) {

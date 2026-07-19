@@ -3,17 +3,7 @@
     class="project-details-aside"
     :aria-label="t('projectDetailsAriaLabel')"
   >
-    <section
-      v-if="attributionDisplay !== 'hidden' && hasAttributionEntries"
-      class="project-details-aside__section project-details-aside__section--attributions"
-    >
-      <h2
-        v-if="attributionDisplay === 'with-title'"
-        class="project-details-aside__title"
-      >
-        {{ t("behindThisTitle") }}
-      </h2>
-
+    <div v-if="hasAttributionEntries" class="project-details-aside__section">
       <div class="project-details-aside__attribution-groups">
         <ProjectAttributionSection
           v-for="section in attributionSections"
@@ -23,7 +13,7 @@
           :language-code="languageCode"
         />
       </div>
-    </section>
+    </div>
 
     <section
       v-if="contact !== undefined"
@@ -65,7 +55,6 @@ interface ProjectDetailsAttributionSection extends ProjectDetailsAttributionSect
 
 const props = defineProps<{
   attributions: readonly ProjectAttribution[];
-  attributionDisplay: "hidden" | "with-title" | "without-title";
   contact: ProjectContact | undefined;
   languageCode: SupportedDisplayLanguageCodes;
 }>();
@@ -120,10 +109,6 @@ function t(
   display: flex;
   min-width: 0;
   flex-direction: column;
-}
-
-.project-details-aside__section--attributions {
-  gap: 0.9rem;
 }
 
 .project-details-aside__section--contact {

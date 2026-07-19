@@ -171,10 +171,9 @@
     </div>
 
     <q-dialog v-model="showMobileProjectDetails" position="bottom">
-      <ZKBottomDialogContainer :title="t({ key: 'behindThisTitle' })">
+      <ZKBottomDialogContainer show-close-button>
         <ProjectDetailsAside
           :attributions="project.attributions"
-          attribution-display="without-title"
           :contact="project.contact"
           :language-code="selectedLanguage"
         />
