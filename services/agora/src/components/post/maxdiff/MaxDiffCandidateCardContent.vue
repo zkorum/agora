@@ -36,8 +36,7 @@ import { computed, nextTick, useTemplateRef, watch } from "vue";
 
 const props = defineProps<{
   conversationSlugId: string;
-  item: MaxDiffCandidateDisplayItem | undefined;
-  fallbackText: string;
+  item: MaxDiffCandidateDisplayItem;
 }>();
 
 const emit = defineEmits<{
@@ -47,27 +46,19 @@ const emit = defineEmits<{
 const contentElement = useTemplateRef<HTMLElement>("contentElement");
 
 const {
-  displayedTitle: translatedDisplayedTitle,
+  displayedTitle,
   displayedBody,
   translationPreview,
   setTranslationMode,
 } = useRankingItemDisplayContent({
   conversationSlugId: computed(() => props.conversationSlugId),
-  itemSlugId: computed(() => props.item?.slugId),
-  displayContent: computed(() => props.item?.displayContent),
+  itemSlugId: computed(() => props.item.slugId),
+  displayContent: computed(() => props.item.displayContent),
 });
 
 const translationMode = computed({
   get: () => translationPreview.value?.mode ?? "original",
   set: setTranslationMode,
-});
-
-const displayedTitle = computed(() => {
-  if (props.item === undefined) {
-    return props.fallbackText;
-  }
-
-  return translatedDisplayedTitle.value;
 });
 
 function isTruncated(): boolean {

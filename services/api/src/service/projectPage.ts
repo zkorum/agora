@@ -63,7 +63,10 @@ import type {
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
 import { translationSourceMatchesCurrentSource } from "@/shared-backend/translate.js";
 import { buildTranslationMetadata } from "./contentTranslationContent.js";
-import { toDisplayedContent } from "./displayContent.js";
+import {
+    type DisplayedContentTranslationControl,
+    toDisplayedContent,
+} from "./displayContent.js";
 import {
     getImplicitDefaultDisplayLanguage,
     resolveOrganizationLocalizationRow,
@@ -123,6 +126,14 @@ type ProjectPageTranslationStatus = Exclude<
     "completed"
 >;
 type ProjectActivityDisplayContent = ProjectPageActivity["displayContent"];
+type UnlistedProjectActivity = Extract<
+    ProjectPageActivity,
+    { isIndexed: false }
+>;
+interface ProjectActivityContentPresentation {
+    displayContent: ProjectActivityDisplayContent;
+    alternateContent?: UnlistedProjectActivity["alternateContent"];
+}
 
 export interface ProjectContentResolutionProject {
     projectContentPublicId: string;
@@ -820,15 +831,26 @@ function toProjectActivityDisplayContent({
     row,
     translation,
     targetLanguageCode,
-    translationAllowed,
     displayLanguage,
+    mode,
+    canRequestAlternate,
 }: {
     row: ProjectActivityRow;
     translation: ProjectActivityContentTranslationRow | undefined;
     targetLanguageCode: SupportedDisplayLanguageCodes;
-    translationAllowed: boolean;
     displayLanguage: SupportedDisplayLanguageCodes;
+    mode: "original" | "translated" | undefined;
+    canRequestAlternate: boolean;
 }): ProjectActivityDisplayContent {
+    const toActivityTranslationControl = (
+        translationControl: DisplayedContentTranslationControl | null,
+    ): DisplayedContentTranslationControl | null =>
+        translationControl === null
+            ? null
+            : {
+                  ...translationControl,
+                  canRequestAlternate,
+              };
     const original = {
         title: row.title,
         bodyPlainText: row.bodyPlainText ?? "",
@@ -877,29 +899,137 @@ function toProjectActivityDisplayContent({
 
     return toDisplayedContent({
         content: localizedContent,
-        translationAllowed,
+        translationAllowed: row.dynamicTranslationEnabled,
         displayLanguage,
         spokenLanguages: [],
+        mode,
         buildOriginal: ({ original: content, translationControl }) => ({
             sourceVersion: localizedContent.sourceVersion,
             status: "available",
             mode: "original",
             content,
-            translationControl,
+            translationControl: toActivityTranslationControl(translationControl),
         }),
         buildTranslated: ({ translated: content, translationControl }) => ({
             sourceVersion: localizedContent.sourceVersion,
             status: "available",
             mode: "translated",
             content,
-            translationControl,
+            translationControl: toActivityTranslationControl(translationControl),
         }),
         buildUnavailable: ({ status, translationControl }) => ({
             sourceVersion: localizedContent.sourceVersion,
             status,
-            translationControl,
+            translationControl: toActivityTranslationControl(translationControl),
         }),
     });
+}
+
+function toProjectActivityContentPresentation({
+    row,
+    translation,
+    targetLanguageCode,
+    displayLanguage,
+}: {
+    row: ProjectActivityRow;
+    translation: ProjectActivityContentTranslationRow | undefined;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+    displayLanguage: SupportedDisplayLanguageCodes;
+}): ProjectActivityContentPresentation {
+    const displayContent = toProjectActivityDisplayContent({
+        row,
+        translation,
+        targetLanguageCode,
+        displayLanguage,
+        mode: undefined,
+        canRequestAlternate: row.isIndexed,
+    });
+    if (
+        row.isIndexed ||
+        displayContent.status !== "available" ||
+        displayContent.translationControl === null
+    ) {
+        return { displayContent };
+    }
+
+    const alternateDisplayContent = toProjectActivityDisplayContent({
+        row,
+        translation,
+        targetLanguageCode,
+        displayLanguage,
+        mode: displayContent.translationControl.alternateMode,
+        canRequestAlternate: false,
+    });
+    if (alternateDisplayContent.status !== "available") {
+        return {
+            displayContent: {
+                ...displayContent,
+                translationControl: null,
+            },
+        };
+    }
+
+    return {
+        displayContent: {
+            ...displayContent,
+            translationControl: {
+                ...displayContent.translationControl,
+                canRequestAlternate: true,
+            },
+        },
+        alternateContent: {
+            mode: alternateDisplayContent.mode,
+            content: alternateDisplayContent.content,
+        },
+    };
+}
+
+export function toProjectPageActivity({
+    row,
+    translation,
+    targetLanguageCode,
+    displayLanguage,
+    counts,
+}: {
+    row: ProjectActivityRow;
+    translation: ProjectActivityContentTranslationRow | undefined;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+    displayLanguage: SupportedDisplayLanguageCodes;
+    counts: ConversationDisplayCounts | undefined;
+}): ProjectPageActivity {
+    const presentation = toProjectActivityContentPresentation({
+        row,
+        translation,
+        targetLanguageCode,
+        displayLanguage,
+    });
+    const activityBase = {
+        conversationType: row.conversationType,
+        isClosed: row.isClosed,
+        createdAt: row.createdAt,
+        isEdited: row.isEdited,
+        displayContent: presentation.displayContent,
+        stats: {
+            opinionCount: counts?.opinionCount ?? 0,
+            participantCount: counts?.participantCount ?? 0,
+            voteCount: counts?.voteCount ?? 0,
+        },
+    };
+    if (row.isIndexed) {
+        return {
+            ...activityBase,
+            isIndexed: true,
+            slugId: row.slugId,
+        };
+    }
+    if (presentation.alternateContent === undefined) {
+        return { ...activityBase, isIndexed: false };
+    }
+    return {
+        ...activityBase,
+        isIndexed: false,
+        alternateContent: presentation.alternateContent,
+    };
 }
 
 async function fetchProjectTranslationWorkStatus({
@@ -1302,34 +1432,13 @@ async function fetchProjectActivities({
         const targetLanguageCode =
             preferredLanguageByContentId.get(row.conversationContentId) ??
             displayLanguage;
-        const activityBase = {
-            conversationType: row.conversationType,
-            isClosed: row.isClosed,
-            createdAt: row.createdAt,
-            isEdited: row.isEdited,
-            displayContent: toProjectActivityDisplayContent({
-                row,
-                translation: freshTranslation,
-                targetLanguageCode,
-                translationAllowed: row.isIndexed && row.dynamicTranslationEnabled,
-                displayLanguage,
-            }),
-            stats: {
-                opinionCount: counts?.opinionCount ?? 0,
-                participantCount: counts?.participantCount ?? 0,
-                voteCount: counts?.voteCount ?? 0,
-            },
-        };
-        return row.isIndexed
-            ? {
-                  ...activityBase,
-                  isIndexed: true,
-                  slugId: row.slugId,
-              }
-            : {
-                  ...activityBase,
-                  isIndexed: false,
-              };
+        return toProjectPageActivity({
+            row,
+            translation: freshTranslation,
+            targetLanguageCode,
+            displayLanguage,
+            counts,
+        });
     });
     const lastRow = pageRows.at(-1);
     return {

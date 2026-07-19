@@ -222,8 +222,37 @@ const requestedActivityContentQuery = useConversationContentQuery({
     () => activityTranslationModePreference.value !== undefined && props.activity.isIndexed
   ),
 });
-const activeActivityDisplayContent = computed(() => {
+const localActivityDisplayContent = computed<ProjectActivity["displayContent"]>(() => {
+  const displayContent = props.activity.displayContent;
+  const alternateContent = props.activity.isIndexed
+    ? undefined
+    : props.activity.alternateContent;
   if (
+    activityTranslationModePreference.value === undefined ||
+    displayContent.status !== "available" ||
+    activityTranslationModePreference.value === displayContent.mode ||
+    alternateContent === undefined ||
+    alternateContent.mode !== activityTranslationModePreference.value
+  ) {
+    return displayContent;
+  }
+
+  return {
+    ...displayContent,
+    mode: alternateContent.mode,
+    content: alternateContent.content,
+    translationControl:
+      displayContent.translationControl === null
+        ? null
+        : {
+            ...displayContent.translationControl,
+            alternateMode: displayContent.mode,
+          },
+  };
+});
+const activeActivityDisplayContent = computed<ProjectActivity["displayContent"]>(() => {
+  if (
+    props.activity.isIndexed &&
     activityTranslationModePreference.value !== undefined &&
     requestedActivityContentQuery.data.value !== undefined
   ) {
@@ -238,7 +267,7 @@ const activeActivityDisplayContent = computed(() => {
 
     return {
       sourceVersion: fetchedContent.sourceVersion,
-      status: "available" as const,
+      status: "available",
       mode: fetchedContent.mode,
       content: {
         title: fetchedContent.content.title,
@@ -248,7 +277,7 @@ const activeActivityDisplayContent = computed(() => {
     };
   }
 
-  return props.activity.displayContent;
+  return localActivityDisplayContent.value;
 });
 
 const activityTranslationMode = computed<ContentTranslationDisplayMode>({

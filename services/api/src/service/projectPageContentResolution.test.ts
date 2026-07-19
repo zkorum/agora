@@ -3,6 +3,7 @@ import {
     projectContentNeedsTranslationStatus,
     resolveProjectContentForDisplay,
     toProjectDisplayContent,
+    toProjectPageActivity,
     type ProjectContentResolutionProject,
     type ProjectContentTranslationResolutionRow,
 } from "./projectPage.js";
@@ -18,6 +19,29 @@ const baseProject = {
     sourceLanguageProvider: null,
     sourceLanguageConfidence: null,
 } satisfies ProjectContentResolutionProject;
+
+type TestProjectActivityRow = Parameters<
+    typeof toProjectPageActivity
+>[0]["row"];
+
+function createUnlistedActivityRow(): TestProjectActivityRow {
+    return {
+        conversationId: 1,
+        conversationContentId: 2,
+        conversationContentPublicId: "00000000-0000-4000-8000-000000000002",
+        slugId: "unlisted-activity",
+        isIndexed: false,
+        isClosed: false,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        isEdited: false,
+        conversationType: "polis",
+        title: "Source activity",
+        bodyPlainText: "Source activity body",
+        sourceLanguageCode: "en",
+        sourceRawLanguageCode: "en",
+        dynamicTranslationEnabled: true,
+    };
+}
 
 function resolveProjectContent({
     project = baseProject,
@@ -370,5 +394,74 @@ describe("resolveProjectContentForDisplay", () => {
                 additionalLanguageCodes: [],
             }),
         ).toBe(false);
+    });
+});
+
+describe("toProjectPageActivity", () => {
+    it("displays completed translations for unlisted activities", () => {
+        const row = createUnlistedActivityRow();
+        const activity = toProjectPageActivity({
+            row,
+            translation: {
+                conversationContentId: 2,
+                displayLanguageCode: "fr",
+                translatedTitle: "Activité traduite",
+                translatedBody: "Corps traduit",
+                translatedBodyPlainText: "Corps traduit",
+                sourceLanguageCode: "en",
+            },
+            targetLanguageCode: "fr",
+            displayLanguage: "fr",
+            counts: undefined,
+        });
+
+        expect(activity).toMatchObject({
+            isIndexed: false,
+            displayContent: {
+                status: "available",
+                mode: "translated",
+                content: {
+                    title: "Activité traduite",
+                    bodyPlainText: "Corps traduit",
+                },
+                translationControl: {
+                    status: "completed",
+                    alternateMode: "original",
+                    canRequestAlternate: true,
+                },
+            },
+            alternateContent: {
+                mode: "original",
+                content: {
+                    title: "Source activity",
+                    bodyPlainText: "Source activity body",
+                },
+            },
+        });
+        expect(activity).not.toHaveProperty("slugId");
+    });
+
+    it("hides the toggle when an unlisted activity has no alternate content", () => {
+        const activity = toProjectPageActivity({
+            row: createUnlistedActivityRow(),
+            translation: undefined,
+            targetLanguageCode: "fr",
+            displayLanguage: "fr",
+            counts: undefined,
+        });
+
+        if (activity.isIndexed) {
+            throw new Error("Expected an unlisted project activity");
+        }
+        expect(activity.alternateContent).toBeUndefined();
+        expect(activity.displayContent).toMatchObject({
+            status: "available",
+            mode: "original",
+            content: {
+                title: "Source activity",
+                bodyPlainText: "Source activity body",
+            },
+            translationControl: null,
+        });
     });
 });

@@ -446,6 +446,12 @@ const zodProjectPageActivityDisplayedContent = createZodDisplayedContent(
     zodProjectPageActivityContentVariant,
     zodProjectPageActivityContentVariant,
 );
+const zodProjectPageActivityAlternateContent = z
+    .object({
+        mode: zodLocalizedContentDisplayMode,
+        content: zodProjectPageActivityContentVariant,
+    })
+    .strict();
 const zodProjectPageActivityBase = z
     .object({
         conversationType: zodConversationType,
@@ -472,6 +478,7 @@ const zodProjectPageActivity = z.discriminatedUnion("isIndexed", [
     zodProjectPageActivityBase
         .extend({
             isIndexed: z.literal(false),
+            alternateContent: zodProjectPageActivityAlternateContent.optional(),
         })
         .strict(),
 ]);

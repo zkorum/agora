@@ -14,7 +14,7 @@
 
     <!-- Initialization error (e.g. candidate set fetch failed) -->
     <ErrorRetryBlock
-      v-else-if="initError"
+      v-else-if="initError || candidateResolutionError"
       :title="t('loadingError')"
       :retry-label="t('retryButton')"
       compact
@@ -59,7 +59,7 @@
     </div>
 
     <!-- Active voting -->
-    <div v-else-if="candidates.length > 0" class="voting-section">
+    <div v-else-if="candidateItems.length > 0" class="voting-section">
       <div class="section-header-row">
         <div class="section-header">{{ t("title") }}</div>
         <AnalysisActionButton
@@ -120,31 +120,30 @@
       <div class="candidates-grid-wrapper">
         <div class="candidates-grid" :class="{ 'candidates-transitioning': isTransitioning }">
           <div
-            v-for="slugId in candidates"
-            :key="slugId"
+            v-for="item in candidateItems"
+            :key="item.slugId"
             class="candidate-card"
             role="button"
             tabindex="0"
             :class="{
-              'selected-best': selectedBest === slugId,
-              'selected-worst': selectedWorst === slugId,
+              'selected-best': selectedBest === item.slugId,
+              'selected-worst': selectedWorst === item.slugId,
             }"
-            @click="handleCandidateClick(slugId)"
-            @keydown.enter.prevent="handleCandidateClick(slugId)"
-            @keydown.space.prevent="handleCandidateClick(slugId)"
+            @click="handleCandidateClick(item.slugId)"
+            @keydown.enter.prevent="handleCandidateClick(item.slugId)"
+            @keydown.space.prevent="handleCandidateClick(item.slugId)"
           >
             <MaxDiffCandidateCardContent
               ref="candidateContentComponents"
               :conversation-slug-id="conversationSlugId"
-              :item="candidateItemBySlugId.get(slugId)"
-              fallback-text=""
+              :item="item"
               @content-changed="checkTruncation"
             />
             <div class="candidate-label">
-              <span v-if="selectedBest === slugId" class="label-best">
+              <span v-if="selectedBest === item.slugId" class="label-best">
                 {{ t("mostImportant") }}
               </span>
-              <span v-else-if="selectedWorst === slugId" class="label-worst">
+              <span v-else-if="selectedWorst === item.slugId" class="label-worst">
                 {{ t("leastImportant") }}
               </span>
             </div>
@@ -402,6 +401,7 @@ const itemBySlugId = computed(() => {
 });
 
 const candidateItems = ref<MaxDiffCandidateDisplayItem[]>([]);
+const candidateResolutionError = ref(false);
 
 const candidateItemBySlugId = computed(() => {
   const map = new Map<string, MaxDiffCandidateDisplayItem>();
@@ -412,10 +412,18 @@ const candidateItemBySlugId = computed(() => {
 });
 
 function updateCandidateItemSnapshot(): void {
-  candidateItems.value = createMaxDiffCandidateDisplaySnapshot({
+  const resolvedCandidateItems = createMaxDiffCandidateDisplaySnapshot({
     candidateSlugIds: candidates.value,
     itemBySlugId: itemBySlugId.value,
   });
+  if (resolvedCandidateItems.length !== candidates.value.length) {
+    candidateItems.value = [];
+    candidateResolutionError.value = true;
+    return;
+  }
+
+  candidateItems.value = resolvedCandidateItems;
+  candidateResolutionError.value = false;
 }
 
 function needsDialog(slugId: string): boolean {
@@ -491,7 +499,7 @@ const dialogDisplayContent = ref<RankingItemDisplayedContent | undefined>(undefi
 const dialogExternalUrl = ref<string | null>(null);
 
 function openVotingDialog(slugId: string): void {
-  const item = itemBySlugId.value.get(slugId);
+  const item = candidateItemBySlugId.value.get(slugId);
   dialogItemSlugId.value = item?.slugId;
   dialogDisplayContent.value = item?.displayContent;
   dialogExternalUrl.value = item?.externalUrl ?? null;
@@ -532,7 +540,7 @@ const candidateContentComponents = ref<
 function checkTruncation(): void {
   const newSet = new Set<string>();
   for (const [index, component] of candidateContentComponents.value.entries()) {
-    const slugId = candidates.value[index];
+    const slugId = candidateItems.value[index]?.slugId;
     if (slugId === undefined) continue;
     if (component.isTruncated()) {
       newSet.add(slugId);
@@ -616,14 +624,19 @@ watch(
 );
 
 // Detect truncated candidate cards after DOM updates
-watch([candidates, itemBySlugId], () => {
-  updateCandidateItemSnapshot();
-  void nextTick(checkTruncation);
-});
+watch(
+  [candidates, itemBySlugId],
+  () => {
+    updateCandidateItemSnapshot();
+    void nextTick(checkTruncation);
+  },
+  { immediate: true }
+);
 
 function retryInitialize(): void {
   engineInitialized.value = false;
   initError.value = false;
+  candidateResolutionError.value = false;
   isInitializingEngine.value = true;
   void itemsQuery.refetch();
   void loadQuery.refetch();
