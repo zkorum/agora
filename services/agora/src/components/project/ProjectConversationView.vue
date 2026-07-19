@@ -348,12 +348,12 @@ main {
 .project-conversation-view__aside {
   grid-area: aside;
   position: sticky;
-  top: 1.25rem;
+  top: 0;
 }
 
 @media (min-width: 861px) {
   .project-conversation-view__aside {
-    padding-block-start: 1rem;
+    padding-block-start: 1.5rem;
   }
 }
 

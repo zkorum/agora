@@ -38,6 +38,9 @@ watch(actionBarElement, (element) => emit("update:actionBarElement", element), {
   top: var(--header-height, 0);
   z-index: 10;
   min-width: 0;
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+  padding-block-start: 1rem;
   padding-block-end: 0.65rem;
   background:
     radial-gradient(
