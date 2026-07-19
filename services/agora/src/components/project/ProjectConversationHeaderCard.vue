@@ -267,7 +267,9 @@ const conversationTypeLabel = computed(() =>
 const extendedConversation = computed(() => props.conversationData);
 const initialDisplayContent = computed(() => props.initialDisplayContent);
 const fallbackPayload = computed(() =>
-  "payload" in props.conversationData ? props.conversationData.payload : undefined
+  "payload" in props.conversationData
+    ? props.conversationData.payload
+    : undefined
 );
 const {
   displayedTitle,

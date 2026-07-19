@@ -101,5 +101,9 @@ generated_test/
 /project-*.csv
 /project-*.md
 
+# local one-off export helpers
+/scripts/export-agora-public-seed-opinions.sql
+/scripts/export-polis-public-seed-opinions.mjs
+
 # local frontend project-page dev assets
 /services/agora/public/local-project-assets/
