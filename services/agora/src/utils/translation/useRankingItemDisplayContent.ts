@@ -8,30 +8,11 @@ import {
   type ContentTranslationDisplayMode,
   getContentTranslationSourceLanguageLabel,
 } from "./contentTranslation";
+import { resolveRankingItemDisplayText } from "./rankingItemDisplayText";
 import {
   type RankingItemContentTranslationPreview,
   useRankingItemContentTranslationPreview,
 } from "./useContentTranslationPreview";
-
-export interface RankingItemDisplayedText {
-  title: string;
-  body: string | null;
-}
-
-export function getRankingItemDisplayText({
-  displayContent,
-}: {
-  displayContent: RankingItemDisplayedContent;
-}): RankingItemDisplayedText {
-  if (displayContent.status !== "available") {
-    return { title: "", body: null };
-  }
-
-  return {
-    title: displayContent.content.title,
-    body: displayContent.content.bodyHtml ?? null,
-  };
-}
 
 export function useRankingItemDisplayContent({
   conversationSlugId,
@@ -90,8 +71,8 @@ export function useRankingItemDisplayContent({
         mode: "translated",
         sourceLanguageLabel,
         translationStatus: translationControl.status,
-        translatedTitle: currentDisplayContent.content.title,
-        translatedBody: currentDisplayContent.content.bodyHtml,
+        originalContent: undefined,
+        translatedContent: currentDisplayContent.content,
       };
     }
 
@@ -101,8 +82,11 @@ export function useRankingItemDisplayContent({
       mode: "original",
       sourceLanguageLabel,
       translationStatus: translationControl.status,
-      translatedTitle: "",
-      translatedBody: undefined,
+      originalContent:
+        currentDisplayContent.status === "available"
+          ? currentDisplayContent.content
+          : undefined,
+      translatedContent: undefined,
     };
   });
 
@@ -110,29 +94,14 @@ export function useRankingItemDisplayContent({
     () => requestedTranslationPreview.value ?? initialTranslationPreview.value
   );
 
-  const displayedTitle = computed(() => {
-    const preview = translationPreview.value;
-    if (preview?.mode === "translated") {
-      return preview.translatedTitle;
-    }
-    const currentDisplayContent = toValue(displayContent);
-    if (currentDisplayContent?.status !== "available") {
-      return "";
-    }
-    return currentDisplayContent.content.title;
-  });
-
-  const displayedBody = computed(() => {
-    const preview = translationPreview.value;
-    if (preview?.mode === "translated") {
-      return preview.translatedBody ?? "";
-    }
-    const currentDisplayContent = toValue(displayContent);
-    if (currentDisplayContent?.status !== "available") {
-      return "";
-    }
-    return currentDisplayContent.content.bodyHtml ?? "";
-  });
+  const displayedText = computed(() =>
+    resolveRankingItemDisplayText({
+      displayContent: toValue(displayContent),
+      translationPreview: translationPreview.value,
+    })
+  );
+  const displayedTitle = computed(() => displayedText.value.title);
+  const displayedBody = computed(() => displayedText.value.body ?? "");
 
   function setTranslationMode(mode: ContentTranslationDisplayMode): void {
     hasRequestedTranslation.value = true;

@@ -109,7 +109,7 @@ import {
   createMaxDiffCandidateDisplaySnapshot,
   type MaxDiffCandidateDisplayItem,
 } from "src/utils/maxdiffCandidateDisplay";
-import { getRankingItemDisplayText } from "src/utils/translation/useRankingItemDisplayContent";
+import { getRankingItemDisplayText } from "src/utils/translation/rankingItemDisplayText";
 import { computed, ref } from "vue";
 
 const { isActive } = usePageLayout({

@@ -264,7 +264,7 @@ import {
   createMaxDiffCandidateDisplaySnapshot,
   type MaxDiffCandidateDisplayItem,
 } from "src/utils/maxdiffCandidateDisplay";
-import { getRankingItemDisplayText } from "src/utils/translation/useRankingItemDisplayContent";
+import { getRankingItemDisplayText } from "src/utils/translation/rankingItemDisplayText";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, inject, nextTick, onActivated, onBeforeUnmount, onDeactivated, ref, triggerRef, watch } from "vue";
 

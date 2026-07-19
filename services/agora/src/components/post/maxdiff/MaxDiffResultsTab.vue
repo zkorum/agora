@@ -172,7 +172,7 @@ import { useMaxDiffLoadQuery } from "src/utils/api/maxdiff/useMaxDiffQueries";
 import type { MaxDiffShortcutItem } from "src/utils/component/analysis/maxdiffShortcutBar";
 import { maxdiffShortcutItemSchema } from "src/utils/component/analysis/maxdiffShortcutBar";
 import { subscribeToContentTranslationUpdated } from "src/utils/translation/contentTranslationEvents";
-import { getRankingItemDisplayText } from "src/utils/translation/useRankingItemDisplayContent";
+import { getRankingItemDisplayText } from "src/utils/translation/rankingItemDisplayText";
 import { computed, inject, onActivated, onDeactivated, onMounted, onUnmounted, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 import { useRoute } from "vue-router";

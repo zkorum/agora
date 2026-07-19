@@ -19,7 +19,7 @@
             aria-hidden="true"
           />
           <span class="project-conversation-header-card__breadcrumb-current">
-            {{ t({ key: "conversationType" }) }}
+            {{ conversationTypeLabel }}
           </span>
           <span class="project-conversation-header-card__breadcrumb-separator"
             >•</span
@@ -258,6 +258,11 @@ const breadcrumbIcon = computed(() =>
   projectTextDirection.value === "rtl"
     ? "mdi-chevron-left"
     : "mdi-chevron-right"
+);
+const conversationTypeLabel = computed(() =>
+  props.conversationData.metadata.conversationType === "ranking"
+    ? t({ key: "voteType" })
+    : t({ key: "conversationType" })
 );
 const extendedConversation = computed(() => props.conversationData);
 const initialDisplayContent = computed(() => props.initialDisplayContent);

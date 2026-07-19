@@ -6,6 +6,7 @@ import type { SSEContentTranslationUpdatedData } from "src/shared/types/sse";
 import type {
   ContentTranslationSubject,
   LocalizedContentTranslationStatus,
+  TitleBodyContentVariant,
 } from "src/shared/types/zod";
 import {
   zodConversationContentVariant,
@@ -117,8 +118,8 @@ export interface RankingItemContentTranslationPreview {
   mode: ContentTranslationDisplayMode;
   sourceLanguageLabel: string | undefined;
   translationStatus: LocalizedContentTranslationStatus;
-  translatedTitle: string;
-  translatedBody: string | undefined;
+  originalContent: TitleBodyContentVariant | undefined;
+  translatedContent: TitleBodyContentVariant | undefined;
 }
 
 interface ContentTranslationController {
@@ -584,12 +585,19 @@ export function useRankingItemContentTranslationPreview({
         return undefined;
       }
       const response = controller.query.data.value;
+      const rawOriginalVariant =
+        response?.success === true &&
+        response.subject.kind === "ranking_item"
+          ? response.content.variants.original
+          : undefined;
       const rawTranslatedVariant =
         response?.success === true &&
         response.subject.kind === "ranking_item" &&
         response.content.kind === "translatable"
           ? response.content.variants.translated
           : undefined;
+      const originalVariant =
+        zodTitleBodyContentVariant.safeParse(rawOriginalVariant);
       const translatedVariant =
         zodTitleBodyContentVariant.safeParse(rawTranslatedVariant);
       return {
@@ -598,11 +606,11 @@ export function useRankingItemContentTranslationPreview({
         mode: controller.mode.value,
         sourceLanguageLabel: controller.sourceLanguageLabel.value,
         translationStatus: controller.translationStatus.value,
-        translatedTitle: translatedVariant.success
-          ? translatedVariant.data.title
-          : "",
-        translatedBody: translatedVariant.success
-          ? translatedVariant.data.bodyHtml
+        originalContent: originalVariant.success
+          ? originalVariant.data
+          : undefined,
+        translatedContent: translatedVariant.success
+          ? translatedVariant.data
           : undefined,
       };
     }
