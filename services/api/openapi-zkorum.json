@@ -26685,7 +26685,8 @@
                                                 "required": [
                                                     "kind",
                                                     "conversationSlugId",
-                                                    "opinionSlugId"
+                                                    "opinionSlugId",
+                                                    "sourceVersion"
                                                 ],
                                                 "additionalProperties": false
                                             },

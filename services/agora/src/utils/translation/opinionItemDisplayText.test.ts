@@ -97,14 +97,14 @@ describe("getPendingOpinionTranslationMode", () => {
 });
 
 describe("opinion translation subject", () => {
-  it("accepts legacy subjects while supporting exact source revisions", () => {
+  it("requires the exact source revision", () => {
     expect(
       zodContentTranslationSubject.safeParse({
         kind: "opinion",
         conversationSlugId: "conv1234",
         opinionSlugId: "opin1234",
       }).success
-    ).toBe(true);
+    ).toBe(false);
     expect(
       zodContentTranslationSubject.safeParse({
         kind: "opinion",

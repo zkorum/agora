@@ -725,7 +725,7 @@ async function fetchOpinionSource({
     db: PostgresDatabase;
     conversationSlugId: string;
     opinionSlugId: string;
-    sourceVersion: string | undefined;
+    sourceVersion: string;
     requesterIsSiteModerator: boolean;
 }): Promise<OpinionContentSource | undefined> {
     const rows = await db
@@ -750,9 +750,7 @@ async function fetchOpinionSource({
             opinionContentTable,
             and(
                 eq(opinionContentTable.opinionId, opinionTable.id),
-                sourceVersion === undefined
-                    ? eq(opinionContentTable.id, opinionTable.currentContentId)
-                    : eq(opinionContentTable.publicId, sourceVersion),
+                eq(opinionContentTable.publicId, sourceVersion),
             ),
         )
         .leftJoin(

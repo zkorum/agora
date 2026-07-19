@@ -17,7 +17,6 @@ import {
 } from "../src/shared-backend/schema.js";
 import { ENQUEUE_CONTENT_TRANSLATION_WORK_SCRIPT } from "../src/shared-backend/contentTranslationQueue.js";
 import { Dto } from "../src/shared/types/dto.js";
-import { zodSSEContentTranslationUpdatedData } from "../src/shared/types/sse.js";
 import { isSiteModeratorAccount } from "../src/service/authUtil.js";
 import { requestContentTranslation } from "../src/service/contentTranslation.js";
 import { readDbFixtureSql } from "./dbFixture.js";
@@ -176,7 +175,7 @@ describe("opinion content translation boundary", () => {
         requesterUserId,
         beforeQueueTranslationWork,
     }: {
-        sourceVersion: string | undefined;
+        sourceVersion: string;
         requestMode: "read_existing" | "queue_if_missing";
         requesterUserId: string;
         beforeQueueTranslationWork: () => Promise<void>;
@@ -186,7 +185,7 @@ describe("opinion content translation boundary", () => {
                 kind: "opinion",
                 conversationSlugId,
                 opinionSlugId,
-                ...(sourceVersion === undefined ? {} : { sourceVersion }),
+                sourceVersion,
             },
             targetLanguageCode: "en",
             requestMode,
@@ -208,63 +207,6 @@ describe("opinion content translation boundary", () => {
             beforeQueueTranslationWork,
         });
     }
-
-    it("accepts legacy request and worker subjects without sourceVersion", async () => {
-        expect(
-            Dto.contentTranslationRequest.safeParse({
-                subject: {
-                    kind: "opinion",
-                    conversationSlugId,
-                    opinionSlugId,
-                },
-                targetLanguageCode: "en",
-                requestMode: "read_existing",
-            }).success,
-        ).toBe(true);
-        expect(
-            zodSSEContentTranslationUpdatedData.safeParse({
-                subject: {
-                    kind: "opinion",
-                    conversationSlugId,
-                    opinionSlugId,
-                },
-                targetLanguageCode: "en",
-                status: "completed",
-                sourceVersion: currentSourceVersion,
-                timestamp: 1,
-            }).success,
-        ).toBe(true);
-    });
-
-    it("falls back legacy opinion requests to the current revision", async () => {
-        await db.insert(opinionContentTranslationTable).values({
-            opinionContentId: currentContentId,
-            displayLanguageCode: "en",
-            translatedContent: "Current translated statement",
-            sourceLanguageCode: "es",
-        });
-
-        const response = await requestOpinionTranslation({
-            sourceVersion: undefined,
-            requestMode: "read_existing",
-            requesterUserId: normalUserId,
-            beforeQueueTranslationWork: async () => {},
-        });
-
-        expect(response).toMatchObject({
-            subject: {
-                kind: "opinion",
-                sourceVersion: currentSourceVersion,
-            },
-            content: {
-                sourceVersion: currentSourceVersion,
-                variants: {
-                    original: { content: "Current statement" },
-                    translated: { content: "Current translated statement" },
-                },
-            },
-        });
-    });
 
     it("keeps explicit sourceVersion requests revision-aware", async () => {
         await db.insert(opinionContentTranslationTable).values({
