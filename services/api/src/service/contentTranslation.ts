@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull, ne, or } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import type { Script } from "@valkey/valkey-glide";
 import type { BaseLogger } from "pino";
@@ -10,6 +10,7 @@ import {
     conversationTranslationTargetLanguageTable,
     opinionContentTable,
     opinionContentTranslationTable,
+    opinionModerationTable,
     opinionTable,
     projectContentTable,
     projectContentTranslationTable,
@@ -74,25 +75,35 @@ interface RequestContentTranslationParams {
     subject: ContentTranslationSubject;
     targetLanguageCode: SupportedDisplayLanguageCodes;
     requestMode: ContentTranslationRequestMode;
+    requesterIsSiteModerator: boolean;
     now: Date;
     log: Pick<BaseLogger, "info" | "error">;
     beforeQueueTranslationWork: () => Promise<void>;
 }
 
 interface RequestConversationContentTranslationParams
-    extends Omit<RequestContentTranslationParams, "subject"> {
+    extends Omit<
+        RequestContentTranslationParams,
+        "subject" | "requesterIsSiteModerator"
+    > {
     conversationSlugId: string;
     sourceVersion?: string;
 }
 
 interface RequestProjectContentTranslationParams
-    extends Omit<RequestContentTranslationParams, "subject"> {
+    extends Omit<
+        RequestContentTranslationParams,
+        "subject" | "requesterIsSiteModerator"
+    > {
     projectSlug: string;
     sourceVersion?: string;
 }
 
 interface RequestSurveyQuestionContentTranslationParams
-    extends Omit<RequestContentTranslationParams, "subject"> {
+    extends Omit<
+        RequestContentTranslationParams,
+        "subject" | "requesterIsSiteModerator"
+    > {
     conversationSlugId: string;
     questionSlugId: string;
 }
@@ -709,11 +720,13 @@ async function fetchOpinionSource({
     conversationSlugId,
     opinionSlugId,
     sourceVersion,
+    requesterIsSiteModerator,
 }: {
     db: PostgresDatabase;
     conversationSlugId: string;
     opinionSlugId: string;
-    sourceVersion: string;
+    sourceVersion: string | undefined;
+    requesterIsSiteModerator: boolean;
 }): Promise<OpinionContentSource | undefined> {
     const rows = await db
         .select({
@@ -737,7 +750,16 @@ async function fetchOpinionSource({
             opinionContentTable,
             and(
                 eq(opinionContentTable.opinionId, opinionTable.id),
-                eq(opinionContentTable.publicId, sourceVersion),
+                sourceVersion === undefined
+                    ? eq(opinionContentTable.id, opinionTable.currentContentId)
+                    : eq(opinionContentTable.publicId, sourceVersion),
+            ),
+        )
+        .leftJoin(
+            opinionModerationTable,
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
             ),
         )
         .where(
@@ -746,6 +768,13 @@ async function fetchOpinionSource({
                 eq(conversationTable.isImporting, false),
                 isNotNull(conversationTable.currentContentId),
                 eq(opinionTable.slugId, opinionSlugId),
+                isNotNull(opinionTable.currentContentId),
+                requesterIsSiteModerator
+                    ? undefined
+                    : or(
+                          isNull(opinionModerationTable.id),
+                          ne(opinionModerationTable.moderationAction, "hide"),
+                      ),
             ),
         )
         .limit(1);
@@ -2608,6 +2637,7 @@ export async function requestContentTranslation({
     subject,
     targetLanguageCode,
     requestMode,
+    requesterIsSiteModerator,
     now,
     log,
     beforeQueueTranslationWork,
@@ -2787,6 +2817,7 @@ export async function requestContentTranslation({
         conversationSlugId: subject.conversationSlugId,
         opinionSlugId: subject.opinionSlugId,
         sourceVersion: subject.sourceVersion,
+        requesterIsSiteModerator,
     });
     if (source === undefined) {
         return undefined;

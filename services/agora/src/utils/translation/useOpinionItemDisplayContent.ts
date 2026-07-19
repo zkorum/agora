@@ -8,7 +8,10 @@ import {
   type ContentTranslationDisplayMode,
   getContentTranslationSourceLanguageLabel,
 } from "./contentTranslation";
-import { getInitialOpinionDisplayText } from "./opinionItemDisplayText";
+import {
+  getInitialOpinionDisplayText,
+  getPendingOpinionTranslationMode,
+} from "./opinionItemDisplayText";
 import {
   type OpinionContentTranslationPreview,
   useOpinionContentTranslationPreview,
@@ -32,6 +35,9 @@ export function useOpinionItemDisplayContent({
   const spokenLanguageKey = computed(() =>
     [...spokenLanguages.value].sort().join("\u0000")
   );
+  const pendingServerTranslationMode = computed(() =>
+    getPendingOpinionTranslationMode(toValue(opinionItem))
+  );
 
   const translationSubject = computed(() => ({
     kind: "opinion" as const,
@@ -45,9 +51,13 @@ export function useOpinionItemDisplayContent({
   } = useOpinionContentTranslationPreview({
     subject: translationSubject,
     enabled: computed(
-      () => toValue(interactive) && hasRequestedTranslation.value
+      () =>
+        toValue(interactive) &&
+        (hasRequestedTranslation.value ||
+          pendingServerTranslationMode.value !== undefined)
     ),
     sourceLanguageCode: computed(() => toValue(opinionItem).sourceLanguageCode),
+    initialModePreference: pendingServerTranslationMode,
   });
 
   const initialTranslationPreview = computed<

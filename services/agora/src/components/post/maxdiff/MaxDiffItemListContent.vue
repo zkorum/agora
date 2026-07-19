@@ -20,7 +20,15 @@ import ContentTranslationControl from "src/components/translation/ContentTransla
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import type { RankingItemDisplayedContent } from "src/shared/types/zod";
 import { useRankingItemDisplayContent } from "src/utils/translation/useRankingItemDisplayContent";
-import { computed } from "vue";
+import { computed, watch } from "vue";
+
+export interface MaxDiffItemListDisplayState {
+  itemSlugId: string;
+  sourceVersion: string;
+  title: string;
+  body: string | null;
+  displayContent: RankingItemDisplayedContent | undefined;
+}
 
 const props = defineProps<{
   conversationSlugId: string;
@@ -29,16 +37,39 @@ const props = defineProps<{
   compactMode: boolean;
 }>();
 
-const { displayedTitle, translationPreview, setTranslationMode } =
-  useRankingItemDisplayContent({
-    conversationSlugId: computed(() => props.conversationSlugId),
-    itemSlugId: computed(() => props.itemSlugId),
-    displayContent: computed(() => props.displayContent),
-  });
+const emit = defineEmits<{
+  displayStateChanged: [state: MaxDiffItemListDisplayState];
+}>();
+
+const {
+  displayedTitle,
+  displayedBody,
+  resolvedDisplayContent,
+  translationPreview,
+  setTranslationMode,
+} = useRankingItemDisplayContent({
+  conversationSlugId: computed(() => props.conversationSlugId),
+  itemSlugId: computed(() => props.itemSlugId),
+  displayContent: computed(() => props.displayContent),
+});
 const translationMode = computed({
   get: () => translationPreview.value?.mode ?? "original",
   set: setTranslationMode,
 });
+
+watch(
+  [displayedTitle, displayedBody, resolvedDisplayContent],
+  ([title, body, activeDisplayContent]) => {
+    emit("displayStateChanged", {
+      itemSlugId: props.itemSlugId,
+      sourceVersion: props.displayContent.sourceVersion,
+      title,
+      body: body === "" ? null : body,
+      displayContent: activeDisplayContent,
+    });
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped lang="scss">

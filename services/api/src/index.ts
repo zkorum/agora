@@ -5776,6 +5776,14 @@ server.after(() => {
                 return productFailureResponse;
             }
 
+            const requesterIsSiteModerator =
+                request.body.subject.kind === "opinion"
+                    ? await isSiteModeratorAccount({
+                          db,
+                          userId: requesterUserId,
+                      })
+                    : false;
+
             const response =
                 await contentTranslationService.requestContentTranslation({
                     db,
@@ -5784,6 +5792,7 @@ server.after(() => {
                     subject: request.body.subject,
                     targetLanguageCode: request.body.targetLanguageCode,
                     requestMode: request.body.requestMode,
+                    requesterIsSiteModerator,
                     now,
                     log,
                     beforeQueueTranslationWork: async () => {

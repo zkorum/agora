@@ -7,6 +7,52 @@ export interface RankingItemDisplayedText {
   body: string | null;
 }
 
+export function resolveRankingItemDisplayedContent({
+  displayContent,
+  translationPreview,
+}: {
+  displayContent: RankingItemDisplayedContent;
+  translationPreview: RankingItemContentTranslationPreview | undefined;
+}): RankingItemDisplayedContent | undefined {
+  if (translationPreview === undefined) {
+    return displayContent;
+  }
+
+  const content =
+    translationPreview.mode === "translated"
+      ? translationPreview.translatedContent
+      : translationPreview.originalContent;
+  if (content === undefined) {
+    if (
+      displayContent.status === "available" &&
+      displayContent.mode === translationPreview.mode
+    ) {
+      return displayContent;
+    }
+    return undefined;
+  }
+
+  const translationControl = displayContent.translationControl;
+  return {
+    sourceVersion: displayContent.sourceVersion,
+    status: "available",
+    mode: translationPreview.mode,
+    content,
+    translationControl:
+      translationControl === null
+        ? null
+        : {
+            ...translationControl,
+            status: translationPreview.translationStatus,
+            sourceLanguageLabel: translationPreview.sourceLanguageLabel,
+            alternateMode:
+              translationPreview.mode === "translated"
+                ? "original"
+                : "translated",
+          },
+  };
+}
+
 export function getRankingItemDisplayText({
   displayContent,
 }: {

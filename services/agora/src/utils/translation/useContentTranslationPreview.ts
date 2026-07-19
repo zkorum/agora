@@ -136,10 +136,14 @@ function useContentTranslationController({
   subject,
   sourceLanguageCode,
   enabled,
+  initialModePreference,
 }: {
   subject: MaybeRefOrGetter<ContentTranslationSubject>;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
   enabled: MaybeRefOrGetter<boolean>;
+  initialModePreference?: MaybeRefOrGetter<
+    ContentTranslationDisplayMode | undefined
+  >;
 }): ContentTranslationController & {
   query: ReturnType<typeof useContentTranslationQuery>;
 } {
@@ -150,7 +154,9 @@ function useContentTranslationController({
   const { t } = useComponentI18n<ContentTranslationPreviewTranslations>(
     contentTranslationPreviewTranslations
   );
-  const modePreference = ref<ContentTranslationDisplayMode | undefined>(undefined);
+  const modePreference = ref<ContentTranslationDisplayMode | undefined>(
+    undefined
+  );
   const hasRequestedTranslation = ref(false);
   const sortedSpokenLanguageKey = computed(() =>
     [...spokenLanguages.value].sort().join("\u0000")
@@ -175,10 +181,7 @@ function useContentTranslationController({
   });
 
   const isLoadingInitialTranslation = computed(() => {
-    return (
-      modePreference.value === undefined &&
-      query.isPending.value
-    );
+    return modePreference.value === undefined && query.isPending.value;
   });
 
   const translatedVariant = computed(() => {
@@ -203,7 +206,11 @@ function useContentTranslationController({
     if (isLoadingInitialTranslation.value) {
       return "pending";
     }
-    if (!hasRequestedTranslation.value) {
+    if (
+      !hasRequestedTranslation.value &&
+      (toValue(initialModePreference) === undefined ||
+        modePreference.value !== undefined)
+    ) {
       return "not_requested";
     }
     if (query.isFetching.value) {
@@ -227,7 +234,8 @@ function useContentTranslationController({
   });
 
   const mode = computed<ContentTranslationDisplayMode>(() => {
-    const preferredMode = modePreference.value ?? "original";
+    const preferredMode =
+      modePreference.value ?? toValue(initialModePreference) ?? "original";
     if (
       preferredMode === "translated" &&
       translationStatus.value === "completed" &&
@@ -255,7 +263,9 @@ function useContentTranslationController({
     });
   });
 
-  async function setMode(nextMode: ContentTranslationDisplayMode): Promise<void> {
+  async function setMode(
+    nextMode: ContentTranslationDisplayMode
+  ): Promise<void> {
     if (nextMode === "translated") {
       modePreference.value = "translated";
       if (
@@ -300,6 +310,24 @@ function useContentTranslationController({
     hasRequestedTranslation.value = false;
   });
 
+  watch(
+    [
+      () => toValue(enabled),
+      () => toValue(initialModePreference),
+      () => toValue(subject),
+      displayLanguage,
+      sortedSpokenLanguageKey,
+    ],
+    ([isEnabled, initialMode]) => {
+      if (isEnabled && initialMode !== undefined) {
+        translationPolling.start();
+      } else if (!hasRequestedTranslation.value) {
+        translationPolling.stop();
+      }
+    },
+    { immediate: true }
+  );
+
   function applyTranslationNotEnabledResponse(): void {
     const response = query.data.value;
     if (
@@ -338,7 +366,7 @@ function useContentTranslationController({
     data: SSEContentTranslationUpdatedData
   ): boolean {
     return (
-      hasRequestedTranslation.value &&
+      toValue(enabled) &&
       data.targetLanguageCode === displayLanguage.value &&
       isSameContentTranslationSubject({
         left: data.subject,
@@ -468,7 +496,8 @@ export function useConversationContentTranslationPreview({
         zodConversationContentVariant.safeParse(rawTranslatedVariant);
       return {
         isAvailable: true,
-        isLoadingInitialTranslation: controller.isLoadingInitialTranslation.value,
+        isLoadingInitialTranslation:
+          controller.isLoadingInitialTranslation.value,
         mode: controller.mode.value,
         sourceLanguageLabel: controller.sourceLanguageLabel.value,
         translationStatus: controller.translationStatus.value,
@@ -492,17 +521,22 @@ export function useOpinionContentTranslationPreview({
   subject,
   sourceLanguageCode,
   enabled,
+  initialModePreference,
 }: {
   subject: MaybeRefOrGetter<
     Extract<ContentTranslationSubject, { kind: "opinion" }>
   >;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
   enabled: MaybeRefOrGetter<boolean>;
+  initialModePreference?: MaybeRefOrGetter<
+    ContentTranslationDisplayMode | undefined
+  >;
 }) {
   const controller = useContentTranslationController({
     subject,
     sourceLanguageCode,
     enabled,
+    initialModePreference,
   });
 
   const preview = computed<OpinionContentTranslationPreview | undefined>(() => {
@@ -569,7 +603,8 @@ export function useSurveyQuestionContentTranslationPreview({
         zodSurveyQuestionContentVariant.safeParse(rawTranslatedVariant);
       return {
         isAvailable: true,
-        isLoadingInitialTranslation: controller.isLoadingInitialTranslation.value,
+        isLoadingInitialTranslation:
+          controller.isLoadingInitialTranslation.value,
         mode: controller.mode.value,
         sourceLanguageLabel: controller.sourceLanguageLabel.value,
         translationStatus: controller.translationStatus.value,
@@ -613,8 +648,7 @@ export function useRankingItemContentTranslationPreview({
       }
       const response = controller.query.data.value;
       const rawOriginalVariant =
-        response?.success === true &&
-        response.subject.kind === "ranking_item"
+        response?.success === true && response.subject.kind === "ranking_item"
           ? response.content.variants.original
           : undefined;
       const rawTranslatedVariant =
@@ -629,7 +663,8 @@ export function useRankingItemContentTranslationPreview({
         zodTitleBodyContentVariant.safeParse(rawTranslatedVariant);
       return {
         isAvailable: true,
-        isLoadingInitialTranslation: controller.isLoadingInitialTranslation.value,
+        isLoadingInitialTranslation:
+          controller.isLoadingInitialTranslation.value,
         mode: controller.mode.value,
         sourceLanguageLabel: controller.sourceLanguageLabel.value,
         translationStatus: controller.translationStatus.value,

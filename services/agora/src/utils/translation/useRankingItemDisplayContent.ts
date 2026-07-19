@@ -8,7 +8,10 @@ import {
   type ContentTranslationDisplayMode,
   getContentTranslationSourceLanguageLabel,
 } from "./contentTranslation";
-import { resolveRankingItemDisplayText } from "./rankingItemDisplayText";
+import {
+  resolveRankingItemDisplayedContent,
+  resolveRankingItemDisplayText,
+} from "./rankingItemDisplayText";
 import {
   type RankingItemContentTranslationPreview,
   useRankingItemContentTranslationPreview,
@@ -26,9 +29,7 @@ export function useRankingItemDisplayContent({
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
   const hasRequestedTranslation = ref(false);
   const resolvedItemSlugId = computed(() => toValue(itemSlugId));
-  const sourceVersion = computed(
-    () => toValue(displayContent)?.sourceVersion
-  );
+  const sourceVersion = computed(() => toValue(displayContent)?.sourceVersion);
   const spokenLanguageKey = computed(() =>
     [...spokenLanguages.value].sort().join("\u0000")
   );
@@ -39,15 +40,17 @@ export function useRankingItemDisplayContent({
     itemSlugId: resolvedItemSlugId.value ?? "",
   }));
 
-  const { preview: requestedTranslationPreview, setMode: setRequestedTranslationMode } =
-    useRankingItemContentTranslationPreview({
-      subject: translationSubject,
-      enabled: computed(
-        () =>
-          hasRequestedTranslation.value && resolvedItemSlugId.value !== undefined
-      ),
-      sourceLanguageCode: undefined,
-    });
+  const {
+    preview: requestedTranslationPreview,
+    setMode: setRequestedTranslationMode,
+  } = useRankingItemContentTranslationPreview({
+    subject: translationSubject,
+    enabled: computed(
+      () =>
+        hasRequestedTranslation.value && resolvedItemSlugId.value !== undefined
+    ),
+    sourceLanguageCode: undefined,
+  });
 
   const initialTranslationPreview = computed<
     RankingItemContentTranslationPreview | undefined
@@ -110,6 +113,16 @@ export function useRankingItemDisplayContent({
   );
   const displayedTitle = computed(() => displayedText.value.title);
   const displayedBody = computed(() => displayedText.value.body ?? "");
+  const resolvedDisplayContent = computed(() => {
+    const currentDisplayContent = toValue(displayContent);
+    if (currentDisplayContent === undefined) {
+      return undefined;
+    }
+    return resolveRankingItemDisplayedContent({
+      displayContent: currentDisplayContent,
+      translationPreview: translationPreview.value,
+    });
+  });
 
   function setTranslationMode(mode: ContentTranslationDisplayMode): void {
     hasRequestedTranslation.value = true;
@@ -134,6 +147,7 @@ export function useRankingItemDisplayContent({
   return {
     displayedTitle,
     displayedBody,
+    resolvedDisplayContent,
     translationPreview,
     setTranslationMode,
     resetTranslationMode,

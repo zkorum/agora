@@ -15,5 +15,14 @@
         "auth_attempt_phone",
         "otp_email_destination_state",
         "otp_phone_destination_state"
+    ],
+    "content-translation": [
+        "user",
+        "conversation",
+        "opinion",
+        "opinion_content",
+        "opinion_content_translation",
+        "content_translation_work",
+        "opinion_moderation"
     ]
 }

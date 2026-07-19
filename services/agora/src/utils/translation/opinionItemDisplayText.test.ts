@@ -2,7 +2,10 @@ import type { DisplayedOpinionItem } from "src/shared/types/zod";
 import { zodContentTranslationSubject } from "src/shared/types/zod";
 import { describe, expect, it } from "vitest";
 
-import { getInitialOpinionDisplayText } from "./opinionItemDisplayText";
+import {
+  getInitialOpinionDisplayText,
+  getPendingOpinionTranslationMode,
+} from "./opinionItemDisplayText";
 
 const sourceVersion = "00000000-0000-4000-8000-000000000001";
 
@@ -58,15 +61,50 @@ describe("getInitialOpinionDisplayText", () => {
   });
 });
 
+describe("getPendingOpinionTranslationMode", () => {
+  it.each(["pending", "running"] as const)(
+    "follows the server alternate mode while translation is %s",
+    (status) => {
+      const item = opinionItem({
+        sourceVersion,
+        status,
+        translationControl: {
+          status,
+          alternateMode: "translated",
+          canRequestAlternate: true,
+        },
+      });
+
+      expect(getPendingOpinionTranslationMode(item)).toBe("translated");
+    }
+  );
+
+  it("does not follow a completed translation in the background", () => {
+    const item = opinionItem({
+      sourceVersion,
+      status: "available",
+      mode: "original",
+      content: { content: "Original statement" },
+      translationControl: {
+        status: "completed",
+        alternateMode: "translated",
+        canRequestAlternate: true,
+      },
+    });
+
+    expect(getPendingOpinionTranslationMode(item)).toBeUndefined();
+  });
+});
+
 describe("opinion translation subject", () => {
-  it("requires the exact source revision", () => {
+  it("accepts legacy subjects while supporting exact source revisions", () => {
     expect(
       zodContentTranslationSubject.safeParse({
         kind: "opinion",
         conversationSlugId: "conv1234",
         opinionSlugId: "opin1234",
       }).success
-    ).toBe(false);
+    ).toBe(true);
     expect(
       zodContentTranslationSubject.safeParse({
         kind: "opinion",

@@ -1079,12 +1079,15 @@ def _fetch_opinion_source(
             OpinionContent.source_language_provider,
             OpinionContent.source_language_confidence,
         )
+        .select_from(OpinionContent)
         .join(Opinion, Opinion.id == OpinionContent.opinion_id)
         .join(Conversation, Conversation.id == Opinion.conversation_id)
         .where(
             and_(
                 OpinionContent.id == opinion_content_id,
-                Opinion.current_content_id == OpinionContent.id,
+                Opinion.current_content_id.is_not(None),
+                Conversation.current_content_id.is_not(None),
+                Conversation.is_importing.is_(False),
             )
         )
         .limit(1)

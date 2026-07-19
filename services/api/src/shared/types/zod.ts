@@ -329,7 +329,7 @@ export const zodContentTranslationSubject = z.discriminatedUnion("kind", [
             kind: z.literal("opinion"),
             conversationSlugId: zodSlugId,
             opinionSlugId: zodSlugId,
-            sourceVersion: z.uuid(),
+            sourceVersion: z.uuid().optional(),
         })
         .strict(),
     z

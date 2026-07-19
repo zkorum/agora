@@ -2377,7 +2377,7 @@ export interface ApiV1ContentTranslationRequestPostRequestSubjectOneOf1 {
     'kind': ApiV1ContentTranslationRequestPostRequestSubjectOneOf1KindEnum;
     'conversationSlugId': string;
     'opinionSlugId': string;
-    'sourceVersion': string;
+    'sourceVersion'?: string;
 }
 
 export const ApiV1ContentTranslationRequestPostRequestSubjectOneOf1KindEnum = {

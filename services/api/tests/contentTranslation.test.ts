@@ -1,0 +1,409 @@
+import { Script } from "@valkey/valkey-glide";
+import { eq } from "drizzle-orm";
+import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import pino from "pino";
+import postgres from "postgres";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { GenericContainer, type StartedTestContainer } from "testcontainers";
+
+import {
+    contentTranslationWorkTable,
+    conversationTable,
+    opinionContentTable,
+    opinionContentTranslationTable,
+    opinionModerationTable,
+    opinionTable,
+    userTable,
+} from "../src/shared-backend/schema.js";
+import { ENQUEUE_CONTENT_TRANSLATION_WORK_SCRIPT } from "../src/shared-backend/contentTranslationQueue.js";
+import { Dto } from "../src/shared/types/dto.js";
+import { zodSSEContentTranslationUpdatedData } from "../src/shared/types/sse.js";
+import { isSiteModeratorAccount } from "../src/service/authUtil.js";
+import { requestContentTranslation } from "../src/service/contentTranslation.js";
+import { readDbFixtureSql } from "./dbFixture.js";
+
+process.env.TESTCONTAINERS_RYUK_DISABLED ??= "true";
+
+const conversationSlugId = "conv1234";
+const opinionSlugId = "opin1234";
+const historicalSourceVersion = "00000000-0000-4000-8000-000000000001";
+const currentSourceVersion = "00000000-0000-4000-8000-000000000002";
+const opinionAuthorId = "00000000-0000-4000-8000-000000000003";
+const guestUserId = "00000000-0000-4000-8000-000000000004";
+const normalUserId = "00000000-0000-4000-8000-000000000005";
+const siteModeratorUserId = "00000000-0000-4000-8000-000000000006";
+
+describe("opinion content translation boundary", () => {
+    let container: StartedTestContainer;
+    let sqlClient: postgres.Sql;
+    let db: PostgresJsDatabase;
+    let queueScript: Script;
+    let opinionId: number;
+    let historicalContentId: number;
+    let currentContentId: number;
+
+    beforeAll(async () => {
+        container = await new GenericContainer("postgres:16-alpine")
+            .withEnvironment({
+                POSTGRES_USER: "postgres",
+                POSTGRES_PASSWORD: "postgres",
+                POSTGRES_DB: "agora_test",
+            })
+            .withExposedPorts(5432)
+            .start();
+
+        sqlClient = postgres({
+            host: container.getHost(),
+            port: container.getMappedPort(5432),
+            database: "agora_test",
+            username: "postgres",
+            password: "postgres",
+            max: 1,
+        });
+        db = drizzle(sqlClient);
+        queueScript = new Script(ENQUEUE_CONTENT_TRANSLATION_WORK_SCRIPT);
+
+        await sqlClient.unsafe(readDbFixtureSql("content-translation.sql"));
+    }, 120_000);
+
+    afterAll(async () => {
+        queueScript?.release();
+        await sqlClient?.end({ timeout: 5 });
+        await container?.stop();
+    }, 120_000);
+
+    beforeEach(async () => {
+        await sqlClient.unsafe(`
+            TRUNCATE TABLE "content_translation_work", "opinion_moderation",
+                "opinion_content_translation", "opinion_content", "opinion", "conversation", "user"
+            RESTART IDENTITY;
+        `);
+
+        await db.insert(userTable).values([
+            {
+                id: opinionAuthorId,
+                username: "opinion-author",
+            },
+            {
+                id: guestUserId,
+                username: "guest-requester",
+            },
+            {
+                id: normalUserId,
+                username: "normal-requester",
+            },
+            {
+                id: siteModeratorUserId,
+                username: "site-moderator",
+                isSiteModerator: true,
+            },
+        ]);
+
+        const conversations = await db
+            .insert(conversationTable)
+            .values({
+                slugId: conversationSlugId,
+                projectId: 1,
+                polisConfigId: 1,
+            })
+            .returning({ id: conversationTable.id });
+        const conversation = conversations.at(0);
+        if (conversation === undefined) {
+            throw new Error("Failed to create test conversation");
+        }
+
+        const opinions = await db
+            .insert(opinionTable)
+            .values({
+                slugId: opinionSlugId,
+                authorId: opinionAuthorId,
+                conversationId: conversation.id,
+            })
+            .returning({ id: opinionTable.id });
+        const opinion = opinions.at(0);
+        if (opinion === undefined) {
+            throw new Error("Failed to create test opinion");
+        }
+        opinionId = opinion.id;
+
+        const contents = await db
+            .insert(opinionContentTable)
+            .values([
+                {
+                    publicId: historicalSourceVersion,
+                    opinionId,
+                    conversationContentId: 1,
+                    content: "Hidden historical statement",
+                    sourceLanguageCode: "es",
+                },
+                {
+                    publicId: currentSourceVersion,
+                    opinionId,
+                    conversationContentId: 1,
+                    content: "Current statement",
+                    sourceLanguageCode: "es",
+                },
+            ])
+            .returning({
+                id: opinionContentTable.id,
+                publicId: opinionContentTable.publicId,
+            });
+        const historicalContent = contents.find(
+            (content) => content.publicId === historicalSourceVersion,
+        );
+        const currentContent = contents.find(
+            (content) => content.publicId === currentSourceVersion,
+        );
+        if (historicalContent === undefined || currentContent === undefined) {
+            throw new Error("Failed to create test opinion revisions");
+        }
+        historicalContentId = historicalContent.id;
+        currentContentId = currentContent.id;
+
+        await db
+            .update(opinionTable)
+            .set({ currentContentId })
+            .where(eq(opinionTable.id, opinionId));
+        await db
+            .update(conversationTable)
+            .set({ currentContentId: 1 })
+            .where(eq(conversationTable.id, conversation.id));
+    });
+
+    async function requestOpinionTranslation({
+        sourceVersion,
+        requestMode,
+        requesterUserId,
+        beforeQueueTranslationWork,
+    }: {
+        sourceVersion: string | undefined;
+        requestMode: "read_existing" | "queue_if_missing";
+        requesterUserId: string;
+        beforeQueueTranslationWork: () => Promise<void>;
+    }) {
+        const request = Dto.contentTranslationRequest.parse({
+            subject: {
+                kind: "opinion",
+                conversationSlugId,
+                opinionSlugId,
+                ...(sourceVersion === undefined ? {} : { sourceVersion }),
+            },
+            targetLanguageCode: "en",
+            requestMode,
+        });
+
+        return await requestContentTranslation({
+            db,
+            valkey: undefined,
+            queueScript,
+            subject: request.subject,
+            targetLanguageCode: request.targetLanguageCode,
+            requestMode: request.requestMode,
+            requesterIsSiteModerator: await isSiteModeratorAccount({
+                db,
+                userId: requesterUserId,
+            }),
+            now: new Date("2026-01-01T00:00:00.000Z"),
+            log: pino({ enabled: false }),
+            beforeQueueTranslationWork,
+        });
+    }
+
+    it("accepts legacy request and worker subjects without sourceVersion", async () => {
+        expect(
+            Dto.contentTranslationRequest.safeParse({
+                subject: {
+                    kind: "opinion",
+                    conversationSlugId,
+                    opinionSlugId,
+                },
+                targetLanguageCode: "en",
+                requestMode: "read_existing",
+            }).success,
+        ).toBe(true);
+        expect(
+            zodSSEContentTranslationUpdatedData.safeParse({
+                subject: {
+                    kind: "opinion",
+                    conversationSlugId,
+                    opinionSlugId,
+                },
+                targetLanguageCode: "en",
+                status: "completed",
+                sourceVersion: currentSourceVersion,
+                timestamp: 1,
+            }).success,
+        ).toBe(true);
+    });
+
+    it("falls back legacy opinion requests to the current revision", async () => {
+        await db.insert(opinionContentTranslationTable).values({
+            opinionContentId: currentContentId,
+            displayLanguageCode: "en",
+            translatedContent: "Current translated statement",
+            sourceLanguageCode: "es",
+        });
+
+        const response = await requestOpinionTranslation({
+            sourceVersion: undefined,
+            requestMode: "read_existing",
+            requesterUserId: normalUserId,
+            beforeQueueTranslationWork: async () => {},
+        });
+
+        expect(response).toMatchObject({
+            subject: {
+                kind: "opinion",
+                sourceVersion: currentSourceVersion,
+            },
+            content: {
+                sourceVersion: currentSourceVersion,
+                variants: {
+                    original: { content: "Current statement" },
+                    translated: { content: "Current translated statement" },
+                },
+            },
+        });
+    });
+
+    it("keeps explicit sourceVersion requests revision-aware", async () => {
+        await db.insert(opinionContentTranslationTable).values({
+            opinionContentId: historicalContentId,
+            displayLanguageCode: "en",
+            translatedContent: "Historical translated statement",
+            sourceLanguageCode: "es",
+        });
+
+        const response = await requestOpinionTranslation({
+            sourceVersion: historicalSourceVersion,
+            requestMode: "read_existing",
+            requesterUserId: normalUserId,
+            beforeQueueTranslationWork: async () => {},
+        });
+
+        expect(response).toMatchObject({
+            subject: { sourceVersion: historicalSourceVersion },
+            content: {
+                sourceVersion: historicalSourceVersion,
+                variants: {
+                    original: { content: "Hidden historical statement" },
+                    translated: { content: "Historical translated statement" },
+                },
+            },
+        });
+    });
+
+    it.each([
+        { requesterKind: "guest", requesterUserId: guestUserId },
+        { requesterKind: "non-admin", requesterUserId: normalUserId },
+    ])(
+        "does not leak hidden historical text to a $requesterKind requester",
+        async ({ requesterUserId }) => {
+            await db.insert(opinionModerationTable).values({
+                opinionId,
+                moderationAction: "hide",
+                moderationReason: "spam",
+            });
+            let queueAuthorizationChecks = 0;
+
+            const response = await requestOpinionTranslation({
+                sourceVersion: historicalSourceVersion,
+                requestMode: "queue_if_missing",
+                requesterUserId,
+                beforeQueueTranslationWork: async () => {
+                    queueAuthorizationChecks += 1;
+                },
+            });
+
+            expect(response).toBeUndefined();
+            expect(queueAuthorizationChecks).toBe(0);
+            expect(
+                await db.select().from(contentTranslationWorkTable),
+            ).toHaveLength(0);
+        },
+    );
+
+    it("allows a site administrator to translate hidden historical text", async () => {
+        await db.insert(opinionContentTranslationTable).values({
+            opinionContentId: historicalContentId,
+            displayLanguageCode: "en",
+            translatedContent: "Historical translated statement",
+            sourceLanguageCode: "es",
+        });
+        await db.insert(opinionModerationTable).values({
+            opinionId,
+            moderationAction: "hide",
+            moderationReason: "spam",
+        });
+
+        const response = await requestOpinionTranslation({
+            sourceVersion: historicalSourceVersion,
+            requestMode: "read_existing",
+            requesterUserId: siteModeratorUserId,
+            beforeQueueTranslationWork: async () => {},
+        });
+
+        expect(response).toMatchObject({
+            subject: { sourceVersion: historicalSourceVersion },
+            content: {
+                variants: {
+                    original: { content: "Hidden historical statement" },
+                    translated: { content: "Historical translated statement" },
+                },
+            },
+        });
+    });
+
+    it("allows a normal user to translate a moved statement", async () => {
+        await db.insert(opinionContentTranslationTable).values({
+            opinionContentId: historicalContentId,
+            displayLanguageCode: "en",
+            translatedContent: "Historical translated statement",
+            sourceLanguageCode: "es",
+        });
+        await db.insert(opinionModerationTable).values({
+            opinionId,
+            moderationAction: "move",
+            moderationReason: "antisocial",
+        });
+
+        const response = await requestOpinionTranslation({
+            sourceVersion: historicalSourceVersion,
+            requestMode: "read_existing",
+            requesterUserId: normalUserId,
+            beforeQueueTranslationWork: async () => {},
+        });
+
+        expect(response).toMatchObject({
+            content: {
+                variants: {
+                    original: { content: "Hidden historical statement" },
+                    translated: { content: "Historical translated statement" },
+                },
+            },
+        });
+    });
+
+    it("does not return or queue deleted historical text for a site administrator", async () => {
+        await db
+            .update(opinionTable)
+            .set({ currentContentId: null })
+            .where(eq(opinionTable.id, opinionId));
+        let queueAuthorizationChecks = 0;
+
+        const response = await requestOpinionTranslation({
+            sourceVersion: historicalSourceVersion,
+            requestMode: "queue_if_missing",
+            requesterUserId: siteModeratorUserId,
+            beforeQueueTranslationWork: async () => {
+                queueAuthorizationChecks += 1;
+            },
+        });
+
+        expect(response).toBeUndefined();
+        expect(queueAuthorizationChecks).toBe(0);
+        expect(
+            await db.select().from(contentTranslationWorkTable),
+        ).toHaveLength(0);
+    });
+});

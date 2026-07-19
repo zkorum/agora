@@ -1,7 +1,10 @@
 import type { RankingItemDisplayedContent } from "src/shared/types/zod";
 import { describe, expect, it } from "vitest";
 
-import { resolveRankingItemDisplayText } from "./rankingItemDisplayText";
+import {
+  resolveRankingItemDisplayedContent,
+  resolveRankingItemDisplayText,
+} from "./rankingItemDisplayText";
 import type { RankingItemContentTranslationPreview } from "./useContentTranslationPreview";
 
 const translatedDisplayContent: RankingItemDisplayedContent = {
@@ -104,5 +107,47 @@ describe("resolveRankingItemDisplayText", () => {
       title: "Original title",
       body: "<p>Original body</p>",
     });
+  });
+});
+
+describe("resolveRankingItemDisplayedContent", () => {
+  it("materializes the locally selected original for downstream dialogs", () => {
+    const result = resolveRankingItemDisplayedContent({
+      displayContent: translatedDisplayContent,
+      translationPreview: preview({
+        mode: "original",
+        originalContent: {
+          title: "Original title",
+          bodyHtml: "<p>Original body</p>",
+        },
+        translatedContent: {
+          title: "Translated title",
+          bodyHtml: "<p>Translated body</p>",
+        },
+      }),
+    });
+
+    expect(result).toMatchObject({
+      status: "available",
+      mode: "original",
+      content: {
+        title: "Original title",
+        bodyHtml: "<p>Original body</p>",
+      },
+      translationControl: { alternateMode: "translated" },
+    });
+  });
+
+  it("does not expose stale content while the selected variant loads", () => {
+    const result = resolveRankingItemDisplayedContent({
+      displayContent: translatedDisplayContent,
+      translationPreview: preview({
+        mode: "original",
+        originalContent: undefined,
+        translatedContent: translatedDisplayContent.content,
+      }),
+    });
+
+    expect(result).toBeUndefined();
   });
 });
