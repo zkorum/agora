@@ -168,7 +168,7 @@ function t(
 .project-conversation-view {
   box-sizing: border-box;
   min-height: 100dvh;
-  overflow-x: hidden;
+  overflow-x: clip;
   background:
     radial-gradient(
       circle at 1px 1px,

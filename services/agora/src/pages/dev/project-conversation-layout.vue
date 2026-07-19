@@ -1,6 +1,9 @@
 <template>
   <div class="project-conversation-layout-dev">
-    <div v-if="controlsVisible" class="project-conversation-layout-dev__controls">
+    <div
+      v-if="controlsVisible"
+      class="project-conversation-layout-dev__controls"
+    >
       <div class="project-conversation-layout-dev__controls-header">
         <div>
           <p>Dev controls</p>
@@ -71,20 +74,27 @@
       :language-options="languageOptions"
     >
       <template #conversation-actions>
-        <PostActionBar
-          v-model="currentTab"
-          :compact-mode="false"
-          :opinion-count="conversation.stats.opinionCount"
-          :participant-count="conversation.stats.participantCount"
-          :vote-count="conversation.stats.voteCount"
-          :total-participant-count="conversation.stats.participantCount"
-          :total-vote-count="conversation.stats.voteCount"
-          :conversation-slug-id="conversation.slugId"
-          :conversation-title="conversation.title"
-          author-username="project-team"
-          :conversation-type-config="{ conversationType: 'polis' }"
-          :enable-route-navigation="false"
-        />
+        <ConversationStickyActionBar
+          layout="project"
+          :sticky-top="0"
+          @update:action-bar-element="setActionBarElement"
+        >
+          <PostActionBar
+            v-model="currentTab"
+            :compact-mode="false"
+            :opinion-count="conversation.stats.opinionCount"
+            :participant-count="conversation.stats.participantCount"
+            :vote-count="conversation.stats.voteCount"
+            :total-participant-count="conversation.stats.participantCount"
+            :total-vote-count="conversation.stats.voteCount"
+            :conversation-slug-id="conversation.slugId"
+            :conversation-title="conversation.title"
+            author-username="project-team"
+            :on-same-tab-click="scrollToActionBar"
+            :conversation-type-config="{ conversationType: 'polis' }"
+            :enable-route-navigation="false"
+          />
+        </ConversationStickyActionBar>
       </template>
 
       <template #conversation-toolbar>
@@ -98,59 +108,63 @@
       </template>
 
       <template #conversation-feed>
-        <div
-          v-if="currentTab === 'comment'"
-          class="project-conversation-layout-dev__statement-list"
-          role="list"
-          :aria-label="`Statements section with ${commentItems.length.toString()} statements`"
-        >
-          <ZKCard
-            v-for="commentItem in commentItems"
-            :id="`comment-${commentItem.opinionSlugId}`"
-            :key="commentItem.opinionSlugId"
-            role="listitem"
-            padding="0rem"
-            class="project-conversation-layout-dev__statement-card"
+        <div class="tab-content">
+          <div
+            v-if="currentTab === 'comment'"
+            class="project-conversation-layout-dev__statement-list"
+            role="list"
+            :aria-label="`Statements section with ${commentItems.length.toString()} statements`"
           >
-            <TranslatedCommentItem
-              :comment-item="commentItem"
-              :post-slug-id="conversation.slugId"
-              conversation-author-username="project-team"
-              conversation-organization-name=""
-              :voting-utilities="votingUtilities"
-              :participation-mode="participationMode"
-              :survey-gate="undefined"
-              :on-view-analysis="showAnalysisTab"
-              :is-voting-disabled="false"
-              :conversation-route-context="projectConversationRouteContext"
-            />
-          </ZKCard>
+            <ZKCard
+              v-for="commentItem in commentItems"
+              :id="`comment-${commentItem.opinionSlugId}`"
+              :key="commentItem.opinionSlugId"
+              role="listitem"
+              padding="0rem"
+              class="project-conversation-layout-dev__statement-card"
+            >
+              <TranslatedCommentItem
+                :comment-item="commentItem"
+                :post-slug-id="conversation.slugId"
+                conversation-author-username="project-team"
+                conversation-organization-name=""
+                :voting-utilities="votingUtilities"
+                :participation-mode="participationMode"
+                :survey-gate="undefined"
+                :on-view-analysis="showAnalysisTab"
+                :is-voting-disabled="false"
+                :conversation-route-context="projectConversationRouteContext"
+              />
+            </ZKCard>
 
-          <div class="project-conversation-layout-dev__statement-end">
-            <q-icon name="mdi-check" size="1rem" />
-            <span>All statements loaded</span>
+            <div class="project-conversation-layout-dev__statement-end">
+              <q-icon name="mdi-check" size="1rem" />
+              <span>All statements loaded</span>
+            </div>
           </div>
-        </div>
 
-        <AnalysisPage
-          v-else
-          :conversation-slug-id="conversation.slugId"
-          conversation-author-username="project-team"
-          conversation-organization-name=""
-          :analysis-query="analysisQuery"
-          :analysis-checkpoints-query="analysisCheckpointsQuery"
-          :live-conversation-view-snapshot-id="undefined"
-          :survey-query="surveyQuery"
-          :has-survey="false"
-          :survey-gate="undefined"
-          :ai-labeling-enabled="false"
-          :show-report-button="true"
-          :report-route-override="{ path: '/dev/project-conversation-report-layout' }"
-          :is-live-analysis-paused="false"
-          :is-conversation-closed="conversation.isClosed"
-          :navigate-to-discover-tab="showStatementsTab"
-          :conversation-scroll-context="conversationScrollContext"
-        />
+          <AnalysisPage
+            v-else
+            :conversation-slug-id="conversation.slugId"
+            conversation-author-username="project-team"
+            conversation-organization-name=""
+            :analysis-query="analysisQuery"
+            :analysis-checkpoints-query="analysisCheckpointsQuery"
+            :live-conversation-view-snapshot-id="undefined"
+            :survey-query="surveyQuery"
+            :has-survey="false"
+            :survey-gate="undefined"
+            :ai-labeling-enabled="false"
+            :show-report-button="true"
+            :report-route-override="{
+              path: '/dev/project-conversation-report-layout',
+            }"
+            :is-live-analysis-paused="false"
+            :is-conversation-closed="conversation.isClosed"
+            :navigate-to-discover-tab="showStatementsTab"
+            :conversation-scroll-context="conversationScrollContext"
+          />
+        </div>
       </template>
     </ProjectConversationView>
   </div>
@@ -161,6 +175,7 @@ import { useQuery } from "@tanstack/vue-query";
 import AnalysisPage from "src/components/post/analysis/AnalysisPage.vue";
 import CommentSortingSelector from "src/components/post/comments/group/CommentSortingSelector.vue";
 import TranslatedCommentItem from "src/components/post/comments/group/item/TranslatedCommentItem.vue";
+import ConversationStickyActionBar from "src/components/post/interactionBar/ConversationStickyActionBar.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
 import ProjectConversationView from "src/components/project/ProjectConversationView.vue";
 import type {
@@ -188,6 +203,11 @@ import type {
 } from "src/shared/types/zod";
 import type { AnalysisData } from "src/utils/api/comment/analysisData";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
+import {
+  getElementScrollTop,
+  getScrollTop,
+  scrollTo,
+} from "src/utils/html/scroll";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
@@ -196,13 +216,13 @@ type ProjectConversationDevLanguage = "en" | "ky" | "ru";
 type StatementScenario = "short" | "medium" | "long";
 type PrivacyMode = "public" | "private";
 
+const controlsVisible = ref(true);
+const actionBarElement = ref<HTMLElement | null>(null);
 usePageLayout({
   enableDrawer: false,
   enableFooter: false,
   enableHeader: false,
 });
-
-const controlsVisible = ref(true);
 const projectConversationRouteContext: ConversationRouteContext = {
   kind: "project",
   projectSlug: "voices-for-change",
@@ -385,8 +405,10 @@ interface ProjectConversationPreview {
 
 const conversation = computed<ProjectConversationPreview>(() => ({
   slugId: "share01",
-  title: projectContentByLanguage[activeScenarioLanguage.value].conversationTitle,
-  bodyHtml: projectContentByLanguage[activeScenarioLanguage.value].conversationBody,
+  title:
+    projectContentByLanguage[activeScenarioLanguage.value].conversationTitle,
+  bodyHtml:
+    projectContentByLanguage[activeScenarioLanguage.value].conversationBody,
   isClosed: false,
   stats: {
     opinionCount: commentItems.value.length,
@@ -566,13 +588,15 @@ const surveyQuery = useQuery<SurveyResultsAggregatedResponse, Error>({
   staleTime: Infinity,
 });
 
-const conversationScrollContext: ConversationScrollContext = {
-  actionBarElement: null,
+const conversationScrollContext = computed<ConversationScrollContext>(() => ({
+  actionBarElement: actionBarElement.value,
   scrollContainerElement: null,
-  getScrollPosition: () => window.scrollY,
-  getElementScrollPosition: ({ element }) => element.getBoundingClientRect().top,
-  scrollToPosition: ({ top, behavior }) => window.scrollTo({ top, behavior }),
-};
+  getScrollPosition: () => getScrollTop({ scrollContainer: null }),
+  getElementScrollPosition: ({ element }) =>
+    getElementScrollTop({ element, scrollContainer: null }),
+  scrollToPosition: ({ top, behavior }) =>
+    scrollTo({ top, behavior, scrollContainer: null }),
+}));
 
 watch(
   () => route.query.tab,
@@ -591,6 +615,24 @@ function showAnalysisTab(): void {
 
 function showStatementsTab(): void {
   currentTab.value = "comment";
+}
+
+function setActionBarElement(element: HTMLElement | null): void {
+  actionBarElement.value = element;
+}
+
+function scrollToActionBar(): void {
+  const element = actionBarElement.value;
+  if (element === null) {
+    return;
+  }
+
+  const elementTop = getElementScrollTop({ element, scrollContainer: null });
+  scrollTo({
+    top: elementTop,
+    behavior: "smooth",
+    scrollContainer: null,
+  });
 }
 
 function getRouteTab(): "comment" | "analysis" {
@@ -650,8 +692,13 @@ function attributionName({
   return names[activeScenarioLanguage.value][key];
 }
 
-function createCommentItems({ count }: { count: number }): DisplayedOpinionItem[] {
-  const baseStatements = statementContentByLanguage[activeScenarioLanguage.value];
+function createCommentItems({
+  count,
+}: {
+  count: number;
+}): DisplayedOpinionItem[] {
+  const baseStatements =
+    statementContentByLanguage[activeScenarioLanguage.value];
   const generatedStatements: DisplayedOpinionItem[] = [];
   const now = new Date();
 

@@ -43,12 +43,10 @@
             />
 
             <div ref="sentinelElement"></div>
-            <div
-              ref="actionBarElement"
-              class="sticky-below-header sticky-action-bar"
-              :style="{
-                '--header-height': (headerRevealed ? headerHeight : 0) + 'px',
-              }"
+            <ConversationStickyActionBar
+              layout="standard"
+              :sticky-top="headerRevealed ? headerHeight : 0"
+              @update:action-bar-element="setActionBarElement"
             >
               <PostActionBar
                 v-model="currentTab"
@@ -68,9 +66,7 @@
                 :author-username="
                   loadedConversationData.metadata.authorUsername
                 "
-                :on-same-tab-click="
-                  () => handleSameTabActionBarClick()
-                "
+                :on-same-tab-click="() => handleSameTabActionBarClick()"
                 :conversation-type-config="loadedConversationData.metadata"
                 :has-survey="
                   loadedConversationData.interaction.surveyGate?.hasSurvey ===
@@ -79,13 +75,10 @@
                 :enable-route-navigation="true"
                 :conversation-route-context="normalConversationRouteContext"
               />
-            </div>
+            </ConversationStickyActionBar>
 
             <div
-              v-if="
-                currentTab === 'comment' &&
-                !isMaxDiffConversation
-              "
+              v-if="currentTab === 'comment' && !isMaxDiffConversation"
               class="dropdownSlot"
             >
               <CommentSortingSelector
@@ -130,9 +123,7 @@
               </router-view>
             </div>
 
-            <FloatingBottomContainer
-              v-if="!isMaxDiffConversation"
-            >
+            <FloatingBottomContainer v-if="!isMaxDiffConversation">
               <CommentComposer
                 ref="commentComposerRef"
                 :post-slug-id="
@@ -165,6 +156,7 @@ import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import CommentComposer from "src/components/post/comments/CommentComposer.vue";
 import CommentSortingSelector from "src/components/post/comments/group/CommentSortingSelector.vue";
 import TranslatedPostContent from "src/components/post/display/TranslatedPostContent.vue";
+import ConversationStickyActionBar from "src/components/post/interactionBar/ConversationStickyActionBar.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
@@ -265,12 +257,11 @@ const {
   pendingScrollOverride,
 } = useConversationParentState(conversationConfig);
 
-const {
-  displayedTitle: displayedConversationTitle,
-} = useConversationDisplayContent({
-  conversationData,
-  initialDisplayContent: conversationDisplayContent,
-});
+const { displayedTitle: displayedConversationTitle } =
+  useConversationDisplayContent({
+    conversationData,
+    initialDisplayContent: conversationDisplayContent,
+  });
 
 const {
   actionBarStats,
@@ -402,6 +393,10 @@ const { tabContentStyle } = useTabScrollRestoration({
   onScrollComplete: refreshStickyState,
 });
 
+function setActionBarElement(element: HTMLElement | null): void {
+  actionBarElement.value = element;
+}
+
 function handleBack(event: MouseEvent): void {
   event.preventDefault();
   if (currentTab.value === "analysis") {
@@ -485,6 +480,6 @@ onBeforeUnmount(() => {
   min-width: 0;
   flex: 1;
   color: black;
-  margin-right: 1rem;
+  margin-inline-end: 1rem;
 }
 </style>
