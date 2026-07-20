@@ -32,9 +32,7 @@ export function reloadForChunkError({
   const lastReload = sessionStorage.getItem(RELOAD_KEY);
   const now = Date.now();
   if (lastReload && now - Number(lastReload) < RELOAD_COOLDOWN_MS) {
-    console.error(
-      "[ChunkRecovery] Chunk load failed after recent reload, giving up"
-    );
+    console.warn("[ChunkRecovery] Reload skipped during cooldown");
     return false;
   }
   sessionStorage.setItem(RELOAD_KEY, String(now));
