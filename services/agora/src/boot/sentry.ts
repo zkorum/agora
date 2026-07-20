@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/vue";
+import { addStackOverflowDiagnostics } from "src/utils/sentry/stackOverflowDiagnostics";
 
 import { defineBoot } from "#q-app/wrappers";
 
@@ -32,7 +33,10 @@ export default defineBoot(({ app, router }) => {
       ) {
         return null;
       }
-      return event;
+      return addStackOverflowDiagnostics({
+        event,
+        documentRoot: document,
+      });
     },
     integrations: [
       Sentry.vueIntegration({
