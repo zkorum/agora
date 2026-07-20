@@ -122,6 +122,7 @@ import { htmlToCountedText } from "src/shared/shared";
 import { processUserGeneratedHtml } from "src/shared-app-api/html";
 import { computed, onUnmounted, ref, watch } from "vue";
 
+import { serializeEditorContent } from "./editorContent";
 import EditorToolbarButton from "./EditorToolbarButton.vue";
 
 defineOptions({
@@ -167,11 +168,10 @@ function computeCharacterCount(editorInstance: TipTapEditor): number {
   if (props.singleLine) {
     return editorInstance.getText().length;
   }
-  const html = editorInstance.getHTML();
-  if (html === "<p></p>" || html === "<br>" || html === "") {
+  if (editorInstance.isEmpty) {
     return 0;
   }
-  return htmlToCountedText(html).length;
+  return htmlToCountedText(editorInstance.getHTML()).length;
 }
 
 function emitCharacterCount(count: number): void {
@@ -285,16 +285,10 @@ const editor = useEditor({
   },
   onUpdate: ({ editor }) => {
     modelPlainText.value = editor.getText();
-    if (props.singleLine) {
-      modelText.value = editor.getText();
-    } else {
-      const html = editor.getHTML();
-      if (html === "<p></p>" || html === "<br>" || html === "") {
-        modelText.value = "";
-      } else {
-        modelText.value = html;
-      }
-    }
+    modelText.value = serializeEditorContent({
+      editor,
+      singleLine: props.singleLine,
+    });
     emitCharacterCount(computeCharacterCount(editor));
   },
   onFocus: () => {
@@ -327,18 +321,19 @@ defineExpose({
 watch(
   () => modelText.value,
   (newValue) => {
-    if (editor.value) {
-      const currentContent = props.singleLine
-        ? editor.value.getText()
-        : editor.value.getHTML();
-      // Only update if the content is actually different
-      if (newValue !== currentContent) {
-        editor.value.commands.setContent(newValue);
-        modelPlainText.value = editor.value.getText();
-        // Recalculate character count after external content change (e.g. draft load)
-        emitCharacterCount(computeCharacterCount(editor.value));
-      }
+    const editorInstance = editor.value;
+    if (
+      editorInstance === undefined ||
+      newValue ===
+        serializeEditorContent({
+          editor: editorInstance,
+          singleLine: props.singleLine,
+        })
+    ) {
+      return;
     }
+
+    editorInstance.commands.setContent(newValue);
   }
 );
 
