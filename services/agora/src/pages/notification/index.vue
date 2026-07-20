@@ -42,7 +42,10 @@
                   @click="markNotificationAsRead(notificationItem.slugId)"
                 >
                   <div class="iconWrapper">
-                    <div v-if="!notificationItem.isRead" class="unreadDot"></div>
+                    <div
+                      v-if="!notificationItem.isRead"
+                      class="unreadDot"
+                    ></div>
                     <ZKIcon
                       :name="getIconFromNotificationType(notificationItem.type)"
                       size="1.8rem"
@@ -109,13 +112,11 @@ import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { isNetworkOffline } from "src/composables/useNetworkStatus";
-import type {
-  NotificationType,
-  RouteTarget,
-} from "src/shared/types/zod";
+import type { NotificationType, RouteTarget } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotificationStore } from "src/stores/notification";
 import { useNotificationApi } from "src/utils/api/notification/notification";
+import { handleNotificationRequestError } from "src/utils/api/notification/requestError";
 import type { DisplayNotification } from "src/utils/notification/transform";
 import { onActivated, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
@@ -135,7 +136,8 @@ const { notificationList, numNewNotifications } =
 const authStore = useAuthenticationStore();
 const { isAuthInitialized } = storeToRefs(authStore);
 const {
-  loadNotificationData,
+  refreshNotificationData,
+  loadMoreNotificationData,
   markNotificationAsRead,
   clearBadgeCount,
   clearNotificationData,
@@ -184,30 +186,42 @@ async function loadInitialData() {
   try {
     isLoading.value = true;
     isError.value = false;
-    await loadNotificationData(false);
+    await refreshNotificationData();
     hasLoadedOnce.value = true;
     clearBadgeCount();
     void markAllNotificationsAsRead();
   } catch (error) {
-    console.error("Failed to load notifications:", error);
     isError.value = true;
+    handleNotificationRequestError({
+      error,
+      operation: "Failed to load notifications",
+    });
   } finally {
     isLoading.value = false;
   }
 }
 
-async function silentRefresh() {
-  try {
-    clearBadgeCount();
-    await markAllNotificationsAsRead();
-  } catch (error) {
-    console.error("Failed to refresh notifications:", error);
-  }
+function silentRefresh(): void {
+  clearBadgeCount();
+  void markAllNotificationsAsRead();
 }
 
-async function onLoad(index: number, done: () => void) {
-  hasMore.value = await loadNotificationData(true);
-  done();
+async function onLoad(
+  _index: number,
+  done: (stop?: boolean) => void
+): Promise<void> {
+  try {
+    hasMore.value = await loadMoreNotificationData();
+  } catch (error) {
+    // Stop QInfiniteScroll from immediately retrying at the same scroll position.
+    hasMore.value = false;
+    handleNotificationRequestError({
+      error,
+      operation: "Failed to load more notifications",
+    });
+  } finally {
+    done();
+  }
 }
 
 function getIconFromNotificationType(
@@ -309,8 +323,13 @@ function pullDownTriggered(done: () => void) {
   setTimeout(() => {
     void (async () => {
       try {
-        await loadNotificationData(false);
+        await refreshNotificationData();
         hasMore.value = true;
+      } catch (error) {
+        handleNotificationRequestError({
+          error,
+          operation: "Failed to refresh notifications",
+        });
       } finally {
         done();
       }
@@ -431,5 +450,4 @@ function getRouteFromTarget(
 .titleStyle {
   color: $ink-darkest;
 }
-
 </style>

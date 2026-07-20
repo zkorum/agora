@@ -46,11 +46,11 @@ export interface AxiosErrorResponse {
 }
 
 // Error categorization utilities
-export function isTimeoutError(code: AxiosErrorCode): boolean {
+export function isTimeoutError(code: string | undefined): boolean {
   return code === "ECONNABORTED" || code === "ETIMEDOUT";
 }
 
-export function isNetworkError(code: AxiosErrorCode): boolean {
+export function isNetworkError(code: string | undefined): boolean {
   return code === "ERR_NETWORK" || code === "ECONNABORTED";
 }
 
@@ -68,7 +68,7 @@ export function isServerError(code: AxiosErrorCode): boolean {
   return code === "ERR_BAD_RESPONSE";
 }
 
-export function isCancellationError(code: AxiosErrorCode): boolean {
+export function isCancellationError(code: string | undefined): boolean {
   return code === "ERR_CANCELED";
 }
 

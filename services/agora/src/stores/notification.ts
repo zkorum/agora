@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import type { NotificationItem } from "src/shared/types/zod";
 import { useNotificationApi } from "src/utils/api/notification/notification";
+import { getLastItem } from "src/utils/array";
 import {
   type DisplayNotification,
   transformNotification,
@@ -14,34 +15,20 @@ export const useNotificationStore = defineStore("notification", () => {
   const notificationList = ref<DisplayNotification[]>([]);
   const numNewNotifications = ref(0);
 
-  async function loadNotificationData(loadMore: boolean): Promise<boolean> {
-    let lastSlugId: string | undefined = undefined;
-    if (loadMore) {
-      const lastItem = notificationList.value.at(-1);
-      if (lastItem) {
-        lastSlugId = lastItem.slugId;
-      }
-    }
+  async function refreshNotificationData(): Promise<void> {
+    const response = await fetchNotifications(undefined);
+    notificationList.value = transformNotifications(response.notificationList);
+    numNewNotifications.value = response.numNewNotifications;
+  }
 
+  async function loadMoreNotificationData(): Promise<boolean> {
+    const lastSlugId = getLastItem(notificationList.value)?.slugId;
     const response = await fetchNotifications(lastSlugId);
-    if (response) {
-      const transformed = transformNotifications(response.notificationList);
-      if (loadMore) {
-        notificationList.value.push(...transformed);
-        numNewNotifications.value += response.numNewNotifications;
-      } else {
-        notificationList.value = transformed;
-        numNewNotifications.value = response.numNewNotifications;
-      }
-
-      if (response.notificationList.length > 0) {
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      throw new Error("Failed to fetch notifications");
-    }
+    notificationList.value.push(
+      ...transformNotifications(response.notificationList)
+    );
+    numNewNotifications.value += response.numNewNotifications;
+    return response.notificationList.length > 0;
   }
 
   function hasNotification(slugId: string): boolean {
@@ -90,7 +77,8 @@ export const useNotificationStore = defineStore("notification", () => {
   }
 
   return {
-    loadNotificationData,
+    refreshNotificationData,
+    loadMoreNotificationData,
     clearNotificationData,
     addNewNotification,
     hasNotification,
