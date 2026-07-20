@@ -16,20 +16,20 @@
         "@types/k6": "^1.7.0",
         "@types/node": "^25.5.2",
         "@types/sanitize-html": "^2.16.1",
-        "eslint": "^10.2.0",
+        "eslint": "^10.7.0",
         "eslint-config-prettier": "^10.1.8",
-        "globals": "^17.4.0",
-        "prettier": "^3.8.1",
+        "globals": "^17.7.0",
+        "prettier": "^3.9.5",
         "typescript": "^6.0.2",
-        "typescript-eslint": "^8.58.0",
-        "vite": "^8.0.5"
+        "typescript-eslint": "^8.64.0",
+        "vite": "^8.1.5"
     },
     "dependencies": {
         "@ucans/ucans": "^0.12.0",
         "@zkorum/keystore-idb": "^0.18.1",
         "fast-text-encoding": "^1.0.6",
         "html-entities": "^2.6.0",
-        "sanitize-html": "^2.17.5",
+        "sanitize-html": "^2.17.6",
         "tweetnacl": "^1.0.3",
         "uint8arrays": "^5.1.0"
     },
