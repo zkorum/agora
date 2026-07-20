@@ -38,7 +38,7 @@ import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { AnalysisOpinionItem } from "src/shared/types/zod";
 import { useOpinionItemDisplayContent } from "src/utils/translation/useOpinionItemDisplayContent";
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 
 import {
   type AnalysisOpinionTextTranslations,
@@ -69,21 +69,21 @@ const props = withDefaults(
 const { t } = useComponentI18n<AnalysisOpinionTextTranslations>(
   analysisOpinionTextTranslations
 );
-const {
-  displayedOpinion,
-  initialDisplayedOpinion,
-  translationPreview,
-  setTranslationMode,
-} =
+const { displayedOpinion, translationPreview, setTranslationMode } =
   useOpinionItemDisplayContent({
     conversationSlugId: computed(() => props.postSlugId),
     opinionItem: computed(() => props.opinionItem),
-    interactive: computed(() => props.translationInteractive),
   });
-const renderedOpinion = computed(() =>
-  props.translationInteractive
-    ? displayedOpinion.value
-    : initialDisplayedOpinion.value
+const frozenOpinion = ref<string>();
+watch(
+  () => props.translationInteractive,
+  (isInteractive) => {
+    frozenOpinion.value = isInteractive ? undefined : displayedOpinion.value;
+  },
+  { flush: "sync", immediate: true }
+);
+const renderedOpinion = computed(
+  () => frozenOpinion.value ?? displayedOpinion.value
 );
 
 const isHiddenModerated = computed(

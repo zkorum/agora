@@ -23,6 +23,8 @@
         "opinion_content",
         "opinion_content_translation",
         "content_translation_work",
-        "opinion_moderation"
+        "opinion_moderation",
+        "analysis_snapshot_opinion",
+        "conversation_view_snapshot"
     ]
 }

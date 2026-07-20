@@ -92,7 +92,9 @@ describe("content translation pure content helpers", () => {
         expect(toMissingContentTranslationStatus("pending")).toBe("pending");
         expect(toMissingContentTranslationStatus("running")).toBe("running");
         expect(toMissingContentTranslationStatus("failed")).toBe("failed");
-        expect(toMissingContentTranslationStatus("completed")).toBe("not_requested");
+        expect(toMissingContentTranslationStatus("completed")).toBe(
+            "not_requested",
+        );
     });
 
     it("requires question and every current option translation", () => {
@@ -123,7 +125,8 @@ describe("content translation pure content helpers", () => {
         const result = buildLocalizedSurveyQuestionContent({
             source: surveyQuestionSource,
             translation: {
-                translatedQuestionText: "Que devrions-nous construire ensuite ?",
+                translatedQuestionText:
+                    "Que devrions-nous construire ensuite ?",
                 sourceLanguageCode: "en",
                 sourceRawLanguageCode: "en",
                 sourceLanguageProvider: "lingua",
@@ -160,7 +163,10 @@ describe("content translation pure content helpers", () => {
                         questionText: "What should we build next?",
                         options: [
                             { optionSlugId: "opt00001", optionText: "Parks" },
-                            { optionSlugId: "opt00002", optionText: "Libraries" },
+                            {
+                                optionSlugId: "opt00002",
+                                optionText: "Libraries",
+                            },
                         ],
                     },
                 },
@@ -172,7 +178,8 @@ describe("content translation pure content helpers", () => {
         const result = buildLocalizedSurveyQuestionContent({
             source: surveyQuestionSource,
             translation: {
-                translatedQuestionText: "Que devrions-nous construire ensuite ?",
+                translatedQuestionText:
+                    "Que devrions-nous construire ensuite ?",
                 sourceLanguageCode: "en",
                 sourceRawLanguageCode: "en",
                 sourceLanguageProvider: "lingua",
@@ -221,6 +228,7 @@ describe("content translation pure content helpers", () => {
             kind: "ranking_item",
             conversationSlugId: "conv1234",
             itemSlugId: "item1234",
+            sourceVersion: "00000000-0000-4000-8000-000000000042",
         });
         expect(result.content).toMatchObject({
             sourceVersion: "00000000-0000-4000-8000-000000000042",

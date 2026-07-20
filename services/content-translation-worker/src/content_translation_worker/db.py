@@ -14,12 +14,14 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from content_translation_worker.events import build_content_translation_event_data
 from content_translation_worker.generated_models import (
+    AnalysisSnapshotOpinion,
     ContentTranslationSourceKind,
     ContentTranslationWork,
     ContentTranslationWorkStatus,
     Conversation,
     ConversationContent,
     ConversationContentTranslation,
+    ConversationViewSnapshot,
     DisplayLanguageCode,
     LanguageDetectionProvider,
     Opinion,
@@ -117,6 +119,7 @@ EMPTY_TRANSLATION_SOURCE_METADATA = TranslationSourceMetadata(
 class TranslationSourceDecision:
     source_language_code_for_translation: str | None
     use_google_detected_source: bool
+
 
 CHINESE_SCRIPT_LANGUAGE_CODES = frozenset({"zh-Hans", "zh-CN", "zh-Hant", "zh-TW"})
 CHINESE_DISPLAY_LANGUAGE_CODES = frozenset({"zh-Hans", "zh-Hant"})
@@ -253,10 +256,8 @@ def should_promote_google_source_metadata(
 ) -> bool:
     return (
         source_metadata.source_language_code is not None
-        and source_metadata.source_language_provider
-        == LanguageDetectionProvider.google_translate
-        and current_source_language_provider
-        in {None, LanguageDetectionProvider.lingua}
+        and source_metadata.source_language_provider == LanguageDetectionProvider.google_translate
+        and current_source_language_provider in {None, LanguageDetectionProvider.lingua}
     )
 
 
@@ -279,8 +280,7 @@ def _promote_opinion_source_metadata(
                 OpinionContent.id == source.content_id,
                 or_(
                     OpinionContent.source_language_provider.is_(None),
-                    OpinionContent.source_language_provider
-                    == LanguageDetectionProvider.lingua,
+                    OpinionContent.source_language_provider == LanguageDetectionProvider.lingua,
                 ),
             )
         )
@@ -312,8 +312,7 @@ def _promote_ranking_item_source_metadata(
                 RankingItemContent.id == source.content_id,
                 or_(
                     RankingItemContent.source_language_provider.is_(None),
-                    RankingItemContent.source_language_provider
-                    == LanguageDetectionProvider.lingua,
+                    RankingItemContent.source_language_provider == LanguageDetectionProvider.lingua,
                 ),
             )
         )
@@ -399,10 +398,8 @@ def retry_failed_eager_work(
             select(ContentTranslationWork.id)
             .where(
                 and_(
-                    ContentTranslationWork.status
-                    == ContentTranslationWorkStatus.failed,
-                    ContentTranslationWork.priority_rank
-                    == EAGER_VISIBLE_PRIORITY_RANK,
+                    ContentTranslationWork.status == ContentTranslationWorkStatus.failed,
+                    ContentTranslationWork.priority_rank == EAGER_VISIBLE_PRIORITY_RANK,
                     or_(
                         ContentTranslationWork.last_error_code.is_(None),
                         ContentTranslationWork.last_error_code != "missing_source",
@@ -453,9 +450,7 @@ def _source_key_for_work_row(row: ContentTranslationWork) -> str | None:
         return f"ranking_item_content:{row.ranking_item_content_id}"
     if row.survey_question_content_id is None or row.survey_question_option_content_ids is None:
         return None
-    option_content_ids = ",".join(
-        str(item) for item in row.survey_question_option_content_ids
-    )
+    option_content_ids = ",".join(str(item) for item in row.survey_question_option_content_ids)
     return f"survey_question:{row.survey_question_content_id}:options:{option_content_ids}"
 
 
@@ -481,8 +476,7 @@ def claim_content_translation_work_batch(
                 ContentTranslationWork.conversation_id.is_not(None),
                 Conversation.current_content_id.is_not(None),
                 or_(
-                    ContentTranslationWork.source_kind
-                    != ContentTranslationSourceKind.conversation,
+                    ContentTranslationWork.source_kind != ContentTranslationSourceKind.conversation,
                     Conversation.current_content_id
                     == ContentTranslationWork.conversation_content_id,
                 ),
@@ -1088,6 +1082,24 @@ def _fetch_opinion_source(
                 Opinion.current_content_id.is_not(None),
                 Conversation.current_content_id.is_not(None),
                 Conversation.is_importing.is_(False),
+                or_(
+                    Opinion.current_content_id == OpinionContent.id,
+                    select(AnalysisSnapshotOpinion.id)
+                    .join(
+                        ConversationViewSnapshot,
+                        ConversationViewSnapshot.analysis_snapshot_id
+                        == AnalysisSnapshotOpinion.analysis_snapshot_id,
+                    )
+                    .where(
+                        and_(
+                            AnalysisSnapshotOpinion.opinion_content_id == OpinionContent.id,
+                            AnalysisSnapshotOpinion.opinion_id == Opinion.id,
+                            ConversationViewSnapshot.conversation_id == Conversation.id,
+                            ConversationViewSnapshot.activated_at.is_not(None),
+                        )
+                    )
+                    .exists(),
+                ),
             )
         )
         .limit(1)
@@ -1310,8 +1322,7 @@ def _has_fresh_conversation_translation(
         select(ConversationContentTranslation.source_language_code).where(
             and_(
                 ConversationContentTranslation.conversation_content_id == source.content_id,
-                ConversationContentTranslation.display_language_code
-                == claim.display_language_code,
+                ConversationContentTranslation.display_language_code == claim.display_language_code,
             )
         )
     ).first()
@@ -1334,8 +1345,7 @@ def _has_fresh_project_translation(
         ).where(
             and_(
                 ProjectContentTranslation.project_content_id == source.content_id,
-                ProjectContentTranslation.display_language_code
-                == claim.display_language_code,
+                ProjectContentTranslation.display_language_code == claim.display_language_code,
                 ProjectContentTranslation.deleted_at.is_(None),
             )
         )
@@ -1377,8 +1387,7 @@ def _has_fresh_survey_question_translation(
     question_row = session.execute(
         select(SurveyQuestionContentTranslation.source_language_code).where(
             and_(
-                SurveyQuestionContentTranslation.survey_question_content_id
-                == source.content_id,
+                SurveyQuestionContentTranslation.survey_question_content_id == source.content_id,
                 SurveyQuestionContentTranslation.display_language_code
                 == claim.display_language_code,
             )
@@ -1430,8 +1439,7 @@ def _has_fresh_ranking_item_translation(
         select(RankingItemContentTranslation.source_language_code).where(
             and_(
                 RankingItemContentTranslation.ranking_item_content_id == source.content_id,
-                RankingItemContentTranslation.display_language_code
-                == claim.display_language_code,
+                RankingItemContentTranslation.display_language_code == claim.display_language_code,
             )
         )
     ).first()
@@ -1527,9 +1535,7 @@ def _translate_conversation_source(
         )
         body_result_by_language = {
             language_code: result
-            for language_code, result in _results_by_display_language_code(
-                body_results
-            ).items()
+            for language_code, result in _results_by_display_language_code(body_results).items()
         }
 
     for display_language_code, title_result in title_result_by_language.items():
@@ -1688,9 +1694,7 @@ def _translate_project_source(
                 set_={
                     "translated_title": title_result.translated_text,
                     "translated_subtitle": (
-                        subtitle_result.translated_text
-                        if subtitle_result is not None
-                        else None
+                        subtitle_result.translated_text if subtitle_result is not None else None
                     ),
                     "translated_body": translated_body,
                     "translated_body_plain_text": translated_body_plain_text,
@@ -1729,9 +1733,7 @@ def _translate_opinion_source(
         mime_type="text/html",
     )
     for localized_result in translation_results:
-        translated_content = sanitize_translated_html(
-            localized_result.result.translated_text
-        )
+        translated_content = sanitize_translated_html(localized_result.result.translated_text)
         translated_content_plain_text = html_to_counted_text(translated_content)
         source_metadata = build_translation_source_metadata_from_results(
             [localized_result.result],
@@ -1828,9 +1830,7 @@ def _translate_ranking_item_source(
             else None
         )
         translated_body_plain_text = (
-            html_to_counted_text(translated_body_html)
-            if translated_body_html is not None
-            else None
+            html_to_counted_text(translated_body_html) if translated_body_html is not None else None
         )
         source_metadata = build_translation_source_metadata_from_results(
             [title_result, *([] if body_result is None else [body_result])],
@@ -1911,9 +1911,7 @@ def _translate_survey_question_source(
             target_language_code=claim.display_language_code.value,
             mime_type="text/plain",
         )
-        option_results_by_id[option.content_id] = _results_by_display_language_code(
-            option_results
-        )
+        option_results_by_id[option.content_id] = _results_by_display_language_code(option_results)
 
     for display_language_code, question_result in question_result_by_language.items():
         if any(
@@ -2037,7 +2035,6 @@ def _insert_opinion_translation_event(
             "kind": "opinion",
             "conversationSlugId": source.conversation_slug_id,
             "opinionSlugId": source.opinion_slug_id,
-            "sourceVersion": str(source.public_id),
         },
         conversation_slug_id=source.conversation_slug_id,
         target_language_code=target_language_code,

@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Literal
 
 import pytest
-from sqlalchemy import create_engine, update
+from sqlalchemy import create_engine, delete, update
 from sqlalchemy.orm import Session
 
 import content_translation_worker.db as translation_db
@@ -16,10 +16,13 @@ from content_translation_worker.db import (
     process_claimed_work,
 )
 from content_translation_worker.generated_models import (
+    AnalysisSnapshotOpinion,
     ContentTranslationSourceKind,
     Conversation,
     ConversationLanguageSettingsSource,
     ConversationType,
+    ConversationViewSnapshot,
+    ConversationViewSnapshotReasonEnum,
     DisplayLanguageCode,
     LanguageDetectionProvider,
     Opinion,
@@ -51,6 +54,8 @@ def opinion_revision_session() -> Iterator[Session]:
             Conversation.metadata.tables["opinion"],
             Conversation.metadata.tables["opinion_content"],
             Conversation.metadata.tables["opinion_content_translation"],
+            Conversation.metadata.tables["analysis_snapshot_opinion"],
+            Conversation.metadata.tables["conversation_view_snapshot"],
         ],
     )
     now = datetime.now(UTC)
@@ -62,9 +67,7 @@ def opinion_revision_session() -> Iterator[Session]:
                 project_id=1,
                 current_content_id=1,
                 is_importing=False,
-                language_settings_source=(
-                    ConversationLanguageSettingsSource.conversation_override
-                ),
+                language_settings_source=(ConversationLanguageSettingsSource.conversation_override),
                 participation_mode=ParticipationMode.guest,
                 conversation_type=ConversationType.polis,
                 created_at=now,
@@ -111,6 +114,39 @@ def opinion_revision_session() -> Iterator[Session]:
                     created_at=now,
                 ),
             ]
+        )
+        session.add(
+            AnalysisSnapshotOpinion(
+                id=40,
+                analysis_snapshot_id=50,
+                opinion_id=OPINION_ID,
+                opinion_content_id=HISTORICAL_CONTENT_ID,
+                local_opinion_index=0,
+                created_at=now,
+            )
+        )
+        session.add(
+            ConversationViewSnapshot(
+                id=41,
+                conversation_id=CONVERSATION_ID,
+                opinion_group_spec_id=1,
+                analysis_snapshot_id=50,
+                survey_aggregate_snapshot_id=None,
+                conversation_content_id=1,
+                view_reason=ConversationViewSnapshotReasonEnum.analysis_completed,
+                preferred_opinion_group_count=None,
+                is_closed=False,
+                opinion_count=1,
+                vote_count=1,
+                participant_count=1,
+                total_opinion_count=1,
+                total_vote_count=1,
+                total_participant_count=1,
+                moderated_opinion_count=0,
+                hidden_opinion_count=0,
+                activated_at=now,
+                created_at=now,
+            )
         )
         session.commit()
         yield session
@@ -161,13 +197,22 @@ def test_processes_non_current_historical_opinion_revision(
 
 @pytest.mark.parametrize(
     "ineligible_source",
-    ["missing_revision", "deleted_opinion", "deleted_conversation", "importing_conversation"],
+    [
+        "missing_revision",
+        "unreferenced_revision",
+        "unactivated_snapshot",
+        "deleted_opinion",
+        "deleted_conversation",
+        "importing_conversation",
+    ],
 )
 def test_ineligible_opinion_revision_remains_missing_source(
     opinion_revision_session: Session,
     monkeypatch: pytest.MonkeyPatch,
     ineligible_source: Literal[
         "missing_revision",
+        "unreferenced_revision",
+        "unactivated_snapshot",
         "deleted_opinion",
         "deleted_conversation",
         "importing_conversation",
@@ -176,6 +221,10 @@ def test_ineligible_opinion_revision_remains_missing_source(
     opinion_content_id = HISTORICAL_CONTENT_ID
     if ineligible_source == "missing_revision":
         opinion_content_id = 999
+    elif ineligible_source == "unreferenced_revision":
+        opinion_revision_session.execute(delete(AnalysisSnapshotOpinion))
+    elif ineligible_source == "unactivated_snapshot":
+        opinion_revision_session.execute(update(ConversationViewSnapshot).values(activated_at=None))
     elif ineligible_source == "deleted_opinion":
         opinion_revision_session.execute(
             update(Opinion).where(Opinion.id == OPINION_ID).values(current_content_id=None)
@@ -188,9 +237,7 @@ def test_ineligible_opinion_revision_remains_missing_source(
         )
     else:
         opinion_revision_session.execute(
-            update(Conversation)
-            .where(Conversation.id == CONVERSATION_ID)
-            .values(is_importing=True)
+            update(Conversation).where(Conversation.id == CONVERSATION_ID).values(is_importing=True)
         )
 
     marked_work_ids: list[int] = []

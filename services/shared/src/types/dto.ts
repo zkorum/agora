@@ -186,6 +186,7 @@ const zodContentTranslationOpinionResponse = z
                 kind: z.literal("opinion"),
                 conversationSlugId: zodSlugId,
                 opinionSlugId: zodSlugId,
+                sourceVersion: z.uuid(),
             })
             .strict(),
         content: zodLocalizedOpinionContent,
@@ -227,6 +228,7 @@ const zodContentTranslationRankingItemResponse = z
                 kind: z.literal("ranking_item"),
                 conversationSlugId: zodSlugId,
                 itemSlugId: zodSlugId,
+                sourceVersion: z.uuid(),
             })
             .strict(),
         content: zodLocalizedRankingItemContent,

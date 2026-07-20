@@ -6,10 +6,10 @@ import {
 } from "../languages.js";
 import {
     zodEventSlug,
-    zodContentTranslationSubject,
     zodNotificationItem,
     zodParticipationMode,
     zodPreferredOpinionGroupCount,
+    zodProjectSlug,
     zodSlugId,
 } from "./zod.js";
 
@@ -208,12 +208,52 @@ export type SSEConversationSettingsUpdatedData = z.infer<
     typeof zodSSEConversationSettingsUpdatedData
 >;
 
+const zodSSEContentTranslationSubject = z.discriminatedUnion("kind", [
+    z
+        .object({
+            kind: z.literal("conversation"),
+            conversationSlugId: zodSlugId,
+            sourceVersion: z.uuid(),
+        })
+        .strict(),
+    z
+        .object({
+            kind: z.literal("opinion"),
+            conversationSlugId: zodSlugId,
+            opinionSlugId: zodSlugId,
+            sourceVersion: z.uuid(),
+        })
+        .strict(),
+    z
+        .object({
+            kind: z.literal("survey_question"),
+            conversationSlugId: zodSlugId,
+            questionSlugId: zodSlugId,
+            sourceVersion: z.uuid(),
+        })
+        .strict(),
+    z
+        .object({
+            kind: z.literal("project"),
+            projectSlug: zodProjectSlug,
+            sourceVersion: z.uuid(),
+        })
+        .strict(),
+    z
+        .object({
+            kind: z.literal("ranking_item"),
+            conversationSlugId: zodSlugId,
+            itemSlugId: zodSlugId,
+            sourceVersion: z.uuid(),
+        })
+        .strict(),
+]);
+
 export const zodSSEContentTranslationUpdatedData = z
     .object({
-        subject: zodContentTranslationSubject,
+        subject: zodSSEContentTranslationSubject,
         targetLanguageCode: ZodSupportedDisplayLanguageCodes,
         status: z.enum(["completed", "failed"]),
-        sourceVersion: z.uuid(),
         timestamp: z.number(),
     })
     .strict();

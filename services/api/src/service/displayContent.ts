@@ -54,7 +54,8 @@ const languageDisplayNamesByLocale = new Map<
 function getLanguageDisplayNames(
     displayLanguage: SupportedDisplayLanguageCodes,
 ): Intl.DisplayNames | undefined {
-    const cachedDisplayNames = languageDisplayNamesByLocale.get(displayLanguage);
+    const cachedDisplayNames =
+        languageDisplayNamesByLocale.get(displayLanguage);
     if (cachedDisplayNames !== undefined) {
         return cachedDisplayNames;
     }
@@ -80,10 +81,12 @@ function getSourceLanguageLabel({
 }): string | undefined {
     const sourceLanguage = content.translation.sourceLanguage;
     if (sourceLanguage.kind === "recognized") {
-        return getLanguageDisplayName({
-            languageCode: sourceLanguage.languageCode,
-            displayLanguage,
-        });
+        return (
+            getLanguageDisplayName({
+                languageCode: sourceLanguage.languageCode,
+                displayLanguage,
+            }) ?? sourceLanguage.label
+        );
     }
     if (sourceLanguage.kind === "raw") {
         return (
@@ -120,7 +123,9 @@ function getSourceLanguageKey({
 }): string | undefined {
     const sourceLanguage = content.translation.sourceLanguage;
     if (sourceLanguage.kind === "recognized") {
-        return getLanguageComparisonKey({ languageCode: sourceLanguage.languageCode });
+        return getLanguageComparisonKey({
+            languageCode: sourceLanguage.languageCode,
+        });
     }
     if (content.translation.sourceLanguageCode != null) {
         return getLanguageComparisonKey({
@@ -128,7 +133,9 @@ function getSourceLanguageKey({
         });
     }
     if (sourceLanguage.kind === "raw") {
-        return getLanguageComparisonKey({ languageCode: sourceLanguage.rawLanguageCode });
+        return getLanguageComparisonKey({
+            languageCode: sourceLanguage.rawLanguageCode,
+        });
     }
     return undefined;
 }
@@ -159,7 +166,8 @@ function sourceMatchesDisplayLanguage({
     displayLanguage: SupportedDisplayLanguageCodes;
 }): boolean {
     return (
-        sourceLanguageKey === getLanguageComparisonKey({ languageCode: displayLanguage })
+        sourceLanguageKey ===
+        getLanguageComparisonKey({ languageCode: displayLanguage })
     );
 }
 

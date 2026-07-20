@@ -625,13 +625,20 @@ watch(
 
 // Detect truncated candidate cards after DOM updates
 watch(
-  [candidates, itemBySlugId],
+  candidates,
   () => {
     updateCandidateItemSnapshot();
     void nextTick(checkTruncation);
   },
   { immediate: true }
 );
+
+watch(itemBySlugId, () => {
+  if (candidateResolutionError.value) {
+    updateCandidateItemSnapshot();
+    void nextTick(checkTruncation);
+  }
+});
 
 function retryInitialize(): void {
   engineInitialized.value = false;

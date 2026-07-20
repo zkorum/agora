@@ -171,7 +171,10 @@
     </div>
 
     <q-dialog v-model="showMobileProjectDetails" position="bottom">
-      <ZKBottomDialogContainer show-close-button>
+      <ZKBottomDialogContainer
+        :title="t({ key: 'projectDetailsAriaLabel' })"
+        show-close-button
+      >
         <ProjectDetailsAside
           :attributions="project.attributions"
           :contact="project.contact"

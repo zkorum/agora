@@ -1,9 +1,22 @@
-import { and, asc, eq, inArray, isNotNull, isNull, ne, or } from "drizzle-orm";
+import {
+    and,
+    asc,
+    eq,
+    exists,
+    inArray,
+    isNotNull,
+    isNull,
+    ne,
+    or,
+    sql,
+} from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import type { Script } from "@valkey/valkey-glide";
 import type { BaseLogger } from "pino";
 import {
     contentTranslationWorkTable,
+    conversationViewSnapshotTable,
+    analysisSnapshotOpinionTable,
     conversationContentTable,
     conversationContentTranslationTable,
     conversationTable,
@@ -31,9 +44,7 @@ import {
     type ContentTranslationQueuePriority,
     enqueueContentTranslationWork,
 } from "@/shared-backend/contentTranslationQueue.js";
-import {
-    translationSourceMatchesCurrentSource,
-} from "@/shared-backend/translate.js";
+import { translationSourceMatchesCurrentSource } from "@/shared-backend/translate.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
 import type {
     LanguageDetectionProvider,
@@ -81,29 +92,26 @@ interface RequestContentTranslationParams {
     beforeQueueTranslationWork: () => Promise<void>;
 }
 
-interface RequestConversationContentTranslationParams
-    extends Omit<
-        RequestContentTranslationParams,
-        "subject" | "requesterIsSiteModerator"
-    > {
+interface RequestConversationContentTranslationParams extends Omit<
+    RequestContentTranslationParams,
+    "subject" | "requesterIsSiteModerator"
+> {
     conversationSlugId: string;
     sourceVersion?: string;
 }
 
-interface RequestProjectContentTranslationParams
-    extends Omit<
-        RequestContentTranslationParams,
-        "subject" | "requesterIsSiteModerator"
-    > {
+interface RequestProjectContentTranslationParams extends Omit<
+    RequestContentTranslationParams,
+    "subject" | "requesterIsSiteModerator"
+> {
     projectSlug: string;
     sourceVersion?: string;
 }
 
-interface RequestSurveyQuestionContentTranslationParams
-    extends Omit<
-        RequestContentTranslationParams,
-        "subject" | "requesterIsSiteModerator"
-    > {
+interface RequestSurveyQuestionContentTranslationParams extends Omit<
+    RequestContentTranslationParams,
+    "subject" | "requesterIsSiteModerator"
+> {
     conversationSlugId: string;
     questionSlugId: string;
 }
@@ -290,7 +298,8 @@ function getTranslationWorkLogFields(input: TranslationWorkInput) {
             conversationId: input.conversationId,
             sourceKind: input.sourceKind,
             surveyQuestionContentId: input.surveyQuestionContentId,
-            surveyQuestionOptionContentIds: input.surveyQuestionOptionContentIds,
+            surveyQuestionOptionContentIds:
+                input.surveyQuestionOptionContentIds,
             targetLanguageCode: input.targetLanguageCode,
         };
     }
@@ -312,7 +321,10 @@ function getTranslationWorkLogFields(input: TranslationWorkInput) {
 
 function getTranslationWorkSourceWhere(input: TranslationWorkInput) {
     if (input.sourceKind === "project") {
-        return eq(contentTranslationWorkTable.projectContentId, input.projectContentId);
+        return eq(
+            contentTranslationWorkTable.projectContentId,
+            input.projectContentId,
+        );
     }
     if (input.sourceKind === "conversation") {
         return eq(
@@ -321,7 +333,10 @@ function getTranslationWorkSourceWhere(input: TranslationWorkInput) {
         );
     }
     if (input.sourceKind === "opinion") {
-        return eq(contentTranslationWorkTable.opinionContentId, input.sourceContentId);
+        return eq(
+            contentTranslationWorkTable.opinionContentId,
+            input.sourceContentId,
+        );
     }
     if (input.sourceKind === "ranking_item") {
         return eq(
@@ -386,14 +401,17 @@ async function resolveMissingContentTranslationStatus({
         return "pending";
     }
     return (
-        (await fetchMissingContentTranslationStatus({ db, input })) ?? "not_requested"
+        (await fetchMissingContentTranslationStatus({ db, input })) ??
+        "not_requested"
     );
 }
 
 function getSurveyQuestionOptionContentIds(
     source: SurveyQuestionContentSource,
 ): number[] {
-    return source.options.map((option) => option.contentId).sort((a, b) => a - b);
+    return source.options
+        .map((option) => option.contentId)
+        .sort((a, b) => a - b);
 }
 
 async function ensureTranslationWork({
@@ -434,10 +452,7 @@ async function ensureTranslationWork({
     if (existing !== undefined) {
         const completedTranslationExists =
             existing.status === "completed" && translationExists;
-        const nextPriorityRank = Math.min(
-            existing.priorityRank,
-            priority,
-        );
+        const nextPriorityRank = Math.min(existing.priorityRank, priority);
         if (existing.status === "running" && !completedTranslationExists) {
             await db
                 .update(contentTranslationWorkTable)
@@ -515,7 +530,9 @@ async function ensureTranslationWork({
                 ? input.surveyQuestionOptionContentIds
                 : null,
         rankingItemContentId:
-            input.sourceKind === "ranking_item" ? input.rankingItemContentId : null,
+            input.sourceKind === "ranking_item"
+                ? input.rankingItemContentId
+                : null,
         displayLanguageCode: input.targetLanguageCode,
         status: "pending" as const,
         priorityRank: priority,
@@ -688,14 +705,17 @@ async function fetchConversationSource({
             conversationSlugId: conversationTable.slugId,
             projectId: conversationTable.projectId,
             languageSettingsSource: conversationTable.languageSettingsSource,
-            dynamicTranslationEnabled: conversationTable.dynamicTranslationEnabled,
+            dynamicTranslationEnabled:
+                conversationTable.dynamicTranslationEnabled,
             contentId: conversationContentTable.id,
             publicId: conversationContentTable.publicId,
             title: conversationContentTable.title,
             body: conversationContentTable.body,
             sourceLanguageCode: conversationContentTable.sourceLanguageCode,
-            sourceRawLanguageCode: conversationContentTable.sourceRawLanguageCode,
-            sourceLanguageProvider: conversationContentTable.sourceLanguageProvider,
+            sourceRawLanguageCode:
+                conversationContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider:
+                conversationContentTable.sourceLanguageProvider,
             sourceLanguageConfidence:
                 conversationContentTable.sourceLanguageConfidence,
         })
@@ -727,7 +747,7 @@ async function fetchOpinionSource({
     opinionSlugId: string;
     sourceVersion: string;
     requesterIsSiteModerator: boolean;
-}): Promise<OpinionContentSource | undefined> {
+}): Promise<(OpinionContentSource & { isHidden: boolean }) | undefined> {
     const rows = await db
         .select({
             conversationId: conversationTable.id,
@@ -739,7 +759,9 @@ async function fetchOpinionSource({
             sourceLanguageCode: opinionContentTable.sourceLanguageCode,
             sourceRawLanguageCode: opinionContentTable.sourceRawLanguageCode,
             sourceLanguageProvider: opinionContentTable.sourceLanguageProvider,
-            sourceLanguageConfidence: opinionContentTable.sourceLanguageConfidence,
+            sourceLanguageConfidence:
+                opinionContentTable.sourceLanguageConfidence,
+            isHidden: sql<boolean>`coalesce(${opinionModerationTable.moderationAction} = 'hide', false)`,
         })
         .from(opinionTable)
         .innerJoin(
@@ -767,6 +789,40 @@ async function fetchOpinionSource({
                 isNotNull(conversationTable.currentContentId),
                 eq(opinionTable.slugId, opinionSlugId),
                 isNotNull(opinionTable.currentContentId),
+                or(
+                    eq(opinionTable.currentContentId, opinionContentTable.id),
+                    exists(
+                        db
+                            .select({ id: analysisSnapshotOpinionTable.id })
+                            .from(analysisSnapshotOpinionTable)
+                            .innerJoin(
+                                conversationViewSnapshotTable,
+                                eq(
+                                    conversationViewSnapshotTable.analysisSnapshotId,
+                                    analysisSnapshotOpinionTable.analysisSnapshotId,
+                                ),
+                            )
+                            .where(
+                                and(
+                                    eq(
+                                        analysisSnapshotOpinionTable.opinionContentId,
+                                        opinionContentTable.id,
+                                    ),
+                                    eq(
+                                        analysisSnapshotOpinionTable.opinionId,
+                                        opinionTable.id,
+                                    ),
+                                    eq(
+                                        conversationViewSnapshotTable.conversationId,
+                                        conversationTable.id,
+                                    ),
+                                    isNotNull(
+                                        conversationViewSnapshotTable.activatedAt,
+                                    ),
+                                ),
+                            ),
+                    ),
+                ),
                 requesterIsSiteModerator
                     ? undefined
                     : or(
@@ -798,8 +854,10 @@ async function fetchSurveyQuestionSource({
             publicId: surveyQuestionContentTable.publicId,
             questionText: surveyQuestionContentTable.questionText,
             sourceLanguageCode: surveyQuestionContentTable.sourceLanguageCode,
-            sourceRawLanguageCode: surveyQuestionContentTable.sourceRawLanguageCode,
-            sourceLanguageProvider: surveyQuestionContentTable.sourceLanguageProvider,
+            sourceRawLanguageCode:
+                surveyQuestionContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider:
+                surveyQuestionContentTable.sourceLanguageProvider,
             sourceLanguageConfidence:
                 surveyQuestionContentTable.sourceLanguageConfidence,
         })
@@ -810,7 +868,10 @@ async function fetchSurveyQuestionSource({
         )
         .innerJoin(
             surveyQuestionContentTable,
-            eq(surveyQuestionContentTable.id, surveyQuestionTable.currentContentId),
+            eq(
+                surveyQuestionContentTable.id,
+                surveyQuestionTable.currentContentId,
+            ),
         )
         .where(
             and(
@@ -852,7 +913,10 @@ async function fetchSurveyQuestionSource({
         )
         .where(
             and(
-                eq(surveyQuestionOptionTable.surveyQuestionId, question.questionId),
+                eq(
+                    surveyQuestionOptionTable.surveyQuestionId,
+                    question.questionId,
+                ),
                 isNotNull(surveyQuestionOptionTable.currentContentId),
             ),
         )
@@ -865,10 +929,12 @@ async function fetchRankingItemSource({
     db,
     conversationSlugId,
     itemSlugId,
+    sourceVersion,
 }: {
     db: PostgresDatabase;
     conversationSlugId: string;
     itemSlugId: string;
+    sourceVersion: string;
 }): Promise<RankingItemContentSource | undefined> {
     const rows = await db
         .select({
@@ -881,8 +947,10 @@ async function fetchRankingItemSource({
             bodyHtml: rankingItemContentTable.body,
             bodyPlainText: rankingItemContentTable.bodyPlainText,
             sourceLanguageCode: rankingItemContentTable.sourceLanguageCode,
-            sourceRawLanguageCode: rankingItemContentTable.sourceRawLanguageCode,
-            sourceLanguageProvider: rankingItemContentTable.sourceLanguageProvider,
+            sourceRawLanguageCode:
+                rankingItemContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider:
+                rankingItemContentTable.sourceLanguageProvider,
             sourceLanguageConfidence:
                 rankingItemContentTable.sourceLanguageConfidence,
         })
@@ -902,6 +970,7 @@ async function fetchRankingItemSource({
                 isNotNull(conversationTable.currentContentId),
                 eq(rankingItemTable.slugId, itemSlugId),
                 isNotNull(rankingItemTable.currentContentId),
+                eq(rankingItemContentTable.publicId, sourceVersion),
             ),
         )
         .limit(1);
@@ -994,11 +1063,17 @@ async function hasOpinionTranslation({
     targetLanguageCode: SupportedDisplayLanguageCodes;
 }): Promise<boolean> {
     const rows = await db
-        .select({ sourceLanguageCode: opinionContentTranslationTable.sourceLanguageCode })
+        .select({
+            sourceLanguageCode:
+                opinionContentTranslationTable.sourceLanguageCode,
+        })
         .from(opinionContentTranslationTable)
         .where(
             and(
-                eq(opinionContentTranslationTable.opinionContentId, source.contentId),
+                eq(
+                    opinionContentTranslationTable.opinionContentId,
+                    source.contentId,
+                ),
                 eq(
                     opinionContentTranslationTable.displayLanguageCode,
                     targetLanguageCode,
@@ -1090,7 +1165,9 @@ async function hasSurveyQuestionTranslation({
         source.options
             .filter((option) => {
                 const sourceLanguageCode =
-                    sourceLanguageByTranslatedOptionContentId.get(option.contentId);
+                    sourceLanguageByTranslatedOptionContentId.get(
+                        option.contentId,
+                    );
                 return (
                     sourceLanguageCode !== undefined &&
                     translationSourceMatchesCurrentSource({
@@ -1140,7 +1217,8 @@ async function fetchMaterializedConversationTargetLanguageCodes({
 }): Promise<SupportedDisplayLanguageCodes[]> {
     const rows = await db
         .select({
-            languageCode: conversationTranslationTargetLanguageTable.languageCode,
+            languageCode:
+                conversationTranslationTargetLanguageTable.languageCode,
         })
         .from(conversationTranslationTargetLanguageTable)
         .innerJoin(
@@ -1216,7 +1294,10 @@ async function fetchConfiguredManualProjectTargetLanguageCodes({
         .from(projectTranslationTargetLanguageTable)
         .innerJoin(
             projectTable,
-            eq(projectTranslationTargetLanguageTable.projectId, projectTable.id),
+            eq(
+                projectTranslationTargetLanguageTable.projectId,
+                projectTable.id,
+            ),
         )
         .where(
             and(
@@ -1250,7 +1331,8 @@ async function fetchProjectContentSource({
             sourceLanguageCode: projectContentTable.sourceLanguageCode,
             sourceRawLanguageCode: projectContentTable.sourceRawLanguageCode,
             sourceLanguageProvider: projectContentTable.sourceLanguageProvider,
-            sourceLanguageConfidence: projectContentTable.sourceLanguageConfidence,
+            sourceLanguageConfidence:
+                projectContentTable.sourceLanguageConfidence,
         })
         .from(projectTable)
         .innerJoin(
@@ -1282,7 +1364,8 @@ async function fetchProjectContentSourceBySlug({
             sourceLanguageCode: projectContentTable.sourceLanguageCode,
             sourceRawLanguageCode: projectContentTable.sourceRawLanguageCode,
             sourceLanguageProvider: projectContentTable.sourceLanguageProvider,
-            sourceLanguageConfidence: projectContentTable.sourceLanguageConfidence,
+            sourceLanguageConfidence:
+                projectContentTable.sourceLanguageConfidence,
         })
         .from(projectTable)
         .innerJoin(
@@ -1312,13 +1395,17 @@ async function hasProjectContentTranslation({
 }): Promise<boolean> {
     const rows = await db
         .select({
-            sourceLanguageCode: projectContentTranslationTable.sourceLanguageCode,
+            sourceLanguageCode:
+                projectContentTranslationTable.sourceLanguageCode,
             sourceKind: projectContentTranslationTable.sourceKind,
         })
         .from(projectContentTranslationTable)
         .where(
             and(
-                eq(projectContentTranslationTable.projectContentId, source.contentId),
+                eq(
+                    projectContentTranslationTable.projectContentId,
+                    source.contentId,
+                ),
                 eq(
                     projectContentTranslationTable.displayLanguageCode,
                     targetLanguageCode,
@@ -1360,7 +1447,8 @@ export async function fetchSeedOpinionSources({
             sourceLanguageCode: opinionContentTable.sourceLanguageCode,
             sourceRawLanguageCode: opinionContentTable.sourceRawLanguageCode,
             sourceLanguageProvider: opinionContentTable.sourceLanguageProvider,
-            sourceLanguageConfidence: opinionContentTable.sourceLanguageConfidence,
+            sourceLanguageConfidence:
+                opinionContentTable.sourceLanguageConfidence,
         })
         .from(opinionTable)
         .innerJoin(
@@ -1403,8 +1491,10 @@ export async function fetchCurrentSurveyQuestionSources({
             publicId: surveyQuestionContentTable.publicId,
             questionText: surveyQuestionContentTable.questionText,
             sourceLanguageCode: surveyQuestionContentTable.sourceLanguageCode,
-            sourceRawLanguageCode: surveyQuestionContentTable.sourceRawLanguageCode,
-            sourceLanguageProvider: surveyQuestionContentTable.sourceLanguageProvider,
+            sourceRawLanguageCode:
+                surveyQuestionContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider:
+                surveyQuestionContentTable.sourceLanguageProvider,
             sourceLanguageConfidence:
                 surveyQuestionContentTable.sourceLanguageConfidence,
             optionSlugId: surveyQuestionOptionTable.slugId,
@@ -1427,7 +1517,10 @@ export async function fetchCurrentSurveyQuestionSources({
         )
         .innerJoin(
             surveyQuestionContentTable,
-            eq(surveyQuestionContentTable.id, surveyQuestionTable.currentContentId),
+            eq(
+                surveyQuestionContentTable.id,
+                surveyQuestionTable.currentContentId,
+            ),
         )
         .leftJoin(
             surveyQuestionOptionTable,
@@ -1570,17 +1663,18 @@ export async function scheduleEagerContentTranslationForConversation({
         conversationSlugId,
     });
 
-    const workIds = await createEagerContentTranslationWorkForConversationSources({
-        db,
-        conversationSource,
-        targetLanguagePolicy,
-        surveySources,
-        seedOpinionSources,
-        rankingItemSources: [],
-        now,
-        log,
-        checkExistingTranslations: true,
-    });
+    const workIds =
+        await createEagerContentTranslationWorkForConversationSources({
+            db,
+            conversationSource,
+            targetLanguagePolicy,
+            surveySources,
+            seedOpinionSources,
+            rankingItemSources: [],
+            now,
+            log,
+            checkExistingTranslations: true,
+        });
     await enqueueEagerContentTranslationWork({
         valkey,
         queueScript,
@@ -1632,19 +1726,22 @@ async function createEagerContentTranslationWorkForConversationSources({
             {
                 conversationSlugId,
                 conversationId: conversationSource.conversationId,
-                languageSettingsSource: conversationSource.languageSettingsSource,
+                languageSettingsSource:
+                    conversationSource.languageSettingsSource,
             },
             "[ContentTranslation] Skipped eager scheduling: dynamic translation disabled",
         );
         return [];
     }
-    const targetLanguageCodes = targetLanguagePolicy.effectiveTargetLanguageCodes;
+    const targetLanguageCodes =
+        targetLanguagePolicy.effectiveTargetLanguageCodes;
     if (targetLanguageCodes.length === 0) {
         log.info(
             {
                 conversationSlugId,
                 conversationId: conversationSource.conversationId,
-                languageSettingsSource: conversationSource.languageSettingsSource,
+                languageSettingsSource:
+                    conversationSource.languageSettingsSource,
                 sourceLanguageCode: conversationSource.sourceLanguageCode,
                 sourceRawLanguageCode: conversationSource.sourceRawLanguageCode,
                 detectedTargetLanguageCode:
@@ -1665,8 +1762,10 @@ async function createEagerContentTranslationWorkForConversationSources({
             languageSettingsSource: conversationSource.languageSettingsSource,
             sourceLanguageCode: conversationSource.sourceLanguageCode,
             sourceRawLanguageCode: conversationSource.sourceRawLanguageCode,
-            detectedTargetLanguageCode: targetLanguagePolicy.detectedTargetLanguageCode,
-            manualTargetLanguageCodes: targetLanguagePolicy.manualTargetLanguageCodes,
+            detectedTargetLanguageCode:
+                targetLanguagePolicy.detectedTargetLanguageCode,
+            manualTargetLanguageCodes:
+                targetLanguagePolicy.manualTargetLanguageCodes,
             effectiveTargetLanguageCodes: targetLanguageCodes,
             surveyQuestionCount: surveySources.length,
             seedOpinionCount: seedOpinionSources.length,
@@ -1716,7 +1815,8 @@ async function createEagerContentTranslationWorkForConversationSources({
                     sourceContentId: conversationSource.contentId,
                     targetLanguageCode,
                     sourceLanguageCode: conversationSource.sourceLanguageCode,
-                    sourceRawLanguageCode: conversationSource.sourceRawLanguageCode,
+                    sourceRawLanguageCode:
+                        conversationSource.sourceRawLanguageCode,
                     skipReason: shouldTranslateConversation
                         ? "translation_exists"
                         : "source_matches_target",
@@ -1726,18 +1826,20 @@ async function createEagerContentTranslationWorkForConversationSources({
         }
 
         for (const source of surveySources) {
-            const shouldTranslateSurveyQuestion = shouldTranslateSurveyQuestionSource({
-                source,
-                targetLanguageCode,
-            });
-            const surveyQuestionTranslationExists = shouldTranslateSurveyQuestion
-                ? checkExistingTranslations &&
-                  (await hasSurveyQuestionTranslation({
-                      db,
-                      source,
-                      targetLanguageCode,
-                  }))
-                : false;
+            const shouldTranslateSurveyQuestion =
+                shouldTranslateSurveyQuestionSource({
+                    source,
+                    targetLanguageCode,
+                });
+            const surveyQuestionTranslationExists =
+                shouldTranslateSurveyQuestion
+                    ? checkExistingTranslations &&
+                      (await hasSurveyQuestionTranslation({
+                          db,
+                          source,
+                          targetLanguageCode,
+                      }))
+                    : false;
             if (
                 !shouldTranslateSurveyQuestion ||
                 surveyQuestionTranslationExists
@@ -1929,7 +2031,8 @@ export async function createEagerContentTranslationWorkForKnownProject({
     if (!source.dynamicTranslationEnabled) {
         return [];
     }
-    const targetLanguageCodes = targetLanguagePolicy.effectiveTargetLanguageCodes;
+    const targetLanguageCodes =
+        targetLanguagePolicy.effectiveTargetLanguageCodes;
     if (targetLanguageCodes.length === 0) {
         return [];
     }
@@ -2013,7 +2116,8 @@ export async function scheduleEagerContentTranslationForProject({
             targetLanguageCodes: manualTargetLanguageCodes,
         },
     });
-    const targetLanguageCodes = targetLanguagePolicy.effectiveTargetLanguageCodes;
+    const targetLanguageCodes =
+        targetLanguagePolicy.effectiveTargetLanguageCodes;
     if (targetLanguageCodes.length === 0) {
         return;
     }
@@ -2108,7 +2212,8 @@ async function buildSurveyQuestionResponse({
     const freshQuestionTranslation =
         questionTranslation !== undefined &&
         translationSourceMatchesCurrentSource({
-            translationSourceLanguageCode: questionTranslation.sourceLanguageCode,
+            translationSourceLanguageCode:
+                questionTranslation.sourceLanguageCode,
             currentSourceLanguageCode: source.sourceLanguageCode,
         })
             ? questionTranslation
@@ -2140,14 +2245,18 @@ async function buildSurveyQuestionResponse({
                       ),
                   );
     const sourceLanguageByOptionContentId = new Map(
-        source.options.map((option) => [option.contentId, option.sourceLanguageCode]),
+        source.options.map((option) => [
+            option.contentId,
+            option.sourceLanguageCode,
+        ]),
     );
     const translatedOptionsByContentId = new Map(
         optionTranslationRows
             .filter((row) => {
-                const currentSourceLanguageCode = sourceLanguageByOptionContentId.get(
-                    row.surveyQuestionOptionContentId,
-                );
+                const currentSourceLanguageCode =
+                    sourceLanguageByOptionContentId.get(
+                        row.surveyQuestionOptionContentId,
+                    );
                 return (
                     currentSourceLanguageCode !== undefined &&
                     translationSourceMatchesCurrentSource({
@@ -2188,7 +2297,8 @@ async function buildSurveyQuestionResponse({
                 : {
                       translatedQuestionText:
                           freshQuestionTranslation.translatedQuestionText,
-                      sourceLanguageCode: freshQuestionTranslation.sourceLanguageCode,
+                      sourceLanguageCode:
+                          freshQuestionTranslation.sourceLanguageCode,
                       sourceRawLanguageCode:
                           freshQuestionTranslation.sourceRawLanguageCode,
                       sourceLanguageProvider:
@@ -2218,9 +2328,11 @@ async function buildConversationResponse({
 }> {
     const translationRows = await db
         .select({
-            translatedTitle: conversationContentTranslationTable.translatedTitle,
+            translatedTitle:
+                conversationContentTranslationTable.translatedTitle,
             translatedBody: conversationContentTranslationTable.translatedBody,
-            sourceLanguageCode: conversationContentTranslationTable.sourceLanguageCode,
+            sourceLanguageCode:
+                conversationContentTranslationTable.sourceLanguageCode,
             sourceRawLanguageCode:
                 conversationContentTranslationTable.sourceRawLanguageCode,
             sourceLanguageProvider:
@@ -2331,11 +2443,14 @@ async function buildProjectResponse({
     const translationRows = await db
         .select({
             translatedTitle: projectContentTranslationTable.translatedTitle,
-            translatedSubtitle: projectContentTranslationTable.translatedSubtitle,
+            translatedSubtitle:
+                projectContentTranslationTable.translatedSubtitle,
             translatedBody: projectContentTranslationTable.translatedBody,
             sourceKind: projectContentTranslationTable.sourceKind,
-            sourceLanguageCode: projectContentTranslationTable.sourceLanguageCode,
-            sourceRawLanguageCode: projectContentTranslationTable.sourceRawLanguageCode,
+            sourceLanguageCode:
+                projectContentTranslationTable.sourceLanguageCode,
+            sourceRawLanguageCode:
+                projectContentTranslationTable.sourceRawLanguageCode,
             sourceLanguageProvider:
                 projectContentTranslationTable.sourceLanguageProvider,
             sourceLanguageConfidence:
@@ -2344,7 +2459,10 @@ async function buildProjectResponse({
         .from(projectContentTranslationTable)
         .where(
             and(
-                eq(projectContentTranslationTable.projectContentId, source.contentId),
+                eq(
+                    projectContentTranslationTable.projectContentId,
+                    source.contentId,
+                ),
                 eq(
                     projectContentTranslationTable.displayLanguageCode,
                     targetLanguageCode,
@@ -2410,7 +2528,8 @@ async function buildProjectResponse({
                     original,
                     translated: {
                         title: freshTranslation.translatedTitle,
-                        subtitle: freshTranslation.translatedSubtitle ?? undefined,
+                        subtitle:
+                            freshTranslation.translatedSubtitle ?? undefined,
                         bodyHtml: freshTranslation.translatedBody ?? undefined,
                     },
                 },
@@ -2537,8 +2656,10 @@ async function buildOpinionResponse({
     const translationRows = await db
         .select({
             translatedContent: opinionContentTranslationTable.translatedContent,
-            sourceLanguageCode: opinionContentTranslationTable.sourceLanguageCode,
-            sourceRawLanguageCode: opinionContentTranslationTable.sourceRawLanguageCode,
+            sourceLanguageCode:
+                opinionContentTranslationTable.sourceLanguageCode,
+            sourceRawLanguageCode:
+                opinionContentTranslationTable.sourceRawLanguageCode,
             sourceLanguageProvider:
                 opinionContentTranslationTable.sourceLanguageProvider,
             sourceLanguageConfidence:
@@ -2547,7 +2668,10 @@ async function buildOpinionResponse({
         .from(opinionContentTranslationTable)
         .where(
             and(
-                eq(opinionContentTranslationTable.opinionContentId, source.contentId),
+                eq(
+                    opinionContentTranslationTable.opinionContentId,
+                    source.contentId,
+                ),
                 eq(
                     opinionContentTranslationTable.displayLanguageCode,
                     targetLanguageCode,
@@ -2672,7 +2796,9 @@ export async function requestContentTranslation({
             source,
             targetLanguageCode,
         });
-        const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
+        const effectiveRequestMode = skipTranslation
+            ? "read_existing"
+            : requestMode;
         if (
             shouldQueueTranslationWork({
                 requestMode: effectiveRequestMode,
@@ -2725,7 +2851,9 @@ export async function requestContentTranslation({
             sourceRawLanguageCode: source.sourceRawLanguageCode,
             targetLanguageCode,
         });
-        const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
+        const effectiveRequestMode = skipTranslation
+            ? "read_existing"
+            : requestMode;
         if (
             shouldQueueTranslationWork({
                 requestMode: effectiveRequestMode,
@@ -2763,6 +2891,7 @@ export async function requestContentTranslation({
             db,
             conversationSlugId: subject.conversationSlugId,
             itemSlugId: subject.itemSlugId,
+            sourceVersion: subject.sourceVersion,
         });
         if (source === undefined) {
             return undefined;
@@ -2777,7 +2906,9 @@ export async function requestContentTranslation({
             sourceRawLanguageCode: source.sourceRawLanguageCode,
             targetLanguageCode,
         });
-        const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
+        const effectiveRequestMode = skipTranslation
+            ? "read_existing"
+            : requestMode;
         if (
             shouldQueueTranslationWork({
                 requestMode: effectiveRequestMode,
@@ -2830,7 +2961,8 @@ export async function requestContentTranslation({
         sourceRawLanguageCode: source.sourceRawLanguageCode,
         targetLanguageCode,
     });
-    const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
+    const effectiveRequestMode =
+        skipTranslation || source.isHidden ? "read_existing" : requestMode;
     if (
         shouldQueueTranslationWork({
             requestMode: effectiveRequestMode,
@@ -2895,7 +3027,9 @@ export async function requestProjectContentTranslation({
         sourceRawLanguageCode: source.sourceRawLanguageCode,
         targetLanguageCode,
     });
-    const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
+    const effectiveRequestMode = skipTranslation
+        ? "read_existing"
+        : requestMode;
     if (
         shouldQueueTranslationWork({
             requestMode: effectiveRequestMode,
@@ -2960,7 +3094,9 @@ export async function requestConversationContentTranslation({
         sourceRawLanguageCode: source.sourceRawLanguageCode,
         targetLanguageCode,
     });
-    const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
+    const effectiveRequestMode = skipTranslation
+        ? "read_existing"
+        : requestMode;
     if (
         shouldQueueTranslationWork({
             requestMode: effectiveRequestMode,
@@ -3022,7 +3158,9 @@ export async function requestSurveyQuestionContentTranslation({
         source,
         targetLanguageCode,
     });
-    const effectiveRequestMode = skipTranslation ? "read_existing" : requestMode;
+    const effectiveRequestMode = skipTranslation
+        ? "read_existing"
+        : requestMode;
     if (
         shouldQueueTranslationWork({
             requestMode: effectiveRequestMode,

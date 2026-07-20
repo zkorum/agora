@@ -3898,7 +3898,7 @@ export const analysisSnapshotResultTable = pgTable(
     ],
 );
 
-/** @service api, shared-analysis-worker */
+/** @service api, shared-analysis-worker, content-translation-worker */
 export const analysisSnapshotOpinionTable = pgTable(
     "analysis_snapshot_opinion",
     {
@@ -4481,7 +4481,7 @@ export const opinionGroupCandidateAssessmentTable = pgTable(
     },
 );
 
-/** @service api, shared-analysis-worker, import-worker */
+/** @service api, shared-analysis-worker, import-worker, content-translation-worker */
 export const conversationViewSnapshotTable = pgTable(
     "conversation_view_snapshot",
     {

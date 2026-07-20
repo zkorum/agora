@@ -77,7 +77,8 @@ function isSameContentTranslationSubject({
   if (left.kind === "ranking_item" && right.kind === "ranking_item") {
     return (
       left.conversationSlugId === right.conversationSlugId &&
-      left.itemSlugId === right.itemSlugId
+      left.itemSlugId === right.itemSlugId &&
+      left.sourceVersion === right.sourceVersion
     );
   }
 
@@ -158,6 +159,7 @@ function useContentTranslationController({
     undefined
   );
   const hasRequestedTranslation = ref(false);
+  let requestGeneration = 0;
   const sortedSpokenLanguageKey = computed(() =>
     [...spokenLanguages.value].sort().join("\u0000")
   );
@@ -279,10 +281,16 @@ function useContentTranslationController({
         translationPolling.stop();
         requestMode.value = "queue_if_missing";
         hasRequestedTranslation.value = true;
+        const activeRequestGeneration = requestGeneration;
         try {
           await query.refetch();
         } finally {
-          requestMode.value = "read_existing";
+          if (activeRequestGeneration === requestGeneration) {
+            requestMode.value = "read_existing";
+          }
+        }
+        if (activeRequestGeneration !== requestGeneration) {
+          return;
         }
         if (
           translationStatus.value !== "completed" ||
@@ -304,11 +312,23 @@ function useContentTranslationController({
   }
 
   watch([displayLanguage, sortedSpokenLanguageKey], () => {
+    requestGeneration += 1;
     translationPolling.stop();
     requestMode.value = "read_existing";
     modePreference.value = undefined;
     hasRequestedTranslation.value = false;
   });
+
+  watch(
+    () => toValue(subject),
+    () => {
+      requestGeneration += 1;
+      translationPolling.stop();
+      requestMode.value = "read_existing";
+      modePreference.value = undefined;
+      hasRequestedTranslation.value = false;
+    }
+  );
 
   watch(
     [
@@ -365,12 +385,22 @@ function useContentTranslationController({
   function isEventForCurrentRequest(
     data: SSEContentTranslationUpdatedData
   ): boolean {
+    const currentSubject = toValue(subject);
+    const response = query.data.value;
+    const currentSourceVersion =
+      "sourceVersion" in currentSubject
+        ? currentSubject.sourceVersion
+        : response?.success === true
+          ? response.content.sourceVersion
+          : undefined;
     return (
       toValue(enabled) &&
       data.targetLanguageCode === displayLanguage.value &&
+      currentSourceVersion !== undefined &&
+      data.subject.sourceVersion === currentSourceVersion &&
       isSameContentTranslationSubject({
         left: data.subject,
-        right: toValue(subject),
+        right: currentSubject,
       })
     );
   }

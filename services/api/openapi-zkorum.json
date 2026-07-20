@@ -26752,12 +26752,18 @@
                                                     "itemSlugId": {
                                                         "type": "string",
                                                         "maxLength": 10
+                                                    },
+                                                    "sourceVersion": {
+                                                        "type": "string",
+                                                        "format": "uuid",
+                                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                     }
                                                 },
                                                 "required": [
                                                     "kind",
                                                     "conversationSlugId",
-                                                    "itemSlugId"
+                                                    "itemSlugId",
+                                                    "sourceVersion"
                                                 ],
                                                 "additionalProperties": false
                                             }
@@ -26846,7 +26852,8 @@
                                                                 },
                                                                 "sourceVersion": {
                                                                     "type": "string",
-                                                                    "minLength": 1
+                                                                    "format": "uuid",
+                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                                 },
                                                                 "initialMode": {
                                                                     "type": "string",
@@ -26901,7 +26908,8 @@
                                                                 },
                                                                 "sourceVersion": {
                                                                     "type": "string",
-                                                                    "minLength": 1
+                                                                    "format": "uuid",
+                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                                 },
                                                                 "initialMode": {
                                                                     "type": "string",
@@ -27360,7 +27368,8 @@
                                                                 },
                                                                 "sourceVersion": {
                                                                     "type": "string",
-                                                                    "minLength": 1
+                                                                    "format": "uuid",
+                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                                 },
                                                                 "initialMode": {
                                                                     "type": "string",
@@ -27839,12 +27848,18 @@
                                                         "opinionSlugId": {
                                                             "type": "string",
                                                             "maxLength": 10
+                                                        },
+                                                        "sourceVersion": {
+                                                            "type": "string",
+                                                            "format": "uuid",
+                                                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                         }
                                                     },
                                                     "required": [
                                                         "kind",
                                                         "conversationSlugId",
-                                                        "opinionSlugId"
+                                                        "opinionSlugId",
+                                                        "sourceVersion"
                                                     ],
                                                     "additionalProperties": false
                                                 },
@@ -27861,7 +27876,8 @@
                                                                 },
                                                                 "sourceVersion": {
                                                                     "type": "string",
-                                                                    "minLength": 1
+                                                                    "format": "uuid",
+                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                                 },
                                                                 "initialMode": {
                                                                     "type": "string",
@@ -27912,7 +27928,8 @@
                                                                 },
                                                                 "sourceVersion": {
                                                                     "type": "string",
-                                                                    "minLength": 1
+                                                                    "format": "uuid",
+                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                                 },
                                                                 "initialMode": {
                                                                     "type": "string",
@@ -28364,7 +28381,8 @@
                                                                 },
                                                                 "sourceVersion": {
                                                                     "type": "string",
-                                                                    "minLength": 1
+                                                                    "format": "uuid",
+                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                                 },
                                                                 "initialMode": {
                                                                     "type": "string",
@@ -28858,7 +28876,8 @@
                                                                 },
                                                                 "sourceVersion": {
                                                                     "type": "string",
-                                                                    "minLength": 1
+                                                                    "format": "uuid",
+                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                                 },
                                                                 "initialMode": {
                                                                     "type": "string",
@@ -28932,7 +28951,8 @@
                                                                 },
                                                                 "sourceVersion": {
                                                                     "type": "string",
-                                                                    "minLength": 1
+                                                                    "format": "uuid",
+                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                                 },
                                                                 "initialMode": {
                                                                     "type": "string",
@@ -29428,7 +29448,8 @@
                                                                 },
                                                                 "sourceVersion": {
                                                                     "type": "string",
-                                                                    "minLength": 1
+                                                                    "format": "uuid",
+                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                                 },
                                                                 "initialMode": {
                                                                     "type": "string",
@@ -29962,7 +29983,8 @@
                                                                 },
                                                                 "sourceVersion": {
                                                                     "type": "string",
-                                                                    "minLength": 1
+                                                                    "format": "uuid",
+                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                                 },
                                                                 "initialMode": {
                                                                     "type": "string",
@@ -30022,7 +30044,8 @@
                                                                 },
                                                                 "sourceVersion": {
                                                                     "type": "string",
-                                                                    "minLength": 1
+                                                                    "format": "uuid",
+                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                                 },
                                                                 "initialMode": {
                                                                     "type": "string",
@@ -30494,7 +30517,8 @@
                                                                 },
                                                                 "sourceVersion": {
                                                                     "type": "string",
-                                                                    "minLength": 1
+                                                                    "format": "uuid",
+                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                                 },
                                                                 "initialMode": {
                                                                     "type": "string",
@@ -30986,12 +31010,18 @@
                                                         "itemSlugId": {
                                                             "type": "string",
                                                             "maxLength": 10
+                                                        },
+                                                        "sourceVersion": {
+                                                            "type": "string",
+                                                            "format": "uuid",
+                                                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                         }
                                                     },
                                                     "required": [
                                                         "kind",
                                                         "conversationSlugId",
-                                                        "itemSlugId"
+                                                        "itemSlugId",
+                                                        "sourceVersion"
                                                     ],
                                                     "additionalProperties": false
                                                 },
@@ -31008,7 +31038,8 @@
                                                                 },
                                                                 "sourceVersion": {
                                                                     "type": "string",
-                                                                    "minLength": 1
+                                                                    "format": "uuid",
+                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                                 },
                                                                 "initialMode": {
                                                                     "type": "string",
@@ -31060,7 +31091,8 @@
                                                                 },
                                                                 "sourceVersion": {
                                                                     "type": "string",
-                                                                    "minLength": 1
+                                                                    "format": "uuid",
+                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                                 },
                                                                 "initialMode": {
                                                                     "type": "string",
@@ -31516,7 +31548,8 @@
                                                                 },
                                                                 "sourceVersion": {
                                                                     "type": "string",
-                                                                    "minLength": 1
+                                                                    "format": "uuid",
+                                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                                 },
                                                                 "initialMode": {
                                                                     "type": "string",

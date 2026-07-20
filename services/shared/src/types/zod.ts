@@ -349,6 +349,7 @@ export const zodContentTranslationSubject = z.discriminatedUnion("kind", [
             kind: z.literal("ranking_item"),
             conversationSlugId: zodSlugId,
             itemSlugId: zodSlugId,
+            sourceVersion: z.uuid(),
         })
         .strict(),
 ]);
@@ -409,7 +410,7 @@ export function createZodLocalizedContent<
         z
             .object({
                 kind: z.literal("original_only"),
-                sourceVersion: z.string().min(1),
+                sourceVersion: z.uuid(),
                 initialMode: z.literal("original"),
                 variants: z
                     .object({
@@ -421,7 +422,7 @@ export function createZodLocalizedContent<
         z
             .object({
                 kind: z.literal("translatable"),
-                sourceVersion: z.string().min(1),
+                sourceVersion: z.uuid(),
                 initialMode: z.literal("original"),
                 translation: zodLocalizedContentTranslationMetadata,
                 variants: z
@@ -435,7 +436,7 @@ export function createZodLocalizedContent<
         z
             .object({
                 kind: z.literal("translatable"),
-                sourceVersion: z.string().min(1),
+                sourceVersion: z.uuid(),
                 initialMode: z.literal("translated"),
                 translation: zodCompletedLocalizedContentTranslationMetadata,
                 variants: z

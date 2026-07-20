@@ -2,10 +2,7 @@ import type { DisplayedOpinionItem } from "src/shared/types/zod";
 import { zodContentTranslationSubject } from "src/shared/types/zod";
 import { describe, expect, it } from "vitest";
 
-import {
-  getInitialOpinionDisplayText,
-  getPendingOpinionTranslationMode,
-} from "./opinionItemDisplayText";
+import { getPendingOpinionTranslationMode } from "./opinionItemDisplayText";
 
 const sourceVersion = "00000000-0000-4000-8000-000000000001";
 
@@ -28,38 +25,6 @@ function opinionItem(
     displayContent,
   };
 }
-
-describe("getInitialOpinionDisplayText", () => {
-  it("returns the server-selected translation", () => {
-    const item = opinionItem({
-      sourceVersion,
-      status: "available",
-      mode: "translated",
-      content: { content: "Translated statement" },
-      translationControl: {
-        status: "completed",
-        alternateMode: "original",
-        canRequestAlternate: true,
-      },
-    });
-
-    expect(getInitialOpinionDisplayText(item)).toBe("Translated statement");
-  });
-
-  it("keeps the original while a translation is unavailable", () => {
-    const item = opinionItem({
-      sourceVersion,
-      status: "pending",
-      translationControl: {
-        status: "pending",
-        alternateMode: "translated",
-        canRequestAlternate: true,
-      },
-    });
-
-    expect(getInitialOpinionDisplayText(item)).toBe("Original statement");
-  });
-});
 
 describe("getPendingOpinionTranslationMode", () => {
   it.each(["pending", "running"] as const)(

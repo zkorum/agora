@@ -38,6 +38,7 @@ export function useRankingItemDisplayContent({
     kind: "ranking_item" as const,
     conversationSlugId: toValue(conversationSlugId),
     itemSlugId: resolvedItemSlugId.value ?? "",
+    sourceVersion: sourceVersion.value ?? "",
   }));
 
   const {
@@ -47,7 +48,9 @@ export function useRankingItemDisplayContent({
     subject: translationSubject,
     enabled: computed(
       () =>
-        hasRequestedTranslation.value && resolvedItemSlugId.value !== undefined
+        hasRequestedTranslation.value &&
+        resolvedItemSlugId.value !== undefined &&
+        sourceVersion.value !== undefined
     ),
     sourceLanguageCode: undefined,
   });

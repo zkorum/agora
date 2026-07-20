@@ -26,6 +26,7 @@
         <slot name="leadingAction" />
         <div v-if="title" class="dialog-title">{{ title }}</div>
         <q-btn
+          v-if="showCloseButton"
           v-close-popup
           flat
           round

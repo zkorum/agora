@@ -216,6 +216,13 @@ class EventSlug(StrEnum):
     devconnect_2025 = "devconnect-2025"
 
 
+class ConversationViewSnapshotReasonEnum(StrEnum):
+    analysis_completed = "analysis_completed"
+    survey_refreshed = "survey_refreshed"
+    conversation_content_updated = "conversation_content_updated"
+    conversation_lifecycle_updated = "conversation_lifecycle_updated"
+
+
 class ProjectContentTranslationSourceKind(StrEnum):
     manual = "manual"
     machine = "machine"
@@ -242,6 +249,21 @@ class SurveyChoiceDisplay(StrEnum):
     auto = "auto"
     list = "list"
     dropdown = "dropdown"
+
+
+class AnalysisSnapshotOpinion(Base):
+    __tablename__ = "analysis_snapshot_opinion"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    analysis_snapshot_id: Mapped[int] = mapped_column(Integer)
+    opinion_id: Mapped[int] = mapped_column(Integer)
+    opinion_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    local_opinion_index: Mapped[int] = mapped_column(Integer)
+    num_agrees: Mapped[int] = mapped_column(Integer, server_default="0")
+    num_disagrees: Mapped[int] = mapped_column(Integer, server_default="0")
+    num_passes: Mapped[int] = mapped_column(Integer, server_default="0")
+    routing_priority: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
 class ContentTranslationWork(Base):
@@ -430,6 +452,37 @@ class ConversationTranslationTargetLanguage(Base):
     )
     created_at: Mapped[datetime] = mapped_column(DateTime)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class ConversationViewSnapshot(Base):
+    __tablename__ = "conversation_view_snapshot"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    opinion_group_spec_id: Mapped[int] = mapped_column(Integer)
+    analysis_snapshot_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    survey_aggregate_snapshot_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    conversation_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    view_reason: Mapped[ConversationViewSnapshotReasonEnum] = mapped_column(
+        SaEnum(
+            ConversationViewSnapshotReasonEnum,
+            name="conversation_view_snapshot_reason_enum",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    preferred_opinion_group_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    is_closed: Mapped[bool] = mapped_column(Boolean)
+    opinion_count: Mapped[int] = mapped_column(Integer)
+    vote_count: Mapped[int] = mapped_column(Integer)
+    participant_count: Mapped[int] = mapped_column(Integer)
+    total_opinion_count: Mapped[int] = mapped_column(Integer)
+    total_vote_count: Mapped[int] = mapped_column(Integer)
+    total_participant_count: Mapped[int] = mapped_column(Integer)
+    moderated_opinion_count: Mapped[int] = mapped_column(Integer)
+    hidden_opinion_count: Mapped[int] = mapped_column(Integer)
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
 class OpinionContent(Base):

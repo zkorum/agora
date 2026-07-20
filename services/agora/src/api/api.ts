@@ -1312,7 +1312,7 @@ export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf {
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1 {
     'success': boolean;
-    'subject': ApiV1ContentTranslationRequestPost200ResponseAnyOf1Subject;
+    'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf1;
     'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf1Content;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1Content {
@@ -1401,18 +1401,6 @@ export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOfVariants {
     'original': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfContent;
 }
-export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1Subject {
-    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf1SubjectKindEnum;
-    'conversationSlugId': string;
-    'opinionSlugId': string;
-}
-
-export const ApiV1ContentTranslationRequestPost200ResponseAnyOf1SubjectKindEnum = {
-    Opinion: 'opinion',
-} as const;
-
-export type ApiV1ContentTranslationRequestPost200ResponseAnyOf1SubjectKindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf1SubjectKindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf1SubjectKindEnum];
-
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf2 {
     'success': boolean;
     'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf2;
@@ -2413,6 +2401,7 @@ export interface ApiV1ContentTranslationRequestPostRequestSubjectOneOf4 {
     'kind': ApiV1ContentTranslationRequestPostRequestSubjectOneOf4KindEnum;
     'conversationSlugId': string;
     'itemSlugId': string;
+    'sourceVersion': string;
 }
 
 export const ApiV1ContentTranslationRequestPostRequestSubjectOneOf4KindEnum = {

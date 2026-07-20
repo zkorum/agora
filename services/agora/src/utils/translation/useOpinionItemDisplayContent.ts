@@ -8,10 +8,7 @@ import {
   type ContentTranslationDisplayMode,
   getContentTranslationSourceLanguageLabel,
 } from "./contentTranslation";
-import {
-  getInitialOpinionDisplayText,
-  getPendingOpinionTranslationMode,
-} from "./opinionItemDisplayText";
+import { getPendingOpinionTranslationMode } from "./opinionItemDisplayText";
 import {
   type OpinionContentTranslationPreview,
   useOpinionContentTranslationPreview,
@@ -20,11 +17,9 @@ import {
 export function useOpinionItemDisplayContent({
   conversationSlugId,
   opinionItem,
-  interactive = true,
 }: {
   conversationSlugId: MaybeRefOrGetter<string>;
   opinionItem: MaybeRefOrGetter<DisplayedOpinionItem>;
-  interactive?: MaybeRefOrGetter<boolean>;
 }) {
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
   const hasRequestedTranslation = ref(false);
@@ -52,9 +47,8 @@ export function useOpinionItemDisplayContent({
     subject: translationSubject,
     enabled: computed(
       () =>
-        toValue(interactive) &&
-        (hasRequestedTranslation.value ||
-          pendingServerTranslationMode.value !== undefined)
+        hasRequestedTranslation.value ||
+        pendingServerTranslationMode.value !== undefined
     ),
     sourceLanguageCode: computed(() => toValue(opinionItem).sourceLanguageCode),
     initialModePreference: pendingServerTranslationMode,
@@ -110,10 +104,6 @@ export function useOpinionItemDisplayContent({
     }
     return toValue(opinionItem).opinion;
   });
-  const initialDisplayedOpinion = computed(() =>
-    getInitialOpinionDisplayText(toValue(opinionItem))
-  );
-
   function setTranslationMode(mode: ContentTranslationDisplayMode): void {
     hasRequestedTranslation.value = true;
     void setRequestedTranslationMode(mode);
@@ -136,7 +126,6 @@ export function useOpinionItemDisplayContent({
 
   return {
     displayedOpinion,
-    initialDisplayedOpinion,
     translationPreview,
     setTranslationMode,
   };

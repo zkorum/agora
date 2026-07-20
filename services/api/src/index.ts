@@ -225,7 +225,10 @@ import {
     getLanguagePreferences,
     updateLanguagePreferences,
 } from "./service/language.js";
-import { getAutoProvisionedDefaultLanguage, getImplicitDefaultDisplayLanguage } from "./service/projectLanguage.js";
+import {
+    getAutoProvisionedDefaultLanguage,
+    getImplicitDefaultDisplayLanguage,
+} from "./service/projectLanguage.js";
 import {
     ZodSupportedDisplayLanguageCodes,
     type SupportedDisplayLanguageCodes,
@@ -607,7 +610,9 @@ async function getContentTranslationAvailabilityForConversation({
             : {
                   dynamicTranslationEnabled: firstRow.dynamicTranslationEnabled,
                   additionalLanguageCodes: rows.flatMap((row) =>
-                      row.targetLanguageCode === null ? [] : [row.targetLanguageCode],
+                      row.targetLanguageCode === null
+                          ? []
+                          : [row.targetLanguageCode],
                   ),
               };
     const detectedTargetLanguageCode = sourceLanguageToDisplayLanguage({
@@ -720,7 +725,8 @@ async function getContentTranslationAvailabilityForProject({
         .select({
             dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
             sourceLanguageCode: projectContentTable.sourceLanguageCode,
-            targetLanguageCode: projectTranslationTargetLanguageTable.languageCode,
+            targetLanguageCode:
+                projectTranslationTargetLanguageTable.languageCode,
         })
         .from(projectTable)
         .innerJoin(
@@ -730,7 +736,10 @@ async function getContentTranslationAvailabilityForProject({
         .leftJoin(
             projectTranslationTargetLanguageTable,
             and(
-                eq(projectTranslationTargetLanguageTable.projectId, projectTable.id),
+                eq(
+                    projectTranslationTargetLanguageTable.projectId,
+                    projectTable.id,
+                ),
                 isNull(projectTranslationTargetLanguageTable.deletedAt),
             ),
         )
@@ -745,7 +754,9 @@ async function getContentTranslationAvailabilityForProject({
 
     const firstRow = rows.at(0);
     if (firstRow === undefined) {
-        throw server.httpErrors.notFound("Content translation subject not found");
+        throw server.httpErrors.notFound(
+            "Content translation subject not found",
+        );
     }
     const multilingualSetting: ConversationMultilingualSetting = {
         dynamicTranslationEnabled: firstRow.dynamicTranslationEnabled,
@@ -1537,17 +1548,20 @@ function createRawRequestBodyCaptureStream({
 }): RawRequestBodyCaptureStream {
     const chunks: Buffer[] = [];
 
-    const captureStream = Object.assign(new Transform({
-        transform(chunk: Buffer, _encoding, callback) {
-            chunks.push(chunk);
-            captureStream.receivedEncodedLength += chunk.length;
-            callback(null, chunk);
-        },
-        flush(callback) {
-            rawRequestBodies.set(request, Buffer.concat(chunks));
-            callback();
-        },
-    }), { receivedEncodedLength: 0 });
+    const captureStream = Object.assign(
+        new Transform({
+            transform(chunk: Buffer, _encoding, callback) {
+                chunks.push(chunk);
+                captureStream.receivedEncodedLength += chunk.length;
+                callback(null, chunk);
+            },
+            flush(callback) {
+                rawRequestBodies.set(request, Buffer.concat(chunks));
+                callback();
+            },
+        }),
+        { receivedEncodedLength: 0 },
+    );
 
     return payload.pipe(captureStream);
 }
@@ -1967,7 +1981,9 @@ server.after(() => {
                 didWrite,
                 now,
             });
-            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const headerDisplayLanguage = getRequestDisplayLanguage({
+                request,
+            });
             const requesterUserId = deviceStatus.isKnown
                 ? deviceStatus.userId
                 : (
@@ -1986,45 +2002,53 @@ server.after(() => {
                     currentDisplayLanguage: headerDisplayLanguage,
                 },
             });
-            const availability = await getContentTranslationAvailabilityForProject({
-                projectSlug: request.body.projectSlug,
-                targetLanguageCode: languagePreferences.displayLanguage,
-            });
+            const availability =
+                await getContentTranslationAvailabilityForProject({
+                    projectSlug: request.body.projectSlug,
+                    targetLanguageCode: languagePreferences.displayLanguage,
+                });
             const queueValkey = queueValkeyRef.current;
-            const content = await contentTranslationService.requestProjectContentTranslation({
-                db,
-                valkey: queueValkey,
-                queueScript: contentTranslationQueueScript,
-                projectSlug: request.body.projectSlug,
-                sourceVersion: request.body.sourceVersion,
-                targetLanguageCode: languagePreferences.displayLanguage,
-                requestMode:
-                    request.body.mode === "translated" && availability.isAllowed
-                        ? request.body.requestMode
-                        : "read_existing",
-                now,
-                log,
-                beforeQueueTranslationWork: async () => {
-                    if (queueValkey === undefined) {
-                        throw server.httpErrors.serviceUnavailable(
-                            "Content translation rate limiter is unavailable",
-                        );
-                    }
-                    const rateLimit = await consumeContentTranslationUserRateLimit({
+            const content =
+                await contentTranslationService.requestProjectContentTranslation(
+                    {
+                        db,
                         valkey: queueValkey,
-                        script: contentTranslationUserRateLimitScript,
-                        userId: requesterUserId,
-                        maxRequests: CONTENT_TRANSLATION_USER_RATE_LIMIT_MAX,
-                        windowMs: CONTENT_TRANSLATION_USER_RATE_LIMIT_WINDOW_MS,
-                    });
-                    if (!rateLimit.isAllowed) {
-                        throw server.httpErrors.createError(
-                            429,
-                            `Content translation rate limit exceeded. Retry after ${String(Math.ceil(rateLimit.retryAfterMs / 1000))}s`,
-                        );
-                    }
-                },
-            });
+                        queueScript: contentTranslationQueueScript,
+                        projectSlug: request.body.projectSlug,
+                        sourceVersion: request.body.sourceVersion,
+                        targetLanguageCode: languagePreferences.displayLanguage,
+                        requestMode:
+                            request.body.mode === "translated" &&
+                            availability.isAllowed
+                                ? request.body.requestMode
+                                : "read_existing",
+                        now,
+                        log,
+                        beforeQueueTranslationWork: async () => {
+                            if (queueValkey === undefined) {
+                                throw server.httpErrors.serviceUnavailable(
+                                    "Content translation rate limiter is unavailable",
+                                );
+                            }
+                            const rateLimit =
+                                await consumeContentTranslationUserRateLimit({
+                                    valkey: queueValkey,
+                                    script: contentTranslationUserRateLimitScript,
+                                    userId: requesterUserId,
+                                    maxRequests:
+                                        CONTENT_TRANSLATION_USER_RATE_LIMIT_MAX,
+                                    windowMs:
+                                        CONTENT_TRANSLATION_USER_RATE_LIMIT_WINDOW_MS,
+                                });
+                            if (!rateLimit.isAllowed) {
+                                throw server.httpErrors.createError(
+                                    429,
+                                    `Content translation rate limit exceeded. Retry after ${String(Math.ceil(rateLimit.retryAfterMs / 1000))}s`,
+                                );
+                            }
+                        },
+                    },
+                );
             if (content === undefined) {
                 throw server.httpErrors.notFound("Project content not found");
             }
@@ -2921,10 +2945,12 @@ server.after(() => {
                       spokenLanguages: [headerDisplayLanguage],
                   };
             const preferredContentTranslation =
-                await getPreferredContentTranslationAvailabilityForConversation({
-                    conversationSlugId: request.body.conversationSlugId,
-                    displayLanguage: languagePreferences.displayLanguage,
-                });
+                await getPreferredContentTranslationAvailabilityForConversation(
+                    {
+                        conversationSlugId: request.body.conversationSlugId,
+                        displayLanguage: languagePreferences.displayLanguage,
+                    },
+                );
             const opinionItemsPerSlugId = await fetchOpinionsByPostSlugId({
                 db: db,
                 postSlugId: request.body.conversationSlugId,
@@ -2935,7 +2961,8 @@ server.after(() => {
                 limit: 3000,
                 displayContentPreferences: {
                     displayLanguage: languagePreferences.displayLanguage,
-                    targetLanguage: preferredContentTranslation.targetLanguageCode,
+                    targetLanguage:
+                        preferredContentTranslation.targetLanguageCode,
                     spokenLanguages: languagePreferences.spokenLanguages,
                     translationAllowed: preferredContentTranslation.isAllowed,
                     viewerUserId: deviceStatus.isKnown
@@ -3008,7 +3035,9 @@ server.after(() => {
             const personalizationUserId = deviceStatus.isKnown
                 ? deviceStatus.userId
                 : undefined;
-            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const headerDisplayLanguage = getRequestDisplayLanguage({
+                request,
+            });
 
             return await fetchAnalysisFrameGroupsByFrameKey({
                 db,
@@ -3066,7 +3095,9 @@ server.after(() => {
             const personalizationUserId = deviceStatus.isKnown
                 ? deviceStatus.userId
                 : undefined;
-            const headerDisplayLanguage = getRequestDisplayLanguage({ request });
+            const headerDisplayLanguage = getRequestDisplayLanguage({
+                request,
+            });
 
             return await fetchAnalysisFrameOpinionListByFrameKey({
                 db,
@@ -3184,10 +3215,12 @@ server.after(() => {
                 },
             });
             const preferredContentTranslation =
-                await getPreferredContentTranslationAvailabilityForConversation({
-                    conversationSlugId: request.body.conversationSlugId,
-                    displayLanguage: languagePreferences.displayLanguage,
-                });
+                await getPreferredContentTranslationAvailabilityForConversation(
+                    {
+                        conversationSlugId: request.body.conversationSlugId,
+                        displayLanguage: languagePreferences.displayLanguage,
+                    },
+                );
             const opinionItemsPerSlugId = await fetchOpinionsByPostSlugId({
                 db: db,
                 postSlugId: request.body.conversationSlugId,
@@ -3195,7 +3228,8 @@ server.after(() => {
                 limit: 3000,
                 displayContentPreferences: {
                     displayLanguage: languagePreferences.displayLanguage,
-                    targetLanguage: preferredContentTranslation.targetLanguageCode,
+                    targetLanguage:
+                        preferredContentTranslation.targetLanguageCode,
                     spokenLanguages: languagePreferences.spokenLanguages,
                     translationAllowed: preferredContentTranslation.isAllowed,
                     viewerUserId: deviceStatus.userId,
@@ -3288,9 +3322,8 @@ server.after(() => {
             },
         },
         handler: async (request, reply) => {
-            const createConversationRequest = Dto.createNewConversationRequest.parse(
-                request.body,
-            );
+            const createConversationRequest =
+                Dto.createNewConversationRequest.parse(request.body);
             const { didWrite, deviceStatus } =
                 await verifyUcanAndKnownDeviceStatus(db, request, {
                     expectedKnownDeviceStatus: {
@@ -3309,14 +3342,17 @@ server.after(() => {
 
             const hasSurvey =
                 createConversationRequest.conversationType === "polis" &&
-                (createConversationRequest.surveyConfig?.questions.length ?? 0) > 0;
-            const createTargetResult = await resolveConversationCreateTargetResult({
-                db,
-                userId: deviceStatus.userId,
-                postAsOrganizationSlug: createConversationRequest.postAsOrganization,
-                projectSlug: createConversationRequest.projectSlug,
-                autoProvisionedDefaultLanguage,
-            });
+                (createConversationRequest.surveyConfig?.questions.length ??
+                    0) > 0;
+            const createTargetResult =
+                await resolveConversationCreateTargetResult({
+                    db,
+                    userId: deviceStatus.userId,
+                    postAsOrganizationSlug:
+                        createConversationRequest.postAsOrganization,
+                    projectSlug: createConversationRequest.projectSlug,
+                    autoProvisionedDefaultLanguage,
+                });
             if (!createTargetResult.success) {
                 return createTargetResult;
             }
@@ -3477,19 +3513,20 @@ server.after(() => {
                 }
             }
 
-            const createTargetResult = await resolveConversationCreateTargetResult({
-                db,
-                userId: deviceStatus.userId,
-                postAsOrganizationSlug: request.body.postAsOrganization,
-                projectSlug: request.body.projectSlug,
-                autoProvisionedDefaultLanguage:
-                    getAutoProvisionedDefaultLanguage({
-                        storedUserDisplayLanguage: undefined,
-                        currentDisplayLanguage: getRequestDisplayLanguage({
-                            request,
+            const createTargetResult =
+                await resolveConversationCreateTargetResult({
+                    db,
+                    userId: deviceStatus.userId,
+                    postAsOrganizationSlug: request.body.postAsOrganization,
+                    projectSlug: request.body.projectSlug,
+                    autoProvisionedDefaultLanguage:
+                        getAutoProvisionedDefaultLanguage({
+                            storedUserDisplayLanguage: undefined,
+                            currentDisplayLanguage: getRequestDisplayLanguage({
+                                request,
+                            }),
                         }),
-                    }),
-            });
+                });
             if (!createTargetResult.success) {
                 return createTargetResult;
             }
@@ -3565,24 +3602,25 @@ server.after(() => {
             }
 
             // Queue URL import for async processing
-            const importResult = await conversationImportService.requestUrlImport({
-                db,
-                userId: deviceStatus.userId,
-                projectId: createTargetResult.target.projectId,
-                polisUrl: request.body.polisUrl,
-                formData: {
-                    participationMode: request.body.participationMode,
-                    isIndexed: request.body.isIndexed,
-                    requiresEventTicket: request.body.requiresEventTicket,
-                    aiLabelingEnabled: request.body.aiLabelingEnabled,
-                    preferredOpinionGroupCount:
-                        request.body.preferredOpinionGroupCount,
-                    languageTargetPolicy,
-                },
-                didWrite,
-                importBuffer,
-                realtimeSSEManager,
-            });
+            const importResult =
+                await conversationImportService.requestUrlImport({
+                    db,
+                    userId: deviceStatus.userId,
+                    projectId: createTargetResult.target.projectId,
+                    polisUrl: request.body.polisUrl,
+                    formData: {
+                        participationMode: request.body.participationMode,
+                        isIndexed: request.body.isIndexed,
+                        requiresEventTicket: request.body.requiresEventTicket,
+                        aiLabelingEnabled: request.body.aiLabelingEnabled,
+                        preferredOpinionGroupCount:
+                            request.body.preferredOpinionGroupCount,
+                        languageTargetPolicy,
+                    },
+                    didWrite,
+                    importBuffer,
+                    realtimeSSEManager,
+                });
             const response: ImportConversationResponse = {
                 success: true,
                 importSlugId: importResult.importSlugId,
@@ -3720,19 +3758,20 @@ server.after(() => {
                 }
             }
 
-            const createTargetResult = await resolveConversationCreateTargetResult({
-                db,
-                userId: deviceStatus.userId,
-                postAsOrganizationSlug: parsedFields.postAsOrganization,
-                projectSlug: parsedFields.projectSlug,
-                autoProvisionedDefaultLanguage:
-                    getAutoProvisionedDefaultLanguage({
-                        storedUserDisplayLanguage: undefined,
-                        currentDisplayLanguage: getRequestDisplayLanguage({
-                            request,
+            const createTargetResult =
+                await resolveConversationCreateTargetResult({
+                    db,
+                    userId: deviceStatus.userId,
+                    postAsOrganizationSlug: parsedFields.postAsOrganization,
+                    projectSlug: parsedFields.projectSlug,
+                    autoProvisionedDefaultLanguage:
+                        getAutoProvisionedDefaultLanguage({
+                            storedUserDisplayLanguage: undefined,
+                            currentDisplayLanguage: getRequestDisplayLanguage({
+                                request,
+                            }),
                         }),
-                    }),
-            });
+                });
             if (!createTargetResult.success) {
                 reply.send(createTargetResult);
                 return;
@@ -3908,11 +3947,15 @@ server.after(() => {
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
             const importAccessState =
-                await conversationImportService.getConversationImportAccessState({
-                    db,
-                    conversationSlugId: request.body.conversationSlugId,
-                    userId: deviceStatus.isKnown ? deviceStatus.userId : undefined,
-                });
+                await conversationImportService.getConversationImportAccessState(
+                    {
+                        db,
+                        conversationSlugId: request.body.conversationSlugId,
+                        userId: deviceStatus.isKnown
+                            ? deviceStatus.userId
+                            : undefined,
+                    },
+                );
             switch (importAccessState.status) {
                 case "not_found":
                 case "importing_not_visible":
@@ -3956,10 +3999,12 @@ server.after(() => {
                 currentDisplayLanguage: languagePreferences.displayLanguage,
             });
             const preferredContentTranslation =
-                await getPreferredContentTranslationAvailabilityForConversation({
-                    conversationSlugId: request.body.conversationSlugId,
-                    displayLanguage: languagePreferences.displayLanguage,
-                });
+                await getPreferredContentTranslationAvailabilityForConversation(
+                    {
+                        conversationSlugId: request.body.conversationSlugId,
+                        displayLanguage: languagePreferences.displayLanguage,
+                    },
+                );
             const localizedContent =
                 await contentTranslationService.requestConversationContentTranslation(
                     {
@@ -4068,7 +4113,8 @@ server.after(() => {
                         {
                             valkey: queueValkeyRef.current,
                             queueScript: contentTranslationQueueScript,
-                            workIds: updateResult.eagerContentTranslationWorkIds,
+                            workIds:
+                                updateResult.eagerContentTranslationWorkIds,
                             now: nowZeroMs(),
                             log,
                         },
@@ -4121,10 +4167,12 @@ server.after(() => {
                     : undefined,
             });
             const preferredContentTranslation =
-                await getPreferredContentTranslationAvailabilityForConversation({
-                    conversationSlugId: request.body.conversationSlugId,
-                    displayLanguage: languagePreferences.displayLanguage,
-                });
+                await getPreferredContentTranslationAvailabilityForConversation(
+                    {
+                        conversationSlugId: request.body.conversationSlugId,
+                        displayLanguage: languagePreferences.displayLanguage,
+                    },
+                );
             const questions = await Promise.all(
                 surveyForm.questions.map(async (question) => {
                     const localizedContent =
@@ -5593,10 +5641,12 @@ server.after(() => {
             });
 
             const preferredContentTranslation =
-                await getPreferredContentTranslationAvailabilityForConversation({
-                    conversationSlugId: request.body.conversationSlugId,
-                    displayLanguage: languagePreferences.displayLanguage,
-                });
+                await getPreferredContentTranslationAvailabilityForConversation(
+                    {
+                        conversationSlugId: request.body.conversationSlugId,
+                        displayLanguage: languagePreferences.displayLanguage,
+                    },
+                );
             const queueValkey = queueValkeyRef.current;
             const content =
                 await contentTranslationService.requestConversationContentTranslation(
@@ -5738,7 +5788,8 @@ server.after(() => {
                           targetLanguageCode: request.body.targetLanguageCode,
                       })
                     : await getContentTranslationAvailabilityForConversation({
-                          conversationSlugId: request.body.subject.conversationSlugId,
+                          conversationSlugId:
+                              request.body.subject.conversationSlugId,
                           targetLanguageCode: request.body.targetLanguageCode,
                       });
             log.info(
@@ -5777,7 +5828,7 @@ server.after(() => {
             }
 
             const requesterIsSiteModerator =
-                request.body.subject.kind === "opinion"
+                request.body.subject.kind === "opinion" && deviceStatus.isKnown
                     ? await isSiteModeratorAccount({
                           db,
                           userId: requesterUserId,

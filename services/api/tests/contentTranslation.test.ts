@@ -7,8 +7,10 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { GenericContainer, type StartedTestContainer } from "testcontainers";
 
 import {
+    analysisSnapshotOpinionTable,
     contentTranslationWorkTable,
     conversationTable,
+    conversationViewSnapshotTable,
     opinionContentTable,
     opinionContentTranslationTable,
     opinionModerationTable,
@@ -73,7 +75,7 @@ describe("opinion content translation boundary", () => {
 
     beforeEach(async () => {
         await sqlClient.unsafe(`
-            TRUNCATE TABLE "content_translation_work", "opinion_moderation",
+            TRUNCATE TABLE "content_translation_work", "opinion_moderation", "analysis_snapshot_opinion", "conversation_view_snapshot",
                 "opinion_content_translation", "opinion_content", "opinion", "conversation", "user"
             RESTART IDENTITY;
         `);
@@ -167,6 +169,29 @@ describe("opinion content translation boundary", () => {
             .update(conversationTable)
             .set({ currentContentId: 1 })
             .where(eq(conversationTable.id, conversation.id));
+        await db.insert(analysisSnapshotOpinionTable).values({
+            analysisSnapshotId: 1,
+            opinionId,
+            opinionContentId: historicalContentId,
+            localOpinionIndex: 0,
+        });
+        await db.insert(conversationViewSnapshotTable).values({
+            conversationId: conversation.id,
+            opinionGroupSpecId: 1,
+            analysisSnapshotId: 1,
+            conversationContentId: 1,
+            viewReason: "analysis_completed",
+            isClosed: false,
+            opinionCount: 1,
+            voteCount: 1,
+            participantCount: 1,
+            totalOpinionCount: 1,
+            totalVoteCount: 1,
+            totalParticipantCount: 1,
+            moderatedOpinionCount: 0,
+            hiddenOpinionCount: 0,
+            activatedAt: new Date("2026-01-01T00:00:00.000Z"),
+        });
     });
 
     async function requestOpinionTranslation({
@@ -222,8 +247,17 @@ describe("opinion content translation boundary", () => {
             requesterUserId: normalUserId,
             beforeQueueTranslationWork: async () => {},
         });
+        if (response === undefined) {
+            throw new Error(
+                "Expected historical checkpoint translation response",
+            );
+        }
+        const parsedResponse = Dto.contentTranslationResponse.parse({
+            success: true,
+            ...response,
+        });
 
-        expect(response).toMatchObject({
+        expect(parsedResponse).toMatchObject({
             subject: { sourceVersion: historicalSourceVersion },
             content: {
                 sourceVersion: historicalSourceVersion,
@@ -233,6 +267,34 @@ describe("opinion content translation boundary", () => {
                 },
             },
         });
+    });
+
+    it("does not expose an unreferenced historical revision", async () => {
+        await db.delete(analysisSnapshotOpinionTable);
+
+        const response = await requestOpinionTranslation({
+            sourceVersion: historicalSourceVersion,
+            requestMode: "read_existing",
+            requesterUserId: normalUserId,
+            beforeQueueTranslationWork: async () => {},
+        });
+
+        expect(response).toBeUndefined();
+    });
+
+    it("does not expose a revision from an unactivated analysis", async () => {
+        await db
+            .update(conversationViewSnapshotTable)
+            .set({ activatedAt: null });
+
+        const response = await requestOpinionTranslation({
+            sourceVersion: historicalSourceVersion,
+            requestMode: "read_existing",
+            requesterUserId: normalUserId,
+            beforeQueueTranslationWork: async () => {},
+        });
+
+        expect(response).toBeUndefined();
     });
 
     it.each([
