@@ -45,6 +45,29 @@ describe("createExclusiveStoreManager", () => {
     expect(initializeStore).toHaveBeenCalledOnce();
   });
 
+  it("uses the named cross-context lock when available", async () => {
+    const requestedLockNames: string[] = [];
+    const lockManager = {
+      async request<Result>(
+        name: string,
+        operation: () => Promise<Result>
+      ): Promise<Result> {
+        requestedLockNames.push(name);
+        return await operation();
+      },
+    };
+    const manager = createExclusiveStoreManager<string>({
+      initializeStore: () => Promise.resolve("store"),
+      lockManager,
+      lockName: "test-store",
+    });
+
+    await expect(
+      manager.runExclusive((store) => Promise.resolve(store))
+    ).resolves.toBe("store");
+    expect(requestedLockNames).toEqual(["test-store"]);
+  });
+
   it("continues processing after an operation fails", async () => {
     const manager = createExclusiveStoreManager<string>({
       initializeStore: () => Promise.resolve("store"),

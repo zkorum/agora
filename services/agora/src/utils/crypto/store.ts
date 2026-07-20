@@ -4,9 +4,16 @@ import { type Implementation } from "./ucan/implementation.js";
 const WEB_CRYPTO_STORE_NAME = "agora-keys";
 const WEB_CRYPTO_STORE_LOCK_NAME = "agora-web-crypto-store";
 
+interface CrossContextLockManager {
+  request: <Result>(
+    name: string,
+    operation: () => Promise<Result>
+  ) => Promise<Result>;
+}
+
 interface CreateExclusiveStoreManagerParams<Store> {
   initializeStore: () => Promise<Store>;
-  lockManager: LockManager | undefined;
+  lockManager: CrossContextLockManager | undefined;
   lockName: string;
 }
 
@@ -17,7 +24,8 @@ export interface ExclusiveStoreManager<Store> {
 }
 
 // Key creation spans multiple IndexedDB transactions, so initialization,
-// signing, and clearing must share one lifecycle lock.
+// signing, and clearing share one lifecycle lock. Web Locks coordinate tabs;
+// the queue remains the single-tab fallback on older browsers.
 export function createExclusiveStoreManager<Store>({
   initializeStore,
   lockManager,
