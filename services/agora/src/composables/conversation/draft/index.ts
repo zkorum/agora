@@ -26,6 +26,7 @@ export {
   areConversationMultilingualSettingsEqual,
   createEmptyDraft,
   hasContentThatWouldBeCleared,
+  resolveSelectedOrganizationSlug,
 } from "./conversationDraft.utils";
 
 // Schemas and validation

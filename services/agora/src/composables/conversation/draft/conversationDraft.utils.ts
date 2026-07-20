@@ -3,7 +3,10 @@
  * Extracted to avoid duplication between composable and store
  */
 
-import type { ConversationMultilingualSetting } from "src/shared/types/zod";
+import type {
+  ConversationMultilingualSetting,
+  OrganizationProperties,
+} from "src/shared/types/zod";
 
 import type { ConversationDraft } from "./conversationDraft.types";
 
@@ -25,6 +28,33 @@ export function areConversationMultilingualSettingsEqual({
   return left.additionalLanguageCodes.every((languageCode) =>
     right.additionalLanguageCodes.includes(languageCode)
   );
+}
+
+export function resolveSelectedOrganizationSlug({
+  organizationIdentifier,
+  organizationList,
+}: {
+  organizationIdentifier: string;
+  organizationList: readonly OrganizationProperties[];
+}): string | undefined {
+  let legacyOrganizationSlug: string | undefined;
+  let hasAmbiguousLegacyName = false;
+
+  for (const organization of organizationList) {
+    if (organization.slug === organizationIdentifier) {
+      return organization.slug;
+    }
+
+    if (organization.name === organizationIdentifier) {
+      if (legacyOrganizationSlug === undefined) {
+        legacyOrganizationSlug = organization.slug;
+      } else {
+        hasAmbiguousLegacyName = true;
+      }
+    }
+  }
+
+  return hasAmbiguousLegacyName ? undefined : legacyOrganizationSlug;
 }
 
 /**

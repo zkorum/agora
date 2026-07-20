@@ -6,12 +6,11 @@
       <div
         class="account-option"
         :class="{
-          'account-option--selected': isAccountSelected(
-            false,
-            profileData.userName
-          ),
+          'account-option--selected': isAccountSelected({
+            isOrganization: false,
+          }),
         }"
-        @click="setPostAs(false, profileData.userName)"
+        @click="setPostAs({ isOrganization: false })"
       >
         <DynamicProfileImage
           :user-identity="profileData.userName"
@@ -25,15 +24,20 @@
       <!-- Organization account option selection should be keyboard accessible for users with motor disabilities -->
       <div
         v-for="organization in profileData.organizationList"
-        :key="getOrganizationIdentifier(organization)"
+        :key="organization.slug"
         class="account-option"
         :class="{
-          'account-option--selected': isAccountSelected(
-            true,
-            getOrganizationIdentifier(organization)
-          ),
+          'account-option--selected': isAccountSelected({
+            isOrganization: true,
+            organizationSlug: organization.slug,
+          }),
         }"
-        @click="setPostAs(true, getOrganizationIdentifier(organization))"
+        @click="
+          setPostAs({
+            isOrganization: true,
+            organizationSlug: organization.slug,
+          })
+        "
       >
         <DynamicProfileImage
           v-if="organization.imageUrl !== undefined"
@@ -53,7 +57,6 @@ import { storeToRefs } from "pinia";
 import DynamicProfileImage from "src/components/account/DynamicProfileImage.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import type { PostAsSettings } from "src/composables/conversation/draft";
-import type { OrganizationProperties } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import { computed } from "vue";
 
@@ -77,15 +80,15 @@ const showDialog = computed({
   set: (value: boolean) => emit("update:modelValue", value),
 });
 
-function getOrganizationIdentifier(organization: OrganizationProperties): string {
-  return organization.slug ?? organization.name;
-}
+type AccountSelection =
+  | { isOrganization: false }
+  | { isOrganization: true; organizationSlug: string };
 
-function setPostAs(isOrganization: boolean, name: string): void {
-  if (isOrganization) {
+function setPostAs(selection: AccountSelection): void {
+  if (selection.isOrganization) {
     postAs.value = {
       postAsOrganization: true,
-      organizationName: name,
+      organizationName: selection.organizationSlug,
     };
   } else {
     postAs.value = {
@@ -96,16 +99,15 @@ function setPostAs(isOrganization: boolean, name: string): void {
   showDialog.value = false;
 }
 
-function isAccountSelected(isOrganization: boolean, name: string): boolean {
-  if (!postAs.value) return false;
-
-  if (isOrganization) {
+function isAccountSelected(selection: AccountSelection): boolean {
+  if (selection.isOrganization) {
     return (
-      postAs.value.postAsOrganization && postAs.value.organizationName === name
+      postAs.value.postAsOrganization &&
+      postAs.value.organizationName === selection.organizationSlug
     );
-  } else {
-    return !postAs.value.postAsOrganization;
   }
+
+  return !postAs.value.postAsOrganization;
 }
 </script>
 

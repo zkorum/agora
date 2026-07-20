@@ -27,7 +27,7 @@ import type {
 export interface PostAsSettings {
   /** Whether to publish this post on behalf of an organization */
   postAsOrganization: boolean;
-  /** The name of the organization (only relevant if postAsOrganization is true) */
+  /** The organization slug, or a legacy display name until the persisted draft is normalized. */
   organizationName: string;
 }
 
