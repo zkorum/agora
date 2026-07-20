@@ -1,9 +1,15 @@
 import * as Sentry from "@sentry/vue";
+import {
+  redactSentryBreadcrumb,
+  redactSentryTransaction,
+  shouldIgnoreSentryEvent,
+} from "src/utils/sentry/eventPrivacy";
+import { createPiniaStateAttachment } from "src/utils/sentry/piniaState";
 import { addStackOverflowDiagnostics } from "src/utils/sentry/stackOverflowDiagnostics";
 
 import { defineBoot } from "#q-app/wrappers";
 
-export default defineBoot(({ app, router }) => {
+export default defineBoot(({ app, router, store }) => {
   Sentry.init({
     app,
     dsn: "https://1a115ad14fb74824a573dce151352b58@o4510068006780928.ingest.de.sentry.io/4510068713979984",
@@ -11,34 +17,27 @@ export default defineBoot(({ app, router }) => {
     // for debugging purposes, but does not collect cookies or user credentials
     // Note: users who want to maintain their privacy are encouraged to use Tor
     sendDefaultPii: false,
-    // Filter out default `Vue` integration
-    // see https://docs.sentry.io/platforms/javascript/guides/vue/#configuration-for-late-defined-vue-apps
-    // integrations: (integrations) =>
-    //   integrations.filter((integration) => integration.name !== "Vue"),
-    beforeSend(event) {
-      // Filter out benign ResizeObserver warnings (common with Quasar dialogs/layouts)
-      if (
-        event.exception?.values?.some((e) =>
-          e.value?.includes("ResizeObserver loop")
-        )
-      ) {
+    beforeBreadcrumb: redactSentryBreadcrumb,
+    beforeSendTransaction: redactSentryTransaction,
+    beforeSend(event, hint) {
+      if (shouldIgnoreSentryEvent(event)) {
         return null;
       }
-      // Filter out Telegram WebView bridge errors (postEvent is Telegram's internal
-      // method, not ours — this fires during Intent URI redirect which works fine)
-      if (
-        event.exception?.values?.some((e) =>
-          e.value?.includes("postEvent")
-        )
-      ) {
-        return null;
-      }
-      return addStackOverflowDiagnostics({
+      hint.attachments = [
+        ...(hint.attachments ?? []),
+        createPiniaStateAttachment(store.state.value),
+      ];
+      const eventWithDiagnostics = addStackOverflowDiagnostics({
         event,
         documentRoot: document,
       });
+      return { ...eventWithDiagnostics, request: undefined };
     },
-    integrations: [
+    integrations: (defaultIntegrations) => [
+      ...defaultIntegrations.filter(
+        (integration) =>
+          integration.name !== "HttpContext" && integration.name !== "Vue"
+      ),
       Sentry.vueIntegration({
         tracingOptions: {
           // see https://docs.sentry.io/platforms/javascript/guides/vue/features/component-tracking/
@@ -47,7 +46,6 @@ export default defineBoot(({ app, router }) => {
       }),
       Sentry.browserTracingIntegration({ router }),
       Sentry.replayIntegration({
-        // Additional SDK configuration goes in here, for example:
         maskAllText: true,
         blockAllMedia: true,
       }),
@@ -60,13 +58,4 @@ export default defineBoot(({ app, router }) => {
       /^https?:\/\/(?:.*\.)?zkorum\.com/,
     ],
   });
-  // To run code after mounting, you can do:
-  // app.mixin({
-  //   mounted() {
-  //     if (!this.$parent) {
-  //       console.log("Root component mounted, adding Sentry integration");
-  //       Sentry.addIntegration(Sentry.vueIntegration({ app }));
-  //     }
-  //   },
-  // });
 });
