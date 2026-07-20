@@ -1,5 +1,6 @@
 <template>
-  <div>
+  <!-- RouterView/KeepAlive can briefly clear route props while switching tabs. -->
+  <div v-if="conversationData !== undefined">
     <AnalysisPage
       ref="analysisPageRef"
       :conversation-slug-id="conversationData.metadata.conversationSlugId"
@@ -66,8 +67,7 @@ import AnalysisPage from "./analysis/AnalysisPage.vue";
 
 const props = withDefaults(
   defineProps<{
-    conversationData: ExtendedConversationDisplayData;
-    hasConversationData: boolean;
+    conversationData: ExtendedConversationDisplayData | undefined;
     showReportButton?: boolean;
     reportRouteOverride?: RouteLocationRaw;
     navigateToDiscoverTab: () => void;
@@ -110,20 +110,26 @@ let unregisterChildRefreshHandler: (() => void) | undefined;
 
 // Create computed properties to ensure reactivity
 const conversationSlugId = computed(
-  () => props.conversationData.metadata.conversationSlugId
+  () => props.conversationData?.metadata.conversationSlugId ?? ""
 );
-const voteCount = computed(() => props.conversationData.metadata.voteCount);
+const voteCount = computed(() => props.conversationData?.metadata.voteCount);
 const aiLabelingEnabled = computed(
-  () => props.conversationData.metadata.aiLabelingEnabled
+  () => props.conversationData?.metadata.aiLabelingEnabled
 );
 const hasSurvey = computed(
-  () => props.conversationData.interaction.surveyGate?.hasSurvey === true
+  () => props.conversationData?.interaction.surveyGate?.hasSurvey === true
 );
 const analysisView = computed(() =>
   parseAnalysisViewQuery({ query: route.query })
 );
 const checkpointViewSnapshotId = computed(() =>
   parseCheckpointQuery({ query: route.query })
+);
+const isAnalysisQueryEnabled = computed(
+  () =>
+    props.conversationData !== undefined &&
+    isTabActive.value &&
+    !isLiveAnalysisPaused.value
 );
 
 // Load analysis data
@@ -133,22 +139,12 @@ const analysisQuery = useAnalysisQuery({
   checkpointViewSnapshotId,
   voteCount,
   aiLabelingEnabled,
-  enabled: computed(
-    () =>
-      props.hasConversationData &&
-      isTabActive.value &&
-      !isLiveAnalysisPaused.value
-  ),
+  enabled: isAnalysisQueryEnabled,
 });
 
 const analysisCheckpointsQuery = useAnalysisCheckpointsQuery({
   conversationSlugId,
-  enabled: computed(
-    () =>
-      props.hasConversationData &&
-      isTabActive.value &&
-      !isLiveAnalysisPaused.value
-  ),
+  enabled: isAnalysisQueryEnabled,
 });
 
 const surveyResultsQuery = useSurveyResultsAggregatedQuery({
@@ -200,7 +196,8 @@ async function handleChildRefresh(): Promise<void> {
 
 function registerRefreshHandler(): void {
   unregisterChildRefreshHandler?.();
-  unregisterChildRefreshHandler = registerChildRefreshHandler(handleChildRefresh);
+  unregisterChildRefreshHandler =
+    registerChildRefreshHandler(handleChildRefresh);
 }
 
 function unregisterRefreshHandler(): void {

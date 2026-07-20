@@ -1,7 +1,13 @@
 <template>
   <div class="maxdiff-container">
     <!-- Loading state -->
-    <PageLoadingSpinner v-if="isInitializingEngine || itemsQuery.isPending.value || (loadQuery.isPending.value && !loadQuery.isError.value)" />
+    <PageLoadingSpinner
+      v-if="
+        isInitializingEngine ||
+        itemsQuery.isPending.value ||
+        (loadQuery.isPending.value && !loadQuery.isError.value)
+      "
+    />
 
     <!-- Items fetch error -->
     <ErrorRetryBlock
@@ -22,7 +28,10 @@
     />
 
     <!-- Completed ranking -->
-    <div v-else-if="isComplete && finalRanking.length > 0" class="voting-section">
+    <div
+      v-else-if="isComplete && finalRanking.length > 0"
+      class="voting-section"
+    >
       <div class="section-header-row">
         <div class="section-header">{{ t("complete") }}</div>
         <AnalysisActionButton
@@ -51,11 +60,7 @@
 
     <!-- Not enough statements -->
     <div v-else-if="itemList.length < 2" class="info-message">
-      {{
-        itemList.length === 0
-          ? t("noStatements")
-          : t("needMoreStatements")
-      }}
+      {{ itemList.length === 0 ? t("noStatements") : t("needMoreStatements") }}
     </div>
 
     <!-- Active voting -->
@@ -72,24 +77,41 @@
         <div class="step-item">
           <div
             class="step-circle step-circle-best"
-            :class="{ 'step-active': selectedBest === null, 'step-done': selectedBest !== null }"
+            :class="{
+              'step-active': selectedBest === null,
+              'step-done': selectedBest !== null,
+            }"
           >
             <q-icon v-if="selectedBest !== null" name="check" size="0.8rem" />
             <span v-else>1</span>
           </div>
-          <span class="step-label" :class="{ 'step-label-active': selectedBest === null }">
+          <span
+            class="step-label"
+            :class="{ 'step-label-active': selectedBest === null }"
+          >
             {{ t("stepSelectBest") }}
           </span>
         </div>
-        <div class="step-connector" :class="{ 'step-connector-done': selectedBest !== null }"></div>
+        <div
+          class="step-connector"
+          :class="{ 'step-connector-done': selectedBest !== null }"
+        ></div>
         <div class="step-item">
           <div
             class="step-circle step-circle-worst"
-            :class="{ 'step-active': selectedBest !== null && selectedWorst === null }"
+            :class="{
+              'step-active': selectedBest !== null && selectedWorst === null,
+            }"
           >
             <span>2</span>
           </div>
-          <span class="step-label" :class="{ 'step-label-active': selectedBest !== null && selectedWorst === null }">
+          <span
+            class="step-label"
+            :class="{
+              'step-label-active':
+                selectedBest !== null && selectedWorst === null,
+            }"
+          >
             {{ t("stepSelectWorst") }}
           </span>
         </div>
@@ -118,7 +140,10 @@
       </div>
 
       <div class="candidates-grid-wrapper">
-        <div class="candidates-grid" :class="{ 'candidates-transitioning': isTransitioning }">
+        <div
+          class="candidates-grid"
+          :class="{ 'candidates-transitioning': isTransitioning }"
+        >
           <div
             v-for="item in candidateItems"
             :key="item.slugId"
@@ -143,7 +168,10 @@
               <span v-if="selectedBest === item.slugId" class="label-best">
                 {{ t("mostImportant") }}
               </span>
-              <span v-else-if="selectedWorst === item.slugId" class="label-worst">
+              <span
+                v-else-if="selectedWorst === item.slugId"
+                class="label-worst"
+              >
                 {{ t("leastImportant") }}
               </span>
             </div>
@@ -175,7 +203,9 @@
       :ok-callback="onLoginCallback"
       active-intention="voting"
       :conversation-slug-id="conversationData.metadata.conversationSlugId"
-      :requires-zupass-event-slug="conversationData.metadata.requiresEventTicket"
+      :requires-zupass-event-slug="
+        conversationData.metadata.requiresEventTicket
+      "
       :needs-auth="needsLogin"
       :participation-mode="conversationData.metadata.participationMode"
     />
@@ -190,7 +220,8 @@
               href="#"
               class="learn-more-link"
               @click.prevent="openScoringDetail"
-            >{{ t("learnMoreScoringLink") }}</a>
+              >{{ t("learnMoreScoringLink") }}</a
+            >
           </p>
         </div>
       </ZKBottomDialogContainer>
@@ -208,21 +239,24 @@
               target="_blank"
               rel="noopener noreferrer"
               class="learn-more-link"
-            >Solidago</a>
+              >Solidago</a
+            >
             ·
             <a
               href="https://en.wikipedia.org/wiki/Best%E2%80%93worst_scaling"
               target="_blank"
               rel="noopener noreferrer"
               class="learn-more-link"
-            >Best-Worst Scaling</a>
+              >Best-Worst Scaling</a
+            >
             ·
             <a
               href="https://ssrn.com/abstract=4311507"
               target="_blank"
               rel="noopener noreferrer"
               class="learn-more-link"
-            >COCM</a>
+              >COCM</a
+            >
           </p>
         </div>
       </ZKBottomDialogContainer>
@@ -265,7 +299,17 @@ import {
 } from "src/utils/maxdiffCandidateDisplay";
 import { getRankingItemDisplayText } from "src/utils/translation/rankingItemDisplayText";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, inject, nextTick, onActivated, onBeforeUnmount, onDeactivated, ref, triggerRef, watch } from "vue";
+import {
+  computed,
+  inject,
+  nextTick,
+  onActivated,
+  onBeforeUnmount,
+  onDeactivated,
+  ref,
+  triggerRef,
+  watch,
+} from "vue";
 
 import MaxDiffCandidateCardContent from "./MaxDiffCandidateCardContent.vue";
 import MaxDiffStatementDialog from "./MaxDiffStatementDialog.vue";
@@ -276,7 +320,6 @@ import {
 
 const props = defineProps<{
   conversationData: ExtendedConversationDisplayData;
-  hasConversationData: boolean;
   onViewAnalysis: () => void;
 }>();
 
@@ -289,15 +332,17 @@ const { showNotifyMessage } = useNotify();
 const conversationSlugId = computed(
   () => props.conversationData.metadata.conversationSlugId
 );
-const {
-  needsAuth: isAuthBlocked,
-  shouldOpenParticipationModal,
-} = useParticipationGate({
-  conversationSlugId,
-  participationMode: computed(() => props.conversationData.metadata.participationMode),
-  requiresEventTicket: computed(() => props.conversationData.metadata.requiresEventTicket),
-  surveyGate: computed(() => props.conversationData.interaction.surveyGate),
-});
+const { needsAuth: isAuthBlocked, shouldOpenParticipationModal } =
+  useParticipationGate({
+    conversationSlugId,
+    participationMode: computed(
+      () => props.conversationData.metadata.participationMode
+    ),
+    requiresEventTicket: computed(
+      () => props.conversationData.metadata.requiresEventTicket
+    ),
+    surveyGate: computed(() => props.conversationData.interaction.surveyGate),
+  });
 
 // Inject parent refresh handler (same pattern as ConversationCommentTab)
 const registerChildRefreshHandler = inject<RegisterChildRefreshHandler>(
@@ -307,7 +352,7 @@ const registerChildRefreshHandler = inject<RegisterChildRefreshHandler>(
     return () => {
       /* noop */
     };
-  },
+  }
 );
 let unregisterChildRefreshHandler: (() => void) | undefined;
 
@@ -344,12 +389,12 @@ function handleBlockedSave(reason: ParticipationBlockedReason): void {
 // TanStack queries for items and saved state
 const itemsQuery = useMaxDiffItemsQuery({
   conversationSlugId,
-  enabled: () => props.hasConversationData,
+  enabled: true,
 });
 
 const loadQuery = useMaxDiffLoadQuery({
   conversationSlugId,
-  enabled: () => props.hasConversationData,
+  enabled: true,
 });
 
 // Pull-to-refresh handler: refetch items and saved state
@@ -359,7 +404,8 @@ async function handleChildRefresh(): Promise<void> {
 
 function registerRefreshHandler(): void {
   unregisterChildRefreshHandler?.();
-  unregisterChildRefreshHandler = registerChildRefreshHandler(handleChildRefresh);
+  unregisterChildRefreshHandler =
+    registerChildRefreshHandler(handleChildRefresh);
 }
 
 function unregisterRefreshHandler(): void {
@@ -495,7 +541,9 @@ const dialogVoteFlat = ref(false);
 const dialogVoteCallback = ref<(() => void) | undefined>(undefined);
 
 const dialogItemSlugId = ref<string | undefined>(undefined);
-const dialogDisplayContent = ref<RankingItemDisplayedContent | undefined>(undefined);
+const dialogDisplayContent = ref<RankingItemDisplayedContent | undefined>(
+  undefined
+);
 const dialogExternalUrl = ref<string | null>(null);
 
 function openVotingDialog(slugId: string): void {
@@ -533,9 +581,9 @@ function openVotingDialog(slugId: string): void {
 
 // Truncation detection for candidate cards
 const truncatedCards = ref(new Set<string>());
-const candidateContentComponents = ref<
-  Array<{ isTruncated: () => boolean }>
->([]);
+const candidateContentComponents = ref<Array<{ isTruncated: () => boolean }>>(
+  []
+);
 
 function checkTruncation(): void {
   const newSet = new Set<string>();
@@ -568,13 +616,16 @@ const canUndo = computed(() => {
   return instance.value.exportState().comparisons.length > 0;
 });
 
-
 // Initialize engine when both queries resolve
 const engineInitialized = ref(false);
 const initError = ref(false);
 
 watch(
-  [() => itemsQuery.data.value, () => loadQuery.data.value, () => loadQuery.isError.value],
+  [
+    () => itemsQuery.data.value,
+    () => loadQuery.data.value,
+    () => loadQuery.isError.value,
+  ],
   ([items, loadData, loadError]) => {
     if (items === undefined || engineInitialized.value) return;
     // Wait for load query to settle (success or error)
@@ -620,7 +671,7 @@ watch(
     isInitializingEngine.value = false;
     engineInitialized.value = true;
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 // Detect truncated candidate cards after DOM updates
@@ -737,12 +788,14 @@ function recordVote(): void {
 
   // Save + get next candidates from server response.
   // Runs in parallel with the 400ms transition animation.
-  const savePromise = saveMutation.mutateAsync({
-    ranking: instance.value.result ?? null,
-    comparisons: instance.value.exportState().comparisons,
-    isComplete: instance.value.complete,
-    context,
-  }).catch(() => undefined);
+  const savePromise = saveMutation
+    .mutateAsync({
+      ranking: instance.value.result ?? null,
+      comparisons: instance.value.exportState().comparisons,
+      isComplete: instance.value.complete,
+      context,
+    })
+    .catch(() => undefined);
   // onError already handles rollback — catch returns undefined on failure
 
   transitionTimeout = setTimeout(() => {
@@ -802,7 +855,6 @@ function undoLastVote(): void {
   });
 }
 
-
 function handleUndoClick(): void {
   undoLastVote();
 }
@@ -816,7 +868,10 @@ function handleRedoRanking(): void {
   }).onOk(() => {
     // Snapshot for rollback
     const context: MaxDiffSaveContext = {
-      previousState: instance.value?.exportState() ?? { items: [], comparisons: [] },
+      previousState: instance.value?.exportState() ?? {
+        items: [],
+        comparisons: [],
+      },
       previousIsComplete: isComplete.value,
       previousFinalRanking: [...finalRanking.value],
       previousCandidates: [...candidates.value],
@@ -831,12 +886,14 @@ function handleRedoRanking(): void {
 
     // Save empty state, use candidateSets from response
     void (async () => {
-      const result = await saveMutation.mutateAsync({
-        ranking: null,
-        comparisons: [],
-        isComplete: false,
-        context,
-      }).catch(() => undefined);
+      const result = await saveMutation
+        .mutateAsync({
+          ranking: null,
+          comparisons: [],
+          isComplete: false,
+          context,
+        })
+        .catch(() => undefined);
       if (result?.success) {
         candidates.value = result.candidateSets[0] ?? [];
       }

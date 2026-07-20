@@ -1,14 +1,16 @@
 <template>
   <MaxDiffVotingTab
-    v-if="isMaxDiffConversation"
+    v-if="
+      conversationData !== undefined &&
+      conversationData.metadata.conversationType === 'ranking' &&
+      conversationData.metadata.rankingMode === 'bws'
+    "
     :conversation-data="conversationData"
-    :has-conversation-data="hasConversationData"
     :on-view-analysis="onViewAnalysis"
   />
   <ConversationCommentTab
     v-else
     :conversation-data="conversationData"
-    :has-conversation-data="hasConversationData"
     :moderation-history-trigger="moderationHistoryTrigger"
     :comment-filter="commentFilter"
     :on-view-analysis="onViewAnalysis"
@@ -25,18 +27,16 @@ import MaxDiffVotingTab from "src/components/post/maxdiff/MaxDiffVotingTab.vue";
 import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
-import { computed } from "vue";
 
 const {
   conversationData,
-  hasConversationData,
   moderationHistoryTrigger,
   commentFilter,
   onViewAnalysis,
   conversationRouteContext,
 } = defineProps<{
-  conversationData: ExtendedConversationDisplayData;
-  hasConversationData: boolean;
+  // Dynamic route props can briefly clear during navigation teardown.
+  conversationData: ExtendedConversationDisplayData | undefined;
   moderationHistoryTrigger: number;
   commentFilter: CommentFilterOptions;
   onViewAnalysis: () => void;
@@ -46,13 +46,6 @@ const {
 const emit = defineEmits<{
   "update:commentFilter": [filter: CommentFilterOptions];
 }>();
-
-const isMaxDiffConversation = computed(
-  () =>
-    conversationData.metadata.conversationType === "ranking" &&
-    conversationData.metadata.rankingMode === "bws"
-);
-
 </script>
 
 <style scoped lang="scss"></style>

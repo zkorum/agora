@@ -80,7 +80,6 @@
                 :is="Component"
                 :key="route.path"
                 :conversation-data="loadedConversationData"
-                :has-conversation-data="hasConversationData"
                 :moderation-history-trigger="moderationHistoryTrigger"
                 :comment-filter="commentFilter"
                 :on-view-analysis="onViewAnalysis"

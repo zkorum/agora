@@ -1,7 +1,7 @@
 <template>
   <ConversationAnalysisTab
+    v-if="props.conversationData !== undefined"
     :conversation-data="props.conversationData"
-    :has-conversation-data="props.hasConversationData"
     :show-report-button="false"
     :navigate-to-discover-tab="props.navigateToDiscoverTab"
     :conversation-scroll-context="props.conversationScrollContext"
@@ -17,13 +17,12 @@ import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 
 const props = defineProps<{
-  conversationData: ExtendedConversationDisplayData;
-  hasConversationData: boolean;
+  // Dynamic route props can briefly clear during navigation teardown.
+  conversationData: ExtendedConversationDisplayData | undefined;
   navigateToDiscoverTab: () => void;
   conversationScrollContext: ConversationScrollContext;
   conversationRouteContext: ConversationRouteContext;
 }>();
-
 </script>
 
 <style scoped lang="scss"></style>
