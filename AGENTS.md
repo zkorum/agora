@@ -457,6 +457,14 @@ Authorization headers built via `buildAuthorizationHeader(encodedUcan)` in front
 
 If you intentionally deviate from any guidance in this file, say so and explain why. Do not silently make exceptions to these rules.
 
+### Browser Compatibility and Polyfills
+
+Do not add hand-written compatibility polyfills or monkey-patch standard JavaScript or web-platform globals and prototypes to emulate missing APIs. First-party runtime APIs must either be natively supported by the frontend's declared modern browser contract or be supplied centrally through maintained compatibility tooling. Refactor the application code when an unsupported API is not worth carrying as part of that contract. A targeted workaround for a confirmed platform bug must be narrowly scoped and document why centralized compatibility tooling cannot address it.
+
+Handle compatibility required by bundled third-party dependencies centrally through the frontend build configuration and maintained compatibility libraries, not through local shims. Syntax and module-format compatibility belong in the build pipeline. When changing the support floor or compatibility tooling, update the shared browser targets, JavaScript and CSS processing, production-build verification, and documented support matrix together.
+
+Prefer idiomatic modern APIs when the centralized build already supplies their compatibility support. Do not replace APIs such as `Array.prototype.at()` with compatibility-only helpers when bundled third-party code already requires the same polyfill, because that adds application complexity without reducing the shipped payload. Inspect the generated bundle before refactoring modern syntax for compatibility or bundle-size reasons.
+
 ### Avoid Unsafe TypeScript Escape Hatches
 
 Avoid `as` type assertions, `!` non-null assertions, `@ts-ignore`, `@ts-expect-error`, and `eslint-disable` / `eslint-ignore` directives. Write typesafe code instead.

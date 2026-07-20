@@ -88,6 +88,20 @@ Start the app with:
 
 Direct `pnpm dev` still works, but it does not create durable log files unless you wrap it with `scripts/dev-log-runner.mjs` from the repository root.
 
+## Browser Support
+
+The browser compilation targets are defined once in [`.browserslistrc`](./.browserslistrc). They are consumed by Autoprefixer and by `@vitejs/plugin-legacy` during production builds. Vite's CSS output target is aligned with the same version floors in [`quasar.config.ts`](./quasar.config.ts).
+
+Production builds use differential delivery:
+
+- Modern browsers receive the native ESM build.
+- Older browsers receive a SystemJS build transpiled by Babel.
+- Both builds receive ECMAScript polyfills selected from core-js based on actual usage across application and bundled third-party chunks.
+
+These targets describe compilation, not an unconditional support guarantee. Autoprefixer and Vite do not transform every modern CSS feature, and Vue 3 requires native ES2016 capabilities. The legacy build cannot supply fundamental platform behavior such as `Proxy`, functional IndexedDB, WebCrypto, or reliable browser storage. Browsers missing capabilities required by a particular flow must receive a degraded or unsupported-browser experience rather than a hand-written global polyfill.
+
+The legacy path is generated only by production builds. Browser compatibility must therefore be tested against `pnpm build:dev`, `pnpm build:staging`, or `pnpm build:production`, not only the development server. In-app browsers such as WeChat can use device-specific kernels, so support claims require testing the built application on representative physical devices.
+
 ## Logos
 
 Currently we are not bundling company logos in the source code due to copyright.

@@ -12,38 +12,38 @@ import { onboardingFlowStore } from "./onboarding/flow";
 import { useOnboardingPreferencesStore } from "./onboarding/preferences";
 
 interface VotingIntention {
-  enabled: boolean;
-  conversationSlugId: string;
-  routeContext: ConversationRouteContext;
-  eventSlug?: EventSlug;
+  readonly enabled: boolean;
+  readonly conversationSlugId: string;
+  readonly routeContext: ConversationRouteContext;
+  readonly eventSlug?: EventSlug;
 }
 
 interface OpinionAgreementIntention {
-  enabled: boolean;
-  conversationSlugId: string;
-  opinionSlugId: string;
-  routeContext: ConversationRouteContext;
-  eventSlug?: EventSlug;
+  readonly enabled: boolean;
+  readonly conversationSlugId: string;
+  readonly opinionSlugId: string;
+  readonly routeContext: ConversationRouteContext;
+  readonly eventSlug?: EventSlug;
 }
 
 interface NewConversationIntention {
-  enabled: boolean;
+  readonly enabled: boolean;
 }
 
 interface NewOpinionIntention {
-  enabled: boolean;
-  conversationSlugId: string;
-  opinionBody: string;
-  routeContext: ConversationRouteContext;
-  eventSlug?: EventSlug;
+  readonly enabled: boolean;
+  readonly conversationSlugId: string;
+  readonly opinionBody: string;
+  readonly routeContext: ConversationRouteContext;
+  readonly eventSlug?: EventSlug;
 }
 
 interface ReportUserContentIntention {
-  enabled: boolean;
-  conversationSlugId: string;
-  opinionSlugId: string;
-  routeContext: ConversationRouteContext;
-  eventSlug?: EventSlug;
+  readonly enabled: boolean;
+  readonly conversationSlugId: string;
+  readonly opinionSlugId: string;
+  readonly routeContext: ConversationRouteContext;
+  readonly eventSlug?: EventSlug;
 }
 
 export type PossibleIntentions =
@@ -245,9 +245,8 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
 
   function clearNewOpinionIntention(): NewOpinionIntention {
     if (completedUserLogin) {
-      const savedIntention: NewOpinionIntention =
-        structuredClone(newOpinionIntention);
-      newOpinionIntention.enabled = false;
+      const savedIntention = structuredClone(newOpinionIntention);
+      newOpinionIntention = { ...newOpinionIntention, enabled: false };
       showIntentionDialog(savedIntention.enabled, "newOpinion");
       return savedIntention;
     } else {
@@ -263,10 +262,8 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
 
   function clearNewConversationIntention(): NewConversationIntention {
     if (completedUserLogin) {
-      const savedIntention: NewConversationIntention = {
-        enabled: newConversationIntention.enabled,
-      };
-      newConversationIntention.enabled = false;
+      const savedIntention = newConversationIntention;
+      newConversationIntention = { ...newConversationIntention, enabled: false };
       showIntentionDialog(savedIntention.enabled, "newConversation");
       return savedIntention;
     } else {
@@ -278,10 +275,11 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
 
   function clearOpinionAgreementIntention(): OpinionAgreementIntention {
     if (completedUserLogin) {
-      const savedIntention: OpinionAgreementIntention = structuredClone(
-        opinionAgreementIntention
-      );
-      opinionAgreementIntention.enabled = false;
+      const savedIntention = structuredClone(opinionAgreementIntention);
+      opinionAgreementIntention = {
+        ...opinionAgreementIntention,
+        enabled: false,
+      };
       showIntentionDialog(savedIntention.enabled, "agreement");
       return savedIntention;
     } else {
@@ -297,8 +295,8 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
 
   function clearVotingIntention(): VotingIntention {
     if (completedUserLogin) {
-      const savedIntention: VotingIntention = structuredClone(votingIntention);
-      votingIntention.enabled = false;
+      const savedIntention = structuredClone(votingIntention);
+      votingIntention = { ...votingIntention, enabled: false };
       showIntentionDialog(savedIntention.enabled, "voting");
       return savedIntention;
     } else {
@@ -313,10 +311,11 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
 
   function clearReportUserContentIntention(): ReportUserContentIntention {
     if (completedUserLogin) {
-      const savedIntention: ReportUserContentIntention = structuredClone(
-        reportUserContentIntention
-      );
-      reportUserContentIntention.enabled = false;
+      const savedIntention = structuredClone(reportUserContentIntention);
+      reportUserContentIntention = {
+        ...reportUserContentIntention,
+        enabled: false,
+      };
       showIntentionDialog(savedIntention.enabled, "reportUserContent");
       return savedIntention;
     } else {

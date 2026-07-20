@@ -1,7 +1,6 @@
 import { defineStore } from "pinia";
 import type { NotificationItem } from "src/shared/types/zod";
 import { useNotificationApi } from "src/utils/api/notification/notification";
-import { getLastItem } from "src/utils/array";
 import {
   type DisplayNotification,
   transformNotification,
@@ -22,7 +21,7 @@ export const useNotificationStore = defineStore("notification", () => {
   }
 
   async function loadMoreNotificationData(): Promise<boolean> {
-    const lastSlugId = getLastItem(notificationList.value)?.slugId;
+    const lastSlugId = notificationList.value.at(-1)?.slugId;
     const response = await fetchNotifications(lastSlugId);
     notificationList.value.push(
       ...transformNotifications(response.notificationList)
