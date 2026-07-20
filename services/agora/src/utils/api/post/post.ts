@@ -81,13 +81,6 @@ export function useBackendPostApi() {
     };
   }
 
-  function createInternalPostData(
-    postElement: unknown
-  ): ExtendedConversation {
-    const parseditem = composeInternalPostList([postElement])[0];
-    return parseditem;
-  }
-
   async function fetchConversationBySlugIdWithDisplayContent({
     postSlugId,
     loadPersonalizedData,
@@ -583,7 +576,6 @@ export function useBackendPostApi() {
     createNewPost,
     fetchRecentPost,
     fetchConversationBySlugIdWithDisplayContent,
-    createInternalPostData,
     deletePostBySlugId,
     importConversation,
     importConversationFromCsv,

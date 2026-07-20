@@ -1,5 +1,4 @@
 import {
-  type ApiV1UserConversationFetchPostRequest,
   type ApiV1UserOpinionFetchPostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
@@ -14,11 +13,9 @@ import type {
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { api } from "./client";
 import { useCommonApi } from "./common";
-import { useBackendPostApi } from "./post/post";
 
 export function useBackendUserApi() {
   const { buildEncodedUcan } = useCommonApi();
-  const { createInternalPostData } = useBackendPostApi();
 
   async function fetchUserProfile(): Promise<
     GetUserProfileResponse | undefined
@@ -56,9 +53,9 @@ export function useBackendUserApi() {
     lastPostSlugId: string | undefined
   ): Promise<ExtendedConversation[] | null> {
     try {
-      const params: ApiV1UserConversationFetchPostRequest = {
+      const params = Dto.fetchUserConversationsRequest.parse({
         lastConversationSlugId: lastPostSlugId,
-      };
+      });
 
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1UserConversationFetchPost(
@@ -75,15 +72,7 @@ export function useBackendUserApi() {
         },
       });
 
-      const internalPostList: ExtendedConversation[] = response.data.map(
-        (postElement) => {
-          const dataItem: ExtendedConversation =
-            createInternalPostData(postElement);
-          return dataItem;
-        }
-      );
-
-      return internalPostList;
+      return Dto.fetchUserConversationsResponse.parse(response.data);
     } catch (e) {
       console.error(e);
       return null;
