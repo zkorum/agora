@@ -17,11 +17,11 @@ importers:
   .:
     dependencies:
       cborg:
-        specifier: ^5.0.1
-        version: 5.0.1
+        specifier: ^5.1.7
+        version: 5.1.7
       countries-list:
-        specifier: ^3.3.0
-        version: 3.3.0
+        specifier: ^3.4.1
+        version: 3.4.1
       html-entities:
         specifier: ^2.6.0
         version: 2.6.0
@@ -32,8 +32,8 @@ importers:
         specifier: ^0.15.5
         version: 0.15.5
       libphonenumber-js:
-        specifier: ^1.12.41
-        version: 1.12.41
+        specifier: ^1.13.9
+        version: 1.13.9
       linkify-html:
         specifier: ^4.3.2
         version: 4.3.2(linkifyjs@4.3.2)
@@ -632,6 +632,7 @@ packages:
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
+    deprecated: Potential CWE-502 - Update to 1.3.1 or higher
 
   '@unrs/resolver-binding-android-arm-eabi@1.11.1':
     resolution: {integrity: sha512-ppLRUgHVaGRWUx0R0Ut06Mjo9gBaBkg3v/8AxusGLhsIotbBLuRk51rAzqLC8gq6NyyAojEXglNjzf6R948DNw==}
@@ -848,8 +849,8 @@ packages:
   caniuse-lite@1.0.30001782:
     resolution: {integrity: sha512-dZcaJLJeDMh4rELYFw1tvSn1bhZWYFOt468FcbHHxx/Z/dFidd1I6ciyFdi3iwfQCyOjqo9upF6lGQYtMiJWxw==}
 
-  cborg@5.0.1:
-    resolution: {integrity: sha512-3UinwdU6Qtr60sLhCpfjh+/jXleI2+8TMaWaZSO3Zx6YxWlPgGsyA01tRitT2KXbHTZrKcx3vaMIbkdXP8AfPw==}
+  cborg@5.1.7:
+    resolution: {integrity: sha512-rGg2MG9zZEUKtKqjkBppIWUecTXf9N1vs1Qru43vJWoDaODhCrtmzdehCaA/aq/c1cPI5A0kPrJ5Tf+jIfhV4w==}
     hasBin: true
 
   ccount@2.0.1:
@@ -898,8 +899,8 @@ packages:
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
 
-  countries-list@3.3.0:
-    resolution: {integrity: sha512-XRUjS+dcZuNh/fg3+mka3bXgcg4TbQZ1gaK5IJqO6qulerBANl1bmrd20P2dgmPkBpP+5FnejiSF1gd7bgAg+g==}
+  countries-list@3.4.1:
+    resolution: {integrity: sha512-sKLGAZD5EAdzQwQ19vOp/9u33MTjmZ0CkdXPYtp/An6cyIlJ/E8TwGf2FcPe1AnzHO+h7nbTfoHyXIi58Hpa+Q==}
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -1441,8 +1442,8 @@ packages:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
 
-  libphonenumber-js@1.12.41:
-    resolution: {integrity: sha512-lsmMmGXBxXIK/VMLEj0kL6MtUs1kBGj1nTCzi6zgQoG1DEwqwt2DQyHxcLykceIxAnfE3hya7NuIh6PpC6S3fA==}
+  libphonenumber-js@1.13.9:
+    resolution: {integrity: sha512-VNS5vWMM7r0P66BYv+TQJATxExEgLxN+34hfHDVhDkUsGAE4cRg0shCNSLTXNKm7nIUscC7AfB51TjxEeF7msQ==}
 
   lie@3.1.1:
     resolution: {integrity: sha512-RiNhHysUjhrDQntfYSfY4MU24coXXdEOgw9WGcKHNeEwffDYbF//u87M1EWaMGzuFoSbqW0C9C6lEEhDOAswfw==}
@@ -2985,7 +2986,7 @@ snapshots:
 
   caniuse-lite@1.0.30001782: {}
 
-  cborg@5.0.1: {}
+  cborg@5.1.7: {}
 
   ccount@2.0.1: {}
 
@@ -3022,7 +3023,7 @@ snapshots:
 
   convert-source-map@2.0.0: {}
 
-  countries-list@3.3.0: {}
+  countries-list@3.4.1: {}
 
   cross-spawn@7.0.6:
     dependencies:
@@ -3728,7 +3729,7 @@ snapshots:
       prelude-ls: 1.2.1
       type-check: 0.4.0
 
-  libphonenumber-js@1.12.41: {}
+  libphonenumber-js@1.13.9: {}
 
   lie@3.1.1:
     dependencies:
