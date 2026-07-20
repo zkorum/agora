@@ -54,7 +54,7 @@
     "@vueuse/integrations": "^14.3.0",
     "@vueuse/router": "^14.3.0",
     "@zkorum/keystore-idb": "^0.18.1",
-    "axios": "^1.16.0",
+    "axios": "^1.18.0",
     "buffer": "^6.0.3",
     "cborg": "^5.1.1",
     "html-entities": "^2.6.0",
