@@ -1,18 +1,22 @@
 <template>
-  <MaxDiffResultsTab
-    v-if="isMaxDiffConversation"
-    :conversation-data="props.conversationData"
-    :navigate-to-voting-tab="props.navigateToDiscoverTab"
-  />
-  <ConversationAnalysisTab
-    v-else
-    :conversation-data="props.conversationData"
-    :has-conversation-data="props.hasConversationData"
-    :navigate-to-discover-tab="props.navigateToDiscoverTab"
-    :conversation-scroll-context="props.conversationScrollContext"
-    :conversation-route-context="props.conversationRouteContext"
-    @analysis-live-pause-stats="emit('analysisLivePauseStats', $event)"
-  />
+  <template v-if="props.conversationData !== undefined">
+    <MaxDiffResultsTab
+      v-if="
+        props.conversationData.metadata.conversationType === 'ranking' &&
+        props.conversationData.metadata.rankingMode === 'bws'
+      "
+      :conversation-data="props.conversationData"
+      :navigate-to-voting-tab="props.navigateToDiscoverTab"
+    />
+    <ConversationAnalysisTab
+      v-else
+      :conversation-data="props.conversationData"
+      :navigate-to-discover-tab="props.navigateToDiscoverTab"
+      :conversation-scroll-context="props.conversationScrollContext"
+      :conversation-route-context="props.conversationRouteContext"
+      @analysis-live-pause-stats="emit('analysisLivePauseStats', $event)"
+    />
+  </template>
 </template>
 
 <script setup lang="ts">
@@ -22,11 +26,10 @@ import type { ConversationActionBarStats } from "src/composables/conversation/us
 import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
 import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
-import { computed } from "vue";
 
 const props = defineProps<{
-  conversationData: ExtendedConversationDisplayData;
-  hasConversationData: boolean;
+  // Dynamic route props can briefly clear during navigation teardown.
+  conversationData: ExtendedConversationDisplayData | undefined;
   navigateToDiscoverTab: () => void;
   conversationScrollContext: ConversationScrollContext;
   conversationRouteContext: ConversationRouteContext;
@@ -35,10 +38,4 @@ const props = defineProps<{
 const emit = defineEmits<{
   analysisLivePauseStats: [stats: ConversationActionBarStats | undefined];
 }>();
-
-const isMaxDiffConversation = computed(
-  () =>
-    props.conversationData.metadata.conversationType === "ranking" &&
-    props.conversationData.metadata.rankingMode === "bws"
-);
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-if="conversationData !== undefined">
     <CommentSection
       ref="opinionSectionRef"
       :post-slug-id="conversationData.metadata.conversationSlugId"
@@ -55,8 +55,7 @@ import CommentSection from "./comments/CommentSection.vue";
 
 // Props from parent
 const props = defineProps<{
-  conversationData: ExtendedConversationDisplayData;
-  hasConversationData: boolean;
+  conversationData: ExtendedConversationDisplayData | undefined;
   moderationHistoryTrigger: number;
   commentFilter: CommentFilterOptions;
   onViewAnalysis: () => void;
@@ -98,14 +97,19 @@ const userStore = useUserStore();
 
 const { profileData } = storeToRefs(userStore);
 
+// Route transitions can temporarily omit data; inert inputs keep queries disabled.
 const conversationSlugId = computed(
-  () => props.conversationData.metadata.conversationSlugId
+  () => props.conversationData?.metadata.conversationSlugId ?? ""
 );
-const voteCount = computed(() => props.conversationData.metadata.voteCount);
+const voteCount = computed(() => props.conversationData?.metadata.voteCount);
 
 // Compute voting disabled state for drilling to CommentActionBar
 const isVotingDisabled = computed(() => {
   const data = props.conversationData;
+  if (data === undefined) {
+    return true;
+  }
+
   const isModeratedAndLocked =
     data.metadata.moderation.status === "moderated" &&
     data.metadata.moderation.action === "lock";
@@ -117,7 +121,7 @@ const commentsDiscoverQuery = useCommentsQuery({
   conversationSlugId,
   filter: "discover",
   voteCount,
-  enabled: () => props.hasConversationData,
+  enabled: () => props.conversationData !== undefined,
 });
 
 const commentsNewQuery = useCommentsQuery({
@@ -177,8 +181,13 @@ watch(
 );
 
 async function submittedComment(data: SubmittedCommentData): Promise<void> {
-  await markCommentsAsStale(props.conversationData.metadata.conversationSlugId);
-  markAnalysisAsStale(props.conversationData.metadata.conversationSlugId);
+  const currentConversation = props.conversationData;
+  if (currentConversation === undefined) {
+    return;
+  }
+
+  await markCommentsAsStale(currentConversation.metadata.conversationSlugId);
+  markAnalysisAsStale(currentConversation.metadata.conversationSlugId);
 
   if (opinionSectionRef.value) {
     await opinionSectionRef.value.refreshAndHighlightOpinion(data.opinionSlugId);

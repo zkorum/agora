@@ -15,6 +15,8 @@ import { queryClient } from "../query/client";
 import { useRouterGuard } from "../router/guard";
 import { api } from "./client";
 import { useCommonApi } from "./common";
+import { getErrorLogContext } from "./errorLog";
+import { runNotificationRefreshInBackground } from "./notification/requestError";
 
 export interface AuthStateUpdateResult {
   authStateChanged: boolean;
@@ -39,7 +41,7 @@ export function useBackendAuthApi() {
 
   const { loadUserProfile } = useUserStore();
   const { loadTopicsData } = useTopicStore();
-  const { loadNotificationData } = useNotificationStore();
+  const { refreshNotificationData } = useNotificationStore();
   const { loadLanguagePreferencesFromBackend } = useLanguageStore();
 
   const route = useRoute();
@@ -83,11 +85,20 @@ export function useBackendAuthApi() {
   async function loadAuthenticatedModules() {
     await loadUserProfile();
 
-    void Promise.all([
-      loadNotificationData(false),
-      loadTopicsData(),
-      loadLanguagePreferencesFromBackend(),
-    ]).catch((e) => console.error("Background module load failed", e));
+    void (async () => {
+      try {
+        await Promise.all([
+          runNotificationRefreshInBackground(refreshNotificationData),
+          loadTopicsData(),
+          loadLanguagePreferencesFromBackend(),
+        ]);
+      } catch (error) {
+        console.error(
+          "Background module load failed",
+          getErrorLogContext(error)
+        );
+      }
+    })();
   }
 
   // update the global state according to the change in login status
@@ -146,7 +157,8 @@ export function useBackendAuthApi() {
           // clearing to avoid wiping the feed and causing a "..." spinner.
           if (authStateChanged) {
             // Detect if this is a new guest creation (anonymous → guest)
-            const newIsGuest = newLoginStatus.isKnown && !newLoginStatus.isRegistered;
+            const newIsGuest =
+              newLoginStatus.isKnown && !newLoginStatus.isRegistered;
             const isNewGuestCreation = !oldIsGuestOrLoggedIn && newIsGuest;
 
             if (isNewGuestCreation) {
@@ -155,13 +167,13 @@ export function useBackendAuthApi() {
                 predicate: (query) => {
                   const queryKey = query.queryKey[0];
                   // Preserve caches with in-flight optimistic updates
-                  if (queryKey === 'userVotes') return false;
-                  if (queryKey === 'comments') return false;
-                  if (queryKey === 'maxdiff-items') return false;
-                  if (queryKey === 'maxdiff-load') return false;
+                  if (queryKey === "userVotes") return false;
+                  if (queryKey === "comments") return false;
+                  if (queryKey === "maxdiff-items") return false;
+                  if (queryKey === "maxdiff-load") return false;
                   // Invalidate everything else (user profile, etc.)
                   return true;
-                }
+                },
               });
             } else {
               // For other transitions (login, logout, account switch): clear everything

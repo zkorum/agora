@@ -12,7 +12,9 @@ import type {
     SupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
 
-export type ContentTranslationRequestMode = "read_existing" | "queue_if_missing";
+export type ContentTranslationRequestMode =
+    | "read_existing"
+    | "queue_if_missing";
 export type MissingContentTranslationStatus = Exclude<
     LocalizedContentTranslationStatus,
     "completed"
@@ -119,7 +121,9 @@ export function getSourceLanguageLabel(
     }
 
     try {
-        const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
+        const displayNames = new Intl.DisplayNames(["en"], {
+            type: "language",
+        });
         return displayNames.of(sourceLanguageCode) ?? sourceLanguageCode;
     } catch {
         return sourceLanguageCode;
@@ -137,7 +141,9 @@ export function buildContentTranslationSourceLanguage({
             return {
                 kind: "recognized",
                 languageCode: sourceLanguageCode,
-                label: getSourceLanguageLabel(sourceLanguageCode) ?? sourceLanguageCode,
+                label:
+                    getSourceLanguageLabel(sourceLanguageCode) ??
+                    sourceLanguageCode,
             };
         }
     }
@@ -168,7 +174,9 @@ export function buildTranslationMetadata<
 }) {
     const sourceLanguageCode = sourceMetadata?.sourceLanguageCode ?? null;
     const sourceLanguageLabel = getSourceLanguageLabel(sourceLanguageCode);
-    const sourceLanguage = buildContentTranslationSourceLanguage({ sourceMetadata });
+    const sourceLanguage = buildContentTranslationSourceLanguage({
+        sourceMetadata,
+    });
     return {
         targetLanguageCode,
         sourceLanguageCode,
@@ -199,7 +207,8 @@ export function buildLocalizedSurveyQuestionContent({
             optionText: option.optionText,
         })),
     };
-    const translatedOptions: { optionSlugId: string; optionText: string }[] = [];
+    const translatedOptions: { optionSlugId: string; optionText: string }[] =
+        [];
     for (const option of source.options) {
         const translatedOptionText =
             translation?.translatedOptionsByContentId.get(option.contentId);
@@ -211,7 +220,8 @@ export function buildLocalizedSurveyQuestionContent({
         }
     }
     const translated =
-        translation === undefined || translatedOptions.length !== source.options.length
+        translation === undefined ||
+        translatedOptions.length !== source.options.length
             ? undefined
             : {
                   questionText: translation.translatedQuestionText,
@@ -285,6 +295,7 @@ export function buildLocalizedRankingItemContent({
         kind: "ranking_item" as const,
         conversationSlugId: source.conversationSlugId,
         itemSlugId: source.itemSlugId,
+        sourceVersion: source.publicId,
     };
 
     if (translation !== undefined) {

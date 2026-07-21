@@ -43,7 +43,6 @@ export interface ProjectPageTranslations {
   emptyActivities: string;
   allActivitiesLoaded: string;
   projectDetailsAriaLabel: string;
-  behindThisTitle: string;
   sponsorsTitle: string;
   projectOwnersTitle: string;
   partnersTitle: string;
@@ -92,7 +91,6 @@ export const projectPageTranslations: Readonly<
     emptyActivities: "No activities have been published yet.",
     allActivitiesLoaded: "All activities loaded",
     projectDetailsAriaLabel: "Project details",
-    behindThisTitle: "Who is behind this",
     sponsorsTitle: "Sponsors",
     projectOwnersTitle: "Project Owners",
     partnersTitle: "Partners",
@@ -138,7 +136,6 @@ export const projectPageTranslations: Readonly<
     emptyActivities: "Todavía no se han publicado actividades.",
     allActivitiesLoaded: "Todas las actividades cargadas",
     projectDetailsAriaLabel: "Detalles del proyecto",
-    behindThisTitle: "Quién está detrás de esto",
     sponsorsTitle: "Patrocinadores",
     projectOwnersTitle: "Responsables del proyecto",
     partnersTitle: "Socios",
@@ -184,7 +181,6 @@ export const projectPageTranslations: Readonly<
     emptyActivities: "Aucune activité n'a encore été publiée.",
     allActivitiesLoaded: "Toutes les activités sont chargées",
     projectDetailsAriaLabel: "Détails du projet",
-    behindThisTitle: "Qui est derrière ce projet",
     sponsorsTitle: "Financeurs",
     projectOwnersTitle: "Porteurs du projet",
     partnersTitle: "Partenaires",
@@ -230,7 +226,6 @@ export const projectPageTranslations: Readonly<
     emptyActivities: "尚未发布任何活动。",
     allActivitiesLoaded: "所有活动已加载",
     projectDetailsAriaLabel: "项目详情",
-    behindThisTitle: "谁在支持这个项目",
     sponsorsTitle: "赞助方",
     projectOwnersTitle: "项目负责人",
     partnersTitle: "合作伙伴",
@@ -275,7 +270,6 @@ export const projectPageTranslations: Readonly<
     emptyActivities: "尚未發布任何活動。",
     allActivitiesLoaded: "所有活動已載入",
     projectDetailsAriaLabel: "專案詳情",
-    behindThisTitle: "誰在支持這個專案",
     sponsorsTitle: "贊助方",
     projectOwnersTitle: "專案負責人",
     partnersTitle: "合作夥伴",
@@ -320,7 +314,6 @@ export const projectPageTranslations: Readonly<
     emptyActivities: "まだアクティビティは公開されていません。",
     allActivitiesLoaded: "すべてのアクティビティを読み込みました",
     projectDetailsAriaLabel: "プロジェクト詳細",
-    behindThisTitle: "このプロジェクトの運営者",
     sponsorsTitle: "スポンサー",
     projectOwnersTitle: "プロジェクトオーナー",
     partnersTitle: "パートナー",
@@ -366,7 +359,6 @@ export const projectPageTranslations: Readonly<
     emptyActivities: "لم يتم نشر أي أنشطة بعد.",
     allActivitiesLoaded: "تم تحميل جميع الأنشطة",
     projectDetailsAriaLabel: "تفاصيل المشروع",
-    behindThisTitle: "من يقف وراء هذا",
     sponsorsTitle: "الرعاة",
     projectOwnersTitle: "مالكو المشروع",
     partnersTitle: "الشركاء",
@@ -411,7 +403,6 @@ export const projectPageTranslations: Readonly<
     emptyActivities: "هنوز هیچ فعالیتی منتشر نشده است.",
     allActivitiesLoaded: "همه فعالیت‌ها بارگذاری شدند",
     projectDetailsAriaLabel: "جزئیات پروژه",
-    behindThisTitle: "چه کسانی پشت این پروژه هستند",
     sponsorsTitle: "حامیان مالی",
     projectOwnersTitle: "مالکان پروژه",
     partnersTitle: "شرکا",
@@ -456,7 +447,6 @@ export const projectPageTranslations: Readonly<
     emptyActivities: "עדיין לא פורסמו פעילויות.",
     allActivitiesLoaded: "כל הפעילויות נטענו",
     projectDetailsAriaLabel: "פרטי הפרויקט",
-    behindThisTitle: "מי עומד מאחורי זה",
     sponsorsTitle: "נותני חסות",
     projectOwnersTitle: "בעלי הפרויקט",
     partnersTitle: "שותפים",
@@ -501,7 +491,6 @@ export const projectPageTranslations: Readonly<
     emptyActivities: "Азырынча иш-чаралар жарыялана элек.",
     allActivitiesLoaded: "Бардык иш-чаралар жүктөлдү",
     projectDetailsAriaLabel: "Долбоор тууралуу маалымат",
-    behindThisTitle: "Бул долбоордун артында ким турат",
     sponsorsTitle: "Демөөрчүлөр",
     projectOwnersTitle: "Долбоор ээлери",
     partnersTitle: "Өнөктөштөр",
@@ -546,7 +535,6 @@ export const projectPageTranslations: Readonly<
     emptyActivities: "Активности пока не опубликованы.",
     allActivitiesLoaded: "Все активности загружены",
     projectDetailsAriaLabel: "Информация о проекте",
-    behindThisTitle: "Кто за этим стоит",
     sponsorsTitle: "Спонсоры",
     projectOwnersTitle: "Владельцы проекта",
     partnersTitle: "Партнеры",

@@ -328,6 +328,7 @@ export const zodContentTranslationSubject = z.discriminatedUnion("kind", [
             kind: z.literal("opinion"),
             conversationSlugId: zodSlugId,
             opinionSlugId: zodSlugId,
+            sourceVersion: z.uuid(),
         })
         .strict(),
     z
@@ -348,6 +349,7 @@ export const zodContentTranslationSubject = z.discriminatedUnion("kind", [
             kind: z.literal("ranking_item"),
             conversationSlugId: zodSlugId,
             itemSlugId: zodSlugId,
+            sourceVersion: z.uuid(),
         })
         .strict(),
 ]);
@@ -408,7 +410,7 @@ export function createZodLocalizedContent<
         z
             .object({
                 kind: z.literal("original_only"),
-                sourceVersion: z.string().min(1),
+                sourceVersion: z.uuid(),
                 initialMode: z.literal("original"),
                 variants: z
                     .object({
@@ -420,7 +422,7 @@ export function createZodLocalizedContent<
         z
             .object({
                 kind: z.literal("translatable"),
-                sourceVersion: z.string().min(1),
+                sourceVersion: z.uuid(),
                 initialMode: z.literal("original"),
                 translation: zodLocalizedContentTranslationMetadata,
                 variants: z
@@ -434,7 +436,7 @@ export function createZodLocalizedContent<
         z
             .object({
                 kind: z.literal("translatable"),
-                sourceVersion: z.string().min(1),
+                sourceVersion: z.uuid(),
                 initialMode: z.literal("translated"),
                 translation: zodCompletedLocalizedContentTranslationMetadata,
                 variants: z
@@ -1378,7 +1380,7 @@ export const zodOpinionItem = z
 export const zodDisplayedOpinionItem = zodOpinionItem.extend({
     displayContent: zodOpinionDisplayedContent,
 });
-export const zodAnalysisOpinionItem = zodOpinionItem.extend({
+export const zodAnalysisOpinionItem = zodDisplayedOpinionItem.extend({
     clustersStats: z.array(zodClusterStats),
     groupAwareConsensusAgree: z.number().nonnegative(),
     groupAwareConsensusDisagree: z.number().nonnegative(),

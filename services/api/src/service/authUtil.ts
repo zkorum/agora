@@ -48,6 +48,16 @@ interface IsSiteModeratorParams {
     userId: string;
 }
 
+export function isActiveRegisteredDeviceStatus(
+    deviceStatus: DeviceLoginStatusInternal,
+): boolean {
+    return (
+        deviceStatus.isKnown &&
+        deviceStatus.isRegistered &&
+        deviceStatus.isLoggedIn
+    );
+}
+
 export async function isSiteModeratorAccount({
     db,
     userId,
@@ -224,7 +234,10 @@ export async function isUserPartOfOrganizationById({
         .from(organizationMembershipTable)
         .innerJoin(
             organizationTable,
-            eq(organizationTable.id, organizationMembershipTable.organizationId),
+            eq(
+                organizationTable.id,
+                organizationMembershipTable.organizationId,
+            ),
         )
         .where(
             and(

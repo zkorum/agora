@@ -187,6 +187,7 @@ const zodContentTranslationOpinionResponse = z
                 kind: z.literal("opinion"),
                 conversationSlugId: zodSlugId,
                 opinionSlugId: zodSlugId,
+                sourceVersion: z.uuid(),
             })
             .strict(),
         content: zodLocalizedOpinionContent,
@@ -228,6 +229,7 @@ const zodContentTranslationRankingItemResponse = z
                 kind: z.literal("ranking_item"),
                 conversationSlugId: zodSlugId,
                 itemSlugId: zodSlugId,
+                sourceVersion: z.uuid(),
             })
             .strict(),
         content: zodLocalizedRankingItemContent,
@@ -446,6 +448,12 @@ const zodProjectPageActivityDisplayedContent = createZodDisplayedContent(
     zodProjectPageActivityContentVariant,
     zodProjectPageActivityContentVariant,
 );
+const zodProjectPageActivityAlternateContent = z
+    .object({
+        mode: zodLocalizedContentDisplayMode,
+        content: zodProjectPageActivityContentVariant,
+    })
+    .strict();
 const zodProjectPageActivityBase = z
     .object({
         conversationType: zodConversationType,
@@ -472,6 +480,7 @@ const zodProjectPageActivity = z.discriminatedUnion("isIndexed", [
     zodProjectPageActivityBase
         .extend({
             isIndexed: z.literal(false),
+            alternateContent: zodProjectPageActivityAlternateContent.optional(),
         })
         .strict(),
 ]);

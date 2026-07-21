@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   createMaxDiffCandidateDisplaySnapshot,
   type MaxDiffCandidateDisplayItem,
+  retryMaxDiffCandidateResolution,
 } from "./maxdiffCandidateDisplay";
 
 function item({
@@ -77,5 +78,58 @@ describe("createMaxDiffCandidateDisplaySnapshot", () => {
     });
 
     expect(snapshot).toEqual([]);
+  });
+});
+
+describe("retryMaxDiffCandidateResolution", () => {
+  it("awaits both refetches before explicitly rerunning resolution", async () => {
+    let finishItemsRefetch: (() => void) | undefined;
+    let finishLoadRefetch: (() => void) | undefined;
+    const refetchItems = () =>
+      new Promise<{ isError: boolean }>((resolve) => {
+        finishItemsRefetch = () => resolve({ isError: false });
+      });
+    const refetchLoad = () =>
+      new Promise<{ isError: boolean }>((resolve) => {
+        finishLoadRefetch = () => resolve({ isError: false });
+      });
+    const resolve = vi.fn(() => true);
+
+    const retry = retryMaxDiffCandidateResolution({
+      refetchItems,
+      refetchLoad,
+      resolve,
+    });
+    expect(resolve).not.toHaveBeenCalled();
+
+    finishItemsRefetch?.();
+    await Promise.resolve();
+    expect(resolve).not.toHaveBeenCalled();
+
+    finishLoadRefetch?.();
+    await expect(retry).resolves.toBe("resolved");
+    expect(resolve).toHaveBeenCalledOnce();
+  });
+
+  it("retains the resolution failure when refetched data is still incomplete", async () => {
+    const result = await retryMaxDiffCandidateResolution({
+      refetchItems: () => Promise.resolve({ isError: false }),
+      refetchLoad: () => Promise.resolve({ isError: false }),
+      resolve: () => false,
+    });
+
+    expect(result).toBe("resolution_failed");
+  });
+
+  it("does not clear or rerun resolution after a refetch failure", async () => {
+    const resolve = vi.fn(() => true);
+    const result = await retryMaxDiffCandidateResolution({
+      refetchItems: () => Promise.resolve({ isError: true }),
+      refetchLoad: () => Promise.resolve({ isError: false }),
+      resolve,
+    });
+
+    expect(result).toBe("refetch_failed");
+    expect(resolve).not.toHaveBeenCalled();
   });
 });

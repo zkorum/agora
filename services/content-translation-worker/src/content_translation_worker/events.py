@@ -24,10 +24,9 @@ def build_content_translation_event_data(
 ) -> ContentTranslationEventData:
     return ContentTranslationEventData(
         payload={
-            "subject": subject,
+            "subject": {**subject, "sourceVersion": str(source_version)},
             "targetLanguageCode": target_language_code,
             "status": status,
-            "sourceVersion": str(source_version),
             "timestamp": timestamp_ms,
         },
         topic=f"translation:conversation:{conversation_slug_id}:target:{target_language_code}",

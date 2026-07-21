@@ -2365,6 +2365,7 @@ export interface ApiV1ContentTranslationRequestPostRequestSubjectOneOf1 {
     'kind': ApiV1ContentTranslationRequestPostRequestSubjectOneOf1KindEnum;
     'conversationSlugId': string;
     'opinionSlugId': string;
+    'sourceVersion': string;
 }
 
 export const ApiV1ContentTranslationRequestPostRequestSubjectOneOf1KindEnum = {
@@ -2400,6 +2401,7 @@ export interface ApiV1ContentTranslationRequestPostRequestSubjectOneOf4 {
     'kind': ApiV1ContentTranslationRequestPostRequestSubjectOneOf4KindEnum;
     'conversationSlugId': string;
     'itemSlugId': string;
+    'sourceVersion': string;
 }
 
 export const ApiV1ContentTranslationRequestPostRequestSubjectOneOf4KindEnum = {
@@ -4638,6 +4640,7 @@ export interface ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClust
     'username': string;
     'moderation': ApiV1ModerationOpinionGetPost200Response;
     'isSeed': boolean;
+    'displayContent': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContent;
     'clustersStats': Array<ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerClustersStatsInner>;
     'groupAwareConsensusAgree': number;
     'groupAwareConsensusDisagree': number;
@@ -5296,6 +5299,7 @@ export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1 {
     'displayContent': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContent;
     'stats': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfStats;
     'isIndexed': boolean;
+    'alternateContent'?: ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1AlternateContent;
 }
 
 export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1ConversationTypeEnum = {
@@ -5304,6 +5308,18 @@ export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1Conversati
 } as const;
 
 export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1ConversationTypeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1ConversationTypeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1ConversationTypeEnum];
+
+export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1AlternateContent {
+    'mode': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1AlternateContentModeEnum;
+    'content': ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContentAnyOfContent;
+}
+
+export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1AlternateContentModeEnum = {
+    Original: 'original',
+    Translated: 'translated',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1AlternateContentModeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1AlternateContentModeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1AlternateContentModeEnum];
 
 export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfDisplayContent {
     'sourceVersion': string;

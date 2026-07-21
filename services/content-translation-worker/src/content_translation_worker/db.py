@@ -14,17 +14,21 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from content_translation_worker.events import build_content_translation_event_data
 from content_translation_worker.generated_models import (
+    AnalysisSnapshotOpinion,
     ContentTranslationSourceKind,
     ContentTranslationWork,
     ContentTranslationWorkStatus,
     Conversation,
     ConversationContent,
     ConversationContentTranslation,
+    ConversationViewSnapshot,
     DisplayLanguageCode,
     LanguageDetectionProvider,
     Opinion,
     OpinionContent,
     OpinionContentTranslation,
+    OpinionModeration,
+    OpinionModerationAction,
     Project,
     ProjectContent,
     ProjectContentTranslation,
@@ -41,6 +45,7 @@ from content_translation_worker.generated_models import (
     SurveyQuestionOption,
     SurveyQuestionOptionContent,
     SurveyQuestionOptionContentTranslation,
+    User,
 )
 from content_translation_worker.translation import (
     ContentTranslationProviderError,
@@ -117,6 +122,7 @@ EMPTY_TRANSLATION_SOURCE_METADATA = TranslationSourceMetadata(
 class TranslationSourceDecision:
     source_language_code_for_translation: str | None
     use_google_detected_source: bool
+
 
 CHINESE_SCRIPT_LANGUAGE_CODES = frozenset({"zh-Hans", "zh-CN", "zh-Hant", "zh-TW"})
 CHINESE_DISPLAY_LANGUAGE_CODES = frozenset({"zh-Hans", "zh-Hant"})
@@ -253,10 +259,8 @@ def should_promote_google_source_metadata(
 ) -> bool:
     return (
         source_metadata.source_language_code is not None
-        and source_metadata.source_language_provider
-        == LanguageDetectionProvider.google_translate
-        and current_source_language_provider
-        in {None, LanguageDetectionProvider.lingua}
+        and source_metadata.source_language_provider == LanguageDetectionProvider.google_translate
+        and current_source_language_provider in {None, LanguageDetectionProvider.lingua}
     )
 
 
@@ -279,8 +283,7 @@ def _promote_opinion_source_metadata(
                 OpinionContent.id == source.content_id,
                 or_(
                     OpinionContent.source_language_provider.is_(None),
-                    OpinionContent.source_language_provider
-                    == LanguageDetectionProvider.lingua,
+                    OpinionContent.source_language_provider == LanguageDetectionProvider.lingua,
                 ),
             )
         )
@@ -312,8 +315,7 @@ def _promote_ranking_item_source_metadata(
                 RankingItemContent.id == source.content_id,
                 or_(
                     RankingItemContent.source_language_provider.is_(None),
-                    RankingItemContent.source_language_provider
-                    == LanguageDetectionProvider.lingua,
+                    RankingItemContent.source_language_provider == LanguageDetectionProvider.lingua,
                 ),
             )
         )
@@ -346,7 +348,13 @@ class ClaimedContentTranslationWork:
 @dataclass(frozen=True)
 class ProcessWorkResult:
     work_id: int
-    status: Literal["completed", "failed", "missing_source", "lost_lease"]
+    status: Literal[
+        "completed",
+        "failed",
+        "ineligible_source",
+        "missing_source",
+        "lost_lease",
+    ]
 
 
 class LostContentTranslationWorkLeaseError(RuntimeError):
@@ -399,13 +407,13 @@ def retry_failed_eager_work(
             select(ContentTranslationWork.id)
             .where(
                 and_(
-                    ContentTranslationWork.status
-                    == ContentTranslationWorkStatus.failed,
-                    ContentTranslationWork.priority_rank
-                    == EAGER_VISIBLE_PRIORITY_RANK,
+                    ContentTranslationWork.status == ContentTranslationWorkStatus.failed,
+                    ContentTranslationWork.priority_rank == EAGER_VISIBLE_PRIORITY_RANK,
                     or_(
                         ContentTranslationWork.last_error_code.is_(None),
-                        ContentTranslationWork.last_error_code != "missing_source",
+                        ContentTranslationWork.last_error_code.not_in(
+                            ["missing_source", "ineligible_source"]
+                        ),
                     ),
                     ContentTranslationWork.failed_at.is_not(None),
                     ContentTranslationWork.failed_at <= retry_after,
@@ -453,9 +461,7 @@ def _source_key_for_work_row(row: ContentTranslationWork) -> str | None:
         return f"ranking_item_content:{row.ranking_item_content_id}"
     if row.survey_question_content_id is None or row.survey_question_option_content_ids is None:
         return None
-    option_content_ids = ",".join(
-        str(item) for item in row.survey_question_option_content_ids
-    )
+    option_content_ids = ",".join(str(item) for item in row.survey_question_option_content_ids)
     return f"survey_question:{row.survey_question_content_id}:options:{option_content_ids}"
 
 
@@ -481,8 +487,7 @@ def claim_content_translation_work_batch(
                 ContentTranslationWork.conversation_id.is_not(None),
                 Conversation.current_content_id.is_not(None),
                 or_(
-                    ContentTranslationWork.source_kind
-                    != ContentTranslationSourceKind.conversation,
+                    ContentTranslationWork.source_kind != ContentTranslationSourceKind.conversation,
                     Conversation.current_content_id
                     == ContentTranslationWork.conversation_content_id,
                 ),
@@ -829,6 +834,25 @@ def process_claimed_work(
                 error_message="opinion work is missing opinion_content_id",
             )
             return ProcessWorkResult(work_id=claim.id, status="failed")
+        eligibility = _get_opinion_source_eligibility(
+            session,
+            opinion_content_id=claim.opinion_content_id,
+        )
+        if eligibility != "eligible":
+            log.warning(
+                "[Worker] Ineligible translation source work_id=%d source_kind=opinion "
+                "conversationSlugId=%s conversation_id=%d opinion_content_id=%d reason=%s",
+                claim.id,
+                claim.conversation_slug_id,
+                claim.conversation_id,
+                claim.opinion_content_id,
+                eligibility,
+            )
+            if eligibility == "missing":
+                _mark_missing_source(session, claim=claim)
+                return ProcessWorkResult(work_id=claim.id, status="missing_source")
+            _mark_ineligible_source(session, claim=claim, reason=eligibility)
+            return ProcessWorkResult(work_id=claim.id, status="ineligible_source")
         source = _fetch_opinion_source(session, opinion_content_id=claim.opinion_content_id)
         if source is None:
             log.warning(
@@ -857,11 +881,31 @@ def process_claimed_work(
             claim=claim,
             source_language_code=source.source_language_code,
         )
+        eligibility = _get_opinion_source_eligibility(
+            session,
+            opinion_content_id=claim.opinion_content_id,
+        )
+        if eligibility != "eligible":
+            if eligibility == "missing":
+                _mark_missing_source(session, claim=claim)
+                return ProcessWorkResult(work_id=claim.id, status="missing_source")
+            _mark_ineligible_source(session, claim=claim, reason=eligibility)
+            return ProcessWorkResult(work_id=claim.id, status="ineligible_source")
         if _has_fresh_opinion_translation(session, claim=claim, source=source):
             _mark_completed(session, claim=claim)
             return ProcessWorkResult(work_id=claim.id, status="completed")
         try:
             with session.begin_nested():
+                eligibility = _get_opinion_source_eligibility(
+                    session,
+                    opinion_content_id=claim.opinion_content_id,
+                )
+                if eligibility != "eligible":
+                    if eligibility == "missing":
+                        _mark_missing_source(session, claim=claim)
+                        return ProcessWorkResult(work_id=claim.id, status="missing_source")
+                    _mark_ineligible_source(session, claim=claim, reason=eligibility)
+                    return ProcessWorkResult(work_id=claim.id, status="ineligible_source")
                 _translate_opinion_source(
                     session,
                     claim=claim,
@@ -925,6 +969,9 @@ class OpinionSource:
     source_raw_language_code: str | None
     source_language_provider: LanguageDetectionProvider | None
     source_language_confidence: float | None
+
+
+OpinionSourceEligibility = Literal["eligible", "hidden", "deleted_author", "missing"]
 
 
 @dataclass(frozen=True)
@@ -1079,12 +1126,44 @@ def _fetch_opinion_source(
             OpinionContent.source_language_provider,
             OpinionContent.source_language_confidence,
         )
+        .select_from(OpinionContent)
         .join(Opinion, Opinion.id == OpinionContent.opinion_id)
+        .join(User, User.id == Opinion.author_id)
         .join(Conversation, Conversation.id == Opinion.conversation_id)
         .where(
             and_(
                 OpinionContent.id == opinion_content_id,
-                Opinion.current_content_id == OpinionContent.id,
+                Opinion.current_content_id.is_not(None),
+                Conversation.current_content_id.is_not(None),
+                Conversation.is_importing.is_(False),
+                User.is_deleted.is_(False),
+                ~select(OpinionModeration.id)
+                .where(
+                    and_(
+                        OpinionModeration.opinion_id == Opinion.id,
+                        OpinionModeration.moderation_action == OpinionModerationAction.hide,
+                        OpinionModeration.deleted_at.is_(None),
+                    )
+                )
+                .exists(),
+                or_(
+                    Opinion.current_content_id == OpinionContent.id,
+                    select(AnalysisSnapshotOpinion.id)
+                    .join(
+                        ConversationViewSnapshot,
+                        ConversationViewSnapshot.analysis_snapshot_id
+                        == AnalysisSnapshotOpinion.analysis_snapshot_id,
+                    )
+                    .where(
+                        and_(
+                            AnalysisSnapshotOpinion.opinion_content_id == OpinionContent.id,
+                            AnalysisSnapshotOpinion.opinion_id == Opinion.id,
+                            ConversationViewSnapshot.conversation_id == Conversation.id,
+                            ConversationViewSnapshot.activated_at.is_not(None),
+                        )
+                    )
+                    .exists(),
+                ),
             )
         )
         .limit(1)
@@ -1102,6 +1181,40 @@ def _fetch_opinion_source(
         source_language_provider=row.source_language_provider,
         source_language_confidence=row.source_language_confidence,
     )
+
+
+def _get_opinion_source_eligibility(
+    session: Session,
+    *,
+    opinion_content_id: int,
+) -> OpinionSourceEligibility:
+    row = session.execute(
+        select(
+            User.is_deleted,
+            select(OpinionModeration.id)
+            .where(
+                and_(
+                    OpinionModeration.opinion_id == Opinion.id,
+                    OpinionModeration.moderation_action == OpinionModerationAction.hide,
+                    OpinionModeration.deleted_at.is_(None),
+                )
+            )
+            .exists()
+            .label("is_hidden"),
+        )
+        .select_from(OpinionContent)
+        .join(Opinion, Opinion.id == OpinionContent.opinion_id)
+        .join(User, User.id == Opinion.author_id)
+        .where(OpinionContent.id == opinion_content_id)
+        .limit(1)
+    ).one_or_none()
+    if row is None:
+        return "missing"
+    if row.is_deleted:
+        return "deleted_author"
+    if row.is_hidden:
+        return "hidden"
+    return "eligible"
 
 
 def _fetch_survey_question_source(
@@ -1307,8 +1420,7 @@ def _has_fresh_conversation_translation(
         select(ConversationContentTranslation.source_language_code).where(
             and_(
                 ConversationContentTranslation.conversation_content_id == source.content_id,
-                ConversationContentTranslation.display_language_code
-                == claim.display_language_code,
+                ConversationContentTranslation.display_language_code == claim.display_language_code,
             )
         )
     ).first()
@@ -1331,8 +1443,7 @@ def _has_fresh_project_translation(
         ).where(
             and_(
                 ProjectContentTranslation.project_content_id == source.content_id,
-                ProjectContentTranslation.display_language_code
-                == claim.display_language_code,
+                ProjectContentTranslation.display_language_code == claim.display_language_code,
                 ProjectContentTranslation.deleted_at.is_(None),
             )
         )
@@ -1374,8 +1485,7 @@ def _has_fresh_survey_question_translation(
     question_row = session.execute(
         select(SurveyQuestionContentTranslation.source_language_code).where(
             and_(
-                SurveyQuestionContentTranslation.survey_question_content_id
-                == source.content_id,
+                SurveyQuestionContentTranslation.survey_question_content_id == source.content_id,
                 SurveyQuestionContentTranslation.display_language_code
                 == claim.display_language_code,
             )
@@ -1427,8 +1537,7 @@ def _has_fresh_ranking_item_translation(
         select(RankingItemContentTranslation.source_language_code).where(
             and_(
                 RankingItemContentTranslation.ranking_item_content_id == source.content_id,
-                RankingItemContentTranslation.display_language_code
-                == claim.display_language_code,
+                RankingItemContentTranslation.display_language_code == claim.display_language_code,
             )
         )
     ).first()
@@ -1524,9 +1633,7 @@ def _translate_conversation_source(
         )
         body_result_by_language = {
             language_code: result
-            for language_code, result in _results_by_display_language_code(
-                body_results
-            ).items()
+            for language_code, result in _results_by_display_language_code(body_results).items()
         }
 
     for display_language_code, title_result in title_result_by_language.items():
@@ -1685,9 +1792,7 @@ def _translate_project_source(
                 set_={
                     "translated_title": title_result.translated_text,
                     "translated_subtitle": (
-                        subtitle_result.translated_text
-                        if subtitle_result is not None
-                        else None
+                        subtitle_result.translated_text if subtitle_result is not None else None
                     ),
                     "translated_body": translated_body,
                     "translated_body_plain_text": translated_body_plain_text,
@@ -1726,9 +1831,7 @@ def _translate_opinion_source(
         mime_type="text/html",
     )
     for localized_result in translation_results:
-        translated_content = sanitize_translated_html(
-            localized_result.result.translated_text
-        )
+        translated_content = sanitize_translated_html(localized_result.result.translated_text)
         translated_content_plain_text = html_to_counted_text(translated_content)
         source_metadata = build_translation_source_metadata_from_results(
             [localized_result.result],
@@ -1825,9 +1928,7 @@ def _translate_ranking_item_source(
             else None
         )
         translated_body_plain_text = (
-            html_to_counted_text(translated_body_html)
-            if translated_body_html is not None
-            else None
+            html_to_counted_text(translated_body_html) if translated_body_html is not None else None
         )
         source_metadata = build_translation_source_metadata_from_results(
             [title_result, *([] if body_result is None else [body_result])],
@@ -1908,9 +2009,7 @@ def _translate_survey_question_source(
             target_language_code=claim.display_language_code.value,
             mime_type="text/plain",
         )
-        option_results_by_id[option.content_id] = _results_by_display_language_code(
-            option_results
-        )
+        option_results_by_id[option.content_id] = _results_by_display_language_code(option_results)
 
     for display_language_code, question_result in question_result_by_language.items():
         if any(
@@ -2112,6 +2211,25 @@ def _mark_missing_source(session: Session, *, claim: ClaimedContentTranslationWo
         claim=claim,
         error_code="missing_source",
         error_message="Source content no longer exists or is not current",
+    )
+
+
+def _mark_ineligible_source(
+    session: Session,
+    *,
+    claim: ClaimedContentTranslationWork,
+    reason: Literal["hidden", "deleted_author"],
+) -> None:
+    error_message = (
+        "Opinion is hidden"
+        if reason == "hidden"
+        else "Opinion author account is deleted"
+    )
+    _mark_failed(
+        session,
+        claim=claim,
+        error_code="ineligible_source",
+        error_message=error_message,
     )
 
 

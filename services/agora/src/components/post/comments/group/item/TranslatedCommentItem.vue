@@ -19,7 +19,6 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
 import type {
   DisplayedOpinionItem,
@@ -27,15 +26,9 @@ import type {
   ParticipationMode,
   SurveyGateSummary,
 } from "src/shared/types/zod";
-import { useLanguageStore } from "src/stores/language";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
-import type { ContentTranslationDisplayMode } from "src/utils/translation/contentTranslation";
-import { getContentTranslationSourceLanguageLabel } from "src/utils/translation/contentTranslation";
-import {
-  type OpinionContentTranslationPreview,
-  useOpinionContentTranslationPreview,
-} from "src/utils/translation/useContentTranslationPreview";
-import { computed, ref } from "vue";
+import { useOpinionItemDisplayContent } from "src/utils/translation/useOpinionItemDisplayContent";
+import { computed } from "vue";
 
 import CommentItem from "./CommentItem.vue";
 
@@ -58,66 +51,8 @@ const emit = defineEmits<{
   mutedComment: [];
 }>();
 
-const translationSubject = computed(() => ({
-  kind: "opinion" as const,
-  conversationSlugId: props.postSlugId,
-  opinionSlugId: props.commentItem.opinionSlugId,
-}));
-const { displayLanguage } = storeToRefs(useLanguageStore());
-const hasRequestedTranslation = ref(false);
-
-const { preview: requestedTranslationPreview, setMode: setRequestedTranslationMode } =
-  useOpinionContentTranslationPreview({
-    subject: translationSubject,
-    enabled: computed(() => hasRequestedTranslation.value),
-    sourceLanguageCode: computed(() => props.commentItem.sourceLanguageCode),
-  });
-
-const initialTranslationPreview = computed<
-  OpinionContentTranslationPreview | undefined
->(() => {
-  const displayContent = props.commentItem.displayContent;
-  if (displayContent === undefined) {
-    return undefined;
-  }
-  const translationControl = displayContent.translationControl;
-  if (translationControl === null) {
-    return undefined;
-  }
-  const sourceLanguageLabel = getContentTranslationSourceLanguageLabel({
-    sourceLanguage: undefined,
-    fallbackLanguageCode: props.commentItem.sourceLanguageCode,
-    fallbackLabel: translationControl.sourceLanguageLabel,
-    displayLanguage: displayLanguage.value,
-  });
-
-  if (displayContent.status === "available" && displayContent.mode === "translated") {
-    return {
-      isAvailable: true,
-      isLoadingInitialTranslation: false,
-      mode: "translated",
-      sourceLanguageLabel,
-      translationStatus: translationControl.status,
-      translatedOpinion: displayContent.content.content,
-    };
-  }
-
-  return {
-    isAvailable: true,
-    isLoadingInitialTranslation: false,
-    mode: "original",
-    sourceLanguageLabel,
-    translationStatus: translationControl.status,
-    translatedOpinion: "",
-  };
+const { translationPreview, setTranslationMode } = useOpinionItemDisplayContent({
+  conversationSlugId: computed(() => props.postSlugId),
+  opinionItem: computed(() => props.commentItem),
 });
-
-const translationPreview = computed(
-  () => requestedTranslationPreview.value ?? initialTranslationPreview.value
-);
-
-function setTranslationMode(mode: ContentTranslationDisplayMode): void {
-  hasRequestedTranslation.value = true;
-  void setRequestedTranslationMode(mode);
-}
 </script>

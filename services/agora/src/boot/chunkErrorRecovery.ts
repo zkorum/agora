@@ -1,18 +1,16 @@
-import { isChunkLoadError, reloadForChunkError } from "src/utils/error/chunkError";
+import {
+  isChunkLoadError,
+  reloadForChunkError,
+} from "src/utils/error/chunkError";
 
 import { defineBoot } from "#q-app/wrappers";
 
 export default defineBoot(({ app }) => {
-  // Vite fires this event when a dynamic import's module preload link fails.
-  // Calling preventDefault() suppresses the unhandled rejection.
-  window.addEventListener("vite:preloadError", (event) => {
-    event.preventDefault();
-    reloadForChunkError();
-  });
-
-  // Catch chunk errors that surface as unhandled promise rejections
-  // (e.g., lazy-loaded route components that fail to fetch).
-  // Replaces the inline script that was previously in index.html.
+  // Vite's `vite:preloadError` event must remain uncancelled so lazy imports
+  // reject normally. Route imports then reach Router.onError with their target
+  // URL; other imports reach this fallback. Cancelling the Vite event instead
+  // resolves the import as undefined, which Vue Router reports misleadingly as
+  // "Couldn't resolve component".
   window.addEventListener("unhandledrejection", (event) => {
     if (isChunkLoadError(event.reason)) {
       event.preventDefault();

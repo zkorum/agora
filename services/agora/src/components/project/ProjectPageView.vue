@@ -16,7 +16,7 @@
           :key="selectedBannerImageUrl"
           class="project-page-view__banner-image"
           :src="selectedBannerImageUrl"
-            :alt="t('bannerImageAlt', { title: displayedProjectContent.title })"
+          :alt="t('bannerImageAlt', { title: displayedProjectContent.title })"
         />
         <div class="project-page-view__banner-grid"></div>
         <div
@@ -164,7 +164,6 @@
             :attributions="project.attributions"
             :contact="project.contact"
             :language-code="selectedLanguage"
-            :show-attribution-title="true"
           />
         </div>
 
@@ -182,9 +181,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { getLanguageTextDirection } from "src/shared/languages";
 import type { LocalizedContentTranslationStatus } from "src/shared/types/zod";
 import { useProjectContentQuery } from "src/utils/api/contentTranslation/useContentTranslationQueries";
-import {
-  type ContentTranslationDisplayMode,
-} from "src/utils/translation/contentTranslation";
+import { type ContentTranslationDisplayMode } from "src/utils/translation/contentTranslation";
 import { computed, ref, watch } from "vue";
 
 import ProjectActivityCard from "./ProjectActivityCard.vue";
@@ -276,7 +273,8 @@ const projectTranslationControl = computed<
     }
   | undefined
 >(() => {
-  const translationControl = activeProjectDisplayContent.value.translationControl;
+  const translationControl =
+    activeProjectDisplayContent.value.translationControl;
   if (translationControl === null) {
     return undefined;
   }
@@ -337,7 +335,9 @@ const activityListKey = computed(() => {
     firstActivity === undefined
       ? "none"
       : getProjectActivityIdentity(firstActivity),
-    lastActivity === undefined ? "none" : getProjectActivityIdentity(lastActivity),
+    lastActivity === undefined
+      ? "none"
+      : getProjectActivityIdentity(lastActivity),
   ].join(":");
 });
 
@@ -371,7 +371,6 @@ function onActivitiesLoad(_index: number, done: () => void): void {
 
   emit("loadMoreActivities", done);
 }
-
 </script>
 
 <style scoped lang="scss">

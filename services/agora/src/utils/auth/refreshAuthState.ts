@@ -8,8 +8,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { api } from "src/utils/api/client";
 import {
   buildAuthorizationHeader,
-  buildUcan,
-  createDidIfDoesNotExist,
+  buildUcanForRequest,
 } from "src/utils/crypto/ucan/operation";
 
 import { resetLocalAuthState } from "./localAuthState";
@@ -33,10 +32,7 @@ async function buildEncodedUcanForGeneratedRequest({
   url: string;
   method: string | undefined;
 }): Promise<string> {
-  const { did, prefixedKey } = await createDidIfDoesNotExist();
-  return await buildUcan({
-    did,
-    prefixedKey,
+  return await buildUcanForRequest({
     pathname: url,
     method,
   });
@@ -91,9 +87,7 @@ async function applyRefreshedAuthState({
   return { authStateChanged, needsCacheRefresh: authStateChanged };
 }
 
-export async function refreshAuthStateFromBackend(): Promise<
-  AuthStateRefreshResult
-> {
+export async function refreshAuthStateFromBackend(): Promise<AuthStateRefreshResult> {
   try {
     const loginStatus = await getDeviceLoginStatus();
     return await applyRefreshedAuthState({ loginStatus });

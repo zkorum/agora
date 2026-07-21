@@ -1,6 +1,6 @@
 <template>
   <section v-if="entries.length > 0" class="project-attribution-section">
-    <h3>{{ title }}</h3>
+    <h2>{{ title }}</h2>
 
     <div class="project-attribution-section__list">
       <component
@@ -130,7 +130,7 @@ function logoStyle(color: string): { backgroundColor: string } {
   gap: 0.75rem;
 }
 
-h3 {
+h2 {
   margin: 0;
   color: $ink-light;
   font-size: 0.78rem;

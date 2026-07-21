@@ -73,6 +73,7 @@
           they can show the current translated display content.
         </p>
         <MaxDiffItemListSection
+          conversation-slug-id="dev-maxdiff-translation"
           section-title="Community ranking"
           subtitle="Read-only list should update immediately when translation completes."
           :items="resultItems"
@@ -109,7 +110,7 @@ import {
   createMaxDiffCandidateDisplaySnapshot,
   type MaxDiffCandidateDisplayItem,
 } from "src/utils/maxdiffCandidateDisplay";
-import { getRankingItemDisplayText } from "src/utils/translation/useRankingItemDisplayContent";
+import { getRankingItemDisplayText } from "src/utils/translation/rankingItemDisplayText";
 import { computed, ref } from "vue";
 
 const { isActive } = usePageLayout({

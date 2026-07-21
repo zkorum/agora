@@ -85,7 +85,6 @@
             :attributions="project.attributions"
             :contact="project.contact"
             :language-code="selectedLanguage"
-            :show-attribution-title="true"
           />
 
           <ProjectPageFooter
@@ -169,7 +168,7 @@ function t(
 .project-conversation-view {
   box-sizing: border-box;
   min-height: 100dvh;
-  overflow-x: hidden;
+  overflow-x: clip;
   background:
     radial-gradient(
       circle at 1px 1px,
@@ -332,10 +331,6 @@ main {
   gap: 1rem;
 }
 
-.project-conversation-view__action-bar {
-  padding-block: 0.25rem 0;
-}
-
 .project-conversation-view__toolbar {
   display: flex;
   justify-content: flex-end;
@@ -353,7 +348,13 @@ main {
 .project-conversation-view__aside {
   grid-area: aside;
   position: sticky;
-  top: 1.25rem;
+  top: 0;
+}
+
+@media (min-width: 861px) {
+  .project-conversation-view__aside {
+    padding-block-start: 1.5rem;
+  }
 }
 
 @media (max-width: 860px) {

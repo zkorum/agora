@@ -368,6 +368,13 @@ function generateMockOpinion({
     updatedAt: new Date("2025-11-20"),
     opinion: mockStatements[index % mockStatements.length],
     sourceLanguageCode: null,
+    displayContent: {
+      sourceVersion: "00000000-0000-4000-8000-000000000001",
+      status: "available",
+      mode: "original",
+      content: { content: mockStatements[index % mockStatements.length] },
+      translationControl: null,
+    },
     numParticipants,
     numAgrees,
     numDisagrees,

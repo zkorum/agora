@@ -40,12 +40,13 @@
             >
               <span class="item-number">{{ index + 1 }}</span>
               <div class="item-details">
-                <ZKHtmlContent
+                <MaxDiffItemListContent
                   class="item-content"
-                  :html-body="item.title"
+                  :conversation-slug-id="conversationSlugId"
+                  :item-slug-id="item.slugId"
+                  :display-content="item.displayContent"
                   :compact-mode="compactMode"
-                  :enable-links="false"
-                  content-role="title"
+                  @display-state-changed="updateItemDisplayState"
                 />
                 <div v-if="item.score !== null" class="item-meta">
                   <div class="score-bar-container">
@@ -57,7 +58,12 @@
                     </div>
                   </div>
                   <span class="score-text">
-                    {{ scoreLabel.replace("{score}", (item.score * 100).toFixed(0) + "%") }}
+                    {{
+                      scoreLabel.replace(
+                        "{score}",
+                        (item.score * 100).toFixed(0) + "%"
+                      )
+                    }}
                   </span>
                 </div>
                 <div v-else-if="scoreLabel !== ''" class="item-meta">
@@ -78,10 +84,13 @@ import AnalysisSectionWrapper from "src/components/post/analysis/common/Analysis
 import AnalysisTitleHeader from "src/components/post/analysis/common/AnalysisTitleHeader.vue";
 import CompactFadeContainer from "src/components/post/analysis/common/CompactFadeContainer.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
-import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { htmlToCountedText } from "src/shared/shared";
 import type { RankingItemDisplayedContent } from "src/shared/types/zod";
-import { computed } from "vue";
+import { computed, ref } from "vue";
+
+import MaxDiffItemListContent, {
+  type MaxDiffItemListDisplayState,
+} from "./MaxDiffItemListContent.vue";
 
 export interface MaxDiffListItem {
   slugId: string;
@@ -100,6 +109,7 @@ interface ClickItemData {
 
 const props = defineProps<{
   sectionTitle: string;
+  conversationSlugId: string;
   subtitle: string | null;
   items: MaxDiffListItem[];
   isLoading: boolean;
@@ -115,17 +125,51 @@ const COMPACT_LIMIT = 3;
 const EXPANDABLE_COMPACT_TITLE_LENGTH = 220;
 
 const displayItems = computed(() =>
-  props.compactMode ? props.items.slice(0, COMPACT_LIMIT) : props.items,
+  props.compactMode ? props.items.slice(0, COMPACT_LIMIT) : props.items
 );
 
 const hasMore = computed(() => props.items.length > COMPACT_LIMIT);
+
+const itemDisplayStateBySlugId = ref(
+  new Map<string, MaxDiffItemListDisplayState>()
+);
+
+function getItemDisplayState(
+  item: MaxDiffListItem
+): MaxDiffItemListDisplayState {
+  const state = itemDisplayStateBySlugId.value.get(item.slugId);
+  if (
+    state !== undefined &&
+    state.sourceVersion === item.displayContent.sourceVersion
+  ) {
+    return state;
+  }
+
+  return {
+    itemSlugId: item.slugId,
+    sourceVersion: item.displayContent.sourceVersion,
+    title: item.title,
+    body: item.body,
+    displayContent: item.displayContent,
+  };
+}
+
+function updateItemDisplayState(state: MaxDiffItemListDisplayState): void {
+  const nextState = new Map(itemDisplayStateBySlugId.value);
+  nextState.set(state.itemSlugId, state);
+  itemDisplayStateBySlugId.value = nextState;
+}
 
 function hasBodyContent(body: string | null): boolean {
   return body !== null && htmlToCountedText(body).trim().length > 0;
 }
 
 function canOpenItem(item: MaxDiffListItem): boolean {
-  if (hasBodyContent(item.body)) {
+  const displayState = getItemDisplayState(item);
+  if (displayState.displayContent === undefined) {
+    return false;
+  }
+  if (hasBodyContent(displayState.body)) {
     return true;
   }
   if (item.externalUrl !== null) {
@@ -133,7 +177,8 @@ function canOpenItem(item: MaxDiffListItem): boolean {
   }
   return (
     props.compactMode &&
-    htmlToCountedText(item.title).length > EXPANDABLE_COMPACT_TITLE_LENGTH
+    htmlToCountedText(displayState.title).length >
+      EXPANDABLE_COMPACT_TITLE_LENGTH
   );
 }
 
@@ -141,9 +186,13 @@ function handleItemClick(item: MaxDiffListItem): void {
   if (!canOpenItem(item)) {
     return;
   }
+  const displayState = getItemDisplayState(item);
+  if (displayState.displayContent === undefined) {
+    return;
+  }
   props.onClickItem({
-    itemSlugId: item.slugId,
-    displayContent: item.displayContent,
+    itemSlugId: displayState.itemSlugId,
+    displayContent: displayState.displayContent,
     externalUrl: item.externalUrl,
   });
 }
@@ -240,5 +289,4 @@ function handleItemClick(item: MaxDiffListItem): void {
 .unranked-text {
   font-style: italic;
 }
-
 </style>

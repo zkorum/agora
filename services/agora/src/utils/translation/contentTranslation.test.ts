@@ -4,7 +4,9 @@ import {
   getContentTranslationSourceLanguageLabel,
   getConversationLanguageSettingSourceLanguageCode,
   getLanguageDisplayName,
+  isRequestedTranslationPreviewCurrent,
   isSameContentLanguage,
+  resolveContentTranslationPollingOutcome,
   resolveContentTranslationState,
   type ResolveContentTranslationStateParams,
 } from "./contentTranslation";
@@ -18,7 +20,9 @@ const defaultResolveStateParams: ResolveContentTranslationStateParams = {
   hasTranslatedContent: true,
 };
 
-function resolveState(overrides: Partial<ResolveContentTranslationStateParams>) {
+function resolveState(
+  overrides: Partial<ResolveContentTranslationStateParams>
+) {
   return resolveContentTranslationState({
     ...defaultResolveStateParams,
     ...overrides,
@@ -223,5 +227,78 @@ describe("getConversationLanguageSettingSourceLanguageCode", () => {
         },
       })
     ).toBe("fr");
+  });
+});
+
+describe("resolveContentTranslationPollingOutcome", () => {
+  it("treats business failures as terminal while resuming polling", () => {
+    expect(
+      resolveContentTranslationPollingOutcome({
+        responseSuccess: false,
+        translationStatus: undefined,
+        hasTranslatedVariant: false,
+      })
+    ).toBe("terminal_failure");
+  });
+
+  it("treats a failed translation status as terminal", () => {
+    expect(
+      resolveContentTranslationPollingOutcome({
+        responseSuccess: true,
+        translationStatus: "failed",
+        hasTranslatedVariant: false,
+      })
+    ).toBe("terminal_failure");
+  });
+
+  it("requires translated content before considering polling complete", () => {
+    expect(
+      resolveContentTranslationPollingOutcome({
+        responseSuccess: true,
+        translationStatus: "completed",
+        hasTranslatedVariant: false,
+      })
+    ).toBe("pending");
+    expect(
+      resolveContentTranslationPollingOutcome({
+        responseSuccess: true,
+        translationStatus: "completed",
+        hasTranslatedVariant: true,
+      })
+    ).toBe("completed");
+  });
+});
+
+describe("isRequestedTranslationPreviewCurrent", () => {
+  const sourceVersion = "00000000-0000-4000-8000-000000000001";
+
+  it("disables a cached preview when translation control disappears", () => {
+    expect(
+      isRequestedTranslationPreviewCurrent({
+        requestedSourceVersion: sourceVersion,
+        currentSourceVersion: sourceVersion,
+        hasTranslationControl: false,
+      })
+    ).toBe(false);
+  });
+
+  it("disables a cached preview after the source revision changes", () => {
+    expect(
+      isRequestedTranslationPreviewCurrent({
+        requestedSourceVersion: sourceVersion,
+        currentSourceVersion: "00000000-0000-4000-8000-000000000002",
+        hasTranslationControl: true,
+      })
+    ).toBe(false);
+  });
+
+  it("keeps a requested preview for the current controlled revision", () => {
+    expect(
+      isRequestedTranslationPreviewCurrent({
+        requestedSourceVersion: sourceVersion,
+        currentSourceVersion: sourceVersion,
+        hasTranslationControl: true,
+      })
+    ).toBe(true);
   });
 });

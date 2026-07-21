@@ -1,5 +1,8 @@
 <template>
-  <PullToRefresh :can-refresh="canStartConversationRefresh" @refresh="handleRefresh">
+  <PullToRefresh
+    :can-refresh="canStartConversationRefresh"
+    @refresh="handleRefresh"
+  >
     <PageLoadingSpinner v-if="isInitialLoading" />
 
     <ErrorRetryBlock
@@ -19,37 +22,48 @@
       @conversation-deleted="handleConversationDeleted"
     >
       <template #conversation-actions>
-        <div ref="actionBarElement" class="project-conversation__action-bar">
+        <ConversationStickyActionBar
+          layout="project"
+          :sticky-top="0"
+          @update:action-bar-element="setActionBarElement"
+        >
           <PostActionBar
             v-model="currentTab"
             :compact-mode="false"
             :opinion-count="displayedActionBarStats.opinionCount"
             :participant-count="displayedActionBarStats.participantCount"
             :vote-count="displayedActionBarStats.voteCount"
-            :total-participant-count="displayedActionBarStats.totalParticipantCount"
+            :total-participant-count="
+              displayedActionBarStats.totalParticipantCount
+            "
             :total-vote-count="displayedActionBarStats.totalVoteCount"
             :is-loading="isActionBarLoading"
-            :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
+            :conversation-slug-id="
+              loadedConversationData.metadata.conversationSlugId
+            "
             :conversation-title="displayedConversationTitle"
             :author-username="loadedConversationData.metadata.authorUsername"
             :on-same-tab-click="handleSameTabActionBarClick"
             :conversation-type-config="loadedConversationData.metadata"
-            :has-survey="loadedConversationData.interaction.surveyGate?.hasSurvey === true"
+            :has-survey="
+              loadedConversationData.interaction.surveyGate?.hasSurvey === true
+            "
             :enable-route-navigation="true"
             :conversation-route-context="conversationRouteContext"
           />
-        </div>
+        </ConversationStickyActionBar>
       </template>
 
       <template #conversation-toolbar>
-          <CommentSortingSelector
-            v-if="
-              currentTab === 'comment' &&
-              !isMaxDiffConversation
-            "
+        <CommentSortingSelector
+          v-if="currentTab === 'comment' && !isMaxDiffConversation"
           :filter-value="commentFilter"
-          :moderated-opinion-count="loadedConversationData.metadata.moderatedOpinionCount"
-          :hidden-opinion-count="loadedConversationData.metadata.hiddenOpinionCount"
+          :moderated-opinion-count="
+            loadedConversationData.metadata.moderatedOpinionCount
+          "
+          :hidden-opinion-count="
+            loadedConversationData.metadata.hiddenOpinionCount
+          "
           @changed-algorithm="
             (filter: CommentFilterOptions) => {
               commentFilter = filter;
@@ -59,14 +73,13 @@
       </template>
 
       <template #conversation-feed>
-        <div :style="tabContentStyle">
+        <div class="tab-content" :style="tabContentStyle">
           <router-view v-slot="{ Component }">
             <KeepAlive :max="2">
               <component
                 :is="Component"
                 :key="route.path"
                 :conversation-data="loadedConversationData"
-                :has-conversation-data="hasConversationData"
                 :moderation-history-trigger="moderationHistoryTrigger"
                 :comment-filter="commentFilter"
                 :on-view-analysis="onViewAnalysis"
@@ -87,17 +100,16 @@
     </ProjectConversationView>
 
     <FloatingBottomContainer
-      v-if="
-        hasConversationData &&
-        !isMaxDiffConversation
-      "
+      v-if="hasConversationData && !isMaxDiffConversation"
       :anchor-element="actionBarElement ?? undefined"
       :respect-drawer-offset="false"
     >
       <CommentComposer
         :post-slug-id="loadedConversationData.metadata.conversationSlugId"
         :participation-mode="loadedConversationData.metadata.participationMode"
-        :requires-event-ticket="loadedConversationData.metadata.requiresEventTicket"
+        :requires-event-ticket="
+          loadedConversationData.metadata.requiresEventTicket
+        "
         :survey-gate="loadedConversationData.interaction.surveyGate"
         :is-composer-disabled="isVotingDisabled"
         :conversation-route-context="conversationRouteContext"
@@ -113,6 +125,7 @@ import { storeToRefs } from "pinia";
 import FloatingBottomContainer from "src/components/navigation/FloatingBottomContainer.vue";
 import CommentComposer from "src/components/post/comments/CommentComposer.vue";
 import CommentSortingSelector from "src/components/post/comments/group/CommentSortingSelector.vue";
+import ConversationStickyActionBar from "src/components/post/interactionBar/ConversationStickyActionBar.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
 import ProjectConversationView from "src/components/project/ProjectConversationView.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
@@ -146,11 +159,14 @@ import {
   conversationPageTranslations,
 } from "../../../conversation/[postSlugId].i18n";
 
-usePageLayout({ enableFooter: false, enableHeader: false, enableDrawer: false });
-
 const { t } = useComponentI18n<ConversationPageTranslations>(
   conversationPageTranslations
 );
+usePageLayout({
+  enableFooter: false,
+  enableHeader: false,
+  enableDrawer: false,
+});
 const route = useRoute();
 const queryClient = useQueryClient();
 const { fetchProjectConversationPage } = useBackendProjectPageApi();
@@ -160,7 +176,9 @@ const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(
 const languageStore = useLanguageStore();
 const { displayLanguage } = storeToRefs(languageStore);
 const { changeDisplayLanguage } = languageStore;
-const pausedAnalysisActionBarStats = ref<ConversationActionBarStats | undefined>();
+const pausedAnalysisActionBarStats = ref<
+  ConversationActionBarStats | undefined
+>();
 const selectedLanguage = computed<SupportedDisplayLanguageCodes>({
   get: () => displayLanguage.value,
   set: (newLanguage) => {
@@ -187,7 +205,8 @@ const conversationRouteContext = computed<ConversationRouteContext>(() => ({
 }));
 
 const conversationConfig: ConversationParentConfig = {
-  analysisRouteName: "/project/[projectSlug]/conversation/[postSlugId]/analysis",
+  analysisRouteName:
+    "/project/[projectSlug]/conversation/[postSlugId]/analysis",
   commentRouteNames: [
     "/project/[projectSlug]/conversation/[postSlugId]/",
     "/project/[projectSlug]/conversation/[postSlugId]",
@@ -219,10 +238,11 @@ const {
   pendingScrollOverride,
 } = useConversationParentState(conversationConfig);
 
-const { displayedTitle: displayedConversationTitle } = useConversationDisplayContent({
-  conversationData,
-  initialDisplayContent: conversationDisplayContent,
-});
+const { displayedTitle: displayedConversationTitle } =
+  useConversationDisplayContent({
+    conversationData,
+    initialDisplayContent: conversationDisplayContent,
+  });
 
 const projectConversationQuery = useQuery({
   queryKey: computed(() => [
@@ -248,7 +268,9 @@ const projectConversationQuery = useQuery({
   ),
   retry: false,
 });
-const projectConversationData = computed(() => projectConversationQuery.data.value);
+const projectConversationData = computed(
+  () => projectConversationQuery.data.value
+);
 
 const {
   actionBarStats,
@@ -350,7 +372,8 @@ watch(conversationData, async (data, previousData) => {
   if (
     previousData !== undefined &&
     data !== undefined &&
-    data.metadata.conversationSlugId !== previousData.metadata.conversationSlugId
+    data.metadata.conversationSlugId !==
+      previousData.metadata.conversationSlugId
   ) {
     await invalidateUserVotes(data.metadata.conversationSlugId);
   }
@@ -379,6 +402,10 @@ function canStartConversationRefresh(): boolean {
   return getScrollTop({}) <= 2;
 }
 
+function setActionBarElement(element: HTMLElement | null): void {
+  actionBarElement.value = element;
+}
+
 async function refetchInitialData(): Promise<void> {
   await Promise.all([
     conversationQuery.refetch(),
@@ -386,21 +413,3 @@ async function refetchInitialData(): Promise<void> {
   ]);
 }
 </script>
-
-<style scoped lang="scss">
-.project-conversation__action-bar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  min-width: 0;
-  padding: 0 0 0.65rem;
-  background:
-    radial-gradient(
-      circle at 1px 1px,
-      rgba($ink-darkest, 0.035) 1px,
-      transparent 0
-    ),
-    $app-background-color;
-  background-size: 24px 24px;
-}
-</style>

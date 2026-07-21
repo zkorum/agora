@@ -3,9 +3,25 @@
  * Extracted to avoid duplication between composable and store
  */
 
-import type { ConversationMultilingualSetting } from "src/shared/types/zod";
+import type {
+  ConversationMultilingualSetting,
+  OrganizationProperties,
+} from "src/shared/types/zod";
 
-import type { ConversationDraft } from "./conversationDraft.types";
+import type {
+  ConversationDraft,
+  PostAsSettings,
+} from "./conversationDraft.types";
+
+export type DraftPublicationIdentityResolution =
+  | { status: "resolved"; organizationSlug: string | undefined }
+  | { status: "profile_pending" }
+  | { status: "organization_unavailable" };
+
+interface DraftPublicationProfile {
+  dataLoaded: boolean;
+  organizationList: readonly OrganizationProperties[];
+}
 
 export function areConversationMultilingualSettingsEqual({
   left,
@@ -18,13 +34,87 @@ export function areConversationMultilingualSettingsEqual({
     return false;
   }
 
-  if (left.additionalLanguageCodes.length !== right.additionalLanguageCodes.length) {
+  if (
+    left.additionalLanguageCodes.length !== right.additionalLanguageCodes.length
+  ) {
     return false;
   }
 
   return left.additionalLanguageCodes.every((languageCode) =>
     right.additionalLanguageCodes.includes(languageCode)
   );
+}
+
+export function resolveSelectedOrganizationSlug({
+  organizationIdentifier,
+  organizationList,
+}: {
+  organizationIdentifier: string;
+  organizationList: readonly OrganizationProperties[];
+}): string | undefined {
+  let legacyOrganizationSlug: string | undefined;
+  let hasAmbiguousLegacyName = false;
+
+  for (const organization of organizationList) {
+    if (organization.slug === organizationIdentifier) {
+      return organization.slug;
+    }
+
+    if (organization.name === organizationIdentifier) {
+      if (legacyOrganizationSlug === undefined) {
+        legacyOrganizationSlug = organization.slug;
+      } else {
+        hasAmbiguousLegacyName = true;
+      }
+    }
+  }
+
+  return hasAmbiguousLegacyName ? undefined : legacyOrganizationSlug;
+}
+
+export function resolveDraftPublicationIdentity({
+  postAs,
+  profile,
+}: {
+  postAs: PostAsSettings;
+  profile: DraftPublicationProfile;
+}): DraftPublicationIdentityResolution {
+  if (!postAs.postAsOrganization) {
+    return { status: "resolved", organizationSlug: undefined };
+  }
+
+  if (!profile.dataLoaded) {
+    return { status: "profile_pending" };
+  }
+
+  const organizationSlug = resolveSelectedOrganizationSlug({
+    organizationIdentifier: postAs.organizationName,
+    organizationList: profile.organizationList,
+  });
+  return organizationSlug === undefined
+    ? { status: "organization_unavailable" }
+    : { status: "resolved", organizationSlug };
+}
+
+export async function resolveDraftPublicationIdentityAtBoundary({
+  postAs,
+  getProfile,
+  loadProfile,
+}: {
+  postAs: PostAsSettings;
+  getProfile: () => DraftPublicationProfile;
+  loadProfile: () => Promise<void>;
+}): Promise<DraftPublicationIdentityResolution> {
+  const initialResolution = resolveDraftPublicationIdentity({
+    postAs,
+    profile: getProfile(),
+  });
+  if (initialResolution.status !== "profile_pending") {
+    return initialResolution;
+  }
+
+  await loadProfile();
+  return resolveDraftPublicationIdentity({ postAs, profile: getProfile() });
 }
 
 /**

@@ -124,7 +124,6 @@ import type {
   ConversationTypeConfig,
   EventSlug,
   ExternalSourceConfig,
-  OrganizationProperties,
   ParticipationMode,
   PreferredOpinionGroupCount,
 } from "src/shared/types/zod";
@@ -241,17 +240,13 @@ const multilingualSetting = defineModel<ConversationMultilingualSetting>(
 const title = defineModel<string>("title", { required: true });
 const content = defineModel<string>("content", { required: true });
 
-function getOrganizationIdentifier(organization: OrganizationProperties): string {
-  return organization.slug ?? organization.name;
-}
-
 const selectedOrganization = computed(() => {
   if (!postAs.value.postAsOrganization) {
     return undefined;
   }
 
   return profileData.value.organizationList.find(
-    (org) => getOrganizationIdentifier(org) === postAs.value.organizationName
+    (organization) => organization.slug === postAs.value.organizationName
   );
 });
 

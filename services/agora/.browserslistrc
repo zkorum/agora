@@ -1,0 +1,10 @@
+# Vue 3 requires native ES2016 support. The explicit floors also approximate
+# older Chromium WebViews used by embedded browsers such as WeChat.
+# Keep these explicit engine floors synchronized with build.cssTarget in
+# quasar.config.ts; Vite does not read Browserslist for CSS syntax lowering.
+defaults
+Chrome >= 51
+Firefox >= 54
+Safari >= 10
+iOS >= 10
+Edge >= 15

@@ -7,31 +7,16 @@ import { computed, ref, toValue, watch } from "vue";
 import {
   type ContentTranslationDisplayMode,
   getContentTranslationSourceLanguageLabel,
+  isRequestedTranslationPreviewCurrent,
 } from "./contentTranslation";
+import {
+  resolveRankingItemDisplayedContent,
+  resolveRankingItemDisplayText,
+} from "./rankingItemDisplayText";
 import {
   type RankingItemContentTranslationPreview,
   useRankingItemContentTranslationPreview,
 } from "./useContentTranslationPreview";
-
-export interface RankingItemDisplayedText {
-  title: string;
-  body: string | null;
-}
-
-export function getRankingItemDisplayText({
-  displayContent,
-}: {
-  displayContent: RankingItemDisplayedContent;
-}): RankingItemDisplayedText {
-  if (displayContent.status !== "available") {
-    return { title: "", body: null };
-  }
-
-  return {
-    title: displayContent.content.title,
-    body: displayContent.content.bodyHtml ?? null,
-  };
-}
 
 export function useRankingItemDisplayContent({
   conversationSlugId,
@@ -42,23 +27,48 @@ export function useRankingItemDisplayContent({
   itemSlugId: MaybeRefOrGetter<string | undefined>;
   displayContent: MaybeRefOrGetter<RankingItemDisplayedContent | undefined>;
 }) {
-  const { displayLanguage } = storeToRefs(useLanguageStore());
-  const hasRequestedTranslation = ref(false);
+  const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
+  const requestedTranslationSourceVersion = ref<string | undefined>();
+  const resolvedItemSlugId = computed(() => toValue(itemSlugId));
+  const sourceVersion = computed(() => toValue(displayContent)?.sourceVersion);
+  const spokenLanguageKey = computed(() =>
+    [...spokenLanguages.value].sort().join("\u0000")
+  );
+  const hasTranslationControl = computed(() => {
+    const currentDisplayContent = toValue(displayContent);
+    return (
+      currentDisplayContent !== undefined &&
+      currentDisplayContent.translationControl !== null
+    );
+  });
+  const hasCurrentRequestedTranslation = computed(() =>
+    isRequestedTranslationPreviewCurrent({
+      requestedSourceVersion: requestedTranslationSourceVersion.value,
+      currentSourceVersion: sourceVersion.value,
+      hasTranslationControl: hasTranslationControl.value,
+    })
+  );
 
   const translationSubject = computed(() => ({
     kind: "ranking_item" as const,
     conversationSlugId: toValue(conversationSlugId),
-    itemSlugId: toValue(itemSlugId) ?? "",
+    itemSlugId: resolvedItemSlugId.value ?? "",
+    sourceVersion: sourceVersion.value ?? "",
   }));
 
-  const { preview: requestedTranslationPreview, setMode: setRequestedTranslationMode } =
-    useRankingItemContentTranslationPreview({
-      subject: translationSubject,
-      enabled: computed(
-        () => hasRequestedTranslation.value && toValue(itemSlugId) !== undefined
-      ),
-      sourceLanguageCode: undefined,
-    });
+  const {
+    preview: requestedTranslationPreview,
+    setMode: setRequestedTranslationMode,
+  } = useRankingItemContentTranslationPreview({
+    subject: translationSubject,
+    enabled: computed(
+      () =>
+        hasCurrentRequestedTranslation.value &&
+        resolvedItemSlugId.value !== undefined &&
+        sourceVersion.value !== undefined
+    ),
+    sourceLanguageCode: undefined,
+  });
 
   const initialTranslationPreview = computed<
     RankingItemContentTranslationPreview | undefined
@@ -90,8 +100,8 @@ export function useRankingItemDisplayContent({
         mode: "translated",
         sourceLanguageLabel,
         translationStatus: translationControl.status,
-        translatedTitle: currentDisplayContent.content.title,
-        translatedBody: currentDisplayContent.content.bodyHtml,
+        originalContent: undefined,
+        translatedContent: currentDisplayContent.content,
       };
     }
 
@@ -101,8 +111,11 @@ export function useRankingItemDisplayContent({
       mode: "original",
       sourceLanguageLabel,
       translationStatus: translationControl.status,
-      translatedTitle: "",
-      translatedBody: undefined,
+      originalContent:
+        currentDisplayContent.status === "available"
+          ? currentDisplayContent.content
+          : undefined,
+      translatedContent: undefined,
     };
   });
 
@@ -110,44 +123,50 @@ export function useRankingItemDisplayContent({
     () => requestedTranslationPreview.value ?? initialTranslationPreview.value
   );
 
-  const displayedTitle = computed(() => {
-    const preview = translationPreview.value;
-    if (preview?.mode === "translated") {
-      return preview.translatedTitle;
-    }
+  const displayedText = computed(() =>
+    resolveRankingItemDisplayText({
+      displayContent: toValue(displayContent),
+      translationPreview: translationPreview.value,
+    })
+  );
+  const displayedTitle = computed(() => displayedText.value.title);
+  const displayedBody = computed(() => displayedText.value.body ?? "");
+  const resolvedDisplayContent = computed(() => {
     const currentDisplayContent = toValue(displayContent);
-    if (currentDisplayContent?.status !== "available") {
-      return "";
+    if (currentDisplayContent === undefined) {
+      return undefined;
     }
-    return currentDisplayContent.content.title;
-  });
-
-  const displayedBody = computed(() => {
-    const preview = translationPreview.value;
-    if (preview?.mode === "translated") {
-      return preview.translatedBody ?? "";
-    }
-    const currentDisplayContent = toValue(displayContent);
-    if (currentDisplayContent?.status !== "available") {
-      return "";
-    }
-    return currentDisplayContent.content.bodyHtml ?? "";
+    return resolveRankingItemDisplayedContent({
+      displayContent: currentDisplayContent,
+      translationPreview: translationPreview.value,
+    });
   });
 
   function setTranslationMode(mode: ContentTranslationDisplayMode): void {
-    hasRequestedTranslation.value = true;
+    requestedTranslationSourceVersion.value = sourceVersion.value;
     void setRequestedTranslationMode(mode);
   }
 
   function resetTranslationMode(): void {
-    hasRequestedTranslation.value = false;
+    requestedTranslationSourceVersion.value = undefined;
   }
 
-  watch([translationSubject, displayLanguage], resetTranslationMode);
+  watch(
+    [
+      () => toValue(conversationSlugId),
+      resolvedItemSlugId,
+      sourceVersion,
+      hasTranslationControl,
+      displayLanguage,
+      spokenLanguageKey,
+    ],
+    resetTranslationMode
+  );
 
   return {
     displayedTitle,
     displayedBody,
+    resolvedDisplayContent,
     translationPreview,
     setTranslationMode,
     resetTranslationMode,

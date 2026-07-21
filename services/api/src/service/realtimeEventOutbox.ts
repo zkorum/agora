@@ -14,7 +14,10 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type pino from "pino";
 import { z } from "zod";
 import type { SharedConfigSchema } from "@/shared-backend/config.js";
-import { createPostgresClient } from "@/shared-backend/db.js";
+import {
+    createPostgresClient,
+    getPrimaryDatabase,
+} from "@/shared-backend/db.js";
 import {
     conversationTable,
     conversationViewSnapshotCheckpointReasonTable,
@@ -59,17 +62,19 @@ const zodConversationCommentStatsUpdatedData = z.object({
     moderatedOpinionCount: z.number().int().nonnegative(),
     hiddenOpinionCount: z.number().int().nonnegative(),
     isClosed: z.boolean(),
-    opinionVoteCounts: z.array(
-        z
-            .object({
-                opinionSlugId: z.string().min(1),
-                numParticipants: z.number().int().nonnegative(),
-                numAgrees: z.number().int().nonnegative(),
-                numDisagrees: z.number().int().nonnegative(),
-                numPasses: z.number().int().nonnegative(),
-            })
-            .strict(),
-    ).default([]),
+    opinionVoteCounts: z
+        .array(
+            z
+                .object({
+                    opinionSlugId: z.string().min(1),
+                    numParticipants: z.number().int().nonnegative(),
+                    numAgrees: z.number().int().nonnegative(),
+                    numDisagrees: z.number().int().nonnegative(),
+                    numPasses: z.number().int().nonnegative(),
+                })
+                .strict(),
+        )
+        .default([]),
     timestamp: z.number().int().nonnegative(),
 });
 
@@ -92,6 +97,16 @@ const zodRealtimeEventOutboxNotification = z.object({
     id: z.number().int().positive(),
 });
 
+const zodLegacyContentTranslationUpdatedData = z
+    .object({
+        subject: z.record(z.string(), z.unknown()),
+        targetLanguageCode: z.string(),
+        status: z.enum(["completed", "failed"]),
+        sourceVersion: z.uuid(),
+        timestamp: z.number(),
+    })
+    .strict();
+
 interface RealtimeEventOutboxBridge {
     start: () => Promise<void>;
     shutdown: () => Promise<void>;
@@ -99,14 +114,32 @@ interface RealtimeEventOutboxBridge {
 
 type ListenerClient = Awaited<ReturnType<typeof createPostgresClient>>;
 
-interface PrimaryReplicaDb extends PostgresJsDatabase {
-    $primary: PostgresJsDatabase;
-}
-
 interface RealtimeEventOutboxRow {
     id: number;
     eventType: string;
     payload: unknown;
+}
+
+function parseContentTranslationUpdatedData(payload: unknown) {
+    const current = zodSSEContentTranslationUpdatedData.safeParse(payload);
+    if (current.success) {
+        return current.data;
+    }
+
+    const legacy = zodLegacyContentTranslationUpdatedData.safeParse(payload);
+    if (!legacy.success) {
+        return undefined;
+    }
+    const normalized = zodSSEContentTranslationUpdatedData.safeParse({
+        subject: {
+            ...legacy.data.subject,
+            sourceVersion: legacy.data.sourceVersion,
+        },
+        targetLanguageCode: legacy.data.targetLanguageCode,
+        status: legacy.data.status,
+        timestamp: legacy.data.timestamp,
+    });
+    return normalized.success ? normalized.data : undefined;
 }
 
 type RealtimeReplayEvent =
@@ -130,17 +163,6 @@ type RealtimeReplayEvent =
           event: "content_translation_updated";
           data: SSEEventDataByType["content_translation_updated"];
       };
-
-function hasPrimaryDb(db: PostgresJsDatabase): db is PrimaryReplicaDb {
-    return "$primary" in db;
-}
-
-function getPrimaryDb(db: PostgresJsDatabase): PostgresJsDatabase {
-    if (hasPrimaryDb(db)) {
-        return db.$primary;
-    }
-    return db;
-}
 
 async function fetchDisplayableGroupCountsByViewSnapshotId({
     db,
@@ -288,7 +310,7 @@ export async function queueConversationSettingsUpdatedEvent({
     conversationSlugId,
     settings,
 }: QueueConversationSettingsUpdatedEventProps): Promise<void> {
-    const primaryDb = getPrimaryDb(db);
+    const primaryDb = getPrimaryDatabase(db);
     const payload: SSEEventDataByType["conversation_settings_updated"] = {
         conversationSlugId,
         settings,
@@ -309,7 +331,7 @@ export async function queueConversationAnalysisUpdatedEventsForViewSnapshots({
         return;
     }
 
-    const primaryDb = getPrimaryDb(db);
+    const primaryDb = getPrimaryDatabase(db);
     const rows = await primaryDb
         .select({
             conversationSlugId: conversationTable.slugId,
@@ -417,7 +439,7 @@ export async function queueConversationCommentStatsUpdatedEventsForViewSnapshots
         return;
     }
 
-    const primaryDb = getPrimaryDb(db);
+    const primaryDb = getPrimaryDatabase(db);
     const opinionVoteCounts = await fetchLiveOpinionVoteCounts({
         db: primaryDb,
         opinionIds: changedOpinionIds,
@@ -456,21 +478,22 @@ export async function queueConversationCommentStatsUpdatedEventsForViewSnapshots
 
     const timestamp = Date.now();
     const values = rows.map((row) => {
-        const payload: SSEEventDataByType["conversation_comment_stats_updated"] = {
-            conversationSlugId: row.conversationSlugId,
-            conversationViewSnapshotId: row.conversationViewSnapshotId,
-            opinionCount: row.opinionCount,
-            voteCount: row.voteCount,
-            participantCount: row.participantCount,
-            totalOpinionCount: row.totalOpinionCount,
-            totalVoteCount: row.totalVoteCount,
-            totalParticipantCount: row.totalParticipantCount,
-            moderatedOpinionCount: row.moderatedOpinionCount,
-            hiddenOpinionCount: row.hiddenOpinionCount,
-            isClosed: row.isClosed,
-            opinionVoteCounts,
-            timestamp,
-        };
+        const payload: SSEEventDataByType["conversation_comment_stats_updated"] =
+            {
+                conversationSlugId: row.conversationSlugId,
+                conversationViewSnapshotId: row.conversationViewSnapshotId,
+                opinionCount: row.opinionCount,
+                voteCount: row.voteCount,
+                participantCount: row.participantCount,
+                totalOpinionCount: row.totalOpinionCount,
+                totalVoteCount: row.totalVoteCount,
+                totalParticipantCount: row.totalParticipantCount,
+                moderatedOpinionCount: row.moderatedOpinionCount,
+                hiddenOpinionCount: row.hiddenOpinionCount,
+                isClosed: row.isClosed,
+                opinionVoteCounts,
+                timestamp,
+            };
         return { eventType: "conversation_comment_stats_updated", payload };
     });
 
@@ -490,7 +513,7 @@ export async function queueConversationAnalysisUpdatedEventsForLatestViewSnapsho
         return;
     }
 
-    const primaryDb = getPrimaryDb(db);
+    const primaryDb = getPrimaryDatabase(db);
     const rows = await primaryDb
         .selectDistinctOn([conversationViewSnapshotTable.conversationId], {
             conversationSlugId: conversationTable.slugId,
@@ -585,7 +608,7 @@ export async function fetchConversationAnalysisUpdatedEventForLatestViewSnapshot
     db: PostgresJsDatabase;
     conversationSlugId: string;
 }): Promise<SSEEventDataByType["conversation_analysis_updated"] | undefined> {
-    const primaryDb = getPrimaryDb(db);
+    const primaryDb = getPrimaryDatabase(db);
     const rows = await primaryDb
         .selectDistinctOn([conversationViewSnapshotTable.conversationId], {
             conversationSlugId: conversationTable.slugId,
@@ -725,14 +748,14 @@ function parseRealtimeEventOutboxRow({
             };
         }
         case "content_translation_updated": {
-            const result = zodSSEContentTranslationUpdatedData.safeParse(payload);
-            if (!result.success) {
+            const data = parseContentTranslationUpdatedData(payload);
+            if (data === undefined) {
                 return undefined;
             }
             return {
                 id,
                 event: eventType,
-                data: result.data,
+                data,
             };
         }
         default: {
@@ -752,7 +775,7 @@ export async function fetchConversationRealtimeEventsAfterId({
     lastEventId: number;
     limit: number;
 }): Promise<RealtimeReplayEvent[]> {
-    const primaryDb = getPrimaryDb(db);
+    const primaryDb = getPrimaryDatabase(db);
     const rows = await primaryDb
         .select({
             id: realtimeEventOutboxTable.id,
@@ -798,7 +821,7 @@ export async function fetchRealtimeTopicEventsAfterId({
         return [];
     }
 
-    const primaryDb = getPrimaryDb(db);
+    const primaryDb = getPrimaryDatabase(db);
     const rows = await primaryDb
         .select({
             id: realtimeEventOutboxTable.id,
@@ -854,7 +877,7 @@ export function createRealtimeEventOutboxBridge({
     let highestProcessedOutboxId = 0;
     let outboxTaskQueue: Promise<void> = Promise.resolve();
     const failedOutboxIds = new Set<number>();
-    const primaryDb = getPrimaryDb(db);
+    const primaryDb = getPrimaryDatabase(db);
 
     const broadcastOutboxRow = ({
         id,

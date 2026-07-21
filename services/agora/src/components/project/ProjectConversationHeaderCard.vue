@@ -19,7 +19,7 @@
             aria-hidden="true"
           />
           <span class="project-conversation-header-card__breadcrumb-current">
-            {{ t({ key: "conversationType" }) }}
+            {{ conversationTypeLabel }}
           </span>
           <span class="project-conversation-header-card__breadcrumb-separator"
             >•</span
@@ -171,12 +171,14 @@
     </div>
 
     <q-dialog v-model="showMobileProjectDetails" position="bottom">
-      <ZKBottomDialogContainer :title="t({ key: 'behindThisTitle' })">
+      <ZKBottomDialogContainer
+        :title="t({ key: 'projectDetailsAriaLabel' })"
+        show-close-button
+      >
         <ProjectDetailsAside
           :attributions="project.attributions"
           :contact="project.contact"
           :language-code="selectedLanguage"
-          :show-attribution-title="false"
         />
       </ZKBottomDialogContainer>
     </q-dialog>
@@ -260,10 +262,17 @@ const breadcrumbIcon = computed(() =>
     ? "mdi-chevron-left"
     : "mdi-chevron-right"
 );
+const conversationTypeLabel = computed(() =>
+  props.conversationData.metadata.conversationType === "ranking"
+    ? t({ key: "voteType" })
+    : t({ key: "conversationType" })
+);
 const extendedConversation = computed(() => props.conversationData);
 const initialDisplayContent = computed(() => props.initialDisplayContent);
 const fallbackPayload = computed(() =>
-  "payload" in props.conversationData ? props.conversationData.payload : undefined
+  "payload" in props.conversationData
+    ? props.conversationData.payload
+    : undefined
 );
 const {
   displayedTitle,

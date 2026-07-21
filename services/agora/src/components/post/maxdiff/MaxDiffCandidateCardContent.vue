@@ -1,19 +1,16 @@
 <template>
   <div class="candidate-card-content">
-    <div
+    <ContentTranslationControl
       v-if="translationPreview !== undefined"
+      v-model="translationMode"
       class="candidate-card-translation-control"
+      :source-language-label="translationPreview.sourceLanguageLabel"
+      :translation-status="translationPreview.translationStatus"
       @click.stop
       @keydown.stop
       @mousedown.stop
       @pointerdown.stop
-    >
-      <ContentTranslationControl
-        v-model="translationMode"
-        :source-language-label="translationPreview.sourceLanguageLabel"
-        :translation-status="translationPreview.translationStatus"
-      />
-    </div>
+    />
 
     <div ref="contentElement" class="candidate-content-wrapper">
       <ZKHtmlContent
@@ -39,8 +36,7 @@ import { computed, nextTick, useTemplateRef, watch } from "vue";
 
 const props = defineProps<{
   conversationSlugId: string;
-  item: MaxDiffCandidateDisplayItem | undefined;
-  fallbackText: string;
+  item: MaxDiffCandidateDisplayItem;
 }>();
 
 const emit = defineEmits<{
@@ -50,27 +46,19 @@ const emit = defineEmits<{
 const contentElement = useTemplateRef<HTMLElement>("contentElement");
 
 const {
-  displayedTitle: translatedDisplayedTitle,
+  displayedTitle,
   displayedBody,
   translationPreview,
   setTranslationMode,
 } = useRankingItemDisplayContent({
   conversationSlugId: computed(() => props.conversationSlugId),
-  itemSlugId: computed(() => props.item?.slugId),
-  displayContent: computed(() => props.item?.displayContent),
+  itemSlugId: computed(() => props.item.slugId),
+  displayContent: computed(() => props.item.displayContent),
 });
 
 const translationMode = computed({
   get: () => translationPreview.value?.mode ?? "original",
   set: setTranslationMode,
-});
-
-const displayedTitle = computed(() => {
-  if (props.item === undefined) {
-    return props.fallbackText;
-  }
-
-  return translatedDisplayedTitle.value;
 });
 
 function isTruncated(): boolean {
@@ -101,6 +89,7 @@ defineExpose({ isTruncated });
 }
 
 .candidate-card-translation-control {
+  max-width: 100%;
   align-self: flex-start;
 }
 

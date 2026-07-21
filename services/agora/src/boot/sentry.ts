@@ -1,8 +1,25 @@
 import * as Sentry from "@sentry/vue";
+import {
+  redactSentryBreadcrumb,
+  redactSentryEvent,
+  redactSentryTransaction,
+  SENTRY_TRACE_PROPAGATION_TARGETS,
+  shouldIgnoreSentryEvent,
+} from "src/utils/sentry/eventPrivacy";
+import { createPiniaStateAttachment } from "src/utils/sentry/piniaState";
+import {
+  sanitizeReplayEvent,
+  sanitizeReplayRecordingEvent,
+  SENTRY_REPLAY_MASK_ATTRIBUTES,
+} from "src/utils/sentry/replayPrivacy";
+import {
+  addStackOverflowDiagnostics,
+  isStackOverflowEvent,
+} from "src/utils/sentry/stackOverflowDiagnostics";
 
 import { defineBoot } from "#q-app/wrappers";
 
-export default defineBoot(({ app, router }) => {
+export default defineBoot(({ app, router, store }) => {
   Sentry.init({
     app,
     dsn: "https://1a115ad14fb74824a573dce151352b58@o4510068006780928.ingest.de.sentry.io/4510068713979984",
@@ -10,59 +27,49 @@ export default defineBoot(({ app, router }) => {
     // for debugging purposes, but does not collect cookies or user credentials
     // Note: users who want to maintain their privacy are encouraged to use Tor
     sendDefaultPii: false,
-    // Filter out default `Vue` integration
-    // see https://docs.sentry.io/platforms/javascript/guides/vue/#configuration-for-late-defined-vue-apps
-    // integrations: (integrations) =>
-    //   integrations.filter((integration) => integration.name !== "Vue"),
-    beforeSend(event) {
-      // Filter out benign ResizeObserver warnings (common with Quasar dialogs/layouts)
-      if (
-        event.exception?.values?.some((e) =>
-          e.value?.includes("ResizeObserver loop")
-        )
-      ) {
+    beforeBreadcrumb: redactSentryBreadcrumb,
+    beforeSendTransaction: redactSentryTransaction,
+    beforeSend(event, hint) {
+      if (shouldIgnoreSentryEvent(event)) {
         return null;
       }
-      // Filter out Telegram WebView bridge errors (postEvent is Telegram's internal
-      // method, not ours — this fires during Intent URI redirect which works fine)
-      if (
-        event.exception?.values?.some((e) =>
-          e.value?.includes("postEvent")
-        )
-      ) {
-        return null;
+      if (isStackOverflowEvent(event)) {
+        hint.attachments = [
+          ...(hint.attachments ?? []),
+          createPiniaStateAttachment(store.state.value),
+        ];
       }
-      return event;
+      const eventWithDiagnostics = addStackOverflowDiagnostics({
+        event,
+        documentRoot: document,
+      });
+      return redactSentryEvent(eventWithDiagnostics);
     },
-    integrations: [
-      Sentry.vueIntegration({
-        tracingOptions: {
-          // see https://docs.sentry.io/platforms/javascript/guides/vue/features/component-tracking/
-          trackComponents: true,
-        },
-      }),
+    integrations: (defaultIntegrations) => [
+      ...defaultIntegrations.filter(
+        (integration) =>
+          integration.name !== "HttpContext" && integration.name !== "Vue"
+      ),
+      Sentry.vueIntegration(),
       Sentry.browserTracingIntegration({ router }),
       Sentry.replayIntegration({
-        // Additional SDK configuration goes in here, for example:
         maskAllText: true,
+        maskAllInputs: true,
         blockAllMedia: true,
+        maskAttributes: SENTRY_REPLAY_MASK_ATTRIBUTES,
+        networkCaptureBodies: false,
+        networkDetailAllowUrls: [],
+        networkRequestHeaders: [],
+        networkResponseHeaders: [],
+        attachRawBodyFromRequest: false,
+        beforeAddRecordingEvent: sanitizeReplayRecordingEvent,
+        beforeErrorSampling: (event) => !shouldIgnoreSentryEvent(event),
       }),
     ],
     tracesSampleRate: 0.1,
-    replaysSessionSampleRate: 0.1,
+    replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 1.0,
-    tracePropagationTargets: [
-      /^https?:\/\/(?:.*\.)?agoracitizen\.network/,
-      /^https?:\/\/(?:.*\.)?zkorum\.com/,
-    ],
+    tracePropagationTargets: SENTRY_TRACE_PROPAGATION_TARGETS,
   });
-  // To run code after mounting, you can do:
-  // app.mixin({
-  //   mounted() {
-  //     if (!this.$parent) {
-  //       console.log("Root component mounted, adding Sentry integration");
-  //       Sentry.addIntegration(Sentry.vueIntegration({ app }));
-  //     }
-  //   },
-  // });
+  Sentry.addEventProcessor(sanitizeReplayEvent);
 });

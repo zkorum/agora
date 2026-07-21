@@ -33,9 +33,11 @@ import {
   getConversationDisplayContentQueryPrefix,
   getProjectContentQueryKey,
 } from "src/utils/api/contentTranslation/useContentTranslationQueries";
+import { getErrorLogContext } from "src/utils/api/errorLog";
 import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { processEnv } from "src/utils/processEnv";
+import { abortIgnoringAbortError } from "src/utils/sse/abort";
 import {
   type ParsedSSEFrame,
   parseRawSSEFrame,
@@ -84,7 +86,10 @@ type ProjectContentTranslationUpdatedData = Omit<
   SSEContentTranslationUpdatedData,
   "subject"
 > & {
-  subject: Extract<SSEContentTranslationUpdatedData["subject"], { kind: "project" }>;
+  subject: Extract<
+    SSEContentTranslationUpdatedData["subject"],
+    { kind: "project" }
+  >;
 };
 
 if (import.meta.hot) {
@@ -270,6 +275,7 @@ export function useRealtimeSSE({
         checkpointViewSnapshotId: params.checkpointViewSnapshotId,
         aiLabelingEnabled: params.aiLabelingEnabled,
         displayLanguage: params.displayLanguage,
+        spokenLanguages: params.spokenLanguages,
         voteCount: undefined,
         freshness: params.freshness,
         analysisQueryKey: undefined,
@@ -370,7 +376,9 @@ export function useRealtimeSSE({
       // Abort if connection doesn't establish within timeout
       connectionTimeout = setTimeout(() => {
         if (thisConnectionId !== connectionId) return;
-        abortController?.abort();
+        if (abortController !== null) {
+          abortIgnoringAbortError(abortController);
+        }
       }, SSE_CONNECTION_TIMEOUT_MS);
 
       const url = buildRealtimeStreamUrl();
@@ -579,7 +587,10 @@ export function useRealtimeSSE({
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { id: frame.id, event: { event: frame.event, data: result.data } };
+        return {
+          id: frame.id,
+          event: { event: frame.event, data: result.data },
+        };
       }
       case "notification": {
         const result = zodSSEEventDataByType.notification.safeParse(rawData);
@@ -587,7 +598,10 @@ export function useRealtimeSSE({
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { id: frame.id, event: { event: frame.event, data: result.data } };
+        return {
+          id: frame.id,
+          event: { event: frame.event, data: result.data },
+        };
       }
       case "new_conversation": {
         const result =
@@ -596,7 +610,10 @@ export function useRealtimeSSE({
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { id: frame.id, event: { event: frame.event, data: result.data } };
+        return {
+          id: frame.id,
+          event: { event: frame.event, data: result.data },
+        };
       }
       case "new_opinion": {
         const result = zodSSEEventDataByType.new_opinion.safeParse(rawData);
@@ -604,7 +621,10 @@ export function useRealtimeSSE({
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { id: frame.id, event: { event: frame.event, data: result.data } };
+        return {
+          id: frame.id,
+          event: { event: frame.event, data: result.data },
+        };
       }
       case "popular_conversation": {
         const result =
@@ -613,7 +633,10 @@ export function useRealtimeSSE({
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { id: frame.id, event: { event: frame.event, data: result.data } };
+        return {
+          id: frame.id,
+          event: { event: frame.event, data: result.data },
+        };
       }
       case "conversation_analysis_updated": {
         const result =
@@ -624,7 +647,10 @@ export function useRealtimeSSE({
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { id: frame.id, event: { event: frame.event, data: result.data } };
+        return {
+          id: frame.id,
+          event: { event: frame.event, data: result.data },
+        };
       }
       case "conversation_comment_stats_updated": {
         const result =
@@ -635,7 +661,10 @@ export function useRealtimeSSE({
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { id: frame.id, event: { event: frame.event, data: result.data } };
+        return {
+          id: frame.id,
+          event: { event: frame.event, data: result.data },
+        };
       }
       case "conversation_settings_updated": {
         const result =
@@ -646,7 +675,10 @@ export function useRealtimeSSE({
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { id: frame.id, event: { event: frame.event, data: result.data } };
+        return {
+          id: frame.id,
+          event: { event: frame.event, data: result.data },
+        };
       }
       case "content_translation_updated": {
         const result =
@@ -655,15 +687,22 @@ export function useRealtimeSSE({
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { id: frame.id, event: { event: frame.event, data: result.data } };
+        return {
+          id: frame.id,
+          event: { event: frame.event, data: result.data },
+        };
       }
       case "subscription_ready": {
-        const result = zodSSEEventDataByType.subscription_ready.safeParse(rawData);
+        const result =
+          zodSSEEventDataByType.subscription_ready.safeParse(rawData);
         if (!result.success) {
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { id: frame.id, event: { event: frame.event, data: result.data } };
+        return {
+          id: frame.id,
+          event: { event: frame.event, data: result.data },
+        };
       }
       case "shutdown": {
         const result = zodSSEEventDataByType.shutdown.safeParse(rawData);
@@ -671,7 +710,10 @@ export function useRealtimeSSE({
           logInvalidSSEPayload({ event: frame.event, error: result.error });
           return undefined;
         }
-        return { id: frame.id, event: { event: frame.event, data: result.data } };
+        return {
+          id: frame.id,
+          event: { event: frame.event, data: result.data },
+        };
       }
       default:
         console.error(`Unknown SSE event: ${frame.event}`);
@@ -739,7 +781,10 @@ export function useRealtimeSSE({
       const result = await refreshAuthState();
       return result.authStateChanged || result.needsCacheRefresh;
     } catch (error) {
-      console.error("Failed to refresh auth state after SSE 401", error);
+      console.error(
+        "Failed to refresh auth state after SSE 401",
+        getErrorLogContext(error)
+      );
       return false;
     }
   }
@@ -1147,12 +1192,15 @@ export function useRealtimeSSE({
     try {
       response = await fetchProjectContent({
         projectSlug: data.subject.projectSlug,
-        sourceVersion: data.sourceVersion,
+        sourceVersion: data.subject.sourceVersion,
         mode: "translated",
         requestMode: "read_existing",
       });
     } catch (error) {
-      console.warn("Failed to fetch project translation after SSE update", error);
+      console.warn(
+        "Failed to fetch project translation after SSE update",
+        getErrorLogContext(error)
+      );
       return;
     }
 
@@ -1164,7 +1212,7 @@ export function useRealtimeSSE({
     queryClient.setQueryData<ProjectContentFetchResponse>(
       getProjectContentQueryKey({
         projectSlug: data.subject.projectSlug,
-        sourceVersion: data.sourceVersion,
+        sourceVersion: data.subject.sourceVersion,
         mode: "translated",
         targetLanguageCode: data.targetLanguageCode,
         spokenLanguages: languageStore.spokenLanguages,
@@ -1174,7 +1222,8 @@ export function useRealtimeSSE({
 
     queryClient.setQueriesData<FetchProjectPageResponse>(
       {
-        predicate: (query) => isProjectPageQueryForTranslation({ queryKey: query.queryKey, data }),
+        predicate: (query) =>
+          isProjectPageQueryForTranslation({ queryKey: query.queryKey, data }),
       },
       (previousData) => {
         if (previousData === undefined) {
@@ -1200,7 +1249,8 @@ export function useRealtimeSSE({
   }): void {
     queryClient.setQueriesData<FetchProjectPageResponse>(
       {
-        predicate: (query) => isProjectPageQueryForTranslation({ queryKey: query.queryKey, data }),
+        predicate: (query) =>
+          isProjectPageQueryForTranslation({ queryKey: query.queryKey, data }),
       },
       (previousData) => {
         const displayContent = previousData?.project.displayContent;
@@ -1210,7 +1260,7 @@ export function useRealtimeSSE({
         const translationControl = displayContent.translationControl;
         if (
           translationControl === null ||
-          displayContent.sourceVersion !== data.sourceVersion
+          displayContent.sourceVersion !== data.subject.sourceVersion
         ) {
           return previousData;
         }
@@ -1485,7 +1535,7 @@ export function useRealtimeSSE({
     heartbeatWatchdog = setTimeout(() => {
       heartbeatWatchdog = null;
       if (abortController) {
-        abortController.abort();
+        abortIgnoringAbortError(abortController);
       }
     }, SSE_HEARTBEAT_TIMEOUT_MS);
   }
@@ -1547,7 +1597,7 @@ export function useRealtimeSSE({
     }
 
     if (abortController) {
-      abortController.abort();
+      abortIgnoringAbortError(abortController);
       abortController = null;
     }
 

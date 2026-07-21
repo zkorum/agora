@@ -6,6 +6,7 @@ import type { SSEContentTranslationUpdatedData } from "src/shared/types/sse";
 import type {
   ContentTranslationSubject,
   LocalizedContentTranslationStatus,
+  TitleBodyContentVariant,
 } from "src/shared/types/zod";
 import {
   zodConversationContentVariant,
@@ -26,6 +27,7 @@ import {
   type ContentTranslationDisplayMode,
   getContentTranslationSourceLanguageLabel,
   getLanguageDisplayName,
+  resolveContentTranslationPollingOutcome,
 } from "./contentTranslation";
 import {
   subscribeToContentTranslationFailed,
@@ -38,6 +40,9 @@ import {
 
 const TRANSLATION_POLL_INTERVAL_MS = 500;
 const TRANSLATION_POLL_MAX_DURATION_MS = 30_000;
+const TRANSLATION_POLL_MAX_CONSECUTIVE_REQUEST_FAILURES = 3;
+
+type ContentTranslationRequestState = "idle" | "submitting" | "polling";
 
 function isRateLimitError(error: unknown): boolean {
   return isAxiosError(error) && error.response?.status === 429;
@@ -60,7 +65,8 @@ function isSameContentTranslationSubject({
   if (left.kind === "opinion" && right.kind === "opinion") {
     return (
       left.conversationSlugId === right.conversationSlugId &&
-      left.opinionSlugId === right.opinionSlugId
+      left.opinionSlugId === right.opinionSlugId &&
+      left.sourceVersion === right.sourceVersion
     );
   }
   if (left.kind === "survey_question" && right.kind === "survey_question") {
@@ -75,7 +81,8 @@ function isSameContentTranslationSubject({
   if (left.kind === "ranking_item" && right.kind === "ranking_item") {
     return (
       left.conversationSlugId === right.conversationSlugId &&
-      left.itemSlugId === right.itemSlugId
+      left.itemSlugId === right.itemSlugId &&
+      left.sourceVersion === right.sourceVersion
     );
   }
 
@@ -117,8 +124,8 @@ export interface RankingItemContentTranslationPreview {
   mode: ContentTranslationDisplayMode;
   sourceLanguageLabel: string | undefined;
   translationStatus: LocalizedContentTranslationStatus;
-  translatedTitle: string;
-  translatedBody: string | undefined;
+  originalContent: TitleBodyContentVariant | undefined;
+  translatedContent: TitleBodyContentVariant | undefined;
 }
 
 interface ContentTranslationController {
@@ -134,10 +141,14 @@ function useContentTranslationController({
   subject,
   sourceLanguageCode,
   enabled,
+  initialModePreference,
 }: {
   subject: MaybeRefOrGetter<ContentTranslationSubject>;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
   enabled: MaybeRefOrGetter<boolean>;
+  initialModePreference?: MaybeRefOrGetter<
+    ContentTranslationDisplayMode | undefined
+  >;
 }): ContentTranslationController & {
   query: ReturnType<typeof useContentTranslationQuery>;
 } {
@@ -148,8 +159,11 @@ function useContentTranslationController({
   const { t } = useComponentI18n<ContentTranslationPreviewTranslations>(
     contentTranslationPreviewTranslations
   );
-  const modePreference = ref<ContentTranslationDisplayMode | undefined>(undefined);
-  const hasRequestedTranslation = ref(false);
+  const modePreference = ref<ContentTranslationDisplayMode | undefined>(
+    undefined
+  );
+  const requestState = ref<ContentTranslationRequestState>("idle");
+  let requestGeneration = 0;
   const sortedSpokenLanguageKey = computed(() =>
     [...spokenLanguages.value].sort().join("\u0000")
   );
@@ -158,6 +172,12 @@ function useContentTranslationController({
   const translationPolling = useBoundedTranslationPolling({
     intervalMs: TRANSLATION_POLL_INTERVAL_MS,
     maxDurationMs: TRANSLATION_POLL_MAX_DURATION_MS,
+    maxConsecutiveRequestFailures:
+      TRANSLATION_POLL_MAX_CONSECUTIVE_REQUEST_FAILURES,
+    onRequestFailureLimit: () => {
+      resetToOriginal();
+      showQueryFailureToast();
+    },
     onTimeout: () => {
       resetToOriginal();
       showNotifyMessage(t("translationTimedOut"));
@@ -173,10 +193,7 @@ function useContentTranslationController({
   });
 
   const isLoadingInitialTranslation = computed(() => {
-    return (
-      modePreference.value === undefined &&
-      query.isPending.value
-    );
+    return modePreference.value === undefined && query.isPending.value;
   });
 
   const translatedVariant = computed(() => {
@@ -186,6 +203,19 @@ function useContentTranslationController({
       return undefined;
     }
     return content.variants.translated;
+  });
+
+  const pollingOutcome = computed(() => {
+    const response = query.data.value;
+    const content = response?.success === true ? response.content : undefined;
+    return resolveContentTranslationPollingOutcome({
+      responseSuccess: response?.success,
+      translationStatus:
+        content?.kind === "translatable"
+          ? content.translation.status
+          : undefined,
+      hasTranslatedVariant: translatedVariant.value !== undefined,
+    });
   });
 
   const translationStatus = computed<LocalizedContentTranslationStatus>(() => {
@@ -201,31 +231,28 @@ function useContentTranslationController({
     if (isLoadingInitialTranslation.value) {
       return "pending";
     }
-    if (!hasRequestedTranslation.value) {
+    if (
+      requestState.value === "idle" &&
+      (toValue(initialModePreference) === undefined ||
+        modePreference.value !== undefined)
+    ) {
       return "not_requested";
     }
-    if (query.isFetching.value) {
+    if (query.isFetching.value || requestState.value !== "idle") {
       return "pending";
     }
     if (query.isError.value) {
       return "failed";
     }
     if (content?.kind === "translatable") {
-      if (
-        hasRequestedTranslation.value &&
-        modePreference.value === "translated" &&
-        content.variants.translated === undefined &&
-        content.translation.status !== "failed"
-      ) {
-        return "pending";
-      }
       return content.translation.status;
     }
     return "pending";
   });
 
   const mode = computed<ContentTranslationDisplayMode>(() => {
-    const preferredMode = modePreference.value ?? "original";
+    const preferredMode =
+      modePreference.value ?? toValue(initialModePreference) ?? "original";
     if (
       preferredMode === "translated" &&
       translationStatus.value === "completed" &&
@@ -253,30 +280,44 @@ function useContentTranslationController({
     });
   });
 
-  async function setMode(nextMode: ContentTranslationDisplayMode): Promise<void> {
+  async function setMode(
+    nextMode: ContentTranslationDisplayMode
+  ): Promise<void> {
     if (nextMode === "translated") {
       modePreference.value = "translated";
       if (
         translationStatus.value !== "completed" ||
         translatedVariant.value === undefined
       ) {
-        if (hasRequestedTranslation.value) {
+        if (requestState.value === "polling") {
           translationPolling.start();
           return;
         }
         translationPolling.stop();
         requestMode.value = "queue_if_missing";
-        hasRequestedTranslation.value = true;
+        requestState.value = "submitting";
+        const activeRequestGeneration = requestGeneration;
         try {
           await query.refetch();
         } finally {
-          requestMode.value = "read_existing";
+          if (activeRequestGeneration === requestGeneration) {
+            requestMode.value = "read_existing";
+          }
+        }
+        if (activeRequestGeneration !== requestGeneration) {
+          return;
+        }
+        if (requestState.value !== "submitting") {
+          return;
         }
         if (
           translationStatus.value !== "completed" ||
           translatedVariant.value === undefined
         ) {
+          requestState.value = "polling";
           translationPolling.start();
+        } else {
+          requestState.value = "idle";
         }
       }
       return;
@@ -288,15 +329,47 @@ function useContentTranslationController({
     translationPolling.stop();
     requestMode.value = "read_existing";
     modePreference.value = "original";
-    hasRequestedTranslation.value = false;
+    requestState.value = "idle";
   }
 
   watch([displayLanguage, sortedSpokenLanguageKey], () => {
+    requestGeneration += 1;
     translationPolling.stop();
     requestMode.value = "read_existing";
     modePreference.value = undefined;
-    hasRequestedTranslation.value = false;
+    requestState.value = "idle";
   });
+
+  watch(
+    () => toValue(subject),
+    () => {
+      requestGeneration += 1;
+      translationPolling.stop();
+      requestMode.value = "read_existing";
+      modePreference.value = undefined;
+      requestState.value = "idle";
+    }
+  );
+
+  watch(
+    [
+      () => toValue(enabled),
+      () => toValue(initialModePreference),
+      () => toValue(subject),
+      displayLanguage,
+      sortedSpokenLanguageKey,
+    ],
+    ([isEnabled, initialMode]) => {
+      if (isEnabled && initialMode !== undefined) {
+        requestState.value = "polling";
+        translationPolling.start();
+      } else if (!isEnabled) {
+        translationPolling.stop();
+        requestState.value = "idle";
+      }
+    },
+    { immediate: true }
+  );
 
   function applyTranslationNotEnabledResponse(): void {
     const response = query.data.value;
@@ -335,65 +408,119 @@ function useContentTranslationController({
   function isEventForCurrentRequest(
     data: SSEContentTranslationUpdatedData
   ): boolean {
+    const currentSubject = toValue(subject);
+    const response = query.data.value;
+    const currentSourceVersion =
+      "sourceVersion" in currentSubject
+        ? currentSubject.sourceVersion
+        : response?.success === true
+          ? response.content.sourceVersion
+          : undefined;
     return (
-      hasRequestedTranslation.value &&
+      toValue(enabled) &&
       data.targetLanguageCode === displayLanguage.value &&
+      currentSourceVersion !== undefined &&
+      data.subject.sourceVersion === currentSourceVersion &&
       isSameContentTranslationSubject({
         left: data.subject,
-        right: toValue(subject),
+        right: currentSubject,
       })
     );
   }
 
-  const unsubscribeFailedEvents = subscribeToContentTranslationFailed(
-    (data) => {
+  let unsubscribeFailedEvents: (() => void) | undefined;
+  let unsubscribeUpdatedEvents: (() => void) | undefined;
+
+  function subscribeToTranslationEvents(): void {
+    if (
+      unsubscribeFailedEvents !== undefined ||
+      unsubscribeUpdatedEvents !== undefined
+    ) {
+      return;
+    }
+    unsubscribeFailedEvents = subscribeToContentTranslationFailed((data) => {
       if (!isEventForCurrentRequest(data)) {
         return;
       }
       resetToOriginal();
       showNotifyMessage(t("translationFailed"));
-    }
-  );
+    });
+    unsubscribeUpdatedEvents = subscribeToContentTranslationUpdated((data) => {
+      if (!isEventForCurrentRequest(data)) {
+        return;
+      }
+      void query.refetch();
+      translationPolling.start();
+    });
+  }
 
-  const unsubscribeUpdatedEvents = subscribeToContentTranslationUpdated((data) => {
-    if (!isEventForCurrentRequest(data)) {
-      return;
-    }
-    void query.refetch();
-    translationPolling.start();
-  });
+  function unsubscribeFromTranslationEvents(): void {
+    unsubscribeUpdatedEvents?.();
+    unsubscribeFailedEvents?.();
+    unsubscribeUpdatedEvents = undefined;
+    unsubscribeFailedEvents = undefined;
+  }
+
+  watch(
+    () => toValue(enabled),
+    (isEnabled) => {
+      if (isEnabled) {
+        subscribeToTranslationEvents();
+      } else {
+        unsubscribeFromTranslationEvents();
+      }
+    },
+    { immediate: true }
+  );
 
   watch([translationStatus, translatedVariant], ([status, variant]) => {
     if (status === "completed" && variant !== undefined) {
       translationPolling.stop();
-    }
-  });
-
-  watch(translationStatus, (status) => {
-    if (status === "failed") {
-      resetToOriginal();
-      showQueryFailureToast();
+      requestState.value = "idle";
     }
   });
 
   watch(
-    () => query.data.value,
-    (response) => {
-      if (response?.success === false && hasRequestedTranslation.value) {
+    () => query.dataUpdatedAt.value,
+    () => {
+      const response = query.data.value;
+      if (requestState.value === "polling") {
+        translationPolling.recordRequestSuccess();
+      }
+      if (requestState.value === "idle") {
+        return;
+      }
+      if (response?.success === false) {
         if (response.reason === "content_translation_not_enabled") {
           applyTranslationNotEnabledResponse();
           return;
         }
         resetToOriginal();
         showNotifyMessage(t("translationFailed"));
+        return;
+      }
+      if (pollingOutcome.value === "terminal_failure") {
+        resetToOriginal();
+        showNotifyMessage(t("translationFailed"));
+      }
+    }
+  );
+
+  watch(
+    () => query.errorUpdatedAt.value,
+    (errorUpdatedAt, previousErrorUpdatedAt) => {
+      if (
+        requestState.value === "polling" &&
+        errorUpdatedAt > previousErrorUpdatedAt
+      ) {
+        translationPolling.recordRequestFailure();
       }
     }
   );
 
   onScopeDispose(() => {
     translationPolling.stop();
-    unsubscribeUpdatedEvents();
-    unsubscribeFailedEvents();
+    unsubscribeFromTranslationEvents();
   });
 
   return {
@@ -440,7 +567,8 @@ export function useConversationContentTranslationPreview({
         zodConversationContentVariant.safeParse(rawTranslatedVariant);
       return {
         isAvailable: true,
-        isLoadingInitialTranslation: controller.isLoadingInitialTranslation.value,
+        isLoadingInitialTranslation:
+          controller.isLoadingInitialTranslation.value,
         mode: controller.mode.value,
         sourceLanguageLabel: controller.sourceLanguageLabel.value,
         translationStatus: controller.translationStatus.value,
@@ -464,17 +592,22 @@ export function useOpinionContentTranslationPreview({
   subject,
   sourceLanguageCode,
   enabled,
+  initialModePreference,
 }: {
   subject: MaybeRefOrGetter<
     Extract<ContentTranslationSubject, { kind: "opinion" }>
   >;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
   enabled: MaybeRefOrGetter<boolean>;
+  initialModePreference?: MaybeRefOrGetter<
+    ContentTranslationDisplayMode | undefined
+  >;
 }) {
   const controller = useContentTranslationController({
     subject,
     sourceLanguageCode,
     enabled,
+    initialModePreference,
   });
 
   const preview = computed<OpinionContentTranslationPreview | undefined>(() => {
@@ -541,7 +674,8 @@ export function useSurveyQuestionContentTranslationPreview({
         zodSurveyQuestionContentVariant.safeParse(rawTranslatedVariant);
       return {
         isAvailable: true,
-        isLoadingInitialTranslation: controller.isLoadingInitialTranslation.value,
+        isLoadingInitialTranslation:
+          controller.isLoadingInitialTranslation.value,
         mode: controller.mode.value,
         sourceLanguageLabel: controller.sourceLanguageLabel.value,
         translationStatus: controller.translationStatus.value,
@@ -584,25 +718,32 @@ export function useRankingItemContentTranslationPreview({
         return undefined;
       }
       const response = controller.query.data.value;
+      const rawOriginalVariant =
+        response?.success === true && response.subject.kind === "ranking_item"
+          ? response.content.variants.original
+          : undefined;
       const rawTranslatedVariant =
         response?.success === true &&
         response.subject.kind === "ranking_item" &&
         response.content.kind === "translatable"
           ? response.content.variants.translated
           : undefined;
+      const originalVariant =
+        zodTitleBodyContentVariant.safeParse(rawOriginalVariant);
       const translatedVariant =
         zodTitleBodyContentVariant.safeParse(rawTranslatedVariant);
       return {
         isAvailable: true,
-        isLoadingInitialTranslation: controller.isLoadingInitialTranslation.value,
+        isLoadingInitialTranslation:
+          controller.isLoadingInitialTranslation.value,
         mode: controller.mode.value,
         sourceLanguageLabel: controller.sourceLanguageLabel.value,
         translationStatus: controller.translationStatus.value,
-        translatedTitle: translatedVariant.success
-          ? translatedVariant.data.title
-          : "",
-        translatedBody: translatedVariant.success
-          ? translatedVariant.data.bodyHtml
+        originalContent: originalVariant.success
+          ? originalVariant.data
+          : undefined,
+        translatedContent: translatedVariant.success
+          ? translatedVariant.data
           : undefined,
       };
     }

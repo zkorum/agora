@@ -1,61 +1,63 @@
 <template>
-  <span
+  <SpaLink
     v-if="interactive"
+    :to="projectConversationRoute"
     class="project-context-pill"
+    target="_blank"
+    rel="noopener noreferrer"
   >
     <span class="project-context-pill__label">
       {{ t("partOfProject") }}
       <strong class="project-context-pill__title">{{ projectTitle }}</strong>
     </span>
-    <a
-      :href="projectConversationHref"
-      class="project-context-pill__cta"
-      target="_blank"
-      rel="noopener noreferrer"
-      @click.stop
-    >
+    <span class="project-context-pill__cta">
       {{ t("openProject") }}
       <q-icon name="mdi-open-in-new" size="0.9rem" aria-hidden="true" />
-    </a>
-  </span>
-  <span
-    v-else
-    class="project-context-text"
-    @click.stop.prevent
-  >
+    </span>
+  </SpaLink>
+  <span v-else class="project-context-text" @click.stop.prevent>
     {{ t("partOfProject") }}
     <strong class="project-context-text__title">{{ projectTitle }}</strong>
   </span>
 </template>
 
 <script setup lang="ts">
+import SpaLink from "src/components/ui-library/SpaLink.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { computed } from "vue";
-import { type RouteLocationRaw, useRouter } from "vue-router";
+import type { RouteLocationRaw } from "vue-router";
 
 import {
   type ConversationProjectContextPillTranslations,
   conversationProjectContextPillTranslations,
 } from "./ConversationProjectContextPill.i18n";
 
-const props = withDefaults(defineProps<{
-  projectSlug: string;
-  projectTitle: string;
-  conversationSlugId: string;
-  interactive?: boolean;
-}>(), {
-  interactive: true,
-});
+const props = withDefaults(
+  defineProps<{
+    projectSlug: string;
+    projectTitle: string;
+    conversationSlugId: string;
+    interactive?: boolean;
+  }>(),
+  {
+    interactive: true,
+  }
+);
 
 const { t } = useComponentI18n<ConversationProjectContextPillTranslations>(
   conversationProjectContextPillTranslations
 );
-const router = useRouter();
-const projectConversationRoute = computed<RouteLocationRaw>(() => ({
-  path: `/project/${props.projectSlug}/conversation/${props.conversationSlugId}/`,
-}));
-const projectConversationHref = computed(
-  () => router.resolve(projectConversationRoute.value).href
+const projectConversationRouteName =
+  "/project/[projectSlug]/conversation/[postSlugId]/";
+const projectConversationRoute = computed(
+  () =>
+    ({
+      name: projectConversationRouteName,
+      params: {
+        projectSlug: props.projectSlug,
+        postSlugId: props.conversationSlugId,
+      },
+    }) satisfies RouteLocationRaw<typeof projectConversationRouteName>
 );
 </script>
 
@@ -82,10 +84,15 @@ const projectConversationHref = computed(
 }
 
 .project-context-pill:hover,
-.project-context-pill:focus-within {
+.project-context-pill:focus-visible {
   border-color: rgba($primary, 0.42);
   box-shadow: 0 0.35rem 0.9rem rgba($primary, 0.12);
   transform: translateY(-1px);
+}
+
+.project-context-pill:focus-visible {
+  outline: 2px solid rgba($primary, 0.36);
+  outline-offset: 2px;
 }
 
 .project-context-pill__label {
@@ -121,13 +128,7 @@ const projectConversationHref = computed(
   font-size: 0.72rem;
   font-weight: var(--font-weight-bold);
   box-shadow: inset 0 0 0 1px rgba($primary, 0.16);
-  text-decoration: none;
   white-space: nowrap;
-}
-
-.project-context-pill__cta:focus-visible {
-  outline: 2px solid rgba($primary, 0.36);
-  outline-offset: 2px;
 }
 
 .project-context-text {

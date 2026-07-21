@@ -1,7 +1,7 @@
 <template>
   <ConversationCommentTab
+    v-if="conversationData !== undefined"
     :conversation-data="conversationData"
-    :has-conversation-data="hasConversationData"
     :moderation-history-trigger="moderationHistoryTrigger"
     :comment-filter="commentFilter"
     :on-view-analysis="onViewAnalysis"
@@ -19,8 +19,8 @@ import type { CommentFilterOptions } from "src/utils/component/opinion";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 
 const { onViewAnalysis } = defineProps<{
-  conversationData: ExtendedConversationDisplayData;
-  hasConversationData: boolean;
+  // Dynamic route props can briefly clear during navigation teardown.
+  conversationData: ExtendedConversationDisplayData | undefined;
   moderationHistoryTrigger: number;
   commentFilter: CommentFilterOptions;
   onViewAnalysis: () => void;

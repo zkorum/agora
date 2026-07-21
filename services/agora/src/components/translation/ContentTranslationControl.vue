@@ -81,24 +81,34 @@ function handleToggleClick(event: MouseEvent): void {
 
 .content-translation-control__meta {
   display: inline-flex;
+  min-width: 0;
   align-items: center;
   gap: 0.3rem;
-  flex: none;
+  flex: 0 1 auto;
 }
 
 .content-translation-control__label {
   color: $color-text-weak;
+  overflow-wrap: anywhere;
 }
 
 .content-translation-control__button {
+  min-width: 0;
+  max-width: 100%;
   padding: 0;
   border: 0;
   background: transparent;
   color: $primary;
   font: inherit;
   font-weight: var(--font-weight-medium);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  text-align: start;
   cursor: pointer;
+}
+
+.content-translation-control {
+  max-width: 100%;
+  flex-wrap: wrap;
 }
 
 .content-translation-control__button:hover {

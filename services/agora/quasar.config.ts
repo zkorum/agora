@@ -6,6 +6,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { sentryVitePlugin } from "@sentry/vite-plugin";
+import legacy from "@vitejs/plugin-legacy";
 import { visualizer } from "rollup-plugin-visualizer";
 import type { Plugin, ViteDevServer } from "vite";
 import viteCompression from "vite-plugin-compression";
@@ -214,9 +215,10 @@ export default defineConfig((ctx) => {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
     build: {
-      sourcemap: "hidden", // generates .map files for Sentry but strips sourceMappingURL from bundles so browsers don't download them
+      // Production maps are uploaded to Sentry and removed from the image.
+      sourcemap:
+        ctx.prod && process.env.VITE_STAGING !== "true" ? "hidden" : false,
       target: {
-        browser: ["es2020", "firefox115", "chrome86", "safari14"],
         node: "node20",
       },
 
@@ -254,6 +256,21 @@ export default defineConfig((ctx) => {
           viteConf.plugins.push(devBrowserLogPlugin());
         }
 
+        viteConf.build = {
+          ...viteConf.build,
+          // Vite does not read Browserslist for CSS syntax lowering.
+          // Keep these engine floors aligned with .browserslistrc.
+          cssTarget: ["chrome51", "edge15", "firefox54", "ios10", "safari10"],
+        };
+
+        if (ctx.prod) {
+          viteConf.plugins.push(
+            ...legacy({
+              modernPolyfills: true,
+            })
+          );
+        }
+
         // Point Node.js modules to stub files
         viteConf.resolve.alias = {
           ...viteConf.resolve.alias,
@@ -265,18 +282,6 @@ export default defineConfig((ctx) => {
           url: resolve(__dirname, "src/stubs/url.js"),
         };
 
-        // Add Sentry plugin in production (non-staging) builds
-        // Note: Sentry should be added after all other plugins
-        if (process.env.VITE_STAGING !== "true" && ctx.prod) {
-          viteConf.plugins.push(
-            sentryVitePlugin({
-              authToken: process.env.VITE_SENTRY_AUTH_TOKEN,
-              org: "zkorum",
-              project: "agora-app",
-            })
-          );
-        }
-
         // Add bundle visualizer in production builds
         if (ctx.prod) {
           viteConf.plugins.push(
@@ -285,6 +290,16 @@ export default defineConfig((ctx) => {
               open: false,
               gzipSize: true,
               brotliSize: true,
+            })
+          );
+        }
+
+        // Add Sentry after plugins that transform or inspect the final bundles.
+        if (process.env.VITE_STAGING !== "true" && ctx.prod) {
+          viteConf.plugins.push(
+            sentryVitePlugin({
+              org: "zkorum",
+              project: "agora-app",
             })
           );
         }

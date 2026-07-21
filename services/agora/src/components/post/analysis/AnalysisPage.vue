@@ -108,7 +108,7 @@
                   :aria-label="t('generateReport')"
                 >
                   <q-icon name="mdi-file-chart-outline" size="1rem" />
-                  <div>{{ t("report") }}</div>
+                  <span class="report-button__label">{{ t("report") }}</span>
                 </SpaLink>
               </div>
             </div>
@@ -1705,11 +1705,10 @@ defineExpose({
     border-color: #6b4eff;
     color: #6b4eff;
   }
-
 }
 
 @container (max-width: 34rem) {
-  .report-button {
+  .report-button__label {
     display: none;
   }
 }

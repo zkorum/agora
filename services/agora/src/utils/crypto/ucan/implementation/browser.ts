@@ -7,6 +7,7 @@ import rsaOperations from "@zkorum/keystore-idb/rsa/index.js";
 import { RSAKeyStore } from "@zkorum/keystore-idb/rsa/index.js";
 import type { SymmAlg } from "@zkorum/keystore-idb/types.js";
 import { HashAlg, SymmKeyLength } from "@zkorum/keystore-idb/types.js";
+import localforage from "localforage";
 import * as typeChecks from "src/utils/type-checks.js";
 import tweetnacl from "tweetnacl";
 import * as uint8arrays from "uint8arrays";
@@ -165,8 +166,9 @@ function ksWriteIdentifier(_ks: RSAKeyStore, prefixedKey: string): string {
   return `${prefixedKey}:write`;
 }
 
-export function ksClearStore(ks: RSAKeyStore): Promise<void> {
-  return ks.destroy();
+function ksClearStore(store: LocalForage): Promise<void> {
+  // Keep the live connection: localForage dropInstance() races with reconnects.
+  return store.clear();
 }
 
 export async function ksDecrypt(
@@ -418,11 +420,15 @@ export async function ksDeleteKey(
 export async function implementation({
   storeName,
 }: ImplementationOptions): Promise<Implementation> {
-  const ks = await RSAKeyStore.init({
-    charSize: 8,
-    hashAlg: HashAlg.SHA_256,
-    storeName: storeName,
-  });
+  const store = localforage.createInstance({ name: storeName });
+  const ks = await RSAKeyStore.init(
+    {
+      charSize: 8,
+      hashAlg: HashAlg.SHA_256,
+      storeName,
+    },
+    store
+  );
 
   return {
     aes,
@@ -432,7 +438,7 @@ export async function implementation({
     rsa,
 
     keystore: {
-      clearStore: (...args) => ksClearStore(ks, ...args),
+      clearStore: () => ksClearStore(store),
       decrypt: (...args) => ksDecrypt(ks, ...args),
       exportSymmKey: (...args) => ksExportSymmKey(ks, ...args),
       getAlgorithm: (...args) => ksGetAlgorithm(ks, ...args),

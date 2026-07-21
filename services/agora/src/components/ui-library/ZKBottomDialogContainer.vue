@@ -21,11 +21,12 @@
     >
       <span class="dialog-drag-handle__bar" />
     </div>
-    <div v-if="title" class="dialog-header">
+    <div v-if="title || showCloseButton" class="dialog-header">
       <div class="dialog-title-row">
         <slot name="leadingAction" />
-        <div class="dialog-title">{{ title }}</div>
+        <div v-if="title" class="dialog-title">{{ title }}</div>
         <q-btn
+          v-if="showCloseButton"
           v-close-popup
           flat
           round
@@ -33,6 +34,7 @@
           icon="mdi-close"
           size="sm"
           class="close-btn"
+          :aria-label="$q.lang.label.close"
         />
       </div>
       <div v-if="subtitle || $slots.subtitleAction" class="dialog-subtitle-row">
@@ -47,19 +49,25 @@
 </template>
 
 <script setup lang="ts">
-import { ClosePopup } from "quasar";
+import { ClosePopup, useQuasar } from "quasar";
 import type { CSSProperties } from "vue";
 import { computed, onBeforeUnmount, ref } from "vue";
 
-withDefaults(defineProps<{
-  title?: string;
-  subtitle?: string;
-}>(), {
-  title: undefined,
-  subtitle: undefined,
-});
+withDefaults(
+  defineProps<{
+    title?: string;
+    subtitle?: string;
+    showCloseButton?: boolean;
+  }>(),
+  {
+    title: undefined,
+    subtitle: undefined,
+    showCloseButton: false,
+  }
+);
 
 const vClosePopup = ClosePopup;
+const $q = useQuasar();
 
 const DRAG_DISMISS_THRESHOLD_PX = 72;
 
@@ -186,7 +194,6 @@ onBeforeUnmount(() => {
   window.removeEventListener("mousemove", onMouseMove);
   window.removeEventListener("touchmove", onTouchMove);
 });
-
 </script>
 
 <style lang="scss" scoped>
@@ -218,6 +225,7 @@ onBeforeUnmount(() => {
   flex: 1;
   flex-direction: column;
   gap: 0.75rem;
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
 
@@ -296,6 +304,7 @@ onBeforeUnmount(() => {
 }
 
 .close-btn {
+  margin-inline-start: auto;
   color: $color-text-weak;
   flex-shrink: 0;
 }

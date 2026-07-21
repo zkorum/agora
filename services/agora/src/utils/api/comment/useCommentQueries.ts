@@ -80,7 +80,7 @@ export function useCommentsQuery({
     enabled: computed(
       () => toValue(enabled) && toValue(conversationSlugId) !== ""
     ),
-    staleTime: getAnalysisStaleTime(toValue(voteCount)), // Dynamic cache based on conversation size
+    staleTime: () => getAnalysisStaleTime(toValue(voteCount)),
     // Note: bypassed by manual invalidation on tab changes
     placeholderData: (previousData) => previousData, // Preserve previous data during refetches
     retry: false, // Disable auto-retry
@@ -110,7 +110,7 @@ export function useHiddenCommentsQuery({
     enabled: computed(
       () => toValue(enabled) && toValue(conversationSlugId) !== ""
     ),
-    staleTime: getAnalysisStaleTime(toValue(voteCount)), // Dynamic cache based on conversation size
+    staleTime: () => getAnalysisStaleTime(toValue(voteCount)),
     // Note: bypassed by manual invalidation on tab changes
     placeholderData: (previousData) => previousData, // Preserve previous data during refetches
     retry: false, // Disable auto-retry
@@ -608,6 +608,7 @@ export async function fetchAnalysisDataWithCache({
   checkpointViewSnapshotId,
   aiLabelingEnabled,
   displayLanguage,
+  spokenLanguages,
   voteCount,
   freshness,
   analysisQueryKey,
@@ -622,6 +623,7 @@ export async function fetchAnalysisDataWithCache({
   checkpointViewSnapshotId: number | undefined;
   aiLabelingEnabled: boolean | undefined;
   displayLanguage: string;
+  spokenLanguages: readonly string[];
   voteCount: number | undefined;
   freshness: AnalysisFreshnessRequest | null;
   analysisQueryKey: AnalysisQueryKey | undefined;
@@ -659,7 +661,13 @@ export async function fetchAnalysisDataWithCache({
   const [groups, groupLabels, agreements, disagreements, divisive] =
     await Promise.all([
       queryClient.fetchQuery({
-        queryKey: ["analysisFrameGroups", conversationSlugId, frameKeyPart],
+        queryKey: [
+          "analysisFrameGroups",
+          conversationSlugId,
+          frameKeyPart,
+          displayLanguage,
+          spokenLanguages,
+        ],
         queryFn: () =>
           fetchAnalysisFrameGroups({
             conversationSlugId,
@@ -685,6 +693,8 @@ export async function fetchAnalysisDataWithCache({
           conversationSlugId,
           frameKeyPart,
           "agreements",
+          displayLanguage,
+          spokenLanguages,
         ],
         queryFn: () =>
           fetchAnalysisFrameOpinionList({
@@ -702,6 +712,8 @@ export async function fetchAnalysisDataWithCache({
           conversationSlugId,
           frameKeyPart,
           "disagreements",
+          displayLanguage,
+          spokenLanguages,
         ],
         queryFn: () =>
           fetchAnalysisFrameOpinionList({
@@ -719,6 +731,8 @@ export async function fetchAnalysisDataWithCache({
           conversationSlugId,
           frameKeyPart,
           "divisive",
+          displayLanguage,
+          spokenLanguages,
         ],
         queryFn: () =>
           fetchAnalysisFrameOpinionList({
@@ -777,7 +791,7 @@ export function useAnalysisQuery({
     fetchAnalysisFrameOpinionList,
   } = useBackendCommentApi();
   const queryClient = useQueryClient();
-  const { displayLanguage } = storeToRefs(useLanguageStore());
+  const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
 
   return useQuery({
     queryKey: [
@@ -787,6 +801,7 @@ export function useAnalysisQuery({
       computed(() => toValue(checkpointViewSnapshotId)),
       computed(() => toValue(aiLabelingEnabled)),
       computed(() => displayLanguage.value),
+      computed(() => [...spokenLanguages.value].sort()),
     ],
     queryFn: async () => {
       const resolvedConversationSlugId = toValue(conversationSlugId);
@@ -796,6 +811,7 @@ export function useAnalysisQuery({
       );
       const resolvedAiLabelingEnabled = toValue(aiLabelingEnabled);
       const resolvedDisplayLanguage = displayLanguage.value;
+      const resolvedSpokenLanguages = [...spokenLanguages.value].sort();
       const resolvedVoteCount = toValue(voteCount);
       const resolvedQueryKey = [
         "analysis",
@@ -804,6 +820,7 @@ export function useAnalysisQuery({
         resolvedCheckpointViewSnapshotId,
         resolvedAiLabelingEnabled,
         resolvedDisplayLanguage,
+        resolvedSpokenLanguages,
       ];
       const previousAnalysis =
         queryClient.getQueryData<AnalysisData>(resolvedQueryKey);
@@ -824,6 +841,7 @@ export function useAnalysisQuery({
         checkpointViewSnapshotId: resolvedCheckpointViewSnapshotId,
         aiLabelingEnabled: resolvedAiLabelingEnabled,
         displayLanguage: resolvedDisplayLanguage,
+        spokenLanguages: resolvedSpokenLanguages,
         voteCount: resolvedVoteCount,
         freshness,
         analysisQueryKey: resolvedQueryKey,
@@ -859,7 +877,7 @@ export function useAnalysisQuery({
     enabled: computed(
       () => toValue(enabled) && toValue(conversationSlugId) !== ""
     ),
-    staleTime: getAnalysisStaleTime(toValue(voteCount)), // Dynamic cache based on conversation size
+    staleTime: () => getAnalysisStaleTime(toValue(voteCount)),
     // Note: When votes/comments happen, markAnalysisAsStale() is called
     // This marks data as stale immediately, so next access will refetch
     retry: false, // Disable auto-retry

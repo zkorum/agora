@@ -81,13 +81,6 @@ export function useBackendPostApi() {
     };
   }
 
-  function createInternalPostData(
-    postElement: unknown
-  ): ExtendedConversation {
-    const parseditem = composeInternalPostList([postElement])[0];
-    return parseditem;
-  }
-
   async function fetchConversationBySlugIdWithDisplayContent({
     postSlugId,
     loadPersonalizedData,
@@ -197,13 +190,13 @@ export function useBackendPostApi() {
   }
 
   async function fetchConversationCreateProjectOptions({
-    postAsOrganizationName,
+    postAsOrganizationSlug,
   }: {
-    postAsOrganizationName: string;
+    postAsOrganizationSlug: string;
   }): Promise<GetConversationCreateProjectOptionsResponse> {
     const url = "/api/v1/project/create-options/list";
     const params = Dto.getConversationCreateProjectOptionsRequest.parse({
-      postAsOrganization: postAsOrganizationName,
+      postAsOrganization: postAsOrganizationSlug,
     });
     const encodedUcan = await buildEncodedUcan(url, { method: "POST" });
     const response = await api.post(
@@ -224,7 +217,7 @@ export function useBackendPostApi() {
     polisUrl: string;
     projectSlug?: string;
     languageSettingsSource: ConversationLanguageSettingsSource;
-    postAsOrganizationName: string;
+    postAsOrganizationSlug: string;
     isIndexed: boolean;
     participationMode: ParticipationMode;
     multilingualSetting: ConversationMultilingualSetting;
@@ -243,7 +236,7 @@ export function useBackendPostApi() {
     votesFile: File;
     projectSlug?: string;
     languageSettingsSource: ConversationLanguageSettingsSource;
-    postAsOrganizationName: string;
+    postAsOrganizationSlug: string;
     isIndexed: boolean;
     participationMode: ParticipationMode;
     multilingualSetting: ConversationMultilingualSetting;
@@ -265,7 +258,7 @@ export function useBackendPostApi() {
     // Add metadata
     formData.append("projectSlug", params.projectSlug ?? "");
     formData.append("languageSettingsSource", params.languageSettingsSource);
-    formData.append("postAsOrganization", params.postAsOrganizationName);
+    formData.append("postAsOrganization", params.postAsOrganizationSlug);
     formData.append("isIndexed", String(params.isIndexed));
     formData.append("participationMode", params.participationMode);
     formData.append(
@@ -312,7 +305,7 @@ export function useBackendPostApi() {
     polisUrl,
     projectSlug,
     languageSettingsSource,
-    postAsOrganizationName,
+    postAsOrganizationSlug,
     isIndexed,
     participationMode,
     multilingualSetting,
@@ -325,7 +318,7 @@ export function useBackendPostApi() {
         polisUrl,
         projectSlug,
         languageSettingsSource,
-        postAsOrganization: postAsOrganizationName,
+        postAsOrganization: postAsOrganizationSlug,
         isIndexed,
         participationMode,
         multilingualSetting,
@@ -583,7 +576,6 @@ export function useBackendPostApi() {
     createNewPost,
     fetchRecentPost,
     fetchConversationBySlugIdWithDisplayContent,
-    createInternalPostData,
     deletePostBySlugId,
     importConversation,
     importConversationFromCsv,

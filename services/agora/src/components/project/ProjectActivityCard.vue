@@ -160,8 +160,8 @@ const activityIdentity = computed(() => getProjectActivityIdentity(props.activit
 
 const activityLinkTarget = computed(() => {
   if (!props.activity.isIndexed) {
-      return undefined;
-    }
+    return undefined;
+  }
 
   return {
     name: "/project/[projectSlug]/conversation/[postSlugId]/" as const,
@@ -222,8 +222,37 @@ const requestedActivityContentQuery = useConversationContentQuery({
     () => activityTranslationModePreference.value !== undefined && props.activity.isIndexed
   ),
 });
-const activeActivityDisplayContent = computed(() => {
+const localActivityDisplayContent = computed<ProjectActivity["displayContent"]>(() => {
+  const displayContent = props.activity.displayContent;
+  const alternateContent = props.activity.isIndexed
+    ? undefined
+    : props.activity.alternateContent;
   if (
+    activityTranslationModePreference.value === undefined ||
+    displayContent.status !== "available" ||
+    activityTranslationModePreference.value === displayContent.mode ||
+    alternateContent === undefined ||
+    alternateContent.mode !== activityTranslationModePreference.value
+  ) {
+    return displayContent;
+  }
+
+  return {
+    ...displayContent,
+    mode: alternateContent.mode,
+    content: alternateContent.content,
+    translationControl:
+      displayContent.translationControl === null
+        ? null
+        : {
+            ...displayContent.translationControl,
+            alternateMode: displayContent.mode,
+          },
+  };
+});
+const activeActivityDisplayContent = computed<ProjectActivity["displayContent"]>(() => {
+  if (
+    props.activity.isIndexed &&
     activityTranslationModePreference.value !== undefined &&
     requestedActivityContentQuery.data.value !== undefined
   ) {
@@ -238,7 +267,7 @@ const activeActivityDisplayContent = computed(() => {
 
     return {
       sourceVersion: fetchedContent.sourceVersion,
-      status: "available" as const,
+      status: "available",
       mode: fetchedContent.mode,
       content: {
         title: fetchedContent.content.title,
@@ -248,7 +277,7 @@ const activeActivityDisplayContent = computed(() => {
     };
   }
 
-  return props.activity.displayContent;
+  return localActivityDisplayContent.value;
 });
 
 const activityTranslationMode = computed<ContentTranslationDisplayMode>({
@@ -342,6 +371,8 @@ function t(
 }
 
 .project-activity-card__surface {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
@@ -349,6 +380,7 @@ function t(
   border: 1.5px solid rgba($primary, 0.22);
   border-radius: 20px;
   background: white;
+  pointer-events: none;
   box-shadow: 0 0.2rem 1rem rgba(10, 7, 20, 0.04);
   transition:
     border-color 160ms ease,
@@ -421,6 +453,7 @@ function t(
   position: relative;
   z-index: 2;
   margin-bottom: -0.25rem;
+  pointer-events: auto;
 }
 
 h3 {
