@@ -215,6 +215,7 @@ export default defineConfig((ctx) => {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
     build: {
+      // Production maps are uploaded to Sentry and removed from the image.
       sourcemap:
         ctx.prod && process.env.VITE_STAGING !== "true" ? "hidden" : false,
       target: {
@@ -297,7 +298,6 @@ export default defineConfig((ctx) => {
         if (process.env.VITE_STAGING !== "true" && ctx.prod) {
           viteConf.plugins.push(
             sentryVitePlugin({
-              authToken: process.env.VITE_SENTRY_AUTH_TOKEN,
               org: "zkorum",
               project: "agora-app",
             })

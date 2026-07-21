@@ -166,7 +166,7 @@ function ksWriteIdentifier(_ks: RSAKeyStore, prefixedKey: string): string {
   return `${prefixedKey}:write`;
 }
 
-export function ksClearStore(store: LocalForage): Promise<void> {
+function ksClearStore(store: LocalForage): Promise<void> {
   // Keep the live connection: localForage dropInstance() races with reconnects.
   return store.clear();
 }

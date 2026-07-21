@@ -27,6 +27,7 @@ import {
   type ContentTranslationDisplayMode,
   getContentTranslationSourceLanguageLabel,
   getLanguageDisplayName,
+  resolveContentTranslationPollingOutcome,
 } from "./contentTranslation";
 import {
   subscribeToContentTranslationFailed,
@@ -39,6 +40,9 @@ import {
 
 const TRANSLATION_POLL_INTERVAL_MS = 500;
 const TRANSLATION_POLL_MAX_DURATION_MS = 30_000;
+const TRANSLATION_POLL_MAX_CONSECUTIVE_REQUEST_FAILURES = 3;
+
+type ContentTranslationRequestState = "idle" | "submitting" | "polling";
 
 function isRateLimitError(error: unknown): boolean {
   return isAxiosError(error) && error.response?.status === 429;
@@ -158,7 +162,7 @@ function useContentTranslationController({
   const modePreference = ref<ContentTranslationDisplayMode | undefined>(
     undefined
   );
-  const hasRequestedTranslation = ref(false);
+  const requestState = ref<ContentTranslationRequestState>("idle");
   let requestGeneration = 0;
   const sortedSpokenLanguageKey = computed(() =>
     [...spokenLanguages.value].sort().join("\u0000")
@@ -168,6 +172,12 @@ function useContentTranslationController({
   const translationPolling = useBoundedTranslationPolling({
     intervalMs: TRANSLATION_POLL_INTERVAL_MS,
     maxDurationMs: TRANSLATION_POLL_MAX_DURATION_MS,
+    maxConsecutiveRequestFailures:
+      TRANSLATION_POLL_MAX_CONSECUTIVE_REQUEST_FAILURES,
+    onRequestFailureLimit: () => {
+      resetToOriginal();
+      showQueryFailureToast();
+    },
     onTimeout: () => {
       resetToOriginal();
       showNotifyMessage(t("translationTimedOut"));
@@ -195,6 +205,19 @@ function useContentTranslationController({
     return content.variants.translated;
   });
 
+  const pollingOutcome = computed(() => {
+    const response = query.data.value;
+    const content = response?.success === true ? response.content : undefined;
+    return resolveContentTranslationPollingOutcome({
+      responseSuccess: response?.success,
+      translationStatus:
+        content?.kind === "translatable"
+          ? content.translation.status
+          : undefined,
+      hasTranslatedVariant: translatedVariant.value !== undefined,
+    });
+  });
+
   const translationStatus = computed<LocalizedContentTranslationStatus>(() => {
     const response = query.data.value;
     const content = response?.success === true ? response.content : undefined;
@@ -209,27 +232,19 @@ function useContentTranslationController({
       return "pending";
     }
     if (
-      !hasRequestedTranslation.value &&
+      requestState.value === "idle" &&
       (toValue(initialModePreference) === undefined ||
         modePreference.value !== undefined)
     ) {
       return "not_requested";
     }
-    if (query.isFetching.value) {
+    if (query.isFetching.value || requestState.value !== "idle") {
       return "pending";
     }
     if (query.isError.value) {
       return "failed";
     }
     if (content?.kind === "translatable") {
-      if (
-        hasRequestedTranslation.value &&
-        modePreference.value === "translated" &&
-        content.variants.translated === undefined &&
-        content.translation.status !== "failed"
-      ) {
-        return "pending";
-      }
       return content.translation.status;
     }
     return "pending";
@@ -274,13 +289,13 @@ function useContentTranslationController({
         translationStatus.value !== "completed" ||
         translatedVariant.value === undefined
       ) {
-        if (hasRequestedTranslation.value) {
+        if (requestState.value === "polling") {
           translationPolling.start();
           return;
         }
         translationPolling.stop();
         requestMode.value = "queue_if_missing";
-        hasRequestedTranslation.value = true;
+        requestState.value = "submitting";
         const activeRequestGeneration = requestGeneration;
         try {
           await query.refetch();
@@ -292,11 +307,17 @@ function useContentTranslationController({
         if (activeRequestGeneration !== requestGeneration) {
           return;
         }
+        if (requestState.value !== "submitting") {
+          return;
+        }
         if (
           translationStatus.value !== "completed" ||
           translatedVariant.value === undefined
         ) {
+          requestState.value = "polling";
           translationPolling.start();
+        } else {
+          requestState.value = "idle";
         }
       }
       return;
@@ -308,7 +329,7 @@ function useContentTranslationController({
     translationPolling.stop();
     requestMode.value = "read_existing";
     modePreference.value = "original";
-    hasRequestedTranslation.value = false;
+    requestState.value = "idle";
   }
 
   watch([displayLanguage, sortedSpokenLanguageKey], () => {
@@ -316,7 +337,7 @@ function useContentTranslationController({
     translationPolling.stop();
     requestMode.value = "read_existing";
     modePreference.value = undefined;
-    hasRequestedTranslation.value = false;
+    requestState.value = "idle";
   });
 
   watch(
@@ -326,7 +347,7 @@ function useContentTranslationController({
       translationPolling.stop();
       requestMode.value = "read_existing";
       modePreference.value = undefined;
-      hasRequestedTranslation.value = false;
+      requestState.value = "idle";
     }
   );
 
@@ -340,9 +361,11 @@ function useContentTranslationController({
     ],
     ([isEnabled, initialMode]) => {
       if (isEnabled && initialMode !== undefined) {
+        requestState.value = "polling";
         translationPolling.start();
-      } else if (!hasRequestedTranslation.value) {
+      } else if (!isEnabled) {
         translationPolling.stop();
+        requestState.value = "idle";
       }
     },
     { immediate: true }
@@ -453,26 +476,44 @@ function useContentTranslationController({
   watch([translationStatus, translatedVariant], ([status, variant]) => {
     if (status === "completed" && variant !== undefined) {
       translationPolling.stop();
-    }
-  });
-
-  watch(translationStatus, (status) => {
-    if (status === "failed") {
-      resetToOriginal();
-      showQueryFailureToast();
+      requestState.value = "idle";
     }
   });
 
   watch(
-    () => query.data.value,
-    (response) => {
-      if (response?.success === false && hasRequestedTranslation.value) {
+    () => query.dataUpdatedAt.value,
+    () => {
+      const response = query.data.value;
+      if (requestState.value === "polling") {
+        translationPolling.recordRequestSuccess();
+      }
+      if (requestState.value === "idle") {
+        return;
+      }
+      if (response?.success === false) {
         if (response.reason === "content_translation_not_enabled") {
           applyTranslationNotEnabledResponse();
           return;
         }
         resetToOriginal();
         showNotifyMessage(t("translationFailed"));
+        return;
+      }
+      if (pollingOutcome.value === "terminal_failure") {
+        resetToOriginal();
+        showNotifyMessage(t("translationFailed"));
+      }
+    }
+  );
+
+  watch(
+    () => query.errorUpdatedAt.value,
+    (errorUpdatedAt, previousErrorUpdatedAt) => {
+      if (
+        requestState.value === "polling" &&
+        errorUpdatedAt > previousErrorUpdatedAt
+      ) {
+        translationPolling.recordRequestFailure();
       }
     }
   );

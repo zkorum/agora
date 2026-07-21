@@ -18,6 +18,7 @@ import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/util.js";
 import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
+import { cancelPendingOpinionTranslationWorkForOpinion } from "@/shared-backend/contentTranslationWork.js";
 
 interface ModerateByPostSlugIdProps {
     postSlugId: string;
@@ -59,7 +60,10 @@ export async function moderateByPostSlugId({
             })
             .where(
                 and(
-                    eq(conversationModerationTable.conversationId, postDetails.id),
+                    eq(
+                        conversationModerationTable.conversationId,
+                        postDetails.id,
+                    ),
                     isNull(conversationModerationTable.deletedAt),
                 ),
             );
@@ -101,6 +105,7 @@ export async function moderateByCommentSlugId({
         });
 
     await db.transaction(async (tx) => {
+        const now = nowZeroMs();
         const moderationRows = await tx
             .select({
                 id: opinionModerationTable.id,
@@ -134,7 +139,7 @@ export async function moderateByCommentSlugId({
                     moderationAction: moderationAction,
                     moderationReason: moderationReason,
                     moderationExplanation: moderationExplanation,
-                    updatedAt: nowZeroMs(),
+                    updatedAt: now,
                 })
                 .where(eq(opinionModerationTable.id, existingModeration.id));
         } else {
@@ -153,6 +158,14 @@ export async function moderateByCommentSlugId({
                 db: tx,
                 conversationId,
                 log,
+            });
+        }
+
+        if (moderationAction === "hide") {
+            await cancelPendingOpinionTranslationWorkForOpinion({
+                db: tx,
+                opinionId,
+                now,
             });
         }
     });

@@ -18,6 +18,10 @@ import {
     userTable,
 } from "../src/shared-backend/schema.js";
 import { ENQUEUE_CONTENT_TRANSLATION_WORK_SCRIPT } from "../src/shared-backend/contentTranslationQueue.js";
+import {
+    cancelPendingOpinionTranslationWorkForOpinion,
+    cancelPendingOpinionTranslationWorkForUser,
+} from "../src/shared-backend/contentTranslationWork.js";
 import { Dto } from "../src/shared/types/dto.js";
 import { isSiteModeratorAccount } from "../src/service/authUtil.js";
 import { requestContentTranslation } from "../src/service/contentTranslation.js";
@@ -59,7 +63,7 @@ describe("opinion content translation boundary", () => {
             database: "agora_test",
             username: "postgres",
             password: "postgres",
-            max: 1,
+            max: 4,
         });
         db = drizzle(sqlClient);
         queueScript = new Script(ENQUEUE_CONTENT_TRANSLATION_WORK_SCRIPT);
@@ -409,5 +413,182 @@ describe("opinion content translation boundary", () => {
         expect(
             await db.select().from(contentTranslationWorkTable),
         ).toHaveLength(0);
+    });
+
+    it("does not return or queue a revision authored by a deleted user", async () => {
+        await db
+            .update(userTable)
+            .set({ isDeleted: true })
+            .where(eq(userTable.id, opinionAuthorId));
+        let queueAuthorizationChecks = 0;
+
+        const response = await requestOpinionTranslation({
+            sourceVersion: historicalSourceVersion,
+            requestMode: "queue_if_missing",
+            requesterUserId: siteModeratorUserId,
+            beforeQueueTranslationWork: async () => {
+                queueAuthorizationChecks += 1;
+            },
+        });
+
+        expect(response).toBeUndefined();
+        expect(queueAuthorizationChecks).toBe(0);
+        expect(
+            await db.select().from(contentTranslationWorkTable),
+        ).toHaveLength(0);
+    });
+
+    it("creates one work row when concurrent requests race", async () => {
+        const requests = [
+            requestOpinionTranslation({
+                sourceVersion: currentSourceVersion,
+                requestMode: "queue_if_missing",
+                requesterUserId: normalUserId,
+                beforeQueueTranslationWork: async () => {},
+            }),
+            requestOpinionTranslation({
+                sourceVersion: currentSourceVersion,
+                requestMode: "queue_if_missing",
+                requesterUserId: normalUserId,
+                beforeQueueTranslationWork: async () => {},
+            }),
+        ];
+
+        const responses = await Promise.all(requests);
+
+        expect(responses.every((response) => response !== undefined)).toBe(
+            true,
+        );
+        expect(
+            await db.select().from(contentTranslationWorkTable),
+        ).toHaveLength(1);
+    });
+
+    it("preserves a running work lease when a request reuses it", async () => {
+        const leaseToken = "00000000-0000-4000-8000-000000000007";
+        const leaseExpiresAt = new Date("2026-01-01T00:01:00.000Z");
+        await db.insert(contentTranslationWorkTable).values({
+            conversationId: 1,
+            sourceKind: "opinion",
+            opinionContentId: currentContentId,
+            displayLanguageCode: "en",
+            status: "running",
+            priorityRank: 1,
+            leaseOwner: "worker-1",
+            leaseToken,
+            leaseExpiresAt,
+        });
+
+        await requestOpinionTranslation({
+            sourceVersion: currentSourceVersion,
+            requestMode: "queue_if_missing",
+            requesterUserId: normalUserId,
+            beforeQueueTranslationWork: async () => {},
+        });
+
+        const rows = await db
+            .select({
+                status: contentTranslationWorkTable.status,
+                priorityRank: contentTranslationWorkTable.priorityRank,
+                leaseOwner: contentTranslationWorkTable.leaseOwner,
+                leaseToken: contentTranslationWorkTable.leaseToken,
+                leaseExpiresAt: contentTranslationWorkTable.leaseExpiresAt,
+            })
+            .from(contentTranslationWorkTable);
+        expect(rows).toEqual([
+            {
+                status: "running",
+                priorityRank: 0,
+                leaseOwner: "worker-1",
+                leaseToken,
+                leaseExpiresAt,
+            },
+        ]);
+    });
+
+    it("cancels pending hidden work without disturbing running leases", async () => {
+        const leaseToken = "00000000-0000-4000-8000-000000000008";
+        const leaseExpiresAt = new Date("2026-01-01T00:01:00.000Z");
+        await db.insert(contentTranslationWorkTable).values([
+            {
+                conversationId: 1,
+                sourceKind: "opinion",
+                opinionContentId: historicalContentId,
+                displayLanguageCode: "en",
+                status: "pending",
+            },
+            {
+                conversationId: 1,
+                sourceKind: "opinion",
+                opinionContentId: currentContentId,
+                displayLanguageCode: "en",
+                status: "running",
+                leaseOwner: "worker-1",
+                leaseToken,
+                leaseExpiresAt,
+            },
+        ]);
+
+        await cancelPendingOpinionTranslationWorkForOpinion({
+            db,
+            opinionId,
+            now: new Date("2026-01-01T00:00:30.000Z"),
+        });
+
+        const rows = await db
+            .select({
+                opinionContentId: contentTranslationWorkTable.opinionContentId,
+                status: contentTranslationWorkTable.status,
+                leaseOwner: contentTranslationWorkTable.leaseOwner,
+                leaseToken: contentTranslationWorkTable.leaseToken,
+                lastErrorCode: contentTranslationWorkTable.lastErrorCode,
+            })
+            .from(contentTranslationWorkTable);
+        expect(rows).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    opinionContentId: historicalContentId,
+                    status: "failed",
+                    lastErrorCode: "ineligible_source",
+                }),
+                expect.objectContaining({
+                    opinionContentId: currentContentId,
+                    status: "running",
+                    leaseOwner: "worker-1",
+                    leaseToken,
+                }),
+            ]),
+        );
+    });
+
+    it("cancels pending work when the opinion author is deleted", async () => {
+        await db.insert(contentTranslationWorkTable).values({
+            conversationId: 1,
+            sourceKind: "opinion",
+            opinionContentId: historicalContentId,
+            displayLanguageCode: "en",
+            status: "pending",
+        });
+
+        await cancelPendingOpinionTranslationWorkForUser({
+            db,
+            userId: opinionAuthorId,
+            now: new Date("2026-01-01T00:00:30.000Z"),
+        });
+
+        const rows = await db
+            .select({
+                status: contentTranslationWorkTable.status,
+                lastErrorCode: contentTranslationWorkTable.lastErrorCode,
+                lastErrorMessage: contentTranslationWorkTable.lastErrorMessage,
+            })
+            .from(contentTranslationWorkTable);
+        expect(rows).toEqual([
+            {
+                status: "failed",
+                lastErrorCode: "ineligible_source",
+                lastErrorMessage: "Opinion author account is deleted",
+            },
+        ]);
     });
 });

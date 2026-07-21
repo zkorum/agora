@@ -1,7 +1,10 @@
 import type { OrganizationProperties } from "src/shared/types/zod";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { resolveSelectedOrganizationSlug } from "./conversationDraft.utils";
+import {
+  resolveDraftPublicationIdentityAtBoundary,
+  resolveSelectedOrganizationSlug,
+} from "./conversationDraft.utils";
 
 const organizationList = [
   {
@@ -78,5 +81,69 @@ describe("resolveSelectedOrganizationSlug", () => {
         organizationList: organizationsWithSlugNameCollision,
       })
     ).toBe("agora-foundation");
+  });
+});
+
+describe("resolveDraftPublicationIdentityAtBoundary", () => {
+  const legacyOrganizationPostAs = {
+    postAsOrganization: true,
+    organizationName: "Agora Foundation",
+  };
+
+  it("resolves a legacy organization for publication from the direct seed route", async () => {
+    const loadProfile = vi.fn(() => Promise.resolve());
+
+    await expect(
+      resolveDraftPublicationIdentityAtBoundary({
+        postAs: legacyOrganizationPostAs,
+        getProfile: () => ({ dataLoaded: true, organizationList }),
+        loadProfile,
+      })
+    ).resolves.toEqual({
+      status: "resolved",
+      organizationSlug: "agora-foundation",
+    });
+    expect(loadProfile).not.toHaveBeenCalled();
+  });
+
+  it("waits for a delayed profile before resolving the organization", async () => {
+    let profile: {
+      dataLoaded: boolean;
+      organizationList: readonly OrganizationProperties[];
+    } = { dataLoaded: false, organizationList: [] };
+
+    await expect(
+      resolveDraftPublicationIdentityAtBoundary({
+        postAs: legacyOrganizationPostAs,
+        getProfile: () => profile,
+        loadProfile: () => {
+          profile = { dataLoaded: true, organizationList };
+          return Promise.resolve();
+        },
+      })
+    ).resolves.toEqual({
+      status: "resolved",
+      organizationSlug: "agora-foundation",
+    });
+  });
+
+  it("does not resolve or switch identity when profile loading fails", async () => {
+    await expect(
+      resolveDraftPublicationIdentityAtBoundary({
+        postAs: legacyOrganizationPostAs,
+        getProfile: () => ({ dataLoaded: false, organizationList: [] }),
+        loadProfile: () => Promise.resolve(),
+      })
+    ).resolves.toEqual({ status: "profile_pending" });
+  });
+
+  it("rejects a loaded profile that cannot resolve the legacy identity", async () => {
+    await expect(
+      resolveDraftPublicationIdentityAtBoundary({
+        postAs: legacyOrganizationPostAs,
+        getProfile: () => ({ dataLoaded: true, organizationList: [] }),
+        loadProfile: () => Promise.resolve(),
+      })
+    ).resolves.toEqual({ status: "organization_unavailable" });
   });
 });

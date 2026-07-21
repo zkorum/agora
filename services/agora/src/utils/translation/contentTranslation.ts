@@ -29,6 +29,45 @@ export interface ResolveContentTranslationStateParams {
   hasTranslatedContent: boolean;
 }
 
+export type ContentTranslationPollingOutcome =
+  | "completed"
+  | "pending"
+  | "terminal_failure";
+
+export function resolveContentTranslationPollingOutcome({
+  responseSuccess,
+  translationStatus,
+  hasTranslatedVariant,
+}: {
+  responseSuccess: boolean | undefined;
+  translationStatus: LocalizedContentTranslationStatus | undefined;
+  hasTranslatedVariant: boolean;
+}): ContentTranslationPollingOutcome {
+  if (responseSuccess === false || translationStatus === "failed") {
+    return "terminal_failure";
+  }
+  if (translationStatus === "completed" && hasTranslatedVariant) {
+    return "completed";
+  }
+  return "pending";
+}
+
+export function isRequestedTranslationPreviewCurrent({
+  requestedSourceVersion,
+  currentSourceVersion,
+  hasTranslationControl,
+}: {
+  requestedSourceVersion: string | undefined;
+  currentSourceVersion: string | undefined;
+  hasTranslationControl: boolean;
+}): boolean {
+  return (
+    hasTranslationControl &&
+    requestedSourceVersion !== undefined &&
+    requestedSourceVersion === currentSourceVersion
+  );
+}
+
 function viewerUnderstandsSourceLanguage({
   sourceLanguageCode,
   displayLanguage,
@@ -62,12 +101,18 @@ export function getLanguageDisplayName({
   languageCode: string | null | undefined;
   displayLanguage: SupportedDisplayLanguageCodes;
 }): string | undefined {
-  if (languageCode === undefined || languageCode === null || languageCode === "") {
+  if (
+    languageCode === undefined ||
+    languageCode === null ||
+    languageCode === ""
+  ) {
     return undefined;
   }
 
   try {
-    const displayNames = new Intl.DisplayNames([displayLanguage], { type: "language" });
+    const displayNames = new Intl.DisplayNames([displayLanguage], {
+      type: "language",
+    });
     return displayNames.of(languageCode) ?? languageCode;
   } catch {
     const language = SupportedSpokenLanguageMetadataList.find(
@@ -140,8 +185,13 @@ export function resolveContentTranslationState({
     languageCode: sourceLanguageCode,
     displayLanguage,
   });
-  const supportsDisplayLanguage = supportedTargetLanguageCodes.includes(displayLanguage);
-  if (!dynamicTranslationEnabled || !hasTranslatedContent || !supportsDisplayLanguage) {
+  const supportsDisplayLanguage =
+    supportedTargetLanguageCodes.includes(displayLanguage);
+  if (
+    !dynamicTranslationEnabled ||
+    !hasTranslatedContent ||
+    !supportsDisplayLanguage
+  ) {
     return {
       isAvailable: false,
       initialMode: "original",

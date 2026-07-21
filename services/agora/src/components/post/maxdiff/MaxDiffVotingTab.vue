@@ -296,6 +296,7 @@ import {
 import {
   createMaxDiffCandidateDisplaySnapshot,
   type MaxDiffCandidateDisplayItem,
+  retryMaxDiffCandidateResolution,
 } from "src/utils/maxdiffCandidateDisplay";
 import { getRankingItemDisplayText } from "src/utils/translation/rankingItemDisplayText";
 import { useNotify } from "src/utils/ui/notify";
@@ -457,7 +458,7 @@ const candidateItemBySlugId = computed(() => {
   return map;
 });
 
-function updateCandidateItemSnapshot(): void {
+function updateCandidateItemSnapshot(): boolean {
   const resolvedCandidateItems = createMaxDiffCandidateDisplaySnapshot({
     candidateSlugIds: candidates.value,
     itemBySlugId: itemBySlugId.value,
@@ -465,11 +466,12 @@ function updateCandidateItemSnapshot(): void {
   if (resolvedCandidateItems.length !== candidates.value.length) {
     candidateItems.value = [];
     candidateResolutionError.value = true;
-    return;
+    return false;
   }
 
   candidateItems.value = resolvedCandidateItems;
   candidateResolutionError.value = false;
+  return true;
 }
 
 function needsDialog(slugId: string): boolean {
@@ -620,56 +622,88 @@ const canUndo = computed(() => {
 const engineInitialized = ref(false);
 const initError = ref(false);
 
+function resolveInitialization(): boolean {
+  const items = itemsQuery.data.value;
+  const loadData = loadQuery.data.value;
+  const loadError = loadQuery.isError.value;
+  if (items === undefined || engineInitialized.value) return false;
+  // Wait for load query to settle (success or error)
+  if (loadData === undefined && !loadError) return false;
+
+  const slugIds = items.map((item) => item.slugId);
+  if (slugIds.length < 2) {
+    candidateItems.value = [];
+    candidates.value = [];
+    initError.value = false;
+    candidateResolutionError.value = false;
+    isInitializingEngine.value = false;
+    engineInitialized.value = true;
+    return true;
+  }
+
+  isInitializingEngine.value = true;
+
+  if (loadData !== undefined && loadData.comparisons !== null) {
+    // Restore from saved state
+    const comparisons: MaxDiffComparison[] = loadData.comparisons.map((c) => ({
+      best: c.best,
+      worst: c.worst,
+      set: c.set,
+    }));
+    const restored = restoreMaxDiff({ items: slugIds, comparisons });
+    instance.value = restored;
+    isComplete.value = restored.complete;
+    finalRanking.value = restored.result ?? [];
+  } else {
+    // No saved state or load failed — create fresh instance
+    const fresh = createMaxDiff(slugIds);
+    instance.value = fresh;
+    isComplete.value = false;
+    finalRanking.value = [];
+  }
+
+  // Use candidate sets from load response (computed server-side)
+  if (loadData !== undefined) {
+    candidates.value = loadData.candidateSets[0] ?? [];
+  } else if (!instance.value.complete) {
+    initError.value = true;
+    isInitializingEngine.value = false;
+    engineInitialized.value = true;
+    return false;
+  }
+
+  if (!instance.value.complete && candidates.value.length === 0) {
+    candidateItems.value = [];
+    candidateResolutionError.value = true;
+    isInitializingEngine.value = false;
+    engineInitialized.value = true;
+    return false;
+  }
+
+  const candidatesResolved = updateCandidateItemSnapshot();
+  isInitializingEngine.value = false;
+  engineInitialized.value = true;
+  if (!candidatesResolved) {
+    return false;
+  }
+
+  initError.value = false;
+  return true;
+}
+
 watch(
   [
     () => itemsQuery.data.value,
+    () => itemsQuery.isError.value,
     () => loadQuery.data.value,
     () => loadQuery.isError.value,
   ],
-  ([items, loadData, loadError]) => {
-    if (items === undefined || engineInitialized.value) return;
-    // Wait for load query to settle (success or error)
-    if (loadData === undefined && !loadError) return;
-
-    const slugIds = items.map((item) => item.slugId);
-    if (slugIds.length < 2) {
+  ([, itemsError]) => {
+    if (itemsError) {
       isInitializingEngine.value = false;
-      engineInitialized.value = true;
       return;
     }
-
-    isInitializingEngine.value = true;
-    initError.value = false;
-
-    if (loadData !== undefined && loadData.comparisons !== null) {
-      // Restore from saved state
-      const comparisons: MaxDiffComparison[] = loadData.comparisons.map(
-        (c) => ({ best: c.best, worst: c.worst, set: c.set })
-      );
-      const restored = restoreMaxDiff({ items: slugIds, comparisons });
-      instance.value = restored;
-      isComplete.value = restored.complete;
-      finalRanking.value = restored.result ?? [];
-    } else {
-      // No saved state or load failed — create fresh instance
-      const fresh = createMaxDiff(slugIds);
-      instance.value = fresh;
-      isComplete.value = false;
-      finalRanking.value = [];
-    }
-
-    // Use candidate sets from load response (computed server-side)
-    if (loadData !== undefined) {
-      candidates.value = loadData.candidateSets[0] ?? [];
-    } else if (!instance.value.complete) {
-      initError.value = true;
-      isInitializingEngine.value = false;
-      engineInitialized.value = true;
-      return;
-    }
-
-    isInitializingEngine.value = false;
-    engineInitialized.value = true;
+    resolveInitialization();
   },
   { immediate: true }
 );
@@ -685,19 +719,25 @@ watch(
 );
 
 watch(itemBySlugId, () => {
-  if (candidateResolutionError.value) {
+  if (candidateResolutionError.value && !isInitializingEngine.value) {
     updateCandidateItemSnapshot();
     void nextTick(checkTruncation);
   }
 });
 
-function retryInitialize(): void {
-  engineInitialized.value = false;
-  initError.value = false;
-  candidateResolutionError.value = false;
+async function retryInitialize(): Promise<void> {
   isInitializingEngine.value = true;
-  void itemsQuery.refetch();
-  void loadQuery.refetch();
+  const retryResult = await retryMaxDiffCandidateResolution({
+    refetchItems: async () => await itemsQuery.refetch(),
+    refetchLoad: async () => await loadQuery.refetch(),
+    resolve: () => {
+      engineInitialized.value = false;
+      return resolveInitialization();
+    },
+  });
+  if (retryResult !== "resolved") {
+    isInitializingEngine.value = false;
+  }
 }
 
 async function handleCandidateClick(slugId: string): Promise<void> {

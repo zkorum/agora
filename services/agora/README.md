@@ -33,6 +33,7 @@ The project uses separate environment files for different build modes:
 - `.env.dev` - Development configuration (automatically loaded by `pnpm dev`)
 - `.env.staging` - Staging configuration (must include `VITE_STAGING=true`)
 - `.env.production` - Production configuration (must include `VITE_STAGING=false`)
+- `.env.sentry-build-plugin` - Build-only Sentry source-map upload credentials
 
 Copy `env.example` to create your local environment files:
 
@@ -46,6 +47,18 @@ Edit the files with your configuration values. Environment variables are accesse
 
 - Development: `pnpm dev` automatically loads `.env.dev` via Quasar/Vite
 - Production builds: `pnpm build:staging` and `pnpm build:production` use `env-cmd` to load the appropriate env file before building
+
+Production source-map uploads use an ignored `.env.sentry-build-plugin` file:
+
+```bash
+SENTRY_AUTH_TOKEN=your-token
+```
+
+The production image scripts pass this file to Docker as a BuildKit secret. It is excluded from the build context, mounted only for the build command, and never added to the frontend bundle or final image. With the file present, build the production image normally:
+
+```bash
+pnpm image:buildx:production <tag>
+```
 
 We use `env-cmd` because:
 
@@ -101,6 +114,8 @@ Production builds use differential delivery:
 These targets describe compilation, not an unconditional support guarantee. Autoprefixer and Vite do not transform every modern CSS feature, and Vue 3 requires native ES2016 capabilities. The legacy build cannot supply fundamental platform behavior such as `Proxy`, functional IndexedDB, WebCrypto, or reliable browser storage. Browsers missing capabilities required by a particular flow must receive a degraded or unsupported-browser experience rather than a hand-written global polyfill.
 
 The legacy path is generated only by production builds. Browser compatibility must therefore be tested against `pnpm build:dev`, `pnpm build:staging`, or `pnpm build:production`, not only the development server. In-app browsers such as WeChat can use device-specific kernels, so support claims require testing the built application on representative physical devices.
+
+Keystore operations prefer the native Web Locks API for cross-tab coordination. Supported browsers without Web Locks use the maintained `browser-tabs-lock` fallback without modifying browser globals.
 
 ## Logos
 

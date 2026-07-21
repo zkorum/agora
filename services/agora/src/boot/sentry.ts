@@ -1,11 +1,21 @@
 import * as Sentry from "@sentry/vue";
 import {
   redactSentryBreadcrumb,
+  redactSentryEvent,
   redactSentryTransaction,
+  SENTRY_TRACE_PROPAGATION_TARGETS,
   shouldIgnoreSentryEvent,
 } from "src/utils/sentry/eventPrivacy";
 import { createPiniaStateAttachment } from "src/utils/sentry/piniaState";
-import { addStackOverflowDiagnostics } from "src/utils/sentry/stackOverflowDiagnostics";
+import {
+  sanitizeReplayEvent,
+  sanitizeReplayRecordingEvent,
+  SENTRY_REPLAY_MASK_ATTRIBUTES,
+} from "src/utils/sentry/replayPrivacy";
+import {
+  addStackOverflowDiagnostics,
+  isStackOverflowEvent,
+} from "src/utils/sentry/stackOverflowDiagnostics";
 
 import { defineBoot } from "#q-app/wrappers";
 
@@ -23,39 +33,43 @@ export default defineBoot(({ app, router, store }) => {
       if (shouldIgnoreSentryEvent(event)) {
         return null;
       }
-      hint.attachments = [
-        ...(hint.attachments ?? []),
-        createPiniaStateAttachment(store.state.value),
-      ];
+      if (isStackOverflowEvent(event)) {
+        hint.attachments = [
+          ...(hint.attachments ?? []),
+          createPiniaStateAttachment(store.state.value),
+        ];
+      }
       const eventWithDiagnostics = addStackOverflowDiagnostics({
         event,
         documentRoot: document,
       });
-      return { ...eventWithDiagnostics, request: undefined };
+      return redactSentryEvent(eventWithDiagnostics);
     },
     integrations: (defaultIntegrations) => [
       ...defaultIntegrations.filter(
         (integration) =>
           integration.name !== "HttpContext" && integration.name !== "Vue"
       ),
-      Sentry.vueIntegration({
-        tracingOptions: {
-          // see https://docs.sentry.io/platforms/javascript/guides/vue/features/component-tracking/
-          trackComponents: true,
-        },
-      }),
+      Sentry.vueIntegration(),
       Sentry.browserTracingIntegration({ router }),
       Sentry.replayIntegration({
         maskAllText: true,
+        maskAllInputs: true,
         blockAllMedia: true,
+        maskAttributes: SENTRY_REPLAY_MASK_ATTRIBUTES,
+        networkCaptureBodies: false,
+        networkDetailAllowUrls: [],
+        networkRequestHeaders: [],
+        networkResponseHeaders: [],
+        attachRawBodyFromRequest: false,
+        beforeAddRecordingEvent: sanitizeReplayRecordingEvent,
+        beforeErrorSampling: (event) => !shouldIgnoreSentryEvent(event),
       }),
     ],
     tracesSampleRate: 0.1,
-    replaysSessionSampleRate: 0.1,
+    replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 1.0,
-    tracePropagationTargets: [
-      /^https?:\/\/(?:.*\.)?agoracitizen\.network/,
-      /^https?:\/\/(?:.*\.)?zkorum\.com/,
-    ],
+    tracePropagationTargets: SENTRY_TRACE_PROPAGATION_TARGETS,
   });
+  Sentry.addEventProcessor(sanitizeReplayEvent);
 });

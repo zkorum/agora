@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Literal
 
 import pytest
-from sqlalchemy import create_engine, delete, update
+from sqlalchemy import create_engine, delete, text, update
 from sqlalchemy.orm import Session
 
 import content_translation_worker.db as translation_db
@@ -18,6 +18,8 @@ from content_translation_worker.db import (
 from content_translation_worker.generated_models import (
     AnalysisSnapshotOpinion,
     ContentTranslationSourceKind,
+    ContentTranslationWork,
+    ContentTranslationWorkStatus,
     Conversation,
     ConversationLanguageSettingsSource,
     ConversationType,
@@ -25,10 +27,14 @@ from content_translation_worker.generated_models import (
     ConversationViewSnapshotReasonEnum,
     DisplayLanguageCode,
     LanguageDetectionProvider,
+    ModerationReasonEnum,
     Opinion,
     OpinionContent,
+    OpinionModeration,
+    OpinionModerationAction,
     ParticipationMode,
     SpokenLanguageCode,
+    User,
 )
 from content_translation_worker.simulated_translation import SimulatedTranslationService
 from content_translation_worker.translation_model import SimulatedTranslationMode
@@ -42,6 +48,7 @@ HISTORICAL_CONTENT_ID = 10
 CURRENT_CONTENT_ID = 11
 CONVERSATION_ID = 20
 OPINION_ID = 30
+AUTHOR_ID = uuid.UUID("00000000-0000-4000-8000-000000000001")
 
 
 @pytest.fixture
@@ -56,10 +63,61 @@ def opinion_revision_session() -> Iterator[Session]:
             Conversation.metadata.tables["opinion_content_translation"],
             Conversation.metadata.tables["analysis_snapshot_opinion"],
             Conversation.metadata.tables["conversation_view_snapshot"],
+            Conversation.metadata.tables["opinion_moderation"],
+            Conversation.metadata.tables["user"],
         ],
     )
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                CREATE TABLE content_translation_work (
+                    id INTEGER PRIMARY KEY,
+                    conversation_id INTEGER,
+                    source_kind TEXT NOT NULL,
+                    project_content_id INTEGER,
+                    conversation_content_id INTEGER,
+                    opinion_content_id INTEGER,
+                    survey_question_content_id INTEGER,
+                    survey_question_option_content_ids TEXT,
+                    ranking_item_content_id INTEGER,
+                    display_language_code TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    priority_rank INTEGER NOT NULL,
+                    attempt_count INTEGER NOT NULL,
+                    lease_owner TEXT,
+                    lease_token TEXT,
+                    lease_expires_at DATETIME,
+                    last_error_code TEXT,
+                    last_error_message TEXT,
+                    requested_at DATETIME,
+                    completed_at DATETIME,
+                    failed_at DATETIME,
+                    created_at DATETIME NOT NULL,
+                    updated_at DATETIME NOT NULL
+                )
+                """
+            )
+        )
     now = datetime.now(UTC)
     with Session(engine) as session:
+        session.add(
+            User(
+                id=AUTHOR_ID,
+                polis_participant_id=1,
+                username="opinion-author",
+                is_site_moderator=False,
+                is_site_org_admin=False,
+                is_imported=False,
+                is_deleted=False,
+                deleted_at=None,
+                active_conversation_count=0,
+                total_conversation_count=0,
+                total_opinion_count=1,
+                created_at=now,
+                updated_at=now,
+            )
+        )
         session.add(
             Conversation(
                 id=CONVERSATION_ID,
@@ -79,7 +137,7 @@ def opinion_revision_session() -> Iterator[Session]:
             Opinion(
                 id=OPINION_ID,
                 slug_id="opin1234",
-                author_id=uuid.uuid4(),
+                author_id=AUTHOR_ID,
                 conversation_id=CONVERSATION_ID,
                 current_content_id=CURRENT_CONTENT_ID,
                 created_at=now,
@@ -260,6 +318,149 @@ def test_ineligible_opinion_revision_remains_missing_source(
 
     assert result == ProcessWorkResult(work_id=1, status="missing_source")
     assert marked_work_ids == [1]
+
+
+@pytest.mark.parametrize("ineligible_source", ["hidden", "deleted_author"])
+def test_rejects_ineligible_opinion_source(
+    opinion_revision_session: Session,
+    ineligible_source: Literal["hidden", "deleted_author"],
+) -> None:
+    if ineligible_source == "hidden":
+        opinion_revision_session.add(
+            OpinionModeration(
+                opinion_id=OPINION_ID,
+                author_id=None,
+                moderation_action=OpinionModerationAction.hide,
+                moderation_reason=ModerationReasonEnum.spam,
+                moderation_explanation=None,
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
+                deleted_at=None,
+            )
+        )
+    else:
+        opinion_revision_session.execute(
+            update(User).where(User.id == AUTHOR_ID).values(is_deleted=True)
+        )
+    opinion_revision_session.flush()
+    claim = _opinion_claim(opinion_content_id=HISTORICAL_CONTENT_ID)
+    _add_claimed_work(opinion_revision_session, claim=claim)
+
+    result = process_claimed_work(
+        opinion_revision_session,
+        claim=claim,
+        translation_service=_translation_service(),
+    )
+
+    assert result == ProcessWorkResult(work_id=1, status="ineligible_source")
+    work = opinion_revision_session.get(ContentTranslationWork, claim.id)
+    assert work is not None
+    assert work.status == ContentTranslationWorkStatus.failed
+    assert work.last_error_code == "ineligible_source"
+    expected_message = (
+        "Opinion is hidden"
+        if ineligible_source == "hidden"
+        else "Opinion author account is deleted"
+    )
+    assert work.last_error_message == expected_message
+    assert work.lease_owner is None
+    assert work.lease_token is None
+    assert work.lease_expires_at is None
+
+
+def test_rechecks_hide_moderation_immediately_before_translation(
+    opinion_revision_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider_called = False
+
+    def hide_before_translation(
+        session: Session,
+        *,
+        claim: ClaimedContentTranslationWork,
+        source: OpinionSource,
+    ) -> bool:
+        del claim, source
+        session.add(
+            OpinionModeration(
+                opinion_id=OPINION_ID,
+                author_id=None,
+                moderation_action=OpinionModerationAction.hide,
+                moderation_reason=ModerationReasonEnum.spam,
+                moderation_explanation=None,
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
+                deleted_at=None,
+            )
+        )
+        session.flush()
+        return False
+
+    def translate_opinion_source(
+        session: Session,
+        *,
+        claim: ClaimedContentTranslationWork,
+        source: OpinionSource,
+        translation_service: ContentTranslationService,
+    ) -> None:
+        nonlocal provider_called
+        del session, claim, source, translation_service
+        provider_called = True
+
+    monkeypatch.setattr(
+        translation_db,
+        "_has_fresh_opinion_translation",
+        hide_before_translation,
+    )
+    monkeypatch.setattr(translation_db, "_translate_opinion_source", translate_opinion_source)
+    claim = _opinion_claim(opinion_content_id=HISTORICAL_CONTENT_ID)
+    _add_claimed_work(opinion_revision_session, claim=claim)
+
+    result = process_claimed_work(
+        opinion_revision_session,
+        claim=claim,
+        translation_service=_translation_service(),
+    )
+
+    assert result == ProcessWorkResult(work_id=1, status="ineligible_source")
+    assert provider_called is False
+    work = opinion_revision_session.get(ContentTranslationWork, claim.id)
+    assert work is not None
+    assert work.status == ContentTranslationWorkStatus.failed
+    assert work.last_error_code == "ineligible_source"
+    assert work.last_error_message == "Opinion is hidden"
+
+
+def _add_claimed_work(
+    session: Session,
+    *,
+    claim: ClaimedContentTranslationWork,
+) -> None:
+    now = datetime.now(UTC)
+    session.add(
+        ContentTranslationWork(
+            id=claim.id,
+            conversation_id=claim.conversation_id,
+            source_kind=claim.source_kind,
+            project_content_id=claim.project_content_id,
+            conversation_content_id=claim.conversation_content_id,
+            opinion_content_id=claim.opinion_content_id,
+            survey_question_content_id=claim.survey_question_content_id,
+            survey_question_option_content_ids=claim.survey_question_option_content_ids,
+            ranking_item_content_id=claim.ranking_item_content_id,
+            display_language_code=claim.display_language_code,
+            status=ContentTranslationWorkStatus.running,
+            priority_rank=0,
+            attempt_count=1,
+            lease_owner="worker-1",
+            lease_token=claim.lease_token,
+            lease_expires_at=now + timedelta(minutes=1),
+            requested_at=now,
+            created_at=now,
+            updated_at=now,
+        )
+    )
+    session.flush()
 
 
 def _opinion_claim(*, opinion_content_id: int) -> ClaimedContentTranslationWork:

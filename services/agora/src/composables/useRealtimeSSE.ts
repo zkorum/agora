@@ -33,6 +33,7 @@ import {
   getConversationDisplayContentQueryPrefix,
   getProjectContentQueryKey,
 } from "src/utils/api/contentTranslation/useContentTranslationQueries";
+import { getErrorLogContext } from "src/utils/api/errorLog";
 import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { processEnv } from "src/utils/processEnv";
@@ -780,7 +781,10 @@ export function useRealtimeSSE({
       const result = await refreshAuthState();
       return result.authStateChanged || result.needsCacheRefresh;
     } catch (error) {
-      console.error("Failed to refresh auth state after SSE 401", error);
+      console.error(
+        "Failed to refresh auth state after SSE 401",
+        getErrorLogContext(error)
+      );
       return false;
     }
   }
@@ -1195,7 +1199,7 @@ export function useRealtimeSSE({
     } catch (error) {
       console.warn(
         "Failed to fetch project translation after SSE update",
-        error
+        getErrorLogContext(error)
       );
       return;
     }

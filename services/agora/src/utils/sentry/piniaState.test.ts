@@ -78,6 +78,21 @@ function privateState(): Record<string, unknown> {
       isResumeMode: true,
       justCompletedSurvey: false,
     },
+    pageLayout: {
+      config: {
+        addGeneralPadding: true,
+        addBottomPadding: false,
+        enableHeader: true,
+        enableDrawer: false,
+        enableFooter: false,
+        reducedWidth: true,
+      },
+      routeName: "private-route",
+    },
+    layoutHeader: {
+      reveal: false,
+      title: "private title",
+    },
     embeddedBrowserWarning: {
       showWarning: true,
       appName: "private-app-name",
@@ -92,49 +107,17 @@ describe("Sentry Pinia state privacy", () => {
     const output = redactPiniaState(privateState());
 
     expect(output).toEqual({
-      authentication: { isAuthInitialized: true },
-      phoneVerification: {
-        hasRequestCodeThrottle: true,
-        hasPendingOtp: true,
-      },
-      emailVerification: {
-        hasRequestCodeThrottle: false,
-        hasPendingOtp: false,
-      },
-      user: {
-        profileData: {
-          dataLoaded: true,
-          postsLoadFailed: false,
-          commentsLoadFailed: true,
+      pageLayout: {
+        config: {
+          addGeneralPadding: true,
+          addBottomPadding: false,
+          enableHeader: true,
+          enableDrawer: false,
+          enableFooter: false,
+          reducedWidth: true,
         },
       },
-      newPostDrafts: {
-        conversationType: "ranking",
-        rankingMode: "bws",
-        aiLabelingEnabled: false,
-        dynamicTranslationEnabled: true,
-      },
-      homeFeed: {
-        visibleConversationCount: 1,
-        hasPendingNewTab: true,
-        hasPendingFollowingTab: false,
-        currentHomeFeedTab: "following",
-        canLoadMore: true,
-      },
-      notification: {
-        hasLoadedNotifications: true,
-        hasNewNotifications: true,
-      },
-      topic: { availableTopicCount: 1 },
-      conversationOnboarding: {
-        hasConversation: true,
-        hasReturnTarget: true,
-        hasReturnHistoryPosition: true,
-        routeKind: "project",
-        isResumeMode: true,
-        justCompletedSurvey: false,
-      },
-      embeddedBrowserWarning: { showWarning: true },
+      layoutHeader: { reveal: false },
     });
 
     const serialized = JSON.stringify(output);
@@ -144,8 +127,8 @@ describe("Sentry Pinia state privacy", () => {
   });
 
   it("omits a malformed store without losing valid stores", () => {
-    const malformedNavigation = {};
-    Object.defineProperty(malformedNavigation, "showMobileDrawer", {
+    const malformedLayoutHeader = {};
+    Object.defineProperty(malformedLayoutHeader, "reveal", {
       get() {
         throw new Error("unreadable state");
       },
@@ -153,10 +136,21 @@ describe("Sentry Pinia state privacy", () => {
 
     expect(
       redactPiniaState({
-        authentication: { isAuthInitialized: true },
-        navigation: malformedNavigation,
+        pageLayout: privateState().pageLayout,
+        layoutHeader: malformedLayoutHeader,
       })
-    ).toEqual({ authentication: { isAuthInitialized: true } });
+    ).toEqual({
+      pageLayout: {
+        config: {
+          addGeneralPadding: true,
+          addBottomPadding: false,
+          enableHeader: true,
+          enableDrawer: false,
+          enableFooter: false,
+          reducedWidth: true,
+        },
+      },
+    });
   });
 
   it("creates one JSON attachment containing only redacted state", () => {

@@ -14,6 +14,15 @@ function createDeferred(): {
 }
 
 describe("createExclusiveStoreManager", () => {
+  const immediateLockManager = {
+    async request<Result>(
+      _name: string,
+      operation: () => Promise<Result>
+    ): Promise<Result> {
+      return await operation();
+    },
+  };
+
   it("serializes operations and initializes the store once", async () => {
     const firstOperationStarted = createDeferred();
     const releaseFirstOperation = createDeferred();
@@ -23,7 +32,7 @@ describe("createExclusiveStoreManager", () => {
     );
     const manager = createExclusiveStoreManager<string>({
       initializeStore,
-      lockManager: undefined,
+      lockManager: immediateLockManager,
       lockName: "test-store",
     });
 
@@ -68,10 +77,45 @@ describe("createExclusiveStoreManager", () => {
     expect(requestedLockNames).toEqual(["test-store"]);
   });
 
+  it("serializes fallback operations across manager instances", async () => {
+    const firstOperationStarted = createDeferred();
+    const releaseFirstOperation = createDeferred();
+    const secondOperation = vi.fn((store: string) => Promise.resolve(store));
+    const firstManager = createExclusiveStoreManager<string>({
+      initializeStore: () => Promise.resolve("first-store"),
+      lockManager: undefined,
+      lockName: "fallback-contention-test",
+    });
+    const secondManager = createExclusiveStoreManager<string>({
+      initializeStore: () => Promise.resolve("second-store"),
+      lockManager: undefined,
+      lockName: "fallback-contention-test",
+    });
+
+    const firstResult = firstManager.runExclusive(async (store) => {
+      firstOperationStarted.resolve();
+      await releaseFirstOperation.promise;
+      return store;
+    });
+    await firstOperationStarted.promise;
+
+    const secondResult = secondManager.runExclusive(secondOperation);
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 100);
+    });
+    expect(secondOperation).not.toHaveBeenCalled();
+
+    releaseFirstOperation.resolve();
+
+    await expect(firstResult).resolves.toBe("first-store");
+    await expect(secondResult).resolves.toBe("second-store");
+    expect(secondOperation).toHaveBeenCalledOnce();
+  });
+
   it("continues processing after an operation fails", async () => {
     const manager = createExclusiveStoreManager<string>({
       initializeStore: () => Promise.resolve("store"),
-      lockManager: undefined,
+      lockManager: immediateLockManager,
       lockName: "test-store",
     });
 
@@ -93,7 +137,7 @@ describe("createExclusiveStoreManager", () => {
       .mockResolvedValueOnce("store");
     const manager = createExclusiveStoreManager<string>({
       initializeStore,
-      lockManager: undefined,
+      lockManager: immediateLockManager,
       lockName: "test-store",
     });
 

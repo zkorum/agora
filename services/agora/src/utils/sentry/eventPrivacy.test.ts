@@ -1,7 +1,9 @@
 import {
   isCefSharpCrawlerEvent,
   redactSentryBreadcrumb,
+  redactSentryEvent,
   redactSentryTransaction,
+  SENTRY_TRACE_PROPAGATION_TARGETS,
   shouldIgnoreSentryEvent,
 } from "src/utils/sentry/eventPrivacy";
 import { describe, expect, it } from "vitest";
@@ -125,14 +127,114 @@ describe("Sentry breadcrumb redaction", () => {
     expect(
       redactSentryBreadcrumb({
         category: "navigation",
+        message: "https://example.com/private",
         data: { from: "/private/from", to: "/private/to" },
       })
-    ).toEqual({ category: "navigation", data: undefined });
+    ).toEqual({
+      category: "navigation",
+      message: undefined,
+      data: undefined,
+    });
   });
 
-  it("retains operational breadcrumbs", () => {
-    const breadcrumb = { category: "http", data: { status_code: 500 } };
-    expect(redactSentryBreadcrumb(breadcrumb)).toBe(breadcrumb);
+  it.each(["fetch", "xhr"])(
+    "retains only safe method and status from %s breadcrumbs",
+    (category) => {
+      expect(
+        redactSentryBreadcrumb({
+          type: "http",
+          category,
+          message: "POST https://api.agoracitizen.network/private?token=secret",
+          data: {
+            method: "POST",
+            status_code: 201,
+            url: "https://api.agoracitizen.network/private?token=secret",
+            request_body_size: 123,
+            response_body_size: 456,
+            request_body: "private request",
+          },
+        })
+      ).toEqual({
+        type: "http",
+        category,
+        message: undefined,
+        data: { method: "POST", status_code: 201 },
+      });
+    }
+  );
+
+  it("fails closed for unexpected network breadcrumb values", () => {
+    expect(
+      redactSentryBreadcrumb({
+        category: "fetch",
+        data: {
+          method: "/private/path",
+          status_code: "private status",
+          url: "https://example.com/private",
+        },
+      })
+    ).toEqual({ category: "fetch", message: undefined, data: undefined });
+  });
+});
+
+describe("Sentry error event redaction", () => {
+  it("removes requests and extras while allowlisting technical contexts", () => {
+    const event = redactSentryEvent({
+      request: {
+        url: "https://example.com/private?token=secret",
+        query_string: "token=secret",
+      },
+      extra: {
+        __serialized__: { private: "captured rejection value" },
+        arbitrary: "private extra",
+      },
+      contexts: {
+        browser: {
+          name: "Mobile Safari",
+          version: "18.5",
+          private_field: "private browser data",
+        },
+        trace: {
+          trace_id: "0123456789abcdef0123456789abcdef",
+          span_id: "0123456789abcdef",
+          op: "ui.vue",
+          data: {
+            route: "/conversation/private-slug",
+            query: "token=secret",
+            "http.url": "https://example.com/private",
+            "http.request.method": "POST",
+          },
+        },
+        browser_translation_diagnostics: {
+          google_class_marker: true,
+          font_element_count_bucket: "2-4",
+          max_observed_font_depth_bucket: "5-9",
+          font_depth_scan_truncated: false,
+          private_field: "private diagnostic data",
+        },
+        arbitrary_context: { private: "private context" },
+      },
+    });
+
+    expect(event.request).toBeUndefined();
+    expect(event.extra).toBeUndefined();
+    expect(event.contexts).toEqual({
+      browser: { name: "Mobile Safari", version: "18.5" },
+      trace: {
+        trace_id: "0123456789abcdef0123456789abcdef",
+        span_id: "0123456789abcdef",
+        op: "ui.vue",
+      },
+      browser_translation_diagnostics: {
+        google_class_marker: true,
+        font_element_count_bucket: "2-4",
+        max_observed_font_depth_bucket: "5-9",
+        font_depth_scan_truncated: false,
+      },
+    });
+    expect(JSON.stringify(event)).not.toContain("private");
+    expect(JSON.stringify(event)).not.toContain("token");
+    expect(JSON.stringify(event)).not.toContain("__serialized__");
   });
 });
 
@@ -141,6 +243,21 @@ describe("Sentry transaction redaction", () => {
     const event = redactSentryTransaction({
       type: "transaction",
       request: { url: "https://example.com/conversation/private-slug" },
+      extra: { __serialized__: { route: "/private" } },
+      contexts: {
+        trace: {
+          trace_id: "0123456789abcdef0123456789abcdef",
+          span_id: "0123456789abcdef",
+          op: "pageload",
+          data: {
+            route: "/conversation/private-slug",
+            query: "invite=secret",
+            "http.url": "https://example.com/private",
+            "http.request.method": "GET",
+          },
+        },
+        arbitrary_context: { content: "private" },
+      },
       spans: [
         {
           data: { url: "https://example.com/private" },
@@ -161,8 +278,42 @@ describe("Sentry transaction redaction", () => {
     });
 
     expect(event.request).toBeUndefined();
+    expect(event.extra).toBeUndefined();
+    expect(event.contexts).toEqual({
+      trace: {
+        trace_id: "0123456789abcdef0123456789abcdef",
+        span_id: "0123456789abcdef",
+        op: "pageload",
+      },
+    });
     expect(event.spans?.[0]?.data).toEqual({});
     expect(event.spans?.[0]?.description).toBe("GET [REDACTED_URL]");
     expect(event.spans?.[1]?.description).toBeUndefined();
+    expect(JSON.stringify(event)).not.toContain("private");
+    expect(JSON.stringify(event)).not.toContain("secret");
+  });
+});
+
+describe("Sentry trace propagation targets", () => {
+  const matchesTarget = (url: string): boolean =>
+    SENTRY_TRACE_PROPAGATION_TARGETS.some((target) => target.test(url));
+
+  it.each([
+    "https://agoracitizen.network/",
+    "https://api.agoracitizen.network/api/v1/conversation",
+    "https://zkorum.com/",
+    "https://staging.zkorum.com/path",
+  ])("matches an owned origin: %s", (url) => {
+    expect(matchesTarget(url)).toBe(true);
+  });
+
+  it.each([
+    "https://agoracitizen.network.attacker.example/path",
+    "https://zkorum.com.evil.example/path",
+    "https://notagoracitizen.network/path",
+    "https://notzkorum.com/path",
+    "http://agoracitizen.network/path",
+  ])("rejects an unowned or insecure origin: %s", (url) => {
+    expect(matchesTarget(url)).toBe(false);
   });
 });

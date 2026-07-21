@@ -7,6 +7,7 @@ import { computed, ref, toValue, watch } from "vue";
 import {
   type ContentTranslationDisplayMode,
   getContentTranslationSourceLanguageLabel,
+  isRequestedTranslationPreviewCurrent,
 } from "./contentTranslation";
 import { getPendingOpinionTranslationMode } from "./opinionItemDisplayText";
 import {
@@ -22,7 +23,7 @@ export function useOpinionItemDisplayContent({
   opinionItem: MaybeRefOrGetter<DisplayedOpinionItem>;
 }) {
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
-  const hasRequestedTranslation = ref(false);
+  const requestedTranslationSourceVersion = ref<string | undefined>();
   const opinionSlugId = computed(() => toValue(opinionItem).opinionSlugId);
   const sourceVersion = computed(
     () => toValue(opinionItem).displayContent.sourceVersion
@@ -32,6 +33,16 @@ export function useOpinionItemDisplayContent({
   );
   const pendingServerTranslationMode = computed(() =>
     getPendingOpinionTranslationMode(toValue(opinionItem))
+  );
+  const hasTranslationControl = computed(
+    () => toValue(opinionItem).displayContent.translationControl !== null
+  );
+  const hasCurrentRequestedTranslation = computed(() =>
+    isRequestedTranslationPreviewCurrent({
+      requestedSourceVersion: requestedTranslationSourceVersion.value,
+      currentSourceVersion: sourceVersion.value,
+      hasTranslationControl: hasTranslationControl.value,
+    })
   );
 
   const translationSubject = computed(() => ({
@@ -47,8 +58,9 @@ export function useOpinionItemDisplayContent({
     subject: translationSubject,
     enabled: computed(
       () =>
-        hasRequestedTranslation.value ||
-        pendingServerTranslationMode.value !== undefined
+        hasTranslationControl.value &&
+        (hasCurrentRequestedTranslation.value ||
+          pendingServerTranslationMode.value !== undefined)
     ),
     sourceLanguageCode: computed(() => toValue(opinionItem).sourceLanguageCode),
     initialModePreference: pendingServerTranslationMode,
@@ -105,12 +117,12 @@ export function useOpinionItemDisplayContent({
     return toValue(opinionItem).opinion;
   });
   function setTranslationMode(mode: ContentTranslationDisplayMode): void {
-    hasRequestedTranslation.value = true;
+    requestedTranslationSourceVersion.value = sourceVersion.value;
     void setRequestedTranslationMode(mode);
   }
 
   function resetTranslationMode(): void {
-    hasRequestedTranslation.value = false;
+    requestedTranslationSourceVersion.value = undefined;
   }
 
   watch(
@@ -118,6 +130,7 @@ export function useOpinionItemDisplayContent({
       () => toValue(conversationSlugId),
       opinionSlugId,
       sourceVersion,
+      hasTranslationControl,
       displayLanguage,
       spokenLanguageKey,
     ],

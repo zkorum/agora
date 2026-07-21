@@ -32,7 +32,6 @@ export const envSchema = z.object({
   VITE_STAGING: z.enum(["true", "false"]).optional(),
   VITE_DEV_AUTHORIZED_PHONES: z.string().optional(), // Comma-separated list of phone numbers for dev/staging testing (must match backend). Must not be set in production (safety check enforced)
   VITE_DEV_AUTHORIZED_EMAILS: z.string().optional(), // Comma-separated list of emails for dev/staging testing (must match backend). Must not be set in production (safety check enforced)
-  VITE_SENTRY_AUTH_TOKEN: z.string().optional(), // Sentry auth token for production builds
   VITE_DISCORD_LINK: z.string().optional(), // Discord invite link for support
   // Note: We use z.enum instead of transform because process.env contains raw strings at runtime.
   // The processEnv object reads build-time process.env values, so transforms don't run at runtime.
@@ -136,12 +135,10 @@ export const processEnv = {
   VITE_STAGING: process.env.VITE_STAGING,
   VITE_DEV_AUTHORIZED_PHONES: process.env.VITE_DEV_AUTHORIZED_PHONES,
   VITE_DEV_AUTHORIZED_EMAILS: process.env.VITE_DEV_AUTHORIZED_EMAILS,
-  VITE_SENTRY_AUTH_TOKEN: process.env.VITE_SENTRY_AUTH_TOKEN,
   VITE_DISCORD_LINK: process.env.VITE_DISCORD_LINK,
   VITE_EXPORT_CONVOS_ENABLED: process.env.VITE_EXPORT_CONVOS_ENABLED,
   VITE_FEATURED_CONVERSATION_SLUG: process.env.VITE_FEATURED_CONVERSATION_SLUG,
-  VITE_IS_MAXDIFF_GITHUB_ORG_ONLY:
-    process.env.VITE_IS_MAXDIFF_GITHUB_ORG_ONLY,
+  VITE_IS_MAXDIFF_GITHUB_ORG_ONLY: process.env.VITE_IS_MAXDIFF_GITHUB_ORG_ONLY,
   VITE_MAXDIFF_GITHUB_ALLOWED_ORGS:
     process.env.VITE_MAXDIFF_GITHUB_ALLOWED_ORGS,
   VITE_MAXDIFF_GITHUB_ALLOWED_USERS:

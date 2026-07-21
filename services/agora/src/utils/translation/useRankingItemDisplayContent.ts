@@ -7,6 +7,7 @@ import { computed, ref, toValue, watch } from "vue";
 import {
   type ContentTranslationDisplayMode,
   getContentTranslationSourceLanguageLabel,
+  isRequestedTranslationPreviewCurrent,
 } from "./contentTranslation";
 import {
   resolveRankingItemDisplayedContent,
@@ -27,11 +28,25 @@ export function useRankingItemDisplayContent({
   displayContent: MaybeRefOrGetter<RankingItemDisplayedContent | undefined>;
 }) {
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
-  const hasRequestedTranslation = ref(false);
+  const requestedTranslationSourceVersion = ref<string | undefined>();
   const resolvedItemSlugId = computed(() => toValue(itemSlugId));
   const sourceVersion = computed(() => toValue(displayContent)?.sourceVersion);
   const spokenLanguageKey = computed(() =>
     [...spokenLanguages.value].sort().join("\u0000")
+  );
+  const hasTranslationControl = computed(() => {
+    const currentDisplayContent = toValue(displayContent);
+    return (
+      currentDisplayContent !== undefined &&
+      currentDisplayContent.translationControl !== null
+    );
+  });
+  const hasCurrentRequestedTranslation = computed(() =>
+    isRequestedTranslationPreviewCurrent({
+      requestedSourceVersion: requestedTranslationSourceVersion.value,
+      currentSourceVersion: sourceVersion.value,
+      hasTranslationControl: hasTranslationControl.value,
+    })
   );
 
   const translationSubject = computed(() => ({
@@ -48,7 +63,7 @@ export function useRankingItemDisplayContent({
     subject: translationSubject,
     enabled: computed(
       () =>
-        hasRequestedTranslation.value &&
+        hasCurrentRequestedTranslation.value &&
         resolvedItemSlugId.value !== undefined &&
         sourceVersion.value !== undefined
     ),
@@ -128,12 +143,12 @@ export function useRankingItemDisplayContent({
   });
 
   function setTranslationMode(mode: ContentTranslationDisplayMode): void {
-    hasRequestedTranslation.value = true;
+    requestedTranslationSourceVersion.value = sourceVersion.value;
     void setRequestedTranslationMode(mode);
   }
 
   function resetTranslationMode(): void {
-    hasRequestedTranslation.value = false;
+    requestedTranslationSourceVersion.value = undefined;
   }
 
   watch(
@@ -141,6 +156,7 @@ export function useRankingItemDisplayContent({
       () => toValue(conversationSlugId),
       resolvedItemSlugId,
       sourceVersion,
+      hasTranslationControl,
       displayLanguage,
       spokenLanguageKey,
     ],

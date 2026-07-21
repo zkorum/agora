@@ -38,6 +38,7 @@ import {
     surveyQuestionOptionContentTranslationTable,
     surveyQuestionOptionTable,
     surveyQuestionTable,
+    userTable,
 } from "@/shared-backend/schema.js";
 import {
     CONTENT_TRANSLATION_QUEUE_PRIORITIES,
@@ -429,32 +430,89 @@ async function ensureTranslationWork({
     priority: ContentTranslationQueuePriority;
     log: Pick<BaseLogger, "info">;
 }): Promise<{ workId: number; shouldQueue: boolean }> {
-    const existingRows = await db
-        .select({
-            id: contentTranslationWorkTable.id,
-            status: contentTranslationWorkTable.status,
-            priorityRank: contentTranslationWorkTable.priorityRank,
-        })
-        .from(contentTranslationWorkTable)
-        .where(
-            and(
-                eq(contentTranslationWorkTable.sourceKind, input.sourceKind),
-                getTranslationWorkSourceWhere(input),
-                eq(
-                    contentTranslationWorkTable.displayLanguageCode,
-                    input.targetLanguageCode,
-                ),
-            ),
-        )
-        .limit(1);
-    const existing = existingRows.at(0);
+    return await db.transaction(async (tx) => {
+        const insertValues = {
+            conversationId: input.conversationId,
+            sourceKind: input.sourceKind,
+            conversationContentId:
+                input.sourceKind === "conversation"
+                    ? input.sourceContentId
+                    : null,
+            projectContentId:
+                input.sourceKind === "project" ? input.projectContentId : null,
+            opinionContentId:
+                input.sourceKind === "opinion" ? input.sourceContentId : null,
+            surveyQuestionContentId:
+                input.sourceKind === "survey_question"
+                    ? input.surveyQuestionContentId
+                    : null,
+            surveyQuestionOptionContentIds:
+                input.sourceKind === "survey_question"
+                    ? input.surveyQuestionOptionContentIds
+                    : null,
+            rankingItemContentId:
+                input.sourceKind === "ranking_item"
+                    ? input.rankingItemContentId
+                    : null,
+            displayLanguageCode: input.targetLanguageCode,
+            status: "pending" as const,
+            priorityRank: priority,
+            requestedAt: now,
+            createdAt: now,
+            updatedAt: now,
+        };
+        const insertedRows = await tx
+            .insert(contentTranslationWorkTable)
+            .values(insertValues)
+            .onConflictDoNothing()
+            .returning({ id: contentTranslationWorkTable.id });
+        const inserted = insertedRows.at(0);
 
-    if (existing !== undefined) {
+        const existingRows = await tx
+            .select({
+                id: contentTranslationWorkTable.id,
+                status: contentTranslationWorkTable.status,
+                priorityRank: contentTranslationWorkTable.priorityRank,
+            })
+            .from(contentTranslationWorkTable)
+            .where(
+                and(
+                    eq(
+                        contentTranslationWorkTable.sourceKind,
+                        input.sourceKind,
+                    ),
+                    getTranslationWorkSourceWhere(input),
+                    eq(
+                        contentTranslationWorkTable.displayLanguageCode,
+                        input.targetLanguageCode,
+                    ),
+                ),
+            )
+            .limit(1)
+            .for("update");
+        const existing = existingRows.at(0);
+        if (existing === undefined) {
+            throw new Error("Failed to load content translation work row");
+        }
+
+        if (inserted !== undefined) {
+            log.info(
+                {
+                    workId: inserted.id,
+                    ...getTranslationWorkLogFields(input),
+                    priorityRank: priority,
+                    queueMode: getContentTranslationQueueMode(priority),
+                },
+                "[ContentTranslation] Created translation work row",
+            );
+            return { workId: inserted.id, shouldQueue: true };
+        }
+
         const completedTranslationExists =
             existing.status === "completed" && translationExists;
         const nextPriorityRank = Math.min(existing.priorityRank, priority);
         if (existing.status === "running" && !completedTranslationExists) {
-            await db
+            await tx
                 .update(contentTranslationWorkTable)
                 .set({
                     priorityRank: nextPriorityRank,
@@ -477,7 +535,7 @@ async function ensureTranslationWork({
             );
             return { workId: existing.id, shouldQueue: false };
         }
-        await db
+        await tx
             .update(contentTranslationWorkTable)
             .set({
                 status: completedTranslationExists ? "completed" : "pending",
@@ -510,55 +568,7 @@ async function ensureTranslationWork({
             workId: existing.id,
             shouldQueue: !completedTranslationExists,
         };
-    }
-
-    const insertValues = {
-        conversationId: input.conversationId,
-        sourceKind: input.sourceKind,
-        conversationContentId:
-            input.sourceKind === "conversation" ? input.sourceContentId : null,
-        projectContentId:
-            input.sourceKind === "project" ? input.projectContentId : null,
-        opinionContentId:
-            input.sourceKind === "opinion" ? input.sourceContentId : null,
-        surveyQuestionContentId:
-            input.sourceKind === "survey_question"
-                ? input.surveyQuestionContentId
-                : null,
-        surveyQuestionOptionContentIds:
-            input.sourceKind === "survey_question"
-                ? input.surveyQuestionOptionContentIds
-                : null,
-        rankingItemContentId:
-            input.sourceKind === "ranking_item"
-                ? input.rankingItemContentId
-                : null,
-        displayLanguageCode: input.targetLanguageCode,
-        status: "pending" as const,
-        priorityRank: priority,
-        requestedAt: now,
-        createdAt: now,
-        updatedAt: now,
-    };
-
-    const insertedRows = await db
-        .insert(contentTranslationWorkTable)
-        .values(insertValues)
-        .returning({ id: contentTranslationWorkTable.id });
-    const inserted = insertedRows.at(0);
-    if (inserted === undefined) {
-        throw new Error("Failed to create content translation work row");
-    }
-    log.info(
-        {
-            workId: inserted.id,
-            ...getTranslationWorkLogFields(input),
-            priorityRank: priority,
-            queueMode: getContentTranslationQueueMode(priority),
-        },
-        "[ContentTranslation] Created translation work row",
-    );
-    return { workId: inserted.id, shouldQueue: true };
+    });
 }
 
 async function markExistingTranslationWorkCompleted({
@@ -768,6 +778,7 @@ async function fetchOpinionSource({
             conversationTable,
             eq(conversationTable.id, opinionTable.conversationId),
         )
+        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
         .innerJoin(
             opinionContentTable,
             and(
@@ -789,6 +800,7 @@ async function fetchOpinionSource({
                 isNotNull(conversationTable.currentContentId),
                 eq(opinionTable.slugId, opinionSlugId),
                 isNotNull(opinionTable.currentContentId),
+                eq(userTable.isDeleted, false),
                 or(
                     eq(opinionTable.currentContentId, opinionContentTable.id),
                     exists(
@@ -1455,6 +1467,7 @@ export async function fetchSeedOpinionSources({
             conversationTable,
             eq(conversationTable.id, opinionTable.conversationId),
         )
+        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
         .innerJoin(
             opinionContentTable,
             eq(opinionContentTable.id, opinionTable.currentContentId),
@@ -1467,6 +1480,7 @@ export async function fetchSeedOpinionSources({
                 isNotNull(conversationTable.currentContentId),
                 eq(opinionTable.isSeed, true),
                 isNotNull(opinionTable.currentContentId),
+                eq(userTable.isDeleted, false),
             ),
         )
         .orderBy(asc(opinionTable.id));

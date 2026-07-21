@@ -1,4 +1,7 @@
-import { addStackOverflowDiagnostics } from "src/utils/sentry/stackOverflowDiagnostics";
+import {
+  addStackOverflowDiagnostics,
+  isStackOverflowEvent,
+} from "src/utils/sentry/stackOverflowDiagnostics";
 import { describe, expect, it } from "vitest";
 
 function createDocument(bodyHtml = ""): Document {
@@ -9,14 +12,13 @@ function createDocument(bodyHtml = ""): Document {
 
 describe("stack overflow diagnostics", () => {
   it("does not inspect or modify unrelated events", () => {
-    const documentRoot = createDocument(
-      "<font><font>Translated</font></font>"
-    );
+    const documentRoot = createDocument("<font><font>Translated</font></font>");
     const event = {
       type: undefined,
       exception: { values: [{ type: "TypeError", value: "Failed" }] },
     };
 
+    expect(isStackOverflowEvent(event)).toBe(false);
     expect(addStackOverflowDiagnostics({ event, documentRoot })).toBe(event);
   });
 
@@ -46,6 +48,19 @@ describe("stack overflow diagnostics", () => {
       documentRoot,
     });
 
+    expect(
+      isStackOverflowEvent({
+        type: undefined,
+        exception: {
+          values: [
+            {
+              type: "RangeError",
+              value: "Maximum call stack size exceeded.",
+            },
+          ],
+        },
+      })
+    ).toBe(true);
     expect(result.tags).toEqual({
       existing: "tag",
       browser_translation_dom: "both",

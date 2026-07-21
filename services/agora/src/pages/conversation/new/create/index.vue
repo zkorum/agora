@@ -382,10 +382,6 @@ watch(
       organizationList,
     });
     if (organizationSlug === undefined) {
-      postAs.value = {
-        postAsOrganization: false,
-        organizationName: "",
-      };
       return;
     }
 

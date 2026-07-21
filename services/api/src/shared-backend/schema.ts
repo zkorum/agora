@@ -860,7 +860,7 @@ export const conversationViewSnapshotReasonEnum = pgEnum(
 // The association between users and devices/emails can change over time.
 // A user must have at least 1 validated primary email and 1 device associated with it.
 // The "at least one" conditon is not enforced directly in the SQL model yet. It is done in the application code.
-/** @service scoring-worker, shared-analysis-worker, import-worker */
+/** @service scoring-worker, shared-analysis-worker, import-worker, content-translation-worker */
 export const userTable = pgTable(
     "user",
     {
@@ -3449,8 +3449,7 @@ export const conversationModerationTable = pgTable(
     ],
 );
 
-/** @service shared-analysis-worker */
-/** @service import-worker */
+/** @service shared-analysis-worker, import-worker, content-translation-worker */
 export const opinionModerationTable = pgTable(
     "opinion_moderation",
     {

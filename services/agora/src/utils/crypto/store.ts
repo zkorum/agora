@@ -1,8 +1,11 @@
+import BrowserTabsLock from "browser-tabs-lock";
+
 import * as BrowserCrypto from "../crypto/ucan/implementation/browser.js";
 import { type Implementation } from "./ucan/implementation.js";
 
 const WEB_CRYPTO_STORE_NAME = "agora-keys";
 const WEB_CRYPTO_STORE_LOCK_NAME = "agora-web-crypto-store";
+const CROSS_CONTEXT_LOCK_TIMEOUT_MS = 60_000;
 
 interface CrossContextLockManager {
   request: <Result>(
@@ -17,15 +20,14 @@ interface CreateExclusiveStoreManagerParams<Store> {
   lockName: string;
 }
 
-export interface ExclusiveStoreManager<Store> {
+interface ExclusiveStoreManager<Store> {
   runExclusive: <Result>(
     operation: (store: Store) => Promise<Result>
   ) => Promise<Result>;
 }
 
 // Key creation spans multiple IndexedDB transactions, so initialization,
-// signing, and clearing share one lifecycle lock. Web Locks coordinate tabs;
-// the queue remains the single-tab fallback on older browsers.
+// signing, and clearing share one lifecycle lock.
 export function createExclusiveStoreManager<Store>({
   initializeStore,
   lockManager,
@@ -33,6 +35,7 @@ export function createExclusiveStoreManager<Store>({
 }: CreateExclusiveStoreManagerParams<Store>): ExclusiveStoreManager<Store> {
   let store: Store | undefined = undefined;
   let operationQueue = Promise.resolve();
+  const fallbackLock = new BrowserTabsLock();
 
   async function runExclusive<Result>(
     operation: (store: Store) => Promise<Result>
@@ -53,10 +56,22 @@ export function createExclusiveStoreManager<Store>({
         return await operation(store);
       };
 
-      if (lockManager === undefined) {
-        return await runWithStore();
+      if (lockManager !== undefined) {
+        return await lockManager.request(lockName, runWithStore);
       }
-      return await lockManager.request(lockName, runWithStore);
+
+      const acquired = await fallbackLock.acquireLock(
+        lockName,
+        CROSS_CONTEXT_LOCK_TIMEOUT_MS
+      );
+      if (!acquired) {
+        throw new Error(`Timed out acquiring cross-tab lock ${lockName}`);
+      }
+      try {
+        return await runWithStore();
+      } finally {
+        await fallbackLock.releaseLock(lockName);
+      }
     } finally {
       releaseOperation();
     }

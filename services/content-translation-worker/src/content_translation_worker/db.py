@@ -27,6 +27,8 @@ from content_translation_worker.generated_models import (
     Opinion,
     OpinionContent,
     OpinionContentTranslation,
+    OpinionModeration,
+    OpinionModerationAction,
     Project,
     ProjectContent,
     ProjectContentTranslation,
@@ -43,6 +45,7 @@ from content_translation_worker.generated_models import (
     SurveyQuestionOption,
     SurveyQuestionOptionContent,
     SurveyQuestionOptionContentTranslation,
+    User,
 )
 from content_translation_worker.translation import (
     ContentTranslationProviderError,
@@ -345,7 +348,13 @@ class ClaimedContentTranslationWork:
 @dataclass(frozen=True)
 class ProcessWorkResult:
     work_id: int
-    status: Literal["completed", "failed", "missing_source", "lost_lease"]
+    status: Literal[
+        "completed",
+        "failed",
+        "ineligible_source",
+        "missing_source",
+        "lost_lease",
+    ]
 
 
 class LostContentTranslationWorkLeaseError(RuntimeError):
@@ -402,7 +411,9 @@ def retry_failed_eager_work(
                     ContentTranslationWork.priority_rank == EAGER_VISIBLE_PRIORITY_RANK,
                     or_(
                         ContentTranslationWork.last_error_code.is_(None),
-                        ContentTranslationWork.last_error_code != "missing_source",
+                        ContentTranslationWork.last_error_code.not_in(
+                            ["missing_source", "ineligible_source"]
+                        ),
                     ),
                     ContentTranslationWork.failed_at.is_not(None),
                     ContentTranslationWork.failed_at <= retry_after,
@@ -823,6 +834,25 @@ def process_claimed_work(
                 error_message="opinion work is missing opinion_content_id",
             )
             return ProcessWorkResult(work_id=claim.id, status="failed")
+        eligibility = _get_opinion_source_eligibility(
+            session,
+            opinion_content_id=claim.opinion_content_id,
+        )
+        if eligibility != "eligible":
+            log.warning(
+                "[Worker] Ineligible translation source work_id=%d source_kind=opinion "
+                "conversationSlugId=%s conversation_id=%d opinion_content_id=%d reason=%s",
+                claim.id,
+                claim.conversation_slug_id,
+                claim.conversation_id,
+                claim.opinion_content_id,
+                eligibility,
+            )
+            if eligibility == "missing":
+                _mark_missing_source(session, claim=claim)
+                return ProcessWorkResult(work_id=claim.id, status="missing_source")
+            _mark_ineligible_source(session, claim=claim, reason=eligibility)
+            return ProcessWorkResult(work_id=claim.id, status="ineligible_source")
         source = _fetch_opinion_source(session, opinion_content_id=claim.opinion_content_id)
         if source is None:
             log.warning(
@@ -851,11 +881,31 @@ def process_claimed_work(
             claim=claim,
             source_language_code=source.source_language_code,
         )
+        eligibility = _get_opinion_source_eligibility(
+            session,
+            opinion_content_id=claim.opinion_content_id,
+        )
+        if eligibility != "eligible":
+            if eligibility == "missing":
+                _mark_missing_source(session, claim=claim)
+                return ProcessWorkResult(work_id=claim.id, status="missing_source")
+            _mark_ineligible_source(session, claim=claim, reason=eligibility)
+            return ProcessWorkResult(work_id=claim.id, status="ineligible_source")
         if _has_fresh_opinion_translation(session, claim=claim, source=source):
             _mark_completed(session, claim=claim)
             return ProcessWorkResult(work_id=claim.id, status="completed")
         try:
             with session.begin_nested():
+                eligibility = _get_opinion_source_eligibility(
+                    session,
+                    opinion_content_id=claim.opinion_content_id,
+                )
+                if eligibility != "eligible":
+                    if eligibility == "missing":
+                        _mark_missing_source(session, claim=claim)
+                        return ProcessWorkResult(work_id=claim.id, status="missing_source")
+                    _mark_ineligible_source(session, claim=claim, reason=eligibility)
+                    return ProcessWorkResult(work_id=claim.id, status="ineligible_source")
                 _translate_opinion_source(
                     session,
                     claim=claim,
@@ -919,6 +969,9 @@ class OpinionSource:
     source_raw_language_code: str | None
     source_language_provider: LanguageDetectionProvider | None
     source_language_confidence: float | None
+
+
+OpinionSourceEligibility = Literal["eligible", "hidden", "deleted_author", "missing"]
 
 
 @dataclass(frozen=True)
@@ -1075,6 +1128,7 @@ def _fetch_opinion_source(
         )
         .select_from(OpinionContent)
         .join(Opinion, Opinion.id == OpinionContent.opinion_id)
+        .join(User, User.id == Opinion.author_id)
         .join(Conversation, Conversation.id == Opinion.conversation_id)
         .where(
             and_(
@@ -1082,6 +1136,16 @@ def _fetch_opinion_source(
                 Opinion.current_content_id.is_not(None),
                 Conversation.current_content_id.is_not(None),
                 Conversation.is_importing.is_(False),
+                User.is_deleted.is_(False),
+                ~select(OpinionModeration.id)
+                .where(
+                    and_(
+                        OpinionModeration.opinion_id == Opinion.id,
+                        OpinionModeration.moderation_action == OpinionModerationAction.hide,
+                        OpinionModeration.deleted_at.is_(None),
+                    )
+                )
+                .exists(),
                 or_(
                     Opinion.current_content_id == OpinionContent.id,
                     select(AnalysisSnapshotOpinion.id)
@@ -1117,6 +1181,40 @@ def _fetch_opinion_source(
         source_language_provider=row.source_language_provider,
         source_language_confidence=row.source_language_confidence,
     )
+
+
+def _get_opinion_source_eligibility(
+    session: Session,
+    *,
+    opinion_content_id: int,
+) -> OpinionSourceEligibility:
+    row = session.execute(
+        select(
+            User.is_deleted,
+            select(OpinionModeration.id)
+            .where(
+                and_(
+                    OpinionModeration.opinion_id == Opinion.id,
+                    OpinionModeration.moderation_action == OpinionModerationAction.hide,
+                    OpinionModeration.deleted_at.is_(None),
+                )
+            )
+            .exists()
+            .label("is_hidden"),
+        )
+        .select_from(OpinionContent)
+        .join(Opinion, Opinion.id == OpinionContent.opinion_id)
+        .join(User, User.id == Opinion.author_id)
+        .where(OpinionContent.id == opinion_content_id)
+        .limit(1)
+    ).one_or_none()
+    if row is None:
+        return "missing"
+    if row.is_deleted:
+        return "deleted_author"
+    if row.is_hidden:
+        return "hidden"
+    return "eligible"
 
 
 def _fetch_survey_question_source(
@@ -2113,6 +2211,25 @@ def _mark_missing_source(session: Session, *, claim: ClaimedContentTranslationWo
         claim=claim,
         error_code="missing_source",
         error_message="Source content no longer exists or is not current",
+    )
+
+
+def _mark_ineligible_source(
+    session: Session,
+    *,
+    claim: ClaimedContentTranslationWork,
+    reason: Literal["hidden", "deleted_author"],
+) -> None:
+    error_message = (
+        "Opinion is hidden"
+        if reason == "hidden"
+        else "Opinion author account is deleted"
+    )
+    _mark_failed(
+        session,
+        claim=claim,
+        error_code="ineligible_source",
+        error_message=error_message,
     )
 
 

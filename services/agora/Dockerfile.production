@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 # ---- Build ----
 FROM node:24.14.1-alpine AS build
 WORKDIR /app
@@ -10,7 +12,8 @@ COPY pnpm-workspace-docker.yaml ./pnpm-workspace.yaml
 COPY package.json pnpm-lock.yaml .npmrc ./
 COPY . ./
 RUN pnpm install --frozen-lockfile
-RUN pnpm run build:production
+RUN --mount=type=secret,id=sentry_auth_token,target=/app/.env.sentry-build-plugin,required=true \
+    pnpm run build:production
 
 # ---- Production ----
 FROM nginx:stable-alpine

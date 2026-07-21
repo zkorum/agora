@@ -8,6 +8,11 @@ export interface MaxDiffCandidateDisplayItem {
   externalUrl: string | null;
 }
 
+export type MaxDiffCandidateRetryResult =
+  | "refetch_failed"
+  | "resolution_failed"
+  | "resolved";
+
 function cloneRankingItemDisplayedContent(
   displayContent: RankingItemDisplayedContent
 ): RankingItemDisplayedContent {
@@ -50,4 +55,30 @@ export function createMaxDiffCandidateDisplaySnapshot({
     });
   }
   return snapshot;
+}
+
+export async function retryMaxDiffCandidateResolution({
+  refetchItems,
+  refetchLoad,
+  resolve,
+}: {
+  refetchItems: () => Promise<{ isError: boolean }>;
+  refetchLoad: () => Promise<{ isError: boolean }>;
+  resolve: () => boolean;
+}): Promise<MaxDiffCandidateRetryResult> {
+  let itemsResult: { isError: boolean };
+  let loadResult: { isError: boolean };
+  try {
+    [itemsResult, loadResult] = await Promise.all([
+      refetchItems(),
+      refetchLoad(),
+    ]);
+  } catch {
+    return "refetch_failed";
+  }
+  if (itemsResult.isError || loadResult.isError) {
+    return "refetch_failed";
+  }
+
+  return resolve() ? "resolved" : "resolution_failed";
 }

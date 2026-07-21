@@ -11,7 +11,7 @@
         Agora Citizen Network is developed by
         <a
           href="https://www.societe.com/societe/zkorum-984736173.html"
-          target="_blank" 
+          target="_blank"
           rel="noopener noreferrer"
           >ZKorum SAS</a
         >. At ZKorum, we believe that privacy is a fundamental right. Our
@@ -59,7 +59,10 @@
           <li>
             <strong>Soft login (session-based verification):</strong> Verify
             using
-            <a href="https://zupass.org" target="_blank"  rel="noopener noreferrer"
+            <a
+              href="https://zupass.org"
+              target="_blank"
+              rel="noopener noreferrer"
               >Zupass</a
             >
             for event ticket verification using Group Proof of Credentials
@@ -80,7 +83,7 @@
               <li>
                 <a
                   href="https://rarimo.com/privacy-notice.html"
-                  target="_blank" 
+                  target="_blank"
                   rel="noopener noreferrer"
                   >Rarimo</a
                 >: Passport-based Zero-Knowledge Proof (ZKP) verification
@@ -161,7 +164,7 @@
           <li>
             <a
               href="https://rarimo.com/privacy-notice.html"
-              target="_blank" 
+              target="_blank"
               rel="noopener noreferrer"
               >Rarimo</a
             >
@@ -169,18 +172,21 @@
             addresses for security and service operations.
           </li>
           <li>
-            <a href="https://zupass.org" target="_blank"  rel="noopener noreferrer"
+            <a
+              href="https://zupass.org"
+              target="_blank"
+              rel="noopener noreferrer"
               >Zupass</a
             >
             (global, open-source) for event ticket and identity verification
-            using Group Proof of Credentials (GPC). May process IP addresses
-            for service operations. Zupass uses Simple Analytics for
+            using Group Proof of Credentials (GPC). May process IP addresses for
+            service operations. Zupass uses Simple Analytics for
             privacy-friendly web analytics.
           </li>
           <li>
             <a
               href="https://www.twilio.com/en-us/legal/privacy"
-              target="_blank" 
+              target="_blank"
               rel="noopener noreferrer"
               >Twilio</a
             >
@@ -193,7 +199,7 @@
           <li>
             <a
               href="https://www.cloudflare.com/privacypolicy/"
-              target="_blank" 
+              target="_blank"
               rel="noopener noreferrer"
               >Cloudflare</a
             >
@@ -202,7 +208,7 @@
           <li>
             <a
               href="https://aws.amazon.com/privacy/"
-              target="_blank" 
+              target="_blank"
               rel="noopener noreferrer"
               >Amazon Web Services</a
             >
@@ -213,7 +219,7 @@
           <li>
             <a
               href="https://cloud.google.com/terms/cloud-privacy-notice"
-              target="_blank" 
+              target="_blank"
               rel="noopener noreferrer"
               >Google Cloud Platform</a
             >
@@ -224,7 +230,7 @@
           <li>
             <a
               href="https://plausible.io/data-policy"
-              target="_blank" 
+              target="_blank"
               rel="noopener noreferrer"
               >Plausible Analytics</a
             >
@@ -233,7 +239,10 @@
             data policy for details).
           </li>
           <li>
-            <a href="https://sentry.io/privacy/" target="_blank"  rel="noopener noreferrer"
+            <a
+              href="https://sentry.io/privacy/"
+              target="_blank"
+              rel="noopener noreferrer"
               >Sentry</a
             >
             (EU servers) for error tracking and crash reporting. Processes IP
@@ -249,11 +258,14 @@
 
         <h3>Cookies and analytics</h3>
         <p>
-          Agora does not track users with cookies, nor do we share tracking data
-          with third parties. For analytics purposes, Agora uses Plausible
-          Analytics, an EU-based solution that does not employ cookies. For more
-          details, visit
-          <a href="https://plausible.io/about" target="_blank"  rel="noopener noreferrer"
+          Agora does not use advertising or cross-site tracking cookies, nor do
+          we sell data for advertising. We use Plausible Analytics, an EU-based
+          analytics service that does not employ cookies, and Sentry for limited
+          error and performance telemetry. For more details, visit
+          <a
+            href="https://plausible.io/about"
+            target="_blank"
+            rel="noopener noreferrer"
             >Plausible Analytics</a
           >.
         </p>
@@ -322,8 +334,8 @@
                 nullifier (privacy-preserving identifier derived from your
                 ticket) and the event slug. This proves event participation
                 without revealing ticket details. Soft login does NOT create a
-                registered account but allows session-based verification that can
-                be upgraded to permanent registration.
+                registered account but allows session-based verification that
+                can be upgraded to permanent registration.
               </td>
               <td>Legitimate interest</td>
             </tr>
@@ -625,9 +637,11 @@
             and encryption measures.
           </li>
           <li>
-            <strong>Limited metadata collection:</strong> IP addresses are not
-            actively logged or stored by Agora, except as required by Cloudflare
-            and cloud service providers for DDoS protection.
+            <strong>Limited metadata collection:</strong> Agora application logs
+            do not deliberately record IP addresses. Infrastructure and error
+            monitoring providers, including Cloudflare, cloud service providers,
+            and Sentry, may process IP addresses for security, operations, or
+            debugging.
           </li>
           <li>
             <strong>Anonymized AI translation:</strong> Content sent to Google
@@ -641,20 +655,32 @@
               >Use of
               <a
                 href="https://sentry.io/privacy/"
-                target="_blank" 
+                target="_blank"
                 rel="noopener noreferrer"
                 >Sentry.io</a
               >
-              for anonymized crash reports:</strong
+              for privacy-reduced crash reports:</strong
             >
             Agora utilizes Sentry (hosted on EU servers) for error tracking and
-            crash reporting purposes. Session Replay is enabled with full text
-            masking and media blocking to prevent capture of user input or
-            visual content. Application state data (Vue Pinia stores) is
-            automatically transformed to redact all personal information
-            (including phone numbers, usernames, draft content, followed topics,
-            and user-generated content) before transmission to Sentry, ensuring
-            that logs remain anonymized and do not contain personal data. Sentry
+            crash reporting purposes. Routine sessions are not uploaded for
+            Session Replay; when an error occurs, buffered recent interaction
+            data may be uploaded to help diagnose the failure. Replay masks text
+            and inputs, blocks media, disables network body capture, and masks
+            configured text and form attributes before recording. Navigation and
+            network custom recording events are scrubbed, and the Replay event's
+            visited-URL list is sanitized before upload. First-party Agora and
+            ZKorum URLs may retain paths and pseudonymous route identifiers, but
+            credentials, query strings, and fragments are removed. External URLs
+            are reduced to their origins, while unsafe URL schemes are redacted.
+            Error events also remove request URLs and arbitrary extra data,
+            retain only an explicit allowlist of technical contexts, and omit
+            console and user-interface breadcrumbs. For one specific
+            stack-overflow diagnostic, a narrowly limited attachment may include
+            structural page-layout flags but not OTP state, drafts, onboarding
+            state, identifiers, or user-generated content. Replay and error
+            reports can still contain structural DOM, pseudonymous route paths,
+            resource origins, technical, and interaction metadata, and Sentry
+            may process IP addresses as described in its privacy policy. Sentry
             does not use tracking cookies.
           </li>
           <li>
@@ -720,55 +746,91 @@
 
         <h3>6.6. Security records:</h3>
         <p>
-          Some security records are retained after account deletion to protect the service:
+          Some security records are retained after account deletion to protect
+          the service:
         </p>
         <ul>
           <li>
-            Short-lived User Controlled Authorization Network (UCAN) token hashes used for replay attack protection
+            Short-lived User Controlled Authorization Network (UCAN) token
+            hashes used for replay attack protection
           </li>
         </ul>
         <p>
-          These records are kept only for the duration needed to prevent reused authorization tokens.
+          These records are kept only for the duration needed to prevent reused
+          authorization tokens.
         </p>
 
         <h3>6.7. How to delete your account:</h3>
         <p>
-          When you delete your account, it is <strong>immediately inaccessible</strong> and cannot be recovered.
-          The deletion process follows this timeline:
+          When you delete your account, it is
+          <strong>immediately inaccessible</strong> and cannot be recovered. The
+          deletion process follows this timeline:
         </p>
         <ul>
-          <li><strong>Immediate:</strong> Your account is soft-deleted and becomes inaccessible. All devices are logged out.</li>
-          <li><strong>After 15 days:</strong> Your account data is permanently deleted (hard-deleted) from our database.</li>
-          <li><strong>Up to 30 days after that:</strong> Data may persist in encrypted backups for disaster recovery purposes.</li>
+          <li>
+            <strong>Immediate:</strong> Your account is soft-deleted and becomes
+            inaccessible. All devices are logged out.
+          </li>
+          <li>
+            <strong>After 15 days:</strong> Your account data is permanently
+            deleted (hard-deleted) from our database.
+          </li>
+          <li>
+            <strong>Up to 30 days after that:</strong> Data may persist in
+            encrypted backups for disaster recovery purposes.
+          </li>
         </ul>
 
         <h4>What happens upon deletion:</h4>
         <ul>
-          <li>Your account becomes immediately inaccessible and cannot be restored</li>
+          <li>
+            Your account becomes immediately inaccessible and cannot be restored
+          </li>
           <li>All devices are logged out and your session is terminated</li>
-          <li>Your verification credentials (phone number, passport proof, event tickets) are invalidated</li>
-          <li>Your content (posts, votes, opinions) remains on the platform but is no longer publicly associated with your account</li>
-          <li>After 15 days, your account data is permanently removed from our database</li>
-          <li>Cryptographic proofs of account actions are not retained after verification</li>
+          <li>
+            Your verification credentials (phone number, passport proof, event
+            tickets) are invalidated
+          </li>
+          <li>
+            Your content (posts, votes, opinions) remains on the platform but is
+            no longer publicly associated with your account
+          </li>
+          <li>
+            After 15 days, your account data is permanently removed from our
+            database
+          </li>
+          <li>
+            Cryptographic proofs of account actions are not retained after
+            verification
+          </li>
         </ul>
-
 
         <h4>Third-party data retention:</h4>
         <ul>
           <li>
-            <strong>Database backups:</strong> Data may persist in encrypted AWS backups for up to 30 days after the 15-day hard deletion
+            <strong>Database backups:</strong> Data may persist in encrypted AWS
+            backups for up to 30 days after the 15-day hard deletion
           </li>
           <li>
-            <strong>Twilio:</strong> Phone verification records are retained according to
-            <a href="https://www.twilio.com/en-us/legal/privacy" target="_blank"  rel="noopener noreferrer">TEMP_MARKERTwilio's privacy policy</a>
+            <strong>Twilio:</strong> Phone verification records are retained
+            according to
+            <a
+              href="https://www.twilio.com/en-us/legal/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Twilio's privacy policy</a
+            >
           </li>
           <li>
-            <strong>Third-party services:</strong> Logs and data in Sentry, Cloudflare, AWS, and Google Cloud may be retained according to their respective privacy policies
+            <strong>Third-party services:</strong> Logs and data in Sentry,
+            Cloudflare, AWS, and Google Cloud may be retained according to their
+            respective privacy policies
           </li>
         </ul>
 
         <p>
-          <strong>Important:</strong> Deletion is immediate and irreversible. You cannot recover your account after requesting deletion.
+          <strong>Important:</strong> Deletion is immediate and irreversible.
+          You cannot recover your account after requesting deletion.
         </p>
 
         <p>
@@ -779,7 +841,7 @@
           competent data protection authority, i.e. the French Commission
           nationale de l'informatique et des libertés (<a
             href="http://www.cnil.fr/"
-            target="_blank" 
+            target="_blank"
             rel="noopener noreferrer"
             >www.cnil.fr</a
           >).

@@ -3,13 +3,18 @@ import { computed, onScopeDispose, ref } from "vue";
 export function useBoundedTranslationPolling({
   intervalMs,
   maxDurationMs,
+  maxConsecutiveRequestFailures,
+  onRequestFailureLimit,
   onTimeout,
 }: {
   intervalMs: number;
   maxDurationMs: number;
+  maxConsecutiveRequestFailures?: number;
+  onRequestFailureLimit?: () => void;
   onTimeout: () => void;
 }) {
   const isActive = ref(false);
+  let consecutiveRequestFailures = 0;
   let stopTimeout: ReturnType<typeof setTimeout> | undefined;
 
   const refetchInterval = computed(() => {
@@ -28,6 +33,7 @@ export function useBoundedTranslationPolling({
 
   function stop(): void {
     isActive.value = false;
+    consecutiveRequestFailures = 0;
     clearStopTimeout();
   }
 
@@ -41,7 +47,34 @@ export function useBoundedTranslationPolling({
     }, maxDurationMs);
   }
 
+  function recordRequestSuccess(): void {
+    consecutiveRequestFailures = 0;
+  }
+
+  function recordRequestFailure(): void {
+    if (
+      !isActive.value ||
+      maxConsecutiveRequestFailures === undefined ||
+      onRequestFailureLimit === undefined
+    ) {
+      return;
+    }
+
+    consecutiveRequestFailures += 1;
+    if (consecutiveRequestFailures >= maxConsecutiveRequestFailures) {
+      stop();
+      onRequestFailureLimit();
+    }
+  }
+
   onScopeDispose(stop);
 
-  return { refetchInterval, start, stop };
+  return {
+    isActive,
+    refetchInterval,
+    recordRequestFailure,
+    recordRequestSuccess,
+    start,
+    stop,
+  };
 }

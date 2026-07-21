@@ -7,9 +7,9 @@ import type { ErrorEvent, Exception } from "@sentry/vue";
  * Affected iPhone sessions had conversation-page breadcrumbs containing nested
  * `<font>` elements that Agora does not render. Browser page translators are
  * known to inject that markup, but the anonymous frame cannot prove whether the
- * translator, Sentry Replay, or application code exhausted the stack. These
- * fields let us correlate future events with translated DOM and frame ownership
- * before deciding whether any product behavior or Sentry filtering should change.
+ * translator or application code exhausted the stack. These fields let us
+ * correlate future events with translated DOM and frame ownership before
+ * deciding whether any product behavior or Sentry filtering should change.
  *
  * DOM inspection is limited to this exact error and records only structural,
  * bucketed metadata. It never records DOM text, HTML, language, or attributes.
@@ -33,6 +33,10 @@ function getStackOverflowExceptions(event: ErrorEvent): Exception[] {
   );
 }
 
+export function isStackOverflowEvent(event: ErrorEvent): boolean {
+  return getStackOverflowExceptions(event).length > 0;
+}
+
 function getFrameOrigin(exceptions: Exception[]): FrameOrigin {
   const frames = exceptions.flatMap(
     (exception) => exception.stacktrace?.frames ?? []
@@ -40,10 +44,7 @@ function getFrameOrigin(exceptions: Exception[]): FrameOrigin {
   if (frames.some((frame) => frame.in_app === true)) {
     return "in_app";
   }
-  if (
-    frames.length > 0 &&
-    frames.every((frame) => frame.in_app === false)
-  ) {
+  if (frames.length > 0 && frames.every((frame) => frame.in_app === false)) {
     return "non_app";
   }
   return "unknown";

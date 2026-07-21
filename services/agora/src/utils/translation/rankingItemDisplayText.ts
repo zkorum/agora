@@ -2,7 +2,7 @@ import type { RankingItemDisplayedContent } from "src/shared/types/zod";
 
 import type { RankingItemContentTranslationPreview } from "./useContentTranslationPreview";
 
-export interface RankingItemDisplayedText {
+interface RankingItemDisplayedText {
   title: string;
   body: string | null;
 }

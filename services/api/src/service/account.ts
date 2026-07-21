@@ -18,6 +18,7 @@ import { logoutAllDevicesForUser } from "./auth.js";
 import { httpErrors } from "@fastify/sensible";
 import { MAX_LENGTH_USERNAME } from "@/shared/shared.js";
 import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
+import { cancelPendingOpinionTranslationWorkForUser } from "@/shared-backend/contentTranslationWork.js";
 
 interface CheckUserNameExistProps {
     db: PostgresJsDatabase;
@@ -623,12 +624,13 @@ export async function deleteUserAccount({ db, userId }: DeleteAccountProps) {
     // 2. conversation deletion should not necessarily delete other people's opinion
     // 3. opinion deletion should not necessarily delete other people's replies
     await db.transaction(async (tx) => {
+        const now = nowZeroMs();
         const updatedUserTableResponse = await tx
             .update(userTable)
             .set({
                 isDeleted: true,
-                deletedAt: nowZeroMs(),
-                updatedAt: nowZeroMs(),
+                deletedAt: now,
+                updatedAt: now,
             })
             .where(eq(userTable.id, userId))
             .returning({ id: userTable.id });
@@ -644,23 +646,29 @@ export async function deleteUserAccount({ db, userId }: DeleteAccountProps) {
         // Update denormalized isDeleted flag in credential tables
         await tx
             .update(zkPassportTable)
-            .set({ isDeleted: true, updatedAt: nowZeroMs() })
+            .set({ isDeleted: true, updatedAt: now })
             .where(eq(zkPassportTable.userId, userId));
 
         await tx
             .update(eventTicketTable)
-            .set({ isDeleted: true, updatedAt: nowZeroMs() })
+            .set({ isDeleted: true, updatedAt: now })
             .where(eq(eventTicketTable.userId, userId));
 
         await tx
             .update(phoneTable)
-            .set({ isDeleted: true, updatedAt: nowZeroMs() })
+            .set({ isDeleted: true, updatedAt: now })
             .where(eq(phoneTable.userId, userId));
 
         await tx
             .update(emailTable)
-            .set({ isDeleted: true, updatedAt: nowZeroMs() })
+            .set({ isDeleted: true, updatedAt: now })
             .where(eq(emailTable.userId, userId));
+
+        await cancelPendingOpinionTranslationWorkForUser({
+            db: tx,
+            userId,
+            now,
+        });
 
         // Don't delete votes/opinions/conversations - use soft-delete pattern
         // Queries already filter by user.isDeleted, so content will be hidden automatically

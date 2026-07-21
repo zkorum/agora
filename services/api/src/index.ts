@@ -5828,7 +5828,8 @@ server.after(() => {
             }
 
             const requesterIsSiteModerator =
-                request.body.subject.kind === "opinion" && deviceStatus.isKnown
+                request.body.subject.kind === "opinion" &&
+                authUtilService.isActiveRegisteredDeviceStatus(deviceStatus)
                     ? await isSiteModeratorAccount({
                           db,
                           userId: requesterUserId,

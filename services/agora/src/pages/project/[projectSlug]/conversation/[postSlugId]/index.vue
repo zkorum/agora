@@ -9,7 +9,7 @@
     :on-view-analysis="onViewAnalysis"
   />
   <ConversationCommentTab
-    v-else
+    v-else-if="conversationData !== undefined"
     :conversation-data="conversationData"
     :moderation-history-trigger="moderationHistoryTrigger"
     :comment-filter="commentFilter"
