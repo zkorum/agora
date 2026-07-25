@@ -11,6 +11,7 @@ import {
   Dto,
   type UpdateOrganizationLocalizationRequest,
 } from "src/shared/types/dto";
+import { isHttpsUrl } from "src/utils/url";
 
 export interface SelectOption<T extends string> {
   label: string;
@@ -61,19 +62,6 @@ export function inputToString(value: unknown): string {
   return "";
 }
 
-export function isHttpsUrl(url: string): boolean {
-  if (url.trim() === "") {
-    return false;
-  }
-
-  try {
-    const parsedUrl = new URL(url);
-    return parsedUrl.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
 export function optionalText(value: string): string | undefined {
   const trimmed = value.trim();
   return trimmed.length === 0 ? undefined : trimmed;
@@ -89,7 +77,7 @@ function normalizeCreateOrganizationForm(
     organizationName: form.organizationName,
     organizationSlug: form.organizationSlug,
     ...(form.imagePath.trim() === "" ? {} : { imagePath: form.imagePath }),
-    ...(form.websiteUrl.trim() === "" ? {} : { websiteUrl: form.websiteUrl }),
+    websiteUrl: optionalText(form.websiteUrl),
   };
 }
 

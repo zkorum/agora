@@ -220,10 +220,18 @@ export const zodExportFileType = z.enum([
     "survey_full_aggregates",
 ]);
 export const zodExportFileAudience = z.enum(["redacted", "owner", "requester"]);
-const zodHttpUrl = z.url().refine((value) => {
-    const protocol = new URL(value).protocol;
-    return protocol === "http:" || protocol === "https:";
-}, "URL must use http or https");
+export const zodHttpsUrl = z.url().refine((value) => {
+    try {
+        const url = new URL(value);
+        return (
+            url.protocol === "https:" &&
+            url.username === "" &&
+            url.password === ""
+        );
+    } catch {
+        return false;
+    }
+}, "URL must use HTTPS without embedded credentials");
 export const zodExportFileInfo = z
     .object({
         fileType: zodExportFileType,
@@ -247,7 +255,7 @@ export const zodOrganization = z
         name: z.string(),
         slug: zodOrganizationSlug,
         imageUrl: z.string().optional(),
-        websiteUrl: zodHttpUrl.optional(),
+        websiteUrl: zodHttpsUrl.optional(),
         description: z.string(),
     })
     .strict();

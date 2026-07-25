@@ -43,6 +43,7 @@ import sanitizeHtml from "sanitize-html";
 import { createPostModerationPropertyObject } from "./moderation.js";
 import { getUserMutePreferences } from "./muteUser.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
+import { optionalHttpsUrl } from "@/utils/url.js";
 import { getConversationEngagementScore } from "./recommendationSystem.js";
 import { log } from "@/app.js";
 import { alias } from "drizzle-orm/pg-core";
@@ -546,18 +547,18 @@ export function useCommonPost() {
                                       postItem.organizationIsFullImagePath,
                                   baseImageServiceUrl,
                               });
+                              const websiteUrl = optionalHttpsUrl(
+                                  postItem.organizationWebsiteUrl,
+                              );
 
                               return {
                                   name: postItem.organizationName,
                                   slug: postItem.organizationSlug,
                                   description:
                                       postItem.organizationDescription ?? "",
-                                  ...(postItem.organizationWebsiteUrl === null
+                                  ...(websiteUrl === undefined
                                       ? {}
-                                      : {
-                                            websiteUrl:
-                                                postItem.organizationWebsiteUrl,
-                                        }),
+                                      : { websiteUrl }),
                                   ...(imageUrl === undefined ? {} : { imageUrl }),
                               };
                           })()

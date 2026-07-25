@@ -83,6 +83,7 @@ import {
     zodSurveyQuestionDisplayedContent,
     zodProjectOrganizationAttributionRole,
     zodProjectSlug,
+    zodHttpsUrl,
     createZodDisplayedContent,
 } from "./zod.js";
 import { zodEmail } from "./zod-email.js";
@@ -264,16 +265,12 @@ const zodConversationContentRequestMode = z.enum([
 ]);
 const zodProjectTitle = z.string().trim().min(1).max(MAX_LENGTH_TITLE);
 const zodOptionalNonEmptyText = z.string().trim().min(1).optional();
-const zodHttpUrl = z.url().refine((value) => {
-    const protocol = new URL(value).protocol;
-    return protocol === "http:" || protocol === "https:";
-}, "URL must use http or https");
 const zodOrganizationLocalization = z
     .object({
         languageCode: ZodSupportedDisplayLanguageCodes,
         displayName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
         description: z.string().trim().max(MAX_LENGTH_DESCRIPTION_CREATOR),
-        websiteUrl: zodHttpUrl.optional(),
+        websiteUrl: zodHttpsUrl.optional(),
         imagePath: zodOptionalNonEmptyText,
         isFullImagePath: z.boolean(),
     })
@@ -283,11 +280,41 @@ const zodProjectExternalOrganizationLocalizationInput = z
         languageCode: ZodSupportedDisplayLanguageCodes,
         displayName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
         description: z.string().trim().max(MAX_LENGTH_DESCRIPTION_CREATOR),
-        websiteUrl: zodHttpUrl.optional(),
+        websiteUrl: zodHttpsUrl.optional(),
         imagePath: zodOptionalNonEmptyText,
         isFullImagePath: z.boolean().default(false),
     })
     .strict();
+const zodProjectContact = z
+    .object({
+        firstName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
+        lastName: z
+            .string()
+            .trim()
+            .min(1)
+            .max(MAX_LENGTH_NAME_CREATOR)
+            .optional(),
+        roleLabel: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
+        email: zodEmail.optional(),
+        organizationSlug: zodOrganizationSlug.optional(),
+        websiteUrl: zodHttpsUrl.optional(),
+        imagePath: zodOptionalNonEmptyText,
+        isFullImagePath: z.boolean().default(false),
+    })
+    .strict();
+const zodCreateProjectContact = zodProjectContact.superRefine(
+    (contact, context) => {
+        if (contact.email !== undefined || contact.websiteUrl !== undefined) {
+            return;
+        }
+
+        context.addIssue({
+            code: "custom",
+            message: "Contact requires an email or website URL",
+            path: ["email"],
+        });
+    },
+);
 const zodAdminOrganization = zodOrganization
     .extend({
         defaultLanguageCode: ZodSupportedDisplayLanguageCodes,
@@ -411,7 +438,7 @@ const zodAdminProject = z
         attributions: z.array(
             z.lazy(() => Dto.createProjectAttributionRequest),
         ),
-        contact: z.lazy(() => Dto.createProjectContactRequest).optional(),
+        contact: zodProjectContact.optional(),
     })
     .strict();
 const zodAdminProjectOption = z
@@ -488,7 +515,7 @@ const zodProjectPageAttribution = z
         role: zodProjectOrganizationAttributionRole,
         displayName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
         description: z.string().trim().min(1).optional(),
-        websiteUrl: zodHttpUrl.optional(),
+        websiteUrl: zodHttpsUrl.optional(),
         initials: z.string().trim().min(1).max(4),
         accentColor: z.string().trim().min(1),
         imageUrl: z.url().optional(),
@@ -502,7 +529,7 @@ const zodProjectPageContact = z
         affiliationName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR).optional(),
         imageUrl: z.url().optional(),
         email: zodEmail.optional(),
-        websiteUrl: z.url().optional(),
+        websiteUrl: zodHttpsUrl.optional(),
     })
     .strict();
 const zodProjectPageProject = z
@@ -1565,7 +1592,7 @@ export class Dto {
             defaultLanguageCode: ZodSupportedDisplayLanguageCodes,
             imagePath: zodOptionalNonEmptyText,
             isFullImagePath: z.boolean(),
-            websiteUrl: zodHttpUrl.optional(),
+            websiteUrl: zodHttpsUrl.optional(),
             description: z.string().trim().max(MAX_LENGTH_DESCRIPTION_CREATOR),
         })
         .strict();
@@ -1575,7 +1602,7 @@ export class Dto {
             languageCode: ZodSupportedDisplayLanguageCodes,
             displayName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
             description: z.string().trim().max(MAX_LENGTH_DESCRIPTION_CREATOR),
-            websiteUrl: zodHttpUrl.optional(),
+            websiteUrl: zodHttpsUrl.optional(),
             imagePath: zodOptionalNonEmptyText,
             isFullImagePath: z.boolean().default(false),
             setAsDefault: z.boolean().default(false),
@@ -1687,46 +1714,14 @@ export class Dto {
                     .optional(),
                 imagePath: zodOptionalNonEmptyText,
                 isFullImagePath: z.boolean().default(false),
-                websiteUrl: zodHttpUrl.optional(),
+                websiteUrl: zodHttpsUrl.optional(),
                 additionalLocalizations: z
                     .array(zodProjectExternalOrganizationLocalizationInput)
                     .default([]),
             })
             .strict(),
     ]);
-    static createProjectContactRequest = z
-        .object({
-            firstName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
-            lastName: z
-                .string()
-                .trim()
-                .min(1)
-                .max(MAX_LENGTH_NAME_CREATOR)
-                .optional(),
-            roleLabel: z
-                .string()
-                .trim()
-                .min(1)
-                .max(MAX_LENGTH_TITLE)
-                .optional(),
-            email: zodEmail.optional(),
-            organizationSlug: zodOrganizationSlug.optional(),
-            websiteUrl: zodHttpUrl.optional(),
-            imagePath: zodOptionalNonEmptyText,
-            isFullImagePath: z.boolean().default(false),
-        })
-        .strict()
-        .superRefine((contact, context) => {
-            if (contact.email !== undefined || contact.websiteUrl !== undefined) {
-                return;
-            }
-
-            context.addIssue({
-                code: "custom",
-                message: "Contact requires an email or website URL",
-                path: ["email"],
-            });
-        });
+    static createProjectContactRequest = zodCreateProjectContact;
     static createProjectRequest = z
         .object({
             projectSlug: zodProjectSlug,
@@ -1861,7 +1856,7 @@ export class Dto {
             languageCode: ZodSupportedDisplayLanguageCodes,
             displayName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
             description: z.string().trim().max(MAX_LENGTH_DESCRIPTION_CREATOR),
-            websiteUrl: zodHttpUrl.optional(),
+            websiteUrl: zodHttpsUrl.optional(),
             imagePath: zodOptionalNonEmptyText,
             isFullImagePath: z.boolean().default(false),
             setAsDefault: z.boolean().default(false),

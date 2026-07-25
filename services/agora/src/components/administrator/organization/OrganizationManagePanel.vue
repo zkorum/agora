@@ -93,6 +93,11 @@
               :model-value="editForm.websiteUrl"
               outlined
               :label="t('websiteUrlLabel')"
+              :hint="t('websiteUrlHint')"
+              :error="!isWebsiteUrlValid"
+              :error-message="t('websiteUrlError')"
+              type="url"
+              autocomplete="url"
               @update:model-value="
                 (value) => setEditTextField({ field: 'websiteUrl', value })
               "
@@ -286,6 +291,7 @@ import {
 } from "src/shared/types/dto";
 import { useLanguageStore } from "src/stores/language";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
+import { isOptionalHttpsUrl } from "src/utils/url";
 import { computed, reactive, ref, watch } from "vue";
 
 type EditTextField = "displayName" | "description" | "imagePath" | "websiteUrl";
@@ -396,6 +402,10 @@ const selectedLanguageHasLocalization = computed(() => {
     languageCode: selectedLanguageCode.value,
   });
 });
+
+const isWebsiteUrlValid = computed(() =>
+  isOptionalHttpsUrl(editForm.websiteUrl)
+);
 
 const canSaveOrganization = computed(() => {
   const organization = selectedOrganization.value;

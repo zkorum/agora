@@ -24,6 +24,7 @@ import type {
 import type { OrganizationProperties } from "@/shared/types/zod.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
+import { optionalHttpsUrl } from "@/utils/url.js";
 import { ensureOrganizationMembershipBaselineCapabilities } from "../projectAccess.js";
 import { getOrganizationIdsWithActiveDynamicTranslationEntitlement } from "../premiumEntitlement.js";
 
@@ -49,18 +50,17 @@ function buildOrganizationProperties({
         isFullImagePath,
         baseImageServiceUrl,
     });
+    const validWebsiteUrl = optionalHttpsUrl(websiteUrl);
 
     return {
         name,
         slug,
         description: description ?? "",
         ...(imageUrl === undefined ? {} : { imageUrl }),
-        ...(websiteUrl === null ? {} : { websiteUrl }),
+        ...(validWebsiteUrl === undefined
+            ? {}
+            : { websiteUrl: validWebsiteUrl }),
     };
-}
-
-function optionalUrl(url: string | null): string | undefined {
-    return url ?? undefined;
 }
 
 function optionalText(text: string | null): string | undefined {
@@ -162,7 +162,7 @@ export async function getAllOrganizations({
         const localizations =
             localizationsByOrganizationId.get(localization.organizationId) ??
             [];
-        const websiteUrl = optionalUrl(localization.websiteUrl);
+        const websiteUrl = optionalHttpsUrl(localization.websiteUrl);
         const imagePath = optionalText(localization.imagePath);
         localizations.push({
             languageCode: localization.languageCode,

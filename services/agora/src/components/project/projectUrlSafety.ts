@@ -1,27 +1,6 @@
-const safeProjectHrefProtocols = ["http:", "https:", "mailto:"];
-const safeProjectWebHrefProtocols = ["http:", "https:"];
+import { zodHttpsUrl } from "src/shared/types/zod";
 
 export function getSafeProjectHref(href: string): string | undefined {
-  return getSafeProjectHrefWithProtocols({
-    href,
-    allowedProtocols: safeProjectHrefProtocols,
-  });
-}
-
-export function getSafeProjectWebHref(href: string): string | undefined {
-  return getSafeProjectHrefWithProtocols({
-    href,
-    allowedProtocols: safeProjectWebHrefProtocols,
-  });
-}
-
-function getSafeProjectHrefWithProtocols({
-  href,
-  allowedProtocols,
-}: {
-  href: string;
-  allowedProtocols: readonly string[];
-}): string | undefined {
   const trimmedHref = href.trim();
   if (trimmedHref.length === 0 || hasControlCharacter(trimmedHref)) {
     return undefined;
@@ -31,12 +10,27 @@ function getSafeProjectHrefWithProtocols({
     return trimmedHref;
   }
 
+  const webUrl = zodHttpsUrl.safeParse(trimmedHref);
+  if (webUrl.success) {
+    return webUrl.data;
+  }
+
   try {
     const parsedUrl = new URL(trimmedHref);
-    return allowedProtocols.includes(parsedUrl.protocol) ? trimmedHref : undefined;
+    return parsedUrl.protocol === "mailto:" ? trimmedHref : undefined;
   } catch {
     return undefined;
   }
+}
+
+export function getSafeProjectWebHref(href: string): string | undefined {
+  const trimmedHref = href.trim();
+  if (hasControlCharacter(trimmedHref)) {
+    return undefined;
+  }
+
+  const result = zodHttpsUrl.safeParse(trimmedHref);
+  return result.success ? result.data : undefined;
 }
 
 function hasControlCharacter(value: string): boolean {

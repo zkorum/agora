@@ -60,6 +60,8 @@ export interface AdministratorProjectTranslations {
   contactImagePathLabel: string;
   contactImageIsFullPathLabel: string;
   contactOrganizationLabel: string;
+  websiteUrlHint: string;
+  websiteUrlError: string;
   createButton: string;
   manageTitle: string;
   manageDescription: string;
@@ -155,7 +157,7 @@ const en: AdministratorProjectTranslations = {
   externalOrganizationSource: "External organization",
   contactTitle: "Participant contact",
   contactDescription:
-    "Optional. If you add contact details, contact name and email are required.",
+    "Optional. If you add contact details, a contact name and either an email address or HTTPS contact page are required.",
   contactFirstNameLabel: "Contact first name",
   contactLastNameLabel: "Contact last name",
   contactRoleLabel: "Contact role label",
@@ -164,6 +166,9 @@ const en: AdministratorProjectTranslations = {
   contactImagePathLabel: "Contact image path",
   contactImageIsFullPathLabel: "Contact image path is a full URL",
   contactOrganizationLabel: "Contact organization affiliation",
+  websiteUrlHint: "Use a full HTTPS URL, for example https://example.org.",
+  websiteUrlError:
+    "Website URL must use HTTPS and cannot contain embedded credentials.",
   createButton: "Create project",
   manageTitle: "Manage projects",
   manageDescription:

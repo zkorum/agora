@@ -69,6 +69,7 @@ import {
     type ProjectContentSource,
 } from "../contentTranslation.js";
 import { log } from "@/app.js";
+import { optionalHttpsUrl } from "@/utils/url.js";
 
 type ProjectOrganizationAttributionRole =
     CreateProjectAttributionRequest["role"];
@@ -1726,7 +1727,7 @@ export async function getAllProjects({
             languageCode: localization.languageCode,
             displayName: localization.displayName,
             description: localization.description,
-            websiteUrl: localization.websiteUrl ?? undefined,
+            websiteUrl: optionalHttpsUrl(localization.websiteUrl),
             imagePath: localization.imagePath ?? undefined,
             isFullImagePath: localization.isFullImagePath,
         });
@@ -1773,28 +1774,29 @@ export async function getAllProjects({
                 description: attribution.description ?? undefined,
                 imagePath: attribution.imagePath ?? undefined,
                 isFullImagePath: attribution.isFullImagePath ?? false,
-                websiteUrl: attribution.websiteUrl ?? undefined,
+                websiteUrl: optionalHttpsUrl(attribution.websiteUrl),
                 additionalLocalizations,
             });
         }
         attributionsByProjectId.set(attribution.projectId, attributions);
     }
 
-    const contactsByProjectId = new Map(
-        contactRows.map((contact) => [
-            contact.projectId,
-            {
-                firstName: contact.firstName,
-                lastName: contact.lastName ?? undefined,
-                roleLabel: contact.roleLabel ?? undefined,
-                email: contact.email ?? undefined,
-                websiteUrl: contact.websiteUrl ?? undefined,
-                imagePath: contact.imagePath ?? undefined,
-                isFullImagePath: contact.isFullImagePath,
-                organizationSlug: contact.organizationSlug ?? undefined,
-            },
-        ]),
-    );
+    const contactsByProjectId = new Map<
+        number,
+        NonNullable<GetAllProjectsResponse["projectList"][number]["contact"]>
+    >();
+    for (const contact of contactRows) {
+        contactsByProjectId.set(contact.projectId, {
+            firstName: contact.firstName,
+            lastName: contact.lastName ?? undefined,
+            roleLabel: contact.roleLabel ?? undefined,
+            email: contact.email ?? undefined,
+            websiteUrl: optionalHttpsUrl(contact.websiteUrl),
+            imagePath: contact.imagePath ?? undefined,
+            isFullImagePath: contact.isFullImagePath,
+            organizationSlug: contact.organizationSlug ?? undefined,
+        });
+    }
 
     return {
         projectList: projectRows.map((project) => ({

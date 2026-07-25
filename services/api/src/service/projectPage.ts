@@ -61,6 +61,7 @@ import type {
     ProjectDisplayedContent,
 } from "@/shared/types/zod.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
+import { optionalHttpsUrl } from "@/utils/url.js";
 import { translationSourceMatchesCurrentSource } from "@/shared-backend/translate.js";
 import { buildTranslationMetadata } from "./contentTranslationContent.js";
 import {
@@ -195,10 +196,6 @@ interface ProjectContentTranslationRow extends ProjectContentTranslationResoluti
 function optionalText(value: string | null): string | undefined {
     const trimmed = value?.trim();
     return trimmed === undefined || trimmed === "" ? undefined : trimmed;
-}
-
-function optionalUrl(value: string | null): string | undefined {
-    return value ?? undefined;
 }
 
 function getInitials(displayName: string): string {
@@ -1708,7 +1705,7 @@ async function fetchProjectAttributions({
             role: row.role,
             displayName: resolved.displayName,
             description: optionalText(resolved.description),
-            websiteUrl: optionalUrl(resolved.websiteUrl),
+            websiteUrl: optionalHttpsUrl(resolved.websiteUrl),
             initials: getInitials(resolved.displayName),
             accentColor: getAttributionAccentColor({ role: row.role }),
             imageUrl: toImageUrl({
@@ -1908,7 +1905,7 @@ async function fetchProjectContact({
         roleLabel: optionalText(row.roleLabel),
         affiliationName,
         email: optionalText(row.email),
-        websiteUrl: optionalUrl(row.websiteUrl),
+        websiteUrl: optionalHttpsUrl(row.websiteUrl),
         imageUrl: toImageUrl({
             imagePath: row.imagePath,
             isFullImagePath: row.isFullImagePath,

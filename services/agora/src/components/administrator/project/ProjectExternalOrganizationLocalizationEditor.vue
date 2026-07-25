@@ -1,5 +1,9 @@
 <template>
-  <q-expansion-item class="language-expansion" :label="labels.title" dense-toggle>
+  <q-expansion-item
+    class="language-expansion"
+    :label="labels.title"
+    dense-toggle
+  >
     <div class="nested-form">
       <div class="form-grid">
         <q-select
@@ -28,6 +32,10 @@
           outlined
           type="url"
           :label="labels.websiteLabel"
+          :hint="labels.websiteHint"
+          :error="!isOptionalHttpsUrl(websiteUrl)"
+          :error-message="labels.websiteError"
+          autocomplete="url"
         />
         <q-input
           v-model="imagePathInput"
@@ -82,6 +90,7 @@ import {
   MAX_LENGTH_NAME_CREATOR,
 } from "src/shared/shared";
 import type { CreateProjectAttributionRequest } from "src/shared/types/dto";
+import { isOptionalHttpsUrl } from "src/utils/url";
 import { computed, type Ref, ref, watch, type WritableComputedRef } from "vue";
 
 type ExternalLocalization = Extract<
@@ -100,6 +109,8 @@ interface ExternalLocalizationEditorLabels {
   nameLabel: string;
   descriptionLabel: string;
   websiteLabel: string;
+  websiteHint: string;
+  websiteError: string;
   imagePathLabel: string;
   imageIsFullPathLabel: string;
   addLanguageButton: string;
@@ -117,7 +128,9 @@ const emit = defineEmits<{
   "update:modelValue": [value: ExternalLocalization[]];
 }>();
 
-const languageCode = ref<SupportedDisplayLanguageCodes>(props.defaultLanguageCode);
+const languageCode = ref<SupportedDisplayLanguageCodes>(
+  props.defaultLanguageCode
+);
 const displayName = ref("");
 const description = ref("");
 const websiteUrl = ref("");
@@ -129,7 +142,8 @@ const websiteUrlInput = stringInputModel(websiteUrl);
 const imagePathInput = stringInputModel(imagePath);
 
 const usedLanguageCodes = computed(
-  () => new Set(props.modelValue.map((localization) => localization.languageCode))
+  () =>
+    new Set(props.modelValue.map((localization) => localization.languageCode))
 );
 
 const availableLanguageOptions = computed(() =>
@@ -145,7 +159,7 @@ const canAddLocalization = computed(
     languageCode.value !== props.defaultLanguageCode &&
     !usedLanguageCodes.value.has(languageCode.value) &&
     displayName.value.trim() !== "" &&
-    isOptionalUrlValid(websiteUrl.value)
+    isOptionalHttpsUrl(websiteUrl.value)
 );
 
 watch(
@@ -178,20 +192,6 @@ function getLanguageLabel(language: SupportedDisplayLanguageCodes): string {
     props.displayLanguageOptions.find((option) => option.value === language)
       ?.label ?? language
   );
-}
-
-function isOptionalUrlValid(value: string): boolean {
-  const trimmed = value.trim();
-  if (trimmed === "") {
-    return true;
-  }
-
-  try {
-    const url = new URL(trimmed);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
 }
 
 function optionalString(value: string): string | undefined {

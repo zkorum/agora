@@ -59,6 +59,11 @@
         :model-value="form.websiteUrl"
         outlined
         :label="t('websiteUrlLabel')"
+        :hint="t('websiteUrlHint')"
+        :error="!isWebsiteUrlValid"
+        :error-message="t('websiteUrlError')"
+        type="url"
+        autocomplete="url"
         @update:model-value="
           (value) => setTextField({ field: 'websiteUrl', value })
         "
@@ -99,6 +104,7 @@ import {
 } from "src/shared-app-api/organizationSlug";
 import { useLanguageStore } from "src/stores/language";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
+import { isOptionalHttpsUrl } from "src/utils/url";
 import { computed, reactive, ref, watch } from "vue";
 
 type CreateTextField =
@@ -133,8 +139,9 @@ const isCreating = ref(false);
 const isSlugValid = computed(
   () => zodOrganizationSlug.safeParse(form.organizationSlug).success
 );
-const canCreateOrganization = computed(
-  () => isCreateOrganizationFormValid(form)
+const isWebsiteUrlValid = computed(() => isOptionalHttpsUrl(form.websiteUrl));
+const canCreateOrganization = computed(() =>
+  isCreateOrganizationFormValid(form)
 );
 
 watch(

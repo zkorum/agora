@@ -22,6 +22,8 @@ export interface AdministratorOrganizationTranslations {
   imagePathLabel: string;
   imagePathHint: string;
   websiteUrlLabel: string;
+  websiteUrlHint: string;
+  websiteUrlError: string;
   createButton: string;
   saveButton: string;
   deleteButton: string;
@@ -76,6 +78,9 @@ const en: AdministratorOrganizationTranslations = {
   imagePathHint:
     "Use an image filename such as avatar_default_0.png or a full https URL.",
   websiteUrlLabel: "Website URL",
+  websiteUrlHint: "Use a full HTTPS URL, for example https://example.org.",
+  websiteUrlError:
+    "Website URL must use HTTPS and cannot contain embedded credentials.",
   createButton: "Create organization",
   saveButton: "Save changes",
   deleteButton: "Delete organization",

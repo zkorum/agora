@@ -182,6 +182,10 @@
               outlined
               type="url"
               :label="optionalLabel(t('externalWebsiteLabel'))"
+              :hint="t('websiteUrlHint')"
+              :error="!isExternalWebsiteUrlValid"
+              :error-message="t('websiteUrlError')"
+              autocomplete="url"
             />
             <q-input
               v-model="externalImagePathInput"
@@ -272,6 +276,10 @@
             outlined
             type="url"
             :label="contactChannelLabel(t('contactWebsiteLabel'))"
+            :hint="t('websiteUrlHint')"
+            :error="!isContactWebsiteUrlValid"
+            :error-message="t('websiteUrlError')"
+            autocomplete="url"
           />
           <q-input
             v-model="contactImagePathInput"
@@ -516,6 +524,10 @@
                 outlined
                 type="url"
                 :label="optionalLabel(t('externalWebsiteLabel'))"
+                :hint="t('websiteUrlHint')"
+                :error="!isExternalWebsiteUrlValid"
+                :error-message="t('websiteUrlError')"
+                autocomplete="url"
               />
               <q-input
                 v-model="externalImagePathInput"
@@ -619,6 +631,10 @@
               outlined
               type="url"
               :label="manageContactChannelLabel(t('contactWebsiteLabel'))"
+              :hint="t('websiteUrlHint')"
+              :error="!isManageContactWebsiteUrlValid"
+              :error-message="t('websiteUrlError')"
+              autocomplete="url"
             />
             <q-input
               v-model="manageContactImagePathInput"
@@ -787,6 +803,7 @@ import { useLanguageStore } from "src/stores/language";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { useBackendAdministratorProjectApi } from "src/utils/api/administrator/project";
 import { useNotify } from "src/utils/ui/notify";
+import { isOptionalHttpsUrl } from "src/utils/url";
 import {
   computed,
   onMounted,
@@ -1088,6 +1105,8 @@ const externalLocalizationEditorLabels = computed(() => ({
   nameLabel: requiredLabel(t("externalNameLabel")),
   descriptionLabel: optionalLabel(t("externalDescriptionLabel")),
   websiteLabel: optionalLabel(t("externalWebsiteLabel")),
+  websiteHint: t("websiteUrlHint"),
+  websiteError: t("websiteUrlError"),
   imagePathLabel: optionalLabel(t("externalImagePathLabel")),
   imageIsFullPathLabel: t("externalImageIsFullPathLabel"),
   addLanguageButton: t("addLanguageButton"),
@@ -1129,9 +1148,21 @@ const canAddAttribution = computed(() => {
 
   return (
     externalDisplayName.value.trim() !== "" &&
-    isOptionalUrlValid(externalWebsiteUrl.value)
+    isOptionalHttpsUrl(externalWebsiteUrl.value)
   );
 });
+
+const isExternalWebsiteUrlValid = computed(() =>
+  isOptionalHttpsUrl(externalWebsiteUrl.value)
+);
+
+const isContactWebsiteUrlValid = computed(() =>
+  isOptionalHttpsUrl(contactWebsite.value)
+);
+
+const isManageContactWebsiteUrlValid = computed(() =>
+  isOptionalHttpsUrl(manageContactWebsite.value)
+);
 
 const canAddManageAttribution = computed(() => {
   if (attributionSource.value === "organization") {
@@ -1146,7 +1177,7 @@ const canAddManageAttribution = computed(() => {
 
   return (
     externalDisplayName.value.trim() !== "" &&
-    isOptionalUrlValid(externalWebsiteUrl.value)
+    isOptionalHttpsUrl(externalWebsiteUrl.value)
   );
 });
 
@@ -1192,7 +1223,7 @@ const hasValidContact = computed(() => {
   return (
     contactFirstName.value.trim() !== "" &&
     (trimmedEmail === "" || zodEmail.safeParse(trimmedEmail).success) &&
-    isOptionalUrlValid(trimmedWebsite) &&
+    isOptionalHttpsUrl(trimmedWebsite) &&
     hasContactChannelInput.value
   );
 });
@@ -1207,7 +1238,7 @@ const hasValidManageContact = computed(() => {
   return (
     manageContactFirstName.value.trim() !== "" &&
     (trimmedEmail === "" || zodEmail.safeParse(trimmedEmail).success) &&
-    isOptionalUrlValid(trimmedWebsite) &&
+    isOptionalHttpsUrl(trimmedWebsite) &&
     hasManageContactChannelInput.value
   );
 });
@@ -1538,20 +1569,6 @@ function optionalStringSelectModel(
         typeof value === "string" && value.length > 0 ? value : undefined;
     },
   });
-}
-
-function isOptionalUrlValid(value: string): boolean {
-  const trimmed = value.trim();
-  if (trimmed === "") {
-    return true;
-  }
-
-  try {
-    const url = new URL(trimmed);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
 }
 
 function optionalRichTextHtml({
