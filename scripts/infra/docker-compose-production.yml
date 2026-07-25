@@ -139,12 +139,23 @@ services:
         awslogs-stream: content-translation-worker
   reacher:
     container_name: reacher
-    image: reacherhq/backend:latest
+    image: reacherhq/backend:v0.11.7
     environment:
       RCH__HTTP_HOST: "0.0.0.0"
       RCH__FROM_EMAIL: "noreply@probe.agoracitizen.network"
       RCH__HELLO_NAME: "probe.agoracitizen.network"
       RCH__SMTP_TIMEOUT: "5"
+      # Avoid Chromium checks that can disconnect from the renderer:
+      # https://github.com/reacherhq/check-if-email-exists/issues/1598
+      # https://github.com/reacherhq/check-if-email-exists/issues/1560
+      RCH__OVERRIDES__YAHOO__TYPE: "api"
+      RCH__OVERRIDES__HOTMAILB2C__TYPE: "smtp"
+      RCH__OVERRIDES__HOTMAILB2C__FROM_EMAIL: "noreply@probe.agoracitizen.network"
+      RCH__OVERRIDES__HOTMAILB2C__HELLO_NAME: "probe.agoracitizen.network"
+      RCH__OVERRIDES__HOTMAILB2C__SMTP_PORT: "25"
+      RCH__OVERRIDES__HOTMAILB2C__SMTP_TIMEOUT__SECS: "5"
+      RCH__OVERRIDES__HOTMAILB2C__SMTP_TIMEOUT__NANOS: "0"
+      RCH__OVERRIDES__HOTMAILB2C__RETRIES: "1"
       RUST_LOG: "reacher=info"
     expose:
       - "8080"
