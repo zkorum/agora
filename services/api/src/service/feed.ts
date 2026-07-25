@@ -1,17 +1,15 @@
-import {
-    conversationTable,
-    conversationViewSnapshotTable,
-} from "@/shared-backend/schema.js";
+import { conversationTable } from "@/shared-backend/schema.js";
 import type {
     ExtendedConversationPerSlugId,
     FeedSortAlgorithm,
 } from "@/shared/types/zod.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
-import { and, desc, eq, isNotNull, SQL } from "drizzle-orm";
+import { and, eq, isNotNull, SQL } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { getConversationEngagementScore } from "./recommendationSystem.js";
 import type { FetchFeedResponse } from "@/shared/types/dto.js";
+import { fetchConversationDisplayCountsByConversationId } from "./conversationDisplayCounts.js";
 
 interface GetPostSlugIdLastCursorProps {
     lastSlugId: string | undefined;
@@ -112,45 +110,37 @@ export async function getTopEngagementSlugIds({
 }: GetTopEngagementSlugIdsProps): Promise<string[]> {
     const conversationRows = await db
         .select({
+            conversationId: conversationTable.id,
             slugId: conversationTable.slugId,
             createdAt: conversationTable.createdAt,
             lastReactedAt: conversationTable.lastReactedAt,
-            opinionCount: conversationViewSnapshotTable.opinionCount,
-            voteCount: conversationViewSnapshotTable.voteCount,
-            participantCount: conversationViewSnapshotTable.participantCount,
         })
         .from(conversationTable)
-        .innerJoin(
-            conversationViewSnapshotTable,
-            eq(
-                conversationViewSnapshotTable.conversationId,
-                conversationTable.id,
-            ),
-        )
         .where(
             and(
                 eq(conversationTable.isIndexed, true),
                 eq(conversationTable.isImporting, false),
                 isNotNull(conversationTable.currentContentId),
-                isNotNull(conversationViewSnapshotTable.activatedAt),
             ),
-        )
-        .orderBy(
-            conversationTable.id,
-            desc(conversationViewSnapshotTable.createdAt),
-            desc(conversationViewSnapshotTable.id),
         );
-
-    const conversationsBySlugId = new Map<
-        string,
-        (typeof conversationRows)[number]
-    >();
-    for (const row of conversationRows) {
-        if (!conversationsBySlugId.has(row.slugId)) {
-            conversationsBySlugId.set(row.slugId, row);
-        }
-    }
-    const conversations = Array.from(conversationsBySlugId.values());
+    const countsByConversationId =
+        await fetchConversationDisplayCountsByConversationId({
+            db,
+            conversationIds: conversationRows.map((row) => row.conversationId),
+        });
+    const conversations = conversationRows.flatMap((row) => {
+        const counts = countsByConversationId.get(row.conversationId);
+        return counts === undefined
+            ? []
+            : [
+                  {
+                      ...row,
+                      opinionCount: counts.opinionCount,
+                      voteCount: counts.voteCount,
+                      participantCount: counts.participantCount,
+                  },
+              ];
+    });
 
     conversations.sort((a, b) => {
         const scoreA = getConversationEngagementScore(a);

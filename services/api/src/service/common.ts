@@ -1,5 +1,4 @@
 import {
-    conversationViewSnapshotTable,
     conversationContentTable,
     conversationTable,
     userTable,
@@ -7,7 +6,6 @@ import {
     conversationModerationTable,
     organizationTable,
     polisConversationConfigTable,
-    rankingItemTable,
     rankingConversationConfigTable,
     conversationImportSourceTable,
     projectOrganizationOwnershipTable,
@@ -27,17 +25,7 @@ import type {
 } from "@/shared/types/zod.js";
 import { zodExternalSourceConfig } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
-import {
-    eq,
-    desc,
-    SQL,
-    and,
-    sql,
-    isNotNull,
-    inArray,
-    isNull,
-    or,
-} from "drizzle-orm";
+import { eq, desc, SQL, and, isNotNull, isNull, or } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import sanitizeHtml from "sanitize-html";
 import { createPostModerationPropertyObject } from "./moderation.js";
@@ -56,6 +44,10 @@ import {
     getConversationMultilingualSettingsByConversationId,
 } from "./conversationMultilingual.js";
 import { fetchConversationProjectContexts } from "./projectPage.js";
+import {
+    fetchConversationDisplayCountsByConversationId,
+    type ConversationDisplayCounts,
+} from "./conversationDisplayCounts.js";
 
 function requireJoinedRankingMode({
     conversationId,
@@ -119,78 +111,6 @@ export function useCommonUser() {
 }
 
 export function useCommonPost() {
-    interface ConversationDisplayCounts {
-        conversationId: number;
-        conversationViewSnapshotId: number;
-        opinionCount: number;
-        voteCount: number;
-        participantCount: number;
-        totalOpinionCount: number;
-        totalVoteCount: number;
-        totalParticipantCount: number;
-        moderatedOpinionCount: number;
-        hiddenOpinionCount: number;
-    }
-
-    async function fetchLatestConversationViewSnapshotCountsByConversationId({
-        db,
-        conversationIds,
-    }: {
-        db: PostgresJsDatabase;
-        conversationIds: number[];
-    }): Promise<Map<number, ConversationDisplayCounts>> {
-        const uniqueConversationIds = Array.from(new Set(conversationIds));
-        if (uniqueConversationIds.length === 0) {
-            return new Map();
-        }
-
-        const snapshotRows = await db
-            .selectDistinctOn([conversationViewSnapshotTable.conversationId], {
-                conversationId: conversationViewSnapshotTable.conversationId,
-                conversationViewSnapshotId: conversationViewSnapshotTable.id,
-                opinionCount: conversationViewSnapshotTable.opinionCount,
-                voteCount: conversationViewSnapshotTable.voteCount,
-                participantCount:
-                    conversationViewSnapshotTable.participantCount,
-                totalOpinionCount:
-                    conversationViewSnapshotTable.totalOpinionCount,
-                totalVoteCount: conversationViewSnapshotTable.totalVoteCount,
-                totalParticipantCount:
-                    conversationViewSnapshotTable.totalParticipantCount,
-                moderatedOpinionCount:
-                    conversationViewSnapshotTable.moderatedOpinionCount,
-                hiddenOpinionCount:
-                    conversationViewSnapshotTable.hiddenOpinionCount,
-            })
-            .from(conversationViewSnapshotTable)
-            .where(
-                and(
-                    inArray(
-                        conversationViewSnapshotTable.conversationId,
-                        uniqueConversationIds,
-                    ),
-                    isNotNull(conversationViewSnapshotTable.activatedAt),
-                ),
-            )
-            .orderBy(
-                conversationViewSnapshotTable.conversationId,
-                desc(conversationViewSnapshotTable.createdAt),
-                desc(conversationViewSnapshotTable.id),
-            );
-
-        const latestCountsByConversationId = new Map<
-            number,
-            ConversationDisplayCounts
-        >();
-        for (const row of snapshotRows) {
-            if (!latestCountsByConversationId.has(row.conversationId)) {
-                latestCountsByConversationId.set(row.conversationId, row);
-            }
-        }
-
-        return latestCountsByConversationId;
-    }
-
     function requireConversationDisplayCounts({
         countsByConversationId,
         conversationId,
@@ -422,14 +342,18 @@ export function useCommonPost() {
             postItems = await postItemsQuery;
         }
 
-        const conversationIds = postItems.map((postItem) => postItem.conversationId);
-        const conversationSlugIds = postItems.map((postItem) => postItem.slugId);
+        const conversationIds = postItems.map(
+            (postItem) => postItem.conversationId,
+        );
+        const conversationSlugIds = postItems.map(
+            (postItem) => postItem.slugId,
+        );
         const [
             latestViewSnapshotCountsByConversationId,
             multilingualSettingsByConversationId,
             projectContextsBySlugId,
         ] = await Promise.all([
-            fetchLatestConversationViewSnapshotCountsByConversationId({
+            fetchConversationDisplayCountsByConversationId({
                 db,
                 conversationIds,
             }),
@@ -514,15 +438,19 @@ export function useCommonPost() {
                 totalParticipantCount: displayCounts.totalParticipantCount,
                 moderatedOpinionCount: displayCounts.moderatedOpinionCount,
                 hiddenOpinionCount: displayCounts.hiddenOpinionCount,
-                authorUsername: postItem.authorName ?? postItem.organizationName,
+                authorUsername:
+                    postItem.authorName ?? postItem.organizationName,
                 isIndexed: postItem.isIndexed,
                 contentLanguageMetadata:
-                    conversationContentSourceMetadataToContentLanguageMetadataOutput({
-                        sourceLanguageCode: postItem.sourceLanguageCode,
-                        sourceRawLanguageCode: postItem.sourceRawLanguageCode,
-                        sourceLanguageConfidence:
-                            postItem.sourceLanguageConfidence,
-                    }),
+                    conversationContentSourceMetadataToContentLanguageMetadataOutput(
+                        {
+                            sourceLanguageCode: postItem.sourceLanguageCode,
+                            sourceRawLanguageCode:
+                                postItem.sourceRawLanguageCode,
+                            sourceLanguageConfidence:
+                                postItem.sourceLanguageConfidence,
+                        },
+                    ),
                 languageSetting:
                     conversationContentSourceMetadataToLanguageSettingOutput({
                         sourceLanguageCode: postItem.sourceLanguageCode,
@@ -559,7 +487,9 @@ export function useCommonPost() {
                                   ...(websiteUrl === undefined
                                       ? {}
                                       : { websiteUrl }),
-                                  ...(imageUrl === undefined ? {} : { imageUrl }),
+                                  ...(imageUrl === undefined
+                                      ? {}
+                                      : { imageUrl }),
                               };
                           })()
                         : undefined,
@@ -602,6 +532,8 @@ export function useCommonPost() {
                         ...metadataBase,
                         conversationType: "ranking",
                         rankingMode,
+                        rankingStatsSnapshotId:
+                            displayCounts.rankingStatsSnapshotId,
                         aiLabelingEnabled: false,
                         preferredOpinionGroupCount: null,
                     };
@@ -620,29 +552,6 @@ export function useCommonPost() {
                         postItem.preferredOpinionGroupCount,
                 };
             })();
-
-            // For MaxDiff conversations, override opinionCount with active item count
-            if (postItem.conversationType === "ranking") {
-                const [itemCountResult] = await db
-                    .select({
-                        count: sql<number>`count(*)::int`,
-                    })
-                    .from(rankingItemTable)
-                    .where(
-                        and(
-                            eq(
-                                rankingItemTable.conversationId,
-                                postItem.conversationId,
-                            ),
-                            isNotNull(rankingItemTable.currentContentId),
-                            inArray(rankingItemTable.lifecycleStatus, [
-                                "active",
-                                "in_progress",
-                            ]),
-                        ),
-                    );
-                metadata.opinionCount = itemCountResult.count;
-            }
 
             const payload: ExtendedConversationPayload = {
                 title: postItem.title,
@@ -768,7 +677,7 @@ export function useCommonPost() {
                   })
                 : null;
         const latestViewSnapshotCountsByConversationId =
-            await fetchLatestConversationViewSnapshotCountsByConversationId({
+            await fetchConversationDisplayCountsByConversationId({
                 db,
                 conversationIds: [post.id],
             });

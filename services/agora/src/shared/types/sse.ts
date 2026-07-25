@@ -181,6 +181,30 @@ export type SSEConversationCommentStatsUpdatedData = z.infer<
 >;
 
 /**
+ * Data sent when a ranking conversation's current aggregate counters changed.
+ */
+export const zodSSEConversationRankingStatsUpdatedData = z
+    .object({
+        conversationSlugId: zodSlugId,
+        rankingStatsSnapshotId: z.number().int().positive(),
+        checkpointChanged: z.boolean(),
+        opinionCount: z.number().int().nonnegative(),
+        voteCount: z.number().int().nonnegative(),
+        participantCount: z.number().int().nonnegative(),
+        totalOpinionCount: z.number().int().nonnegative(),
+        totalVoteCount: z.number().int().nonnegative(),
+        totalParticipantCount: z.number().int().nonnegative(),
+        moderatedOpinionCount: z.literal(0),
+        hiddenOpinionCount: z.literal(0),
+        isClosed: z.boolean(),
+        timestamp: z.number(),
+    })
+    .strict();
+export type SSEConversationRankingStatsUpdatedData = z.infer<
+    typeof zodSSEConversationRankingStatsUpdatedData
+>;
+
+/**
  * Data sent when conversation settings that affect live views change.
  */
 export const zodSSEConversationSettingsData = z
@@ -290,6 +314,8 @@ export const zodSSEEventDataByType = {
     conversation_analysis_updated: zodSSEConversationAnalysisUpdatedData,
     conversation_comment_stats_updated:
         zodSSEConversationCommentStatsUpdatedData,
+    conversation_ranking_stats_updated:
+        zodSSEConversationRankingStatsUpdatedData,
     conversation_settings_updated: zodSSEConversationSettingsUpdatedData,
     content_translation_updated: zodSSEContentTranslationUpdatedData,
     subscription_ready: zodSSESubscriptionReadyData,
@@ -322,6 +348,8 @@ export type SSEConversationAnalysisUpdatedEvent =
     SSEEvent<"conversation_analysis_updated">;
 export type SSEConversationCommentStatsUpdatedEvent =
     SSEEvent<"conversation_comment_stats_updated">;
+export type SSEConversationRankingStatsUpdatedEvent =
+    SSEEvent<"conversation_ranking_stats_updated">;
 export type SSEConversationSettingsUpdatedEvent =
     SSEEvent<"conversation_settings_updated">;
 export type SSEContentTranslationUpdatedEvent =
@@ -340,6 +368,7 @@ export type AnySSEEvent =
     | SSEPopularConversationEvent
     | SSEConversationAnalysisUpdatedEvent
     | SSEConversationCommentStatsUpdatedEvent
+    | SSEConversationRankingStatsUpdatedEvent
     | SSEConversationSettingsUpdatedEvent
     | SSEContentTranslationUpdatedEvent
     | SSESubscriptionReadyEvent

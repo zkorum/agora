@@ -56,7 +56,8 @@
 
         <CommentModeration
           v-if="opinionItem.moderation?.status == 'moderated'"
-          :comment-item="opinionItem"
+          :moderation="opinionItem.moderation"
+          :opinion-slug-id="opinionItem.opinionSlugId"
           :post-slug-id="conversationSlugId"
           :conversation-author-username="conversationAuthorUsername"
           :conversation-organization-name="conversationOrganizationName"

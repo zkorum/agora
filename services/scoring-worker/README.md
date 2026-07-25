@@ -11,11 +11,13 @@ When a user submits a MaxDiff comparison, the API:
 
 The worker polls that set and processes conversations in batches:
 
-1. **ZPOPMIN** a batch of dirty conversation IDs (atomic, safe for multi-worker)
-2. **Batch SELECT** all active items and comparisons from the read replica
-3. **Update counters** (participant/vote counts on the conversation)
+1. **ZPOPMIN** a batch of dirty conversation IDs
+2. **Acquire advisory locks** so only one worker processes each conversation
+3. **Batch SELECT** current items, survey-eligible comparisons, and totals from PostgreSQL primary
 4. **Parallel Solidago** via `ThreadPoolExecutor` (no DB during scoring)
-5. **Batch WRITE** scores back to PostgreSQL primary in one transaction
+5. **Recheck inputs** and requeue the batch if scoring inputs changed during computation
+6. **Persist results** followed by immutable item/count snapshots, checkpoints, and an SSE outbox event
+7. **Prune unpublished history** while retaining the baseline, latest snapshot, and every checkpoint
 
 Failed conversations are re-added to the dirty set with per-conversation exponential backoff. A periodic reconciliation pass (default 300s) catches any conversations missed after a crash.
 
@@ -32,9 +34,9 @@ API (Fastify) ──sync upsert──▸ PostgreSQL
                     │ scoring-worker│
                     │  (Python)     │
                     └──────┬───────┘
-              read replica │ primary
-                    ▼      ▼
-                  PostgreSQL
+         reconciliation read │ current reads/writes
+                          ▼   ▼
+                        PostgreSQL
 ```
 
 ## Scoring Pipeline

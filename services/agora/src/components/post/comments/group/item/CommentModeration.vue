@@ -1,29 +1,21 @@
 <template>
   <div>
-    <div
-      v-if="commentItem.moderation?.status == 'moderated'"
-      class="moderatedBox"
-    >
+    <div v-if="moderation.status === 'moderated'" class="moderatedBox">
       <ZKCard padding="1rem" class="cardBackground">
         <div class="moderationContainer">
           <div class="moderatedMessage">
             <div class="moderatedFont moderatedItalic">
-              {{ t("moderatorFlaggedMessage") }} "{{
-                commentItem.moderation.reason
-              }}".
+              {{ t("moderatorFlaggedMessage") }} "{{ moderation.reason }}".
             </div>
-            <div
-              v-if="commentItem.moderation.explanation.length > 0"
-              class="moderatedFont"
-            >
-              "{{ commentItem.moderation.explanation }}"
+            <div v-if="moderation.explanation.length > 0" class="moderatedFont">
+              "{{ moderation.explanation }}"
             </div>
           </div>
 
           <div class="moderationTimeBox moderatedFont">
             <ModerationTime
-              :created-at="commentItem.moderation.createdAt"
-              :updated-at="commentItem.moderation.updatedAt"
+              :created-at="moderation.createdAt"
+              :updated-at="moderation.updatedAt"
             />
 
             <div v-if="showEditButton" class="moderationEditButton">
@@ -32,7 +24,7 @@
                   name: '/moderate/conversation/[conversationSlugId]/opinion/[opinionSlugId]/',
                   params: {
                     conversationSlugId: postSlugId,
-                    opinionSlugId: commentItem.opinionSlugId,
+                    opinionSlugId,
                   },
                 }"
               >
@@ -56,7 +48,7 @@ import ModerationTime from "src/components/post/common/moderation/ModerationTime
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { OpinionItem } from "src/shared/types/zod";
+import type { OpinionModerationProperties } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import { computed } from "vue";
 
@@ -66,7 +58,8 @@ import {
 } from "./CommentModeration.i18n";
 
 const props = defineProps<{
-  commentItem: OpinionItem;
+  moderation: OpinionModerationProperties;
+  opinionSlugId: string;
   postSlugId: string;
   conversationAuthorUsername: string;
   conversationOrganizationName: string;
@@ -77,11 +70,18 @@ const { profileData } = storeToRefs(useUserStore());
 const canModerateConversation = computed(() => {
   const profile = profileData.value;
   if (profile.isSiteModerator) return true;
-  if (profile.userName !== "" && profile.userName === props.conversationAuthorUsername) return true;
+  if (
+    profile.userName !== "" &&
+    profile.userName === props.conversationAuthorUsername
+  )
+    return true;
   if (
     props.conversationOrganizationName !== "" &&
-    profile.organizationList.some((org) => org.name === props.conversationOrganizationName)
-  ) return true;
+    profile.organizationList.some(
+      (org) => org.name === props.conversationOrganizationName
+    )
+  )
+    return true;
   return false;
 });
 

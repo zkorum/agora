@@ -1368,9 +1368,7 @@ function createLockedOption(view: AnalysisView): AnalysisViewOption {
     view,
     status: "locked",
     reason: "analysis_variants_not_available",
-    ...(view === "facilitator_preference"
-      ? { resolvesToView: "auto" }
-      : {}),
+    ...(view === "facilitator_preference" ? { resolvesToView: "auto" } : {}),
   };
 }
 
@@ -1381,9 +1379,7 @@ function createRecommendedUnavailableOption(
     view,
     status: "unavailable",
     reason: "recommended_default_unavailable",
-    ...(view === "facilitator_preference"
-      ? { resolvesToView: "auto" }
-      : {}),
+    ...(view === "facilitator_preference" ? { resolvesToView: "auto" } : {}),
   };
 }
 
@@ -1527,9 +1523,7 @@ const mockAnalysisViewState = computed<AnalysisViewState>(() => {
   const fixedGroupCount = getFixedGroupCount(requestedView);
   const defaultGroupCount = defaultVariantGroupCount.value;
   const facilitatorGroupCount = getFacilitatorGroupCount(defaultGroupCount);
-  const canonicalView = analysisVariantsEnabled.value
-    ? requestedView
-    : "auto";
+  const canonicalView = analysisVariantsEnabled.value ? requestedView : "auto";
 
   const resolved: MockResolvedAnalysisView = (() => {
     if (!analysisVariantsEnabled.value && requestedView !== "auto") {
@@ -1542,8 +1536,7 @@ const mockAnalysisViewState = computed<AnalysisViewState>(() => {
     if (canonicalView === "auto") {
       return {
         groupCount: defaultGroupCount,
-        resolvedBy:
-          defaultGroupCount === undefined ? "no_analysis" : "auto",
+        resolvedBy: defaultGroupCount === undefined ? "no_analysis" : "auto",
       };
     }
 
@@ -1559,20 +1552,18 @@ const mockAnalysisViewState = computed<AnalysisViewState>(() => {
 
     if (fixedGroupCount !== undefined) {
       return {
-        groupCount:
-          isSpecialGroupState({
-            groupCount: fixedGroupCount,
-            state: "unavailable",
-          })
-            ? undefined
-            : fixedGroupCount,
-        resolvedBy:
-          isSpecialGroupState({
-            groupCount: fixedGroupCount,
-            state: "unavailable",
-          })
-            ? "unavailable_fixed_count"
-            : "fixed_count",
+        groupCount: isSpecialGroupState({
+          groupCount: fixedGroupCount,
+          state: "unavailable",
+        })
+          ? undefined
+          : fixedGroupCount,
+        resolvedBy: isSpecialGroupState({
+          groupCount: fixedGroupCount,
+          state: "unavailable",
+        })
+          ? "unavailable_fixed_count"
+          : "fixed_count",
       };
     }
 
@@ -1697,27 +1688,30 @@ function generateMockOpinion({
     opinionSlugId: `mock-op-${index}`,
     createdAt: new Date("2025-11-20"),
     updatedAt: new Date("2025-11-20"),
-    opinion: `Mock #${String(index + 1).padStart(3, "0")}: ${
-      mockStatements[index % mockStatements.length]
-    }`,
-    sourceLanguageCode: null,
-    displayContent: {
-      sourceVersion: "00000000-0000-4000-8000-000000000001",
-      status: "available",
-      mode: "original",
-      content: {
-        content: `Mock #${String(index + 1).padStart(3, "0")}: ${
-          mockStatements[index % mockStatements.length]
-        }`,
+    content: {
+      status: "visible",
+      html: `Mock #${String(index + 1).padStart(3, "0")}: ${
+        mockStatements[index % mockStatements.length]
+      }`,
+      sourceLanguageCode: null,
+      displayContent: {
+        sourceVersion: "00000000-0000-4000-8000-000000000001",
+        status: "available",
+        mode: "original",
+        content: {
+          content: `Mock #${String(index + 1).padStart(3, "0")}: ${
+            mockStatements[index % mockStatements.length]
+          }`,
+        },
+        translationControl: null,
       },
-      translationControl: null,
+      moderation: { status: "unmoderated" },
     },
     numParticipants: baseNumParticipants * participantScaleMultiplier.value,
     numAgrees: baseNumAgrees * participantScaleMultiplier.value,
     numDisagrees: baseNumDisagrees * participantScaleMultiplier.value,
     numPasses: baseNumPasses * participantScaleMultiplier.value,
     username: `user${index + 1}`,
-    moderation: { status: "unmoderated" },
     isSeed: false,
     clustersStats: generateClusterStats({ clusterCount, seed }),
     groupAwareConsensusAgree: isLiveAddedOpinion
@@ -1851,7 +1845,9 @@ const mockCheckpoints = computed<FetchAnalysisCheckpointsResponse>(() =>
       totalParticipantCount: participantCount,
       moderatedOpinionCount: opinionCount,
       hiddenOpinionCount: 0,
-      isClosed: reasons.some((reason) => reason.reason === "conversation_closed"),
+      isClosed: reasons.some(
+        (reason) => reason.reason === "conversation_closed"
+      ),
       reasons,
     };
   })

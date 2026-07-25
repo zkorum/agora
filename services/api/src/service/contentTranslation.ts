@@ -32,6 +32,9 @@ import {
     rankingItemContentTable,
     rankingItemContentTranslationTable,
     rankingItemTable,
+    rankingConversationStatsCheckpointTable,
+    rankingConversationStatsItemTable,
+    rankingConversationStatsSnapshotTable,
     surveyQuestionContentTable,
     surveyQuestionContentTranslationTable,
     surveyQuestionOptionContentTable,
@@ -973,7 +976,7 @@ async function fetchRankingItemSource({
         )
         .innerJoin(
             rankingItemContentTable,
-            eq(rankingItemContentTable.id, rankingItemTable.currentContentId),
+            eq(rankingItemContentTable.rankingItemId, rankingItemTable.id),
         )
         .where(
             and(
@@ -981,8 +984,63 @@ async function fetchRankingItemSource({
                 eq(conversationTable.isImporting, false),
                 isNotNull(conversationTable.currentContentId),
                 eq(rankingItemTable.slugId, itemSlugId),
-                isNotNull(rankingItemTable.currentContentId),
                 eq(rankingItemContentTable.publicId, sourceVersion),
+                or(
+                    eq(
+                        rankingItemTable.currentContentId,
+                        rankingItemContentTable.id,
+                    ),
+                    exists(
+                        db
+                            .select({
+                                id: rankingConversationStatsItemTable.id,
+                            })
+                            .from(rankingConversationStatsItemTable)
+                            .innerJoin(
+                                rankingConversationStatsSnapshotTable,
+                                eq(
+                                    rankingConversationStatsSnapshotTable.id,
+                                    rankingConversationStatsItemTable.statsSnapshotId,
+                                ),
+                            )
+                            .where(
+                                and(
+                                    eq(
+                                        rankingConversationStatsItemTable.rankingItemContentId,
+                                        rankingItemContentTable.id,
+                                    ),
+                                    eq(
+                                        rankingConversationStatsSnapshotTable.conversationId,
+                                        conversationTable.id,
+                                    ),
+                                    or(
+                                        exists(
+                                            db
+                                                .select({
+                                                    id: rankingConversationStatsCheckpointTable.id,
+                                                })
+                                                .from(
+                                                    rankingConversationStatsCheckpointTable,
+                                                )
+                                                .where(
+                                                    eq(
+                                                        rankingConversationStatsCheckpointTable.statsSnapshotId,
+                                                        rankingConversationStatsSnapshotTable.id,
+                                                    ),
+                                                ),
+                                        ),
+                                        sql`${rankingConversationStatsSnapshotTable.id} = (
+                                            SELECT baseline.id
+                                            FROM ranking_conversation_stats_snapshot baseline
+                                            WHERE baseline.conversation_id = ${conversationTable.id}
+                                            ORDER BY baseline.created_at, baseline.id
+                                            LIMIT 1
+                                        )`,
+                                    ),
+                                ),
+                            ),
+                    ),
+                ),
             ),
         )
         .limit(1);

@@ -6,6 +6,7 @@ export interface PostActionBarTranslations {
   totalVotes: string;
   totalParticipants: string;
   usedForAnalysis: string;
+  usedForRanking: string;
   moderatedVotesExplanation: string;
   moderatedParticipantsExplanation: string;
   surveyVotesExplanation: string;
@@ -24,6 +25,7 @@ export const postActionBarTranslations: Record<
     totalVotes: "Total votes",
     totalParticipants: "Total participants",
     usedForAnalysis: "Used for analysis",
+    usedForRanking: "Used for ranking",
     moderatedVotesExplanation:
       "Votes on moderated statements are excluded from analysis.",
     moderatedParticipantsExplanation:
@@ -43,6 +45,7 @@ export const postActionBarTranslations: Record<
     totalVotes: "إجمالي الأصوات",
     totalParticipants: "إجمالي المشاركين",
     usedForAnalysis: "المستخدمة في التحليل",
+    usedForRanking: "المستخدمة في الترتيب",
     moderatedVotesExplanation:
       "يتم استبعاد الأصوات على العبارات المعتدلة من التحليل.",
     moderatedParticipantsExplanation:
@@ -62,6 +65,7 @@ export const postActionBarTranslations: Record<
     totalVotes: "Votos totales",
     totalParticipants: "Participantes totales",
     usedForAnalysis: "Usados para el análisis",
+    usedForRanking: "Usados para la clasificación",
     moderatedVotesExplanation:
       "Los votos sobre proposiciones moderadas se excluyen del análisis.",
     moderatedParticipantsExplanation:
@@ -81,12 +85,19 @@ export const postActionBarTranslations: Record<
     totalVotes: "مجموع رأی‌ها",
     totalParticipants: "مجموع شرکت‌کنندگان",
     usedForAnalysis: "استفاده شده برای تحلیل",
-    moderatedVotesExplanation: "رأی‌های مربوط به گزاره‌های مدیریت‌شده از تحلیل حذف شده‌اند.",
-    moderatedParticipantsExplanation: "شرکت‌کنندگانی که فقط به گزاره‌های مدیریت‌شده رأی داده‌اند از تحلیل حذف شده‌اند.",
-    surveyVotesExplanation: "رأی‌های شرکت‌کنندگانی که نظرسنجی را کامل نکرده‌اند از تحلیل حذف شده‌اند.",
-    surveyParticipantsExplanation: "شرکت‌کنندگانی که نظرسنجی را کامل نکرده‌اند از تحلیل حذف شده‌اند.",
-    maxdiffVotesExplanation: "رأی‌های مربوط به موارد تکمیل‌شده و لغوشده از رتبه‌بندی حذف شده‌اند.",
-    maxdiffParticipantsExplanation: "شرکت‌کنندگانی که فقط به موارد تکمیل‌شده و لغوشده رأی داده‌اند از رتبه‌بندی حذف شده‌اند.",
+    usedForRanking: "استفاده شده برای رتبه‌بندی",
+    moderatedVotesExplanation:
+      "رأی‌های مربوط به گزاره‌های مدیریت‌شده از تحلیل حذف شده‌اند.",
+    moderatedParticipantsExplanation:
+      "شرکت‌کنندگانی که فقط به گزاره‌های مدیریت‌شده رأی داده‌اند از تحلیل حذف شده‌اند.",
+    surveyVotesExplanation:
+      "رأی‌های شرکت‌کنندگانی که نظرسنجی را کامل نکرده‌اند از تحلیل حذف شده‌اند.",
+    surveyParticipantsExplanation:
+      "شرکت‌کنندگانی که نظرسنجی را کامل نکرده‌اند از تحلیل حذف شده‌اند.",
+    maxdiffVotesExplanation:
+      "رأی‌های مربوط به موارد تکمیل‌شده و لغوشده از رتبه‌بندی حذف شده‌اند.",
+    maxdiffParticipantsExplanation:
+      "شرکت‌کنندگانی که فقط به موارد تکمیل‌شده و لغوشده رأی داده‌اند از رتبه‌بندی حذف شده‌اند.",
   },
   fr: {
     share: "Partager",
@@ -94,6 +105,7 @@ export const postActionBarTranslations: Record<
     totalVotes: "Votes totaux",
     totalParticipants: "Participants totaux",
     usedForAnalysis: "Utilisés pour l'analyse",
+    usedForRanking: "Utilisés pour le classement",
     moderatedVotesExplanation:
       "Les votes sur les propositions modérées sont exclus de l'analyse.",
     moderatedParticipantsExplanation:
@@ -113,9 +125,9 @@ export const postActionBarTranslations: Record<
     totalVotes: "总投票数",
     totalParticipants: "总参与人数",
     usedForAnalysis: "用于分析",
+    usedForRanking: "用于排名",
     moderatedVotesExplanation: "对已审核意见的投票不计入分析。",
-    moderatedParticipantsExplanation:
-      "仅对已审核意见投票的参与者不计入分析。",
+    moderatedParticipantsExplanation: "仅对已审核意见投票的参与者不计入分析。",
     surveyVotesExplanation: "未完成问卷的参与者所投的票不计入分析。",
     surveyParticipantsExplanation: "未完成问卷的参与者不计入分析。",
     maxdiffVotesExplanation: "对已完成和已取消项目的投票不计入排名。",
@@ -128,9 +140,9 @@ export const postActionBarTranslations: Record<
     totalVotes: "總投票數",
     totalParticipants: "總參與人數",
     usedForAnalysis: "用於分析",
+    usedForRanking: "用於排名",
     moderatedVotesExplanation: "對已審核意見的投票不計入分析。",
-    moderatedParticipantsExplanation:
-      "僅對已審核意見投票的參與者不計入分析。",
+    moderatedParticipantsExplanation: "僅對已審核意見投票的參與者不計入分析。",
     surveyVotesExplanation: "未完成問卷的參與者所投的票不計入分析。",
     surveyParticipantsExplanation: "未完成問卷的參與者不計入分析。",
     maxdiffVotesExplanation: "對已完成和已取消項目的投票不計入排名。",
@@ -143,12 +155,19 @@ export const postActionBarTranslations: Record<
     totalVotes: "סך הצבעות",
     totalParticipants: "סך משתתפים",
     usedForAnalysis: "בשימוש לניתוח",
-    moderatedVotesExplanation: "הצבעות על הצהרות שעברו מודרציה מוחרגות מהניתוח.",
-    moderatedParticipantsExplanation: "משתתפים שהצביעו רק על הצהרות שעברו מודרציה מוחרגים מהניתוח.",
-    surveyVotesExplanation: "הצבעות של משתתפים שלא השלימו את הסקר מוחרגות מהניתוח.",
-    surveyParticipantsExplanation: "משתתפים שלא השלימו את הסקר מוחרגים מהניתוח.",
-    maxdiffVotesExplanation: "הצבעות על פריטים שהושלמו או בוטלו מוחרגות מהדירוג.",
-    maxdiffParticipantsExplanation: "משתתפים שהצביעו רק על פריטים שהושלמו או בוטלו מוחרגים מהדירוג.",
+    usedForRanking: "בשימוש לדירוג",
+    moderatedVotesExplanation:
+      "הצבעות על הצהרות שעברו מודרציה מוחרגות מהניתוח.",
+    moderatedParticipantsExplanation:
+      "משתתפים שהצביעו רק על הצהרות שעברו מודרציה מוחרגים מהניתוח.",
+    surveyVotesExplanation:
+      "הצבעות של משתתפים שלא השלימו את הסקר מוחרגות מהניתוח.",
+    surveyParticipantsExplanation:
+      "משתתפים שלא השלימו את הסקר מוחרגים מהניתוח.",
+    maxdiffVotesExplanation:
+      "הצבעות על פריטים שהושלמו או בוטלו מוחרגות מהדירוג.",
+    maxdiffParticipantsExplanation:
+      "משתתפים שהצביעו רק על פריטים שהושלמו או בוטלו מוחרגים מהדירוג.",
   },
   ja: {
     share: "共有",
@@ -156,6 +175,7 @@ export const postActionBarTranslations: Record<
     totalVotes: "総投票数",
     totalParticipants: "総参加者数",
     usedForAnalysis: "分析に使用",
+    usedForRanking: "ランキングに使用",
     moderatedVotesExplanation:
       "モデレートされた意見への投票は分析から除外されます。",
     moderatedParticipantsExplanation:
@@ -175,6 +195,7 @@ export const postActionBarTranslations: Record<
     totalVotes: "Жалпы добуштар",
     totalParticipants: "Жалпы катышуучулар",
     usedForAnalysis: "Анализ үчүн колдонулат",
+    usedForRanking: "Рейтинг үчүн колдонулат",
     moderatedVotesExplanation:
       "Модерацияланган пикирлерге берилген добуштар анализден чыгарылат.",
     moderatedParticipantsExplanation:
@@ -194,6 +215,7 @@ export const postActionBarTranslations: Record<
     totalVotes: "Всего голосов",
     totalParticipants: "Всего участников",
     usedForAnalysis: "Используются для анализа",
+    usedForRanking: "Используются для рейтинга",
     moderatedVotesExplanation:
       "Голоса за модерированные высказывания исключены из анализа.",
     moderatedParticipantsExplanation:

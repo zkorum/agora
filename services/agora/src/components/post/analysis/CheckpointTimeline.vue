@@ -42,12 +42,12 @@
 
           <button
             v-for="(checkpoint, index) in displayedCheckpoints"
-            :key="checkpoint.conversationViewSnapshotId"
+            :key="checkpoint.checkpointId"
             :ref="
               (el) =>
                 setMarkerRef({
                   el,
-                  markerKey: checkpoint.conversationViewSnapshotId,
+                  markerKey: checkpoint.checkpointId,
                 })
             "
             type="button"
@@ -56,9 +56,7 @@
               'checkpoint-timeline__marker--selected':
                 isCheckpointSelected(checkpoint),
             }"
-            @click="
-              emit('selectCheckpoint', checkpoint.conversationViewSnapshotId)
-            "
+            @click="emit('selectCheckpoint', checkpoint.checkpointId)"
           >
             <span class="checkpoint-timeline__dot" />
             <span
@@ -129,12 +127,15 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script
+  setup
+  lang="ts"
+  generic="TReason extends CheckpointTimelineReasonPayload"
+>
 import { useQuasar } from "quasar";
 import ZKLiveStatusDot from "src/components/ui-library/ZKLiveStatusDot.vue";
 import { getHorizontalScrollMax } from "src/composables/ui/horizontalDragScrollLogic";
 import { useHorizontalDragScroll } from "src/composables/ui/useHorizontalDragScroll";
-import type { AnalysisCheckpoint } from "src/shared/types/dto";
 import {
   type ComponentPublicInstance,
   computed,
@@ -147,7 +148,9 @@ import {
 } from "vue";
 
 import type {
+  CheckpointTimelineItem,
   CheckpointTimelineReasonFormatter,
+  CheckpointTimelineReasonPayload,
   CheckpointTimelineReasonsFormatter,
 } from "./CheckpointTimeline.types";
 
@@ -155,7 +158,7 @@ type CheckpointMarkerKey = number | "live";
 
 const props = withDefaults(
   defineProps<{
-    checkpoints: AnalysisCheckpoint[];
+    checkpoints: CheckpointTimelineItem<TReason>[];
     selectedCheckpointId: number | undefined;
     isLiveSelected: boolean;
     isLivePaused: boolean;
@@ -166,8 +169,8 @@ const props = withDefaults(
     nowLabel: string;
     previousLabel: string;
     nextLabel: string;
-    formatReason: CheckpointTimelineReasonFormatter;
-    formatReasons?: CheckpointTimelineReasonsFormatter;
+    formatReason: CheckpointTimelineReasonFormatter<TReason>;
+    formatReasons?: CheckpointTimelineReasonsFormatter<TReason>;
     maxReasonCount?: number;
   }>(),
   {
@@ -198,8 +201,7 @@ const hasRequestedUnavailableCheckpoint = computed(() => {
   }
 
   return !props.checkpoints.some(
-    (checkpoint) =>
-      checkpoint.conversationViewSnapshotId === props.selectedCheckpointId
+    (checkpoint) => checkpoint.checkpointId === props.selectedCheckpointId
   );
 });
 
@@ -236,8 +238,7 @@ const isLiveTimelineSelected = computed(
     props.isLiveSelected ||
     hasRequestedUnavailableCheckpoint.value ||
     (props.isLatestCheckpointLive &&
-      props.selectedCheckpointId ===
-        latestCheckpoint.value?.conversationViewSnapshotId)
+      props.selectedCheckpointId === latestCheckpoint.value?.checkpointId)
 );
 
 const isLivePulseActive = computed(
@@ -249,9 +250,7 @@ const isLivePulseActive = computed(
 );
 
 const timelineStepKeys = computed<CheckpointMarkerKey[]>(() => [
-  ...displayedCheckpoints.value.map(
-    (checkpoint) => checkpoint.conversationViewSnapshotId
-  ),
+  ...displayedCheckpoints.value.map((checkpoint) => checkpoint.checkpointId),
   "live",
 ]);
 
@@ -275,8 +274,7 @@ const hasSelectedCheckpointDetail = computed(() => {
 
   return displayedCheckpoints.value.some(
     (checkpoint, index) =>
-      index > 0 &&
-      checkpoint.conversationViewSnapshotId === props.selectedCheckpointId
+      index > 0 && checkpoint.checkpointId === props.selectedCheckpointId
   );
 });
 
@@ -288,11 +286,15 @@ const nextIcon = computed(() =>
   $q.lang.rtl ? "mdi-chevron-left" : "mdi-chevron-right"
 );
 
-function isCheckpointSelected(checkpoint: AnalysisCheckpoint): boolean {
-  return props.selectedCheckpointId === checkpoint.conversationViewSnapshotId;
+function isCheckpointSelected(
+  checkpoint: CheckpointTimelineItem<TReason>
+): boolean {
+  return props.selectedCheckpointId === checkpoint.checkpointId;
 }
 
-function getCheckpointReasonLabels(checkpoint: AnalysisCheckpoint): string[] {
+function getCheckpointReasonLabels(
+  checkpoint: CheckpointTimelineItem<TReason>
+): string[] {
   if (props.formatReasons !== undefined) {
     return props
       .formatReasons(checkpoint.reasons)
@@ -330,12 +332,13 @@ function formatElapsedDuration(diffMs: number): string {
   return `${String(weekCount)}w`;
 }
 
-function getCheckpointElapsedLabel(checkpoint: AnalysisCheckpoint): string {
+function getCheckpointElapsedLabel(
+  checkpoint: CheckpointTimelineItem<TReason>
+): string {
   const firstCheckpoint = props.checkpoints[0];
   if (
     firstCheckpoint === undefined ||
-    firstCheckpoint.conversationViewSnapshotId ===
-      checkpoint.conversationViewSnapshotId
+    firstCheckpoint.checkpointId === checkpoint.checkpointId
   ) {
     return props.startLabel;
   }
@@ -359,7 +362,7 @@ function getSelectedTimeLabel({
   checkpoint,
   index,
 }: {
-  checkpoint: AnalysisCheckpoint;
+  checkpoint: CheckpointTimelineItem<TReason>;
   index: number;
 }): string | undefined {
   if (!isCheckpointSelected(checkpoint) || index === 0) {

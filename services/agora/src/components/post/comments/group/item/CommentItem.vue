@@ -43,7 +43,8 @@
       <div class="commentAdditionalDetailsFlex">
         <CommentModeration
           v-if="commentItem.moderation?.status == 'moderated'"
-          :comment-item="commentItem"
+          :moderation="commentItem.moderation"
+          :opinion-slug-id="commentItem.opinionSlugId"
           :post-slug-id="postSlugId"
           :conversation-author-username="conversationAuthorUsername"
           :conversation-organization-name="conversationOrganizationName"

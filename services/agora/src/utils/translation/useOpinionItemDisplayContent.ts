@@ -9,18 +9,27 @@ import {
   getContentTranslationSourceLanguageLabel,
   isRequestedTranslationPreviewCurrent,
 } from "./contentTranslation";
-import { getPendingOpinionTranslationMode } from "./opinionItemDisplayText";
+import {
+  getPendingOpinionTranslationMode,
+  type OpinionTranslationDisplaySource,
+} from "./opinionItemDisplayText";
 import {
   type OpinionContentTranslationPreview,
   useOpinionContentTranslationPreview,
 } from "./useContentTranslationPreview";
+
+export interface OpinionItemDisplayContentInput extends OpinionTranslationDisplaySource {
+  opinionSlugId: string;
+  opinion: string;
+  sourceLanguageCode: DisplayedOpinionItem["sourceLanguageCode"];
+}
 
 export function useOpinionItemDisplayContent({
   conversationSlugId,
   opinionItem,
 }: {
   conversationSlugId: MaybeRefOrGetter<string>;
-  opinionItem: MaybeRefOrGetter<DisplayedOpinionItem>;
+  opinionItem: MaybeRefOrGetter<OpinionItemDisplayContentInput>;
 }) {
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
   const requestedTranslationSourceVersion = ref<string | undefined>();

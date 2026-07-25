@@ -211,8 +211,11 @@ type CompleteAnalysisData = AnalysisData & {
   divisive: AnalysisFrameOpinionList;
 };
 
-function frameKeyQueryPart(frameKey: AnalysisFrameKey): readonly number[] {
+function frameKeyQueryPart(
+  frameKey: AnalysisFrameKey
+): readonly (number | string)[] {
   return [
+    frameKey.mode,
     frameKey.conversationViewSnapshotId,
     frameKey.analysisSnapshotId,
     frameKey.candidateId,
@@ -229,7 +232,8 @@ function isSameFrameKey({
   return (
     left.conversationViewSnapshotId === right.conversationViewSnapshotId &&
     left.analysisSnapshotId === right.analysisSnapshotId &&
-    left.candidateId === right.candidateId
+    left.candidateId === right.candidateId &&
+    left.mode === right.mode
   );
 }
 
@@ -312,6 +316,7 @@ function labelCatchUpKey({
 }): string {
   return JSON.stringify([
     conversationSlugId,
+    frameKey.mode,
     frameKey.conversationViewSnapshotId,
     frameKey.analysisSnapshotId,
     frameKey.candidateId,

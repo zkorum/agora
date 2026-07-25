@@ -6,15 +6,13 @@ import type {
   ApiV1RankingBwsSavePostRequest,
   ApiV1RankingBwsSyncPost200Response,
 } from "src/api";
-import {
-  DefaultApiAxiosParamCreator,
-  DefaultApiFactory,
-} from "src/api";
+import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import {
   Dto,
   type MaxDiffItemsFetchResponse,
   type MaxDiffResultsResponse,
   type MaxDiffSaveResponse,
+  type RankingStatsCheckpointsResponse,
 } from "src/shared/types/dto";
 import type { MaxDiffComparison } from "src/shared/types/zod";
 
@@ -81,9 +79,7 @@ export function useMaxDiffApi() {
 
   type LoadMaxDiffSuccessResponse =
     AxiosSuccessResponse<ApiV1RankingBwsLoadPost200Response>;
-  type LoadMaxDiffResponse =
-    | LoadMaxDiffSuccessResponse
-    | AxiosErrorResponse;
+  type LoadMaxDiffResponse = LoadMaxDiffSuccessResponse | AxiosErrorResponse;
 
   async function loadMaxDiffResult({
     conversationSlugId,
@@ -109,10 +105,23 @@ export function useMaxDiffApi() {
     }
   }
 
-  interface GetMaxDiffResultsParams {
+  interface LiveMaxDiffResultsParams {
     conversationSlugId: string;
     lifecycleFilter?: ApiV1RankingBwsResultsPostRequest["lifecycleFilter"];
+    requestedRankingStatsSnapshotId?: number;
+    rankingStatsSnapshotId?: never;
   }
+
+  interface HistoricalMaxDiffResultsParams {
+    conversationSlugId: string;
+    lifecycleFilter?: "active";
+    requestedRankingStatsSnapshotId?: never;
+    rankingStatsSnapshotId: number;
+  }
+
+  type GetMaxDiffResultsParams =
+    | LiveMaxDiffResultsParams
+    | HistoricalMaxDiffResultsParams;
 
   type GetMaxDiffResultsSuccessResponse =
     AxiosSuccessResponse<MaxDiffResultsResponse>;
@@ -123,9 +132,16 @@ export function useMaxDiffApi() {
   async function getMaxDiffResults({
     conversationSlugId,
     lifecycleFilter,
+    rankingStatsSnapshotId,
+    requestedRankingStatsSnapshotId,
   }: GetMaxDiffResultsParams): Promise<GetMaxDiffResultsResponse> {
     try {
-      const params = { conversationSlugId, lifecycleFilter };
+      const params = {
+        conversationSlugId,
+        lifecycleFilter,
+        rankingStatsSnapshotId,
+        requestedRankingStatsSnapshotId,
+      };
 
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1RankingBwsResultsPost(params);
@@ -142,6 +158,44 @@ export function useMaxDiffApi() {
       return {
         status: "success",
         data: Dto.maxdiffResultsResponse.parse(response.data),
+      };
+    } catch (e) {
+      return createAxiosErrorResponse(e);
+    }
+  }
+
+  type FetchRankingStatsCheckpointsResponse =
+    | AxiosSuccessResponse<RankingStatsCheckpointsResponse>
+    | AxiosErrorResponse;
+
+  async function fetchRankingStatsCheckpoints({
+    conversationSlugId,
+    requestedRankingStatsSnapshotId,
+  }: {
+    conversationSlugId: string;
+    requestedRankingStatsSnapshotId: number | undefined;
+  }): Promise<FetchRankingStatsCheckpointsResponse> {
+    try {
+      const params = {
+        conversationSlugId,
+        requestedRankingStatsSnapshotId,
+      };
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1RankingBwsStatsCheckpointsPost(
+          params
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1RankingBwsStatsCheckpointsPost(
+        params,
+        createRawAxiosRequestConfig({ encodedUcan })
+      );
+      return {
+        status: "success",
+        data: Dto.rankingStatsCheckpointsResponse.parse(response.data),
       };
     } catch (e) {
       return createAxiosErrorResponse(e);
@@ -165,7 +219,9 @@ export function useMaxDiffApi() {
       const params = { conversationSlugId, lifecycleFilter };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1RankingBwsItemsFetchPost(params);
+        await DefaultApiAxiosParamCreator().apiV1RankingBwsItemsFetchPost(
+          params
+        );
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
@@ -204,7 +260,9 @@ export function useMaxDiffApi() {
       const params = { conversationSlugId, itemSlugId, newStatus };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1RankingBwsItemsLifecycleUpdatePost(params);
+        await DefaultApiAxiosParamCreator().apiV1RankingBwsItemsLifecycleUpdatePost(
+          params
+        );
       const encodedUcan = await buildEncodedUcan(url, options);
       await DefaultApiFactory(
         undefined,
@@ -270,7 +328,9 @@ export function useMaxDiffApi() {
       const params = { repository, label };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1RankingBwsGithubPreviewPost(params);
+        await DefaultApiAxiosParamCreator().apiV1RankingBwsGithubPreviewPost(
+          params
+        );
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
@@ -291,6 +351,7 @@ export function useMaxDiffApi() {
     saveMaxDiffResult,
     loadMaxDiffResult,
     getMaxDiffResults,
+    fetchRankingStatsCheckpoints,
     fetchMaxDiffItems,
     updateMaxDiffItemLifecycle,
     syncMaxDiff,

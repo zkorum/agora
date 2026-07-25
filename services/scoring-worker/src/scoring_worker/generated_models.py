@@ -9,7 +9,18 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from sqlalchemy import ARRAY, JSON, Boolean, DateTime, Float, Integer, String, Text, Uuid
+from sqlalchemy import (
+    ARRAY,
+    JSON,
+    BigInteger,
+    Boolean,
+    DateTime,
+    Float,
+    Integer,
+    String,
+    Text,
+    Uuid,
+)
 from sqlalchemy import Enum as SaEnum
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -50,6 +61,19 @@ class DirectoryVisibility(StrEnum):
 
 class RankingMode(StrEnum):
     bws = "bws"
+
+
+class RankingStatsCheckpointReasonEnum(StrEnum):
+    major_participation_milestone = "major_participation_milestone"
+    major_vote_milestone = "major_vote_milestone"
+    conversation_closed = "conversation_closed"
+
+
+class RankingItemLifecycleStatus(StrEnum):
+    active = "active"
+    completed = "completed"
+    in_progress = "in_progress"
+    canceled = "canceled"
 
 
 class SpokenLanguageCode(StrEnum):
@@ -196,11 +220,8 @@ class LanguageDetectionProvider(StrEnum):
     google_translate = "google_translate"
 
 
-class RankingItemLifecycleStatus(StrEnum):
-    active = "active"
-    completed = "completed"
-    in_progress = "in_progress"
-    canceled = "canceled"
+class ExternalSourceType(StrEnum):
+    github_issue = "github_issue"
 
 
 class SurveyQuestionType(StrEnum):
@@ -341,8 +362,73 @@ class RankingConversationConfig(Base):
         JSON(none_as_null=True),
         nullable=True,
     )
+    item_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    total_item_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    vote_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    total_vote_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    participant_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    total_participant_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    scoring_input_revision: Mapped[int] = mapped_column(BigInteger, server_default="0")
+    processed_scoring_input_revision: Mapped[int] = mapped_column(BigInteger, server_default="-1")
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class RankingConversationStatsCheckpoint(Base):
+    __tablename__ = "ranking_conversation_stats_checkpoint"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    stats_snapshot_id: Mapped[int] = mapped_column(Integer)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    reason: Mapped[RankingStatsCheckpointReasonEnum] = mapped_column(
+        SaEnum(
+            RankingStatsCheckpointReasonEnum,
+            name="ranking_stats_checkpoint_reason_enum",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    participant_milestone: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    vote_milestone: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class RankingConversationStatsItem(Base):
+    __tablename__ = "ranking_conversation_stats_item"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    stats_snapshot_id: Mapped[int] = mapped_column(Integer)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    ranking_item_id: Mapped[int] = mapped_column(Integer)
+    ranking_item_content_id: Mapped[int] = mapped_column(Integer)
+    lifecycle_status: Mapped[RankingItemLifecycleStatus] = mapped_column(
+        SaEnum(
+            RankingItemLifecycleStatus,
+            name="ranking_item_lifecycle_status",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    participant_count: Mapped[int] = mapped_column(Integer)
+    external_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class RankingConversationStatsSnapshot(Base):
+    __tablename__ = "ranking_conversation_stats_snapshot"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    item_count: Mapped[int] = mapped_column(Integer)
+    total_item_count: Mapped[int] = mapped_column(Integer)
+    vote_count: Mapped[int] = mapped_column(Integer)
+    total_vote_count: Mapped[int] = mapped_column(Integer)
+    participant_count: Mapped[int] = mapped_column(Integer)
+    total_participant_count: Mapped[int] = mapped_column(Integer)
+    scoring_input_revision: Mapped[int] = mapped_column(BigInteger)
+    is_closed: Mapped[bool] = mapped_column(Boolean)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
 class RankingItemContent(Base):
@@ -375,6 +461,27 @@ class RankingItemContent(Base):
         nullable=True,
     )
     source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class RankingItemExternalSource(Base):
+    __tablename__ = "ranking_item_external_source"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ranking_item_id: Mapped[int] = mapped_column(Integer)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    source_type: Mapped[ExternalSourceType] = mapped_column(
+        SaEnum(
+            ExternalSourceType,
+            name="external_source_type",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    external_id: Mapped[str] = mapped_column(Text)
+    external_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    external_metadata: Mapped[Any | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    last_synced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
@@ -434,6 +541,15 @@ class RankingScore(Base):
     voting_rights: Mapped[str | None] = mapped_column(String(100), nullable=True)
     aggregation_config: Mapped[str | None] = mapped_column(String(200), nullable=True)
     computed_at: Mapped[datetime] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class RealtimeEventOutbox(Base):
+    __tablename__ = "realtime_event_outbox"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    event_type: Mapped[str] = mapped_column(String(100))
+    payload: Mapped[Any] = mapped_column(JSON(none_as_null=True))
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 

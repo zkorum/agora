@@ -34,6 +34,7 @@ import type { SSEEventDataByType } from "@/shared/types/dto.js";
 import {
     zodSSEContentTranslationUpdatedData,
     zodSSEConversationAnalysisUpdatedData,
+    zodSSEConversationRankingStatsUpdatedData,
 } from "@/shared/types/sse.js";
 import {
     zodEventSlug,
@@ -152,6 +153,11 @@ type RealtimeReplayEvent =
           id: number;
           event: "conversation_comment_stats_updated";
           data: SSEEventDataByType["conversation_comment_stats_updated"];
+      }
+    | {
+          id: number;
+          event: "conversation_ranking_stats_updated";
+          data: SSEEventDataByType["conversation_ranking_stats_updated"];
       }
     | {
           id: number;
@@ -735,6 +741,18 @@ function parseRealtimeEventOutboxRow({
                 data: result.data,
             };
         }
+        case "conversation_ranking_stats_updated": {
+            const result =
+                zodSSEConversationRankingStatsUpdatedData.safeParse(payload);
+            if (!result.success) {
+                return undefined;
+            }
+            return {
+                id,
+                event: eventType,
+                data: result.data,
+            };
+        }
         case "conversation_settings_updated": {
             const result =
                 zodConversationSettingsUpdatedData.safeParse(payload);
@@ -788,6 +806,7 @@ export async function fetchConversationRealtimeEventsAfterId({
                 gt(realtimeEventOutboxTable.id, lastEventId),
                 inArray(realtimeEventOutboxTable.eventType, [
                     "conversation_analysis_updated",
+                    "conversation_ranking_stats_updated",
                     "conversation_settings_updated",
                 ]),
                 sql`${realtimeEventOutboxTable.payload}->>'conversationSlugId' = ${conversationSlugId}`,
@@ -911,6 +930,15 @@ export function createRealtimeEventOutboxBridge({
                 break;
             }
             case "conversation_comment_stats_updated": {
+                realtimeSSEManager.broadcastToConversationSubscribers({
+                    conversationSlugId: realtimeEvent.data.conversationSlugId,
+                    id: realtimeEvent.id,
+                    event: realtimeEvent.event,
+                    data: realtimeEvent.data,
+                });
+                break;
+            }
+            case "conversation_ranking_stats_updated": {
                 realtimeSSEManager.broadcastToConversationSubscribers({
                     conversationSlugId: realtimeEvent.data.conversationSlugId,
                     id: realtimeEvent.id,

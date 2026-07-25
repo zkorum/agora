@@ -1,14 +1,28 @@
-import type { AnalysisCheckpoint } from "src/shared/types/dto";
+import type {
+  AnalysisCheckpoint,
+  RankingStatsCheckpointReason,
+} from "src/shared/types/dto";
+
+export type CheckpointTimelineReasonPayload =
+  | AnalysisCheckpoint["reasons"][number]
+  | RankingStatsCheckpointReason;
+
+export interface CheckpointTimelineItem<
+  TReason extends CheckpointTimelineReasonPayload =
+    CheckpointTimelineReasonPayload,
+> {
+  checkpointId: number;
+  activatedAt: Date | string;
+  reasons: TReason[];
+}
 
 export type CheckpointTimelineReason =
-  AnalysisCheckpoint["reasons"][number]["reason"];
+  CheckpointTimelineReasonPayload["reason"];
 
-export type CheckpointTimelineReasonPayload = AnalysisCheckpoint["reasons"][number];
+export type CheckpointTimelineReasonFormatter<
+  TReason extends CheckpointTimelineReasonPayload,
+> = (reason: TReason) => string | undefined;
 
-export type CheckpointTimelineReasonFormatter = (
-  reason: CheckpointTimelineReasonPayload
-) => string | undefined;
-
-export type CheckpointTimelineReasonsFormatter = (
-  reasons: AnalysisCheckpoint["reasons"]
-) => string[];
+export type CheckpointTimelineReasonsFormatter<
+  TReason extends CheckpointTimelineReasonPayload,
+> = (reasons: TReason[]) => string[];

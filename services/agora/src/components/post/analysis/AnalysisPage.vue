@@ -15,7 +15,7 @@
       </div>
       <CheckpointTimeline
         v-else
-        :checkpoints="analysisCheckpoints"
+        :checkpoints="checkpointTimelineItems"
         :selected-checkpoint-id="selectedRouteCheckpoint"
         :is-live-selected="isLiveAnalysis"
         :is-live-paused="isLivePaused"
@@ -420,7 +420,10 @@ import {
   type AnalysisPageTranslations,
   analysisPageTranslations,
 } from "./AnalysisPage.i18n";
-import type { CheckpointTimelineReasonPayload } from "./CheckpointTimeline.types";
+import type {
+  CheckpointTimelineItem,
+  CheckpointTimelineReasonPayload,
+} from "./CheckpointTimeline.types";
 import CheckpointTimeline from "./CheckpointTimeline.vue";
 import ConsensusTab from "./consensusTab/ConsensusTab.vue";
 import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
@@ -612,6 +615,15 @@ const analysisCheckpoints = computed<AnalysisCheckpoint[]>(() => {
     (checkpoint) => checkpoint.conversationViewSnapshotId <= liveViewSnapshotId
   );
 });
+const checkpointTimelineItems = computed<
+  CheckpointTimelineItem<AnalysisCheckpoint["reasons"][number]>[]
+>(() =>
+  analysisCheckpoints.value.map((checkpoint) => ({
+    checkpointId: checkpoint.conversationViewSnapshotId,
+    activatedAt: checkpoint.activatedAt,
+    reasons: checkpoint.reasons,
+  }))
+);
 
 const latestCheckpoint = computed(() => {
   if (analysisCheckpoints.value.length === 0) {

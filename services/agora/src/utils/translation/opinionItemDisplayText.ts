@@ -2,8 +2,12 @@ import type { DisplayedOpinionItem } from "src/shared/types/zod";
 
 import type { ContentTranslationDisplayMode } from "./contentTranslation";
 
+export interface OpinionTranslationDisplaySource {
+  displayContent: DisplayedOpinionItem["displayContent"];
+}
+
 export function getPendingOpinionTranslationMode(
-  opinionItem: DisplayedOpinionItem
+  opinionItem: OpinionTranslationDisplaySource
 ): ContentTranslationDisplayMode | undefined {
   const translationControl = opinionItem.displayContent.translationControl;
   if (

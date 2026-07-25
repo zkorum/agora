@@ -9,7 +9,10 @@ import { eq, and, inArray, isNotNull } from "drizzle-orm";
 import { generateRandomSlugId } from "@/crypto.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
-import { computeItemSnapshot } from "./maxdiff.js";
+import {
+    computeItemSnapshot,
+    lockRankingScoringConfig,
+} from "./maxdiff.js";
 import type {
     MaxDiffItem,
     MaxDiffItemsFetchResponse,
@@ -514,73 +517,81 @@ export async function updateRankingItemLifecycle({
         message: "Missing conversation_update capability",
     });
 
-    const itemRows = await db
-        .select({
-            id: rankingItemTable.id,
-            lifecycleStatus: rankingItemTable.lifecycleStatus,
-        })
-        .from(rankingItemTable)
-        .where(
-            and(
-                eq(rankingItemTable.slugId, itemSlugId),
-                eq(rankingItemTable.conversationId, conversationId),
-                isNotNull(rankingItemTable.currentContentId),
-            ),
-        );
-
-    if (itemRows.length === 0) {
-        throw httpErrors.notFound("Ranking item not found");
-    }
-    const item = itemRows[0];
-
-    if (item.lifecycleStatus === newStatus) {
-        return;
-    }
-
     const now = new Date();
-
-    const wasActive =
-        item.lifecycleStatus === "active" ||
-        item.lifecycleStatus === "in_progress";
-    const isDeactivating =
-        newStatus === "completed" || newStatus === "canceled";
-
-    if (wasActive && isDeactivating) {
-        const snapshot = await computeItemSnapshot({
-            db,
-            conversationId,
-            itemSlugId,
-        });
-
-        await db
-            .update(rankingItemTable)
-            .set({
-                lifecycleStatus: newStatus,
-                snapshotScore: snapshot.snapshotScore,
-                snapshotRank: snapshot.snapshotRank,
-                snapshotParticipantCount: snapshot.snapshotParticipantCount,
-                updatedAt: now,
+    const transition = await db.transaction(async (tx) => {
+        await lockRankingScoringConfig({ db: tx, conversationId });
+        const itemRows = await tx
+            .select({
+                id: rankingItemTable.id,
+                lifecycleStatus: rankingItemTable.lifecycleStatus,
             })
-            .where(eq(rankingItemTable.id, item.id));
+            .from(rankingItemTable)
+            .where(
+                and(
+                    eq(rankingItemTable.slugId, itemSlugId),
+                    eq(rankingItemTable.conversationId, conversationId),
+                    isNotNull(rankingItemTable.currentContentId),
+                ),
+            )
+            .for("update");
+        const item = itemRows.at(0);
+        if (item === undefined) {
+            throw httpErrors.notFound("Ranking item not found");
+        }
+        if (item.lifecycleStatus === newStatus) {
+            return { changed: false };
+        }
 
-        log.info(
-            `[RankingItem] Item ${itemSlugId} transitioned to ${newStatus} with snapshot: score=${String(snapshot.snapshotScore)}, rank=${String(snapshot.snapshotRank)}`,
-        );
-    } else {
+        const wasActive =
+            item.lifecycleStatus === "active" ||
+            item.lifecycleStatus === "in_progress";
+        const isDeactivating =
+            newStatus === "completed" || newStatus === "canceled";
+        const snapshot =
+            wasActive && isDeactivating
+                ? await computeItemSnapshot({
+                      db: tx,
+                      conversationId,
+                      itemSlugId,
+                  })
+                : undefined;
         const isReactivating =
             newStatus === "active" || newStatus === "in_progress";
-
-        await db
+        await tx
             .update(rankingItemTable)
             .set({
                 lifecycleStatus: newStatus,
-                snapshotScore: isReactivating ? null : undefined,
-                snapshotRank: isReactivating ? null : undefined,
-                snapshotParticipantCount: isReactivating ? null : undefined,
+                snapshotScore:
+                    snapshot !== undefined
+                        ? snapshot.snapshotScore
+                        : isReactivating
+                          ? null
+                          : undefined,
+                snapshotRank:
+                    snapshot !== undefined
+                        ? snapshot.snapshotRank
+                        : isReactivating
+                          ? null
+                          : undefined,
+                snapshotParticipantCount:
+                    snapshot !== undefined
+                        ? snapshot.snapshotParticipantCount
+                        : isReactivating
+                          ? null
+                          : undefined,
                 updatedAt: now,
             })
             .where(eq(rankingItemTable.id, item.id));
-
+        return { changed: true, snapshot };
+    });
+    if (!transition.changed) {
+        return;
+    }
+    if (transition.snapshot !== undefined) {
+        log.info(
+            `[RankingItem] Item ${itemSlugId} transitioned to ${newStatus} with snapshot: score=${String(transition.snapshot.snapshotScore)}, rank=${String(transition.snapshot.snapshotRank)}`,
+        );
+    } else {
         log.info(`[RankingItem] Item ${itemSlugId} transitioned to ${newStatus}`);
     }
 

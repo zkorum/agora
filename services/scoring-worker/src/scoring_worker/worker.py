@@ -2,13 +2,14 @@
 
 Batch architecture:
     1. ZPOPMIN batch (filter out backed-off conversations)
-    2. Batch SELECT all data for all conversations
-    3. Parallel Solidago via ThreadPoolExecutor (no DB during scoring)
-    4. Batch WRITE all results in one transaction
+    2. Acquire PostgreSQL advisory locks per conversation
+    3. Batch SELECT scoring inputs from primary
+    4. Parallel Solidago via ThreadPoolExecutor (no DB during scoring)
+    5. Recheck inputs, then persist scores and immutable stats snapshots
 
 Scaling (future ECS/EKS):
     Monitor ZCARD for queue depth trend. Multiple identical workers
-    share the sorted set via atomic ZPOPMIN -- no coordination needed.
+    share the sorted set and serialize each conversation with advisory locks.
     Reconciliation should move to a dedicated service when scaling.
 
 Run with: uv run python -m scoring_worker.worker
@@ -30,13 +31,14 @@ from scoring_worker.db import (
     ComparisonRow,
     ScoredEntity,
     UserScoreEntry,
-    clear_scores_batch,
-    fetch_active_items_batch,
+    acquire_conversation_locks,
     fetch_comparisons_batch,
+    fetch_ranking_items_batch,
+    fetch_scoring_input_revisions,
+    persist_scoring_batch,
     reconcile_unscored_conversations,
-    update_maxdiff_counters_batch,
-    write_scores_batch,
 )
+from scoring_worker.observations import comparison_rows_to_maxdiff_observations
 from scoring_worker.scoring import (
     ConversationScoringOutput,
     score_comparisons,
@@ -67,20 +69,22 @@ def _handle_signal(signum: int, frame: object) -> None:
     _running = False
 
 
-def _build_participant_counts(
+def build_participant_counts(
     comparisons: list[ComparisonRow],
+    *,
+    entity_ids: list[str],
 ) -> dict[str, int]:
     """Count distinct users per entity from comparisons."""
     user_entities: dict[str, set[int]] = {}
-    for comp in comparisons:
-        for slug_id in [
-            comp.best_slug_id,
-            comp.worst_slug_id,
-            *comp.candidate_set,
-        ]:
+    observations = comparison_rows_to_maxdiff_observations(
+        entity_ids=entity_ids,
+        comparisons=comparisons,
+    )
+    for observation in observations:
+        for slug_id in observation.candidate_set:
             if slug_id not in user_entities:
                 user_entities[slug_id] = set()
-            user_entities[slug_id].add(comp.user_idx)
+            user_entities[slug_id].add(observation.user_id)
     return {sid: len(users) for sid, users in user_entities.items()}
 
 
@@ -91,6 +95,16 @@ def _score_one(
 ) -> ConversationScoringOutput | None:
     """Score a single conversation (called in thread pool)."""
     return score_comparisons(entity_ids=entity_ids, comparisons=comparisons)
+
+
+def deduplicate_batch(batch: list[DirtyConversation]) -> list[DirtyConversation]:
+    """Keep one queue member per conversation, preferring its highest weight."""
+    conversations: dict[int, DirtyConversation] = {}
+    for item in batch:
+        current = conversations.get(item.conversation_id)
+        if current is None or item.weight > current.weight:
+            conversations[item.conversation_id] = item
+    return list(conversations.values())
 
 
 def _connect_to_valkey_with_retry(settings: Settings) -> valkey_lib.Valkey | None:
@@ -184,17 +198,6 @@ def _run_worker_once() -> None:
         log.info("[Worker] Shutdown complete")
         return
 
-    read_engine = _create_engine_with_retry(
-        connection_string=settings.read_dsn,
-        role="read",
-        retry_interval_seconds=settings.valkey_retry_interval_seconds,
-    )
-    if read_engine is None:
-        primary_engine.dispose()
-        vk.close()
-        log.info("[Worker] Shutdown complete")
-        return
-
     log.info("[Worker] PostgreSQL connected (pool_pre_ping=True)")
 
     warmup()
@@ -202,7 +205,7 @@ def _run_worker_once() -> None:
     # Per-conversation backoff: conv_id -> monotonic time when retry is allowed
     backoff_until: dict[int, float] = {}
 
-    last_reconcile = time.monotonic()
+    last_reconcile = time.monotonic() - settings.reconcile_interval_seconds
     log.info("[Worker] Ready")
 
     while _running:
@@ -210,12 +213,12 @@ def _run_worker_once() -> None:
         now = time.monotonic()
         if now - last_reconcile >= settings.reconcile_interval_seconds:
             try:
-                unscored = reconcile_unscored_conversations(read_engine)
+                unscored = reconcile_unscored_conversations(primary_engine)
                 if unscored:
-                    for conv_id in unscored:
+                    for conv_id, slug_id in unscored:
                         mark_dirty(
                             vk,
-                            member=f"{conv_id}:reconciled",
+                            member=f"{conv_id}:{slug_id}",
                             weight=0,
                         )
                     log.info(
@@ -256,40 +259,85 @@ def _run_worker_once() -> None:
             else:
                 to_process.append(item)
 
+        deduplicated = deduplicate_batch(to_process)
+        if len(deduplicated) < len(to_process):
+            log.info(
+                "[Worker] Coalesced %d duplicate queue member(s)",
+                len(to_process) - len(deduplicated),
+            )
+        to_process = deduplicated
+
         if not to_process:
             time.sleep(settings.poll_interval_seconds)
             continue
 
         conv_ids = [item.conversation_id for item in to_process]
-        log.info(
-            "[Worker] Processing %d conversation(s): %s",
-            len(to_process),
-            ", ".join(item.slug_id for item in to_process),
+        (
+            locked_conversation_ids,
+            processing_connection,
+            release_conversation_locks,
+        ) = acquire_conversation_locks(
+            primary_engine,
+            conversation_ids=conv_ids,
         )
+        try:
+            unlocked_items = [
+                item for item in to_process if item.conversation_id not in locked_conversation_ids
+            ]
+            for item in unlocked_items:
+                mark_dirty(vk, member=item.member, weight=item.weight)
+            to_process = [
+                item for item in to_process if item.conversation_id in locked_conversation_ids
+            ]
+            if not to_process:
+                release_conversation_locks()
+                time.sleep(settings.poll_interval_seconds)
+                continue
+
+            conv_ids = [item.conversation_id for item in to_process]
+            log.info(
+                "[Worker] Processing %d conversation(s): %s",
+                len(to_process),
+                ", ".join(item.slug_id for item in to_process),
+            )
+        except Exception:
+            release_conversation_locks()
+            raise
 
         try:
             # Step 2: Batch SELECT
-            active_items = fetch_active_items_batch(read_engine, conversation_ids=conv_ids)
-            comparisons_result = fetch_comparisons_batch(read_engine, conversation_ids=conv_ids)
+            scoring_input_revisions = fetch_scoring_input_revisions(
+                processing_connection,
+                conversation_ids=conv_ids,
+            )
+            ranking_items = fetch_ranking_items_batch(
+                processing_connection,
+                conversation_ids=conv_ids,
+            )
+            active_items = {
+                conversation_id: [
+                    item.slug_id
+                    for item in items
+                    if item.lifecycle_status.value in {"active", "in_progress"}
+                ]
+                for conversation_id, items in ranking_items.items()
+            }
+            comparisons_result = fetch_comparisons_batch(
+                processing_connection,
+                conversation_ids=conv_ids,
+            )
             comparisons = comparisons_result.comparisons
             user_idx_to_result_id = comparisons_result.user_idx_to_result_id
 
-            # Update counters
-            update_maxdiff_counters_batch(
-                primary_engine,
-                conversation_ids=conv_ids,
-                active_items_by_conv=active_items,
-            )
-
             # Separate: conversations with enough data vs those to clear
             to_score: list[DirtyConversation] = []
-            to_clear: list[int] = []
+            to_clear: set[int] = set()
             for item in to_process:
                 cid = item.conversation_id
                 items = active_items.get(cid, [])
                 comps = comparisons.get(cid, [])
                 if len(items) < 2 or not comps:
-                    to_clear.append(cid)
+                    to_clear.add(cid)
                     log.info(
                         "[Worker] %s: %d items, %d comparisons -> clear",
                         item.slug_id,
@@ -298,9 +346,6 @@ def _run_worker_once() -> None:
                     )
                 else:
                     to_score.append(item)
-
-            if to_clear:
-                clear_scores_batch(primary_engine, conversation_ids=to_clear)
 
             # Step 3: Parallel Solidago (ThreadPoolExecutor)
             scoring_results: dict[int, tuple[list[ScoredEntity], dict[str, int]]] = {}
@@ -323,7 +368,10 @@ def _run_worker_once() -> None:
                         try:
                             output = future.result()
                             if output is not None:
-                                pc = _build_participant_counts(comparisons[item.conversation_id])
+                                pc = build_participant_counts(
+                                    comparisons[item.conversation_id],
+                                    entity_ids=active_items[item.conversation_id],
+                                )
                                 scored = [
                                     ScoredEntity(
                                         entity_slug_id=r.entity_id,
@@ -359,7 +407,7 @@ def _run_worker_once() -> None:
                                             )
                                         )
                             else:
-                                to_clear.append(item.conversation_id)
+                                to_clear.add(item.conversation_id)
                         except Exception:
                             log.exception(
                                 "[Worker] %s: Solidago failed",
@@ -367,16 +415,39 @@ def _run_worker_once() -> None:
                             )
                             failed_items.append(item)
 
-            # Step 4: Batch WRITE
-            if scoring_results:
-                write_scores_batch(
-                    primary_engine,
-                    results=scoring_results,
-                    user_scores=all_user_score_entries,
+            # Step 4: Final revision locking and atomic publication
+            snapshot_scored_entities = {
+                conversation_id: result[0] for conversation_id, result in scoring_results.items()
+            }
+            completed_conversation_ids = [
+                *scoring_results.keys(),
+                *to_clear,
+            ]
+            published = persist_scoring_batch(
+                processing_connection,
+                scoring_results=scoring_results,
+                user_scores=all_user_score_entries,
+                conversation_ids_to_clear=list(to_clear),
+                snapshot_conversation_ids=completed_conversation_ids,
+                ranking_items_by_conv=ranking_items,
+                comparisons_by_conv=comparisons,
+                total_vote_count_by_conversation=(
+                    comparisons_result.total_vote_count_by_conversation
+                ),
+                total_participant_count_by_conversation=(
+                    comparisons_result.total_participant_count_by_conversation
+                ),
+                scored_entities_by_conv=snapshot_scored_entities,
+                scoring_input_revisions=scoring_input_revisions,
+            )
+            if not published:
+                for item in to_process:
+                    mark_dirty(vk, member=item.member, weight=item.weight)
+                log.info(
+                    "[Worker] Requeued batch because scoring input revisions "
+                    "changed before publication",
                 )
-
-            if to_clear:
-                clear_scores_batch(primary_engine, conversation_ids=to_clear)
+                continue
 
             # Handle failures: re-add with backoff
             for item in failed_items:
@@ -389,9 +460,10 @@ def _run_worker_once() -> None:
             for item in to_process:
                 mark_dirty(vk, member=item.member, weight=item.weight)
             time.sleep(5)
+        finally:
+            release_conversation_locks()
 
     primary_engine.dispose()
-    read_engine.dispose()
     vk.close()
     log.info("[Worker] Shutdown complete")
 

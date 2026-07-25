@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { normalizeScores } from "@/service/maxdiff.js";
 import { parseResultRows } from "@/utils/maxdiffParsing.js";
 import { zodMaxdiffComparison } from "@/shared/types/zod.js";
+import { Dto } from "@/shared/types/dto.js";
 
 describe("zodMaxdiffComparison", () => {
     it("accepts valid comparisons", () => {
@@ -137,5 +138,48 @@ describe("normalizeScores", () => {
             { entitySlugId: "a", score: 0.5 },
             { entitySlugId: "b", score: 0.5 },
         ]);
+    });
+});
+
+describe("ranking snapshot request IDs", () => {
+    it("accepts PostgreSQL integer identity values", () => {
+        expect(
+            Dto.maxdiffResultsRequest.safeParse({
+                conversationSlugId: "ranking1",
+                rankingStatsSnapshotId: 2_147_483_647,
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects values outside the PostgreSQL integer range", () => {
+        expect(
+            Dto.maxdiffResultsRequest.safeParse({
+                conversationSlugId: "ranking1",
+                rankingStatsSnapshotId: 2_147_483_648,
+            }).success,
+        ).toBe(false);
+        expect(
+            Dto.rankingStatsCheckpointsRequest.safeParse({
+                conversationSlugId: "ranking1",
+                requestedRankingStatsSnapshotId: 2_147_483_648,
+            }).success,
+        ).toBe(false);
+    });
+
+    it("rejects incompatible live and historical selectors", () => {
+        expect(
+            Dto.maxdiffResultsRequest.safeParse({
+                conversationSlugId: "ranking1",
+                rankingStatsSnapshotId: 1,
+                requestedRankingStatsSnapshotId: 2,
+            }).success,
+        ).toBe(false);
+        expect(
+            Dto.maxdiffResultsRequest.safeParse({
+                conversationSlugId: "ranking1",
+                lifecycleFilter: "completed",
+                rankingStatsSnapshotId: 1,
+            }).success,
+        ).toBe(false);
     });
 });

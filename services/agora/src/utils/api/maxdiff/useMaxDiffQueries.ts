@@ -1,10 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
 import type { ApiV1RankingBwsLoadPost200Response } from "src/api";
-import type { MaxDiffItem, MaxDiffSaveResponse } from "src/shared/types/dto";
+import type {
+  MaxDiffItem,
+  MaxDiffSaveResponse,
+  RankingStatsCheckpointsResponse,
+} from "src/shared/types/dto";
 import type { ParticipationBlockedReason } from "src/shared/types/zod";
-import type { ExtendedConversation, MaxDiffComparison } from "src/shared/types/zod";
+import type {
+  ExtendedConversation,
+  MaxDiffComparison,
+} from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
+import { getRetainedConversationRankingStatsUpdate } from "src/utils/api/post/rankingStatsUpdate";
 import type { MaxDiffState } from "src/utils/maxdiff";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
@@ -55,16 +63,59 @@ export function useMaxDiffLoadQuery({
   const { loadMaxDiffResult } = useMaxDiffApi();
 
   return useQuery({
-    queryKey: [
-      "maxdiff-load",
-      computed(() => toValue(conversationSlugId)),
-    ],
+    queryKey: ["maxdiff-load", computed(() => toValue(conversationSlugId))],
     queryFn: async (): Promise<ApiV1RankingBwsLoadPost200Response> => {
       const response = await loadMaxDiffResult({
         conversationSlugId: toValue(conversationSlugId),
       });
       if (response.status !== "success") {
         throw new Error("Failed to load MaxDiff state");
+      }
+      return response.data;
+    },
+    enabled: computed(() => toValue(enabled)),
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+}
+
+export function useRankingStatsCheckpointsQuery({
+  conversationSlugId,
+  requestedRankingStatsSnapshotId,
+  enabled,
+}: {
+  conversationSlugId: MaybeRefOrGetter<string>;
+  requestedRankingStatsSnapshotId: MaybeRefOrGetter<number | undefined>;
+  enabled: MaybeRefOrGetter<boolean>;
+}) {
+  const { fetchRankingStatsCheckpoints } = useMaxDiffApi();
+  const queryClient = useQueryClient();
+
+  return useQuery({
+    queryKey: [
+      "ranking-stats-checkpoints",
+      computed(() => toValue(conversationSlugId)),
+    ],
+    queryFn: async (): Promise<RankingStatsCheckpointsResponse> => {
+      const requestedSnapshotId = toValue(requestedRankingStatsSnapshotId);
+      const retainedSnapshotId =
+        getRetainedConversationRankingStatsUpdate({
+          queryClient,
+          conversationSlugId: toValue(conversationSlugId),
+        })?.rankingStatsSnapshotId;
+      const freshnessSnapshotId =
+        requestedSnapshotId === undefined
+          ? retainedSnapshotId
+          : retainedSnapshotId === undefined
+            ? requestedSnapshotId
+            : Math.max(requestedSnapshotId, retainedSnapshotId);
+      const response = await fetchRankingStatsCheckpoints({
+        conversationSlugId: toValue(conversationSlugId),
+        requestedRankingStatsSnapshotId: freshnessSnapshotId,
+      });
+      if (response.status !== "success") {
+        throw new Error("Failed to fetch ranking checkpoints");
       }
       return response.data;
     },
@@ -168,7 +219,7 @@ export function useMaxDiffSaveMutation({
                 : {}),
             },
           };
-        },
+        }
       );
 
       // Write saved state directly to cache instead of invalidating
@@ -185,7 +236,7 @@ export function useMaxDiffSaveMutation({
           isComplete: variables.isComplete,
           candidateSets: old?.candidateSets ?? [],
           perUserScores: old?.perUserScores ?? null,
-        }),
+        })
       );
 
       // Note: We don't invalidate the conversation query here to avoid

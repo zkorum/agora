@@ -7,6 +7,7 @@ import { storeToRefs } from "pinia";
 import type {
   ConversationContentFetchResponse,
   GetConversationResponse,
+  SSEConversationRankingStatsUpdatedData,
 } from "src/shared/types/dto";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import {
@@ -22,16 +23,57 @@ import {
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
 import { useBackendPostApi } from "./post";
+import {
+  clearRetainedConversationRankingStatsUpdate,
+  getRetainedConversationRankingStatsUpdate,
+} from "./rankingStatsUpdate";
 
 type ReadyConversationResponse = Extract<
   GetConversationResponse,
   { status: "ready" }
 >;
 export type ConversationDetail = Omit<ReadyConversationResponse, "status">;
-export type ConversationDetailData = ReadyConversationResponse["conversationData"];
+export type ConversationDetailData =
+  ReadyConversationResponse["conversationData"];
 
 type ConversationCacheData = ExtendedConversation | ConversationDetailData;
 type ConversationCacheEntry = ExtendedConversation | ConversationDetail;
+
+export function applyConversationRankingStatsUpdate({
+  conversation,
+  data,
+}: {
+  conversation: ConversationCacheData;
+  data: SSEConversationRankingStatsUpdatedData;
+}): ConversationCacheData {
+  if (conversation.metadata.conversationType !== "ranking") {
+    return conversation;
+  }
+  const previousSnapshotId = conversation.metadata.rankingStatsSnapshotId;
+  if (
+    previousSnapshotId !== undefined &&
+    data.rankingStatsSnapshotId <= previousSnapshotId
+  ) {
+    return conversation;
+  }
+
+  return {
+    ...conversation,
+    metadata: {
+      ...conversation.metadata,
+      rankingStatsSnapshotId: data.rankingStatsSnapshotId,
+      opinionCount: data.opinionCount,
+      voteCount: data.voteCount,
+      participantCount: data.participantCount,
+      totalOpinionCount: data.totalOpinionCount,
+      totalVoteCount: data.totalVoteCount,
+      totalParticipantCount: data.totalParticipantCount,
+      moderatedOpinionCount: data.moderatedOpinionCount,
+      hiddenOpinionCount: data.hiddenOpinionCount,
+      isClosed: data.isClosed,
+    },
+  };
+}
 
 function isConversationDetail(
   conversation: ConversationCacheEntry
@@ -42,17 +84,66 @@ function isConversationDetail(
 function preserveNewerSnapshotMetadata({
   fetchedConversation,
   cachedConversation,
+  cachedConversationBeforeFetch,
 }: {
   fetchedConversation: ConversationDetail;
   cachedConversation: ConversationDetail | undefined;
+  cachedConversationBeforeFetch: ConversationDetail | undefined;
 }): ConversationDetail {
-  const cachedSnapshotId =
-    cachedConversation?.conversationData.metadata.conversationViewSnapshotId;
-  const fetchedSnapshotId =
-    fetchedConversation.conversationData.metadata.conversationViewSnapshotId;
+  if (cachedConversation === undefined) {
+    return fetchedConversation;
+  }
+
+  const cachedMetadata = cachedConversation.conversationData.metadata;
+  const fetchedMetadata = fetchedConversation.conversationData.metadata;
+  if (
+    cachedMetadata.conversationType === "ranking" &&
+    fetchedMetadata.conversationType === "ranking"
+  ) {
+    const cachedSnapshotId = cachedMetadata.rankingStatsSnapshotId;
+    const fetchedSnapshotId = fetchedMetadata.rankingStatsSnapshotId;
+    if (
+      cachedSnapshotId === undefined ||
+      (fetchedSnapshotId !== undefined &&
+        (fetchedSnapshotId > cachedSnapshotId ||
+          (fetchedSnapshotId === cachedSnapshotId &&
+            cachedConversation === cachedConversationBeforeFetch)))
+    ) {
+      return fetchedConversation;
+    }
+
+    return {
+      ...fetchedConversation,
+      conversationData: {
+        ...fetchedConversation.conversationData,
+        metadata: {
+          ...fetchedMetadata,
+          rankingStatsSnapshotId: cachedSnapshotId,
+          opinionCount: cachedMetadata.opinionCount,
+          voteCount: cachedMetadata.voteCount,
+          participantCount: cachedMetadata.participantCount,
+          totalOpinionCount: cachedMetadata.totalOpinionCount,
+          totalVoteCount: cachedMetadata.totalVoteCount,
+          totalParticipantCount: cachedMetadata.totalParticipantCount,
+          moderatedOpinionCount: cachedMetadata.moderatedOpinionCount,
+          hiddenOpinionCount: cachedMetadata.hiddenOpinionCount,
+          isClosed: cachedMetadata.isClosed,
+        },
+      },
+    };
+  }
 
   if (
-    cachedConversation === undefined ||
+    cachedMetadata.conversationType !== "polis" ||
+    fetchedMetadata.conversationType !== "polis"
+  ) {
+    return fetchedConversation;
+  }
+
+  const cachedSnapshotId = cachedMetadata.conversationViewSnapshotId;
+  const fetchedSnapshotId = fetchedMetadata.conversationViewSnapshotId;
+
+  if (
     cachedSnapshotId === undefined ||
     fetchedSnapshotId === undefined ||
     fetchedSnapshotId >= cachedSnapshotId
@@ -65,24 +156,46 @@ function preserveNewerSnapshotMetadata({
     conversationData: {
       ...fetchedConversation.conversationData,
       metadata: {
-        ...fetchedConversation.conversationData.metadata,
+        ...fetchedMetadata,
         conversationViewSnapshotId: cachedSnapshotId,
-        opinionCount: cachedConversation.conversationData.metadata.opinionCount,
-        voteCount: cachedConversation.conversationData.metadata.voteCount,
-        participantCount:
-          cachedConversation.conversationData.metadata.participantCount,
-        totalOpinionCount:
-          cachedConversation.conversationData.metadata.totalOpinionCount,
-        totalVoteCount:
-          cachedConversation.conversationData.metadata.totalVoteCount,
-        totalParticipantCount:
-          cachedConversation.conversationData.metadata.totalParticipantCount,
-        moderatedOpinionCount:
-          cachedConversation.conversationData.metadata.moderatedOpinionCount,
-        hiddenOpinionCount:
-          cachedConversation.conversationData.metadata.hiddenOpinionCount,
+        opinionCount: cachedMetadata.opinionCount,
+        voteCount: cachedMetadata.voteCount,
+        participantCount: cachedMetadata.participantCount,
+        totalOpinionCount: cachedMetadata.totalOpinionCount,
+        totalVoteCount: cachedMetadata.totalVoteCount,
+        totalParticipantCount: cachedMetadata.totalParticipantCount,
+        moderatedOpinionCount: cachedMetadata.moderatedOpinionCount,
+        hiddenOpinionCount: cachedMetadata.hiddenOpinionCount,
       },
     },
+  };
+}
+
+function mergeRetainedRankingStatsUpdate({
+  conversation,
+  update,
+}: {
+  conversation: ConversationDetail;
+  update: SSEConversationRankingStatsUpdatedData | undefined;
+}): ConversationDetail {
+  const metadata = conversation.conversationData.metadata;
+  if (
+    update === undefined ||
+    metadata.conversationType !== "ranking" ||
+    (metadata.rankingStatsSnapshotId !== undefined &&
+      metadata.rankingStatsSnapshotId >= update.rankingStatsSnapshotId)
+  ) {
+    return conversation;
+  }
+
+  return {
+    ...conversation,
+    conversationData: zodExtendedConversationDisplayData.parse(
+      applyConversationRankingStatsUpdate({
+        conversation: conversation.conversationData,
+        data: update,
+      })
+    ),
   };
 }
 
@@ -116,13 +229,16 @@ export function updateConversationQueryCache({
     return zodExtendedConversationData.parse(updateConversation(conversation));
   };
 
-  queryClient.setQueriesData<ConversationCacheEntry>({ queryKey }, (oldData) => {
-    if (!oldData) {
-      return oldData;
-    }
+  queryClient.setQueriesData<ConversationCacheEntry>(
+    { queryKey },
+    (oldData) => {
+      if (!oldData) {
+        return oldData;
+      }
 
-    return updateCacheEntry(oldData);
-  });
+      return updateCacheEntry(oldData);
+    }
+  );
 
   if (
     fallbackConversation !== undefined &&
@@ -130,10 +246,7 @@ export function updateConversationQueryCache({
       ? fallbackConversation.conversationData.metadata.conversationSlugId
       : fallbackConversation.metadata.conversationSlugId) === conversationSlugId
   ) {
-    queryClient.setQueryData(
-      queryKey,
-      updateCacheEntry(fallbackConversation)
-    );
+    queryClient.setQueryData(queryKey, updateCacheEntry(fallbackConversation));
   }
 }
 
@@ -148,7 +261,9 @@ export function useConversationQuery({
   const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
   const queryClient = useQueryClient();
-  const sortedSpokenLanguages = computed(() => [...spokenLanguages.value].sort());
+  const sortedSpokenLanguages = computed(() =>
+    [...spokenLanguages.value].sort()
+  );
 
   return useQuery({
     queryKey: [
@@ -157,18 +272,30 @@ export function useConversationQuery({
       displayLanguage,
       sortedSpokenLanguages,
     ],
-    queryFn: async () => {
+    queryFn: async ({ queryKey }) => {
       const slugId = toValue(conversationSlugId);
+      const cachedConversationBeforeFetch =
+        queryClient.getQueryData<ConversationDetail>(queryKey);
       const targetLanguageCode = displayLanguage.value;
       const requestedSpokenLanguages = [...spokenLanguages.value];
-      const fetchedConversation = await fetchConversationBySlugIdWithDisplayContent({
-        postSlugId: slugId,
-        loadPersonalizedData: isGuestOrLoggedIn.value,
-      });
-      const cachedConversation = queryClient.getQueryData<ConversationDetail>([
-        "conversation",
-        slugId,
-      ]);
+      const fetchedConversation =
+        await fetchConversationBySlugIdWithDisplayContent({
+          postSlugId: slugId,
+          loadPersonalizedData: isGuestOrLoggedIn.value,
+        });
+      const cachedConversation =
+        queryClient.getQueryData<ConversationDetail>(queryKey);
+      const fetchedMetadata = fetchedConversation.conversationData.metadata;
+      if (
+        fetchedMetadata.conversationType === "ranking" &&
+        fetchedMetadata.rankingStatsSnapshotId !== undefined
+      ) {
+        clearRetainedConversationRankingStatsUpdate({
+          queryClient,
+          conversationSlugId: slugId,
+          throughSnapshotId: fetchedMetadata.rankingStatsSnapshotId,
+        });
+      }
       queryClient.setQueryData<ConversationContentFetchResponse>(
         getConversationDisplayContentQueryKey({
           conversationSlugId: slugId,
@@ -190,9 +317,17 @@ export function useConversationQuery({
         );
       }
 
-      return preserveNewerSnapshotMetadata({
+      const conversationWithPreservedCache = preserveNewerSnapshotMetadata({
         fetchedConversation,
         cachedConversation,
+        cachedConversationBeforeFetch,
+      });
+      return mergeRetainedRankingStatsUpdate({
+        conversation: conversationWithPreservedCache,
+        update: getRetainedConversationRankingStatsUpdate({
+          queryClient,
+          conversationSlugId: slugId,
+        }),
       });
     },
     enabled: computed(() => toValue(enabled)),

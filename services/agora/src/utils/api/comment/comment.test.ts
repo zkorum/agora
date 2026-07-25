@@ -18,24 +18,28 @@ import {
 } from "./analysisData";
 
 const frameKey: AnalysisFrameKey = {
+  mode: "live",
   conversationViewSnapshotId: 12,
   analysisSnapshotId: 34,
   candidateId: 56,
 };
 
-const analysisViewResolution: AnalysisFrameManifest["analysisViewResolution"] = {
-  requestedView: "auto",
-  canonicalView: "auto",
-  resolvedGroupCount: 2,
-  resolvedCandidateId: 56,
-  resolvedBy: "auto",
-  variantsEnabled: true,
-  options: [],
-};
+const analysisViewResolution: AnalysisFrameManifest["analysisViewResolution"] =
+  {
+    requestedView: "auto",
+    canonicalView: "auto",
+    resolvedGroupCount: 2,
+    resolvedCandidateId: 56,
+    resolvedBy: "auto",
+    variantsEnabled: true,
+    options: [],
+  };
 
 type AnalysisFrameManifestWithFrame = AnalysisFrameManifest & {
   frameKey: AnalysisFrameKey;
-  conversationViewSnapshot: NonNullable<AnalysisFrameManifest["conversationViewSnapshot"]>;
+  conversationViewSnapshot: NonNullable<
+    AnalysisFrameManifest["conversationViewSnapshot"]
+  >;
 };
 
 type ConversationViewSnapshot = NonNullable<
@@ -146,26 +150,31 @@ function conversationViewSnapshot(
   };
 }
 
-function opinion(overrides: Partial<AnalysisOpinionItem> = {}): AnalysisOpinionItem {
+function opinion(
+  overrides: Partial<AnalysisOpinionItem> = {}
+): AnalysisOpinionItem {
   return {
     opinionSlugId: "opinion-1",
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
     updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-    opinion: "Statement",
-    sourceLanguageCode: null,
-    displayContent: {
-      sourceVersion: "00000000-0000-4000-8000-000000000001",
-      status: "available",
-      mode: "original",
-      content: { content: "Statement" },
-      translationControl: null,
+    content: {
+      status: "visible",
+      html: "Statement",
+      sourceLanguageCode: null,
+      displayContent: {
+        sourceVersion: "00000000-0000-4000-8000-000000000001",
+        status: "available",
+        mode: "original",
+        content: { content: "Statement" },
+        translationControl: null,
+      },
+      moderation: { status: "unmoderated" },
     },
     numParticipants: 7,
     numAgrees: 5,
     numDisagrees: 1,
     numPasses: 1,
     username: "alice",
-    moderation: { status: "unmoderated" },
     isSeed: false,
     clustersStats: [],
     groupAwareConsensusAgree: 0.8,
@@ -175,7 +184,10 @@ function opinion(overrides: Partial<AnalysisOpinionItem> = {}): AnalysisOpinionI
   };
 }
 
-function groups(numUsersByKey: { "0": number; "1": number }): AnalysisFrameGroups {
+function groups(numUsersByKey: {
+  "0": number;
+  "1": number;
+}): AnalysisFrameGroups {
   return {
     frameKey,
     clusters: {
@@ -206,7 +218,9 @@ const groupLabels: AnalysisFrameGroupLabels = {
   },
 };
 
-function opinionList(kind: AnalysisFrameOpinionList["kind"]): AnalysisFrameOpinionList {
+function opinionList(
+  kind: AnalysisFrameOpinionList["kind"]
+): AnalysisFrameOpinionList {
   return {
     frameKey,
     kind,

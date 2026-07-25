@@ -17,7 +17,10 @@ import {
     markRankingScoringDirty,
     normalizeProviderRankingItemContent,
 } from "@/service/rankingItem.js";
-import { computeItemSnapshot } from "@/service/maxdiff.js";
+import {
+    computeItemSnapshot,
+    lockRankingScoringConfig,
+} from "@/service/maxdiff.js";
 import { log } from "@/app.js";
 import {
     processUserGeneratedHtml,
@@ -378,6 +381,7 @@ async function upsertItemFromGitHubIssue({
 
             // If issue is already closed, transition to correct lifecycle
             if (newLifecycle !== "active") {
+                await lockRankingScoringConfig({ db: tx, conversationId });
                 const snapshot = await computeItemSnapshot({
                     db: tx,
                     conversationId,
@@ -490,6 +494,7 @@ async function upsertItemFromGitHubIssue({
 
             if (wasActive && isDeactivating) {
                 // Snapshot before deactivating
+                await lockRankingScoringConfig({ db: tx, conversationId });
                 const snapshot = await computeItemSnapshot({
                     db: tx,
                     conversationId,
@@ -581,40 +586,44 @@ async function deactivateItemByExternalId({
 
     const itemId = rows[0].rankingItemId;
 
-    const itemRows = await db
-        .select({
-            slugId: rankingItemTable.slugId,
-            lifecycleStatus: rankingItemTable.lifecycleStatus,
-        })
-        .from(rankingItemTable)
-        .where(eq(rankingItemTable.id, itemId));
-
-    if (itemRows.length === 0) return;
-    const item = itemRows[0];
-
-    if (
-        item.lifecycleStatus === "completed" ||
-        item.lifecycleStatus === "canceled"
-    ) {
-        return; // already deactivated
-    }
-
-    const snapshot = await computeItemSnapshot({
-        db,
-        conversationId,
-        itemSlugId: item.slugId,
+    const changed = await db.transaction(async (tx) => {
+        await lockRankingScoringConfig({ db: tx, conversationId });
+        const itemRows = await tx
+            .select({
+                slugId: rankingItemTable.slugId,
+                lifecycleStatus: rankingItemTable.lifecycleStatus,
+            })
+            .from(rankingItemTable)
+            .where(eq(rankingItemTable.id, itemId))
+            .for("update");
+        const item = itemRows.at(0);
+        if (
+            item === undefined ||
+            item.lifecycleStatus === "completed" ||
+            item.lifecycleStatus === "canceled"
+        ) {
+            return false;
+        }
+        const snapshot = await computeItemSnapshot({
+            db: tx,
+            conversationId,
+            itemSlugId: item.slugId,
+        });
+        await tx
+            .update(rankingItemTable)
+            .set({
+                lifecycleStatus: "canceled",
+                snapshotScore: snapshot.snapshotScore,
+                snapshotRank: snapshot.snapshotRank,
+                snapshotParticipantCount: snapshot.snapshotParticipantCount,
+                updatedAt: new Date(),
+            })
+            .where(eq(rankingItemTable.id, itemId));
+        return true;
     });
-
-    await db
-        .update(rankingItemTable)
-        .set({
-            lifecycleStatus: "canceled",
-            snapshotScore: snapshot.snapshotScore,
-            snapshotRank: snapshot.snapshotRank,
-            snapshotParticipantCount: snapshot.snapshotParticipantCount,
-            updatedAt: new Date(),
-        })
-        .where(eq(rankingItemTable.id, itemId));
+    if (!changed) {
+        return;
+    }
 
     log.info(`[GitHub] Deactivated item from ${externalId} (label removed)`);
 

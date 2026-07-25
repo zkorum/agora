@@ -18,7 +18,9 @@ const POLIS_KEYS = ["0", "1", "2", "3", "4", "5"] satisfies PolisKey[];
 
 type AnalysisFrameManifestWithFrame = AnalysisFrameManifest & {
   frameKey: AnalysisFrameKey;
-  conversationViewSnapshot: NonNullable<AnalysisFrameManifest["conversationViewSnapshot"]>;
+  conversationViewSnapshot: NonNullable<
+    AnalysisFrameManifest["conversationViewSnapshot"]
+  >;
 };
 
 interface CompleteAnalysisFrameSections {
@@ -95,7 +97,8 @@ function isAnalysisFrameKeyEqual({
   return (
     left.conversationViewSnapshotId === right.conversationViewSnapshotId &&
     left.analysisSnapshotId === right.analysisSnapshotId &&
-    left.candidateId === right.candidateId
+    left.candidateId === right.candidateId &&
+    left.mode === right.mode
   );
 }
 
@@ -130,7 +133,9 @@ export function buildEmptyAnalysisDataFromManifest({
     emptyReason: manifest.emptyReason,
     analysisViewState: manifest.analysisViewResolution,
     displayableGroupCounts: manifest.analysisViewResolution.options
-      .map((option) => ("candidate" in option ? option.candidate.groupCount : undefined))
+      .map((option) =>
+        "candidate" in option ? option.candidate.groupCount : undefined
+      )
       .filter((groupCount) => groupCount !== undefined),
     hasVotedOnAllAvailableOpinions: manifest.hasVotedOnAllAvailableOpinions,
   };
@@ -219,7 +224,9 @@ export function buildAnalysisDataFromFrame({
     emptyReason: manifest.emptyReason,
     analysisViewState: manifest.analysisViewResolution,
     displayableGroupCounts: manifest.analysisViewResolution.options
-      .map((option) => ("candidate" in option ? option.candidate.groupCount : undefined))
+      .map((option) =>
+        "candidate" in option ? option.candidate.groupCount : undefined
+      )
       .filter((groupCount) => groupCount !== undefined),
     hasVotedOnAllAvailableOpinions: manifest.hasVotedOnAllAvailableOpinions,
   };

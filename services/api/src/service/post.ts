@@ -9,14 +9,12 @@ import {
     rankingConversationConfigTable,
     userTable,
 } from "@/shared-backend/schema.js";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
-import type {
-    ExtendedConversation,
-} from "@/shared/types/zod.js";
+import type { ExtendedConversation } from "@/shared/types/zod.js";
 import type {
     CloseConversationResponse,
     CreateNewConversationRequest,
@@ -53,6 +51,8 @@ import {
     buildConversationLanguageDetectionCorpus,
 } from "@/service/conversationLanguage.js";
 import { upsertConversationMultilingualSetting } from "@/service/conversationMultilingual.js";
+import type { Valkey } from "@/shared-backend/valkey.js";
+import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
 import {
     buildContentBlockLanguageDetectionCorpus,
     buildSurveyLanguageDetectionCorpus,
@@ -76,6 +76,31 @@ import {
 
 const MAX_CONVERSATION_SEED_ITEMS = 50;
 
+async function scheduleRankingStatsRefresh({
+    valkey,
+    conversationId,
+    conversationSlugId,
+}: {
+    valkey: Valkey | undefined;
+    conversationId: number;
+    conversationSlugId: string;
+}): Promise<void> {
+    if (valkey === undefined) {
+        return;
+    }
+    const member = `${String(conversationId)}:${conversationSlugId}`;
+    try {
+        await valkey.zadd(VALKEY_QUEUE_KEYS.SCORING_DIRTY_SOLIDAGO, {
+            [member]: 0,
+        });
+    } catch (error: unknown) {
+        log.error(
+            error,
+            `[Conversation] Failed to schedule ranking stats refresh for ${member}`,
+        );
+    }
+}
+
 interface CreateNewPostProps {
     db: PostgresDatabase;
     request: CreateNewConversationRequest;
@@ -91,6 +116,7 @@ interface CreateNewPostProps {
     importCreatedAt?: Date;
     importAuthor?: string;
     importMethod?: "url" | "csv";
+    valkey: Valkey | undefined;
 }
 
 export interface CreatedConversationEagerContentTranslation {
@@ -118,6 +144,7 @@ export async function createNewPost({
     importCreatedAt,
     importAuthor,
     importMethod,
+    valkey,
 }: CreateNewPostProps): Promise<CreateNewPostResponse> {
     const {
         conversationTitle,
@@ -204,24 +231,25 @@ export async function createNewPost({
                   projectId: target.projectId,
               })
             : undefined;
-    const conversationSourceLanguageMetadata = await resolveContentLanguageMetadata({
-        text: buildContentBlockLanguageDetectionCorpus({
-            conversationCorpus: buildConversationLanguageDetectionCorpus({
+    const conversationSourceLanguageMetadata =
+        await resolveContentLanguageMetadata({
+            text: buildContentBlockLanguageDetectionCorpus({
+                conversationCorpus: buildConversationLanguageDetectionCorpus({
+                    conversationTitle,
+                    bodyPlainText,
+                }),
+                surveyConfig,
+            }),
+            googleText: buildGoogleConversationLanguageDetectionCorpus({
                 conversationTitle,
                 bodyPlainText,
+                supplementalPlainText: surveyLanguageDetectionCorpus,
             }),
-            surveyConfig,
-        }),
-        googleText: buildGoogleConversationLanguageDetectionCorpus({
-            conversationTitle,
-            bodyPlainText,
-            supplementalPlainText: surveyLanguageDetectionCorpus,
-        }),
-        googleCloudCredentials,
-        useGoogleLanguageDetection:
-            inheritedProjectLanguageSettings?.dynamicTranslationEnabled ??
-            multilingualSetting.dynamicTranslationEnabled,
-    });
+            googleCloudCredentials,
+            useGoogleLanguageDetection:
+                inheritedProjectLanguageSettings?.dynamicTranslationEnabled ??
+                multilingualSetting.dynamicTranslationEnabled,
+        });
     const normalizedMultilingualSetting =
         inheritedProjectLanguageSettings !== undefined
             ? normalizeInheritedConversationMultilingualSettings({
@@ -245,6 +273,7 @@ export async function createNewPost({
               });
 
     let eagerContentTranslationWorkIds: number[] | undefined;
+    let createdConversationId: number | undefined;
 
     await db.transaction(async (tx) => {
         const now = new Date();
@@ -297,6 +326,7 @@ export async function createNewPost({
             .returning({ conversationId: conversationTable.id });
 
         const insertedConversationId = insertPostResponse[0].conversationId;
+        createdConversationId = insertedConversationId;
 
         if (
             importUrl !== undefined ||
@@ -351,7 +381,8 @@ export async function createNewPost({
             db: tx,
             conversationId: insertedConversationId,
             setting: {
-                dynamicTranslationEnabled: targetLanguagePolicy.dynamicTranslationEnabled,
+                dynamicTranslationEnabled:
+                    targetLanguagePolicy.dynamicTranslationEnabled,
                 additionalLanguageCodes:
                     targetLanguagePolicy.effectiveTargetLanguageCodes,
             },
@@ -363,12 +394,14 @@ export async function createNewPost({
             conversationSlugId,
             projectId: target.projectId,
             languageSettingsSource,
-            dynamicTranslationEnabled: targetLanguagePolicy.dynamicTranslationEnabled,
+            dynamicTranslationEnabled:
+                targetLanguagePolicy.dynamicTranslationEnabled,
             contentId: insertedConversationContentId,
             publicId: conversationContentPublicId,
             title: conversationTitle,
             body: conversationBody,
-            sourceLanguageCode: conversationSourceLanguageMetadata.sourceLanguageCode,
+            sourceLanguageCode:
+                conversationSourceLanguageMetadata.sourceLanguageCode,
             sourceRawLanguageCode:
                 conversationSourceLanguageMetadata.sourceRawLanguageCode,
             sourceLanguageProvider:
@@ -449,6 +482,16 @@ export async function createNewPost({
             }
         }
 
+        if (rankingConfigId !== undefined) {
+            await tx
+                .update(rankingConversationConfigTable)
+                .set({
+                    itemCount: rankingItemSources.length,
+                    totalItemCount: rankingItemSources.length,
+                })
+                .where(eq(rankingConversationConfigTable.id, rankingConfigId));
+        }
+
         if (surveyConfig !== undefined) {
             const surveyUpdateEffect = await setSurveyConfigForConversation({
                 db: tx,
@@ -487,17 +530,30 @@ export async function createNewPost({
         return undefined;
     });
 
-    const createdEagerContentTranslationWorkIds = eagerContentTranslationWorkIds;
+    const createdEagerContentTranslationWorkIds =
+        eagerContentTranslationWorkIds;
     if (createdEagerContentTranslationWorkIds === undefined) {
         throw httpErrors.internalServerError(
             "Failed to create eager content translation work rows",
         );
     }
+    if (createdConversationId === undefined) {
+        throw httpErrors.internalServerError("Failed to create conversation");
+    }
+    if (conversationType === "ranking") {
+        await scheduleRankingStatsRefresh({
+            valkey,
+            conversationId: createdConversationId,
+            conversationSlugId,
+        });
+    }
 
     return {
         success: true,
         conversationSlugId: conversationSlugId,
-        eagerContentTranslation: { workIds: createdEagerContentTranslationWorkIds },
+        eagerContentTranslation: {
+            workIds: createdEagerContentTranslationWorkIds,
+        },
     };
 }
 
@@ -543,10 +599,11 @@ export async function fetchPostBySlugId({
         );
     }
 
-    const { id: conversationId } = await useCommonPost().getPostMetadataFromSlugId({
-        db,
-        conversationSlugId,
-    });
+    const { id: conversationId } =
+        await useCommonPost().getPostMetadataFromSlugId({
+            db,
+            conversationSlugId,
+        });
     const surveyGate = await getSurveyGateSummary({
         db,
         conversationId,
@@ -645,30 +702,35 @@ interface CloseConversationProps {
     db: PostgresDatabase;
     conversationSlugId: string;
     userId: string;
+    valkey: Valkey | undefined;
 }
 
 export async function closeConversation({
     db,
     conversationSlugId,
     userId,
+    valkey,
 }: CloseConversationProps): Promise<CloseConversationResponse> {
     // First, get the conversation to check permissions and current state
     const conversation = await db
         .select({
             conversationId: conversationTable.id,
             projectId: conversationTable.projectId,
-            isClosed: conversationTable.isClosed,
             isIndexed: conversationTable.isIndexed,
             participationMode: conversationTable.participationMode,
             requiresEventTicket: conversationTable.requiresEventTicket,
             aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
             preferredOpinionGroupCount:
                 polisConversationConfigTable.preferredOpinionGroupCount,
+            conversationType: conversationTable.conversationType,
         })
         .from(conversationTable)
         .leftJoin(
             polisConversationConfigTable,
-            eq(polisConversationConfigTable.id, conversationTable.polisConfigId),
+            eq(
+                polisConversationConfigTable.id,
+                conversationTable.polisConfigId,
+            ),
         )
         .where(eq(conversationTable.slugId, conversationSlugId))
         .limit(1);
@@ -688,30 +750,36 @@ export async function closeConversation({
         return { success: false, reason: "not_allowed" };
     }
 
-    // Check if already closed
-    if (conversation[0].isClosed) {
-        return { success: false, reason: "already_closed" };
-    }
-
-    await db.transaction(async (tx) => {
-        await tx
+    const transitioned = await db.transaction(async (tx) => {
+        const updatedRows = await tx
             .update(conversationTable)
             .set({ isClosed: true })
-            .where(eq(conversationTable.id, conversation[0].conversationId));
+            .where(
+                and(
+                    eq(conversationTable.id, conversation[0].conversationId),
+                    eq(conversationTable.isClosed, false),
+                ),
+            )
+            .returning({ id: conversationTable.id });
+        if (updatedRows.length === 0) {
+            return false;
+        }
 
-        await createConversationViewSnapshotsFromCurrentState({
-            db: tx,
-            conversationId: conversation[0].conversationId,
-            viewReason: "conversation_lifecycle_updated",
-            lifecycleCheckpointReason: "conversation_closed",
-            emitRealtimeEvent: true,
-        });
+        if (conversation[0].conversationType === "polis") {
+            await createConversationViewSnapshotsFromCurrentState({
+                db: tx,
+                conversationId: conversation[0].conversationId,
+                viewReason: "conversation_lifecycle_updated",
+                lifecycleCheckpointReason: "conversation_closed",
+                emitRealtimeEvent: true,
+            });
 
-        await scheduleConversationAnalysisRefresh({
-            db: tx,
-            conversationId: conversation[0].conversationId,
-            log,
-        });
+            await scheduleConversationAnalysisRefresh({
+                db: tx,
+                conversationId: conversation[0].conversationId,
+                log,
+            });
+        }
 
         await queueConversationSettingsUpdatedEvent({
             db: tx,
@@ -726,7 +794,19 @@ export async function closeConversation({
                 isClosed: true,
             },
         });
+        return true;
     });
+
+    if (!transitioned) {
+        return { success: false, reason: "already_closed" };
+    }
+    if (conversation[0].conversationType === "ranking") {
+        await scheduleRankingStatsRefresh({
+            valkey,
+            conversationId: conversation[0].conversationId,
+            conversationSlugId,
+        });
+    }
 
     return { success: true };
 }
@@ -735,30 +815,35 @@ interface OpenConversationProps {
     db: PostgresDatabase;
     conversationSlugId: string;
     userId: string;
+    valkey: Valkey | undefined;
 }
 
 export async function openConversation({
     db,
     conversationSlugId,
     userId,
+    valkey,
 }: OpenConversationProps): Promise<OpenConversationResponse> {
     // First, get the conversation to check permissions and current state
     const conversation = await db
         .select({
             conversationId: conversationTable.id,
             projectId: conversationTable.projectId,
-            isClosed: conversationTable.isClosed,
             isIndexed: conversationTable.isIndexed,
             participationMode: conversationTable.participationMode,
             requiresEventTicket: conversationTable.requiresEventTicket,
             aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
             preferredOpinionGroupCount:
                 polisConversationConfigTable.preferredOpinionGroupCount,
+            conversationType: conversationTable.conversationType,
         })
         .from(conversationTable)
         .leftJoin(
             polisConversationConfigTable,
-            eq(polisConversationConfigTable.id, conversationTable.polisConfigId),
+            eq(
+                polisConversationConfigTable.id,
+                conversationTable.polisConfigId,
+            ),
         )
         .where(eq(conversationTable.slugId, conversationSlugId))
         .limit(1);
@@ -778,22 +863,28 @@ export async function openConversation({
         return { success: false, reason: "not_allowed" };
     }
 
-    // Check if already open
-    if (!conversation[0].isClosed) {
-        return { success: false, reason: "already_open" };
-    }
-
-    await db.transaction(async (tx) => {
-        await tx
+    const transitioned = await db.transaction(async (tx) => {
+        const updatedRows = await tx
             .update(conversationTable)
             .set({ isClosed: false })
-            .where(eq(conversationTable.id, conversation[0].conversationId));
+            .where(
+                and(
+                    eq(conversationTable.id, conversation[0].conversationId),
+                    eq(conversationTable.isClosed, true),
+                ),
+            )
+            .returning({ id: conversationTable.id });
+        if (updatedRows.length === 0) {
+            return false;
+        }
 
-        await scheduleConversationAnalysisRefresh({
-            db: tx,
-            conversationId: conversation[0].conversationId,
-            log,
-        });
+        if (conversation[0].conversationType === "polis") {
+            await scheduleConversationAnalysisRefresh({
+                db: tx,
+                conversationId: conversation[0].conversationId,
+                log,
+            });
+        }
 
         await queueConversationSettingsUpdatedEvent({
             db: tx,
@@ -808,7 +899,20 @@ export async function openConversation({
                 isClosed: false,
             },
         });
+        return true;
     });
+
+    if (!transitioned) {
+        return { success: false, reason: "already_open" };
+    }
+
+    if (conversation[0].conversationType === "ranking") {
+        await scheduleRankingStatsRefresh({
+            valkey,
+            conversationId: conversation[0].conversationId,
+            conversationSlugId,
+        });
+    }
 
     return { success: true };
 }

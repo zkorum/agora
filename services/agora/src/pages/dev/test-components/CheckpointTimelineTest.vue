@@ -13,9 +13,21 @@
 
       <div class="control-panel">
         <div class="control-buttons">
-          <PrimeButton :label="t('smallSet')" size="small" @click="setCheckpointCount(4)" />
-          <PrimeButton :label="t('manySet')" size="small" @click="setCheckpointCount(40)" />
-          <PrimeButton :label="t('addCheckpoint')" size="small" @click="addCheckpoint" />
+          <PrimeButton
+            :label="t('smallSet')"
+            size="small"
+            @click="setCheckpointCount(4)"
+          />
+          <PrimeButton
+            :label="t('manySet')"
+            size="small"
+            @click="setCheckpointCount(40)"
+          />
+          <PrimeButton
+            :label="t('addCheckpoint')"
+            size="small"
+            @click="addCheckpoint"
+          />
           <PrimeButton
             :label="t('removeCheckpoint')"
             size="small"
@@ -60,7 +72,7 @@
 
       <div class="timeline-preview">
         <CheckpointTimeline
-          :checkpoints="checkpoints"
+          :checkpoints="checkpointTimelineItems"
           :selected-checkpoint-id="selectedCheckpointId"
           :is-live-selected="selectedCheckpointId === undefined"
           :is-live-paused="false"
@@ -84,6 +96,7 @@
 import Button from "primevue/button";
 import Card from "primevue/card";
 import type {
+  CheckpointTimelineItem,
   CheckpointTimelineReason,
   CheckpointTimelineReasonPayload,
 } from "src/components/post/analysis/CheckpointTimeline.types";
@@ -140,7 +153,9 @@ const checkpoints = computed<AnalysisCheckpoint[]>(() =>
     const id = 1000 + index;
     const activatedAt = new Date(baseTime.getTime() + index * 17 * 60 * 1000);
     const reasons = selectedReasons.value
-      .filter((_reason, reasonIndex) => index === 0 || (index + reasonIndex) % 2 === 0)
+      .filter(
+        (_reason, reasonIndex) => index === 0 || (index + reasonIndex) % 2 === 0
+      )
       .map((reason) => ({
         reason,
         groupCount:
@@ -149,13 +164,16 @@ const checkpoints = computed<AnalysisCheckpoint[]>(() =>
             ? 2 + (index % 5)
             : null,
         previousGroupCount:
-          reason === "default_group_count_changed" ? 2 + ((index + 4) % 5) : null,
+          reason === "default_group_count_changed"
+            ? 2 + ((index + 4) % 5)
+            : null,
         participantCount:
           reason === "major_participation_milestone" ? 20 + index * 3 : null,
         participantMilestone:
           reason === "major_participation_milestone" ? 20 + index * 3 : null,
         voteCount: reason === "major_vote_milestone" ? 100 + index * 50 : null,
-        voteMilestone: reason === "major_vote_milestone" ? 100 + index * 50 : null,
+        voteMilestone:
+          reason === "major_vote_milestone" ? 100 + index * 50 : null,
       }));
 
     const opinionCount = 10 + index;
@@ -181,15 +199,24 @@ const checkpoints = computed<AnalysisCheckpoint[]>(() =>
     };
   })
 );
+const checkpointTimelineItems = computed<CheckpointTimelineItem[]>(() =>
+  checkpoints.value.map((checkpoint) => ({
+    checkpointId: checkpoint.conversationViewSnapshotId,
+    activatedAt: checkpoint.activatedAt,
+    reasons: checkpoint.reasons,
+  }))
+);
 
 watch(checkpoints, (currentCheckpoints) => {
   if (
     selectedCheckpointId.value !== undefined &&
     !currentCheckpoints.some(
-      (checkpoint) => checkpoint.conversationViewSnapshotId === selectedCheckpointId.value
+      (checkpoint) =>
+        checkpoint.conversationViewSnapshotId === selectedCheckpointId.value
     )
   ) {
-    selectedCheckpointId.value = currentCheckpoints.at(-1)?.conversationViewSnapshotId;
+    selectedCheckpointId.value =
+      currentCheckpoints.at(-1)?.conversationViewSnapshotId;
   }
 });
 
@@ -214,7 +241,8 @@ function selectLive(): void {
 }
 
 function freezeLatest(): void {
-  selectedCheckpointId.value = checkpoints.value.at(-1)?.conversationViewSnapshotId;
+  selectedCheckpointId.value =
+    checkpoints.value.at(-1)?.conversationViewSnapshotId;
 }
 
 function formatReason(
@@ -226,13 +254,17 @@ function formatReason(
     case "first_group_count_available":
       return undefined;
     case "default_group_count_changed":
-      return reason.groupCount === null ? undefined : `${String(reason.groupCount)} groups`;
+      return reason.groupCount === null
+        ? undefined
+        : `${String(reason.groupCount)} groups`;
     case "major_participation_milestone":
       return reason.participantCount === null
         ? undefined
         : `${String(reason.participantCount)} participants`;
     case "major_vote_milestone":
-      return reason.voteCount === null ? undefined : `${String(reason.voteCount)} votes`;
+      return reason.voteCount === null
+        ? undefined
+        : `${String(reason.voteCount)} votes`;
     case "conversation_closed":
       return t("conversationClosed");
   }
@@ -240,7 +272,9 @@ function formatReason(
 
 function toggleReason(reason: CheckpointTimelineReason): void {
   selectedReasons.value = selectedReasons.value.includes(reason)
-    ? selectedReasons.value.filter((selectedReason) => selectedReason !== reason)
+    ? selectedReasons.value.filter(
+        (selectedReason) => selectedReason !== reason
+      )
     : [...selectedReasons.value, reason];
 }
 </script>

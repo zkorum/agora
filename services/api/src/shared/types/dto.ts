@@ -525,9 +525,19 @@ const zodProjectPageAttribution = z
 const zodProjectPageContact = z
     .object({
         firstName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
-        lastName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR).optional(),
+        lastName: z
+            .string()
+            .trim()
+            .min(1)
+            .max(MAX_LENGTH_NAME_CREATOR)
+            .optional(),
         roleLabel: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
-        affiliationName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR).optional(),
+        affiliationName: z
+            .string()
+            .trim()
+            .min(1)
+            .max(MAX_LENGTH_NAME_CREATOR)
+            .optional(),
         imageUrl: z.url().optional(),
         email: zodEmail.optional(),
         websiteUrl: zodHttpsUrl.optional(),
@@ -611,6 +621,7 @@ export class Dto {
         .strict();
     static analysisFrameKey = z
         .object({
+            mode: z.enum(["live", "checkpoint"]),
             conversationViewSnapshotId: z.number().int().positive(),
             analysisSnapshotId: z.number().int().positive(),
             candidateId: z.number().int().positive(),
@@ -793,9 +804,10 @@ export class Dto {
             conversationBody: zodConversationBodyInput,
             conversationBodyPlainText: zodConversationBodyPlainTextInput,
             projectSlug: zodProjectSlug.optional(),
-            languageSettingsSource: zodConversationLanguageSettingsSource.default(
-                "conversation_override",
-            ),
+            languageSettingsSource:
+                zodConversationLanguageSettingsSource.default(
+                    "conversation_override",
+                ),
             postAsOrganization: z.preprocess(
                 (val) => (val === "" || val === undefined ? undefined : val),
                 zodOrganizationSlug.optional(),
@@ -810,18 +822,24 @@ export class Dto {
     static createNewConversationRequest = z.discriminatedUnion(
         "conversationType",
         [
-            Dto.createNewConversationBaseRequest.extend({
-                conversationType: z.literal("polis"),
-                aiLabelingEnabled: z.boolean().default(true),
-                preferredOpinionGroupCount:
-                    zodPreferredOpinionGroupCount.default(null),
-                surveyConfig: zodSurveyConfig.nullable().optional(),
-            }).strict(),
-            Dto.createNewConversationBaseRequest.extend({
-                conversationType: z.literal("ranking"),
-                rankingMode: zodRankingMode,
-                externalSourceConfig: zodExternalSourceConfig.nullable().optional(),
-            }).strict(),
+            Dto.createNewConversationBaseRequest
+                .extend({
+                    conversationType: z.literal("polis"),
+                    aiLabelingEnabled: z.boolean().default(true),
+                    preferredOpinionGroupCount:
+                        zodPreferredOpinionGroupCount.default(null),
+                    surveyConfig: zodSurveyConfig.nullable().optional(),
+                })
+                .strict(),
+            Dto.createNewConversationBaseRequest
+                .extend({
+                    conversationType: z.literal("ranking"),
+                    rankingMode: zodRankingMode,
+                    externalSourceConfig: zodExternalSourceConfig
+                        .nullable()
+                        .optional(),
+                })
+                .strict(),
         ],
     );
     static createNewConversationResponse = z.discriminatedUnion("success", [
@@ -842,9 +860,10 @@ export class Dto {
         .object({
             polisUrl: zodPolisUrl,
             projectSlug: zodProjectSlug.optional(),
-            languageSettingsSource: zodConversationLanguageSettingsSource.default(
-                "conversation_override",
-            ),
+            languageSettingsSource:
+                zodConversationLanguageSettingsSource.default(
+                    "conversation_override",
+                ),
             postAsOrganization: z.preprocess(
                 (val) => (val === "" || val === undefined ? undefined : val),
                 zodOrganizationSlug.optional(),
@@ -882,9 +901,10 @@ export class Dto {
                 zodOrganizationSlug.optional(),
             ),
             projectSlug: zodProjectSlug.optional(),
-            languageSettingsSource: zodConversationLanguageSettingsSource.default(
-                "conversation_override",
-            ),
+            languageSettingsSource:
+                zodConversationLanguageSettingsSource.default(
+                    "conversation_override",
+                ),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
         })
@@ -1105,7 +1125,8 @@ export class Dto {
                 languageSetting: zodConversationLanguageSettingOutput,
                 multilingualSetting: zodConversationMultilingualSetting,
                 languageSettingsSource: zodConversationLanguageSettingsSource,
-                projectLanguageProject: zodConversationCreateProjectOption.optional(),
+                projectLanguageProject:
+                    zodConversationCreateProjectOption.optional(),
                 isIndexed: z.boolean(),
                 participationMode: zodParticipationMode,
                 requiresEventTicket: zodEventSlug.optional(),
@@ -1135,9 +1156,10 @@ export class Dto {
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
             multilingualSetting: zodConversationMultilingualSetting,
-            languageSettingsSource: zodConversationLanguageSettingsSource.default(
-                "conversation_override",
-            ),
+            languageSettingsSource:
+                zodConversationLanguageSettingsSource.default(
+                    "conversation_override",
+                ),
             requiresEventTicket: zodEventSlug.optional(),
             aiLabelingEnabled: z.boolean().optional(),
             preferredOpinionGroupCount:
@@ -1751,7 +1773,10 @@ export class Dto {
         })
         .strict()
         .superRefine((request, context) => {
-            if (request.body !== undefined && request.bodyPlainText === undefined) {
+            if (
+                request.body !== undefined &&
+                request.bodyPlainText === undefined
+            ) {
                 context.addIssue({
                     code: "custom",
                     message:
@@ -1768,7 +1793,10 @@ export class Dto {
                     (localization) => localization.languageCode,
                 ),
             );
-            for (const [index, localization] of request.contentLocalizations.entries()) {
+            for (const [
+                index,
+                localization,
+            ] of request.contentLocalizations.entries()) {
                 if (!targetLanguageCodes.has(localization.languageCode)) {
                     context.addIssue({
                         code: "custom",
@@ -2359,8 +2387,42 @@ export class Dto {
                 .or(z.literal("all"))
                 .optional()
                 .default("active"),
+            rankingStatsSnapshotId: z
+                .number()
+                .int()
+                .positive()
+                .max(2_147_483_647)
+                .optional(),
+            requestedRankingStatsSnapshotId: z
+                .number()
+                .int()
+                .positive()
+                .max(2_147_483_647)
+                .optional(),
         })
-        .strict();
+        .strict()
+        .superRefine((request, context) => {
+            if (
+                request.rankingStatsSnapshotId !== undefined &&
+                request.requestedRankingStatsSnapshotId !== undefined
+            ) {
+                context.addIssue({
+                    code: "custom",
+                    message:
+                        "Historical and live ranking snapshot selectors cannot be combined",
+                });
+            }
+            if (
+                request.rankingStatsSnapshotId !== undefined &&
+                request.lifecycleFilter !== "active"
+            ) {
+                context.addIssue({
+                    code: "custom",
+                    message:
+                        "Ranking checkpoints cannot be combined with a lifecycle filter",
+                });
+            }
+        });
     static maxdiffResultItem = z.object({
         itemSlugId: z.string(),
         displayContent: zodRankingItemDisplayedContent,
@@ -2373,6 +2435,55 @@ export class Dto {
     static maxdiffResultsResponse = z.object({
         rankings: z.array(Dto.maxdiffResultItem),
     });
+    static rankingStatsCheckpointsRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+            requestedRankingStatsSnapshotId: z
+                .number()
+                .int()
+                .positive()
+                .max(2_147_483_647)
+                .optional(),
+        })
+        .strict();
+    static rankingStatsCheckpointReason = z.discriminatedUnion("reason", [
+        z
+            .object({
+                reason: z.literal("major_participation_milestone"),
+                participantCount: z.number().int().nonnegative(),
+                participantMilestone: z.number().int().positive(),
+            })
+            .strict(),
+        z
+            .object({
+                reason: z.literal("major_vote_milestone"),
+                voteCount: z.number().int().nonnegative(),
+                voteMilestone: z.number().int().positive(),
+            })
+            .strict(),
+        z
+            .object({
+                reason: z.literal("conversation_closed"),
+            })
+            .strict(),
+    ]);
+    static rankingStatsCheckpoint = z
+        .object({
+            rankingStatsSnapshotId: z.number().int().positive(),
+            createdAt: zodDateTimeFlexible,
+            itemCount: z.number().int().nonnegative(),
+            voteCount: z.number().int().nonnegative(),
+            participantCount: z.number().int().nonnegative(),
+            totalItemCount: z.number().int().nonnegative(),
+            totalVoteCount: z.number().int().nonnegative(),
+            totalParticipantCount: z.number().int().nonnegative(),
+            isClosed: z.boolean(),
+            reasons: z.array(Dto.rankingStatsCheckpointReason),
+        })
+        .strict();
+    static rankingStatsCheckpointsResponse = z.array(
+        Dto.rankingStatsCheckpoint,
+    );
     // MaxDiff item CRUD
     static maxdiffItemsFetchRequest = z
         .object({
@@ -2816,6 +2927,12 @@ export type MaxDiffSaveRequest = z.infer<typeof Dto.maxdiffSaveRequest>;
 export type MaxDiffLoadResponse = z.infer<typeof Dto.maxdiffLoadResponse>;
 export type MaxDiffResultItem = z.infer<typeof Dto.maxdiffResultItem>;
 export type MaxDiffResultsResponse = z.infer<typeof Dto.maxdiffResultsResponse>;
+export type RankingStatsCheckpointsResponse = z.infer<
+    typeof Dto.rankingStatsCheckpointsResponse
+>;
+export type RankingStatsCheckpointReason = z.infer<
+    typeof Dto.rankingStatsCheckpointReason
+>;
 export type MaxDiffSaveResponse = z.infer<typeof Dto.maxdiffSaveResponse>;
 export type MaxDiffItem = z.infer<typeof Dto.maxdiffItem>;
 export type MaxDiffItemsFetchResponse = z.infer<

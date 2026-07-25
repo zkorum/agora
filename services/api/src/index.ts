@@ -100,6 +100,7 @@ import {
     saveMaxdiffResult,
     loadMaxdiffResult,
     getMaxdiffResults,
+    fetchRankingStatsCheckpoints,
     computeGlobalUncertainty,
 } from "./service/maxdiff.js";
 import { generateCandidateSets } from "./service/maxdiffRouting.js";
@@ -2675,7 +2676,29 @@ server.after(() => {
                 conversationSlugId: request.body.conversationSlugId,
                 displayPreferences,
                 lifecycleFilter: request.body.lifecycleFilter,
+                rankingStatsSnapshotId: request.body.rankingStatsSnapshotId,
+                requestedRankingStatsSnapshotId:
+                    request.body.requestedRankingStatsSnapshotId,
                 valkey: queueValkeyRef.current,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/ranking/bws/stats/checkpoints`,
+        schema: {
+            body: Dto.rankingStatsCheckpointsRequest,
+            response: {
+                200: Dto.rankingStatsCheckpointsResponse,
+            },
+        },
+        handler: async (request) => {
+            return await fetchRankingStatsCheckpoints({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                requestedRankingStatsSnapshotId:
+                    request.body.requestedRankingStatsSnapshotId,
             });
         },
     });
@@ -3283,6 +3306,7 @@ server.after(() => {
                 db: db,
                 conversationSlugId: request.body.conversationSlugId,
                 userId: deviceStatus.userId,
+                valkey: queueValkeyRef.current,
             });
         },
     });
@@ -3308,6 +3332,7 @@ server.after(() => {
                 db: db,
                 conversationSlugId: request.body.conversationSlugId,
                 userId: deviceStatus.userId,
+                valkey: queueValkeyRef.current,
             });
         },
     });
@@ -3424,6 +3449,7 @@ server.after(() => {
                 autoProvisionedDefaultLanguage,
                 isImporting: false,
                 googleCloudCredentials,
+                valkey: queueValkeyRef.current,
             });
 
             if (!createResult.success) {

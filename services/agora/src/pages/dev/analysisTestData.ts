@@ -57,13 +57,7 @@ export const mockStatements = [
 
 export const polisKeys: PolisKey[] = ["0", "1", "2", "3", "4", "5"];
 
-const fixedAnalysisViews = [
-  "2",
-  "3",
-  "4",
-  "5",
-  "6",
-] satisfies AnalysisView[];
+const fixedAnalysisViews = ["2", "3", "4", "5", "6"] satisfies AnalysisView[];
 
 export const surveySuppressionThreshold = 5;
 
@@ -106,21 +100,24 @@ function buildMockAnalysisOpinion({
     opinionSlugId: `mock-op-${suffix}-${String(index)}`,
     createdAt: new Date("2026-01-01T00:00:00Z"),
     updatedAt: new Date("2026-01-01T00:00:00Z"),
-    opinion: `${getStatement({ index })}${suffixText}`,
-    sourceLanguageCode: null,
-    displayContent: {
-      sourceVersion: "00000000-0000-4000-8000-000000000001",
-      status: "available",
-      mode: "original",
-      content: { content: `${getStatement({ index })}${suffixText}` },
-      translationControl: null,
+    content: {
+      status: "visible",
+      html: `${getStatement({ index })}${suffixText}`,
+      sourceLanguageCode: null,
+      displayContent: {
+        sourceVersion: "00000000-0000-4000-8000-000000000001",
+        status: "available",
+        mode: "original",
+        content: { content: `${getStatement({ index })}${suffixText}` },
+        translationControl: null,
+      },
+      moderation: { status: "unmoderated" },
     },
     numParticipants: participantCount,
     numAgrees: Math.floor(participantCount * 0.62),
     numDisagrees: Math.floor(participantCount * 0.25),
     numPasses: Math.floor(participantCount * 0.13),
     username: `dev-user-${String(index + 1)}`,
-    moderation: { status: "unmoderated" },
     isSeed: false,
     clustersStats: buildMockClusterStats({ clusterCount }),
     groupAwareConsensusAgree: 0.6 + index * 0.01,
@@ -214,6 +211,7 @@ function getMockAnalysisResolvedBy(
 
 function buildMockAnalysisFrameKey(groupCount: number): AnalysisFrameKey {
   return {
+    mode: "live",
     conversationViewSnapshotId: 100,
     analysisSnapshotId: 10,
     candidateId: groupCount,

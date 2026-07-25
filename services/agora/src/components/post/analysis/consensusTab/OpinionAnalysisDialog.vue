@@ -27,7 +27,9 @@
               :opinion-item="opinionItem"
               :post-slug-id="props.conversationSlugId"
               :conversation-author-username="props.conversationAuthorUsername"
-              :conversation-organization-name="props.conversationOrganizationName"
+              :conversation-organization-name="
+                props.conversationOrganizationName
+              "
               :compact-mode="false"
               :enable-links="true"
             />
@@ -167,7 +169,11 @@
 
           <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
           <!-- View original comment link should be keyboard accessible for users with motor disabilities -->
-          <div class="view-original" @click="viewOriginalComment">
+          <div
+            v-if="opinionItem.content.status === 'visible'"
+            class="view-original"
+            @click="viewOriginalComment"
+          >
             {{ t("viewOriginal") }}
           </div>
         </div>
@@ -251,10 +257,7 @@ const shouldShowGroupStats = computed(() => {
 
 async function viewOriginalComment() {
   showDialog.value = false;
-  await openComment(
-    props.conversationSlugId,
-    props.opinionItem.opinionSlugId
-  );
+  await openComment(props.conversationSlugId, props.opinionItem.opinionSlugId);
 }
 </script>
 

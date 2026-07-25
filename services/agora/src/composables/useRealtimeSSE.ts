@@ -7,6 +7,7 @@ import {
   type SSEContentTranslationUpdatedData,
   type SSEConversationAnalysisUpdatedData,
   type SSEConversationCommentStatsUpdatedData,
+  type SSEConversationRankingStatsUpdatedData,
   type SSEConversationSettingsUpdatedData,
   zodSSEEventDataByType,
 } from "src/shared/types/dto";
@@ -34,7 +35,11 @@ import {
   getProjectContentQueryKey,
 } from "src/utils/api/contentTranslation/useContentTranslationQueries";
 import { getErrorLogContext } from "src/utils/api/errorLog";
-import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
+import { retainConversationRankingStatsUpdate } from "src/utils/api/post/rankingStatsUpdate";
+import {
+  applyConversationRankingStatsUpdate,
+  updateConversationQueryCache,
+} from "src/utils/api/post/useConversationQuery";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { processEnv } from "src/utils/processEnv";
 import { abortIgnoringAbortError } from "src/utils/sse/abort";
@@ -165,6 +170,29 @@ function isAnalysisCheckpointsQueryKey({
 }): boolean {
   return (
     queryKey[0] === "analysisCheckpoints" && queryKey[1] === conversationSlugId
+  );
+}
+
+function isConversationQueryKey({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return queryKey[0] === "conversation" && queryKey[1] === conversationSlugId;
+}
+
+function isRankingCheckpointsQueryKey({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return (
+    queryKey[0] === "ranking-stats-checkpoints" &&
+    queryKey[1] === conversationSlugId
   );
 }
 
@@ -308,7 +336,7 @@ export function useRealtimeSSE({
     string,
     number
   >();
-  const latestCommentStatsEventTimestampByConversationSlugId = new Map<
+  const latestStatsEventTimestampByConversationSlugId = new Map<
     string,
     number
   >();
@@ -444,7 +472,7 @@ export function useRealtimeSSE({
       }
 
       setNetworkOffline(false);
-      refreshActiveConversationQueriesAfterReconnect({
+      void refreshActiveConversationQueriesAfterReconnect({
         conversationSlugId: getSubscribedConversationSlugId(),
       });
 
@@ -655,6 +683,20 @@ export function useRealtimeSSE({
       case "conversation_comment_stats_updated": {
         const result =
           zodSSEEventDataByType.conversation_comment_stats_updated.safeParse(
+            rawData
+          );
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return {
+          id: frame.id,
+          event: { event: frame.event, data: result.data },
+        };
+      }
+      case "conversation_ranking_stats_updated": {
+        const result =
+          zodSSEEventDataByType.conversation_ranking_stats_updated.safeParse(
             rawData
           );
         if (!result.success) {
@@ -942,6 +984,10 @@ export function useRealtimeSSE({
         }
         case "conversation_comment_stats_updated": {
           updateCommentStatsFromEvent(sseEvent.data);
+          break;
+        }
+        case "conversation_ranking_stats_updated": {
+          updateRankingStatsFromEvent(sseEvent.data);
           break;
         }
         case "popular_conversation": {
@@ -1376,18 +1422,9 @@ export function useRealtimeSSE({
   function updateCommentStatsFromEvent(
     data: SSEConversationCommentStatsUpdatedData
   ): void {
-    const previousTimestamp =
-      latestCommentStatsEventTimestampByConversationSlugId.get(
-        data.conversationSlugId
-      );
-    if (previousTimestamp !== undefined && previousTimestamp > data.timestamp) {
+    if (!recordConversationStatsEventTimestamp(data)) {
       return;
     }
-
-    latestCommentStatsEventTimestampByConversationSlugId.set(
-      data.conversationSlugId,
-      data.timestamp
-    );
 
     const stats: FetchCommentStatsResponse = {
       conversationViewSnapshotId: data.conversationViewSnapshotId,
@@ -1440,6 +1477,50 @@ export function useRealtimeSSE({
     });
 
     updateVotedVisibleOpinionCountsFromEvent(data);
+  }
+
+  function recordConversationStatsEventTimestamp(data: {
+    conversationSlugId: string;
+    timestamp: number;
+  }): boolean {
+    const previousTimestamp = latestStatsEventTimestampByConversationSlugId.get(
+      data.conversationSlugId
+    );
+    if (previousTimestamp !== undefined && previousTimestamp > data.timestamp) {
+      return false;
+    }
+    latestStatsEventTimestampByConversationSlugId.set(
+      data.conversationSlugId,
+      data.timestamp
+    );
+    return true;
+  }
+
+  function updateRankingStatsFromEvent(
+    data: SSEConversationRankingStatsUpdatedData
+  ): void {
+    if (!retainConversationRankingStatsUpdate({ queryClient, data })) {
+      if (data.checkpointChanged) {
+        void queryClient.invalidateQueries({
+          queryKey: ["ranking-stats-checkpoints", data.conversationSlugId],
+        });
+      }
+      return;
+    }
+
+    updateConversationQueryCache({
+      queryClient,
+      conversationSlugId: data.conversationSlugId,
+      updateConversation: (conversation) =>
+        applyConversationRankingStatsUpdate({ conversation, data }),
+    });
+
+    if (data.checkpointChanged) {
+      void queryClient.invalidateQueries({
+        queryKey: ["ranking-stats-checkpoints", data.conversationSlugId],
+      });
+    }
+
   }
 
   function updateVotedVisibleOpinionCountsFromEvent(
@@ -1503,19 +1584,31 @@ export function useRealtimeSSE({
     );
   }
 
-  function refreshActiveConversationQueriesAfterReconnect({
+  async function refreshActiveConversationQueriesAfterReconnect({
     conversationSlugId,
   }: {
     conversationSlugId: string | undefined;
-  }): void {
+  }): Promise<void> {
     if (conversationSlugId === undefined) {
       return;
     }
 
-    void queryClient.refetchQueries({
+    await queryClient.refetchQueries({
       predicate: (query) =>
         query.isActive() &&
-        (isAnalysisCheckpointsQueryKey({
+        isConversationQueryKey({
+          queryKey: query.queryKey,
+          conversationSlugId,
+        }),
+    });
+    await queryClient.refetchQueries({
+      predicate: (query) =>
+        query.isActive() &&
+        (isRankingCheckpointsQueryKey({
+          queryKey: query.queryKey,
+          conversationSlugId,
+        }) ||
+          isAnalysisCheckpointsQueryKey({
           queryKey: query.queryKey,
           conversationSlugId,
         }) ||

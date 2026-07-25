@@ -25,7 +25,10 @@
       :name="iconCode"
       size="1rem"
     />
-    <AnimatedAmountText v-if="amount !== undefined" :amount="amount" />
+    <AnimatedAmountText
+      v-if="!isLoading && amount !== undefined"
+      :amount="amount"
+    />
     <span v-else-if="text !== undefined" :style="{ paddingBottom: '0' }">
       {{ text }}
     </span>
@@ -54,7 +57,10 @@
       :name="iconCode"
       size="1rem"
     />
-    <AnimatedAmountText v-if="amount !== undefined" :amount="amount" />
+    <AnimatedAmountText
+      v-if="!isLoading && amount !== undefined"
+      :amount="amount"
+    />
     <span v-else-if="text !== undefined" :style="{ paddingBottom: '0' }">
       {{ text }}
     </span>

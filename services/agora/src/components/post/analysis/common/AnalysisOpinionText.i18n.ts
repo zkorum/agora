@@ -1,7 +1,8 @@
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface AnalysisOpinionTextTranslations {
-  hiddenModeratedStatement: string;
+  deletedStatement: string;
+  moderatedStatement: string;
 }
 
 export const analysisOpinionTextTranslations: Record<
@@ -9,36 +10,47 @@ export const analysisOpinionTextTranslations: Record<
   AnalysisOpinionTextTranslations
 > = {
   en: {
-    hiddenModeratedStatement: "[moderated]",
+    deletedStatement: "[deleted]",
+    moderatedStatement: "[moderated]",
   },
   ar: {
-    hiddenModeratedStatement: "[خاضعة للإشراف]",
+    deletedStatement: "[محذوفة]",
+    moderatedStatement: "[خاضعة للإشراف]",
   },
   es: {
-    hiddenModeratedStatement: "[moderada]",
+    deletedStatement: "[eliminada]",
+    moderatedStatement: "[moderada]",
   },
   fa: {
-    hiddenModeratedStatement: "[مدیریت‌شده]",
+    deletedStatement: "[حذف‌شده]",
+    moderatedStatement: "[مدیریت‌شده]",
   },
   fr: {
-    hiddenModeratedStatement: "[modérée]",
+    deletedStatement: "[supprimée]",
+    moderatedStatement: "[modérée]",
   },
   "zh-Hans": {
-    hiddenModeratedStatement: "[已审核]",
+    deletedStatement: "[已删除]",
+    moderatedStatement: "[已审核]",
   },
   "zh-Hant": {
-    hiddenModeratedStatement: "[已審核]",
+    deletedStatement: "[已刪除]",
+    moderatedStatement: "[已審核]",
   },
   he: {
-    hiddenModeratedStatement: "[עבר מודרציה]",
+    deletedStatement: "[נמחקה]",
+    moderatedStatement: "[עבר מודרציה]",
   },
   ja: {
-    hiddenModeratedStatement: "[モデレート済み]",
+    deletedStatement: "[削除済み]",
+    moderatedStatement: "[モデレート済み]",
   },
   ky: {
-    hiddenModeratedStatement: "[модерацияланган]",
+    deletedStatement: "[өчүрүлгөн]",
+    moderatedStatement: "[модерацияланган]",
   },
   ru: {
-    hiddenModeratedStatement: "[модерировано]",
+    deletedStatement: "[удалено]",
+    moderatedStatement: "[модерировано]",
   },
 };

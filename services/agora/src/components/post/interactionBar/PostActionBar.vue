@@ -21,21 +21,25 @@
       <div class="rightSection">
         <ZKButton
           button-type="compactButton"
+          :disable="isLoading"
           @click.stop.prevent="showVoteBreakdown = true"
         >
           <div class="countContentContainer">
             <ZKIcon color="#7D7A85" name="mdi:vote" size="1rem" />
-            <AnimatedAmountText :amount="voteCount" />
+            <q-spinner v-if="isLoading" color="#7D7A85" size="1rem" />
+            <AnimatedAmountText v-else :amount="voteCount" />
           </div>
         </ZKButton>
 
         <ZKButton
           button-type="compactButton"
+          :disable="isLoading"
           @click.stop.prevent="showParticipantBreakdown = true"
         >
           <div class="countContentContainer">
             <ZKIcon color="#7D7A85" name="ph:users-fill" size="1rem" />
-            <AnimatedAmountText :amount="participantCount" />
+            <q-spinner v-if="isLoading" color="#7D7A85" size="1rem" />
+            <AnimatedAmountText v-else :amount="participantCount" />
           </div>
         </ZKButton>
 
@@ -66,7 +70,7 @@
       :total-count="totalVoteCount"
       :analysis-count="voteCount"
       :total-label="t('totalVotes')"
-      :analysis-label="t('usedForAnalysis')"
+      :analysis-label="countScopeLabel"
       :explanation-text="votesExplanation"
     />
 
@@ -75,7 +79,7 @@
       :total-count="totalParticipantCount"
       :analysis-count="participantCount"
       :total-label="t('totalParticipants')"
-      :analysis-label="t('usedForAnalysis')"
+      :analysis-label="countScopeLabel"
       :explanation-text="participantsExplanation"
     />
 
@@ -152,6 +156,9 @@ const isMaxDiffConversation = computed(
   () =>
     props.conversationTypeConfig.conversationType === "ranking" &&
     props.conversationTypeConfig.rankingMode === "bws"
+);
+const countScopeLabel = computed(() =>
+  isMaxDiffConversation.value ? t("usedForRanking") : t("usedForAnalysis")
 );
 
 const votesExplanation = computed(() => {

@@ -16,6 +16,7 @@ import {
     check,
     smallint,
     real,
+    bigint,
     serial,
     foreignKey,
 } from "drizzle-orm/pg-core";
@@ -837,6 +838,15 @@ export const conversationViewSnapshotCheckpointReasonEnum = pgEnum(
         "first_displayable_analysis",
         "first_group_count_available",
         "default_group_count_changed",
+        "major_participation_milestone",
+        "major_vote_milestone",
+        "conversation_closed",
+    ],
+);
+
+export const rankingStatsCheckpointReasonEnum = pgEnum(
+    "ranking_stats_checkpoint_reason_enum",
+    [
         "major_participation_milestone",
         "major_vote_milestone",
         "conversation_closed",
@@ -2032,6 +2042,22 @@ export const rankingConversationConfigTable = pgTable(
             .references((): AnyPgColumn => rankingScoreTable.id)
             .unique(),
         externalSourceConfig: jsonb("external_source_config"),
+        itemCount: integer("item_count").notNull().default(0),
+        totalItemCount: integer("total_item_count").notNull().default(0),
+        voteCount: integer("vote_count").notNull().default(0),
+        totalVoteCount: integer("total_vote_count").notNull().default(0),
+        participantCount: integer("participant_count").notNull().default(0),
+        totalParticipantCount: integer("total_participant_count")
+            .notNull()
+            .default(0),
+        scoringInputRevision: bigint("scoring_input_revision", { mode: "number" })
+            .notNull()
+            .default(0),
+        processedScoringInputRevision: bigint("processed_scoring_input_revision", {
+            mode: "number",
+        })
+            .notNull()
+            .default(-1),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -2045,6 +2071,12 @@ export const rankingConversationConfigTable = pgTable(
             .defaultNow()
             .notNull(),
     },
+    (table) => [
+        check(
+            "ranking_conversation_config_counts_check",
+            sql`${table.itemCount} >= 0 AND ${table.itemCount} <= ${table.totalItemCount} AND ${table.voteCount} >= 0 AND ${table.voteCount} <= ${table.totalVoteCount} AND ${table.participantCount} >= 0 AND ${table.participantCount} <= ${table.totalParticipantCount} AND ${table.scoringInputRevision} >= 0 AND ${table.processedScoringInputRevision} >= -1 AND ${table.processedScoringInputRevision} <= ${table.scoringInputRevision}`,
+        ),
+    ],
 );
 
 /** @service scoring-worker, api, shared-analysis-worker, import-worker, content-translation-worker */
@@ -2274,6 +2306,10 @@ export const rankingItemTable = pgTable(
             .notNull(),
     },
     (table) => [
+        unique("ranking_item_id_conversation_unique").on(
+            table.id,
+            table.conversationId,
+        ),
         index("ranking_item_conversation_active_idx").on(
             table.conversationId,
             table.currentContentId,
@@ -2293,7 +2329,7 @@ export const rankingItemTable = pgTable(
     ],
 );
 
-/** @service api */
+/** @service api, scoring-worker */
 export const rankingItemExternalSourceTable = pgTable(
     "ranking_item_external_source",
     {
@@ -4561,7 +4597,7 @@ export const conversationViewSnapshotTable = pgTable(
     ],
 );
 
-/** @service api, shared-analysis-worker, content-translation-worker */
+/** @service api, shared-analysis-worker, content-translation-worker, scoring-worker */
 export const realtimeEventOutboxTable = pgTable(
     "realtime_event_outbox",
     {
@@ -4582,6 +4618,9 @@ export const realtimeEventOutboxTable = pgTable(
             .where(
                 sql`${t.eventType} IN ('conversation_analysis_updated', 'conversation_settings_updated')`,
             ),
+        index("realtime_event_outbox_ranking_replay_idx")
+            .using("btree", sql`(${t.payload}->>'conversationSlugId')`, t.id)
+            .where(sql`${t.eventType} = 'conversation_ranking_stats_updated'`),
     ],
 );
 
@@ -5119,6 +5158,145 @@ export const rankingScoreTable = pgTable("ranking_score", {
         .defaultNow()
         .notNull(),
 });
+
+/** @service scoring-worker, api */
+export const rankingConversationStatsSnapshotTable = pgTable(
+    "ranking_conversation_stats_snapshot",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        conversationId: integer("conversation_id")
+            .notNull()
+            .references(() => conversationTable.id),
+        itemCount: integer("item_count").notNull(),
+        totalItemCount: integer("total_item_count").notNull(),
+        voteCount: integer("vote_count").notNull(),
+        totalVoteCount: integer("total_vote_count").notNull(),
+        participantCount: integer("participant_count").notNull(),
+        totalParticipantCount: integer("total_participant_count").notNull(),
+        scoringInputRevision: bigint("scoring_input_revision", {
+            mode: "number",
+        }).notNull(),
+        isClosed: boolean("is_closed").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("ranking_stats_snapshot_id_conversation_unique").on(
+            table.id,
+            table.conversationId,
+        ),
+        index("ranking_conversation_stats_snapshot_latest_idx").using(
+            "btree",
+            table.conversationId,
+            sql`${table.createdAt} DESC`,
+            sql`${table.id} DESC`,
+        ),
+        check(
+            "ranking_conversation_stats_snapshot_counts_check",
+            sql`${table.itemCount} >= 0 AND ${table.itemCount} <= ${table.totalItemCount} AND ${table.voteCount} >= 0 AND ${table.voteCount} <= ${table.totalVoteCount} AND ${table.participantCount} >= 0 AND ${table.participantCount} <= ${table.totalParticipantCount} AND ${table.scoringInputRevision} >= 0`,
+        ),
+    ],
+);
+
+/** @service scoring-worker, api */
+export const rankingConversationStatsItemTable = pgTable(
+    "ranking_conversation_stats_item",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        statsSnapshotId: integer("stats_snapshot_id").notNull(),
+        conversationId: integer("conversation_id").notNull(),
+        rankingItemId: integer("ranking_item_id").notNull(),
+        rankingItemContentId: integer("ranking_item_content_id")
+            .notNull(),
+        lifecycleStatus:
+            rankingItemLifecycleStatusEnum("lifecycle_status").notNull(),
+        score: real("score"),
+        rank: integer("rank"),
+        participantCount: integer("participant_count").notNull(),
+        externalUrl: text("external_url"),
+    },
+    (table) => [
+        foreignKey({
+            columns: [table.statsSnapshotId, table.conversationId],
+            foreignColumns: [
+                rankingConversationStatsSnapshotTable.id,
+                rankingConversationStatsSnapshotTable.conversationId,
+            ],
+            name: "ranking_stats_item_snapshot_conversation_fk",
+        }),
+        foreignKey({
+            columns: [table.rankingItemId, table.conversationId],
+            foreignColumns: [rankingItemTable.id, rankingItemTable.conversationId],
+            name: "ranking_stats_item_item_conversation_fk",
+        }),
+        foreignKey({
+            columns: [table.rankingItemContentId, table.rankingItemId],
+            foreignColumns: [rankingItemContentTable.id, rankingItemContentTable.rankingItemId],
+            name: "ranking_stats_item_content_item_fk",
+        }),
+        uniqueIndex("ranking_stats_item_snapshot_item_unique").on(
+            table.statsSnapshotId,
+            table.rankingItemId,
+        ),
+        check(
+            "ranking_stats_item_score_rank_check",
+            sql`((${table.score} IS NULL AND ${table.rank} IS NULL) OR (${table.score} IS NOT NULL AND ${table.rank} IS NOT NULL AND ${table.score} >= 0 AND ${table.score} <= 1 AND ${table.rank} > 0))`,
+        ),
+        check(
+            "ranking_stats_item_participant_count_check",
+            sql`${table.participantCount} >= 0`,
+        ),
+    ],
+);
+
+/** @service scoring-worker, api */
+export const rankingConversationStatsCheckpointTable = pgTable(
+    "ranking_conversation_stats_checkpoint",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        statsSnapshotId: integer("stats_snapshot_id").notNull(),
+        conversationId: integer("conversation_id").notNull(),
+        reason: rankingStatsCheckpointReasonEnum("reason").notNull(),
+        participantMilestone: integer("participant_milestone"),
+        voteMilestone: integer("vote_milestone"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        foreignKey({
+            columns: [table.statsSnapshotId, table.conversationId],
+            foreignColumns: [
+                rankingConversationStatsSnapshotTable.id,
+                rankingConversationStatsSnapshotTable.conversationId,
+            ],
+            name: "ranking_stats_checkpoint_snapshot_conversation_fk",
+        }),
+        index("ranking_stats_checkpoint_snapshot_idx").on(
+            table.statsSnapshotId,
+        ),
+        uniqueIndex("ranking_stats_checkpoint_participant_unique")
+            .on(table.conversationId, table.participantMilestone)
+            .where(sql`${table.reason} = 'major_participation_milestone'`),
+        uniqueIndex("ranking_stats_checkpoint_vote_unique")
+            .on(table.conversationId, table.voteMilestone)
+            .where(sql`${table.reason} = 'major_vote_milestone'`),
+        uniqueIndex("ranking_stats_checkpoint_closed_unique")
+            .on(table.statsSnapshotId)
+            .where(sql`${table.reason} = 'conversation_closed'`),
+        check(
+            "ranking_stats_checkpoint_milestone_check",
+            sql`((${table.reason} = 'major_participation_milestone' AND ${table.participantMilestone} IS NOT NULL AND ${table.voteMilestone} IS NULL AND ${table.participantMilestone} > 0) OR (${table.reason} = 'major_vote_milestone' AND ${table.participantMilestone} IS NULL AND ${table.voteMilestone} IS NOT NULL AND ${table.voteMilestone} > 0) OR (${table.reason} = 'conversation_closed' AND ${table.participantMilestone} IS NULL AND ${table.voteMilestone} IS NULL))`,
+        ),
+    ],
+);
 
 // Canonical raw entity-level scores for one ranking_score computation.
 // The JSONB `scores` column on ranking_score is kept as a backup blob.

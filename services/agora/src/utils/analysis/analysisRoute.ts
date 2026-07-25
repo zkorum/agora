@@ -1,6 +1,10 @@
 import type { AnalysisView } from "src/shared/types/zod";
 import { zodAnalysisView } from "src/shared/types/zod";
-import type { LocationQuery, LocationQueryRaw, LocationQueryValue } from "vue-router";
+import type {
+  LocationQuery,
+  LocationQueryRaw,
+  LocationQueryValue,
+} from "vue-router";
 
 function getSingleQueryValue(
   value: LocationQueryValue | LocationQueryValue[] | undefined
@@ -27,13 +31,18 @@ export function parseCheckpointQuery({
 }: {
   query: LocationQuery;
 }): number | undefined {
-  const value = getSingleQueryValue(query.checkpoint);
-  if (value === undefined) {
+  const value = query.checkpoint;
+  if (
+    value === undefined ||
+    value === null ||
+    Array.isArray(value) ||
+    !/^[1-9]\d*$/.test(value)
+  ) {
     return undefined;
   }
 
-  const parsed = Number.parseInt(value, 10);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 export function getUpdatedAnalysisRouteQuery({

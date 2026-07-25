@@ -575,6 +575,13 @@
       "when": 1783464468255,
       "tag": "0081_abnormal_puff_adder",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1784995853129,
+      "tag": "0082_fair_switch",
+      "breakpoints": true
     }
   ]
 }

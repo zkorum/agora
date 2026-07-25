@@ -1,5 +1,32 @@
 <template>
   <div class="container flexStyle">
+    <PageLoadingSpinner
+      v-if="checkpointsQuery.isPending.value && !hasCheckpointData"
+    />
+    <ErrorRetryBlock
+      v-else-if="hasBlockingCheckpointError"
+      :title="t('loadingError')"
+      :retry-label="t('retryButton')"
+      @retry="retryFetchCheckpoints"
+    />
+    <CheckpointTimeline
+      v-else
+      :checkpoints="checkpointTimelineItems"
+      :selected-checkpoint-id="selectedCheckpointId"
+      :is-live-selected="selectedCheckpointId === undefined"
+      :is-live-paused="selectedCheckpointId !== undefined"
+      :is-latest-checkpoint-live="isLatestCheckpointLive"
+      :is-live-closed="props.conversationData.metadata.isClosed"
+      :title="tAnalysis('checkpointTimelineLabel')"
+      :start-label="tAnalysis('checkpointTimelineStart')"
+      :now-label="timelineLiveLabel"
+      :previous-label="tAnalysis('previousCheckpoint')"
+      :next-label="tAnalysis('nextCheckpoint')"
+      :format-reason="formatCheckpointReason"
+      @select-checkpoint="selectCheckpoint"
+      @select-live="selectLive"
+    />
+
     <ShortcutBar
       :model-value="currentTab"
       :items="maxdiffTabItems"
@@ -10,7 +37,9 @@
     />
 
     <!-- Loading (initial results fetch) -->
-    <PageLoadingSpinner v-if="isInitialLoading" />
+    <PageLoadingSpinner
+      v-if="isInitialLoading && !hasBlockingCheckpointError"
+    />
 
     <!-- Error -->
     <ErrorRetryBlock
@@ -20,7 +49,7 @@
       @retry="retryFetchResults"
     />
 
-    <template v-else>
+    <template v-else-if="!hasBlockingCheckpointError">
       <!-- Me section (above community ranking in Summary) -->
       <div
         v-if="currentTab === 'Summary' || currentTab === 'Me'"
@@ -60,7 +89,10 @@
 
       <!-- Completed items -->
       <div
-        v-if="hasLifecycleTabs && (currentTab === 'Summary' || currentTab === 'Completed')"
+        v-if="
+          hasLifecycleTabs &&
+          (currentTab === 'Summary' || currentTab === 'Completed')
+        "
         class="tabComponent"
       >
         <MaxDiffItemListSection
@@ -80,7 +112,10 @@
 
       <!-- Canceled items -->
       <div
-        v-if="hasLifecycleTabs && (currentTab === 'Summary' || currentTab === 'Canceled')"
+        v-if="
+          hasLifecycleTabs &&
+          (currentTab === 'Summary' || currentTab === 'Canceled')
+        "
         class="tabComponent"
       >
         <MaxDiffItemListSection
@@ -101,13 +136,21 @@
 
     <!-- Learn more dialog -->
     <q-dialog v-model="showInfoDialog" position="bottom">
-      <ZKBottomDialogContainer :title="learnMoreContext === 'community' ? t('title') : t('meTitle')">
+      <ZKBottomDialogContainer
+        :title="learnMoreContext === 'community' ? t('title') : t('meTitle')"
+      >
         <div class="learn-more-content">
           <template v-if="learnMoreContext === 'community'">
             <p>{{ t("communityLearnMoreHow") }}</p>
             <p>{{ t("communityLearnMoreCocm") }}</p>
             <p>{{ t("communityLearnMoreDiversity") }}</p>
-            <p>{{ hasLifecycleTabs ? t("communityLearnMoreSourceGitHub") : t("communityLearnMoreSourceManual") }}</p>
+            <p>
+              {{
+                hasLifecycleTabs
+                  ? t("communityLearnMoreSourceGitHub")
+                  : t("communityLearnMoreSourceManual")
+              }}
+            </p>
             <p class="learn-more-reference">
               {{ t("communityLearnMoreReference") }}
               <a
@@ -115,21 +158,24 @@
                 target="_blank"
                 rel="noopener noreferrer"
                 class="learn-more-link"
-              >Solidago</a>
+                >Solidago</a
+              >
               ·
               <a
                 href="https://en.wikipedia.org/wiki/Best%E2%80%93worst_scaling"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="learn-more-link"
-              >Best-Worst Scaling</a>
+                >Best-Worst Scaling</a
+              >
               ·
               <a
                 href="https://ssrn.com/abstract=4311507"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="learn-more-link"
-              >COCM</a>
+                >COCM</a
+              >
             </p>
           </template>
           <template v-else>
@@ -161,25 +207,56 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import {
+  type AnalysisPageTranslations,
+  analysisPageTranslations,
+} from "src/components/post/analysis/AnalysisPage.i18n";
+import type { CheckpointTimelineItem } from "src/components/post/analysis/CheckpointTimeline.types";
+import CheckpointTimeline from "src/components/post/analysis/CheckpointTimeline.vue";
 import ShortcutBar from "src/components/post/analysis/shortcutBar/ShortcutBar.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import type { ConversationActionBarStats } from "src/composables/conversation/useConversationActionBarStats";
 import type { RegisterChildRefreshHandler } from "src/composables/conversation/useConversationParentState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTabNavigation } from "src/composables/ui/useTabNavigation";
-import type { MaxDiffItem, MaxDiffResultItem } from "src/shared/types/dto";
-import type { ExtendedConversationDisplayData, RankingItemDisplayedContent } from "src/shared/types/zod";
+import type {
+  MaxDiffItem,
+  MaxDiffResultItem,
+  RankingStatsCheckpointReason,
+  RankingStatsCheckpointsResponse,
+} from "src/shared/types/dto";
+import type {
+  ExtendedConversationDisplayData,
+  RankingItemDisplayedContent,
+} from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
+import {
+  getUpdatedAnalysisRouteQuery,
+  parseCheckpointQuery,
+} from "src/utils/analysis/analysisRoute";
 import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
-import { useMaxDiffLoadQuery } from "src/utils/api/maxdiff/useMaxDiffQueries";
+import {
+  useMaxDiffLoadQuery,
+  useRankingStatsCheckpointsQuery,
+} from "src/utils/api/maxdiff/useMaxDiffQueries";
 import type { MaxDiffShortcutItem } from "src/utils/component/analysis/maxdiffShortcutBar";
 import { maxdiffShortcutItemSchema } from "src/utils/component/analysis/maxdiffShortcutBar";
 import { subscribeToContentTranslationUpdated } from "src/utils/translation/contentTranslationEvents";
 import { getRankingItemDisplayText } from "src/utils/translation/rankingItemDisplayText";
-import { computed, inject, onActivated, onDeactivated, onMounted, onUnmounted, ref, watch } from "vue";
+import {
+  computed,
+  inject,
+  onActivated,
+  onDeactivated,
+  onMounted,
+  onUnmounted,
+  ref,
+  watch,
+} from "vue";
 import type { RouteLocationRaw } from "vue-router";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import type { MaxDiffListItem } from "./MaxDiffItemListSection.vue";
 import MaxDiffItemListSection from "./MaxDiffItemListSection.vue";
@@ -194,30 +271,44 @@ const props = defineProps<{
   conversationData: ExtendedConversationDisplayData;
   navigateToVotingTab: () => void;
 }>();
+defineEmits<{
+  analysisLivePauseStats: [stats: ConversationActionBarStats | undefined];
+}>();
 
 const { t } = useComponentI18n<MaxDiffResultsTabTranslations>(
-  maxDiffResultsTabTranslations,
+  maxDiffResultsTabTranslations
+);
+const { t: tAnalysis } = useComponentI18n<AnalysisPageTranslations>(
+  analysisPageTranslations
 );
 
 const { getMaxDiffResults, fetchMaxDiffItems } = useMaxDiffApi();
 const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
 
 const route = useRoute();
+const router = useRouter();
 
-const { currentTab, handleSameTabClick } = useTabNavigation({
-  schema: maxdiffShortcutItemSchema,
-  defaultTab: "Summary",
-});
+const { currentTab, handleSameTabClick, setCurrentTabFromRoute } =
+  useTabNavigation({
+    schema: maxdiffShortcutItemSchema,
+    defaultTab: "Summary",
+  });
 
 function getMaxDiffTabRoute(item: string): RouteLocationRaw {
+  const query = { ...route.query };
   if (item === "Summary") {
-    return { path: route.path };
+    delete query.tab;
+  } else {
+    query.tab = item;
   }
-  return { path: route.path, query: { tab: item } };
+  if (item !== "Results") {
+    delete query.checkpoint;
+  }
+  return { path: route.path, query };
 }
 
 const hasLifecycleTabs = computed(
-  () => props.conversationData.metadata.externalSourceConfig !== null,
+  () => props.conversationData.metadata.externalSourceConfig !== null
 );
 
 const maxdiffTabItems = computed<MaxDiffShortcutItem[]>(() => {
@@ -260,7 +351,13 @@ function getTabLabel(item: string): string {
 function onTabChange(value: string): void {
   const parsed = maxdiffShortcutItemSchema.safeParse(value);
   if (parsed.success) {
-    currentTab.value = isTabAvailable(parsed.data) ? parsed.data : "Summary";
+    const nextTab = isTabAvailable(parsed.data) ? parsed.data : "Summary";
+    if (selectedCheckpointId.value !== undefined && nextTab !== "Results") {
+      setCurrentTabFromRoute(nextTab);
+      void router.replace(getMaxDiffTabRoute(nextTab));
+      return;
+    }
+    currentTab.value = nextTab;
   }
 }
 
@@ -272,20 +369,126 @@ const registerChildRefreshHandler = inject<RegisterChildRefreshHandler>(
     return () => {
       /* noop */
     };
-  },
+  }
 );
 let unregisterChildRefreshHandler: (() => void) | undefined;
 let unregisterTranslationUpdateHandler: (() => void) | undefined;
 let translationRefreshTimeout: ReturnType<typeof setTimeout> | undefined;
 const isActive = ref(true);
 
-const conversationSlugId =
-  props.conversationData.metadata.conversationSlugId;
+const conversationSlugId = props.conversationData.metadata.conversationSlugId;
+const selectedCheckpointId = computed(() =>
+  parseCheckpointQuery({ query: route.query })
+);
+const liveRankingStatsSnapshotId = computed(() => {
+  const metadata = props.conversationData.metadata;
+  return metadata.conversationType === "ranking"
+    ? metadata.rankingStatsSnapshotId
+    : undefined;
+});
+const requestedRankingStatsSnapshotId = computed(
+  () => {
+    const selectedSnapshotId = selectedCheckpointId.value;
+    const liveSnapshotId = liveRankingStatsSnapshotId.value;
+    if (selectedSnapshotId === undefined) {
+      return liveSnapshotId;
+    }
+    if (liveSnapshotId === undefined) {
+      return selectedSnapshotId;
+    }
+    return Math.max(selectedSnapshotId, liveSnapshotId);
+  }
+);
+const checkpointsQuery = useRankingStatsCheckpointsQuery({
+  conversationSlugId,
+  requestedRankingStatsSnapshotId,
+  enabled: isActive,
+});
+const rankingCheckpoints = computed<RankingStatsCheckpointsResponse>(
+  () => checkpointsQuery.data.value ?? []
+);
+const hasCheckpointData = computed(
+  () => checkpointsQuery.data.value !== undefined
+);
+const hasBlockingCheckpointError = computed(
+  () => checkpointsQuery.isError.value && !hasCheckpointData.value
+);
+const checkpointTimelineItems = computed<
+  CheckpointTimelineItem<RankingStatsCheckpointReason>[]
+>(() =>
+  rankingCheckpoints.value.map((checkpoint) => ({
+    checkpointId: checkpoint.rankingStatsSnapshotId,
+    activatedAt: checkpoint.createdAt,
+    reasons: checkpoint.reasons,
+  }))
+);
+const latestCheckpointId = computed(
+  () => rankingCheckpoints.value.at(-1)?.rankingStatsSnapshotId
+);
+const isLatestCheckpointLive = computed(
+  () =>
+    latestCheckpointId.value !== undefined &&
+    latestCheckpointId.value === liveRankingStatsSnapshotId.value
+);
+const timelineLiveLabel = computed(() =>
+  props.conversationData.metadata.isClosed
+    ? tAnalysis("checkpointReasonConversationClosed")
+    : tAnalysis("checkpointTimelineNow")
+);
+
+function formatCheckpointReason(
+  reason: RankingStatsCheckpointReason
+): string | undefined {
+  switch (reason.reason) {
+    case "major_participation_milestone":
+      return tAnalysis("checkpointReasonParticipationMilestone", {
+        count: new Intl.NumberFormat(displayLanguage.value).format(
+          reason.participantMilestone
+        ),
+      });
+    case "major_vote_milestone":
+      return tAnalysis("checkpointReasonVoteMilestone", {
+        count: new Intl.NumberFormat(displayLanguage.value).format(
+          reason.voteMilestone
+        ),
+      });
+    case "conversation_closed":
+      return tAnalysis("checkpointReasonConversationClosed");
+  }
+}
+
+async function selectCheckpoint(checkpointId: number): Promise<void> {
+  setCurrentTabFromRoute("Results");
+  const query = getUpdatedAnalysisRouteQuery({
+    query: route.query,
+    checkpointViewSnapshotId: checkpointId,
+  });
+  query.tab = "Results";
+  await router.replace({
+    path: route.path,
+    query,
+  });
+}
+
+async function selectLive(): Promise<void> {
+  await router.replace({
+    path: route.path,
+    query: getUpdatedAnalysisRouteQuery({
+      query: route.query,
+      checkpointViewSnapshotId: undefined,
+    }),
+  });
+}
 
 // Results data
 const isInitialLoading = ref(true);
 const hasError = ref(false);
 const resultItems = ref<MaxDiffListItem[]>([]);
+let latestResultsRequestId = 0;
+let latestCheckpointValidationId = 0;
+let isResultsFetchInFlight = false;
+let hasQueuedResultsFetch = false;
+let queuedResultsFetchShowsLoading = false;
 
 // Me tab: user's personal ranking (data passed to MaxDiffMeSection)
 const loadQuery = useMaxDiffLoadQuery({
@@ -298,6 +501,10 @@ const completedItems = ref<MaxDiffListItem[]>([]);
 const isCompletedLoading = ref(true);
 const canceledItems = ref<MaxDiffListItem[]>([]);
 const isCanceledLoading = ref(true);
+const lifecycleRequestIds = {
+  completed: 0,
+  canceled: 0,
+};
 
 // Dialog state
 const learnMoreContext = ref<"community" | "me" | null>(null);
@@ -312,7 +519,9 @@ const lifecycleInfoTitle = ref("");
 const lifecycleInfoContent = ref("");
 const showStatementDialog = ref(false);
 const expandedItemSlugId = ref<string | undefined>(undefined);
-const expandedDisplayContent = ref<RankingItemDisplayedContent | undefined>(undefined);
+const expandedDisplayContent = ref<RankingItemDisplayedContent | undefined>(
+  undefined
+);
 const expandedExternalUrl = ref<string | null>(null);
 
 function openStatementDialog({
@@ -330,9 +539,7 @@ function openStatementDialog({
   showStatementDialog.value = true;
 }
 
-function openLifecycleLearnMore(
-  lifecycle: "completed" | "canceled",
-): void {
+function openLifecycleLearnMore(lifecycle: "completed" | "canceled"): void {
   const keyMap: Record<
     "completed" | "canceled",
     {
@@ -356,7 +563,7 @@ function openLifecycleLearnMore(
   const keys = keyMap[lifecycle];
   lifecycleInfoTitle.value = t(keys.title);
   lifecycleInfoContent.value = t(
-    hasLifecycleTabs.value ? keys.github : keys.manual,
+    hasLifecycleTabs.value ? keys.github : keys.manual
   );
   showLifecycleInfoDialog.value = true;
 }
@@ -404,6 +611,7 @@ async function fetchLifecycleItems({
   loadingRef: typeof isCompletedLoading;
   showLoading: boolean;
 }): Promise<void> {
+  const requestId = ++lifecycleRequestIds[lifecycle];
   if (showLoading) {
     loadingRef.value = true;
   }
@@ -413,11 +621,14 @@ async function fetchLifecycleItems({
     lifecycleFilter: lifecycle,
   });
 
-  if (response.status === "success") {
+  if (
+    requestId === lifecycleRequestIds[lifecycle] &&
+    response.status === "success"
+  ) {
     itemsRef.value = mapApiItemsToListItems({ apiItems: response.data.items });
   }
 
-  if (showLoading) {
+  if (requestId === lifecycleRequestIds[lifecycle]) {
     loadingRef.value = false;
   }
 }
@@ -426,42 +637,232 @@ function retryFetchResults(): void {
   void fetchResults({ showLoading: true });
 }
 
-async function fetchResults({ showLoading }: { showLoading: boolean }): Promise<void> {
+async function fetchResults({
+  showLoading,
+}: {
+  showLoading: boolean;
+}): Promise<void> {
+  if (!isActive.value) {
+    return;
+  }
+  if (isResultsFetchInFlight) {
+    hasQueuedResultsFetch = true;
+    queuedResultsFetchShowsLoading ||= showLoading;
+    return;
+  }
+
+  isResultsFetchInFlight = true;
+  let nextFetchShowsLoading = showLoading;
+  try {
+    while (isActive.value) {
+      hasQueuedResultsFetch = false;
+      queuedResultsFetchShowsLoading = false;
+      await performResultsFetch({ showLoading: nextFetchShowsLoading });
+      if (!hasQueuedResultsFetch) {
+        break;
+      }
+      nextFetchShowsLoading = queuedResultsFetchShowsLoading;
+    }
+  } finally {
+    isResultsFetchInFlight = false;
+  }
+}
+
+async function performResultsFetch({
+  showLoading,
+}: {
+  showLoading: boolean;
+}): Promise<void> {
+  const requestedCheckpointId = selectedCheckpointId.value;
+  const requestedLiveSnapshotId =
+    requestedCheckpointId === undefined
+      ? liveRankingStatsSnapshotId.value
+      : undefined;
+  const requestId = ++latestResultsRequestId;
   if (showLoading) {
     isInitialLoading.value = true;
+    hasError.value = false;
   }
-  hasError.value = false;
 
-  const response = await getMaxDiffResults({ conversationSlugId });
+  const response =
+    requestedCheckpointId === undefined
+      ? await getMaxDiffResults({
+          conversationSlugId,
+          requestedRankingStatsSnapshotId: requestedLiveSnapshotId,
+        })
+      : await getMaxDiffResults({
+          conversationSlugId,
+          rankingStatsSnapshotId: requestedCheckpointId,
+        });
+
+  if (
+    requestId !== latestResultsRequestId ||
+    requestedCheckpointId !== selectedCheckpointId.value ||
+    (requestedCheckpointId === undefined &&
+      requestedLiveSnapshotId !== liveRankingStatsSnapshotId.value) ||
+    !isActive.value
+  ) {
+    return;
+  }
 
   if (response.status === "success") {
     resultItems.value = mapApiResultItemsToListItems({
       apiItems: response.data.rankings,
     });
-  } else {
+    hasError.value = false;
+  } else if (showLoading || resultItems.value.length === 0) {
     hasError.value = true;
   }
 
-  if (showLoading) {
-    isInitialLoading.value = false;
+  isInitialLoading.value = false;
+}
+
+async function validateCheckpointRoute({
+  checkpoints = rankingCheckpoints.value,
+  refetchIfMissing = true,
+}: {
+  checkpoints?: RankingStatsCheckpointsResponse;
+  refetchIfMissing?: boolean;
+} = {}): Promise<boolean> {
+  const validationId = ++latestCheckpointValidationId;
+  if (route.query.checkpoint === undefined) {
+    return true;
+  }
+  const checkpointId = selectedCheckpointId.value;
+  if (checkpointId === undefined) {
+    if (validationId !== latestCheckpointValidationId || !isActive.value) {
+      return false;
+    }
+    await selectLive();
+    return false;
+  }
+  if (currentTab.value !== "Results") {
+    setCurrentTabFromRoute("Results");
+    await router.replace({
+      path: route.path,
+      query: { ...route.query, tab: "Results" },
+    });
+    if (
+      validationId !== latestCheckpointValidationId ||
+      checkpointId !== selectedCheckpointId.value ||
+      !isActive.value
+    ) {
+      return false;
+    }
+  }
+  if (
+    checkpoints.some(
+      (checkpoint) => checkpoint.rankingStatsSnapshotId === checkpointId
+    )
+  ) {
+    return true;
+  }
+  if (!refetchIfMissing) {
+    await selectLive();
+    return false;
+  }
+  const result = await checkpointsQuery.refetch();
+  if (
+    validationId !== latestCheckpointValidationId ||
+    checkpointId !== selectedCheckpointId.value ||
+    !isActive.value ||
+    result.status !== "success"
+  ) {
+    return false;
+  }
+  if (
+    !result.data.some(
+      (checkpoint) => checkpoint.rankingStatsSnapshotId === checkpointId
+    )
+  ) {
+    await selectLive();
+    return false;
+  }
+  return true;
+}
+
+async function retryFetchCheckpoints(): Promise<void> {
+  const result = await checkpointsQuery.refetch();
+  if (result.status !== "success" || !isActive.value) {
+    return;
+  }
+  if (
+    await validateCheckpointRoute({
+      checkpoints: result.data,
+      refetchIfMissing: false,
+    })
+  ) {
+    await fetchResults({ showLoading: true });
   }
 }
 
-async function fetchAllLifecycleItems({ showLoading }: { showLoading: boolean }): Promise<void> {
+watch(
+  () => route.query.checkpoint,
+  async () => {
+    if (!isActive.value || !(await validateCheckpointRoute())) {
+      return;
+    }
+    await fetchResults({ showLoading: true });
+  }
+);
+watch(liveRankingStatsSnapshotId, async (snapshotId, previousSnapshotId) => {
+  if (snapshotId === previousSnapshotId) {
+    return;
+  }
+  if (isActive.value && selectedCheckpointId.value === undefined) {
+    await fetchResults({ showLoading: false });
+  }
+});
+
+async function fetchAllLifecycleItems({
+  showLoading,
+}: {
+  showLoading: boolean;
+}): Promise<void> {
   if (!hasLifecycleTabs.value) {
     return;
   }
 
   await Promise.all([
-    fetchLifecycleItems({ lifecycle: "completed", itemsRef: completedItems, loadingRef: isCompletedLoading, showLoading }),
-    fetchLifecycleItems({ lifecycle: "canceled", itemsRef: canceledItems, loadingRef: isCanceledLoading, showLoading }),
+    fetchLifecycleItems({
+      lifecycle: "completed",
+      itemsRef: completedItems,
+      loadingRef: isCompletedLoading,
+      showLoading,
+    }),
+    fetchLifecycleItems({
+      lifecycle: "canceled",
+      itemsRef: canceledItems,
+      loadingRef: isCanceledLoading,
+      showLoading,
+    }),
   ]);
 }
 
 // Pull-to-refresh handler: silently refetch without toggling loading spinners
 // (the pull-to-refresh spinner already indicates activity)
-async function handleChildRefresh(): Promise<void> {
-  await fetchResults({ showLoading: false });
+async function handleChildRefresh({
+  refetchCheckpoints = true,
+}: {
+  refetchCheckpoints?: boolean;
+} = {}): Promise<void> {
+  let checkpoints = rankingCheckpoints.value;
+  if (refetchCheckpoints) {
+    const result = await checkpointsQuery.refetch();
+    if (result.status === "success") {
+      checkpoints = result.data;
+    } else if (selectedCheckpointId.value !== undefined) {
+      return;
+    }
+  }
+  if (
+    await validateCheckpointRoute({
+      checkpoints,
+      refetchIfMissing: false,
+    })
+  ) {
+    await fetchResults({ showLoading: false });
+  }
   await Promise.all([
     loadQuery.refetch(),
     fetchAllLifecycleItems({ showLoading: false }),
@@ -475,13 +876,14 @@ function queueTranslationRefresh(): void {
 
   translationRefreshTimeout = setTimeout(() => {
     translationRefreshTimeout = undefined;
-    void handleChildRefresh();
+    void handleChildRefresh({ refetchCheckpoints: false });
   }, 250);
 }
 
 function registerRefreshHandler(): void {
   unregisterChildRefreshHandler?.();
-  unregisterChildRefreshHandler = registerChildRefreshHandler(handleChildRefresh);
+  unregisterChildRefreshHandler =
+    registerChildRefreshHandler(handleChildRefresh);
 }
 
 function unregisterRefreshHandler(): void {
@@ -491,14 +893,16 @@ function unregisterRefreshHandler(): void {
 
 function registerTranslationHandler(): void {
   unregisterTranslationHandler();
-  unregisterTranslationUpdateHandler = subscribeToContentTranslationUpdated((data) => {
-    if (
-      data.subject.kind === "ranking_item" &&
-      data.subject.conversationSlugId === conversationSlugId
-    ) {
-      queueTranslationRefresh();
+  unregisterTranslationUpdateHandler = subscribeToContentTranslationUpdated(
+    (data) => {
+      if (
+        data.subject.kind === "ranking_item" &&
+        data.subject.conversationSlugId === conversationSlugId
+      ) {
+        queueTranslationRefresh();
+      }
     }
-  });
+  );
 }
 
 function unregisterTranslationHandler(): void {
@@ -518,7 +922,9 @@ registerTranslationHandler();
 const hasInitiallyLoaded = ref(false);
 
 onMounted(async () => {
-  await fetchResults({ showLoading: true });
+  if (await validateCheckpointRoute()) {
+    await fetchResults({ showLoading: true });
+  }
   await fetchAllLifecycleItems({ showLoading: true });
   hasInitiallyLoaded.value = true;
 });
@@ -535,6 +941,8 @@ onActivated(async () => {
 
 onDeactivated(() => {
   isActive.value = false;
+  latestResultsRequestId += 1;
+  latestCheckpointValidationId += 1;
   unregisterRefreshHandler();
   unregisterTranslationHandler();
 });
@@ -546,13 +954,26 @@ onUnmounted(() => {
 
 watch(currentTab, async (newTab, oldTab) => {
   if (oldTab === "Summary" && newTab !== "Summary") {
-    const tabLifecycleMap: Partial<Record<MaxDiffShortcutItem, {
-      lifecycle: "completed" | "canceled";
-      itemsRef: typeof completedItems;
-      loadingRef: typeof isCompletedLoading;
-    }>> = {
-      Completed: { lifecycle: "completed", itemsRef: completedItems, loadingRef: isCompletedLoading },
-      Canceled: { lifecycle: "canceled", itemsRef: canceledItems, loadingRef: isCanceledLoading },
+    const tabLifecycleMap: Partial<
+      Record<
+        MaxDiffShortcutItem,
+        {
+          lifecycle: "completed" | "canceled";
+          itemsRef: typeof completedItems;
+          loadingRef: typeof isCompletedLoading;
+        }
+      >
+    > = {
+      Completed: {
+        lifecycle: "completed",
+        itemsRef: completedItems,
+        loadingRef: isCompletedLoading,
+      },
+      Canceled: {
+        lifecycle: "canceled",
+        itemsRef: canceledItems,
+        loadingRef: isCanceledLoading,
+      },
     };
 
     const config = tabLifecycleMap[newTab];
@@ -566,8 +987,8 @@ watch(
   computed(() => `${displayLanguage.value}:${spokenLanguages.value.join(",")}`),
   async () => {
     if (!isActive.value) return;
-    await handleChildRefresh();
-  },
+    await handleChildRefresh({ refetchCheckpoints: false });
+  }
 );
 </script>
 
@@ -615,6 +1036,4 @@ watch(
     text-decoration: underline;
   }
 }
-
-
 </style>

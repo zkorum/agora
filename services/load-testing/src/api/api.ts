@@ -3097,6 +3097,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
     'projectContext'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOfProjectContext;
     'conversationType': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ConversationTypeEnum;
     'rankingMode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1RankingModeEnum;
+    'rankingStatsSnapshotId'?: number;
 }
 
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOneOf1ParticipationModeEnum = {
@@ -4631,16 +4632,13 @@ export interface ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClust
     'opinionSlugId': string;
     'createdAt': string;
     'updatedAt': string;
-    'opinion': string;
-    'sourceLanguageCode': string | null;
     'numParticipants': number;
     'numAgrees': number;
     'numDisagrees': number;
     'numPasses': number;
     'username': string;
-    'moderation': ApiV1ModerationOpinionGetPost200Response;
     'isSeed': boolean;
-    'displayContent': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContent;
+    'content': ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContent;
     'clustersStats': Array<ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerClustersStatsInner>;
     'groupAwareConsensusAgree': number;
     'groupAwareConsensusDisagree': number;
@@ -4665,6 +4663,42 @@ export const ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersV
 } as const;
 
 export type ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerClustersStatsInnerKeyEnum = typeof ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerClustersStatsInnerKeyEnum[keyof typeof ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerClustersStatsInnerKeyEnum];
+
+/**
+ * @type ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContent
+ */
+export type ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContent = ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOf | ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOf1;
+
+export interface ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOf {
+    'status': ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOfStatusEnum;
+    'html': string;
+    'sourceLanguageCode': string | null;
+    'displayContent': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDisplayContent;
+    'moderation': ApiV1ModerationOpinionGetPost200Response;
+}
+
+export const ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOfStatusEnum = {
+    Visible: 'visible',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOfStatusEnum = typeof ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOfStatusEnum[keyof typeof ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOfStatusEnum];
+
+export interface ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOf1 {
+    'status': ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOf1StatusEnum;
+    'reason': ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOf1ReasonEnum;
+}
+
+export const ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOf1StatusEnum = {
+    Redacted: 'redacted',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOf1StatusEnum = typeof ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOf1StatusEnum[keyof typeof ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOf1StatusEnum];
+export const ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOf1ReasonEnum = {
+    StatementDeleted: 'statement_deleted',
+    HiddenByModeration: 'hidden_by_moderation',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOf1ReasonEnum = typeof ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOf1ReasonEnum[keyof typeof ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerContentOneOf1ReasonEnum];
 
 export interface ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest {
     'conversationSlugId': string;
@@ -5027,10 +5061,19 @@ export interface ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200Resp
     'isClosed': boolean;
 }
 export interface ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200ResponseFrameKey {
+    'mode': ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200ResponseFrameKeyModeEnum;
     'conversationViewSnapshotId': number;
     'analysisSnapshotId': number;
     'candidateId': number;
 }
+
+export const ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200ResponseFrameKeyModeEnum = {
+    Live: 'live',
+    Checkpoint: 'checkpoint',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200ResponseFrameKeyModeEnum = typeof ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200ResponseFrameKeyModeEnum[keyof typeof ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200ResponseFrameKeyModeEnum];
+
 export interface ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest {
     'conversationSlugId': string;
     'analysisView'?: ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequestAnalysisViewEnum;
@@ -5625,6 +5668,21 @@ export const ApiV1RankingBwsItemsFetchPost200ResponseItemsInnerLifecycleStatusEn
 
 export type ApiV1RankingBwsItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum = typeof ApiV1RankingBwsItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum[keyof typeof ApiV1RankingBwsItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum];
 
+export interface ApiV1RankingBwsItemsFetchPostRequest {
+    'conversationSlugId': string;
+    'lifecycleFilter'?: ApiV1RankingBwsItemsFetchPostRequestLifecycleFilterEnum;
+}
+
+export const ApiV1RankingBwsItemsFetchPostRequestLifecycleFilterEnum = {
+    Active: 'active',
+    Completed: 'completed',
+    InProgress: 'in_progress',
+    Canceled: 'canceled',
+    All: 'all',
+} as const;
+
+export type ApiV1RankingBwsItemsFetchPostRequestLifecycleFilterEnum = typeof ApiV1RankingBwsItemsFetchPostRequestLifecycleFilterEnum[keyof typeof ApiV1RankingBwsItemsFetchPostRequestLifecycleFilterEnum];
+
 export interface ApiV1RankingBwsItemsLifecycleUpdatePostRequest {
     'conversationSlugId': string;
     'itemSlugId': string;
@@ -5743,6 +5801,8 @@ export interface ApiV1RankingBwsResultsPost200ResponseRankingsInnerDisplayConten
 export interface ApiV1RankingBwsResultsPostRequest {
     'conversationSlugId': string;
     'lifecycleFilter'?: ApiV1RankingBwsResultsPostRequestLifecycleFilterEnum;
+    'rankingStatsSnapshotId'?: number;
+    'requestedRankingStatsSnapshotId'?: number;
 }
 
 export const ApiV1RankingBwsResultsPostRequestLifecycleFilterEnum = {
@@ -5774,6 +5834,61 @@ export interface ApiV1RankingBwsSavePostRequestComparisonsInner {
     'best': string;
     'worst': string;
     'set': Array<string>;
+}
+export interface ApiV1RankingBwsStatsCheckpointsPost200ResponseInner {
+    'rankingStatsSnapshotId': number;
+    'createdAt': string;
+    'itemCount': number;
+    'voteCount': number;
+    'participantCount': number;
+    'totalItemCount': number;
+    'totalVoteCount': number;
+    'totalParticipantCount': number;
+    'isClosed': boolean;
+    'reasons': Array<ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInner>;
+}
+/**
+ * @type ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInner
+ */
+export type ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInner = ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOf | ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOf1 | ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOf2;
+
+export interface ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOf {
+    'reason': ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOfReasonEnum;
+    'participantCount': number;
+    'participantMilestone': number;
+}
+
+export const ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOfReasonEnum = {
+    MajorParticipationMilestone: 'major_participation_milestone',
+} as const;
+
+export type ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOfReasonEnum = typeof ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOfReasonEnum[keyof typeof ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOfReasonEnum];
+
+export interface ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOf1 {
+    'reason': ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOf1ReasonEnum;
+    'voteCount': number;
+    'voteMilestone': number;
+}
+
+export const ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOf1ReasonEnum = {
+    MajorVoteMilestone: 'major_vote_milestone',
+} as const;
+
+export type ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOf1ReasonEnum = typeof ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOf1ReasonEnum[keyof typeof ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOf1ReasonEnum];
+
+export interface ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOf2 {
+    'reason': ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOf2ReasonEnum;
+}
+
+export const ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOf2ReasonEnum = {
+    ConversationClosed: 'conversation_closed',
+} as const;
+
+export type ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOf2ReasonEnum = typeof ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOf2ReasonEnum[keyof typeof ApiV1RankingBwsStatsCheckpointsPost200ResponseInnerReasonsInnerOneOf2ReasonEnum];
+
+export interface ApiV1RankingBwsStatsCheckpointsPostRequest {
+    'conversationSlugId': string;
+    'requestedRankingStatsSnapshotId'?: number;
 }
 export interface ApiV1RankingBwsSyncPost200Response {
     'created': number;
@@ -9743,13 +9858,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1RankingBwsResultsPostRequest} apiV1RankingBwsResultsPostRequest 
+         * @param {ApiV1RankingBwsItemsFetchPostRequest} apiV1RankingBwsItemsFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1RankingBwsItemsFetchPost: async (apiV1RankingBwsResultsPostRequest: ApiV1RankingBwsResultsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1RankingBwsResultsPostRequest' is not null or undefined
-            assertParamExists('apiV1RankingBwsItemsFetchPost', 'apiV1RankingBwsResultsPostRequest', apiV1RankingBwsResultsPostRequest)
+        apiV1RankingBwsItemsFetchPost: async (apiV1RankingBwsItemsFetchPostRequest: ApiV1RankingBwsItemsFetchPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1RankingBwsItemsFetchPostRequest' is not null or undefined
+            assertParamExists('apiV1RankingBwsItemsFetchPost', 'apiV1RankingBwsItemsFetchPostRequest', apiV1RankingBwsItemsFetchPostRequest)
             const localVarPath = `/api/v1/ranking/bws/items/fetch`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -9772,7 +9887,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1RankingBwsResultsPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1RankingBwsItemsFetchPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -9924,6 +10039,44 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(apiV1RankingBwsSavePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsStatsCheckpointsPostRequest} apiV1RankingBwsStatsCheckpointsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1RankingBwsStatsCheckpointsPost: async (apiV1RankingBwsStatsCheckpointsPostRequest: ApiV1RankingBwsStatsCheckpointsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1RankingBwsStatsCheckpointsPostRequest' is not null or undefined
+            assertParamExists('apiV1RankingBwsStatsCheckpointsPost', 'apiV1RankingBwsStatsCheckpointsPostRequest', apiV1RankingBwsStatsCheckpointsPostRequest)
+            const localVarPath = `/api/v1/ranking/bws/stats/checkpoints`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1RankingBwsStatsCheckpointsPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -11950,12 +12103,12 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1RankingBwsResultsPostRequest} apiV1RankingBwsResultsPostRequest 
+         * @param {ApiV1RankingBwsItemsFetchPostRequest} apiV1RankingBwsItemsFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1RankingBwsItemsFetchPost(apiV1RankingBwsResultsPostRequest: ApiV1RankingBwsResultsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1RankingBwsItemsFetchPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1RankingBwsItemsFetchPost(apiV1RankingBwsResultsPostRequest, options);
+        async apiV1RankingBwsItemsFetchPost(apiV1RankingBwsItemsFetchPostRequest: ApiV1RankingBwsItemsFetchPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1RankingBwsItemsFetchPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1RankingBwsItemsFetchPost(apiV1RankingBwsItemsFetchPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1RankingBwsItemsFetchPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -12006,6 +12159,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1RankingBwsSavePost(apiV1RankingBwsSavePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1RankingBwsSavePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsStatsCheckpointsPostRequest} apiV1RankingBwsStatsCheckpointsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1RankingBwsStatsCheckpointsPost(apiV1RankingBwsStatsCheckpointsPostRequest: ApiV1RankingBwsStatsCheckpointsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1RankingBwsStatsCheckpointsPost200ResponseInner>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1RankingBwsStatsCheckpointsPost(apiV1RankingBwsStatsCheckpointsPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1RankingBwsStatsCheckpointsPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -13083,12 +13248,12 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1RankingBwsResultsPostRequest} apiV1RankingBwsResultsPostRequest 
+         * @param {ApiV1RankingBwsItemsFetchPostRequest} apiV1RankingBwsItemsFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1RankingBwsItemsFetchPost(apiV1RankingBwsResultsPostRequest: ApiV1RankingBwsResultsPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1RankingBwsItemsFetchPost200Response> {
-            return localVarFp.apiV1RankingBwsItemsFetchPost(apiV1RankingBwsResultsPostRequest, options).then((request) => request(axios, basePath));
+        apiV1RankingBwsItemsFetchPost(apiV1RankingBwsItemsFetchPostRequest: ApiV1RankingBwsItemsFetchPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1RankingBwsItemsFetchPost200Response> {
+            return localVarFp.apiV1RankingBwsItemsFetchPost(apiV1RankingBwsItemsFetchPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -13125,6 +13290,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1RankingBwsSavePost(apiV1RankingBwsSavePostRequest: ApiV1RankingBwsSavePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1RankingBwsSavePost200Response> {
             return localVarFp.apiV1RankingBwsSavePost(apiV1RankingBwsSavePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1RankingBwsStatsCheckpointsPostRequest} apiV1RankingBwsStatsCheckpointsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1RankingBwsStatsCheckpointsPost(apiV1RankingBwsStatsCheckpointsPostRequest: ApiV1RankingBwsStatsCheckpointsPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1RankingBwsStatsCheckpointsPost200ResponseInner>> {
+            return localVarFp.apiV1RankingBwsStatsCheckpointsPost(apiV1RankingBwsStatsCheckpointsPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -14198,12 +14372,12 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1RankingBwsResultsPostRequest} apiV1RankingBwsResultsPostRequest 
+     * @param {ApiV1RankingBwsItemsFetchPostRequest} apiV1RankingBwsItemsFetchPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1RankingBwsItemsFetchPost(apiV1RankingBwsResultsPostRequest: ApiV1RankingBwsResultsPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1RankingBwsItemsFetchPost(apiV1RankingBwsResultsPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1RankingBwsItemsFetchPost(apiV1RankingBwsItemsFetchPostRequest: ApiV1RankingBwsItemsFetchPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1RankingBwsItemsFetchPost(apiV1RankingBwsItemsFetchPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -14244,6 +14418,16 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1RankingBwsSavePost(apiV1RankingBwsSavePostRequest: ApiV1RankingBwsSavePostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1RankingBwsSavePost(apiV1RankingBwsSavePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1RankingBwsStatsCheckpointsPostRequest} apiV1RankingBwsStatsCheckpointsPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1RankingBwsStatsCheckpointsPost(apiV1RankingBwsStatsCheckpointsPostRequest: ApiV1RankingBwsStatsCheckpointsPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1RankingBwsStatsCheckpointsPost(apiV1RankingBwsStatsCheckpointsPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

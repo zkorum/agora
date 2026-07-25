@@ -9,9 +9,9 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, TypedDict, cast
 
-from sqlalchemy import and_, func, select, update
+from sqlalchemy import and_, delete, or_, select, text, update
 from sqlalchemy.orm import Session
 
 from scoring_worker.generated_models import (
@@ -20,10 +20,17 @@ from scoring_worker.generated_models import (
     MaxdiffResult,
     MaxdiffUserEntityScore,
     RankingConversationConfig,
+    RankingConversationStatsCheckpoint,
+    RankingConversationStatsItem,
+    RankingConversationStatsSnapshot,
     RankingItem,
+    RankingItemContent,
+    RankingItemExternalSource,
     RankingItemLifecycleStatus,
     RankingScore,
     RankingScoreEntity,
+    RankingStatsCheckpointReasonEnum,
+    RealtimeEventOutbox,
     SurveyAnswer,
     SurveyAnswerOption,
     SurveyConfig,
@@ -35,10 +42,16 @@ from scoring_worker.generated_models import (
 )
 from scoring_worker.pipeline_config import PIPELINE_CONFIG
 
+PARTICIPANT_MILESTONE_SEEDS = (2,)
+VOTE_MILESTONE_SEEDS: tuple[int, ...] = ()
+MILESTONE_MULTIPLIERS = ((1, 1), (25, 10), (5, 1))
+SCORING_ADVISORY_LOCK_NAMESPACE = 1_397_705_809
+
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from uuid import UUID
 
-    from sqlalchemy import Engine
+    from sqlalchemy import Connection, Engine
 
 
 @dataclass(frozen=True)
@@ -56,6 +69,103 @@ class ScoredEntity:
     uncertainty_left: float
     uncertainty_right: float
     participant_count: int
+
+
+@dataclass(frozen=True)
+class RankingItemSnapshotInput:
+    item_id: int
+    slug_id: str
+    content_id: int
+    lifecycle_status: RankingItemLifecycleStatus
+    external_url: str | None
+
+
+class RankingCheckpointInsert(TypedDict):
+    stats_snapshot_id: int
+    conversation_id: int
+    reason: RankingStatsCheckpointReasonEnum
+    participant_milestone: int | None
+    vote_milestone: int | None
+
+
+class RankingStatsEventPayload(TypedDict):
+    conversationSlugId: str
+    rankingStatsSnapshotId: int
+    checkpointChanged: bool
+    opinionCount: int
+    totalOpinionCount: int
+    voteCount: int
+    totalVoteCount: int
+    participantCount: int
+    totalParticipantCount: int
+    moderatedOpinionCount: int
+    hiddenOpinionCount: int
+    isClosed: bool
+    timestamp: int
+
+
+def checkpoint_milestones_at_or_below(*, count: int, seeds: tuple[int, ...]) -> list[int]:
+    """Return the shared 1/2.5/5 milestone sequence up to a count."""
+    milestones = {seed for seed in seeds if seed <= count}
+    base = 10
+    while base <= count:
+        for numerator, denominator in MILESTONE_MULTIPLIERS:
+            milestone = (base * numerator) // denominator
+            if milestone <= count:
+                milestones.add(milestone)
+        base *= 10
+    return sorted(milestones)
+
+
+def acquire_conversation_locks(
+    engine: Engine,
+    *,
+    conversation_ids: list[int],
+) -> tuple[frozenset[int], Connection, Callable[[], None]]:
+    """Acquire session-level locks that serialize workers per conversation."""
+    connection = engine.connect()
+    locked_conversation_ids: list[int] = []
+    try:
+        for conversation_id in sorted(set(conversation_ids)):
+            acquired = connection.execute(
+                text("SELECT pg_try_advisory_lock(:namespace, :conversation_id)"),
+                {
+                    "namespace": SCORING_ADVISORY_LOCK_NAMESPACE,
+                    "conversation_id": conversation_id,
+                },
+            ).scalar_one()
+            if acquired:
+                locked_conversation_ids.append(conversation_id)
+    except Exception:
+        try:
+            for conversation_id in locked_conversation_ids:
+                connection.execute(
+                    text("SELECT pg_advisory_unlock(:namespace, :conversation_id)"),
+                    {
+                        "namespace": SCORING_ADVISORY_LOCK_NAMESPACE,
+                        "conversation_id": conversation_id,
+                    },
+                )
+        finally:
+            connection.close()
+        raise
+
+    connection.commit()
+
+    def release() -> None:
+        try:
+            for conversation_id in locked_conversation_ids:
+                connection.execute(
+                    text("SELECT pg_advisory_unlock(:namespace, :conversation_id)"),
+                    {
+                        "namespace": SCORING_ADVISORY_LOCK_NAMESPACE,
+                        "conversation_id": conversation_id,
+                    },
+                )
+        finally:
+            connection.close()
+
+    return frozenset(locked_conversation_ids), connection, release
 
 
 @dataclass(frozen=True)
@@ -364,33 +474,70 @@ def _fetch_survey_eligible_participants_batch(
 # --- Batch READ queries (one query per data type for all conversations) ---
 
 
-def fetch_active_items_batch(
-    engine: Engine,
+def fetch_ranking_items_batch(
+    engine: Engine | Connection,
     *,
     conversation_ids: list[int],
-) -> dict[int, list[str]]:
-    """Fetch active item slugIds grouped by conversation_id."""
+) -> dict[int, list[RankingItemSnapshotInput]]:
+    """Fetch all current ranking items needed for scoring and snapshots."""
     if not conversation_ids:
         return {}
 
-    stmt = select(RankingItem.conversation_id, RankingItem.slug_id).where(
-        and_(
-            RankingItem.conversation_id.in_(conversation_ids),
-            RankingItem.current_content_id.is_not(None),
-            RankingItem.lifecycle_status.in_(
-                [
-                    RankingItemLifecycleStatus.active,
-                    RankingItemLifecycleStatus.in_progress,
-                ]
-            ),
-        ),
+    stmt = (
+        select(
+            RankingItem.conversation_id,
+            RankingItem.id.label("item_id"),
+            RankingItem.slug_id,
+            RankingItemContent.id.label("content_id"),
+            RankingItem.lifecycle_status,
+            RankingItemExternalSource.external_url,
+        )
+        .join(RankingItemContent, RankingItemContent.id == RankingItem.current_content_id)
+        .outerjoin(
+            RankingItemExternalSource,
+            RankingItemExternalSource.ranking_item_id == RankingItem.id,
+        )
+        .where(RankingItem.conversation_id.in_(conversation_ids))
+        .order_by(RankingItem.conversation_id, RankingItem.id)
     )
 
-    result: dict[int, list[str]] = {cid: [] for cid in conversation_ids}
+    result: dict[int, list[RankingItemSnapshotInput]] = {
+        conversation_id: [] for conversation_id in conversation_ids
+    }
     with Session(engine) as session:
         for row in session.execute(stmt):
-            result[row.conversation_id].append(row.slug_id)
+            result[row.conversation_id].append(
+                RankingItemSnapshotInput(
+                    item_id=row.item_id,
+                    slug_id=row.slug_id,
+                    content_id=row.content_id,
+                    lifecycle_status=row.lifecycle_status,
+                    external_url=row.external_url,
+                )
+            )
     return result
+
+
+def fetch_scoring_input_revisions(
+    engine: Engine | Connection,
+    *,
+    conversation_ids: list[int],
+) -> dict[int, int]:
+    if not conversation_ids:
+        return {}
+    stmt = (
+        select(
+            Conversation.id,
+            RankingConversationConfig.scoring_input_revision,
+        )
+        .join(
+            RankingConversationConfig,
+            RankingConversationConfig.id == Conversation.ranking_config_id,
+        )
+        .where(Conversation.id.in_(conversation_ids))
+    )
+    with Session(engine) as session:
+        return {row.id: row.scoring_input_revision for row in session.execute(stmt)}
 
 
 @dataclass(frozen=True)
@@ -398,10 +545,12 @@ class ComparisonsBatchResult:
     comparisons: dict[int, list[ComparisonRow]]
     # Reverse map: conv_id → {user_idx → maxdiff_result_id}
     user_idx_to_result_id: dict[int, dict[int, int]]
+    total_vote_count_by_conversation: dict[int, int]
+    total_participant_count_by_conversation: dict[int, int]
 
 
 def fetch_comparisons_batch(
-    engine: Engine,
+    engine: Engine | Connection,
     *,
     conversation_ids: list[int],
 ) -> ComparisonsBatchResult:
@@ -417,6 +566,8 @@ def fetch_comparisons_batch(
         return ComparisonsBatchResult(
             comparisons={},
             user_idx_to_result_id={},
+            total_vote_count_by_conversation={},
+            total_participant_count_by_conversation={},
         )
 
     stmt = (
@@ -459,10 +610,14 @@ def fetch_comparisons_batch(
 
     with Session(engine) as session:
         raw_rows = list(session.execute(stmt))
+        total_vote_count_by_conversation = {
+            conversation_id: 0 for conversation_id in conversation_ids
+        }
         candidate_participant_ids_by_conv: dict[int, set[UUID]] = {
             cid: set() for cid in conversation_ids
         }
         for row in raw_rows:
+            total_vote_count_by_conversation[row.conversation_id] += 1
             candidate_participant_ids_by_conv[row.conversation_id].add(row.participant_id)
 
         eligible_participant_ids_by_conv = _fetch_survey_eligible_participants_batch(
@@ -501,6 +656,11 @@ def fetch_comparisons_batch(
     return ComparisonsBatchResult(
         comparisons=comparisons,
         user_idx_to_result_id=reverse_maps,
+        total_vote_count_by_conversation=total_vote_count_by_conversation,
+        total_participant_count_by_conversation={
+            conversation_id: len(participant_ids)
+            for conversation_id, participant_ids in candidate_participant_ids_by_conv.items()
+        },
     )
 
 
@@ -516,9 +676,10 @@ class UserScoreEntry:
     uncertainty_right: float
 
 
-def write_scores_batch(
-    engine: Engine,
+def _write_scores_batch(
+    connection: Connection,
     *,
+    conversation_ids: list[int],
     results: dict[int, tuple[list[ScoredEntity], dict[str, int]]],
     user_scores: list[UserScoreEntry] | None = None,
 ) -> None:
@@ -528,12 +689,21 @@ def write_scores_batch(
     `user_scores` is a flat list of per-user entity scores to upsert.
     Skips conversations with empty scores.
     """
-    if not results:
+    if not conversation_ids:
         return
 
     now = datetime.now(tz=UTC).replace(microsecond=0)
 
-    with Session(engine) as session:
+    with Session(connection, join_transaction_mode="create_savepoint") as session:
+        session.execute(
+            delete(MaxdiffUserEntityScore).where(
+                MaxdiffUserEntityScore.maxdiff_result_id.in_(
+                    select(MaxdiffResult.id).where(
+                        MaxdiffResult.conversation_id.in_(conversation_ids)
+                    )
+                )
+            )
+        )
         for conv_id, (scores, participant_counts) in results.items():
             if not scores:
                 continue
@@ -634,15 +804,15 @@ def write_scores_batch(
         session.commit()
 
 
-def clear_scores_batch(
-    engine: Engine,
+def _clear_scores_batch(
+    connection: Connection,
     *,
     conversation_ids: list[int],
 ) -> None:
     """Clear scores for conversations with <2 active items."""
     if not conversation_ids:
         return
-    with Session(engine) as session:
+    with Session(connection, join_transaction_mode="create_savepoint") as session:
         session.execute(
             update(RankingConversationConfig)
             .where(
@@ -657,179 +827,357 @@ def clear_scores_batch(
         session.commit()
 
 
-# --- Counter update ---
+# --- Conversation stats ---
 
 
-def update_maxdiff_counters_batch(
-    engine: Engine,
+def _prune_unpublished_ranking_snapshots(
+    session: Session,
+    *,
+    conversation_id: int,
+    current_snapshot_id: int,
+) -> None:
+    """Keep only the baseline, current snapshot, and published checkpoints."""
+    earliest_snapshot_id = (
+        select(RankingConversationStatsSnapshot.id)
+        .where(RankingConversationStatsSnapshot.conversation_id == conversation_id)
+        .order_by(
+            RankingConversationStatsSnapshot.created_at,
+            RankingConversationStatsSnapshot.id,
+        )
+        .limit(1)
+        .scalar_subquery()
+    )
+    has_checkpoint = (
+        select(RankingConversationStatsCheckpoint.id)
+        .where(
+            RankingConversationStatsCheckpoint.stats_snapshot_id
+            == RankingConversationStatsSnapshot.id
+        )
+        .exists()
+    )
+    prunable_snapshot_ids = list(
+        session.scalars(
+            select(RankingConversationStatsSnapshot.id).where(
+                RankingConversationStatsSnapshot.conversation_id == conversation_id,
+                RankingConversationStatsSnapshot.id != current_snapshot_id,
+                RankingConversationStatsSnapshot.id != earliest_snapshot_id,
+                ~has_checkpoint,
+            )
+        )
+    )
+    if not prunable_snapshot_ids:
+        return
+    session.execute(
+        delete(RankingConversationStatsItem).where(
+            RankingConversationStatsItem.stats_snapshot_id.in_(prunable_snapshot_ids)
+        )
+    )
+    session.execute(
+        delete(RankingConversationStatsSnapshot).where(
+            RankingConversationStatsSnapshot.id.in_(prunable_snapshot_ids)
+        )
+    )
+
+
+def _update_ranking_stats_batch(
+    connection: Connection,
     *,
     conversation_ids: list[int],
-    active_items_by_conv: dict[int, list[str]],
+    ranking_items_by_conv: dict[int, list[RankingItemSnapshotInput]],
+    comparisons_by_conv: dict[int, list[ComparisonRow]],
+    total_vote_count_by_conversation: dict[int, int],
+    total_participant_count_by_conversation: dict[int, int],
+    scored_entities_by_conv: dict[int, list[ScoredEntity]],
+    scoring_input_revisions: dict[int, int],
 ) -> None:
-    """Update conversation-level MaxDiff counters for a batch.
-
-    Single source of truth for MaxDiff counters (API no longer computes these):
-    - total_participant_count: distinct users with any comparisons
-    - total_vote_count: total comparison rows across all users
-    - participant_count: distinct users with comparisons where both best
-      AND worst are active items
-    - vote_count: comparison rows where both best AND worst are active items
-    """
+    """Persist current ranking counts, immutable snapshots, and SSE outbox events."""
     if not conversation_ids:
         return
 
-    with Session(engine) as session:
-        candidate_participant_rows = session.execute(
-            select(MaxdiffResult.conversation_id, MaxdiffResult.participant_id)
-            .join(User, User.id == MaxdiffResult.participant_id)
-            .where(
-                and_(
-                    MaxdiffResult.conversation_id.in_(conversation_ids),
-                    User.is_deleted.is_(False),
+    with Session(connection, join_transaction_mode="create_savepoint") as session:
+        for conversation_id in conversation_ids:
+            conversation = session.execute(
+                select(
+                    Conversation.slug_id,
+                    Conversation.is_closed,
+                    Conversation.ranking_config_id,
+                )
+                .join(
+                    RankingConversationConfig,
+                    RankingConversationConfig.id == Conversation.ranking_config_id,
+                )
+                .where(Conversation.id == conversation_id)
+            ).one()
+            ranking_items = ranking_items_by_conv.get(conversation_id, [])
+            active_items = [
+                item
+                for item in ranking_items
+                if item.lifecycle_status
+                in {
+                    RankingItemLifecycleStatus.active,
+                    RankingItemLifecycleStatus.in_progress,
+                }
+            ]
+            active_slugs = {item.slug_id for item in active_items}
+            active_comparisons = [
+                comparison
+                for comparison in comparisons_by_conv.get(conversation_id, [])
+                if comparison.best_slug_id in active_slugs
+                and comparison.worst_slug_id in active_slugs
+            ]
+            participant_count = len({comparison.user_idx for comparison in active_comparisons})
+            vote_count = len(active_comparisons)
+            total_vote_count = total_vote_count_by_conversation.get(conversation_id, 0)
+            total_participant_count = total_participant_count_by_conversation.get(
+                conversation_id, 0
+            )
+            previous_snapshot = session.execute(
+                select(RankingConversationStatsSnapshot.is_closed)
+                .where(RankingConversationStatsSnapshot.conversation_id == conversation_id)
+                .order_by(
+                    RankingConversationStatsSnapshot.created_at.desc(),
+                    RankingConversationStatsSnapshot.id.desc(),
+                )
+                .limit(1)
+            ).one_or_none()
+            session.execute(
+                update(RankingConversationConfig)
+                .where(RankingConversationConfig.id == conversation.ranking_config_id)
+                .values(
+                    item_count=len(active_items),
+                    total_item_count=len(ranking_items),
+                    vote_count=vote_count,
+                    total_vote_count=total_vote_count,
+                    participant_count=participant_count,
+                    total_participant_count=total_participant_count,
+                    processed_scoring_input_revision=scoring_input_revisions[conversation_id],
                 )
             )
-        ).all()
-        candidate_participant_ids_by_conv: dict[int, set[UUID]] = {
-            cid: set() for cid in conversation_ids
-        }
-        for row in candidate_participant_rows:
-            candidate_participant_ids_by_conv[row.conversation_id].add(row.participant_id)
+            snapshot = RankingConversationStatsSnapshot(
+                conversation_id=conversation_id,
+                item_count=len(active_items),
+                total_item_count=len(ranking_items),
+                vote_count=vote_count,
+                total_vote_count=total_vote_count,
+                participant_count=participant_count,
+                total_participant_count=total_participant_count,
+                scoring_input_revision=scoring_input_revisions[conversation_id],
+                is_closed=conversation.is_closed,
+                created_at=datetime.now(tz=UTC).replace(microsecond=0),
+            )
+            session.add(snapshot)
+            session.flush()
 
-        eligible_participant_ids_by_conv = _fetch_survey_eligible_participants_batch(
-            session,
-            conversation_ids=conversation_ids,
-            candidate_participant_ids_by_conv=candidate_participant_ids_by_conv,
-        )
+            scored_entities = scored_entities_by_conv.get(conversation_id, [])
+            normalized_scores_by_slug: dict[str, tuple[float, int, int]] = {}
+            if scored_entities:
+                minimum_score = min(item.score for item in scored_entities)
+                maximum_score = max(item.score for item in scored_entities)
+                score_range = maximum_score - minimum_score
+                for rank, item in enumerate(scored_entities, start=1):
+                    normalized_score = (
+                        0.5 if score_range < 1e-6 else (item.score - minimum_score) / score_range
+                    )
+                    normalized_scores_by_slug[item.entity_slug_id] = (
+                        normalized_score,
+                        rank,
+                        item.participant_count,
+                    )
 
-        for conv_id in conversation_ids:
-            active_slugs = set(active_items_by_conv.get(conv_id, []))
-            eligible_participant_ids = eligible_participant_ids_by_conv.get(conv_id)
-
-            # Total counts (all comparisons, excluding deleted users + soft-deleted rows)
-            total_row = session.execute(
-                select(
-                    func.count(func.distinct(MaxdiffResult.participant_id)).label(
-                        "total_participants"
-                    ),
-                    func.count().label("total_votes"),
-                )
-                .select_from(MaxdiffComparison)
-                .join(
-                    MaxdiffResult,
-                    MaxdiffResult.id == MaxdiffComparison.maxdiff_result_id,
-                )
-                .join(
-                    User,
-                    User.id == MaxdiffResult.participant_id,
-                )
-                .where(
-                    and_(
-                        MaxdiffResult.conversation_id == conv_id,
-                        User.is_deleted.is_(False),
-                        MaxdiffComparison.deleted_at.is_(None),
-                    ),
-                ),
-            ).one()
-
-            if not active_slugs:
-                session.execute(
-                    update(Conversation)
-                    .where(Conversation.id == conv_id)
-                    .values(
-                        participant_count=0,
-                        total_participant_count=total_row.total_participants,
-                        vote_count=0,
-                        total_vote_count=total_row.total_votes,
-                    ),
-                )
-                continue
-
-            if eligible_participant_ids is not None and not eligible_participant_ids:
-                session.execute(
-                    update(Conversation)
-                    .where(Conversation.id == conv_id)
-                    .values(
-                        participant_count=0,
-                        total_participant_count=total_row.total_participants,
-                        vote_count=0,
-                        total_vote_count=total_row.total_votes,
-                    ),
-                )
-                continue
-
-            # Filtered counts (only active items, excluding deleted users + soft-deleted rows)
-            filtered_conditions = [
-                MaxdiffResult.conversation_id == conv_id,
-                User.is_deleted.is_(False),
-                MaxdiffComparison.deleted_at.is_(None),
-                MaxdiffComparison.best_slug_id.in_(active_slugs),
-                MaxdiffComparison.worst_slug_id.in_(active_slugs),
-            ]
-            if eligible_participant_ids is not None:
-                filtered_conditions.append(
-                    MaxdiffResult.participant_id.in_(eligible_participant_ids)
+            for item in active_items:
+                score_data = normalized_scores_by_slug.get(item.slug_id)
+                session.add(
+                    RankingConversationStatsItem(
+                        stats_snapshot_id=snapshot.id,
+                        conversation_id=conversation_id,
+                        ranking_item_id=item.item_id,
+                        ranking_item_content_id=item.content_id,
+                        lifecycle_status=item.lifecycle_status,
+                        score=None if score_data is None else score_data[0],
+                        rank=None if score_data is None else score_data[1],
+                        participant_count=0 if score_data is None else score_data[2],
+                        external_url=item.external_url,
+                    )
                 )
 
-            filtered_row = session.execute(
-                select(
-                    func.count(func.distinct(MaxdiffResult.participant_id)).label("participants"),
-                    func.count().label("votes"),
+            checkpoint_values: list[RankingCheckpointInsert] = []
+            for milestone in checkpoint_milestones_at_or_below(
+                count=participant_count,
+                seeds=PARTICIPANT_MILESTONE_SEEDS,
+            ):
+                checkpoint_values.append(
+                    {
+                        "stats_snapshot_id": snapshot.id,
+                        "conversation_id": conversation_id,
+                        "reason": (RankingStatsCheckpointReasonEnum.major_participation_milestone),
+                        "participant_milestone": milestone,
+                        "vote_milestone": None,
+                    }
                 )
-                .select_from(MaxdiffComparison)
-                .join(
-                    MaxdiffResult,
-                    MaxdiffResult.id == MaxdiffComparison.maxdiff_result_id,
+            if conversation.is_closed and (
+                previous_snapshot is None or not previous_snapshot.is_closed
+            ):
+                checkpoint_values.append(
+                    {
+                        "stats_snapshot_id": snapshot.id,
+                        "conversation_id": conversation_id,
+                        "reason": RankingStatsCheckpointReasonEnum.conversation_closed,
+                        "participant_milestone": None,
+                        "vote_milestone": None,
+                    }
                 )
-                .join(
-                    User,
-                    User.id == MaxdiffResult.participant_id,
+            for milestone in checkpoint_milestones_at_or_below(
+                count=vote_count,
+                seeds=VOTE_MILESTONE_SEEDS,
+            ):
+                checkpoint_values.append(
+                    {
+                        "stats_snapshot_id": snapshot.id,
+                        "conversation_id": conversation_id,
+                        "reason": RankingStatsCheckpointReasonEnum.major_vote_milestone,
+                        "participant_milestone": None,
+                        "vote_milestone": milestone,
+                    }
                 )
-                .where(and_(*filtered_conditions)),
-            ).one()
+            checkpoint_changed = previous_snapshot is None
+            if checkpoint_values:
+                from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-            session.execute(
-                update(Conversation)
-                .where(Conversation.id == conv_id)
-                .values(
-                    participant_count=filtered_row.participants,
-                    total_participant_count=total_row.total_participants,
-                    vote_count=filtered_row.votes,
-                    total_vote_count=total_row.total_votes,
-                ),
+                inserted_checkpoints = session.execute(
+                    pg_insert(RankingConversationStatsCheckpoint)
+                    .values(checkpoint_values)
+                    .on_conflict_do_nothing()
+                    .returning(RankingConversationStatsCheckpoint.id)
+                ).all()
+                checkpoint_changed = checkpoint_changed or len(inserted_checkpoints) > 0
+            _prune_unpublished_ranking_snapshots(
+                session,
+                conversation_id=conversation_id,
+                current_snapshot_id=snapshot.id,
+            )
+            event_payload: RankingStatsEventPayload = {
+                "conversationSlugId": conversation.slug_id,
+                "rankingStatsSnapshotId": snapshot.id,
+                "checkpointChanged": checkpoint_changed,
+                "opinionCount": len(active_items),
+                "totalOpinionCount": len(ranking_items),
+                "voteCount": vote_count,
+                "totalVoteCount": total_vote_count,
+                "participantCount": participant_count,
+                "totalParticipantCount": total_participant_count,
+                "moderatedOpinionCount": 0,
+                "hiddenOpinionCount": 0,
+                "isClosed": conversation.is_closed,
+                "timestamp": int(datetime.now(tz=UTC).timestamp() * 1000),
+            }
+            session.add(
+                RealtimeEventOutbox(
+                    event_type="conversation_ranking_stats_updated",
+                    payload=event_payload,
+                    created_at=datetime.now(tz=UTC).replace(microsecond=0),
+                )
             )
 
         session.commit()
 
 
+def persist_scoring_batch(
+    connection: Connection,
+    *,
+    scoring_results: dict[int, tuple[list[ScoredEntity], dict[str, int]]],
+    user_scores: list[UserScoreEntry],
+    conversation_ids_to_clear: list[int],
+    snapshot_conversation_ids: list[int],
+    ranking_items_by_conv: dict[int, list[RankingItemSnapshotInput]],
+    comparisons_by_conv: dict[int, list[ComparisonRow]],
+    total_vote_count_by_conversation: dict[int, int],
+    total_participant_count_by_conversation: dict[int, int],
+    scored_entities_by_conv: dict[int, list[ScoredEntity]],
+    scoring_input_revisions: dict[int, int],
+) -> bool:
+    """Atomically publish scores, immutable snapshots, checkpoints, and SSE."""
+    with connection.begin():
+        with Session(
+            connection,
+            join_transaction_mode="create_savepoint",
+        ) as session:
+            revision_rows = session.execute(
+                select(
+                    Conversation.id,
+                    RankingConversationConfig.scoring_input_revision,
+                )
+                .join(
+                    RankingConversationConfig,
+                    RankingConversationConfig.id == Conversation.ranking_config_id,
+                )
+                .where(Conversation.id.in_(snapshot_conversation_ids))
+                .order_by(Conversation.id)
+                .with_for_update(of=RankingConversationConfig)
+            ).all()
+            if len(revision_rows) != len(snapshot_conversation_ids) or any(
+                scoring_input_revisions.get(row.id) != row.scoring_input_revision
+                for row in revision_rows
+            ):
+                return False
+            session.commit()
+        _write_scores_batch(
+            connection,
+            conversation_ids=snapshot_conversation_ids,
+            results=scoring_results,
+            user_scores=user_scores,
+        )
+        _clear_scores_batch(
+            connection,
+            conversation_ids=conversation_ids_to_clear,
+        )
+        _update_ranking_stats_batch(
+            connection,
+            conversation_ids=snapshot_conversation_ids,
+            ranking_items_by_conv=ranking_items_by_conv,
+            comparisons_by_conv=comparisons_by_conv,
+            total_vote_count_by_conversation=total_vote_count_by_conversation,
+            total_participant_count_by_conversation=(total_participant_count_by_conversation),
+            scored_entities_by_conv=scored_entities_by_conv,
+            scoring_input_revisions=scoring_input_revisions,
+        )
+    return True
+
+
 # --- Reconciliation ---
 
 
-def reconcile_unscored_conversations(engine: Engine) -> list[int]:
+def reconcile_unscored_conversations(engine: Engine) -> list[tuple[int, str]]:
     """Find conversations needing scoring (safety net for missed ZADDs)."""
-    stmt = (
-        select(func.distinct(MaxdiffResult.conversation_id))
-        .join(
-            Conversation,
-            Conversation.id == MaxdiffResult.conversation_id,
+    latest_snapshot_is_closed = (
+        select(RankingConversationStatsSnapshot.is_closed)
+        .where(RankingConversationStatsSnapshot.conversation_id == Conversation.id)
+        .order_by(
+            RankingConversationStatsSnapshot.created_at.desc(),
+            RankingConversationStatsSnapshot.id.desc(),
         )
+        .limit(1)
+        .scalar_subquery()
+    )
+    stmt = (
+        select(Conversation.id, Conversation.slug_id)
         .join(
             RankingConversationConfig,
             RankingConversationConfig.id == Conversation.ranking_config_id,
-        )
-        .outerjoin(
-            RankingScore,
-            RankingScore.id == RankingConversationConfig.current_ranking_score_id,
         )
         .where(
             and_(
                 Conversation.conversation_type == "ranking",
                 RankingConversationConfig.ranking_mode == "bws",
-                (
-                    RankingScore.computed_at.is_(None)
-                    | (MaxdiffResult.updated_at > RankingScore.computed_at)
+                or_(
+                    ~select(RankingConversationStatsSnapshot.id)
+                    .where(RankingConversationStatsSnapshot.conversation_id == Conversation.id)
+                    .exists(),
+                    latest_snapshot_is_closed != Conversation.is_closed,
+                    RankingConversationConfig.scoring_input_revision
+                    > RankingConversationConfig.processed_scoring_input_revision,
                 ),
             ),
         )
     )
     with Session(engine) as session:
-        return [row[0] for row in session.execute(stmt)]
+        return [(row.id, row.slug_id) for row in session.execute(stmt)]

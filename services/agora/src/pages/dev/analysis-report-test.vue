@@ -366,21 +366,24 @@ function generateMockOpinion({
     opinionSlugId: `mock-op-${index}`,
     createdAt: new Date("2025-11-20"),
     updatedAt: new Date("2025-11-20"),
-    opinion: mockStatements[index % mockStatements.length],
-    sourceLanguageCode: null,
-    displayContent: {
-      sourceVersion: "00000000-0000-4000-8000-000000000001",
-      status: "available",
-      mode: "original",
-      content: { content: mockStatements[index % mockStatements.length] },
-      translationControl: null,
+    content: {
+      status: "visible",
+      html: mockStatements[index % mockStatements.length],
+      sourceLanguageCode: null,
+      displayContent: {
+        sourceVersion: "00000000-0000-4000-8000-000000000001",
+        status: "available",
+        mode: "original",
+        content: { content: mockStatements[index % mockStatements.length] },
+        translationControl: null,
+      },
+      moderation: { status: "unmoderated" },
     },
     numParticipants,
     numAgrees,
     numDisagrees,
     numPasses,
     username: `user${index + 1}`,
-    moderation: { status: "unmoderated" },
     isSeed: false,
     clustersStats: generateClusterStats({ clusterCount }),
     groupAwareConsensusAgree: 0.6 + Math.random() * 0.35,
@@ -520,9 +523,10 @@ const surveyResultsQuery = useQuery({
   staleTime: Infinity,
 });
 
-const showReportSurveyToggle = computed(() =>
-  hasMockSurvey.value &&
-  canViewFullSurveyResults({ surveyResults: surveyResultsQuery.data.value })
+const showReportSurveyToggle = computed(
+  () =>
+    hasMockSurvey.value &&
+    canViewFullSurveyResults({ surveyResults: surveyResultsQuery.data.value })
 );
 
 const reportSurveyRows = computed(() =>
