@@ -255,10 +255,8 @@ const editor = useEditor({
     Placeholder.configure({
       placeholder: () => props.placeholder,
     }),
-    // Add Enter key blocker for single-line mode
-    ...(props.singleLine ? [BlockEnterExtension] : []),
-    // Add custom Tab/Shift-Tab handler for list indentation (prevents focus change)
-    CustomListTabKeymap,
+    // Single-line schemas have no list nodes, so list commands must stay multiline-only.
+    props.singleLine ? BlockEnterExtension : CustomListTabKeymap,
     // Clear storedMarks on selection change for mobile (bubble menu UX)
     ...($q.platform.is.mobile ? [ClearStoredMarksOnSelectionChange] : []),
   ],
