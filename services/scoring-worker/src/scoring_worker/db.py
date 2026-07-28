@@ -6,11 +6,15 @@ Column name typos are caught by basedpyright at static analysis time.
 
 from __future__ import annotations
 
+import html
 import json
+import logging
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, TypedDict, cast
 
+import regex
 from sqlalchemy import and_, delete, or_, select, text, update
 from sqlalchemy.orm import Session
 
@@ -42,6 +46,7 @@ from scoring_worker.generated_models import (
 )
 from scoring_worker.pipeline_config import PIPELINE_CONFIG
 
+log = logging.getLogger(__name__)
 PARTICIPANT_MILESTONE_SEEDS = (2,)
 VOTE_MILESTONE_SEEDS: tuple[int, ...] = ()
 MILESTONE_MULTIPLIERS = ((1, 1), (25, 10), (5, 1))
@@ -185,24 +190,70 @@ class SurveyStoredAnswerAnalysisRecord:
     option_slug_ids: tuple[str, ...]
 
 
-def _html_to_counted_text(html_string: str) -> str:
-    plain_text = (
-        html_string.replace("&nbsp;", " ")
-        .replace("<br>", "\n")
-        .replace("<br/>", "\n")
-        .replace("<br />", "\n")
-        .replace("</p>", "\n")
-        .replace("</div>", "\n")
-    )
-    import re
+def _normalize_counted_text(value: str) -> str:
+    return re.sub(r"\n+", "\n", value).strip("\n")
 
-    plain_text = re.sub(r"</h[1-6]>", "\n", plain_text, flags=re.IGNORECASE)
-    plain_text = re.sub(r"</li>", "\n", plain_text, flags=re.IGNORECASE)
-    plain_text = re.sub(r"<li>", "- ", plain_text, flags=re.IGNORECASE)
-    plain_text = re.sub(r"<[^>]*>", "", plain_text)
-    plain_text = re.sub(r"\n{2,}", "\n", plain_text).strip()
+
+def _convert_html_to_counted_text(html_string: str) -> str:
+    text_with_newlines = re.sub(
+        r"</(?:p|li|div|h[1-6])>",
+        "\n",
+        html_string,
+        flags=re.IGNORECASE,
+    )
+    text_with_newlines = re.sub(
+        r"<br\s*/?>",
+        "\n",
+        text_with_newlines,
+        flags=re.IGNORECASE,
+    )
+    plain_text = re.sub(r"<[^>]*>", "", text_with_newlines)
     plain_text = re.sub(r"<[^>]*$", "", plain_text)
-    return plain_text.removesuffix("\n")
+    return _normalize_counted_text(html.unescape(plain_text))
+
+
+def _convert_html_to_counted_text_fallback(html_string: str) -> str:
+    text_with_newlines = re.sub(
+        r"</(?:p|li|div|h[1-6])>",
+        "\n",
+        html_string,
+        flags=re.IGNORECASE,
+    )
+    text_with_newlines = re.sub(
+        r"<br\s*/?>",
+        "\n",
+        text_with_newlines,
+        flags=re.IGNORECASE,
+    )
+    plain_text = re.sub(r"<[^>]*>", "", text_with_newlines)
+    plain_text = re.sub(r"<[^>]*$", "", plain_text)
+    return _normalize_counted_text(plain_text)
+
+
+def _html_to_counted_text(html_string: str) -> str:
+    try:
+        return _convert_html_to_counted_text(html_string)
+    except Exception:
+        log.warning(
+            "HTML-to-text conversion failed; using best-effort text (HTML length: %d)",
+            len(html_string),
+            exc_info=True,
+        )
+        return _convert_html_to_counted_text_fallback(html_string)
+
+
+def _has_visible_plain_text(value: str) -> bool:
+    return bool(
+        regex.sub(r"[\p{Cc}\p{Default_Ignorable_Code_Point}]", "", value).strip()
+    )
+
+
+def _count_graphemes(value: str) -> int:
+    return len(regex.findall(r"\X", value))
+
+
+def _utf16_length(value: str) -> int:
+    return len(value.encode("utf-16-le")) // 2
 
 
 def _validate_survey_answer_for_analysis(
@@ -217,9 +268,25 @@ def _validate_survey_answer_for_analysis(
         if question.constraints["type"] != "free_text":
             return False
         text_value_html = answer.text_value_html or ""
-        if len(text_value_html) > int(question.constraints["maxHtmlLength"]):
+        if question.constraints.get("inputMode") == "integer":
+            if re.fullmatch(r"[0-9]+", text_value_html) is None:
+                return False
+            parsed_value = int(text_value_html)
+            if parsed_value > 9_007_199_254_740_991:
+                return False
+            min_value = int(question.constraints["minValue"])
+            max_value_raw = question.constraints.get("maxValue")
+            max_value = int(max_value_raw) if max_value_raw is not None else None
+            return parsed_value >= min_value and (
+                max_value is None or parsed_value <= max_value
+            )
+
+        if _utf16_length(text_value_html) > int(question.constraints["maxHtmlLength"]):
             return False
-        plain_text_length = len(_html_to_counted_text(text_value_html))
+        plain_text = _html_to_counted_text(text_value_html)
+        if not _has_visible_plain_text(plain_text):
+            return False
+        plain_text_length = _count_graphemes(plain_text)
         min_plain_text_length = max(int(question.constraints.get("minPlainTextLength", 0)), 1)
         return (
             min_plain_text_length

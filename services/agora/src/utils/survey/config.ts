@@ -11,7 +11,7 @@ import type {
   SurveyQuestionFormItem,
   SurveyQuestionOption,
 } from "src/shared/types/zod";
-import { zodSurveyConfig } from "src/shared/types/zod";
+import { zodSurveyConfigInput } from "src/shared/types/zod";
 
 export const SURVEY_CHOICE_DROPDOWN_OPTION_THRESHOLD = 8;
 export const SURVEY_LARGE_OPTION_WARNING_THRESHOLD = 7;
@@ -327,7 +327,7 @@ export function buildSurveyConfigForSave({
     };
   }
 
-  const parsedConfig = zodSurveyConfig.safeParse(
+  const parsedConfig = zodSurveyConfigInput.safeParse(
     normalizeSurveyConfig({ surveyConfig })
   );
 

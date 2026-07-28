@@ -306,7 +306,6 @@ export async function updateConversation({
         conversationSlugId,
         conversationTitle,
         conversationBody,
-        conversationBodyPlainText,
         isIndexed,
         participationMode,
         languageSettingsSource,
@@ -323,13 +322,13 @@ export async function updateConversation({
         try {
             const normalizationResult = normalizeUserRichTextInput({
                 html: sanitizedBody,
-                plainText: conversationBodyPlainText,
                 validationMode: "conversation",
-                logLabel:
-                    "[ConversationPlainText] Frontend/backend plain text mismatch on update",
             });
             if (!normalizationResult.success) {
-                return normalizationResult;
+                return {
+                    success: false,
+                    reason: normalizationResult.reason,
+                };
             }
             sanitizedBody = normalizationResult.content.html;
             bodyPlainText = normalizationResult.content.plainText;

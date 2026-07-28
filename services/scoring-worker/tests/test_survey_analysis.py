@@ -68,3 +68,69 @@ def test_optional_only_survey_is_analysis_eligible_without_response() -> None:
     )
 
     assert status == "complete_valid"
+
+
+def test_required_rich_text_uses_graphemes_and_rejects_invisible_text() -> None:
+    question = SurveyQuestionAnalysisRecord(
+        question_id=3,
+        question_type="free_text",
+        current_semantic_version=1,
+        is_required=True,
+        constraints={
+            "type": "free_text",
+            "inputMode": "rich_text",
+            "maxPlainTextLength": 1,
+            "maxHtmlLength": 100,
+        },
+        option_slug_ids=(),
+    )
+
+    def status_for(text_value_html: str) -> str:
+        return derive_survey_gate_status_for_analysis(
+            has_survey=True,
+            questions=[question],
+            answers_by_question_id={
+                3: SurveyStoredAnswerAnalysisRecord(
+                    answered_question_semantic_version=1,
+                    text_value_html=text_value_html,
+                    option_slug_ids=(),
+                )
+            },
+            withdrawn_at=None,
+        )
+
+    assert status_for("<p>👨‍👩‍👧‍👦</p>") == "complete_valid"
+    assert status_for("<p>\u200b</p>") == "needs_update"
+
+
+def test_required_integer_question_uses_integer_constraints() -> None:
+    question = SurveyQuestionAnalysisRecord(
+        question_id=4,
+        question_type="free_text",
+        current_semantic_version=1,
+        is_required=True,
+        constraints={
+            "type": "free_text",
+            "inputMode": "integer",
+            "minValue": 1,
+            "maxValue": 10,
+        },
+        option_slug_ids=(),
+    )
+    def status_for(value: str) -> str:
+        return derive_survey_gate_status_for_analysis(
+            has_survey=True,
+            questions=[question],
+            answers_by_question_id={
+                4: SurveyStoredAnswerAnalysisRecord(
+                    answered_question_semantic_version=1,
+                    text_value_html=value,
+                    option_slug_ids=(),
+                )
+            },
+            withdrawn_at=None,
+        )
+
+    assert status_for("5") == "complete_valid"
+    assert status_for("\u0665") == "needs_update"
+    assert status_for("9007199254740992") == "needs_update"

@@ -8,7 +8,6 @@ import {
     zodAnalysisOpinionItem,
     zodConversationTitle,
     zodConversationBodyInput,
-    zodConversationBodyPlainTextInput,
     zodConversationBodyOutput,
     zodOpinionContentInput,
     zodVotingOption,
@@ -47,6 +46,7 @@ import {
     zodParticipationMode,
     zodParticipationBlockedReason,
     zodRichTextValidationFailureReason,
+    zodRichTextSizeValidationFailureReason,
     zodMaxdiffComparison,
     zodConversationType,
     zodRankingMode,
@@ -59,6 +59,7 @@ import {
     zodMaxdiffLifecycleStatus,
     zodExternalSourceConfig,
     zodSurveyConfig,
+    zodSurveyConfigInput,
     zodSurveyAggregateRow,
     zodSurveyCompletionCounts,
     zodSurveyQuestionFormItem,
@@ -361,9 +362,30 @@ const zodGetConversationCreateProjectOptionsFailureReason = z.enum([
     "organization_not_available",
     "missing_conversation_create_capability",
 ]);
-const zodConversationCreateFailureReason = z.union([
-    zodRichTextValidationFailureReason,
-    zodGetConversationCreateProjectOptionsFailureReason,
+const zodConversationCreateFailure = z.discriminatedUnion("target", [
+    z
+        .object({
+            target: z.literal("project"),
+            reason: zodGetConversationCreateProjectOptionsFailureReason,
+        })
+        .strict(),
+    z
+        .object({
+            target: z.literal("conversation_body"),
+            reason: zodRichTextSizeValidationFailureReason,
+            count: z.number().int().nonnegative(),
+            limit: z.number().int().positive(),
+        })
+        .strict(),
+    z
+        .object({
+            target: z.literal("seed_opinion"),
+            reason: zodRichTextValidationFailureReason,
+            index: z.number().int().nonnegative(),
+            count: z.number().int().nonnegative(),
+            limit: z.number().int().positive(),
+        })
+        .strict(),
 ]);
 const zodConversationLanguageSettingsSource = z.enum([
     "conversation_override",
@@ -377,44 +399,33 @@ const zodConversationCreateProjectOption = z
         languageSettings: zodProjectLanguageSettings,
     })
     .strict();
-const zodProjectContentLocalization = z
+const zodProjectContentLocalizationInput = z
     .object({
         languageCode: ZodSupportedDisplayLanguageCodes,
         projectTitle: zodProjectTitle.optional(),
         subtitle: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
         body: zodConversationBodyInput,
-        bodyPlainText: zodConversationBodyPlainTextInput.optional(),
         bannerPath: zodOptionalNonEmptyText,
         bannerIsFullPath: z.boolean().default(false),
     })
-    .strict()
-    .superRefine((localization, context) => {
-        if (
-            localization.bodyPlainText !== undefined &&
-            localization.bodyPlainText.trim() !== "" &&
-            localization.body === undefined
-        ) {
-            context.addIssue({
-                code: "custom",
-                message:
-                    "Project content localization body HTML is required when body plain text is provided",
-                path: ["body"],
-            });
-        }
-        if (
-            localization.body !== undefined &&
-            localization.bodyPlainText === undefined
-        ) {
-            context.addIssue({
-                code: "custom",
-                message:
-                    "Project content localization body plain text is required when body HTML is provided",
-                path: ["bodyPlainText"],
-            });
-        }
-    });
-const zodProjectContentLocalizations = z
-    .array(zodProjectContentLocalization)
+    .strict();
+const zodProjectContentLocalizationOutput = zodProjectContentLocalizationInput
+    .extend({
+        body: zodConversationBodyOutput,
+        bodyPlainText: z.string().optional(),
+    })
+    .strict();
+const zodProjectContentLocalizationInputs = z
+    .array(zodProjectContentLocalizationInput)
+    .refine(
+        (localizations) =>
+            new Set(
+                localizations.map((localization) => localization.languageCode),
+            ).size === localizations.length,
+        "Project content localizations must use unique languages",
+    );
+const zodProjectContentLocalizationOutputs = z
+    .array(zodProjectContentLocalizationOutput)
     .refine(
         (localizations) =>
             new Set(
@@ -428,12 +439,12 @@ const zodAdminProject = z
         projectTitle: zodProjectTitle,
         ownerOrganizationSlugs: z.array(zodOrganizationSlug).min(1),
         subtitle: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
-        body: zodConversationBodyInput,
-        bodyPlainText: zodConversationBodyPlainTextInput.optional(),
+        body: zodConversationBodyOutput,
+        bodyPlainText: z.string().optional(),
         bannerPath: zodOptionalNonEmptyText,
         bannerIsFullPath: z.boolean(),
-        contentLocalizations: zodProjectContentLocalizations,
-        machineContentLocalizations: zodProjectContentLocalizations,
+        contentLocalizations: zodProjectContentLocalizationOutputs,
+        machineContentLocalizations: zodProjectContentLocalizationOutputs,
         languageSettings: zodProjectLanguageSettings,
         attributions: z.array(
             z.lazy(() => Dto.createProjectAttributionRequest),
@@ -467,7 +478,7 @@ const zodProjectPageLanguageOption = z
 const zodProjectPageActivityContentVariant = z
     .object({
         title: zodConversationTitle,
-        bodyPlainText: zodConversationBodyPlainTextInput.default(""),
+        bodyPlainText: z.string().default(""),
     })
     .strict();
 const zodProjectPageActivityDisplayedContent = createZodDisplayedContent(
@@ -801,7 +812,6 @@ export class Dto {
         .object({
             conversationTitle: zodConversationTitle,
             conversationBody: zodConversationBodyInput,
-            conversationBodyPlainText: zodConversationBodyPlainTextInput,
             projectSlug: zodProjectSlug.optional(),
             languageSettingsSource:
                 zodConversationLanguageSettingsSource.default(
@@ -827,7 +837,7 @@ export class Dto {
                     aiLabelingEnabled: z.boolean().default(true),
                     preferredOpinionGroupCount:
                         zodPreferredOpinionGroupCount.default(null),
-                    surveyConfig: zodSurveyConfig.nullable().optional(),
+                    surveyConfig: zodSurveyConfigInput.nullable().optional(),
                 })
                 .strict(),
             Dto.createNewConversationBaseRequest
@@ -851,7 +861,7 @@ export class Dto {
         z
             .object({
                 success: z.literal(false),
-                reason: zodConversationCreateFailureReason,
+                failure: zodConversationCreateFailure,
             })
             .strict(),
     ]);
@@ -1151,7 +1161,6 @@ export class Dto {
             conversationSlugId: zodSlugId,
             conversationTitle: zodConversationTitle,
             conversationBody: zodConversationBodyInput,
-            conversationBodyPlainText: zodConversationBodyPlainTextInput,
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
             multilingualSetting: zodConversationMultilingualSetting,
@@ -1163,7 +1172,7 @@ export class Dto {
             aiLabelingEnabled: z.boolean().optional(),
             preferredOpinionGroupCount:
                 zodPreferredOpinionGroupCount.optional(),
-            surveyConfig: zodSurveyConfig.nullable().optional(),
+            surveyConfig: zodSurveyConfigInput.nullable().optional(),
         })
         .strict();
     static updateConversationResponse = z.discriminatedUnion("success", [
@@ -1175,15 +1184,16 @@ export class Dto {
         z
             .object({
                 success: z.literal(false),
-                reason: z.enum([
-                    "not_found",
-                    "not_author",
-                    "conversation_locked",
-                    "invalid_access_settings",
-                    "premium_access_expired",
-                    "premium_access_required",
-                    "plain_text_too_long",
-                    "html_too_long",
+                reason: z.union([
+                    z.enum([
+                        "not_found",
+                        "not_author",
+                        "conversation_locked",
+                        "invalid_access_settings",
+                        "premium_access_expired",
+                        "premium_access_required",
+                    ]),
+                    zodRichTextSizeValidationFailureReason,
                 ]),
             })
             .strict(),
@@ -1332,7 +1342,7 @@ export class Dto {
     static surveyConfigUpdateRequest = z
         .object({
             conversationSlugId: zodSlugId,
-            surveyConfig: zodSurveyConfig,
+            surveyConfig: zodSurveyConfigInput,
         })
         .strict();
     static surveyConfigUpdateResponse = z
@@ -1356,7 +1366,6 @@ export class Dto {
         .object({
             conversationSlugId: z.string(),
             opinionBody: zodOpinionContentInput,
-            opinionPlainText: z.string(),
         })
         .strict();
     static createOpinionResponse = z.discriminatedUnion("success", [
@@ -1757,10 +1766,11 @@ export class Dto {
                 ),
             subtitle: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
             body: zodConversationBodyInput,
-            bodyPlainText: zodConversationBodyPlainTextInput.optional(),
             bannerPath: zodOptionalNonEmptyText,
             bannerIsFullPath: z.boolean().default(false),
-            contentLocalizations: zodProjectContentLocalizations.default([]),
+            contentLocalizations: zodProjectContentLocalizationInputs.default(
+                [],
+            ),
             languageSettings: zodProjectLanguageSettings.default({
                 dynamicTranslationEnabled: false,
                 targetLanguageCodes: [],
@@ -1772,18 +1782,6 @@ export class Dto {
         })
         .strict()
         .superRefine((request, context) => {
-            if (
-                request.body !== undefined &&
-                request.bodyPlainText === undefined
-            ) {
-                context.addIssue({
-                    code: "custom",
-                    message:
-                        "Project body plain text is required when body HTML is provided",
-                    path: ["bodyPlainText"],
-                });
-            }
-
             const targetLanguageCodes = new Set(
                 request.languageSettings.targetLanguageCodes,
             );

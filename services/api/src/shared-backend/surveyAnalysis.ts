@@ -2,6 +2,12 @@ import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { z } from "zod";
 import {
+    countPlainTextCharacters,
+    hasVisiblePlainText,
+    htmlToCountedTextResult,
+} from "../shared/shared.js";
+import { log } from "../app.js";
+import {
     surveyAnswerOptionTable,
     surveyAnswerTable,
     surveyConfigTable,
@@ -21,6 +27,17 @@ export type SurveyGateStatus =
     | "needs_update"
     | "complete_valid"
     | "withdrawn";
+
+function surveyHtmlToCountedText(html: string): string {
+    const result = htmlToCountedTextResult(html);
+    if (result.usedFallback) {
+        log.warn(
+            result.error,
+            `[SurveyAnalysis] HTML-to-text conversion failed; using best-effort text (HTML length: ${String(html.length)})`,
+        );
+    }
+    return result.plainText;
+}
 
 const surveyQuestionConstraintsSchema = z.union([
     z
@@ -81,7 +98,9 @@ export function isSurveyAnswerPassedForAnalysis({
 
     return (
         answer.optionSlugIds.length === 0 &&
-        htmlToCountedText(answer.textValueHtml ?? "").length === 0
+        !hasVisiblePlainText(
+            surveyHtmlToCountedText(answer.textValueHtml ?? ""),
+        )
     );
 }
 
@@ -102,22 +121,6 @@ export function isSurveyQuestionCompletedForAnalysis({
             ? validateSurveyAnswerForAnalysis({ question, answer })
             : validateSurveyAnswerContentForAnalysis({ question, answer }))
     );
-}
-
-function htmlToCountedText(htmlString: string): string {
-    let plainText = htmlString
-        .replace(/&nbsp;/g, " ")
-        .replace(/<br\s*\/?>/gi, "\n")
-        .replace(/<\/p>/gi, "\n")
-        .replace(/<\/div>/gi, "\n")
-        .replace(/<\/h[1-6]>/gi, "\n")
-        .replace(/<\/li>/gi, "\n")
-        .replace(/<li>/gi, "- ")
-        .replace(/<[^>]*>/g, "")
-        .replace(/\n{2,}/g, "\n")
-        .trim();
-    plainText = plainText.replace(/<[^>]*$/, "");
-    return plainText.replace(/\n$/, "");
 }
 
 export function validateSurveyAnswerForAnalysis({
@@ -172,12 +175,15 @@ function validateSurveyAnswerContentForAnalysis({
                 return false;
             }
 
-            const plainTextLength = htmlToCountedText(textValueHtml).length;
+            const plainText = surveyHtmlToCountedText(textValueHtml);
+            const plainTextLength =
+                countPlainTextCharacters(plainText).characterCount;
             const minPlainTextLength = Math.max(
                 question.constraints.minPlainTextLength ?? 0,
                 1,
             );
             return (
+                hasVisiblePlainText(plainText) &&
                 plainTextLength >= minPlainTextLength &&
                 plainTextLength <= question.constraints.maxPlainTextLength
             );

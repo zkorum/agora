@@ -928,13 +928,15 @@ export function useCreateCommentMutation() {
   return useMutation({
     mutationFn: ({
       commentBody,
-      opinionPlainText,
       conversationSlugId,
     }: {
       commentBody: string;
-      opinionPlainText: string;
       conversationSlugId: string;
-    }) => createNewComment(commentBody, opinionPlainText, conversationSlugId),
+    }) =>
+      createNewComment({
+        commentBody,
+        postSlugId: conversationSlugId,
+      }),
     onSuccess: (data, variables) => {
       // Only proceed if the comment creation was successful
       if (data.success) {

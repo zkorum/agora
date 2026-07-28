@@ -90,13 +90,16 @@ import type {
 } from "@/utils/dataStructure.js";
 import { nowZeroMs } from "@/shared/util.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
-import { htmlToCountedText } from "@/shared/shared.js";
 import {
     getOpinionGroupAnalysisSelection,
     getSelectedOpinionGroupCandidate,
 } from "./opinionGroupAnalysis.js";
 import { ensureAiDescriptionLocaleRequestForConversationViewSnapshot } from "./conversationViewSnapshot.js";
-import { normalizeUserRichTextInput } from "./richText.js";
+import {
+    htmlToCountedTextWithWarning,
+    normalizeUserRichTextInput,
+    type NormalizedUserRichText,
+} from "./richText.js";
 import { alias } from "drizzle-orm/pg-core";
 import {
     type SupportedDisplayLanguageCodes,
@@ -3047,8 +3050,6 @@ async function getPostIdFromPostSlugId(
 interface PostNewOpinionBaseProps {
     db: PostgresJsDatabase;
     tx?: PostgresJsDatabase;
-    commentBody: string;
-    opinionPlainText: string;
     conversationSlugId: string;
     didWrite: string;
     userAgent: string;
@@ -3060,6 +3061,16 @@ interface PostNewOpinionBaseProps {
     realtimeSSEManager?: RealtimeSSEManager;
     onCreatedOpinionSource?: (source: OpinionContentSource) => void;
 }
+
+type PostNewOpinionContentProps =
+    | {
+          normalizedContent: NormalizedUserRichText;
+          commentBody?: never;
+      }
+    | {
+          normalizedContent?: never;
+          commentBody: string;
+      };
 
 interface PostNewOpinionWithConversationMetadataProps {
     currentDisplayLanguage?: never;
@@ -3081,6 +3092,7 @@ interface PostNewOpinionWithParticipationCheckProps {
 }
 
 type PostNewOpinionProps = PostNewOpinionBaseProps &
+    PostNewOpinionContentProps &
     (
         | PostNewOpinionWithConversationMetadataProps
         | PostNewOpinionWithParticipationCheckProps
@@ -3092,7 +3104,6 @@ export async function postNewOpinion(
     const {
         db,
         tx,
-        opinionPlainText,
         conversationSlugId,
         didWrite,
         userAgent,
@@ -3104,7 +3115,6 @@ export async function postNewOpinion(
         realtimeSSEManager,
         onCreatedOpinionSource,
     } = props;
-    let { commentBody } = props;
     interface ParticipationContext {
         success: true;
         conversationId: number;
@@ -3112,24 +3122,31 @@ export async function postNewOpinion(
         participantId: string;
     }
 
+    let commentBody: string;
     let contentPlainText: string;
-    try {
-        const normalizationResult = normalizeUserRichTextInput({
-            html: commentBody,
-            plainText: opinionPlainText,
-            validationMode: "opinion",
-            logLabel: "[OpinionPlainText] Frontend/backend plain text mismatch",
-        });
-        if (!normalizationResult.success) {
-            return normalizationResult;
-        }
-        commentBody = normalizationResult.content.html;
-        contentPlainText = normalizationResult.content.plainText;
-    } catch (error) {
-        if (error instanceof Error) {
-            throw httpErrors.badRequest(error.message);
-        } else {
-            throw httpErrors.badRequest("Error while sanitizing request body");
+    if (props.normalizedContent !== undefined) {
+        commentBody = props.normalizedContent.html;
+        contentPlainText = props.normalizedContent.plainText;
+    } else {
+        try {
+            const normalizationResult = normalizeUserRichTextInput({
+                html: props.commentBody,
+                validationMode: "opinion",
+            });
+            if (!normalizationResult.success) {
+                return {
+                    success: false,
+                    reason: normalizationResult.reason,
+                };
+            }
+            commentBody = normalizationResult.content.html;
+            contentPlainText = normalizationResult.content.plainText;
+        } catch (error) {
+            if (error instanceof Error) {
+                throw httpErrors.badRequest(error.message);
+            } else {
+                throw httpErrors.badRequest("Error while sanitizing request body");
+            }
         }
     }
     const participationContext:
@@ -3617,7 +3634,10 @@ export async function bulkInsertOpinionsFromExternalPolisConvo({
                         true,
                         "output",
                     );
-                    const contentPlainText = htmlToCountedText(commentBody);
+                    const contentPlainText = htmlToCountedTextWithWarning({
+                        html: commentBody,
+                        context: "legacy Polis opinion import",
+                    });
                     return {
                         opinionId: opinionId,
                         conversationContentId: conversationContentId,

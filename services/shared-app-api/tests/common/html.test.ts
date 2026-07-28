@@ -1,6 +1,10 @@
 import { describe, expect, test } from "@jest/globals";
 
-import { htmlToCountedText, normalizeEmptyLines } from "../../src/html.js";
+import { processUserGeneratedHtml } from "../../src/html.js";
+
+function normalizeEmptyLines(html: string): string {
+    return processUserGeneratedHtml(html, false, "input");
+}
 
 describe("normalizeEmptyLines", () => {
     test("preserves one intentional empty paragraph between content paragraphs", () => {
@@ -22,18 +26,11 @@ describe("normalizeEmptyLines", () => {
             "<p>First</p>",
         );
     });
-});
 
-describe("htmlToCountedText", () => {
-    test("preserves paragraph and break newlines", () => {
-        expect(htmlToCountedText("<p>Hello<br>world</p><p>Again</p>")).toBe(
-            "Hello\nworld\nAgain",
+    test("handles long empty runs before trailing content", () => {
+        const html = `<p>First</p>${"<p></p>".repeat(3_000)}<strong>Last</strong>`;
+        expect(normalizeEmptyLines(html)).toBe(
+            "<p>First</p><p></p><strong>Last</strong>",
         );
-    });
-
-    test("strips tags and decodes entities", () => {
-        expect(
-            htmlToCountedText("<p><strong>Fish &amp; chips</strong>&nbsp;now</p>"),
-        ).toBe("Fish & chips\u00a0now");
     });
 });

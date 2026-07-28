@@ -200,3 +200,56 @@ def test_build_suppressed_survey_aggregates_excludes_withdrawn_and_stale_answers
     assert [record.suppressed_count for record in result.results] == [None, None]
     assert [record.full_count for record in result.results] == [0, 1]
     assert {record.is_suppressed for record in result.results} == {True}
+
+
+def test_required_free_text_validation_filters_choice_aggregates() -> None:
+    choice_question = _question()
+    free_text_question = SurveyQuestionSnapshot(
+        id=101,
+        slug_id="q2",
+        display_order=2,
+        question_type=SurveyQuestionType.free_text,
+        question_text="Explain",
+        is_required=True,
+        is_public_aggregate_suppression_enabled=False,
+        current_semantic_version=1,
+        constraints={
+            "type": "free_text",
+            "inputMode": "rich_text",
+            "maxPlainTextLength": 1,
+            "maxHtmlLength": 100,
+        },
+        options=[],
+    )
+    config = SurveyConfigSnapshot(
+        id=1,
+        current_revision=1,
+        is_optional=False,
+        questions=[choice_question, free_text_question],
+    )
+    response = SurveyResponseSnapshot(
+        participant_id=USER_1,
+        withdrawn=False,
+        answers_by_question_id={
+            100: SurveyAnswerSnapshot(
+                question_id=100,
+                answered_question_semantic_version=2,
+                option_slug_ids=["a"],
+                text_value_html=None,
+            ),
+            101: SurveyAnswerSnapshot(
+                question_id=101,
+                answered_question_semantic_version=1,
+                option_slug_ids=[],
+                text_value_html="<p>\u200b</p>",
+            ),
+        },
+    )
+
+    result = build_suppressed_survey_aggregates(
+        config=config,
+        responses=[response],
+        group_memberships=[],
+    )
+
+    assert [record.full_count for record in result.results] == [0, 0]

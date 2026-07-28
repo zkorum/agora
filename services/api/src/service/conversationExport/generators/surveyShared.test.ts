@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { htmlToCountedText } from "@/shared/shared.js";
 import { createExportParticipantMap } from "./participantMap.js";
 import {
     buildSurveyAggregateRows,
@@ -135,7 +136,7 @@ function createCompleteMonoChoiceState({
             answerId: responseId * 10 + 2,
             answeredQuestionSemanticVersion: 1,
             textValueHtml: freeTextHtml,
-            textValuePlainText: freeTextHtml,
+            textValuePlainText: htmlToCountedText(freeTextHtml),
             optionSlugIds: [],
         });
     }

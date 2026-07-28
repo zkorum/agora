@@ -10,10 +10,12 @@ import {
     MAX_LENGTH_NAME_CREATOR,
     MAX_LENGTH_BODY,
     MAX_LENGTH_BODY_HTML,
+    MAX_BYTES_RICH_TEXT_HTML,
     LEGACY_MAX_LENGTH_CONVERSATION_BODY_HTML_OUTPUT,
     MAX_LENGTH_USER_REPORT_EXPLANATION,
-    MAX_LENGTH_OPINION_HTML_OUTPUT,
-    normalizeRichTextEmptyLines,
+    countUtf8Bytes,
+    richTextSizeValidationFailureReasons,
+    richTextValidationFailureReasons,
 } from "../shared.js";
 import { isValidPolisUrl } from "../utils/polis.js";
 import {
@@ -297,19 +299,14 @@ export const zodDevice = z
     .strict();
 export const zodDevices = z.array(zodDevice); // list of didWrite of all the devices belonging to a user
 export const zodConversationTitle = z.string().max(MAX_LENGTH_TITLE).min(1);
-export const zodRichTextValidationFailureReason = z.enum([
-    "plain_text_too_long",
-    "html_too_long",
-]);
+export const zodRichTextValidationFailureReason = z.enum(
+    richTextValidationFailureReasons,
+);
+export const zodRichTextSizeValidationFailureReason = z.enum(
+    richTextSizeValidationFailureReasons,
+);
 
-function normalizeRichTextInput(val: unknown): unknown {
-    return typeof val === "string" ? normalizeRichTextEmptyLines(val) : val;
-}
-
-export const zodConversationBodyInput = z
-    .preprocess(normalizeRichTextInput, z.string())
-    .optional();
-export const zodConversationBodyPlainTextInput = z.string();
+export const zodConversationBodyInput = z.string().optional();
 
 // For database/API output - validates HTML string length only (after linkification may add extra chars)
 export const zodConversationBodyOutput = z
@@ -844,9 +841,36 @@ const zodSurveyQuestionFreeTextRichTextConstraints = z
     .object({
         type: z.literal("free_text"),
         inputMode: z.literal("rich_text").optional().default("rich_text"),
-        minPlainTextLength: z.number().int().nonnegative().optional(),
+        minPlainTextLength: z
+            .number()
+            .int()
+            .nonnegative()
+            .optional(),
         maxPlainTextLength: z.number().int().positive(),
         maxHtmlLength: z.number().int().positive(),
+    })
+    .strict();
+
+const zodSurveyQuestionFreeTextRichTextConstraintsInput = z
+    .object({
+        type: z.literal("free_text"),
+        inputMode: z.literal("rich_text").optional().default("rich_text"),
+        minPlainTextLength: z
+            .number()
+            .int()
+            .nonnegative()
+            .max(MAX_LENGTH_BODY_HTML)
+            .optional(),
+        maxPlainTextLength: z
+            .number()
+            .int()
+            .positive()
+            .max(MAX_LENGTH_BODY_HTML),
+        maxHtmlLength: z
+            .number()
+            .int()
+            .positive()
+            .max(MAX_LENGTH_BODY_HTML),
     })
     .strict();
 
@@ -941,6 +965,16 @@ const zodSurveyFreeTextQuestionConfig = zodSurveyQuestionBase
         questionType: z.literal("free_text"),
         constraints: z.union([
             zodSurveyQuestionFreeTextRichTextConstraints,
+            zodSurveyQuestionFreeTextIntegerConstraints,
+        ]),
+    })
+    .strict();
+
+const zodSurveyFreeTextQuestionConfigInput = zodSurveyQuestionBase
+    .extend({
+        questionType: z.literal("free_text"),
+        constraints: z.union([
+            zodSurveyQuestionFreeTextRichTextConstraintsInput,
             zodSurveyQuestionFreeTextIntegerConstraints,
         ]),
     })
@@ -1073,6 +1107,21 @@ export const zodSurveyConfig = z
         }
     });
 
+const zodSurveyQuestionConfigInput = z
+    .discriminatedUnion("questionType", [
+        zodSurveyChoiceQuestionConfig,
+        zodSurveyFreeTextQuestionConfigInput,
+    ])
+    .refine((value) => zodSurveyQuestionConfig.safeParse(value).success);
+
+export const zodSurveyConfigInput = z
+    .object({
+        isOptional: z.boolean().optional().default(false),
+        questions: z.array(zodSurveyQuestionConfigInput),
+    })
+    .strict()
+    .refine((value) => zodSurveyConfig.safeParse(value).success);
+
 export const zodSurveyGateStatus = z.enum([
     "no_survey",
     "not_started",
@@ -1140,7 +1189,7 @@ const zodSurveyFreeTextAnswerDraft = z
     .object({
         questionType: z.literal("free_text"),
         textValueHtml: z.string().max(MAX_LENGTH_BODY_HTML),
-        textValuePlainText: z.string().max(MAX_LENGTH_BODY),
+        textValuePlainText: z.string(),
     })
     .strict();
 
@@ -1153,7 +1202,19 @@ export const zodSurveyAnswerDraft = z.discriminatedUnion("questionType", [
     zodSurveyFreeTextAnswerDraft,
 ]);
 
-export const zodSurveyAnswerSubmission = zodSurveyAnswerDraft;
+export const zodSurveyAnswerSubmission = z.discriminatedUnion("questionType", [
+    zodSurveyChoiceAnswerDraftBase
+        .extend({
+            questionType: z.literal("choice"),
+        })
+        .strict(),
+    z
+        .object({
+            questionType: z.literal("free_text"),
+            textValueHtml: z.string().max(MAX_LENGTH_BODY_HTML),
+        })
+        .strict(),
+]);
 
 const zodSurveyQuestionFormItemFields = {
     currentAnswer: zodSurveyAnswerDraft.optional(),
@@ -1347,17 +1408,13 @@ export const zodAnalysisViewOptionReason = z.enum([
     "recommended_default_unavailable",
 ]);
 
-export const zodOpinionContentInput = z.preprocess(
-    normalizeRichTextInput,
-    z.string().min(1),
-);
-
-// For database/API output - validates HTML string length only (after linkification may add extra chars)
+export const zodOpinionContentInput = z.string();
+// Existing linked content and new editor HTML share the same technical byte ceiling.
 export const zodOpinionContentOutput = z
     .string()
     .min(1)
-    .max(MAX_LENGTH_OPINION_HTML_OUTPUT, {
-        message: `Raw HTML content exceeds maximum length of ${String(MAX_LENGTH_OPINION_HTML_OUTPUT)} characters`,
+    .refine((content) => countUtf8Bytes(content) <= MAX_BYTES_RICH_TEXT_HTML, {
+        message: `Raw HTML content exceeds maximum size of ${String(MAX_BYTES_RICH_TEXT_HTML)} bytes`,
     });
 export const zodOpinionContentVariant = z
     .object({

@@ -9402,8 +9402,7 @@
                                                     },
                                                     "opinion": {
                                                         "type": "string",
-                                                        "minLength": 1,
-                                                        "maxLength": 3000
+                                                        "minLength": 1
                                                     },
                                                     "sourceLanguageCode": {
                                                         "nullable": true,
@@ -11018,17 +11017,12 @@
                                         "type": "string"
                                     },
                                     "opinionBody": {
-                                        "type": "string",
-                                        "minLength": 1
-                                    },
-                                    "opinionPlainText": {
                                         "type": "string"
                                     }
                                 },
                                 "required": [
                                     "conversationSlugId",
-                                    "opinionBody",
-                                    "opinionPlainText"
+                                    "opinionBody"
                                 ],
                                 "additionalProperties": false
                             }
@@ -11071,8 +11065,7 @@
                                                         },
                                                         "opinion": {
                                                             "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 3000
+                                                            "minLength": 1
                                                         },
                                                         "sourceLanguageCode": {
                                                             "nullable": true,
@@ -11207,8 +11200,7 @@
                                                         },
                                                         "opinion": {
                                                             "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 3000
+                                                            "minLength": 1
                                                         },
                                                         "sourceLanguageCode": {
                                                             "nullable": true,
@@ -11336,8 +11328,7 @@
                                                                             "properties": {
                                                                                 "content": {
                                                                                     "type": "string",
-                                                                                    "minLength": 1,
-                                                                                    "maxLength": 3000
+                                                                                    "minLength": 1
                                                                                 }
                                                                             },
                                                                             "required": [
@@ -11586,6 +11577,7 @@
                                                         {
                                                             "type": "string",
                                                             "enum": [
+                                                                "plain_text_empty",
                                                                 "plain_text_too_long",
                                                                 "html_too_long"
                                                             ]
@@ -11674,8 +11666,7 @@
                                             },
                                             "opinion": {
                                                 "type": "string",
-                                                "minLength": 1,
-                                                "maxLength": 3000
+                                                "minLength": 1
                                             },
                                             "sourceLanguageCode": {
                                                 "nullable": true,
@@ -11803,8 +11794,7 @@
                                                                 "properties": {
                                                                     "content": {
                                                                         "type": "string",
-                                                                        "minLength": 1,
-                                                                        "maxLength": 3000
+                                                                        "minLength": 1
                                                                     }
                                                                 },
                                                                 "required": [
@@ -13091,8 +13081,7 @@
                                                                                 },
                                                                                 "html": {
                                                                                     "type": "string",
-                                                                                    "minLength": 1,
-                                                                                    "maxLength": 3000
+                                                                                    "minLength": 1
                                                                                 },
                                                                                 "sourceLanguageCode": {
                                                                                     "nullable": true,
@@ -13125,8 +13114,7 @@
                                                                                                     "properties": {
                                                                                                         "content": {
                                                                                                             "type": "string",
-                                                                                                            "minLength": 1,
-                                                                                                            "maxLength": 3000
+                                                                                                            "minLength": 1
                                                                                                         }
                                                                                                     },
                                                                                                     "required": [
@@ -13955,8 +13943,7 @@
                                                                     },
                                                                     "html": {
                                                                         "type": "string",
-                                                                        "minLength": 1,
-                                                                        "maxLength": 3000
+                                                                        "minLength": 1
                                                                     },
                                                                     "sourceLanguageCode": {
                                                                         "nullable": true,
@@ -13989,8 +13976,7 @@
                                                                                         "properties": {
                                                                                             "content": {
                                                                                                 "type": "string",
-                                                                                                "minLength": 1,
-                                                                                                "maxLength": 3000
+                                                                                                "minLength": 1
                                                                                             }
                                                                                         },
                                                                                         "required": [
@@ -14613,8 +14599,7 @@
                                             },
                                             "opinion": {
                                                 "type": "string",
-                                                "minLength": 1,
-                                                "maxLength": 3000
+                                                "minLength": 1
                                             },
                                             "sourceLanguageCode": {
                                                 "nullable": true,
@@ -14742,8 +14727,7 @@
                                                                 "properties": {
                                                                     "content": {
                                                                         "type": "string",
-                                                                        "minLength": 1,
-                                                                        "maxLength": 3000
+                                                                        "minLength": 1
                                                                     }
                                                                 },
                                                                 "required": [
@@ -15014,8 +14998,7 @@
                                             },
                                             "opinion": {
                                                 "type": "string",
-                                                "minLength": 1,
-                                                "maxLength": 3000
+                                                "minLength": 1
                                             },
                                             "sourceLanguageCode": {
                                                 "nullable": true,
@@ -15143,8 +15126,7 @@
                                                                 "properties": {
                                                                     "content": {
                                                                         "type": "string",
-                                                                        "minLength": 1,
-                                                                        "maxLength": 3000
+                                                                        "minLength": 1
                                                                     }
                                                                 },
                                                                 "required": [
@@ -15562,9 +15544,6 @@
                                             "conversationBody": {
                                                 "type": "string"
                                             },
-                                            "conversationBodyPlainText": {
-                                                "type": "string"
-                                            },
                                             "projectSlug": {
                                                 "type": "string",
                                                 "maxLength": 65,
@@ -15632,8 +15611,7 @@
                                                 "maxItems": 50,
                                                 "type": "array",
                                                 "items": {
-                                                    "type": "string",
-                                                    "minLength": 1
+                                                    "type": "string"
                                                 }
                                             },
                                             "requiresEventTicket": {
@@ -15831,17 +15809,17 @@
                                                                                         "minPlainTextLength": {
                                                                                             "type": "integer",
                                                                                             "minimum": 0,
-                                                                                            "maximum": 9007199254740991
+                                                                                            "maximum": 3000
                                                                                         },
                                                                                         "maxPlainTextLength": {
                                                                                             "type": "integer",
                                                                                             "exclusiveMinimum": true,
-                                                                                            "maximum": 9007199254740991
+                                                                                            "maximum": 3000
                                                                                         },
                                                                                         "maxHtmlLength": {
                                                                                             "type": "integer",
                                                                                             "exclusiveMinimum": true,
-                                                                                            "maximum": 9007199254740991
+                                                                                            "maximum": 3000
                                                                                         }
                                                                                     },
                                                                                     "required": [
@@ -15908,7 +15886,6 @@
                                         },
                                         "required": [
                                             "conversationTitle",
-                                            "conversationBodyPlainText",
                                             "postAsOrganization",
                                             "isIndexed",
                                             "participationMode",
@@ -15927,9 +15904,6 @@
                                                 "maxLength": 140
                                             },
                                             "conversationBody": {
-                                                "type": "string"
-                                            },
-                                            "conversationBodyPlainText": {
                                                 "type": "string"
                                             },
                                             "projectSlug": {
@@ -15999,8 +15973,7 @@
                                                 "maxItems": 50,
                                                 "type": "array",
                                                 "items": {
-                                                    "type": "string",
-                                                    "minLength": 1
+                                                    "type": "string"
                                                 }
                                             },
                                             "requiresEventTicket": {
@@ -16051,7 +16024,6 @@
                                         },
                                         "required": [
                                             "conversationTitle",
-                                            "conversationBodyPlainText",
                                             "postAsOrganization",
                                             "isIndexed",
                                             "participationMode",
@@ -16102,28 +16074,114 @@
                                                         false
                                                     ]
                                                 },
-                                                "reason": {
-                                                    "anyOf": [
+                                                "failure": {
+                                                    "oneOf": [
                                                         {
-                                                            "type": "string",
-                                                            "enum": [
-                                                                "plain_text_too_long",
-                                                                "html_too_long"
-                                                            ]
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "target": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "project"
+                                                                    ]
+                                                                },
+                                                                "reason": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "organization_not_available",
+                                                                        "missing_conversation_create_capability"
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "target",
+                                                                "reason"
+                                                            ],
+                                                            "additionalProperties": false
                                                         },
                                                         {
-                                                            "type": "string",
-                                                            "enum": [
-                                                                "organization_not_available",
-                                                                "missing_conversation_create_capability"
-                                                            ]
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "target": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "conversation_body"
+                                                                    ]
+                                                                },
+                                                                "reason": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "plain_text_too_long",
+                                                                        "html_too_long"
+                                                                    ]
+                                                                },
+                                                                "count": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0,
+                                                                    "maximum": 9007199254740991
+                                                                },
+                                                                "limit": {
+                                                                    "type": "integer",
+                                                                    "exclusiveMinimum": true,
+                                                                    "maximum": 9007199254740991
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "target",
+                                                                "reason",
+                                                                "count",
+                                                                "limit"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "target": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "seed_opinion"
+                                                                    ]
+                                                                },
+                                                                "reason": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "plain_text_empty",
+                                                                        "plain_text_too_long",
+                                                                        "html_too_long"
+                                                                    ]
+                                                                },
+                                                                "index": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0,
+                                                                    "maximum": 9007199254740991
+                                                                },
+                                                                "count": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0,
+                                                                    "maximum": 9007199254740991
+                                                                },
+                                                                "limit": {
+                                                                    "type": "integer",
+                                                                    "exclusiveMinimum": true,
+                                                                    "maximum": 9007199254740991
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "target",
+                                                                "reason",
+                                                                "index",
+                                                                "count",
+                                                                "limit"
+                                                            ],
+                                                            "additionalProperties": false
                                                         }
                                                     ]
                                                 }
                                             },
                                             "required": [
                                                 "success",
-                                                "reason"
+                                                "failure"
                                             ],
                                             "additionalProperties": false
                                         }
@@ -19511,9 +19569,6 @@
                                     "conversationBody": {
                                         "type": "string"
                                     },
-                                    "conversationBodyPlainText": {
-                                        "type": "string"
-                                    },
                                     "isIndexed": {
                                         "type": "boolean"
                                     },
@@ -19754,17 +19809,17 @@
                                                                                 "minPlainTextLength": {
                                                                                     "type": "integer",
                                                                                     "minimum": 0,
-                                                                                    "maximum": 9007199254740991
+                                                                                    "maximum": 3000
                                                                                 },
                                                                                 "maxPlainTextLength": {
                                                                                     "type": "integer",
                                                                                     "exclusiveMinimum": true,
-                                                                                    "maximum": 9007199254740991
+                                                                                    "maximum": 3000
                                                                                 },
                                                                                 "maxHtmlLength": {
                                                                                     "type": "integer",
                                                                                     "exclusiveMinimum": true,
-                                                                                    "maximum": 9007199254740991
+                                                                                    "maximum": 3000
                                                                                 }
                                                                             },
                                                                             "required": [
@@ -19832,7 +19887,6 @@
                                 "required": [
                                     "conversationSlugId",
                                     "conversationTitle",
-                                    "conversationBodyPlainText",
                                     "isIndexed",
                                     "participationMode",
                                     "multilingualSetting"
@@ -19874,16 +19928,25 @@
                                                     ]
                                                 },
                                                 "reason": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "not_found",
-                                                        "not_author",
-                                                        "conversation_locked",
-                                                        "invalid_access_settings",
-                                                        "premium_access_expired",
-                                                        "premium_access_required",
-                                                        "plain_text_too_long",
-                                                        "html_too_long"
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "not_found",
+                                                                "not_author",
+                                                                "conversation_locked",
+                                                                "invalid_access_settings",
+                                                                "premium_access_expired",
+                                                                "premium_access_required"
+                                                            ]
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "plain_text_too_long",
+                                                                "html_too_long"
+                                                            ]
+                                                        }
                                                     ]
                                                 }
                                             },
@@ -20087,8 +20150,7 @@
                                                                                                 "maxLength": 3000
                                                                                             },
                                                                                             "textValuePlainText": {
-                                                                                                "type": "string",
-                                                                                                "maxLength": 1000
+                                                                                                "type": "string"
                                                                                             }
                                                                                         },
                                                                                         "required": [
@@ -20285,8 +20347,7 @@
                                                                                                 "maxLength": 3000
                                                                                             },
                                                                                             "textValuePlainText": {
-                                                                                                "type": "string",
-                                                                                                "maxLength": 1000
+                                                                                                "type": "string"
                                                                                             }
                                                                                         },
                                                                                         "required": [
@@ -20869,16 +20930,11 @@
                                                     "textValueHtml": {
                                                         "type": "string",
                                                         "maxLength": 3000
-                                                    },
-                                                    "textValuePlainText": {
-                                                        "type": "string",
-                                                        "maxLength": 1000
                                                     }
                                                 },
                                                 "required": [
                                                     "questionType",
-                                                    "textValueHtml",
-                                                    "textValuePlainText"
+                                                    "textValueHtml"
                                                 ],
                                                 "additionalProperties": false
                                             }
@@ -21287,17 +21343,17 @@
                                                                                 "minPlainTextLength": {
                                                                                     "type": "integer",
                                                                                     "minimum": 0,
-                                                                                    "maximum": 9007199254740991
+                                                                                    "maximum": 3000
                                                                                 },
                                                                                 "maxPlainTextLength": {
                                                                                     "type": "integer",
                                                                                     "exclusiveMinimum": true,
-                                                                                    "maximum": 9007199254740991
+                                                                                    "maximum": 3000
                                                                                 },
                                                                                 "maxHtmlLength": {
                                                                                     "type": "integer",
                                                                                     "exclusiveMinimum": true,
-                                                                                    "maximum": 9007199254740991
+                                                                                    "maximum": 3000
                                                                                 }
                                                                             },
                                                                             "required": [
@@ -22478,7 +22534,8 @@
                                                         "maxLength": 140
                                                     },
                                                     "body": {
-                                                        "type": "string"
+                                                        "type": "string",
+                                                        "maxLength": 60000
                                                     },
                                                     "bodyPlainText": {
                                                         "type": "string"
@@ -22522,10 +22579,8 @@
                                                                     "maxLength": 140
                                                                 },
                                                                 "body": {
-                                                                    "type": "string"
-                                                                },
-                                                                "bodyPlainText": {
-                                                                    "type": "string"
+                                                                    "type": "string",
+                                                                    "maxLength": 60000
                                                                 },
                                                                 "bannerPath": {
                                                                     "type": "string",
@@ -22534,6 +22589,9 @@
                                                                 "bannerIsFullPath": {
                                                                     "default": false,
                                                                     "type": "boolean"
+                                                                },
+                                                                "bodyPlainText": {
+                                                                    "type": "string"
                                                                 }
                                                             },
                                                             "required": [
@@ -22575,10 +22633,8 @@
                                                                     "maxLength": 140
                                                                 },
                                                                 "body": {
-                                                                    "type": "string"
-                                                                },
-                                                                "bodyPlainText": {
-                                                                    "type": "string"
+                                                                    "type": "string",
+                                                                    "maxLength": 60000
                                                                 },
                                                                 "bannerPath": {
                                                                     "type": "string",
@@ -22587,6 +22643,9 @@
                                                                 "bannerIsFullPath": {
                                                                     "default": false,
                                                                     "type": "boolean"
+                                                                },
+                                                                "bodyPlainText": {
+                                                                    "type": "string"
                                                                 }
                                                             },
                                                             "required": [
@@ -22963,7 +23022,8 @@
                                                     "maxLength": 140
                                                 },
                                                 "body": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "maxLength": 60000
                                                 },
                                                 "bodyPlainText": {
                                                     "type": "string"
@@ -23007,10 +23067,8 @@
                                                                 "maxLength": 140
                                                             },
                                                             "body": {
-                                                                "type": "string"
-                                                            },
-                                                            "bodyPlainText": {
-                                                                "type": "string"
+                                                                "type": "string",
+                                                                "maxLength": 60000
                                                             },
                                                             "bannerPath": {
                                                                 "type": "string",
@@ -23019,6 +23077,9 @@
                                                             "bannerIsFullPath": {
                                                                 "default": false,
                                                                 "type": "boolean"
+                                                            },
+                                                            "bodyPlainText": {
+                                                                "type": "string"
                                                             }
                                                         },
                                                         "required": [
@@ -23060,10 +23121,8 @@
                                                                 "maxLength": 140
                                                             },
                                                             "body": {
-                                                                "type": "string"
-                                                            },
-                                                            "bodyPlainText": {
-                                                                "type": "string"
+                                                                "type": "string",
+                                                                "maxLength": 60000
                                                             },
                                                             "bannerPath": {
                                                                 "type": "string",
@@ -23072,6 +23131,9 @@
                                                             "bannerIsFullPath": {
                                                                 "default": false,
                                                                 "type": "boolean"
+                                                            },
+                                                            "bodyPlainText": {
+                                                                "type": "string"
                                                             }
                                                         },
                                                         "required": [
@@ -23376,9 +23438,6 @@
                                     "body": {
                                         "type": "string"
                                     },
-                                    "bodyPlainText": {
-                                        "type": "string"
-                                    },
                                     "bannerPath": {
                                         "type": "string",
                                         "minLength": 1
@@ -23388,6 +23447,7 @@
                                         "type": "boolean"
                                     },
                                     "contentLocalizations": {
+                                        "default": [],
                                         "type": "array",
                                         "items": {
                                             "type": "object",
@@ -23419,9 +23479,6 @@
                                                     "maxLength": 140
                                                 },
                                                 "body": {
-                                                    "type": "string"
-                                                },
-                                                "bodyPlainText": {
                                                     "type": "string"
                                                 },
                                                 "bannerPath": {
@@ -23993,9 +24050,6 @@
                                     "body": {
                                         "type": "string"
                                     },
-                                    "bodyPlainText": {
-                                        "type": "string"
-                                    },
                                     "bannerPath": {
                                         "type": "string",
                                         "minLength": 1
@@ -24005,6 +24059,7 @@
                                         "type": "boolean"
                                     },
                                     "contentLocalizations": {
+                                        "default": [],
                                         "type": "array",
                                         "items": {
                                             "type": "object",
@@ -24036,9 +24091,6 @@
                                                     "maxLength": 140
                                                 },
                                                 "body": {
-                                                    "type": "string"
-                                                },
-                                                "bodyPlainText": {
                                                     "type": "string"
                                                 },
                                                 "bannerPath": {
@@ -28242,8 +28294,7 @@
                                                                             "properties": {
                                                                                 "content": {
                                                                                     "type": "string",
-                                                                                    "minLength": 1,
-                                                                                    "maxLength": 3000
+                                                                                    "minLength": 1
                                                                                 }
                                                                             },
                                                                             "required": [
@@ -28682,8 +28733,7 @@
                                                                             "properties": {
                                                                                 "content": {
                                                                                     "type": "string",
-                                                                                    "minLength": 1,
-                                                                                    "maxLength": 3000
+                                                                                    "minLength": 1
                                                                                 }
                                                                             },
                                                                             "required": [
@@ -29131,8 +29181,7 @@
                                                                             "properties": {
                                                                                 "content": {
                                                                                     "type": "string",
-                                                                                    "minLength": 1,
-                                                                                    "maxLength": 3000
+                                                                                    "minLength": 1
                                                                                 }
                                                                             },
                                                                             "required": [

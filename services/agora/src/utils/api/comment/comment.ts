@@ -190,14 +190,15 @@ export function useBackendCommentApi() {
     }
   }
 
-  async function createNewComment(
-    commentBody: string,
-    opinionPlainText: string,
-    postSlugId: string
-  ): Promise<CreateNewCommentResult> {
+  async function createNewComment({
+    commentBody,
+    postSlugId,
+  }: {
+    commentBody: string;
+    postSlugId: string;
+  }): Promise<CreateNewCommentResult> {
     const params: CreateOpinionRequest = {
       opinionBody: commentBody,
-      opinionPlainText,
       conversationSlugId: postSlugId,
     };
 

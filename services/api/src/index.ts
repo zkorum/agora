@@ -2926,7 +2926,6 @@ server.after(() => {
             const newOpinionResponse = await postNewOpinion({
                 db: db,
                 commentBody: request.body.opinionBody,
-                opinionPlainText: request.body.opinionPlainText,
                 conversationSlugId: request.body.conversationSlugId,
                 didWrite: didWrite,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
@@ -3356,6 +3355,13 @@ server.after(() => {
                         isRegistered: true,
                     },
                 });
+            const normalizedRichTextResult =
+                postService.normalizeCreateConversationRichText(
+                    createConversationRequest,
+                );
+            if (!normalizedRichTextResult.success) {
+                return normalizedRichTextResult;
+            }
             const headerDisplayLanguage = getRequestDisplayLanguage({
                 request,
             });
@@ -3379,7 +3385,13 @@ server.after(() => {
                     autoProvisionedDefaultLanguage,
                 });
             if (!createTargetResult.success) {
-                return createTargetResult;
+                return Dto.createNewConversationResponse.parse({
+                    success: false,
+                    failure: {
+                        target: "project",
+                        reason: createTargetResult.reason,
+                    },
+                });
             }
             if (
                 createConversationRequest.languageSettingsSource ===
@@ -3443,6 +3455,7 @@ server.after(() => {
             const createResult = await postService.createNewPost({
                 db: db,
                 request: createConversationRequest,
+                normalizedRichText: normalizedRichTextResult.content,
                 authorId: deviceStatus.userId,
                 didWrite: didWrite,
                 createTarget: createTargetResult.target,

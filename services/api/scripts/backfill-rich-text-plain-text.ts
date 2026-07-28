@@ -20,7 +20,7 @@ import {
     rankingItemContentTranslationTable,
     surveyAnswerTable,
 } from "../src/shared-backend/schema.js";
-import { htmlToCountedText } from "../src/shared-app-api/html.js";
+import { htmlToCountedTextResult } from "../src/shared/shared.js";
 import {
     contentLanguageMetadataUpdateValues,
     resolveContentLanguageMetadata,
@@ -66,7 +66,21 @@ const log = {
     error: (...args: unknown[]): void => {
         console.error(...args);
     },
+    warn: (...args: unknown[]): void => {
+        console.warn(...args);
+    },
 };
+
+function htmlToCountedText(html: string): string {
+    const result = htmlToCountedTextResult(html);
+    if (result.usedFallback) {
+        log.warn(
+            `[RichTextBackfill] HTML-to-text conversion failed; using best-effort text (HTML length: ${String(html.length)})`,
+            result.error,
+        );
+    }
+    return result.plainText;
+}
 
 type Db = PostgresJsDatabase;
 

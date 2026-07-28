@@ -515,6 +515,7 @@ import {
   type SupportedDisplayLanguageCodes,
   ZodSupportedDisplayLanguageCodes,
 } from "src/shared/languages";
+import { MAX_LENGTH_BODY_HTML } from "src/shared/shared";
 import type {
   SurveyChoiceDisplay,
   SurveyConfig,
@@ -1469,16 +1470,19 @@ function updateRichTextConstraints({
     return;
   }
 
-  const parsedMaxPlainTextLength = Math.max(
-    parseOptionalInteger(maxPlainTextLength) ?? 300,
-    1
+  const parsedMaxPlainTextLength = Math.min(
+    Math.max(parseOptionalInteger(maxPlainTextLength) ?? 300, 1),
+    MAX_LENGTH_BODY_HTML
   );
   question.constraints = {
     type: "free_text",
     inputMode: "rich_text",
     minPlainTextLength: parseOptionalInteger(minPlainTextLength ?? null),
     maxPlainTextLength: parsedMaxPlainTextLength,
-    maxHtmlLength: parsedMaxPlainTextLength * 10,
+    maxHtmlLength: Math.min(
+      parsedMaxPlainTextLength * 10,
+      MAX_LENGTH_BODY_HTML
+    ),
   };
 }
 

@@ -16,18 +16,16 @@
 
             <Editor
               ref="editorRef"
-              v-model:plain-text="plainText"
               :model-value="modelValue"
               class="textarea-border-style"
               :placeholder="t('inputTextPlaceholder')"
               :show-toolbar="true"
               :single-line="false"
-              :disabled="false"
+              :disabled="disabled"
               :max-length="maxLengthOpinion"
               :submit-on-enter="submitOnEnter"
               min-height="3rem"
               @update:model-value="(val: string) => emit('update:modelValue', val)"
-              @update:character-count="onCharacterCountUpdate"
               @manually-focused="emit('focus')"
               @blur="emit('blur')"
               @enter="emit('enter')"
@@ -43,6 +41,7 @@
       rounded
       severity="secondary"
       class="delete-button"
+      :disabled="disabled"
       @click.stop="handleDeleteClick"
       @mousedown.stop
     />
@@ -53,7 +52,7 @@
       :confirm-text="t('confirmDeleteConfirm')"
       :cancel-text="t('confirmDeleteCancel')"
       variant="destructive"
-      @confirm="emit('remove')"
+      @confirm="handleConfirmDelete"
     />
   </div>
 </template>
@@ -80,8 +79,9 @@ defineOptions({
 
 const props = defineProps<{
   modelValue: string;
-  errorMessage?: string;
+  errorMessage: string | undefined;
   isActive: boolean;
+  disabled: boolean;
   submitOnEnter?: boolean;
 }>();
 
@@ -91,7 +91,6 @@ const emit = defineEmits<{
   (e: "focus"): void;
   (e: "blur"): void;
   (e: "enter"): void;
-  (e: "update:characterCount", count: number): void;
 }>();
 
 const maxLengthOpinion = MAX_LENGTH_OPINION;
@@ -106,25 +105,30 @@ const { t } = useComponentI18n<SeedOpinionItemTranslations>(
 
 const editorRef = ref<InstanceType<typeof Editor>>();
 const showDeleteConfirm = ref(false);
-const plainText = ref("");
-
-function onCharacterCountUpdate(count: number) {
-  emit("update:characterCount", count);
-}
 
 const handleCardClick = (): void => {
-  if (!props.isActive) {
+  if (!props.disabled && !props.isActive) {
     editorRef.value?.focus();
   }
 };
 
 function handleDeleteClick(): void {
+  if (props.disabled) {
+    return;
+  }
+
   if (htmlToCountedText(props.modelValue).trim().length === 0) {
     emit("remove");
     return;
   }
 
   showDeleteConfirm.value = true;
+}
+
+function handleConfirmDelete(): void {
+  if (!props.disabled) {
+    emit("remove");
+  }
 }
 
 // Expose focus method for parent component

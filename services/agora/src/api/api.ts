@@ -269,7 +269,6 @@ export interface ApiV1AdministratorProjectCreatePostRequest {
     'ownerOrganizationSlugs': Array<string>;
     'subtitle'?: string;
     'body'?: string;
-    'bodyPlainText'?: string;
     'bannerPath'?: string;
     'bannerIsFullPath'?: boolean;
     'contentLocalizations'?: Array<ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInner>;
@@ -362,7 +361,6 @@ export interface ApiV1AdministratorProjectCreatePostRequestContentLocalizationsI
     'projectTitle'?: string;
     'subtitle'?: string;
     'body'?: string;
-    'bodyPlainText'?: string;
     'bannerPath'?: string;
     'bannerIsFullPath'?: boolean;
 }
@@ -553,9 +551,9 @@ export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectLi
     'projectTitle'?: string;
     'subtitle'?: string;
     'body'?: string;
-    'bodyPlainText'?: string;
     'bannerPath'?: string;
     'bannerIsFullPath': boolean;
+    'bodyPlainText'?: string;
 }
 
 export const ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInnerLanguageCodeEnum = {
@@ -658,7 +656,6 @@ export interface ApiV1AdministratorProjectUpdatePostRequest {
     'ownerOrganizationSlugs': Array<string>;
     'subtitle'?: string;
     'body'?: string;
-    'bodyPlainText'?: string;
     'bannerPath'?: string;
     'bannerIsFullPath'?: boolean;
     'contentLocalizations'?: Array<ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInner>;
@@ -2461,17 +2458,69 @@ export interface ApiV1ConversationCreatePost200ResponseOneOf {
 }
 export interface ApiV1ConversationCreatePost200ResponseOneOf1 {
     'success': boolean;
-    'reason': ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum;
+    'failure': ApiV1ConversationCreatePost200ResponseOneOf1Failure;
+}
+/**
+ * @type ApiV1ConversationCreatePost200ResponseOneOf1Failure
+ */
+export type ApiV1ConversationCreatePost200ResponseOneOf1Failure = ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf | ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf1 | ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf2;
+
+export interface ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf {
+    'target': ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOfTargetEnum;
+    'reason': ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOfReasonEnum;
 }
 
-export const ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum = {
-    PlainTextTooLong: 'plain_text_too_long',
-    HtmlTooLong: 'html_too_long',
+export const ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOfTargetEnum = {
+    Project: 'project',
+} as const;
+
+export type ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOfTargetEnum = typeof ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOfTargetEnum[keyof typeof ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOfTargetEnum];
+export const ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOfReasonEnum = {
     OrganizationNotAvailable: 'organization_not_available',
     MissingConversationCreateCapability: 'missing_conversation_create_capability',
 } as const;
 
-export type ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationCreatePost200ResponseOneOf1ReasonEnum];
+export type ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOfReasonEnum = typeof ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOfReasonEnum[keyof typeof ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOfReasonEnum];
+
+export interface ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf1 {
+    'target': ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf1TargetEnum;
+    'reason': ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf1ReasonEnum;
+    'count': number;
+    'limit': number;
+}
+
+export const ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf1TargetEnum = {
+    ConversationBody: 'conversation_body',
+} as const;
+
+export type ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf1TargetEnum = typeof ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf1TargetEnum[keyof typeof ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf1TargetEnum];
+export const ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf1ReasonEnum = {
+    PlainTextTooLong: 'plain_text_too_long',
+    HtmlTooLong: 'html_too_long',
+} as const;
+
+export type ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf1ReasonEnum = typeof ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf1ReasonEnum[keyof typeof ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf1ReasonEnum];
+
+export interface ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf2 {
+    'target': ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf2TargetEnum;
+    'reason': ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf2ReasonEnum;
+    'index': number;
+    'count': number;
+    'limit': number;
+}
+
+export const ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf2TargetEnum = {
+    SeedOpinion: 'seed_opinion',
+} as const;
+
+export type ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf2TargetEnum = typeof ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf2TargetEnum[keyof typeof ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf2TargetEnum];
+export const ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf2ReasonEnum = {
+    PlainTextEmpty: 'plain_text_empty',
+    PlainTextTooLong: 'plain_text_too_long',
+    HtmlTooLong: 'html_too_long',
+} as const;
+
+export type ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf2ReasonEnum = typeof ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf2ReasonEnum[keyof typeof ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf2ReasonEnum];
 
 /**
  * @type ApiV1ConversationCreatePostRequest
@@ -2481,7 +2530,6 @@ export type ApiV1ConversationCreatePostRequest = ApiV1ConversationCreatePostRequ
 export interface ApiV1ConversationCreatePostRequestOneOf {
     'conversationTitle': string;
     'conversationBody'?: string;
-    'conversationBodyPlainText': string;
     'projectSlug'?: string;
     'languageSettingsSource'?: ApiV1ConversationCreatePostRequestOneOfLanguageSettingsSourceEnum;
     'postAsOrganization': string;
@@ -2524,7 +2572,6 @@ export type ApiV1ConversationCreatePostRequestOneOfConversationTypeEnum = typeof
 export interface ApiV1ConversationCreatePostRequestOneOf1 {
     'conversationTitle': string;
     'conversationBody'?: string;
-    'conversationBodyPlainText': string;
     'projectSlug'?: string;
     'languageSettingsSource'?: ApiV1ConversationCreatePostRequestOneOf1LanguageSettingsSourceEnum;
     'postAsOrganization': string;
@@ -4061,7 +4108,6 @@ export interface ApiV1ConversationUpdatePostRequest {
     'conversationSlugId': string;
     'conversationTitle': string;
     'conversationBody'?: string;
-    'conversationBodyPlainText': string;
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationUpdatePostRequestParticipationModeEnum;
     'multilingualSetting': ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
@@ -4436,6 +4482,7 @@ export const ApiV1OpinionCreatePost200ResponseOneOf1ReasonEnum = {
     EmailVerificationRequired: 'email_verification_required',
     SurveyRequired: 'survey_required',
     SurveyOutdated: 'survey_outdated',
+    PlainTextEmpty: 'plain_text_empty',
     PlainTextTooLong: 'plain_text_too_long',
     HtmlTooLong: 'html_too_long',
 } as const;
@@ -4526,7 +4573,6 @@ export interface ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItemDispl
 export interface ApiV1OpinionCreatePostRequest {
     'conversationSlugId': string;
     'opinionBody': string;
-    'opinionPlainText': string;
 }
 export interface ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInner {
     'conversationViewSnapshotId': number;
@@ -5965,7 +6011,18 @@ export interface ApiV1SurveyAnswerSavePostRequest {
 /**
  * @type ApiV1SurveyAnswerSavePostRequestAnswer
  */
-export type ApiV1SurveyAnswerSavePostRequestAnswer = ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfCurrentAnswerOneOf | ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfCurrentAnswerOneOf1;
+export type ApiV1SurveyAnswerSavePostRequestAnswer = ApiV1SurveyAnswerSavePostRequestAnswerOneOf | ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfCurrentAnswerOneOf;
+
+export interface ApiV1SurveyAnswerSavePostRequestAnswerOneOf {
+    'questionType': ApiV1SurveyAnswerSavePostRequestAnswerOneOfQuestionTypeEnum;
+    'textValueHtml': string;
+}
+
+export const ApiV1SurveyAnswerSavePostRequestAnswerOneOfQuestionTypeEnum = {
+    FreeText: 'free_text',
+} as const;
+
+export type ApiV1SurveyAnswerSavePostRequestAnswerOneOfQuestionTypeEnum = typeof ApiV1SurveyAnswerSavePostRequestAnswerOneOfQuestionTypeEnum[keyof typeof ApiV1SurveyAnswerSavePostRequestAnswerOneOfQuestionTypeEnum];
 
 export interface ApiV1SurveyCompletionCountsPost200Response {
     'hasSurvey': boolean;

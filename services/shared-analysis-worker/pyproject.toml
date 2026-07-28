@@ -11,6 +11,7 @@ dependencies = [
     "psycopg[binary]>=3.2",
     "pydantic>=2.12",
     "pydantic-settings>=2.0",
+    "regex>=2025.0",
     "sqlalchemy[postgresql-psycopg]>=2.0",
     "valkey>=6.0",
     "zstandard>=0.23",

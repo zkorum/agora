@@ -118,7 +118,10 @@ import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { BubbleMenu } from "@tiptap/vue-3/menus";
 import Divider from "primevue/divider";
 import { useQuasar } from "quasar";
-import { htmlToCountedText } from "src/shared/shared";
+import {
+  countPlainTextCharacters,
+  htmlToCountedText,
+} from "src/shared/shared";
 import { processUserGeneratedHtml } from "src/shared-app-api/html";
 import { computed, onUnmounted, ref, watch } from "vue";
 
@@ -154,7 +157,7 @@ const emit = defineEmits<{
 }>();
 const $q = useQuasar();
 const modelText = defineModel<string>({ required: true });
-const modelPlainText = defineModel<string>("plainText", { required: true });
+const modelPlainText = defineModel<string>("plainText", { default: "" });
 
 // Internal character count tracking
 const internalCharacterCount = ref(0);
@@ -164,22 +167,44 @@ const isOverLimit = computed(
     internalCharacterCount.value > props.maxLength
 );
 
-function computeCharacterCount(editorInstance: TipTapEditor): number {
-  if (props.singleLine) {
-    return editorInstance.getText().length;
-  }
-  if (editorInstance.isEmpty) {
-    return 0;
-  }
-  return htmlToCountedText(editorInstance.getHTML()).length;
-}
-
 function emitCharacterCount(count: number): void {
   internalCharacterCount.value = count;
   emit("update:characterCount", count);
   emit(
     "update:isOverLimit",
     props.maxLength !== undefined && count > props.maxLength
+  );
+}
+
+function getSerializedPlainText(serializedContent: string): string {
+  return props.singleLine
+    ? serializedContent
+    : htmlToCountedText(serializedContent);
+}
+
+let serializedEditorContent = modelText.value;
+
+function updateEditorState({
+  editorInstance,
+  updateModelText,
+}: {
+  editorInstance: TipTapEditor;
+  updateModelText: boolean;
+}): void {
+  const serializedContent = serializeEditorContent({
+    editor: editorInstance,
+    singleLine: props.singleLine,
+  });
+  const plainText = getSerializedPlainText(serializedContent);
+  serializedEditorContent = serializedContent;
+  modelPlainText.value = plainText;
+  if (updateModelText) {
+    modelText.value = serializedContent;
+  }
+  emitCharacterCount(
+    props.singleLine
+      ? plainText.length
+      : countPlainTextCharacters(plainText).characterCount
   );
 }
 
@@ -278,16 +303,10 @@ const editor = useEditor({
     },
   },
   onCreate: ({ editor }) => {
-    modelPlainText.value = editor.getText();
-    emitCharacterCount(computeCharacterCount(editor));
+    updateEditorState({ editorInstance: editor, updateModelText: false });
   },
   onUpdate: ({ editor }) => {
-    modelPlainText.value = editor.getText();
-    modelText.value = serializeEditorContent({
-      editor,
-      singleLine: props.singleLine,
-    });
-    emitCharacterCount(computeCharacterCount(editor));
+    updateEditorState({ editorInstance: editor, updateModelText: true });
   },
   onFocus: () => {
     emit("manuallyFocused");
@@ -322,15 +341,12 @@ watch(
     const editorInstance = editor.value;
     if (
       editorInstance === undefined ||
-      newValue ===
-        serializeEditorContent({
-          editor: editorInstance,
-          singleLine: props.singleLine,
-        })
+      newValue === serializedEditorContent
     ) {
       return;
     }
 
+    serializedEditorContent = newValue;
     editorInstance.commands.setContent(newValue);
   }
 );

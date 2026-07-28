@@ -225,6 +225,33 @@ describe("deriveSurveyQuestionFormItem", () => {
         });
     });
 
+    it("derives legacy answer plain text from canonical HTML", async () => {
+        const { deriveSurveyQuestionFormItem } = await surveyModulePromise;
+        const question = createFreeTextQuestion({
+            id: 1,
+            slugId: "legacy-question",
+            isRequired: true,
+            displayOrder: 0,
+        });
+
+        const formItem = deriveSurveyQuestionFormItem({
+            question,
+            storedAnswer: {
+                answerId: 10,
+                answeredQuestionSemanticVersion: 1,
+                textValueHtml: "<p>Canonical</p>",
+                textValuePlainText: "Mismatched legacy text",
+                optionSlugIds: [],
+            },
+        });
+
+        expect(formItem.currentAnswer).toEqual({
+            questionType: "free_text",
+            textValueHtml: "<p>Canonical</p>",
+            textValuePlainText: "Canonical",
+        });
+    });
+
     it("presents required questions as optional when the whole survey is optional", async () => {
         const { deriveSurveyQuestionFormItem } = await surveyModulePromise;
         const requiredQuestion = createFreeTextQuestion({
@@ -382,6 +409,63 @@ describe("validateSurveyAnswer", () => {
                     questionType: "free_text",
                     textValueHtml: "0",
                     textValuePlainText: "0",
+                },
+            }),
+        ).toBe(false);
+    });
+
+    it("applies rich-text length limits to grapheme clusters", async () => {
+        const { validateSurveyAnswer } = await surveyModulePromise;
+        const question = {
+            id: 1,
+            slugId: "question1",
+            questionType: "free_text" as const,
+            choiceDisplay: "auto" as const,
+            currentContentId: 10,
+            currentSemanticVersion: 1,
+            displayOrder: 0,
+            isRequired: true,
+            isPublicAggregateSuppressionEnabled: false,
+            questionText: "Describe your household",
+            constraints: {
+                type: "free_text" as const,
+                inputMode: "rich_text" as const,
+                maxPlainTextLength: 1,
+                maxHtmlLength: 100,
+            },
+            sourceLanguageCode: "en",
+            sourceLanguageConfidence: 0.99,
+            options: [],
+        };
+
+        expect(
+            validateSurveyAnswer({
+                question,
+                answer: {
+                    questionType: "free_text",
+                    textValueHtml: "<p>👨‍👩‍👧‍👦</p>",
+                    textValuePlainText: "👨‍👩‍👧‍👦",
+                },
+            }),
+        ).toBe(true);
+    });
+
+    it("rejects rich-text answers without visible text", async () => {
+        const { validateSurveyAnswer } = await surveyModulePromise;
+        const question = createFreeTextQuestion({
+            id: 1,
+            slugId: "required-question",
+            isRequired: true,
+            displayOrder: 0,
+        });
+
+        expect(
+            validateSurveyAnswer({
+                question,
+                answer: {
+                    questionType: "free_text",
+                    textValueHtml: "<p>\u200B</p>",
+                    textValuePlainText: "\u200B",
                 },
             }),
         ).toBe(false);

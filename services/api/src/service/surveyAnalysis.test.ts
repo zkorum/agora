@@ -50,6 +50,20 @@ const requiredIntegerFreeTextQuestion: SurveyQuestionAnalysisRecord = {
     optionSlugIds: [],
 };
 
+const requiredRichTextQuestion: SurveyQuestionAnalysisRecord = {
+    questionId: 4,
+    questionType: "free_text",
+    currentSemanticVersion: 1,
+    isRequired: true,
+    constraints: {
+        type: "free_text",
+        inputMode: "rich_text",
+        maxPlainTextLength: 1,
+        maxHtmlLength: 100,
+    },
+    optionSlugIds: [],
+};
+
 describe("validateSurveyAnswerForAnalysis", () => {
     it("marks facilitator-invalidated answers as stale when semantic versions diverge", () => {
         const answer: SurveyStoredAnswerAnalysisRecord = {
@@ -95,6 +109,45 @@ describe("validateSurveyAnswerForAnalysis", () => {
                 answer: {
                     answeredQuestionSemanticVersion: 1,
                     textValueHtml: "34.5",
+                    optionSlugIds: [],
+                },
+            }),
+        ).toBe(false);
+    });
+
+    it("applies rich-text limits to grapheme clusters", () => {
+        expect(
+            validateSurveyAnswerForAnalysis({
+                question: requiredRichTextQuestion,
+                answer: {
+                    answeredQuestionSemanticVersion: 1,
+                    textValueHtml: "<p>👨‍👩‍👧‍👦</p>",
+                    optionSlugIds: [],
+                },
+            }),
+        ).toBe(true);
+    });
+
+    it("uses canonical plain-text extraction for rich-text limits", () => {
+        expect(
+            validateSurveyAnswerForAnalysis({
+                question: requiredRichTextQuestion,
+                answer: {
+                    answeredQuestionSemanticVersion: 1,
+                    textValueHtml: "<ul><li><p>A</p></li></ul>",
+                    optionSlugIds: [],
+                },
+            }),
+        ).toBe(true);
+    });
+
+    it("rejects rich-text answers without visible text", () => {
+        expect(
+            validateSurveyAnswerForAnalysis({
+                question: requiredRichTextQuestion,
+                answer: {
+                    answeredQuestionSemanticVersion: 1,
+                    textValueHtml: "<p>\u200B</p>",
                     optionSlugIds: [],
                 },
             }),

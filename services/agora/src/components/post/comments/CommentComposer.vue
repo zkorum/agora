@@ -43,7 +43,7 @@
           severity="primary"
           :disabled="
             isOverLimit ||
-            characterCount === 0 ||
+            !hasVisibleOpinionText ||
             isSubmissionLoading ||
             isComposerDisabled
           "
@@ -87,8 +87,8 @@ import { useParticipationGate } from "src/composables/conversation/useParticipat
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useIdleMount } from "src/composables/ui/useIdleMount";
 import {
+  hasVisiblePlainText,
   MAX_LENGTH_OPINION,
-  validateHtmlStringCharacterCount,
 } from "src/shared/shared";
 import type {
   EventSlug,
@@ -285,6 +285,9 @@ if (newOpinionIntention.enabled) {
 
 const opinionBody = ref(newOpinionIntention.opinionBody);
 const opinionPlainText = ref("");
+const hasVisibleOpinionText = computed(() =>
+  hasVisiblePlainText(opinionPlainText.value)
+);
 
 const showLoginDialog = ref(false);
 const showGuidelinesDialog = ref(false);
@@ -306,9 +309,8 @@ watch(showGuidelinesDialog, (isOpen, wasOpen) => {
   }
 });
 
-watch(opinionBody, () => {
-  checkWordCount();
-  if (characterCount.value === 0) {
+watch(characterCount, (count) => {
+  if (count === 0) {
     deleteOpinionDraft(props.postSlugId);
   }
 });
@@ -394,7 +396,6 @@ onMounted(() => {
     opinionBody.value = savedDraft.body;
   }
 
-  checkWordCount();
 });
 
 watch(yScroll, () => {
@@ -505,13 +506,6 @@ function editorFocused() {
   }, 1000);
 }
 
-function checkWordCount() {
-  characterCount.value = validateHtmlStringCharacterCount(
-    opinionBody.value,
-    "opinion"
-  ).characterCount;
-}
-
 function onCharacterCountUpdate(count: number) {
   characterCount.value = count;
 }
@@ -525,11 +519,10 @@ async function submitPostClicked() {
   isSubmissionLoading.value = true;
 
   try {
-    const response = await createNewComment(
-      opinionBody.value,
-      opinionPlainText.value,
-      props.postSlugId
-    );
+    const response = await createNewComment({
+      commentBody: opinionBody.value,
+      postSlugId: props.postSlugId,
+    });
 
     if (response.success) {
       addCreatedOpinionVoteToCache({
@@ -581,6 +574,7 @@ async function submitPostClicked() {
           case "survey_outdated":
             showLoginDialog.value = true;
             break;
+          case "plain_text_empty":
           case "plain_text_too_long":
           case "html_too_long":
             showNotifyMessage(t("createOpinionError"));

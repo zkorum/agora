@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+import html
+import logging
+import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+
+import regex
 
 from agora_analysis_worker_shared.generated_models import (
     SurveyAggregateScopeEnum,
@@ -13,6 +18,7 @@ if TYPE_CHECKING:
     from uuid import UUID
 
 PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD = 5
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -356,9 +362,106 @@ def _is_question_completed(
     answer = response.answers_by_question_id.get(question.id)
     if answer is None:
         return False
-    if question.question_type != SurveyQuestionType.choice:
-        return answer.answered_question_semantic_version == question.current_semantic_version
-    return _is_valid_choice_answer(question=question, answer=answer)
+    if question.question_type == SurveyQuestionType.choice:
+        return _is_valid_choice_answer(question=question, answer=answer)
+    return _is_valid_free_text_answer(question=question, answer=answer)
+
+
+def _normalize_counted_text(value: str) -> str:
+    return re.sub(r"\n+", "\n", value).strip("\n")
+
+
+def _convert_html_to_counted_text(value: str) -> str:
+    text_with_newlines = re.sub(
+        r"</(?:p|li|div|h[1-6])>",
+        "\n",
+        value,
+        flags=re.IGNORECASE,
+    )
+    text_with_newlines = re.sub(
+        r"<br\s*/?>",
+        "\n",
+        text_with_newlines,
+        flags=re.IGNORECASE,
+    )
+    plain_text = re.sub(r"<[^>]*>", "", text_with_newlines)
+    plain_text = re.sub(r"<[^>]*$", "", plain_text)
+    return _normalize_counted_text(html.unescape(plain_text))
+
+
+def _convert_html_to_counted_text_fallback(value: str) -> str:
+    text_with_newlines = re.sub(
+        r"</(?:p|li|div|h[1-6])>",
+        "\n",
+        value,
+        flags=re.IGNORECASE,
+    )
+    text_with_newlines = re.sub(
+        r"<br\s*/?>",
+        "\n",
+        text_with_newlines,
+        flags=re.IGNORECASE,
+    )
+    plain_text = re.sub(r"<[^>]*>", "", text_with_newlines)
+    plain_text = re.sub(r"<[^>]*$", "", plain_text)
+    return _normalize_counted_text(plain_text)
+
+
+def _html_to_counted_text(value: str) -> str:
+    try:
+        return _convert_html_to_counted_text(value)
+    except Exception:
+        log.warning(
+            "HTML-to-text conversion failed; using best-effort text (HTML length: %d)",
+            len(value),
+            exc_info=True,
+        )
+        return _convert_html_to_counted_text_fallback(value)
+
+
+def _is_valid_free_text_answer(
+    *,
+    question: SurveyQuestionSnapshot,
+    answer: SurveyAnswerSnapshot,
+) -> bool:
+    if answer.answered_question_semantic_version != question.current_semantic_version:
+        return False
+    constraints = question.constraints
+    if constraints.get("type") != "free_text":
+        return False
+    text_value_html = answer.text_value_html or ""
+    if constraints.get("inputMode") == "integer":
+        if re.fullmatch(r"[0-9]+", text_value_html) is None:
+            return False
+        parsed_value = int(text_value_html)
+        if parsed_value > 9_007_199_254_740_991:
+            return False
+        min_value = _optional_int(constraints.get("minValue"))
+        max_value = _optional_int(constraints.get("maxValue"))
+        return min_value is not None and parsed_value >= min_value and (
+            max_value is None or parsed_value <= max_value
+        )
+
+    max_html_length = _optional_int(constraints.get("maxHtmlLength"))
+    max_plain_text_length = _optional_int(constraints.get("maxPlainTextLength"))
+    if max_html_length is None or max_plain_text_length is None:
+        return False
+    if len(text_value_html.encode("utf-16-le")) // 2 > max_html_length:
+        return False
+    plain_text = _html_to_counted_text(text_value_html)
+    visible_text = regex.sub(
+        r"[\p{Cc}\p{Default_Ignorable_Code_Point}]",
+        "",
+        plain_text,
+    ).strip()
+    if not visible_text:
+        return False
+    min_plain_text_length = max(
+        _optional_int(constraints.get("minPlainTextLength")) or 0,
+        1,
+    )
+    plain_text_length = len(regex.findall(r"\X", plain_text))
+    return min_plain_text_length <= plain_text_length <= max_plain_text_length
 
 
 def _is_valid_choice_answer(

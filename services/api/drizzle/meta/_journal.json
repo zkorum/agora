@@ -582,6 +582,13 @@
       "when": 1784995853129,
       "tag": "0082_fair_switch",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1785191145797,
+      "tag": "0083_daily_hardball",
+      "breakpoints": true
     }
   ]
 }

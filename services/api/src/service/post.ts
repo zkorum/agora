@@ -21,15 +21,13 @@ import type {
     CreateNewConversationResponse,
     OpenConversationResponse,
 } from "@/shared/types/dto.js";
-import {
-    htmlToCountedText,
-    toUnionUndefined,
-    validateRichTextInput,
-} from "@/shared/shared.js";
+import { toUnionUndefined } from "@/shared/shared.js";
 import { postNewOpinion } from "./comment.js";
 import { createRankingItem } from "./rankingItem.js";
-import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
-import { normalizeUserRichTextInput } from "./richText.js";
+import {
+    normalizeUserRichTextInput,
+    type NormalizedUserRichText,
+} from "./richText.js";
 import { deleteAllConversationExports } from "@/service/conversationExport/index.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
@@ -74,8 +72,6 @@ import {
     type SurveyQuestionContentSource,
 } from "./contentTranslation.js";
 
-const MAX_CONVERSATION_SEED_ITEMS = 50;
-
 async function scheduleRankingStatsRefresh({
     valkey,
     conversationId,
@@ -104,6 +100,7 @@ async function scheduleRankingStatsRefresh({
 interface CreateNewPostProps {
     db: PostgresDatabase;
     request: CreateNewConversationRequest;
+    normalizedRichText: NormalizedCreateConversationRichText;
     authorId: string;
     didWrite: string;
     createTarget?: { projectId: number; organizationId: number };
@@ -129,9 +126,72 @@ type CreateNewPostResponse =
           eagerContentTranslation: CreatedConversationEagerContentTranslation;
       });
 
+export interface NormalizedCreateConversationRichText {
+    body: NormalizedUserRichText | undefined;
+    seedOpinions: NormalizedUserRichText[];
+}
+
+type NormalizeCreateConversationRichTextResult =
+    | {
+          success: true;
+          content: NormalizedCreateConversationRichText;
+      }
+    | Exclude<CreateNewConversationResponse, { success: true }>;
+
+export function normalizeCreateConversationRichText(
+    request: CreateNewConversationRequest,
+): NormalizeCreateConversationRichTextResult {
+    let body: NormalizedUserRichText | undefined;
+    if (request.conversationBody !== undefined) {
+        const normalizationResult = normalizeUserRichTextInput({
+            html: request.conversationBody,
+            validationMode: "conversation",
+        });
+        if (!normalizationResult.success) {
+            return {
+                success: false,
+                failure: {
+                    target: "conversation_body",
+                    reason: normalizationResult.reason,
+                    count: normalizationResult.count,
+                    limit: normalizationResult.limit,
+                },
+            };
+        }
+        body = normalizationResult.content;
+    }
+
+    const seedOpinions: NormalizedUserRichText[] = [];
+    for (const [index, seedOpinion] of request.seedOpinionList.entries()) {
+        const normalizationResult = normalizeUserRichTextInput({
+            html: seedOpinion,
+            validationMode: "opinion",
+        });
+        if (!normalizationResult.success) {
+            return {
+                success: false,
+                failure: {
+                    target: "seed_opinion",
+                    reason: normalizationResult.reason,
+                    index,
+                    count: normalizationResult.count,
+                    limit: normalizationResult.limit,
+                },
+            };
+        }
+        seedOpinions.push(normalizationResult.content);
+    }
+
+    return {
+        success: true,
+        content: { body, seedOpinions },
+    };
+}
+
 export async function createNewPost({
     db,
     request,
+    normalizedRichText,
     authorId,
     didWrite,
     createTarget,
@@ -148,27 +208,21 @@ export async function createNewPost({
 }: CreateNewPostProps): Promise<CreateNewPostResponse> {
     const {
         conversationTitle,
-        conversationBody: requestConversationBody,
-        conversationBodyPlainText,
         postAsOrganization,
         projectSlug,
         languageSettingsSource,
         participationMode,
         conversationType,
         isIndexed,
-        seedOpinionList,
         requiresEventTicket,
         multilingualSetting,
     } = request;
     const surveyConfig =
         conversationType === "polis" ? request.surveyConfig : undefined;
-    let conversationBody = requestConversationBody ?? null;
+    const conversationBody = normalizedRichText.body?.html ?? null;
+    const bodyPlainText = normalizedRichText.body?.plainText ?? "";
+    const normalizedSeedOpinions = normalizedRichText.seedOpinions;
 
-    if (seedOpinionList.length > MAX_CONVERSATION_SEED_ITEMS) {
-        throw httpErrors.badRequest(
-            `A conversation can have at most ${String(MAX_CONVERSATION_SEED_ITEMS)} seed items`,
-        );
-    }
     const target =
         createTarget ??
         (await resolveConversationCreateTarget({
@@ -179,47 +233,6 @@ export async function createNewPost({
             autoProvisionedDefaultLanguage,
         }));
     const conversationSlugId = generateRandomSlugId();
-
-    let bodyPlainText = "";
-    if (conversationBody != null) {
-        try {
-            const normalizationResult = normalizeUserRichTextInput({
-                html: conversationBody,
-                plainText: conversationBodyPlainText,
-                validationMode: "conversation",
-                logLabel:
-                    "[ConversationPlainText] Frontend/backend plain text mismatch on create",
-            });
-            if (!normalizationResult.success) {
-                return normalizationResult;
-            }
-            conversationBody = normalizationResult.content.html;
-            bodyPlainText = normalizationResult.content.plainText;
-        } catch (error) {
-            if (error instanceof Error) {
-                throw httpErrors.badRequest(error.message);
-            } else {
-                throw httpErrors.badRequest(
-                    "Error while sanitizing request body",
-                );
-            }
-        }
-    }
-
-    for (const seedOpinion of seedOpinionList) {
-        const sanitizedSeedOpinion = processUserGeneratedHtml(
-            seedOpinion,
-            false,
-            "input",
-        );
-        const validationResult = validateRichTextInput({
-            htmlString: sanitizedSeedOpinion,
-            mode: "opinion",
-        });
-        if (!validationResult.success) {
-            return validationResult;
-        }
-    }
 
     const surveyLanguageDetectionCorpus = buildSurveyLanguageDetectionCorpus({
         surveyConfig,
@@ -413,9 +426,9 @@ export async function createNewPost({
         const rankingItemSources: RankingItemContentSource[] = [];
         let surveySources: SurveyQuestionContentSource[] = [];
 
-        if (seedOpinionList.length > 0) {
+        if (normalizedSeedOpinions.length > 0) {
             if (conversationType === "ranking") {
-                for (const seedTitle of seedOpinionList) {
+                for (const seedOpinion of normalizedSeedOpinions) {
                     const rankingItemResult = await createRankingItem({
                         db,
                         tx,
@@ -423,7 +436,7 @@ export async function createNewPost({
                         conversationSlugId,
                         conversationContentId: insertedConversationContentId,
                         authorId,
-                        title: seedTitle,
+                        title: seedOpinion.html,
                         isSeed: true,
                         googleCloudCredentials,
                         useGoogleLanguageDetection:
@@ -444,12 +457,11 @@ export async function createNewPost({
                     );
                 }
 
-                for (const seedOpinionText of seedOpinionList) {
+                for (const seedOpinion of normalizedSeedOpinions) {
                     const seedOpinionResult = await postNewOpinion({
                         db,
                         tx,
-                        commentBody: seedOpinionText,
-                        opinionPlainText: htmlToCountedText(seedOpinionText),
+                        normalizedContent: seedOpinion,
                         conversationSlugId,
                         didWrite,
                         userAgent: "Seed Opinion Creation",

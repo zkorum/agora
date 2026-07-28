@@ -56,8 +56,6 @@ export interface ConversationDraftBase {
   title: string;
   /** The main content/body text of the conversation post */
   content: string;
-  /** The visible plain text emitted by the rich-text editor for the body */
-  contentPlainText: string;
   /** Additional target languages and Dynamic Translation activation. */
   multilingualSetting: ConversationMultilingualSetting;
   /** Listed project selected for this conversation; undefined means the hidden default project. */
@@ -184,7 +182,6 @@ export interface ConversationFormState {
   // Basic content
   title: string;
   content: string;
-  contentPlainText: string;
   multilingualSetting: ConversationMultilingualSetting;
   selectedProjectSlug?: string;
   inheritProjectLanguages: boolean;

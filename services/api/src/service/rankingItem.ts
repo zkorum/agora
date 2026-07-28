@@ -6,6 +6,7 @@ import {
 } from "@/shared-backend/schema.js";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { eq, and, inArray, isNotNull } from "drizzle-orm";
+import { encode } from "html-entities";
 import { generateRandomSlugId } from "@/crypto.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
@@ -18,10 +19,7 @@ import type {
     MaxDiffItemsFetchResponse,
 } from "@/shared/types/dto.js";
 import type { MaxdiffLifecycleStatus } from "@/shared/types/zod.js";
-import {
-    htmlToCountedText,
-    processUserGeneratedHtml,
-} from "@/shared-app-api/html.js";
+import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import { log } from "@/app.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
@@ -32,12 +30,16 @@ import {
     resolveContentLanguageMetadata,
     type ContentLanguageMetadata,
 } from "./contentLanguageMetadata.js";
-import { normalizeUserRichTextInput } from "./richText.js";
+import {
+    htmlToCountedTextWithWarning,
+    normalizeUserRichTextInput,
+} from "./richText.js";
 import {
     buildRankingItemDisplayContentByContentId,
     type RankingItemDisplayPreferences,
 } from "./rankingItemDisplay.js";
 import type { RankingItemContentSource } from "./contentTranslation.js";
+import { removeNonDisplayControlCharacters } from "@/shared/shared.js";
 
 export interface NormalizedRankingItemContent {
     title: string;
@@ -60,18 +62,18 @@ function buildRankingItemLanguageDetectionCorpus({
 }
 
 async function resolveRankingItemLanguageMetadata({
-    title,
+    titlePlainText,
     bodyPlainText,
     googleCloudCredentials,
     useGoogleLanguageDetection,
 }: {
-    title: string;
+    titlePlainText: string;
     bodyPlainText: string | null;
     googleCloudCredentials?: GoogleCloudCredentials;
     useGoogleLanguageDetection: boolean;
 }): Promise<ContentLanguageMetadata> {
     const corpus = buildRankingItemLanguageDetectionCorpus({
-        title,
+        title: titlePlainText,
         bodyPlainText,
     });
     return await resolveContentLanguageMetadata({
@@ -85,31 +87,29 @@ async function resolveRankingItemLanguageMetadata({
 export async function normalizeFrontendRankingItemContent({
     title,
     bodyHtml,
-    bodyPlainText: frontendBodyPlainText,
     googleCloudCredentials,
     useGoogleLanguageDetection = false,
 }: {
     title: string;
     bodyHtml?: string | null;
-    bodyPlainText?: string | null;
     googleCloudCredentials?: GoogleCloudCredentials;
     useGoogleLanguageDetection?: boolean;
 }): Promise<NormalizedRankingItemContent> {
-    const normalizedTitle = title.trim();
+    const normalizedTitleResult = normalizeUserRichTextInput({
+        html: title.trim(),
+        validationMode: "opinion",
+    });
+    if (!normalizedTitleResult.success) {
+        throw httpErrors.badRequest(normalizedTitleResult.reason);
+    }
+    const normalizedTitle = normalizedTitleResult.content.html;
+    const normalizedTitlePlainText = normalizedTitleResult.content.plainText;
     let sanitizedBodyHtml: string | null = null;
     let bodyPlainText: string | null = null;
     if (bodyHtml != null) {
-        if (frontendBodyPlainText == null) {
-            throw httpErrors.badRequest(
-                "Ranking item body plain text is required when body HTML is provided",
-            );
-        }
-
         const normalizationResult = normalizeUserRichTextInput({
             html: bodyHtml,
-            plainText: frontendBodyPlainText,
             validationMode: "ranking_item",
-            logLabel: "[RankingItemPlainText] Frontend/backend plain text mismatch",
         });
         if (!normalizationResult.success) {
             throw httpErrors.badRequest(normalizationResult.reason);
@@ -127,7 +127,7 @@ export async function normalizeFrontendRankingItemContent({
         normalizedBodyHtml !== null ? bodyPlainText : null;
 
     const sourceLanguageMetadata = await resolveRankingItemLanguageMetadata({
-        title: normalizedTitle,
+        titlePlainText: normalizedTitlePlainText,
         bodyPlainText: normalizedBodyPlainText,
         googleCloudCredentials,
         useGoogleLanguageDetection,
@@ -152,13 +152,24 @@ export async function normalizeProviderRankingItemContent({
     googleCloudCredentials?: GoogleCloudCredentials;
     useGoogleLanguageDetection?: boolean;
 }): Promise<NormalizedRankingItemContent> {
-    const normalizedTitle = title.trim();
+    const normalizedTitle = encode(
+        removeNonDisplayControlCharacters(title.trim()),
+    );
+    const normalizedTitlePlainText = htmlToCountedTextWithWarning({
+        html: normalizedTitle,
+        context: "provider ranking title",
+    });
     const sanitizedBodyHtml =
         bodyHtml != null ? processUserGeneratedHtml(bodyHtml, true, "output") : null;
     const bodyPlainText =
-        sanitizedBodyHtml !== null ? htmlToCountedText(sanitizedBodyHtml) : null;
+        sanitizedBodyHtml !== null
+            ? htmlToCountedTextWithWarning({
+                  html: sanitizedBodyHtml,
+                  context: "provider ranking body",
+              })
+            : null;
     const sourceLanguageMetadata = await resolveRankingItemLanguageMetadata({
-        title: normalizedTitle,
+        titlePlainText: normalizedTitlePlainText,
         bodyPlainText,
         googleCloudCredentials,
         useGoogleLanguageDetection,
@@ -211,12 +222,10 @@ type CreateRankingItemProps = CreateRankingItemCommonProps &
         | {
               contentSource?: "frontend";
               bodyHtml?: string | null;
-              bodyPlainText?: string | null;
           }
         | {
               contentSource: "provider";
               bodyHtml?: string | null;
-              bodyPlainText?: undefined;
           }
     );
 
@@ -299,7 +308,6 @@ export async function createRankingItem({
     authorId,
     title,
     bodyHtml,
-    bodyPlainText,
     contentSource = "frontend",
     isSeed,
     googleCloudCredentials,
@@ -323,7 +331,6 @@ export async function createRankingItem({
             : await normalizeFrontendRankingItemContent({
                   title,
                   bodyHtml,
-                  bodyPlainText,
                   googleCloudCredentials,
                   useGoogleLanguageDetection,
               });

@@ -52,7 +52,6 @@ export interface UseConversationDraftReturn {
   // State (always refs - single source of truth)
   title: Ref<string>;
   content: Ref<string>;
-  contentPlainText: Ref<string>;
   multilingualSetting: Ref<ConversationMultilingualSetting>;
   selectedProjectSlug: Ref<string | undefined>;
   inheritProjectLanguages: Ref<boolean>;
@@ -85,9 +84,6 @@ export interface UseConversationDraftReturn {
   // Mutation functions
   updateTitle: (newTitle: string) => MutationResult;
   updateContent: (newContent: string) => MutationResult;
-  addSeedOpinion: (opinion: string) => void;
-  updateSeedOpinion: (index: number, value: string) => void;
-  removeSeedOpinion: (index: number) => void;
 
   // Draft management functions
   createEmptyDraft: () => ConversationDraft;
@@ -129,7 +125,6 @@ export function useConversationDraft(
   // All state as refs (single source of truth)
   const title = ref(initialDraft.title);
   const content = ref(initialDraft.content);
-  const contentPlainText = ref(initialDraft.contentPlainText);
   const multilingualSetting = ref<ConversationMultilingualSetting>(
     initialDraft.multilingualSetting
   );
@@ -177,7 +172,6 @@ export function useConversationDraft(
     const draftSnapshot = computed(() => ({
       title: title.value,
       content: content.value,
-      contentPlainText: contentPlainText.value,
       multilingualSetting: multilingualSetting.value,
       selectedProjectSlug: selectedProjectSlug.value,
       inheritProjectLanguages: inheritProjectLanguages.value,
@@ -201,7 +195,6 @@ export function useConversationDraft(
       (newSnapshot) => {
         store.conversationDraft.title = newSnapshot.title;
         store.conversationDraft.content = newSnapshot.content;
-        store.conversationDraft.contentPlainText = newSnapshot.contentPlainText;
         store.conversationDraft.multilingualSetting =
           newSnapshot.multilingualSetting;
         store.conversationDraft.selectedProjectSlug = newSnapshot.selectedProjectSlug;
@@ -417,24 +410,6 @@ export function useConversationDraft(
     return { success: true };
   }
 
-  function addSeedOpinion(opinion: string): void {
-    if (opinion.trim() !== "") {
-      seedOpinions.value.push(opinion.trim());
-    }
-  }
-
-  function updateSeedOpinion(index: number, value: string): void {
-    if (index >= 0 && index < seedOpinions.value.length) {
-      seedOpinions.value[index] = value;
-    }
-  }
-
-  function removeSeedOpinion(index: number): void {
-    if (index >= 0 && index < seedOpinions.value.length) {
-      seedOpinions.value.splice(index, 1);
-    }
-  }
-
   // ============================================================================
   // Draft Management Functions
   // ============================================================================
@@ -448,9 +423,7 @@ export function useConversationDraft(
 
     // Check basic content changes
     const hasContentChanges =
-      title.value !== emptyDraft.title ||
-      content.value !== emptyDraft.content ||
-      contentPlainText.value !== emptyDraft.contentPlainText;
+      title.value !== emptyDraft.title || content.value !== emptyDraft.content;
 
     const hasMultilingualSettingChanges =
       !areConversationMultilingualSettingsEqual({
@@ -533,7 +506,6 @@ export function useConversationDraft(
 
     title.value = emptyDraft.title;
     content.value = emptyDraft.content;
-    contentPlainText.value = emptyDraft.contentPlainText;
     multilingualSetting.value = emptyDraft.multilingualSetting;
     selectedProjectSlug.value = emptyDraft.selectedProjectSlug;
     inheritProjectLanguages.value = emptyDraft.inheritProjectLanguages;
@@ -563,7 +535,6 @@ export function useConversationDraft(
   function initializeFromData(data: ConversationFormState): void {
     title.value = data.title;
     content.value = data.content;
-    contentPlainText.value = data.contentPlainText;
     multilingualSetting.value = data.multilingualSetting;
     selectedProjectSlug.value = data.selectedProjectSlug;
     inheritProjectLanguages.value = data.inheritProjectLanguages;
@@ -583,7 +554,6 @@ export function useConversationDraft(
     return {
       title: title.value,
       content: content.value,
-      contentPlainText: contentPlainText.value,
       multilingualSetting: multilingualSetting.value,
       selectedProjectSlug: selectedProjectSlug.value,
       inheritProjectLanguages: inheritProjectLanguages.value,
@@ -619,7 +589,6 @@ export function useConversationDraft(
     // State
     title,
     content,
-    contentPlainText,
     multilingualSetting,
     selectedProjectSlug,
     inheritProjectLanguages,
@@ -652,9 +621,6 @@ export function useConversationDraft(
     // Mutation functions
     updateTitle,
     updateContent,
-    addSeedOpinion,
-    updateSeedOpinion,
-    removeSeedOpinion,
 
     // Draft management functions
     createEmptyDraft,

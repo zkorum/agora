@@ -32,7 +32,6 @@ export {
 // Schemas and validation
 export type { SerializableConversationDraft } from "./conversationDraft.schema";
 export {
-  VALIDATION_CONSTANTS,
   zodConversationImportSettings,
   zodConversationImportType,
   zodCsvFileMetadata,

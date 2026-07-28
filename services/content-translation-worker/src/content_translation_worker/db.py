@@ -70,37 +70,162 @@ SUPPORTED_SOURCE_KINDS = {
 ALLOWED_TRANSLATED_HTML_TAGS = frozenset(
     {"b", "strong", "i", "em", "strike", "s", "u", "p", "br", "ul", "ol", "li"}
 )
+NUMERIC_CHARACTER_REFERENCE_PATTERN = re.compile(
+    r"&#(?:(?P<decimal>\d+)|[xX](?P<hexadecimal>[\da-fA-F]+));?"
+)
+BIDI_CHARACTER_REFERENCE_PATTERN = re.compile(r"&(?:lrm|rlm);", flags=re.IGNORECASE)
+BASIC_HTML_ENTITY_PATTERN = re.compile(
+    r"&#(?:(?P<decimal>\d+)|[xX](?P<hexadecimal>[\da-fA-F]+));?"
+    r"|&(?P<named>amp|apos|gt|lt|nbsp|quot);",
+    flags=re.IGNORECASE,
+)
+BIDI_CONTROL_CODE_POINTS = {
+    0x061C,
+    0x200E,
+    0x200F,
+    *range(0x202A, 0x202F),
+    *range(0x2066, 0x206A),
+}
 
 
 def create_lease_token() -> uuid.UUID:
     return uuid.uuid4()
 
 
-def sanitize_translated_html(value: str) -> str:
-    return bleach.clean(
-        value,
-        tags=ALLOWED_TRANSLATED_HTML_TAGS,
-        attributes={},
-        strip=True,
+def remove_non_display_control_characters(value: str) -> str:
+    without_literal_controls = "".join(
+        character
+        for character in value
+        if not (
+            ord(character) <= 0x08
+            or 0x0B <= ord(character) <= 0x0C
+            or 0x0E <= ord(character) <= 0x1F
+            or 0x7F <= ord(character) <= 0x9F
+            or ord(character) in BIDI_CONTROL_CODE_POINTS
+        )
+    )
+
+    def remove_encoded_control(match: re.Match[str]) -> str:
+        decimal = match.group("decimal")
+        hexadecimal = match.group("hexadecimal")
+        encoded_code_point = decimal if decimal is not None else hexadecimal
+        if encoded_code_point is None:
+            return match.group(0)
+        normalized_code_point = encoded_code_point.lstrip("0") or "0"
+        if len(normalized_code_point) > 4:
+            return match.group(0)
+        code_point = int(normalized_code_point, 10 if decimal is not None else 16)
+        if (
+            code_point <= 0x08
+            or 0x0B <= code_point <= 0x0C
+            or 0x0E <= code_point <= 0x1F
+            or 0x7F <= code_point <= 0x9F
+            or code_point in BIDI_CONTROL_CODE_POINTS
+        ):
+            return ""
+        return match.group(0)
+
+    return NUMERIC_CHARACTER_REFERENCE_PATTERN.sub(
+        remove_encoded_control,
+        BIDI_CHARACTER_REFERENCE_PATTERN.sub("", without_literal_controls),
     )
 
 
-def html_to_counted_text(value: str) -> str:
-    text_with_newlines = re.sub(r"</p>", "\n", value, flags=re.IGNORECASE)
+def sanitize_translated_html(value: str) -> str:
+    return remove_non_display_control_characters(
+        bleach.clean(
+            remove_non_display_control_characters(value),
+            tags=ALLOWED_TRANSLATED_HTML_TAGS,
+            attributes={},
+            strip=True,
+        )
+    )
+
+
+def _normalize_counted_text(value: str) -> str:
+    return re.sub(r"\n+", "\n", value).strip("\n")
+
+
+def _decode_basic_html_entities(value: str) -> str:
+    named_entities = {
+        "amp": "&",
+        "apos": "'",
+        "gt": ">",
+        "lt": "<",
+        "nbsp": "\xa0",
+        "quot": '"',
+    }
+
+    def decode_entity(match: re.Match[str]) -> str:
+        named = match.group("named")
+        if named is not None:
+            return named_entities[named.lower()]
+        decimal = match.group("decimal")
+        hexadecimal = match.group("hexadecimal")
+        encoded_code_point = decimal if decimal is not None else hexadecimal
+        if encoded_code_point is None:
+            return match.group(0)
+        try:
+            code_point = int(encoded_code_point, 10 if decimal is not None else 16)
+            if code_point > 0x10FFFF or 0xD800 <= code_point <= 0xDFFF:
+                return match.group(0)
+            return chr(code_point)
+        except ValueError:
+            return match.group(0)
+
+    return BASIC_HTML_ENTITY_PATTERN.sub(decode_entity, value)
+
+
+def convert_html_to_counted_text(value: str) -> str:
+    text_with_newlines = re.sub(
+        r"</(?:p|li|div|h[1-6])>",
+        "\n",
+        value,
+        flags=re.IGNORECASE,
+    )
     text_with_newlines = re.sub(
         r"<br\s*/?>",
         "\n",
         text_with_newlines,
         flags=re.IGNORECASE,
     )
-    text_with_newlines = re.sub(r"<p>", "", text_with_newlines, flags=re.IGNORECASE)
     plain_text = bleach.clean(
         text_with_newlines,
         tags=frozenset(),
         attributes={},
         strip=True,
     )
-    return html.unescape(plain_text).removesuffix("\n")
+    return _normalize_counted_text(html.unescape(plain_text))
+
+
+def convert_html_to_counted_text_fallback(value: str) -> str:
+    text_with_newlines = re.sub(
+        r"</(?:p|li|div|h[1-6])>",
+        "\n",
+        value,
+        flags=re.IGNORECASE,
+    )
+    text_with_newlines = re.sub(
+        r"<br\s*/?>",
+        "\n",
+        text_with_newlines,
+        flags=re.IGNORECASE,
+    )
+    plain_text = re.sub(r"<[^>]*>", "", text_with_newlines)
+    plain_text = re.sub(r"<[^>]*$", "", plain_text)
+    return _normalize_counted_text(_decode_basic_html_entities(plain_text))
+
+
+def html_to_counted_text(value: str) -> str:
+    try:
+        return convert_html_to_counted_text(value)
+    except Exception:
+        log.warning(
+            "HTML-to-text conversion failed; using best-effort text (HTML length: %d)",
+            len(value),
+            exc_info=True,
+        )
+        return convert_html_to_counted_text_fallback(value)
 
 
 @dataclass(frozen=True)
@@ -1900,7 +2025,7 @@ def _translate_ranking_item_source(
         text_value=source.title,
         source_language_code=source_decision.source_language_code_for_translation,
         target_language_code=claim.display_language_code.value,
-        mime_type="text/plain",
+        mime_type="text/html",
     )
     title_result_by_language = _results_by_display_language_code(title_results)
     body_result_by_language: dict[DisplayLanguageCode, ContentTranslationResult | None] = {
@@ -1921,6 +2046,7 @@ def _translate_ranking_item_source(
         }
 
     for display_language_code, title_result in title_result_by_language.items():
+        translated_title = sanitize_translated_html(title_result.translated_text)
         body_result = body_result_by_language.get(display_language_code)
         translated_body_html = (
             sanitize_translated_html(body_result.translated_text)
@@ -1946,7 +2072,7 @@ def _translate_ranking_item_source(
         stmt = pg_insert(RankingItemContentTranslation).values(
             ranking_item_content_id=source.content_id,
             display_language_code=display_language_code,
-            translated_title=title_result.translated_text,
+            translated_title=translated_title,
             translated_body_html=translated_body_html,
             translated_body_plain_text=translated_body_plain_text,
             source_language_code=source_metadata.source_language_code,
@@ -1963,7 +2089,7 @@ def _translate_ranking_item_source(
                     RankingItemContentTranslation.display_language_code,
                 ],
                 set_={
-                    "translated_title": title_result.translated_text,
+                    "translated_title": translated_title,
                     "translated_body_html": translated_body_html,
                     "translated_body_plain_text": translated_body_plain_text,
                     "source_language_code": source_metadata.source_language_code,

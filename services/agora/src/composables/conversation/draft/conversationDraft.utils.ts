@@ -126,7 +126,6 @@ export function createEmptyDraft(): ConversationDraft {
     // Basic Content
     title: "",
     content: "",
-    contentPlainText: "",
     multilingualSetting: {
       additionalLanguageCodes: [],
       dynamicTranslationEnabled: false,

@@ -837,8 +837,9 @@ type ExternalAttribution = Extract<
   CreateProjectAttributionRequest,
   { source: "external" }
 >;
-type ProjectContentLocalization =
+type ProjectContentLocalizationRequest =
   CreateProjectRequest["contentLocalizations"][number];
+type ProjectContentLocalization = AdminProject["contentLocalizations"][number];
 
 const noMachineContentLocalizations: ProjectContentLocalization[] = [];
 
@@ -1585,6 +1586,19 @@ function optionalRichTextHtml({
   return optionalString(html);
 }
 
+function buildProjectContentLocalizationRequest(
+  localization: ProjectContentLocalization
+): ProjectContentLocalizationRequest {
+  return {
+    languageCode: localization.languageCode,
+    projectTitle: localization.projectTitle,
+    subtitle: localization.subtitle,
+    body: localization.body,
+    bannerPath: localization.bannerPath,
+    bannerIsFullPath: localization.bannerIsFullPath,
+  };
+}
+
 function getRoleLabel(role: AttributionRole): string {
   return roleLabels[role]();
 }
@@ -1919,7 +1933,6 @@ function populateExternalAttributionForm({
 }
 
 function buildCreateRequest(): CreateProjectRequest {
-  const bodyPlainText = optionalString(projectBodyPlainText.value);
   return {
     projectSlug: projectSlug.value.trim(),
     projectTitle: projectTitle.value.trim(),
@@ -1929,10 +1942,11 @@ function buildCreateRequest(): CreateProjectRequest {
       html: projectBody.value,
       plainText: projectBodyPlainText.value,
     }),
-    bodyPlainText,
     bannerPath: optionalString(bannerPath.value),
     bannerIsFullPath: bannerIsFullPath.value,
-    contentLocalizations: createContentLocalizations.value,
+    contentLocalizations: createContentLocalizations.value.map(
+      buildProjectContentLocalizationRequest
+    ),
     languageSettings: {
       targetLanguageCodes:
         createMultilingualSetting.value.additionalLanguageCodes,
@@ -1956,7 +1970,6 @@ function buildCreateRequest(): CreateProjectRequest {
 }
 
 function buildUpdateRequest(project: AdminProject): UpdateProjectRequest {
-  const bodyPlainText = optionalString(manageProjectBodyPlainText.value);
   return {
     currentProjectSlug: project.projectSlug,
     projectSlug: project.projectSlug,
@@ -1967,10 +1980,11 @@ function buildUpdateRequest(project: AdminProject): UpdateProjectRequest {
       html: manageProjectBody.value,
       plainText: manageProjectBodyPlainText.value,
     }),
-    bodyPlainText,
     bannerPath: optionalString(manageBannerPath.value),
     bannerIsFullPath: manageBannerIsFullPath.value,
-    contentLocalizations: manageContentLocalizations.value,
+    contentLocalizations: manageContentLocalizations.value.map(
+      buildProjectContentLocalizationRequest
+    ),
     languageSettings: {
       targetLanguageCodes:
         manageMultilingualSetting.value.additionalLanguageCodes,

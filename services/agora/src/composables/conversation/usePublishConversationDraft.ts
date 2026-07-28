@@ -28,12 +28,21 @@ interface PublishConversationDraftParams {
   invalidSurveyMessage: string;
   defaultErrorMessage: string;
   onInvalidSurvey?: () => void;
+  onSeedOpinionFailure?: (failure: SeedOpinionCreateFailure) => void;
   beforeSuccessNavigation?: () => void;
 }
 
-type CreateConversationFailureReason = Extract<
+type CreateConversationFailure = Extract<
   CreateNewConversationResponse,
   { success: false }
+>["failure"];
+export type SeedOpinionCreateFailure = Extract<
+  CreateConversationFailure,
+  { target: "seed_opinion" }
+>;
+type ProjectCreateFailureReason = Extract<
+  CreateConversationFailure,
+  { target: "project" }
 >["reason"];
 
 type BuildCreateConversationRequestResult =
@@ -56,7 +65,6 @@ function buildBaseCreateConversationRequest({
     conversationTitle: conversationDraft.title,
     conversationBody:
       conversationDraft.content === "" ? undefined : conversationDraft.content,
-    conversationBodyPlainText: conversationDraft.contentPlainText,
     projectSlug: conversationDraft.selectedProjectSlug,
     languageSettingsSource:
       conversationDraft.selectedProjectSlug !== undefined &&
@@ -140,6 +148,7 @@ export function usePublishConversationDraft() {
     invalidSurveyMessage,
     defaultErrorMessage,
     onInvalidSurvey,
+    onSeedOpinionFailure,
     beforeSuccessNavigation,
   }: PublishConversationDraftParams): Promise<boolean> {
     try {
@@ -177,15 +186,22 @@ export function usePublishConversationDraft() {
       }
 
       if (!response.data.success) {
-        switch (response.data.reason) {
-          case "plain_text_too_long":
-          case "html_too_long": {
+        const failure = response.data.failure;
+        switch (failure.target) {
+          case "seed_opinion": {
+            if (onSeedOpinionFailure !== undefined) {
+              onSeedOpinionFailure(failure);
+            } else {
+              showNotifyMessage(defaultErrorMessage);
+            }
+            break;
+          }
+          case "conversation_body": {
             showNotifyMessage(defaultErrorMessage);
             break;
           }
-          case "organization_not_available":
-          case "missing_conversation_create_capability": {
-            showProjectTargetFailure(response.data.reason);
+          case "project": {
+            showProjectTargetFailure(failure.reason);
             break;
           }
         }
@@ -220,7 +236,7 @@ export function usePublishConversationDraft() {
   }
 
   function showProjectTargetFailure(
-    reason: CreateConversationFailureReason
+    reason: ProjectCreateFailureReason
   ): void {
     if (reason === "organization_not_available") {
       showNotifyMessage(t("organizationUnavailable"));

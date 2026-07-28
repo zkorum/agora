@@ -103,8 +103,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     // Check basic content changes
     const hasContentChanges =
       current.title !== emptyDraft.title ||
-      current.content !== emptyDraft.content ||
-      current.contentPlainText !== emptyDraft.contentPlainText;
+      current.content !== emptyDraft.content;
 
     const hasMultilingualSettingChanges =
       !areConversationMultilingualSettingsEqual({
@@ -189,15 +188,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
    */
   function resetDraft(): void {
     conversationDraft.value = createEmptyDraft();
-  }
-
-  /**
-   * Adds a new initial opinion to seed the conversation
-   */
-  function addInitialOpinion(opinion: string): void {
-    if (opinion.trim() !== "") {
-      conversationDraft.value.seedOpinions.push(opinion.trim());
-    }
   }
 
   /**
@@ -359,7 +349,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
 
     // Draft management functions
     resetDraft,
-    addInitialOpinion,
     togglePrivacy,
 
     // Import type management functions

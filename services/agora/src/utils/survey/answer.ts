@@ -1,3 +1,7 @@
+import {
+  countPlainTextCharacters,
+  hasVisiblePlainText,
+} from "src/shared/shared";
 import type {
   SurveyAnswerDraft,
   SurveyAnswerSubmission,
@@ -11,7 +15,7 @@ export function getSurveyFreeTextCharacterCount({
 }: {
   textValuePlainText: string;
 }): number {
-  return textValuePlainText.length;
+  return countPlainTextCharacters(textValuePlainText).characterCount;
 }
 
 export function normalizeSurveyAnswer({
@@ -26,7 +30,7 @@ export function normalizeSurveyAnswer({
   selectedMultiOptionSlugIds: readonly string[];
   textValueHtml: string;
   textValuePlainText: string;
-}): SurveyAnswerSubmission | undefined {
+}): SurveyAnswerDraft | undefined {
   switch (question.questionType) {
     case "choice": {
       const optionSlugIds = isSingleSelectionChoiceQuestion({ question })
@@ -47,7 +51,7 @@ export function normalizeSurveyAnswer({
     case "free_text": {
       const hasContent = isIntegerFreeTextQuestion({ question })
         ? textValueHtml.trim().length > 0
-        : getSurveyFreeTextCharacterCount({ textValuePlainText }) > 0;
+        : hasVisiblePlainText(textValuePlainText);
       if (!hasContent) {
         return undefined;
       }
@@ -59,6 +63,20 @@ export function normalizeSurveyAnswer({
           : textValuePlainText,
       };
     }
+  }
+}
+
+export function buildSurveyAnswerSubmission(
+  answer: SurveyAnswerDraft
+): SurveyAnswerSubmission {
+  switch (answer.questionType) {
+    case "choice":
+      return answer;
+    case "free_text":
+      return {
+        questionType: "free_text",
+        textValueHtml: answer.textValueHtml,
+      };
   }
 }
 
@@ -108,7 +126,7 @@ export function isSurveyAnswerSubmittable({
   answer,
 }: {
   question: SurveyQuestionFormItem;
-  answer: SurveyAnswerSubmission | undefined;
+  answer: SurveyAnswerDraft | undefined;
 }): boolean {
   if (answer === undefined) {
     return false;
@@ -163,7 +181,9 @@ export function isSurveyAnswerSubmittable({
         });
       }
 
-      const plainTextCharacterCount = answer.textValuePlainText.length;
+      const plainTextCharacterCount = getSurveyFreeTextCharacterCount({
+        textValuePlainText: answer.textValuePlainText,
+      });
       const minimumLength = Math.max(
         question.constraints.minPlainTextLength ?? 0,
         1
@@ -171,6 +191,7 @@ export function isSurveyAnswerSubmittable({
 
       return (
         answer.textValueHtml.length <= question.constraints.maxHtmlLength &&
+        hasVisiblePlainText(answer.textValuePlainText) &&
         plainTextCharacterCount >= minimumLength &&
         plainTextCharacterCount <= question.constraints.maxPlainTextLength
       );

@@ -124,7 +124,7 @@ CREATE TABLE "opinion_content" (
 	"public_id" uuid DEFAULT gen_random_uuid() NOT NULL,
 	"opinion_id" integer NOT NULL,
 	"conversation_content_id" integer NOT NULL,
-	"content" varchar(3000) NOT NULL,
+	"content" text NOT NULL,
 	"content_plain_text" text,
 	"source_language_code" "spoken_language_code",
 	"source_raw_language_code" varchar(35),
@@ -132,6 +132,7 @@ CREATE TABLE "opinion_content" (
 	"source_language_confidence" real,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "opinion_content_public_id_unique" UNIQUE("public_id"),
+	CONSTRAINT "opinion_content_content_byte_length_check" CHECK (octet_length("opinion_content"."content") <= 16384),
 	CONSTRAINT "opinion_content_source_metadata_check" CHECK ((("opinion_content"."source_language_provider" IS NULL AND "opinion_content"."source_raw_language_code" IS NULL) OR ("opinion_content"."source_language_provider" IS NOT NULL AND "opinion_content"."source_raw_language_code" IS NOT NULL)))
 );
 

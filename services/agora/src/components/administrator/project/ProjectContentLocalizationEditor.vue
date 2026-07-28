@@ -149,13 +149,12 @@
 <script setup lang="ts">
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { MAX_LENGTH_TITLE } from "src/shared/shared";
-import type { CreateProjectRequest } from "src/shared/types/dto";
+import type { AdminProject } from "src/shared/types/dto";
 import { computed, type Ref, ref, watch, type WritableComputedRef } from "vue";
 
 import ProjectBodyEditor from "./ProjectBodyEditor.vue";
 
-type ProjectContentLocalization =
-  CreateProjectRequest["contentLocalizations"][number];
+type ProjectContentLocalization = AdminProject["contentLocalizations"][number];
 
 interface LanguageOption {
   label: string;

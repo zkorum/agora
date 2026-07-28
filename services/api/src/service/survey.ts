@@ -41,7 +41,8 @@ import {
 import type { Valkey } from "@/shared-backend/valkey.js";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
 import {
-    htmlToCountedText,
+    countPlainTextCharacters,
+    hasVisiblePlainText,
     PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
 } from "@/shared/shared.js";
 import {
@@ -99,7 +100,10 @@ import {
 } from "./conversationLanguage.js";
 import { getConversationMultilingualSetting } from "./conversationMultilingual.js";
 import type { SurveyQuestionContentSource } from "./contentTranslation.js";
-import { normalizeUserRichTextInput } from "./richText.js";
+import {
+    htmlToCountedTextWithWarning,
+    normalizeUserRichTextInput,
+} from "./richText.js";
 
 interface ConversationAccessContext {
     conversationId: number;
@@ -438,10 +442,10 @@ export interface StoredSurveyAnswer {
 function getStoredSurveyAnswerPlainText(
     storedAnswer: StoredSurveyAnswer,
 ): string {
-    return (
-        storedAnswer.textValuePlainText ??
-        htmlToCountedText(storedAnswer.textValueHtml ?? "")
-    );
+    return htmlToCountedTextWithWarning({
+        html: storedAnswer.textValueHtml ?? "",
+        context: "stored survey answer",
+    });
 }
 
 function isStoredSurveyAnswerPassed({
@@ -457,7 +461,7 @@ function isStoredSurveyAnswerPassed({
 
     return (
         storedAnswer.optionSlugIds.length === 0 &&
-        getStoredSurveyAnswerPlainText(storedAnswer).length === 0
+        !hasVisiblePlainText(getStoredSurveyAnswerPlainText(storedAnswer))
     );
 }
 
@@ -685,7 +689,7 @@ export function validateSurveyAnswer({
     answer,
 }: {
     question: ActiveSurveyQuestionRecord;
-    answer: SurveyAnswerSubmission;
+    answer: SurveyAnswerDraft;
 }): boolean {
     if (question.questionType !== answer.questionType) {
         return false;
@@ -711,9 +715,12 @@ export function validateSurveyAnswer({
                 return false;
             }
 
-            const characterCount = answer.textValuePlainText.length;
+            const characterCount = countPlainTextCharacters(
+                answer.textValuePlainText,
+            ).characterCount;
             const effectiveMinLength = Math.max(minPlainTextLength ?? 0, 1);
             return (
+                hasVisiblePlainText(answer.textValuePlainText) &&
                 characterCount >= effectiveMinLength &&
                 characterCount <= maxPlainTextLength
             );
@@ -758,7 +765,7 @@ function normalizeSurveyAnswerForStorage({
 }: {
     question: ActiveSurveyQuestionRecord;
     answer: SurveyAnswerSubmission;
-}): SurveyAnswerSubmission {
+}): SurveyAnswerDraft {
     if (answer.questionType !== "free_text") {
         return answer;
     }
@@ -776,9 +783,7 @@ function normalizeSurveyAnswerForStorage({
     try {
         const normalizationResult = normalizeUserRichTextInput({
             html: answer.textValueHtml,
-            plainText: answer.textValuePlainText,
-            logLabel:
-                "[SurveyAnswerPlainText] Frontend/backend plain text mismatch",
+            validationMode: "survey",
         });
         if (!normalizationResult.success) {
             throw httpErrors.badRequest(normalizationResult.reason);

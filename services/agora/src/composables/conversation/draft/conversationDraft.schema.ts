@@ -6,7 +6,7 @@
  * - newConversationDrafts store (persistence validation)
  */
 
-import { MAX_LENGTH_CONVERSATION_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
+import { MAX_LENGTH_TITLE } from "src/shared/shared";
 import {
   zodConversationMultilingualSetting,
   zodEventSlug,
@@ -93,7 +93,6 @@ const zodConversationDraftBase = z.object({
   // Basic content
   title: z.string().max(MAX_LENGTH_TITLE),
   content: z.string(), // Body length validation happens in validateHtmlStringCharacterCount
-  contentPlainText: z.string().default(""),
   multilingualSetting: zodConversationMultilingualSetting.default({
     additionalLanguageCodes: [],
     dynamicTranslationEnabled: false,
@@ -145,7 +144,6 @@ export const zodSerializableConversationDraft = z.preprocess(
             rankingMode: "bws",
           }
         : val;
-
     if (
       "participationMode" in normalizedLegacyConversationType ||
       !("privateConversationSettings" in normalizedLegacyConversationType)
@@ -195,12 +193,3 @@ export type SerializableConversationDraft = z.infer<
  * Type for conversation import method
  */
 export type ConversationImportType = z.infer<typeof zodConversationImportType>;
-
-// ============================================================================
-// Validation Constants
-// ============================================================================
-
-export const VALIDATION_CONSTANTS = {
-  MAX_LENGTH_TITLE,
-  MAX_LENGTH_BODY: MAX_LENGTH_CONVERSATION_BODY,
-} as const;

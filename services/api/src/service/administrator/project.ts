@@ -45,7 +45,6 @@ import type {
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import { normalizeEmail } from "@/shared/types/zod-email.js";
-import { htmlToCountedText } from "@/shared/shared.js";
 import {
     contentLanguageMetadataUpdateValues,
     type ContentLanguageMetadata,
@@ -63,7 +62,10 @@ import {
     normalizeProjectLanguageSettings,
     sourceLanguageToDisplayLanguage,
 } from "../translationLanguageSetting.js";
-import { normalizeUserRichTextInput } from "../richText.js";
+import {
+    htmlToCountedTextWithWarning,
+    normalizeUserRichTextInput,
+} from "../richText.js";
 import {
     createEagerContentTranslationWorkForKnownProject,
     type ProjectContentSource,
@@ -211,29 +213,15 @@ function normalizeOptionalString(value: string | undefined): string | null {
     return trimmed === undefined || trimmed === "" ? null : trimmed;
 }
 
-function sanitizeProjectBody({
-    body,
-    bodyPlainText,
-}: {
-    body: string | undefined;
-    bodyPlainText: string | undefined;
-}): SanitizedProjectBody {
+function sanitizeProjectBody(body: string | undefined): SanitizedProjectBody {
     if (body === undefined) {
         return { body: undefined, bodyPlainText: "" };
-    }
-
-    if (bodyPlainText === undefined) {
-        throw httpErrors.badRequest(
-            "Project body plain text is required when project body HTML is provided",
-        );
     }
 
     try {
         const normalizationResult = normalizeUserRichTextInput({
             html: body,
-            plainText: bodyPlainText,
             validationMode: "conversation",
-            logLabel: "[ProjectPlainText] Frontend/backend plain text mismatch",
         });
         if (!normalizationResult.success) {
             throw httpErrors.badRequest(normalizationResult.reason);
@@ -306,10 +294,7 @@ function sanitizeProjectContentLocalizations({
         }
 
         const projectTitle = normalizeOptionalString(localization.projectTitle);
-        const sanitizedBody = sanitizeProjectBody({
-            body: localization.body,
-            bodyPlainText: localization.bodyPlainText,
-        });
+        const sanitizedBody = sanitizeProjectBody(localization.body);
         const subtitle = normalizeOptionalString(localization.subtitle);
         if (
             projectTitle === null &&
@@ -445,7 +430,12 @@ async function hasCompleteStoredManualProjectContentLocalizations({
             (!sourceSubtitleRequired ||
                 projectSubtitleRequiresLocalization(row.subtitle)) &&
             (!sourceBodyRequired ||
-                projectBodyRequiresLocalization(htmlToCountedText(row.body ?? "")))
+                projectBodyRequiresLocalization(
+                    htmlToCountedTextWithWarning({
+                        html: row.body ?? "",
+                        context: "project localization requirement",
+                    }),
+                ))
         );
     });
 }
@@ -1020,10 +1010,7 @@ export async function createProject({
         organizationsBySlug: organizationLookup.organizationsBySlug,
     });
 
-    const sanitizedProjectBody = sanitizeProjectBody({
-        body: data.body,
-        bodyPlainText: data.bodyPlainText,
-    });
+    const sanitizedProjectBody = sanitizeProjectBody(data.body);
     const bodyPlainText = sanitizedProjectBody.bodyPlainText;
     const projectLanguageMetadata = await resolveProjectContentLanguageMetadata(
         {
@@ -1667,7 +1654,10 @@ export async function getAllProjects({
             bodyPlainText:
                 localization.body === null
                     ? undefined
-                    : htmlToCountedText(localization.body),
+                    : htmlToCountedTextWithWarning({
+                          html: localization.body,
+                          context: "project localization response",
+                      }),
             bannerPath: bannerLocalization?.bannerPath,
             bannerIsFullPath: bannerLocalization?.bannerIsFullPath ?? false,
         });
@@ -2014,14 +2004,14 @@ export async function updateProject({
         requestedAttributions: data.attributions,
         organizationsBySlug: organizationLookup.organizationsBySlug,
     });
-    const sanitizedProjectBody = sanitizeProjectBody({
-        body: data.body,
-        bodyPlainText: data.bodyPlainText,
-    });
+    const sanitizedProjectBody = sanitizeProjectBody(data.body);
     const bodyPlainText = sanitizedProjectBody.bodyPlainText;
     const currentBodyPlainText =
         project.currentBodyPlainText ??
-        htmlToCountedText(project.currentBody ?? "");
+        htmlToCountedTextWithWarning({
+            html: project.currentBody ?? "",
+            context: "current project body comparison",
+        });
     const languageTextChanged =
         project.currentContentId === null ||
         project.currentTitle !== data.projectTitle ||
@@ -2568,7 +2558,10 @@ export async function updateProjectLanguageSettings({
         ) {
             const bodyPlainText =
                 currentContent.bodyPlainText ??
-                htmlToCountedText(currentContent.body ?? "");
+                htmlToCountedTextWithWarning({
+                    html: currentContent.body ?? "",
+                    context: "project language settings source body",
+                });
             sourceLanguageMetadata = await resolveProjectContentLanguageMetadata({
                 projectTitle: currentContent.title,
                 subtitle: currentContent.subtitle,
@@ -2590,7 +2583,10 @@ export async function updateProjectLanguageSettings({
 
             const bodyPlainText =
                 currentContent.bodyPlainText ??
-                htmlToCountedText(currentContent.body ?? "");
+                htmlToCountedTextWithWarning({
+                    html: currentContent.body ?? "",
+                    context: "project language settings source body",
+                });
             if (
                 !(await hasCompleteStoredManualProjectContentLocalizations({
                     db: tx,

@@ -11,7 +11,6 @@ import {
     surveyQuestionTable,
 } from "@/shared-backend/schema.js";
 import { detectLanguage } from "@/shared-backend/translate.js";
-import { htmlToCountedText } from "@/shared/shared.js";
 import { and, eq, isNotNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
@@ -25,6 +24,7 @@ import {
 } from "./conversationLanguage.js";
 import type { SupportedSpokenLanguageCodes } from "@/shared/languages.js";
 import type { SurveyConfig } from "@/shared/types/zod.js";
+import { htmlToCountedTextWithWarning } from "./richText.js";
 
 export interface ContentLanguageMetadata {
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
@@ -299,7 +299,11 @@ export async function refreshCurrentConversationOwnedContentLanguageMetadata({
 
     for (const seedOpinion of seedOpinionRows) {
         const plainText =
-            seedOpinion.contentPlainText ?? htmlToCountedText(seedOpinion.content);
+            seedOpinion.contentPlainText ??
+            htmlToCountedTextWithWarning({
+                html: seedOpinion.content,
+                context: "seed opinion language metadata",
+            });
         const sourceLanguageMetadata = await resolveContentLanguageMetadata({
             text: plainText,
             googleCloudCredentials,

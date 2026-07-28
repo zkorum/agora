@@ -22,10 +22,8 @@ import {
     lockRankingScoringConfig,
 } from "@/service/maxdiff.js";
 import { log } from "@/app.js";
-import {
-    processUserGeneratedHtml,
-    htmlToCountedText,
-} from "@/shared-app-api/html.js";
+import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
+import { htmlToCountedTextWithWarning } from "@/service/richText.js";
 import { marked } from "marked";
 import type { GitHubClient, GitHubIssue, SyncResult } from "./index.js";
 import { requireProjectCapability } from "@/service/projectAccess.js";
@@ -862,7 +860,10 @@ export function convertMarkdownToHtml({
     let html = processUserGeneratedHtml(rawHtml, true, "output");
 
     // Verify text length after conversion
-    const textLength = htmlToCountedText(html).length;
+    const textLength = htmlToCountedTextWithWarning({
+        html,
+        context: "GitHub ranking body truncation",
+    }).length;
     if (textLength > MAX_TEXT_LENGTH) {
         // Re-truncate source more aggressively and retry
         const ratio = MAX_TEXT_LENGTH / textLength;

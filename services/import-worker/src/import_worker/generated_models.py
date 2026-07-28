@@ -593,7 +593,7 @@ class OpinionContent(Base):
     public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
     opinion_id: Mapped[int] = mapped_column(Integer)
     conversation_content_id: Mapped[int] = mapped_column(Integer)
-    content: Mapped[str] = mapped_column(String(3000))
+    content: Mapped[str] = mapped_column(Text)
     content_plain_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     source_language_code: Mapped[SpokenLanguageCode | None] = mapped_column(
         SaEnum(

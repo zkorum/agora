@@ -31,12 +31,10 @@ import { projectOrganizationAttributionRoleValues } from "@/shared/types/project
 // WARNING: when you modify these limits, change this in shared.ts as well
 const MAX_LENGTH_TITLE = 140;
 const MAX_LENGTH_BODY = 1000;
+const MAX_BYTES_RICH_TEXT_HTML = 16_384;
 // const MAX_LENGTH_OPINION = 280;
-const MAX_LENGTH_OPINION_HTML = 3000; // is lower now, kept this value For retro-compatibility
 const MAX_LENGTH_SURVEY_QUESTION = 500;
 const MAX_LENGTH_SURVEY_OPTION = 200;
-const MAX_LENGTH_RANKING_ITEM_TITLE = 200;
-const MAX_LENGTH_RANKING_ITEM_BODY = 3000;
 const MAX_LENGTH_NAME_CREATOR = 65;
 const MAX_LENGTH_DESCRIPTION_CREATOR = 280;
 const MAX_LENGTH_USERNAME = 20;
@@ -2236,10 +2234,8 @@ export const rankingItemContentTable = pgTable(
         conversationContentId: integer("conversation_content_id")
             .notNull()
             .references(() => conversationContentTable.id),
-        title: varchar("title", {
-            length: MAX_LENGTH_RANKING_ITEM_TITLE,
-        }).notNull(),
-        body: varchar("body", { length: MAX_LENGTH_RANKING_ITEM_BODY }),
+        title: text("title").notNull(),
+        body: text("body"),
         bodyPlainText: text("body_plain_text"),
         sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
         sourceRawLanguageCode: varchar("source_raw_language_code", {
@@ -2992,7 +2988,7 @@ export const opinionContentTable = pgTable(
         conversationContentId: integer("conversation_content_id")
             .references(() => conversationContentTable.id)
             .notNull(), // used to cascade delete all opinionContent when deleting a conversation(content)
-        content: varchar("content", { length: MAX_LENGTH_OPINION_HTML }).notNull(),
+        content: text("content").notNull(),
         contentPlainText: text("content_plain_text"),
         sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
         sourceRawLanguageCode: varchar("source_raw_language_code", { length: 35 }),
@@ -3008,6 +3004,10 @@ export const opinionContentTable = pgTable(
             .notNull(),
     },
     (table) => [
+        check(
+            "opinion_content_content_byte_length_check",
+            sql`octet_length(${table.content}) <= ${sql.raw(String(MAX_BYTES_RICH_TEXT_HTML))}`,
+        ),
         check(
             "opinion_content_source_metadata_check",
             sql`((${table.sourceLanguageProvider} IS NULL AND ${table.sourceRawLanguageCode} IS NULL) OR (${table.sourceLanguageProvider} IS NOT NULL AND ${table.sourceRawLanguageCode} IS NOT NULL))`,
