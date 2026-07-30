@@ -23,12 +23,14 @@
               :single-line="false"
               :disabled="disabled"
               :max-length="maxLengthOpinion"
-              :submit-on-enter="submitOnEnter"
+              :submit-on-shift-enter="true"
               min-height="3rem"
-              @update:model-value="(val: string) => emit('update:modelValue', val)"
+              @update:model-value="
+                (val: string) => emit('update:modelValue', val)
+              "
               @manually-focused="emit('focus')"
               @blur="emit('blur')"
-              @enter="emit('enter')"
+              @submit="emit('addNext')"
             />
           </div>
         </div>
@@ -63,7 +65,7 @@ import Card from "primevue/card";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { htmlToCountedText, MAX_LENGTH_OPINION } from "src/shared/shared";
-import { defineAsyncComponent, ref } from "vue";
+import { defineAsyncComponent, ref, watch } from "vue";
 
 import {
   type SeedOpinionItemTranslations,
@@ -82,7 +84,6 @@ const props = defineProps<{
   errorMessage: string | undefined;
   isActive: boolean;
   disabled: boolean;
-  submitOnEnter?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -90,7 +91,7 @@ const emit = defineEmits<{
   (e: "remove"): void;
   (e: "focus"): void;
   (e: "blur"): void;
-  (e: "enter"): void;
+  (e: "addNext"): void;
 }>();
 
 const maxLengthOpinion = MAX_LENGTH_OPINION;
@@ -103,12 +104,23 @@ const { t } = useComponentI18n<SeedOpinionItemTranslations>(
   seedOpinionItemTranslations
 );
 
-const editorRef = ref<InstanceType<typeof Editor>>();
+interface FocusableEditor {
+  focus: () => void;
+}
+
+const editorRef = ref<FocusableEditor | null>(null);
 const showDeleteConfirm = ref(false);
+let focusWhenEditorIsReady = false;
+
+watch(editorRef, () => {
+  if (focusWhenEditorIsReady) {
+    focusEditor();
+  }
+});
 
 const handleCardClick = (): void => {
   if (!props.disabled && !props.isActive) {
-    editorRef.value?.focus();
+    focusEditor();
   }
 };
 
@@ -131,13 +143,19 @@ function handleConfirmDelete(): void {
   }
 }
 
-// Expose focus method for parent component
-const focus = (): void => {
-  editorRef.value?.focus();
-};
+function focusEditor(): void {
+  const editorInstance = editorRef.value;
+  if (editorInstance === null) {
+    focusWhenEditorIsReady = true;
+    return;
+  }
+
+  focusWhenEditorIsReady = false;
+  editorInstance.focus();
+}
 
 defineExpose({
-  focus,
+  focus: focusEditor,
 });
 </script>
 

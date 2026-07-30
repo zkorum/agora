@@ -100,7 +100,10 @@
     </div>
 
     <!-- Character count footer (shown when maxLength is provided) -->
-    <div v-if="maxLength !== undefined && showCharacterCount" class="character-count-footer">
+    <div
+      v-if="maxLength !== undefined && showCharacterCount"
+      class="character-count-footer"
+    >
       <span :class="{ 'character-count-over-limit': isOverLimit }">
         {{ internalCharacterCount }}
       </span>
@@ -118,10 +121,7 @@ import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { BubbleMenu } from "@tiptap/vue-3/menus";
 import Divider from "primevue/divider";
 import { useQuasar } from "quasar";
-import {
-  countPlainTextCharacters,
-  htmlToCountedText,
-} from "src/shared/shared";
+import { countPlainTextCharacters, htmlToCountedText } from "src/shared/shared";
 import { processUserGeneratedHtml } from "src/shared-app-api/html";
 import { computed, onUnmounted, ref, watch } from "vue";
 
@@ -134,24 +134,27 @@ defineOptions({
   },
 });
 
-const props = withDefaults(defineProps<{
-  showToolbar: boolean;
-  placeholder: string;
-  minHeight: string;
-  disabled: boolean;
-  singleLine: boolean;
-  maxLength?: number;
-  showCharacterCount?: boolean;
-  submitOnEnter?: boolean;
-}>(), {
-  maxLength: undefined,
-  showCharacterCount: true,
-  submitOnEnter: false,
-});
+const props = withDefaults(
+  defineProps<{
+    showToolbar: boolean;
+    placeholder: string;
+    minHeight: string;
+    disabled: boolean;
+    singleLine: boolean;
+    maxLength?: number;
+    showCharacterCount?: boolean;
+    submitOnShiftEnter?: boolean;
+  }>(),
+  {
+    maxLength: undefined,
+    showCharacterCount: true,
+    submitOnShiftEnter: false,
+  }
+);
 const emit = defineEmits<{
   manuallyFocused: [];
   blur: [];
-  enter: [];
+  submit: [];
   "update:characterCount": [count: number];
   "update:isOverLimit": [isOverLimit: boolean];
 }>();
@@ -245,21 +248,50 @@ const ClearStoredMarksOnSelectionChange = Extension.create({
   },
 });
 
-// Custom extension to capture Tab/Shift-Tab for list indentation
-// This prevents the default browser behavior of moving focus to the next UI element
-// Note: StarterKit v3 includes a ListKeymap extension, but we use higher priority
-// to ensure Tab is captured for lists and doesn't change focus
+// Extend Tiptap's list shortcuts with useful fallbacks for a multiline editor.
 const CustomListTabKeymap = Extension.create({
   name: "customListTabKeymap",
-  priority: 1000, // Very high priority to ensure it captures Tab before default behavior
+  priority: 1000,
   addKeyboardShortcuts() {
     return {
-      Tab: () => this.editor.commands.sinkListItem("listItem"),
-      "Shift-Tab": () => this.editor.commands.liftListItem("listItem"),
+      Tab: () => {
+        if (this.editor.commands.sinkListItem("listItem")) {
+          return true;
+        }
+
+        const { selection } = this.editor.state;
+        const isAtEndOfListItem =
+          this.editor.isActive("listItem") &&
+          selection.empty &&
+          selection.$from.parentOffset === selection.$from.parent.content.size;
+        if (isAtEndOfListItem) {
+          return this.editor
+            .chain()
+            .splitListItem("listItem")
+            .sinkListItem("listItem")
+            .run();
+        }
+
+        return this.editor.commands.insertContent("\t");
+      },
+      "Shift-Tab": () => {
+        const { doc, selection } = this.editor.state;
+        if (
+          selection.empty &&
+          selection.from > 0 &&
+          doc.textBetween(selection.from - 1, selection.from) === "\t"
+        ) {
+          return this.editor.commands.deleteRange({
+            from: selection.from - 1,
+            to: selection.from,
+          });
+        }
+
+        return this.editor.commands.liftListItem("listItem");
+      },
     };
   },
 });
-
 
 const editor = useEditor({
   content: modelText.value,
@@ -276,6 +308,8 @@ const editor = useEditor({
       listItem: props.singleLine ? false : {},
       // Disable hard breaks in single-line mode
       hardBreak: props.singleLine ? false : {},
+      // List indentation must not create an unrelated empty paragraph.
+      trailingNode: false,
     }),
     Placeholder.configure({
       placeholder: () => props.placeholder,
@@ -294,8 +328,17 @@ const editor = useEditor({
       return processUserGeneratedHtml(html, false, "input");
     },
     handleKeyDown(_view, event) {
-      if (props.submitOnEnter && event.key === "Enter" && !event.shiftKey) {
-        emit("enter");
+      if (
+        props.submitOnShiftEnter &&
+        event.key === "Enter" &&
+        event.shiftKey &&
+        !event.altKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.isComposing &&
+        !event.repeat
+      ) {
+        emit("submit");
         return true;
       }
 
@@ -339,10 +382,7 @@ watch(
   () => modelText.value,
   (newValue) => {
     const editorInstance = editor.value;
-    if (
-      editorInstance === undefined ||
-      newValue === serializedEditorContent
-    ) {
+    if (editorInstance === undefined || newValue === serializedEditorContent) {
       return;
     }
 
@@ -422,6 +462,8 @@ watch(
 
 .editor :deep(.ProseMirror p) {
   margin-bottom: 0.5rem;
+  tab-size: 2;
+  white-space: pre-wrap;
 }
 
 .editor :deep(.ProseMirror p:empty) {

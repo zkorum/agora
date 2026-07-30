@@ -77,11 +77,7 @@
       <!-- Manual: Add Seed Opinions Section -->
       <div v-else class="seed-opinions-section">
         <div class="section-title">
-          {{
-            isMaxDiffDraft
-              ? t("addMaxDiffItems")
-              : t("addSeedOpinions")
-          }}
+          {{ isMaxDiffDraft ? t("addMaxDiffItems") : t("addSeedOpinions") }}
         </div>
         <p class="section-description">
           {{
@@ -89,6 +85,7 @@
               ? t("maxDiffSeedDescription")
               : t("seedOpinionsDescription")
           }}
+          <span class="shortcut-hint">{{ t("addStatementShortcut") }}</span>
         </p>
 
         <!-- Seed Opinions List -->
@@ -107,7 +104,6 @@
             :error-message="opinionErrors[index]"
             :is-active="currentActiveOpinionIndex === index"
             :disabled="isSubmitButtonLoading"
-            :submit-on-enter="true"
             @update:model-value="
               (val) => {
                 conversationDraft.seedOpinions[index] = val;
@@ -120,7 +116,7 @@
               }
             "
             @blur="currentActiveOpinionIndex = -1"
-            @enter="addNewOpinion"
+            @add-next="addNewOpinion"
             @remove="removeOpinion(index)"
           />
         </div>
@@ -128,11 +124,7 @@
         <!-- Add Opinion Button -->
         <div v-if="!isSubmitButtonLoading" class="add-button-container">
           <ConversationControlButton
-            :label="
-              isMaxDiffDraft
-                ? t('addMaxDiffItem')
-                : t('addOpinion')
-            "
+            :label="isMaxDiffDraft ? t('addMaxDiffItem') : t('addOpinion')"
             icon="pi pi-plus"
             :show-border="false"
             icon-position="left"
@@ -378,13 +370,9 @@ async function addNewOpinion(): Promise<void> {
     });
   }
 
-  // Focus the new opinion's editor
   const newComponent = opinionComponentRefs.value[newIndex];
   if (newComponent) {
-    // Small delay to ensure scroll completes before focus
-    setTimeout(() => {
-      newComponent.focus();
-    }, 100);
+    newComponent.focus();
   }
 }
 
@@ -615,6 +603,13 @@ async function onSubmit() {
   font-size: 0.9rem;
   line-height: 1.4;
   margin: 0;
+}
+
+.shortcut-hint {
+  display: block;
+  margin-block-start: 0.5rem;
+  color: $color-text-weak;
+  font-size: 0.85rem;
 }
 
 .add-button-container {

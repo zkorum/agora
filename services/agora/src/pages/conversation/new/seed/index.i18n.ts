@@ -7,6 +7,7 @@ export interface ConversationReviewTranslations {
   addMaxDiffItems: string;
   seedOpinionsDescription: string;
   maxDiffSeedDescription: string;
+  addStatementShortcut: string;
   needMinimumForMaxDiff: string;
   addOpinion: string;
   addMaxDiffItem: string;
@@ -35,6 +36,8 @@ export const conversationReviewTranslations: Record<
       "It's recommended to seed 8 to 15 statements across a range of viewpoints. This has a powerful effect on early participation.",
     maxDiffSeedDescription:
       "Prioritization requires at least 2 statements. We recommend 10 to 25 for the best experience.",
+    addStatementShortcut:
+      "Press Shift + Enter while writing to start a new statement.",
     needMinimumForMaxDiff:
       "At least 2 statements are required for prioritization.",
     addOpinion: "Add Statement",
@@ -63,6 +66,8 @@ export const conversationReviewTranslations: Record<
       "يُنصح بإضافة 8 إلى 15 مقترحًا أوليًا تغطي مجموعة من وجهات النظر. هذا له تأثير قوي على المشاركة المبكرة.",
     maxDiffSeedDescription:
       "يتطلب ترتيب الأولويات 4 مقترحات على الأقل. نوصي بـ 10 إلى 25 للحصول على أفضل تجربة.",
+    addStatementShortcut:
+      "اضغط على Shift + Enter أثناء الكتابة لبدء مقترح جديد.",
     needMinimumForMaxDiff: "مطلوب 4 مقترحات على الأقل لترتيب الأولويات.",
     addOpinion: "أضف مقترحًا",
     addMaxDiffItem: "أضف عبارة",
@@ -88,6 +93,8 @@ export const conversationReviewTranslations: Record<
       "Se recomienda agregar de 8 a 15 proposiciones iniciales que cubran una variedad de puntos de vista. Esto tiene un efecto poderoso en la participación temprana.",
     maxDiffSeedDescription:
       "La priorización requiere al menos 4 declaraciones. Recomendamos de 10 a 25 para la mejor experiencia.",
+    addStatementShortcut:
+      "Pulsa Mayús + Intro mientras escribes para iniciar otra proposición.",
     needMinimumForMaxDiff:
       "Se requieren al menos 4 declaraciones para la priorización.",
     addOpinion: "Añadir Proposición",
@@ -115,6 +122,8 @@ export const conversationReviewTranslations: Record<
       "توصیه می‌شود ۸ تا ۱۵ گزاره اولیه از دیدگاه‌های مختلف اضافه کنید. این تأثیر قدرتمندی بر مشارکت اولیه دارد.",
     maxDiffSeedDescription:
       "اولویت‌بندی حداقل به ۲ گزاره نیاز دارد. برای بهترین تجربه ۱۰ تا ۲۵ عدد توصیه می‌شود.",
+    addStatementShortcut:
+      "هنگام نوشتن، Shift + Enter را فشار دهید تا گزاره جدیدی شروع کنید.",
     needMinimumForMaxDiff: "حداقل ۲ گزاره برای اولویت‌بندی لازم است.",
     addOpinion: "افزودن گزاره",
     addMaxDiffItem: "افزودن گزاره",
@@ -141,6 +150,8 @@ export const conversationReviewTranslations: Record<
       "מומלץ להוסיף 8 עד 15 הצהרות ראשוניות ממגוון נקודות מבט. לכך השפעה חזקה על ההשתתפות המוקדמת.",
     maxDiffSeedDescription:
       "תיעדוף דורש לפחות 2 הצהרות. מומלץ 10 עד 25 לחוויה הטובה ביותר.",
+    addStatementShortcut:
+      "בזמן הכתיבה, לחצו על Shift + Enter כדי להתחיל הצהרה חדשה.",
     needMinimumForMaxDiff: "נדרשות לפחות 2 הצהרות לתיעדוף.",
     addOpinion: "הוספת הצהרה",
     addMaxDiffItem: "הוספת הצהרה",
@@ -166,6 +177,8 @@ export const conversationReviewTranslations: Record<
       "Il est recommandé d'ajouter 8 à 15 propositions initiales couvrant un éventail de points de vue. Cela a un effet puissant sur la participation précoce.",
     maxDiffSeedDescription:
       "La hiérarchisation nécessite au moins 4 propositions. Nous recommandons 10 à 25 pour une meilleure expérience.",
+    addStatementShortcut:
+      "Pendant la saisie, appuyez sur Maj + Entrée pour commencer une nouvelle proposition.",
     needMinimumForMaxDiff:
       "Au moins 4 propositions sont requises pour la hiérarchisation.",
     addOpinion: "Ajouter une Proposition",
@@ -194,6 +207,7 @@ export const conversationReviewTranslations: Record<
       "建议添加8到15个涵盖不同立场的初始意见。这会对早期参与产生强大的影响。",
     maxDiffSeedDescription:
       "优先排序至少需要2条意见。我们建议10至25条以获得最佳体验。",
+    addStatementShortcut: "输入时按 Shift + Enter 可开始一条新意见。",
     needMinimumForMaxDiff: "优先排序至少需要2条意见。",
     addOpinion: "添加意见",
     addMaxDiffItem: "添加意见",
@@ -219,6 +233,7 @@ export const conversationReviewTranslations: Record<
       "建議添加8到15個涵蓋不同立場的初始意見。這會對早期參與產生強大的影響。",
     maxDiffSeedDescription:
       "優先排序至少需要2條意見。我們建議10至25條以獲得最佳體驗。",
+    addStatementShortcut: "輸入時按 Shift + Enter 可開始一條新意見。",
     needMinimumForMaxDiff: "優先排序至少需要2條意見。",
     addOpinion: "添加意見",
     addMaxDiffItem: "添加意見",
@@ -244,6 +259,8 @@ export const conversationReviewTranslations: Record<
       "様々な視点から8〜15個の初期の意見を追加することをお勧めします。これは初期段階の参加に大きな効果をもたらします。",
     maxDiffSeedDescription:
       "優先順位付けには少なくとも2つの意見が必要です。最良の体験のために10〜25個を推奨します。",
+    addStatementShortcut:
+      "入力中に Shift + Enter を押すと、新しい意見を始められます。",
     needMinimumForMaxDiff: "優先順位付けには少なくとも2つの意見が必要です。",
     addOpinion: "意見を追加",
     addMaxDiffItem: "意見を追加",
@@ -270,6 +287,8 @@ export const conversationReviewTranslations: Record<
       "Ар кандай көз караштардан 8ден 15ке чейин баштапкы пикир кошуу сунушталат. Бул эрте катышууга күчтүү таасир тийгизет.",
     maxDiffSeedDescription:
       "Артыкчылыктуу кылуу үчүн кеминде 4 билдирүү керек. Эң жакшы тажрыйба үчүн 10-25 сунушталат.",
+    addStatementShortcut:
+      "Жазып жатканда жаңы билдирүүнү баштоо үчүн Shift + Enter басыңыз.",
     needMinimumForMaxDiff: "Артыкчылыктуу кылуу үчүн кеминде 4 билдирүү керек.",
     addOpinion: "Пикир кошуу",
     addMaxDiffItem: "Билдирүү кошуу",
@@ -296,6 +315,8 @@ export const conversationReviewTranslations: Record<
       "Рекомендуется добавить от 8 до 15 начальных высказываний с разных точек зрения. Это значительно стимулирует раннее участие.",
     maxDiffSeedDescription:
       "Для приоритизации необходимо минимум 4 высказывания. Рекомендуем 10-25 для лучшего опыта.",
+    addStatementShortcut:
+      "Во время ввода нажмите Shift + Enter, чтобы начать новое высказывание.",
     needMinimumForMaxDiff:
       "Для приоритизации необходимо минимум 4 высказывания.",
     addOpinion: "Добавить высказывание",
