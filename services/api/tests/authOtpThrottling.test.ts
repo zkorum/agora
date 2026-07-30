@@ -19,9 +19,9 @@ import { readDbFixtureSql } from "./dbFixture.js";
 
 process.env.NODE_ENV = "test";
 process.env.CORS_ORIGIN_LIST = "http://localhost:9000";
-const TEST_PEPPER = Buffer.from(
-    "0123456789abcdef0123456789abcdef",
-).toString("base64");
+const TEST_PEPPER = Buffer.from("0123456789abcdef0123456789abcdef").toString(
+    "base64",
+);
 process.env.PEPPERS = TEST_PEPPER;
 process.env.VERIFICATOR_SVC_BASE_URL = "http://localhost:3000";
 
@@ -83,7 +83,7 @@ describe("OTP destination throttling", () => {
             database: "agora_test",
             username: "postgres",
             password: "postgres",
-            max: 1,
+            max: 5,
         });
         db = drizzle(sqlClient);
 
@@ -265,6 +265,21 @@ describe("OTP destination throttling", () => {
             success: false,
             reason: "verification_failed",
         });
+
+        const replayResponse = await authService.verifyEmailOtp({
+            db,
+            maxAttempt: 3,
+            didWrite,
+            code: authAttempt.code,
+            email,
+            sessionLifetimeDays: 90,
+            now: currentNow,
+            currentDisplayLanguage: "en",
+        });
+        expect(replayResponse).toEqual({
+            success: false,
+            reason: "expired_code",
+        });
     }, 30000);
 
     it("returns a generic error after OTP when phone ownership conflicts", async () => {
@@ -373,6 +388,78 @@ describe("OTP destination throttling", () => {
             success: false,
             reason: "verification_failed",
         });
+
+        const replayResponse = await authService.verifyPhoneOtp({
+            db,
+            maxAttempt: 3,
+            didWrite,
+            code: authAttempt.code,
+            phoneNumber,
+            defaultCallingCode: "1",
+            peppers: [TEST_PEPPER],
+            phoneAuth: enabledPhoneAuth,
+            sessionLifetimeDays: 90,
+            now: currentNow,
+            currentDisplayLanguage: "en",
+        });
+        expect(replayResponse).toEqual({
+            success: false,
+            reason: "expired_code",
+        });
+    }, 30000);
+
+    it("allows only one concurrent verification to claim a phone OTP", async () => {
+        const didWrite = "did:test:phone:concurrent";
+        const phoneNumber = "+14155552672";
+
+        await createGuestDevice(didWrite);
+        const authenticateResponse = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber,
+                defaultCallingCode: "1",
+                isRequestingNewCode: false,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite,
+            userAgent: "test-agent",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth: enabledPhoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+        expect(authenticateResponse.success).toBe(true);
+
+        const [authAttempt] = await db
+            .select()
+            .from(authAttemptPhoneTable)
+            .where(eq(authAttemptPhoneTable.didWrite, didWrite));
+        const verify = async () =>
+            await authService.verifyPhoneOtp({
+                db,
+                maxAttempt: 3,
+                didWrite,
+                code: authAttempt.code,
+                phoneNumber,
+                defaultCallingCode: "1",
+                peppers: [TEST_PEPPER],
+                phoneAuth: enabledPhoneAuth,
+                sessionLifetimeDays: 90,
+                now: currentNow,
+                currentDisplayLanguage: "en",
+            });
+
+        const responses = await Promise.all([verify(), verify()]);
+
+        expect(responses.filter((response) => response.success)).toHaveLength(
+            1,
+        );
+        expect(
+            responses.filter(
+                (response) =>
+                    !response.success && response.reason === "expired_code",
+            ),
+        ).toHaveLength(1);
     }, 30000);
 
     it("reuses the same email OTP on resend and preserves wrong-guess count", async () => {

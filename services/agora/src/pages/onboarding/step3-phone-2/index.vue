@@ -9,8 +9,8 @@
           :current-step="3.5"
           :total-steps="5"
           :enable-next-button="phoneOtpFormRef?.isCodeComplete?.() ?? false"
-          :show-next-button="phoneOtpFormRef?.isAvailable?.value ?? false"
-          :show-loading-button="phoneOtpFormRef?.isSubmitButtonLoading?.value ?? false"
+          :show-next-button="phoneOtpFormRef?.isAvailable ?? false"
+          :show-loading-button="phoneOtpFormRef?.isSubmitButtonLoading ?? false"
         >
           <template #header>
             <InfoHeader
@@ -62,8 +62,8 @@ const phoneAuthPurpose = computed(() =>
 
 const phoneOtpFormRef = ref<{
   nextButtonClicked: () => void;
-  isSubmitButtonLoading: { value: boolean };
-  isAvailable: { value: boolean };
+  isSubmitButtonLoading: boolean;
+  isAvailable: boolean;
   isCodeComplete: () => boolean;
 } | null>(null);
 

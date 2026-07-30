@@ -12,8 +12,6 @@ export interface PhoneOtpFormTranslations {
   accountMerged: string;
   codeExpiredResend: string;
   wrongCodeTryAgain: string;
-  credentialAlreadyLinked: string;
-  authStateChanged: string;
   somethingWrong: string;
   tooManyAttempts: string;
   invalidPhoneNumber: string;
@@ -37,9 +35,6 @@ export const phoneOtpFormTranslations: Record<
     accountMerged: "Success! Your accounts have been merged",
     codeExpiredResend: "Code expired—resend a new code",
     wrongCodeTryAgain: "Wrong code—try again",
-    credentialAlreadyLinked: "This phone number is already linked to another account",
-    authStateChanged:
-      "Authentication state changed—please request a new code",
     somethingWrong: "Oops! Something is wrong",
     tooManyAttempts:
       "Too many attempts—please wait before requesting a new code",
@@ -62,17 +57,13 @@ export const phoneOtpFormTranslations: Record<
     accountMerged: "نجح! تم دمج حساباتك",
     codeExpiredResend: "انتهت صلاحية الرمز - أرسل رمزاً جديداً",
     wrongCodeTryAgain: "رمز خاطئ - حاول مرة أخرى",
-    credentialAlreadyLinked:
-      "رقم الهاتف هذا مرتبط بالفعل بحساب آخر",
-    authStateChanged: "تغيرت حالة المصادقة - يرجى طلب رمز جديد",
     somethingWrong: "عفواً! هناك خطأ ما",
     tooManyAttempts: "محاولات كثيرة جداً - يرجى الانتظار قبل طلب رمز جديد",
     invalidPhoneNumber:
       "عذراً، رقم الهاتف هذا غير صالح. يرجى التحقق والمحاولة مرة أخرى.",
     restrictedPhoneType:
       "عذراً، رقم الهاتف هذا غير مدعوم لأسباب أمنية. يرجى تجربة رقم آخر.",
-    alreadyHasCredential:
-      "لديك بالفعل رقم هاتف مرتبط بحسابك",
+    alreadyHasCredential: "لديك بالفعل رقم هاتف مرتبط بحسابك",
   },
   es: {
     instructions:
@@ -87,10 +78,6 @@ export const phoneOtpFormTranslations: Record<
     accountMerged: "¡Éxito! Sus cuentas han sido fusionadas",
     codeExpiredResend: "Código expirado—reenvíe un nuevo código",
     wrongCodeTryAgain: "Código incorrecto—intente de nuevo",
-    credentialAlreadyLinked:
-      "Este número de teléfono ya está vinculado a otra cuenta",
-    authStateChanged:
-      "El estado de autenticación cambió—solicite un nuevo código",
     somethingWrong: "¡Ups! Algo salió mal",
     tooManyAttempts:
       "Demasiados intentos—por favor, espere antes de solicitar un nuevo código",
@@ -101,7 +88,26 @@ export const phoneOtpFormTranslations: Record<
     alreadyHasCredential:
       "Ya tienes un número de teléfono vinculado a tu cuenta",
   },
-  fa: { instructions: "کد ۶ رقمی ارسال شده به شماره تلفن را وارد کنید", expiresIn: "انقضا در", codeExpired: "کد منقضی شده", changeNumber: "تغییر شماره", resendCodeIn: "ارسال مجدد کد در", resendCode: "ارسال مجدد کد", pleaseEnterValidCode: "لطفاً یک کد ۶ رقمی معتبر وارد کنید", verificationSuccessful: "تأیید موفقیت‌آمیز", accountMerged: "موفقیت! حساب‌های شما ادغام شدند", codeExpiredResend: "کد منقضی شده—کد جدید ارسال کنید", wrongCodeTryAgain: "کد اشتباه—دوباره تلاش کنید", credentialAlreadyLinked: "این شماره تلفن قبلاً به حساب دیگری متصل شده است", authStateChanged: "وضعیت احراز هویت تغییر کرد—لطفاً کد جدید درخواست دهید", somethingWrong: "مشکلی پیش آمد!", tooManyAttempts: "تلاش‌های زیاد—لطفاً قبل از درخواست کد جدید صبر کنید", invalidPhoneNumber: "متأسفانه این شماره تلفن نامعتبر است. لطفاً بررسی و دوباره تلاش کنید.", restrictedPhoneType: "متأسفانه این شماره تلفن به دلایل امنیتی پشتیبانی نمی‌شود. لطفاً شماره دیگری امتحان کنید.", alreadyHasCredential: "حساب شما قبلاً به یک شماره تلفن متصل شده است" },
+  fa: {
+    instructions: "کد ۶ رقمی ارسال شده به شماره تلفن را وارد کنید",
+    expiresIn: "انقضا در",
+    codeExpired: "کد منقضی شده",
+    changeNumber: "تغییر شماره",
+    resendCodeIn: "ارسال مجدد کد در",
+    resendCode: "ارسال مجدد کد",
+    pleaseEnterValidCode: "لطفاً یک کد ۶ رقمی معتبر وارد کنید",
+    verificationSuccessful: "تأیید موفقیت‌آمیز",
+    accountMerged: "موفقیت! حساب‌های شما ادغام شدند",
+    codeExpiredResend: "کد منقضی شده—کد جدید ارسال کنید",
+    wrongCodeTryAgain: "کد اشتباه—دوباره تلاش کنید",
+    somethingWrong: "مشکلی پیش آمد!",
+    tooManyAttempts: "تلاش‌های زیاد—لطفاً قبل از درخواست کد جدید صبر کنید",
+    invalidPhoneNumber:
+      "متأسفانه این شماره تلفن نامعتبر است. لطفاً بررسی و دوباره تلاش کنید.",
+    restrictedPhoneType:
+      "متأسفانه این شماره تلفن به دلایل امنیتی پشتیبانی نمی‌شود. لطفاً شماره دیگری امتحان کنید.",
+    alreadyHasCredential: "حساب شما قبلاً به یک شماره تلفن متصل شده است",
+  },
   fr: {
     instructions:
       "Entrez le code à 6 chiffres que nous avons envoyé au numéro de téléphone",
@@ -115,10 +121,6 @@ export const phoneOtpFormTranslations: Record<
     accountMerged: "Succès ! Vos comptes ont été fusionnés",
     codeExpiredResend: "Code expiré—renvoyez un nouveau code",
     wrongCodeTryAgain: "Code incorrect—réessayez",
-    credentialAlreadyLinked:
-      "Ce numéro de téléphone est déjà associé à un autre compte",
-    authStateChanged:
-      "L'état d'authentification a changé—demandez un nouveau code",
     somethingWrong: "Oups ! Quelque chose ne va pas",
     tooManyAttempts:
       "Trop de tentatives—veuillez attendre avant de demander un nouveau code",
@@ -141,8 +143,6 @@ export const phoneOtpFormTranslations: Record<
     accountMerged: "成功！您的账户已合并",
     codeExpiredResend: "验证码已过期—重新发送一个新代码",
     wrongCodeTryAgain: "验证码错误—请重试",
-    credentialAlreadyLinked: "此手机号码已关联到另一个账户",
-    authStateChanged: "认证状态已更改—请请求新代码",
     somethingWrong: "哎呀！出错了",
     tooManyAttempts: "太多尝试—请等待重新请求一个新代码",
     invalidPhoneNumber: "抱歉，这个手机号无效。请检查并重试。",
@@ -161,15 +161,31 @@ export const phoneOtpFormTranslations: Record<
     accountMerged: "成功！您的帳戶已合併",
     codeExpiredResend: "驗證碼已過期—重新發送一個新代碼",
     wrongCodeTryAgain: "驗證碼錯誤—請重試",
-    credentialAlreadyLinked: "此手機號碼已關聯到另一個帳戶",
-    authStateChanged: "認證狀態已更改—請請求新代碼",
     somethingWrong: "哎呀！出錯了",
     tooManyAttempts: "太多嘗試—請等待重新請求一個新代碼",
     invalidPhoneNumber: "抱歉，這個手機號無效。請檢查並重試。",
     restrictedPhoneType: "抱歉，這個手機號因安全原因不支持。請嘗試其他號碼。",
     alreadyHasCredential: "您的帳戶已關聯手機號碼",
   },
-  he: { instructions: "הזינו את הקוד בן 6 הספרות ששלחנו למספר הטלפון", expiresIn: "פג ב", codeExpired: "הקוד פג", changeNumber: "שינוי מספר", resendCodeIn: "שליחת קוד מחדש בעוד", resendCode: "שליחת קוד מחדש", pleaseEnterValidCode: "אנא הזינו קוד תקין בן 6 ספרות", verificationSuccessful: "האימות הצליח", accountMerged: "הצלחה! החשבונות שלך מוזגו", codeExpiredResend: "הקוד פג—שלחו קוד חדש", wrongCodeTryAgain: "קוד שגוי—נסו שוב", credentialAlreadyLinked: "מספר טלפון זה כבר מקושר לחשבון אחר", authStateChanged: "מצב האימות השתנה—אנא בקשו קוד חדש", somethingWrong: "אופס! משהו לא תקין", tooManyAttempts: "ניסיונות רבים מדי—אנא המתינו לפני בקשת קוד חדש", invalidPhoneNumber: "מצטערים, מספר טלפון זה אינו תקין. אנא בדקו ונסו שוב.", restrictedPhoneType: "מצטערים, מספר טלפון זה אינו נתמך מטעמי אבטחה. אנא נסו מספר אחר.", alreadyHasCredential: "מספר טלפון כבר מקושר לחשבון שלך" },
+  he: {
+    instructions: "הזינו את הקוד בן 6 הספרות ששלחנו למספר הטלפון",
+    expiresIn: "פג ב",
+    codeExpired: "הקוד פג",
+    changeNumber: "שינוי מספר",
+    resendCodeIn: "שליחת קוד מחדש בעוד",
+    resendCode: "שליחת קוד מחדש",
+    pleaseEnterValidCode: "אנא הזינו קוד תקין בן 6 ספרות",
+    verificationSuccessful: "האימות הצליח",
+    accountMerged: "הצלחה! החשבונות שלך מוזגו",
+    codeExpiredResend: "הקוד פג—שלחו קוד חדש",
+    wrongCodeTryAgain: "קוד שגוי—נסו שוב",
+    somethingWrong: "אופס! משהו לא תקין",
+    tooManyAttempts: "ניסיונות רבים מדי—אנא המתינו לפני בקשת קוד חדש",
+    invalidPhoneNumber: "מצטערים, מספר טלפון זה אינו תקין. אנא בדקו ונסו שוב.",
+    restrictedPhoneType:
+      "מצטערים, מספר טלפון זה אינו נתמך מטעמי אבטחה. אנא נסו מספר אחר.",
+    alreadyHasCredential: "מספר טלפון כבר מקושר לחשבון שלך",
+  },
   ja: {
     instructions: "携帯電話番号に送信された6桁のコードを入力してください",
     expiresIn: "有効期限",
@@ -182,10 +198,6 @@ export const phoneOtpFormTranslations: Record<
     accountMerged: "成功！アカウントが統合されました",
     codeExpiredResend: "コードが期限切れです—新しいコードを再送信",
     wrongCodeTryAgain: "コードが間違っています—もう一度試してください",
-    credentialAlreadyLinked:
-      "この電話番号はすでに別のアカウントにリンクされています",
-    authStateChanged:
-      "認証状態が変更されました—新しいコードをリクエストしてください",
     somethingWrong: "おっと！何かが間違っています",
     tooManyAttempts:
       "試行回数が多すぎます—新しいコードを要求する前に、少し待ってください",
@@ -193,8 +205,7 @@ export const phoneOtpFormTranslations: Record<
       "申し訳ありませんが、この電話番号は無効です。確認してからもう一度試してください。",
     restrictedPhoneType:
       "申し訳ありませんが、この電話番号はセキュリティ上の理由でサポートされていません。別の番号を試してください。",
-    alreadyHasCredential:
-      "アカウントにはすでに電話番号がリンクされています",
+    alreadyHasCredential: "アカウントにはすでに電話番号がリンクされています",
   },
   ky: {
     instructions: "Телефон номериңизге жөнөтүлгөн 6 орундуу кодду киргизиңиз",
@@ -208,19 +219,13 @@ export const phoneOtpFormTranslations: Record<
     accountMerged: "Ийгилик! Аккаунттарыңыз бириктирилди",
     codeExpiredResend: "Коддун мөөнөтү бүттү — жаңы код жөнөтүңүз",
     wrongCodeTryAgain: "Туура эмес код — кайра аракет кылыңыз",
-    credentialAlreadyLinked:
-      "Бул телефон номери башка аккаунтка мурунтан эле байланган",
-    authStateChanged:
-      "Аутентификация абалы өзгөрдү — жаңы код сураңыз",
     somethingWrong: "Ой! Бир нерсе туура эмес",
-    tooManyAttempts:
-      "Өтө көп аракет — жаңы код сурап бергенге чейин күтүңүз",
+    tooManyAttempts: "Өтө көп аракет — жаңы код сурап бергенге чейин күтүңүз",
     invalidPhoneNumber:
       "Кечиресиз, бул телефон номери жараксыз. Текшерип, кайра аракет кылыңыз.",
     restrictedPhoneType:
       "Кечиресиз, бул телефон номери коопсуздук себептерден колдоого алынбайт. Башка номерди колдонуңуз.",
-    alreadyHasCredential:
-      "Аккаунтуңузга телефон номери мурунтан эле байланган",
+    alreadyHasCredential: "Аккаунтуңузга телефон номери мурунтан эле байланган",
   },
   ru: {
     instructions: "Введите 6-значный код, отправленный на номер телефона",
@@ -234,10 +239,6 @@ export const phoneOtpFormTranslations: Record<
     accountMerged: "Успешно! Ваши аккаунты объединены",
     codeExpiredResend: "Код истёк — отправьте новый код",
     wrongCodeTryAgain: "Неверный код — попробуйте снова",
-    credentialAlreadyLinked:
-      "Этот номер телефона уже привязан к другому аккаунту",
-    authStateChanged:
-      "Состояние аутентификации изменилось — запросите новый код",
     somethingWrong: "Ой! Что-то пошло не так",
     tooManyAttempts:
       "Слишком много попыток — подождите перед запросом нового кода",
@@ -245,7 +246,6 @@ export const phoneOtpFormTranslations: Record<
       "Извините, этот номер телефона недействителен. Проверьте и попробуйте снова.",
     restrictedPhoneType:
       "Извините, этот номер телефона не поддерживается по соображениям безопасности. Попробуйте другой.",
-    alreadyHasCredential:
-      "К вашему аккаунту уже привязан номер телефона",
+    alreadyHasCredential: "К вашему аккаунту уже привязан номер телефона",
   },
 };

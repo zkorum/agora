@@ -19,9 +19,7 @@
           :total-steps="surveyStepTotal"
           :enable-next-button="emailOtpFormRef?.isCodeComplete?.() ?? false"
           :show-next-button="true"
-          :show-loading-button="
-            emailOtpFormRef?.isSubmitButtonLoading?.value ?? false
-          "
+          :show-loading-button="emailOtpFormRef?.isSubmitButtonLoading ?? false"
         >
           <template #header>
             <InfoHeader
@@ -69,7 +67,8 @@ const { t } = useComponentI18n<VerifyEmailCodeTranslations>(
 );
 
 const router = useRouter();
-const { routeConversationSlugId, routeContext } = useConversationOnboardingRoute();
+const { routeConversationSlugId, routeContext } =
+  useConversationOnboardingRoute();
 const conversationOnboardingStore = useConversationOnboardingStore();
 const { credentialUpgradeTarget } = storeToRefs(onboardingFlowStore());
 const { exitToConversation } = useConversationOnboardingExit();
@@ -84,8 +83,12 @@ if (
   });
 }
 
-const { conversationSlugId, conversationData, conversationDisplayContent, surveyForm } =
-  useConversationSurveyState({ conversationSlugId: routeConversationSlugId });
+const {
+  conversationSlugId,
+  conversationData,
+  conversationDisplayContent,
+  surveyForm,
+} = useConversationSurveyState({ conversationSlugId: routeConversationSlugId });
 
 const surveyStepTotal = computed(() => {
   const questionCount = surveyForm.value?.questions.length ?? 0;
@@ -95,7 +98,7 @@ const surveyStepTotal = computed(() => {
 
 const emailOtpFormRef = ref<{
   nextButtonClicked: () => void;
-  isSubmitButtonLoading: { value: boolean };
+  isSubmitButtonLoading: boolean;
   isCodeComplete: () => boolean;
 } | null>(null);
 

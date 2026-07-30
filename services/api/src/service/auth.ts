@@ -25,6 +25,7 @@ import {
     userDisplayLanguageTable,
     userSpokenLanguagesTable,
 } from "@/shared-backend/schema.js";
+import { getPrimaryDatabase } from "@/shared-backend/db.js";
 import { nowZeroMs } from "@/shared/util.js";
 import type {
     AuthenticateRequestBody,
@@ -57,7 +58,6 @@ import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 const OTP_DESTINATION_STREAK_RESET_MS = 24 * 60 * 60 * 1000;
 const OTP_MIN_BACKOFF_SECONDS = 30;
 const OTP_MAX_BACKOFF_SECONDS = 60 * 60;
-const UNUSED_TWILIO_LOCAL_CODE = 0;
 
 interface OtpDestinationStateRecord {
     lastOtpSentAt: Date;
@@ -220,9 +220,7 @@ async function checkEmailOtpDeliverability({
     };
 }
 
-function buildTooManyWrongGuessResponse(
-    nextCodeSoonestTime: Date,
-): {
+function buildTooManyWrongGuessResponse(nextCodeSoonestTime: Date): {
     success: false;
     reason: "too_many_wrong_guess";
     nextCodeSoonestTime: Date;
@@ -232,57 +230,6 @@ function buildTooManyWrongGuessResponse(
         reason: "too_many_wrong_guess",
         nextCodeSoonestTime,
     };
-}
-
-async function finalizePhoneOtpSuccess({
-    db,
-    authResult,
-    didWrite,
-    resultOtp,
-    now,
-    phoneAuthMode,
-    sessionLifetimeDays,
-    currentDisplayLanguage,
-}: {
-    db: PostgresDatabase;
-    authResult: Exclude<AuthResult, { type: "associated_with_another_user" }>;
-    didWrite: string;
-    resultOtp: {
-        lastTwoDigits: number;
-        countryCallingCode: string;
-        phoneCountryCode: CountryCode | null;
-        phoneHash: string;
-        pepperVersion: number;
-        userAgent: string;
-    };
-    now: Date;
-    phoneAuthMode: ActivePhoneAuthMode;
-    sessionLifetimeDays: number;
-    currentDisplayLanguage: SupportedDisplayLanguageCodes;
-}): Promise<VerifyPhoneOtp200> {
-    return await db.transaction(async (tx) => {
-        const verifyResult = await registerOrLoginWithPhoneNumber({
-            ...authResult,
-            db: tx,
-            didWrite,
-            lastTwoDigits: resultOtp.lastTwoDigits,
-            countryCallingCode: resultOtp.countryCallingCode,
-            phoneCountryCode: toUnionUndefined(resultOtp.phoneCountryCode),
-            phoneHash: resultOtp.phoneHash,
-            pepperVersion: resultOtp.pepperVersion,
-            userAgent: resultOtp.userAgent,
-            now,
-            phoneAuthMode,
-            sessionLifetimeDays,
-            currentDisplayLanguage,
-        });
-        await resetPhoneOtpDestinationState({
-            db: tx,
-            phoneHash: resultOtp.phoneHash,
-            now,
-        });
-        return verifyResult;
-    });
 }
 
 async function finalizeVerifiedPhoneOtp({
@@ -305,128 +252,107 @@ async function finalizeVerifiedPhoneOtp({
         pepperVersion: number;
         userAgent: string;
         authType: AuthenticateType;
+        code: number;
+        codeExpiry: Date;
     };
     now: Date;
     phoneAuthMode: ActivePhoneAuthMode;
     sessionLifetimeDays: number;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }): Promise<VerifyPhoneOtp200> {
-    const deviceStatus = await authUtilService.getDeviceStatus({
-        db,
-        didWrite,
-        now,
-    });
-    const authResult = await getPhoneAuthenticationTypeByHash({
-        db,
-        phoneHash: resultOtp.phoneHash,
-        didWrite,
-        deviceStatus,
-    });
+    return await db.transaction(async (tx) => {
+        const claimedChallenge = await tx
+            .update(authAttemptPhoneTable)
+            .set({ codeExpiry: now, updatedAt: now })
+            .where(
+                and(
+                    eq(authAttemptPhoneTable.didWrite, didWrite),
+                    eq(authAttemptPhoneTable.phoneHash, resultOtp.phoneHash),
+                    eq(authAttemptPhoneTable.code, resultOtp.code),
+                    eq(authAttemptPhoneTable.codeExpiry, resultOtp.codeExpiry),
+                    gt(authAttemptPhoneTable.codeExpiry, now),
+                ),
+            )
+            .returning({ didWrite: authAttemptPhoneTable.didWrite });
+        if (claimedChallenge.length === 0) {
+            return { success: false, reason: "expired_code" };
+        }
 
-    if (authResult.type === "associated_with_another_user") {
-        return {
-            success: false,
-            reason: "verification_failed",
-        };
-    }
+        await resetPhoneOtpDestinationState({
+            db: tx,
+            phoneHash: resultOtp.phoneHash,
+            now,
+        });
 
-    if (resultOtp.authType !== authResult.type) {
-        const currentUserId =
-            authResult.type === "merge"
-                ? authResult.toUserId
-                : authResult.userId;
-        log.error(
-            {
-                didWrite,
-                storedType: resultOtp.authType,
-                currentType: authResult.type,
-                storedUserId: resultOtp.userId,
-                currentUserId,
-            },
-            "[Phone] Authentication type changed during OTP flow - rejecting for safety",
-        );
-        return {
-            success: false,
-            reason: "verification_failed",
-        };
-    }
+        const deviceStatus = await authUtilService.getDeviceStatus({
+            db: tx,
+            didWrite,
+            now,
+        });
+        const authResult = await getPhoneAuthenticationTypeByHash({
+            db: tx,
+            phoneHash: resultOtp.phoneHash,
+            didWrite,
+            deviceStatus,
+        });
 
-    if (authResult.type === "register") {
-        authResult.userId = resultOtp.userId;
-    } else {
-        const currentUserId =
-            authResult.type === "merge"
-                ? authResult.toUserId
-                : authResult.userId;
-        if (resultOtp.userId !== currentUserId) {
+        if (authResult.type === "associated_with_another_user") {
+            return { success: false, reason: "verification_failed" };
+        }
+
+        if (resultOtp.authType !== authResult.type) {
+            const currentUserId =
+                authResult.type === "merge"
+                    ? authResult.toUserId
+                    : authResult.userId;
             log.error(
                 {
                     didWrite,
+                    storedType: resultOtp.authType,
+                    currentType: authResult.type,
                     storedUserId: resultOtp.userId,
                     currentUserId,
                 },
-                "[Phone] User ID changed during OTP flow - rejecting for safety",
+                "[Phone] Authentication type changed during OTP flow - rejecting for safety",
             );
-            return {
-                success: false,
-                reason: "verification_failed",
-            };
+            return { success: false, reason: "verification_failed" };
         }
-    }
 
-    return await finalizePhoneOtpSuccess({
-        db,
-        authResult,
-        didWrite,
-        resultOtp,
-        now,
-        phoneAuthMode,
-        sessionLifetimeDays,
-        currentDisplayLanguage,
-    });
-}
+        if (authResult.type === "register") {
+            authResult.userId = resultOtp.userId;
+        } else {
+            const currentUserId =
+                authResult.type === "merge"
+                    ? authResult.toUserId
+                    : authResult.userId;
+            if (resultOtp.userId !== currentUserId) {
+                log.error(
+                    {
+                        didWrite,
+                        storedUserId: resultOtp.userId,
+                        currentUserId,
+                    },
+                    "[Phone] User ID changed during OTP flow - rejecting for safety",
+                );
+                return { success: false, reason: "verification_failed" };
+            }
+        }
 
-async function finalizeEmailOtpSuccess({
-    db,
-    authResult,
-    didWrite,
-    email,
-    canonicalEmail,
-    userAgent,
-    now,
-    sessionLifetimeDays,
-    emailReachability,
-    currentDisplayLanguage,
-}: {
-    db: PostgresDatabase;
-    authResult: Exclude<AuthResult, { type: "associated_with_another_user" }>;
-    didWrite: string;
-    email: string;
-    canonicalEmail: string;
-    userAgent: string;
-    now: Date;
-    sessionLifetimeDays: number;
-    emailReachability: ReacherIsReachable | null;
-    currentDisplayLanguage: SupportedDisplayLanguageCodes;
-}): Promise<VerifyOtp200> {
-    return await db.transaction(async (tx) => {
-        const verifyResult = await registerOrLoginWithEmail({
+        return await registerOrLoginWithPhoneNumber({
             ...authResult,
             db: tx,
             didWrite,
-            email,
-            userAgent,
+            lastTwoDigits: resultOtp.lastTwoDigits,
+            countryCallingCode: resultOtp.countryCallingCode,
+            phoneCountryCode: toUnionUndefined(resultOtp.phoneCountryCode),
+            phoneHash: resultOtp.phoneHash,
+            pepperVersion: resultOtp.pepperVersion,
+            userAgent: resultOtp.userAgent,
             now,
+            phoneAuthMode,
             sessionLifetimeDays,
-            emailReachability,
             currentDisplayLanguage,
         });
-        await resetEmailOtpDestinationState({
-            db: tx,
-            canonicalEmail,
-            now,
-        });
-        return verifyResult;
     });
 }
 
@@ -446,76 +372,102 @@ async function finalizeVerifiedEmailOtp({
         userAgent: string;
         authType: AuthenticateType;
         emailReachability: ReacherIsReachable | null;
+        code: number;
+        codeExpiry: Date;
     };
     now: Date;
     sessionLifetimeDays: number;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }): Promise<VerifyOtp200> {
-    const deviceStatus = await authUtilService.getDeviceStatus({
-        db,
-        didWrite,
-        now,
-    });
-    const authResult = await getEmailAuthTypeWithDeviceStatus({
-        db,
-        email: resultOtp.email,
-        didWrite,
-        deviceStatus,
-    });
+    return await db.transaction(async (tx) => {
+        const claimedChallenge = await tx
+            .update(authAttemptEmailTable)
+            .set({ codeExpiry: now, updatedAt: now })
+            .where(
+                and(
+                    eq(authAttemptEmailTable.didWrite, didWrite),
+                    eq(authAttemptEmailTable.email, resultOtp.email),
+                    eq(authAttemptEmailTable.code, resultOtp.code),
+                    eq(authAttemptEmailTable.codeExpiry, resultOtp.codeExpiry),
+                    gt(authAttemptEmailTable.codeExpiry, now),
+                ),
+            )
+            .returning({ didWrite: authAttemptEmailTable.didWrite });
+        if (claimedChallenge.length === 0) {
+            return { success: false, reason: "expired_code" };
+        }
 
-    if (authResult.type === "associated_with_another_user") {
-        return { success: false, reason: "verification_failed" };
-    }
+        await resetEmailOtpDestinationState({
+            db: tx,
+            canonicalEmail: resultOtp.email,
+            now,
+        });
 
-    if (resultOtp.authType !== authResult.type) {
-        const currentUserId =
-            authResult.type === "merge"
-                ? authResult.toUserId
-                : authResult.userId;
-        log.error(
-            {
-                didWrite,
-                storedType: resultOtp.authType,
-                currentType: authResult.type,
-                storedUserId: resultOtp.userId,
-                currentUserId,
-            },
-            "[Email] Authentication type changed during OTP flow - rejecting for safety",
-        );
-        return { success: false, reason: "verification_failed" };
-    }
+        const deviceStatus = await authUtilService.getDeviceStatus({
+            db: tx,
+            didWrite,
+            now,
+        });
+        const authResult = await getEmailAuthTypeWithDeviceStatus({
+            db: tx,
+            email: resultOtp.email,
+            didWrite,
+            deviceStatus,
+        });
 
-    if (authResult.type === "register") {
-        authResult.userId = resultOtp.userId;
-    } else {
-        const currentUserId =
-            authResult.type === "merge"
-                ? authResult.toUserId
-                : authResult.userId;
-        if (resultOtp.userId !== currentUserId) {
+        if (authResult.type === "associated_with_another_user") {
+            return { success: false, reason: "verification_failed" };
+        }
+
+        if (resultOtp.authType !== authResult.type) {
+            const currentUserId =
+                authResult.type === "merge"
+                    ? authResult.toUserId
+                    : authResult.userId;
             log.error(
                 {
                     didWrite,
+                    storedType: resultOtp.authType,
+                    currentType: authResult.type,
                     storedUserId: resultOtp.userId,
                     currentUserId,
                 },
-                "[Email] User ID changed during OTP flow - rejecting for safety",
+                "[Email] Authentication type changed during OTP flow - rejecting for safety",
             );
             return { success: false, reason: "verification_failed" };
         }
-    }
 
-    return await finalizeEmailOtpSuccess({
-        db,
-        authResult,
-        didWrite,
-        email: resultOtp.email,
-        canonicalEmail: resultOtp.email,
-        userAgent: resultOtp.userAgent,
-        now,
-        sessionLifetimeDays,
-        emailReachability: resultOtp.emailReachability,
-        currentDisplayLanguage,
+        if (authResult.type === "register") {
+            authResult.userId = resultOtp.userId;
+        } else {
+            const currentUserId =
+                authResult.type === "merge"
+                    ? authResult.toUserId
+                    : authResult.userId;
+            if (resultOtp.userId !== currentUserId) {
+                log.error(
+                    {
+                        didWrite,
+                        storedUserId: resultOtp.userId,
+                        currentUserId,
+                    },
+                    "[Email] User ID changed during OTP flow - rejecting for safety",
+                );
+                return { success: false, reason: "verification_failed" };
+            }
+        }
+
+        return await registerOrLoginWithEmail({
+            ...authResult,
+            db: tx,
+            didWrite,
+            email: resultOtp.email,
+            userAgent: resultOtp.userAgent,
+            now,
+            sessionLifetimeDays,
+            emailReachability: resultOtp.emailReachability,
+            currentDisplayLanguage,
+        });
     });
 }
 
@@ -625,22 +577,18 @@ async function insertInitialLanguagePreferencesForNewUser({
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
     now: Date;
 }): Promise<void> {
-    await db
-        .insert(userDisplayLanguageTable)
-        .values({
-            userId,
-            languageCode: currentDisplayLanguage,
-            createdAt: now,
-            updatedAt: now,
-        });
+    await db.insert(userDisplayLanguageTable).values({
+        userId,
+        languageCode: currentDisplayLanguage,
+        createdAt: now,
+        updatedAt: now,
+    });
 
-    await db
-        .insert(userSpokenLanguagesTable)
-        .values({
-            userId,
-            languageCode: currentDisplayLanguage,
-            createdAt: now,
-        });
+    await db.insert(userSpokenLanguagesTable).values({
+        userId,
+        languageCode: currentDisplayLanguage,
+        createdAt: now,
+    });
 }
 
 export async function createUserWithInitialLanguagePreferencesIfMissing({
@@ -788,34 +736,6 @@ async function registerOrLoginWithPhoneNumber(
         loginSessionExpiry.getDate() + props.sessionLifetimeDays,
     );
 
-    // CRITICAL: Expire OTP at the entry point to prevent race conditions
-    // This ensures OTP can only be used once across all auth paths
-    const expirationResult = await db
-        .update(authAttemptPhoneTable)
-        .set({
-            codeExpiry: now,
-            updatedAt: now,
-        })
-        .where(
-            and(
-                eq(authAttemptPhoneTable.didWrite, didWrite),
-                gt(authAttemptPhoneTable.codeExpiry, now), // Only update if not expired
-            ),
-        )
-        .returning({ didWrite: authAttemptPhoneTable.didWrite });
-
-    if (expirationResult.length === 0) {
-        // OTP was already used or expired - potential replay attack
-        log.warn(
-            { didWrite },
-            "[Phone] OTP already used or expired - potential replay attack",
-        );
-        return {
-            success: false,
-            reason: "expired_code",
-        };
-    }
-
     switch (type) {
         case "register": {
             if (props.phoneAuthMode !== "enabled") {
@@ -941,8 +861,9 @@ export async function verifyPhoneOtp({
         };
     }
 
+    const primaryDb = getPrimaryDatabase(db);
     const now = providedNow;
-    const resultOtp = await db
+    const resultOtp = await primaryDb
         .select({
             userId: authAttemptPhoneTable.userId,
             lastTwoDigits: authAttemptPhoneTable.lastTwoDigits,
@@ -982,7 +903,7 @@ export async function verifyPhoneOtp({
 
     const destinationState = getEffectiveOtpDestinationState({
         state: await getPhoneOtpDestinationState({
-            db,
+            db: primaryDb,
             phoneHash: resultOtp[0].phoneHash,
         }),
         now,
@@ -1009,7 +930,7 @@ export async function verifyPhoneOtp({
             case "max_attempts_reached":
                 return buildTooManyWrongGuessResponse(
                     await recordPhoneOtpChallengeExhausted({
-                        db,
+                        db: primaryDb,
                         phoneHash: resultOtp[0].phoneHash,
                         state: destinationState,
                         now,
@@ -1030,7 +951,7 @@ export async function verifyPhoneOtp({
                 return { success: false, reason: "expired_code" };
             case "approved":
                 return await finalizeVerifiedPhoneOtp({
-                    db,
+                    db: primaryDb,
                     didWrite,
                     resultOtp: {
                         ...resultOtp[0],
@@ -1057,7 +978,7 @@ export async function verifyPhoneOtp({
         return { success: false, reason: "expired_code" };
     } else if (otpCodesEqual({ a: resultOtp[0].code, b: code })) {
         return await finalizeVerifiedPhoneOtp({
-            db,
+            db: primaryDb,
             didWrite,
             resultOtp: {
                 ...resultOtp[0],
@@ -1070,16 +991,16 @@ export async function verifyPhoneOtp({
         });
     } else {
         await updateCodeGuessAttemptAmount(
-            db,
+            primaryDb,
             didWrite,
             resultOtp[0].guessAttemptAmount + 1,
         );
         if (resultOtp[0].guessAttemptAmount + 1 >= maxAttempt) {
             // code is now considered expired
-            await expireCode(db, didWrite);
+            await expireCode(primaryDb, didWrite);
             return buildTooManyWrongGuessResponse(
                 await recordPhoneOtpChallengeExhausted({
-                    db,
+                    db: primaryDb,
                     phoneHash: resultOtp[0].phoneHash,
                     state: destinationState,
                     now,
@@ -1121,7 +1042,7 @@ export async function updateCodeGuessAttemptAmount(
         .where(eq(authAttemptPhoneTable.didWrite, didWrite));
 }
 
-// WARN: we assume the OTP was verified AND EXPIRED at registerOrLoginWithPhoneNumber entry point
+// WARN: we assume the OTP was verified and atomically claimed before entry.
 async function registerWithPhoneNumber({
     db,
     didWrite,
@@ -1138,8 +1059,7 @@ async function registerWithPhoneNumber({
 }: RegisterWithPhoneNumberProps): Promise<void> {
     log.info("Register with phone number");
     await db.transaction(async (tx) => {
-        // Note: OTP expiration happens at registerOrLoginWithPhoneNumber entry point
-        // to prevent race conditions across all auth paths
+        // The caller atomically claimed the OTP before registration.
 
         const wasUserCreated =
             await createUserWithInitialLanguagePreferencesIfMissing({
@@ -1517,7 +1437,10 @@ async function getPhoneAuthState({
         .from(phoneTable)
         .innerJoin(userTable, eq(userTable.id, phoneTable.userId))
         .where(
-            and(eq(phoneTable.phoneHash, phoneHash), eq(phoneTable.isDeleted, false)),
+            and(
+                eq(phoneTable.phoneHash, phoneHash),
+                eq(phoneTable.isDeleted, false),
+            ),
         )
         .limit(1);
 
@@ -1760,9 +1683,10 @@ export async function authenticateAttempt({
         };
     }
 
+    const primaryDb = getPrimaryDatabase(db);
     const now = providedNow;
     const authResult = await getPhoneAuthenticationTypeByNumber({
-        db,
+        db: primaryDb,
         phoneNumber: authenticateRequestBody.phoneNumber,
         didWrite,
         peppers,
@@ -1774,7 +1698,7 @@ export async function authenticateAttempt({
             : authResult.type;
     const userId =
         authResult.type === "merge" ? authResult.toUserId : authResult.userId;
-    const resultHasAttempted = await db
+    const resultHasAttempted = await primaryDb
         .select({
             codeExpiry: authAttemptPhoneTable.codeExpiry,
             lastOtpSentAt: authAttemptPhoneTable.lastOtpSentAt,
@@ -1785,7 +1709,7 @@ export async function authenticateAttempt({
     if (resultHasAttempted.length === 0) {
         // this is a first attempt, generate new code, insert data and send email in one transaction
         return await insertAuthAttemptCode({
-            db,
+            db: primaryDb,
             type,
             userId,
             minutesBeforeSmsCodeExpiry,
@@ -1809,7 +1733,7 @@ export async function authenticateAttempt({
     if (authenticateRequestBody.isRequestingNewCode) {
         // if user wants to regenerate new code, do it (if possible according to throttling rules)
         return await updateAuthAttemptCode({
-            db,
+            db: primaryDb,
             type,
             userId,
             minutesBeforeSmsCodeExpiry,
@@ -1840,7 +1764,7 @@ export async function authenticateAttempt({
         // If the user changes the identifier mid-flow, rotate the attempt instead
         // of returning success for a stale OTP tied to a different destination.
         return await updateAuthAttemptCode({
-            db,
+            db: primaryDb,
             type,
             userId,
             minutesBeforeSmsCodeExpiry,
@@ -2185,13 +2109,12 @@ async function insertAuthAttemptCode({
         return buildPhoneAuthenticateThrottledResponse(throttleUntil);
     }
     const oneTimeCode =
-        delivery.type === "twilio"
-            ? UNUSED_TWILIO_LOCAL_CODE
-            : delivery.speciallyAuthorizedPhones.includes(
-                    authenticateRequestBody.phoneNumber,
-                )
-              ? delivery.testCode
-              : generateOneTimeCode();
+        delivery.type === "local" &&
+        delivery.speciallyAuthorizedPhones.includes(
+            authenticateRequestBody.phoneNumber,
+        )
+            ? delivery.testCode
+            : generateOneTimeCode();
     const codeExpiry = new Date(now);
     codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeSmsCodeExpiry);
     const phoneNumber = parsePhoneNumberFromString(
@@ -2379,9 +2302,10 @@ async function updateAuthAttemptCode({
                 phoneCountryCode: phoneCountryCode,
                 phoneHash: phoneHash,
                 pepperVersion: PEPPER_VERSION,
-                code: delivery.type === "twilio"
-                    ? UNUSED_TWILIO_LOCAL_CODE
-                    : currentAttempt[0].code,
+                code:
+                    delivery.type === "twilio"
+                        ? generateOneTimeCode()
+                        : currentAttempt[0].code,
                 lastOtpSentAt: now,
                 updatedAt: now,
             })
@@ -2403,13 +2327,12 @@ async function updateAuthAttemptCode({
     }
 
     const oneTimeCode =
-        delivery.type === "twilio"
-            ? UNUSED_TWILIO_LOCAL_CODE
-            : delivery.speciallyAuthorizedPhones.includes(
-                    authenticateRequestBody.phoneNumber,
-                )
-              ? delivery.testCode
-              : generateOneTimeCode();
+        delivery.type === "local" &&
+        delivery.speciallyAuthorizedPhones.includes(
+            authenticateRequestBody.phoneNumber,
+        )
+            ? delivery.testCode
+            : generateOneTimeCode();
     const codeExpiry = new Date(now);
     codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeSmsCodeExpiry);
     if (delivery.type === "twilio") {
@@ -2654,10 +2577,11 @@ export async function authenticateEmailAttempt({
     headerLanguageCode = "en",
     now: providedNow,
 }: AuthenticateEmailAttemptProps): Promise<AuthenticateEmailResponse> {
+    const primaryDb = getPrimaryDatabase(db);
     const now = providedNow;
     const canonicalEmail = normalizeEmail(email);
     const authResult = await getEmailAuthType({
-        db,
+        db: primaryDb,
         email: canonicalEmail,
         didWrite,
     });
@@ -2669,7 +2593,7 @@ export async function authenticateEmailAttempt({
     const userId =
         authResult.type === "merge" ? authResult.toUserId : authResult.userId;
 
-    const resultHasAttempted = await db
+    const resultHasAttempted = await primaryDb
         .select({
             codeExpiry: authAttemptEmailTable.codeExpiry,
             lastOtpSentAt: authAttemptEmailTable.lastOtpSentAt,
@@ -2680,7 +2604,7 @@ export async function authenticateEmailAttempt({
     if (resultHasAttempted.length === 0) {
         // first attempt: generate new code, insert data and send email
         return await insertEmailAuthAttemptCode({
-            db,
+            db: primaryDb,
             type,
             userId,
             minutesBeforeEmailCodeExpiry,
@@ -2702,7 +2626,7 @@ export async function authenticateEmailAttempt({
     if (isRequestingNewCode) {
         // user wants to regenerate new code (if possible according to throttling)
         return await updateEmailAuthAttemptCode({
-            db,
+            db: primaryDb,
             type,
             userId,
             minutesBeforeEmailCodeExpiry,
@@ -2731,7 +2655,7 @@ export async function authenticateEmailAttempt({
         // If the identifier changes mid-flow, update the attempt instead of
         // returning success for an OTP tied to the previous address.
         return await updateEmailAuthAttemptCode({
-            db,
+            db: primaryDb,
             type,
             userId,
             minutesBeforeEmailCodeExpiry,
@@ -3066,8 +2990,7 @@ async function registerWithEmail({
 
     log.info("Register with email");
     await db.transaction(async (tx) => {
-        // Note: OTP expiration happens at registerOrLoginWithEmail entry point
-        // to prevent race conditions across all auth paths
+        // The caller atomically claimed the OTP before registration.
 
         const wasUserCreated =
             await createUserWithInitialLanguagePreferencesIfMissing({
@@ -3136,34 +3059,6 @@ async function registerOrLoginWithEmail(
         loginSessionExpiry.getDate() + props.sessionLifetimeDays,
     );
 
-    // CRITICAL: Expire OTP at the entry point to prevent race conditions
-    // This ensures OTP can only be used once across all auth paths
-    const expirationResult = await db
-        .update(authAttemptEmailTable)
-        .set({
-            codeExpiry: now,
-            updatedAt: now,
-        })
-        .where(
-            and(
-                eq(authAttemptEmailTable.didWrite, didWrite),
-                gt(authAttemptEmailTable.codeExpiry, now), // Only update if not expired
-            ),
-        )
-        .returning({ didWrite: authAttemptEmailTable.didWrite });
-
-    if (expirationResult.length === 0) {
-        // OTP was already used or expired - potential replay attack
-        log.warn(
-            { didWrite },
-            "[Email] OTP already used or expired - potential replay attack",
-        );
-        return {
-            success: false,
-            reason: "expired_code",
-        };
-    }
-
     switch (type) {
         case "register": {
             // Prevent duplicate credential: user must not already have an active email
@@ -3205,7 +3100,7 @@ async function registerOrLoginWithEmail(
             };
         }
         case "login_known_device": {
-            // OTP already expired at entry point above - just update session
+            // OTP was already claimed by the caller; just update the session.
             await db
                 .update(deviceTable)
                 .set({
@@ -3281,9 +3176,10 @@ export async function verifyEmailOtp({
     currentDisplayLanguage,
     now: providedNow,
 }: VerifyEmailOtpProps): Promise<VerifyOtp200> {
+    const primaryDb = getPrimaryDatabase(db);
     const now = providedNow;
     const canonicalEmail = normalizeEmail(email);
-    const resultOtp = await db
+    const resultOtp = await primaryDb
         .select({
             userId: authAttemptEmailTable.userId,
             email: authAttemptEmailTable.email,
@@ -3303,7 +3199,7 @@ export async function verifyEmailOtp({
     }
     const destinationState = getEffectiveOtpDestinationState({
         state: await getEmailOtpDestinationState({
-            db,
+            db: primaryDb,
             canonicalEmail: resultOtp[0].email,
         }),
         now,
@@ -3321,7 +3217,7 @@ export async function verifyEmailOtp({
         return { success: false, reason: "expired_code" };
     } else if (otpCodesEqual({ a: resultOtp[0].code, b: code })) {
         return await finalizeVerifiedEmailOtp({
-            db,
+            db: primaryDb,
             didWrite,
             resultOtp: {
                 ...resultOtp[0],
@@ -3333,16 +3229,16 @@ export async function verifyEmailOtp({
         });
     } else {
         await updateEmailCodeGuessAttemptAmount({
-            db,
+            db: primaryDb,
             didWrite,
             attemptAmount: resultOtp[0].guessAttemptAmount + 1,
         });
         if (resultOtp[0].guessAttemptAmount + 1 >= maxAttempt) {
             // code is now considered expired
-            await expireEmailCode({ db, didWrite });
+            await expireEmailCode({ db: primaryDb, didWrite });
             return buildTooManyWrongGuessResponse(
                 await recordEmailOtpChallengeExhausted({
-                    db,
+                    db: primaryDb,
                     canonicalEmail,
                     state: destinationState,
                     now,

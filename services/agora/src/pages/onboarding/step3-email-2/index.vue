@@ -10,7 +10,7 @@
           :total-steps="5"
           :enable-next-button="emailOtpFormRef?.isCodeComplete?.() ?? false"
           :show-next-button="true"
-          :show-loading-button="emailOtpFormRef?.isSubmitButtonLoading?.value ?? false"
+          :show-loading-button="emailOtpFormRef?.isSubmitButtonLoading ?? false"
         >
           <template #header>
             <InfoHeader
@@ -55,7 +55,7 @@ const router = useRouter();
 
 const emailOtpFormRef = ref<{
   nextButtonClicked: () => void;
-  isSubmitButtonLoading: { value: boolean };
+  isSubmitButtonLoading: boolean;
   isCodeComplete: () => boolean;
 } | null>(null);
 

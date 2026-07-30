@@ -12,8 +12,6 @@ export interface EmailOtpFormTranslations {
   accountMerged: string;
   codeExpiredResend: string;
   wrongCodeTryAgain: string;
-  credentialAlreadyLinked: string;
-  authStateChanged: string;
   somethingWrong: string;
   tooManyAttempts: string;
   alreadyHasCredential: string;
@@ -37,9 +35,6 @@ export const emailOtpFormTranslations: Record<
     accountMerged: "Success! Your accounts have been merged",
     codeExpiredResend: "Code expired—resend a new code",
     wrongCodeTryAgain: "Wrong code—try again",
-    credentialAlreadyLinked: "This email address is already linked to another account",
-    authStateChanged:
-      "Authentication state changed—please request a new code",
     somethingWrong: "Oops! Something is wrong",
     tooManyAttempts:
       "Too many attempts—please wait before requesting a new code",
@@ -47,8 +42,7 @@ export const emailOtpFormTranslations: Record<
       "You already have an email address linked to your account",
     unreachable:
       "This email address doesn't seem to exist—please use a different one",
-    disposable:
-      "Temporary or disposable email addresses are not allowed",
+    disposable: "Temporary or disposable email addresses are not allowed",
   },
   ar: {
     instructions: "أدخل الرمز المكون من 6 أرقام الذي أرسلناه إلى",
@@ -62,20 +56,16 @@ export const emailOtpFormTranslations: Record<
     accountMerged: "نجح! تم دمج حساباتك",
     codeExpiredResend: "انتهت صلاحية الرمز - أرسل رمزاً جديداً",
     wrongCodeTryAgain: "رمز خاطئ - حاول مرة أخرى",
-    credentialAlreadyLinked:
-      "عنوان البريد الإلكتروني هذا مرتبط بالفعل بحساب آخر",
-    authStateChanged: "تغيرت حالة المصادقة - يرجى طلب رمز جديد",
     somethingWrong: "عفواً! هناك خطأ ما",
     tooManyAttempts: "محاولات كثيرة جداً - يرجى الانتظار قبل طلب رمز جديد",
-    alreadyHasCredential:
-      "لديك بالفعل عنوان بريد إلكتروني مرتبط بحسابك",
+    alreadyHasCredential: "لديك بالفعل عنوان بريد إلكتروني مرتبط بحسابك",
     unreachable:
       "يبدو أن عنوان البريد الإلكتروني هذا غير موجود—يرجى استخدام عنوان آخر",
-    disposable: "عناوين البريد الإلكتروني المؤقتة أو التي يمكن التخلص منها غير مسموح بها",
+    disposable:
+      "عناوين البريد الإلكتروني المؤقتة أو التي يمكن التخلص منها غير مسموح بها",
   },
   es: {
-    instructions:
-      "Ingrese el código de 6 dígitos que hemos enviado a",
+    instructions: "Ingrese el código de 6 dígitos que hemos enviado a",
     expiresIn: "Expira en",
     codeExpired: "Código expirado",
     changeEmail: "Cambiar correo electrónico",
@@ -86,10 +76,6 @@ export const emailOtpFormTranslations: Record<
     accountMerged: "¡Éxito! Sus cuentas han sido fusionadas",
     codeExpiredResend: "Código expirado—reenvíe un nuevo código",
     wrongCodeTryAgain: "Código incorrecto—intente de nuevo",
-    credentialAlreadyLinked:
-      "Esta dirección de correo electrónico ya está vinculada a otra cuenta",
-    authStateChanged:
-      "El estado de autenticación cambió—solicite un nuevo código",
     somethingWrong: "¡Ups! Algo salió mal",
     tooManyAttempts:
       "Demasiados intentos—por favor, espere antes de solicitar un nuevo código",
@@ -100,10 +86,27 @@ export const emailOtpFormTranslations: Record<
     disposable:
       "No se permiten direcciones de correo electrónico temporales o desechables",
   },
-  fa: { instructions: "کد ۶ رقمی ارسال شده به آدرس زیر را وارد کنید", expiresIn: "انقضا در", codeExpired: "کد منقضی شده", changeEmail: "تغییر ایمیل", resendCodeIn: "ارسال مجدد کد در", resendCode: "ارسال مجدد کد", pleaseEnterValidCode: "لطفاً یک کد ۶ رقمی معتبر وارد کنید", verificationSuccessful: "ورود موفقیت‌آمیز!", accountMerged: "موفقیت! حساب‌های شما ادغام شدند", codeExpiredResend: "کد منقضی شده—کد جدید ارسال کنید", wrongCodeTryAgain: "کد اشتباه—دوباره تلاش کنید", credentialAlreadyLinked: "این آدرس ایمیل قبلاً به حساب دیگری متصل شده است", authStateChanged: "وضعیت احراز هویت تغییر کرد—لطفاً کد جدید درخواست دهید", somethingWrong: "مشکلی پیش آمد!", tooManyAttempts: "تلاش‌های زیاد—لطفاً قبل از درخواست کد جدید صبر کنید", alreadyHasCredential: "حساب شما قبلاً به یک آدرس ایمیل متصل شده است", unreachable: "به نظر می‌رسد این آدرس ایمیل وجود ندارد—لطفاً از آدرس دیگری استفاده کنید", disposable: "آدرس‌های ایمیل موقت یا یکبار مصرف مجاز نیستند" },
+  fa: {
+    instructions: "کد ۶ رقمی ارسال شده به آدرس زیر را وارد کنید",
+    expiresIn: "انقضا در",
+    codeExpired: "کد منقضی شده",
+    changeEmail: "تغییر ایمیل",
+    resendCodeIn: "ارسال مجدد کد در",
+    resendCode: "ارسال مجدد کد",
+    pleaseEnterValidCode: "لطفاً یک کد ۶ رقمی معتبر وارد کنید",
+    verificationSuccessful: "ورود موفقیت‌آمیز!",
+    accountMerged: "موفقیت! حساب‌های شما ادغام شدند",
+    codeExpiredResend: "کد منقضی شده—کد جدید ارسال کنید",
+    wrongCodeTryAgain: "کد اشتباه—دوباره تلاش کنید",
+    somethingWrong: "مشکلی پیش آمد!",
+    tooManyAttempts: "تلاش‌های زیاد—لطفاً قبل از درخواست کد جدید صبر کنید",
+    alreadyHasCredential: "حساب شما قبلاً به یک آدرس ایمیل متصل شده است",
+    unreachable:
+      "به نظر می‌رسد این آدرس ایمیل وجود ندارد—لطفاً از آدرس دیگری استفاده کنید",
+    disposable: "آدرس‌های ایمیل موقت یا یکبار مصرف مجاز نیستند",
+  },
   fr: {
-    instructions:
-      "Entrez le code à 6 chiffres que nous avons envoyé à",
+    instructions: "Entrez le code à 6 chiffres que nous avons envoyé à",
     expiresIn: "Expire dans",
     codeExpired: "Code expiré",
     changeEmail: "Changer l'e-mail",
@@ -114,15 +117,10 @@ export const emailOtpFormTranslations: Record<
     accountMerged: "Succès ! Vos comptes ont été fusionnés",
     codeExpiredResend: "Code expiré—renvoyez un nouveau code",
     wrongCodeTryAgain: "Code incorrect—réessayez",
-    credentialAlreadyLinked:
-      "Cette adresse e-mail est déjà associée à un autre compte",
-    authStateChanged:
-      "L'état d'authentification a changé—demandez un nouveau code",
     somethingWrong: "Oups ! Quelque chose ne va pas",
     tooManyAttempts:
       "Trop de tentatives—veuillez attendre avant de demander un nouveau code",
-    alreadyHasCredential:
-      "Une adresse e-mail est déjà associée à votre compte",
+    alreadyHasCredential: "Une adresse e-mail est déjà associée à votre compte",
     unreachable:
       "Cette adresse e-mail ne semble pas exister—veuillez en utiliser une autre",
     disposable:
@@ -140,8 +138,6 @@ export const emailOtpFormTranslations: Record<
     accountMerged: "成功！您的账户已合并",
     codeExpiredResend: "验证码已过期—重新发送一个新代码",
     wrongCodeTryAgain: "验证码错误—请重试",
-    credentialAlreadyLinked: "此电子邮箱地址已关联到另一个账户",
-    authStateChanged: "认证状态已更改—请请求新代码",
     somethingWrong: "哎呀！出错了",
     tooManyAttempts: "太多尝试—请等待重新请求一个新代码",
     alreadyHasCredential: "您的账户已关联电子邮箱地址",
@@ -160,15 +156,30 @@ export const emailOtpFormTranslations: Record<
     accountMerged: "成功！您的帳戶已合併",
     codeExpiredResend: "驗證碼已過期—重新發送一個新代碼",
     wrongCodeTryAgain: "驗證碼錯誤—請重試",
-    credentialAlreadyLinked: "此電子郵箱地址已關聯到另一個帳戶",
-    authStateChanged: "認證狀態已更改—請請求新代碼",
     somethingWrong: "哎呀！出錯了",
     tooManyAttempts: "太多嘗試—請等待重新請求一個新代碼",
     alreadyHasCredential: "您的帳戶已關聯電子郵箱地址",
     unreachable: "此電子郵箱地址似乎不存在—請使用其他地址",
     disposable: "不允許使用臨時或一次性電子郵箱地址",
   },
-  he: { instructions: "הזינו את הקוד בן 6 הספרות ששלחנו אל", expiresIn: "פג ב", codeExpired: "הקוד פג", changeEmail: "שינוי דוא\"ל", resendCodeIn: "שליחת קוד מחדש בעוד", resendCode: "שליחת קוד מחדש", pleaseEnterValidCode: "אנא הזינו קוד תקין בן 6 ספרות", verificationSuccessful: "ההתחברות הצליחה!", accountMerged: "הצלחה! החשבונות שלך מוזגו", codeExpiredResend: "הקוד פג—שלחו קוד חדש", wrongCodeTryAgain: "קוד שגוי—נסו שוב", credentialAlreadyLinked: "כתובת דוא\"ל זו כבר מקושרת לחשבון אחר", authStateChanged: "מצב האימות השתנה—אנא בקשו קוד חדש", somethingWrong: "אופס! משהו לא תקין", tooManyAttempts: "ניסיונות רבים מדי—אנא המתינו לפני בקשת קוד חדש", alreadyHasCredential: "כתובת דוא\"ל כבר מקושרת לחשבון שלך", unreachable: "כתובת דוא\"ל זו לא נראית קיימת—אנא השתמשו בכתובת אחרת", disposable: "כתובות דוא\"ל זמניות או חד-פעמיות אינן מותרות" },
+  he: {
+    instructions: "הזינו את הקוד בן 6 הספרות ששלחנו אל",
+    expiresIn: "פג ב",
+    codeExpired: "הקוד פג",
+    changeEmail: 'שינוי דוא"ל',
+    resendCodeIn: "שליחת קוד מחדש בעוד",
+    resendCode: "שליחת קוד מחדש",
+    pleaseEnterValidCode: "אנא הזינו קוד תקין בן 6 ספרות",
+    verificationSuccessful: "ההתחברות הצליחה!",
+    accountMerged: "הצלחה! החשבונות שלך מוזגו",
+    codeExpiredResend: "הקוד פג—שלחו קוד חדש",
+    wrongCodeTryAgain: "קוד שגוי—נסו שוב",
+    somethingWrong: "אופס! משהו לא תקין",
+    tooManyAttempts: "ניסיונות רבים מדי—אנא המתינו לפני בקשת קוד חדש",
+    alreadyHasCredential: 'כתובת דוא"ל כבר מקושרת לחשבון שלך',
+    unreachable: 'כתובת דוא"ל זו לא נראית קיימת—אנא השתמשו בכתובת אחרת',
+    disposable: 'כתובות דוא"ל זמניות או חד-פעמיות אינן מותרות',
+  },
   ja: {
     instructions: "以下のアドレスに送信した6桁のコードを入力してください",
     expiresIn: "有効期限",
@@ -181,10 +192,6 @@ export const emailOtpFormTranslations: Record<
     accountMerged: "成功！アカウントが統合されました",
     codeExpiredResend: "コードが期限切れです—新しいコードを再送信",
     wrongCodeTryAgain: "コードが間違っています—もう一度試してください",
-    credentialAlreadyLinked:
-      "このメールアドレスはすでに別のアカウントにリンクされています",
-    authStateChanged:
-      "認証状態が変更されました—新しいコードをリクエストしてください",
     somethingWrong: "おっと！何かが間違っています",
     tooManyAttempts:
       "試行回数が多すぎます—新しいコードを要求する前に、少し待ってください",
@@ -192,8 +199,7 @@ export const emailOtpFormTranslations: Record<
       "アカウントにはすでにメールアドレスがリンクされています",
     unreachable:
       "このメールアドレスは存在しないようです—別のアドレスをお使いください",
-    disposable:
-      "一時的または使い捨てのメールアドレスは許可されていません",
+    disposable: "一時的または使い捨てのメールアドレスは許可されていません",
   },
   ky: {
     instructions: "Биз жөнөткөн 6 орундуу кодду киргизиңиз",
@@ -207,13 +213,8 @@ export const emailOtpFormTranslations: Record<
     accountMerged: "Ийгилик! Аккаунттарыңыз бириктирилди",
     codeExpiredResend: "Коддун мөөнөтү бүттү — жаңы код жөнөтүңүз",
     wrongCodeTryAgain: "Туура эмес код — кайра аракет кылыңыз",
-    credentialAlreadyLinked:
-      "Бул электрондук почта дареги башка аккаунтка мурунтан эле байланган",
-    authStateChanged:
-      "Аутентификация абалы өзгөрдү — жаңы код сураңыз",
     somethingWrong: "Ой! Бир нерсе туура эмес",
-    tooManyAttempts:
-      "Өтө көп аракет — жаңы код сурап бергенге чейин күтүңүз",
+    tooManyAttempts: "Өтө көп аракет — жаңы код сурап бергенге чейин күтүңүз",
     alreadyHasCredential:
       "Аккаунтуңузга электрондук почта дареги мурунтан эле байланган",
     unreachable:
@@ -233,10 +234,6 @@ export const emailOtpFormTranslations: Record<
     accountMerged: "Успешно! Ваши аккаунты объединены",
     codeExpiredResend: "Код истёк — отправьте новый код",
     wrongCodeTryAgain: "Неверный код — попробуйте снова",
-    credentialAlreadyLinked:
-      "Этот адрес электронной почты уже привязан к другому аккаунту",
-    authStateChanged:
-      "Состояние аутентификации изменилось — запросите новый код",
     somethingWrong: "Ой! Что-то пошло не так",
     tooManyAttempts:
       "Слишком много попыток — подождите перед запросом нового кода",
