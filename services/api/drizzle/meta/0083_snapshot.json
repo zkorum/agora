@@ -1,5 +1,5 @@
 {
-  "id": "34b9ce79-e9f2-4801-8e86-202bbca3c008",
+  "id": "f0acadd7-5353-43c7-975e-ae7af86fd531",
   "prevId": "01630ab8-70b5-43fa-9942-5b8680aa46b4",
   "version": "7",
   "dialect": "postgresql",
@@ -12192,7 +12192,7 @@
             }
           ],
           "isUnique": false,
-          "where": "\"realtime_event_outbox\".\"event_type\" IN ('conversation_analysis_updated', 'conversation_settings_updated')",
+          "where": "\"realtime_event_outbox\".\"event_type\" IN ('conversation_analysis_updated', 'conversation_settings_updated', 'conversation_survey_updated')",
           "concurrently": false,
           "method": "btree",
           "with": {}

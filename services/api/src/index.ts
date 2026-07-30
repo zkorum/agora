@@ -349,6 +349,11 @@ const githubWebhookRateLimitConfig = {
     timeWindow: 60 * 1000,
     groupId: "maxdiff-github-webhook",
 };
+const surveyResultsRateLimitConfig = {
+    max: 60,
+    timeWindow: 60 * 1000,
+    groupId: "survey-results",
+};
 const CONTENT_TRANSLATION_USER_RATE_LIMIT_MAX = 20;
 const CONTENT_TRANSLATION_USER_RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
@@ -4178,6 +4183,7 @@ server.after(() => {
                 db: db,
                 userId: deviceStatus.userId,
                 googleCloudCredentials,
+                valkey: queueValkeyRef.current,
                 data: request.body,
             });
 
@@ -4453,6 +4459,9 @@ server.after(() => {
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/survey/results/aggregated`,
+        config: {
+            rateLimit: surveyResultsRateLimitConfig,
+        },
         schema: {
             body: Dto.surveyResultsAggregatedRequest,
             response: {

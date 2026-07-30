@@ -226,7 +226,6 @@
               class="tabComponent"
             >
               <SurveyTab
-                :model-value="currentTab"
                 :conversation-slug-id="props.conversationSlugId"
                 :survey-gate="props.surveyGate"
                 :survey-query="props.surveyQuery"
@@ -235,7 +234,7 @@
                 :total-participant-count="analysisParticipantCount"
                 :compact-mode="currentTab === 'Summary'"
                 :conversation-scroll-context="props.conversationScrollContext"
-                @update:model-value="onTabChange"
+                @switch-to-survey="onTabChange('Survey')"
               />
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import {
     maxdiffComparisonTable,
     maxdiffResultTable,
@@ -13,6 +13,7 @@ import {
 } from "@/shared-backend/schema.js";
 import { PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD } from "@/shared/shared.js";
 import type {
+    ConversationType,
     SurveyAggregateRow as PublicSurveyAggregateRow,
     SurveyQuestionType,
 } from "@/shared/types/zod.js";
@@ -25,7 +26,10 @@ import {
     type StoredSurveyAnswer,
     type SurveyParticipantState,
 } from "@/service/survey.js";
-import { getSelectedOpinionGroupMembershipsByParticipantId } from "@/service/opinionGroupAnalysis.js";
+import {
+    getSelectedOpinionGroupMembershipsByParticipantId,
+    type SelectedOpinionGroupMembership,
+} from "@/service/opinionGroupAnalysis.js";
 import type { GeneratorParams } from "./base.js";
 
 type CsvValue = string | number | null;
@@ -364,13 +368,42 @@ export function buildSurveyQuestionOptionRows({
 async function loadSurveyCountedParticipantIds({
     db,
     conversationId,
+    conversationType,
 }: {
     db: GeneratorParams["db"];
     conversationId: number;
+    conversationType: ConversationType;
 }): Promise<Set<string>> {
-    const [voteParticipants, maxdiffParticipants] = await Promise.all([
-        db
-            .select({ participantId: voteTable.authorId })
+    const participantRows =
+        conversationType === "ranking"
+            ? await db
+                  .selectDistinct({
+                      participantId: maxdiffResultTable.participantId,
+                  })
+                  .from(maxdiffResultTable)
+                  .innerJoin(
+                      maxdiffComparisonTable,
+                      eq(
+                          maxdiffComparisonTable.maxdiffResultId,
+                          maxdiffResultTable.id,
+                      ),
+                  )
+                  .innerJoin(
+                      userTable,
+                      eq(maxdiffResultTable.participantId, userTable.id),
+                  )
+                  .where(
+                      and(
+                          eq(
+                              maxdiffResultTable.conversationId,
+                              conversationId,
+                          ),
+                          eq(userTable.isDeleted, false),
+                          isNull(maxdiffComparisonTable.deletedAt),
+                      ),
+                  )
+            : await db
+                  .selectDistinct({ participantId: voteTable.authorId })
             .from(voteTable)
             .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
             .innerJoin(userTable, eq(voteTable.authorId, userTable.id))
@@ -389,34 +422,9 @@ async function loadSurveyCountedParticipantIds({
                     isNotNull(opinionTable.currentContentId),
                     isNotNull(voteTable.currentContentId),
                 ),
-            ),
-        db
-            .select({ participantId: maxdiffResultTable.participantId })
-            .from(maxdiffResultTable)
-            .innerJoin(
-                maxdiffComparisonTable,
-                eq(
-                    maxdiffComparisonTable.maxdiffResultId,
-                    maxdiffResultTable.id,
-                ),
-            )
-            .innerJoin(
-                userTable,
-                eq(maxdiffResultTable.participantId, userTable.id),
-            )
-            .where(
-                and(
-                    eq(maxdiffResultTable.conversationId, conversationId),
-                    eq(userTable.isDeleted, false),
-                    isNull(maxdiffComparisonTable.deletedAt),
-                ),
-            ),
-    ]);
+            );
 
-    return new Set([
-        ...voteParticipants.map((row) => row.participantId),
-        ...maxdiffParticipants.map((row) => row.participantId),
-    ]);
+    return new Set(participantRows.map((row) => row.participantId));
 }
 
 function getCountedParticipantStates({
@@ -429,13 +437,35 @@ function getCountedParticipantStates({
     );
 }
 
+const SURVEY_QUERY_ID_BATCH_SIZE = 10_000;
+
+async function loadRowsInIdBatches<Id extends string | number, Row>({
+    ids,
+    loadBatch,
+}: {
+    ids: Id[];
+    loadBatch: (ids: Id[]) => Promise<Row[]>;
+}): Promise<Row[]> {
+    const rows: Row[] = [];
+    for (let offset = 0; offset < ids.length; offset += SURVEY_QUERY_ID_BATCH_SIZE) {
+        rows.push(
+            ...(await loadBatch(
+                ids.slice(offset, offset + SURVEY_QUERY_ID_BATCH_SIZE),
+            )),
+        );
+    }
+    return rows;
+}
+
 export async function loadSurveyExportContext({
     db,
     conversationId,
-}: Pick<
-    GeneratorParams,
-    "db" | "conversationId"
->): Promise<SurveyExportContext> {
+    conversationType = "polis",
+    includeClusterMemberships = true,
+}: Pick<GeneratorParams, "db" | "conversationId"> & {
+    conversationType?: ConversationType;
+    includeClusterMemberships?: boolean;
+}): Promise<SurveyExportContext> {
     const activeSurveyConfig = await getActiveSurveyConfigRecord({
         db,
         conversationId,
@@ -453,6 +483,7 @@ export async function loadSurveyExportContext({
     const countedParticipantIds = await loadSurveyCountedParticipantIds({
         db,
         conversationId,
+        conversationType,
     });
     if (countedParticipantIds.size === 0) {
         return {
@@ -463,83 +494,88 @@ export async function loadSurveyExportContext({
         };
     }
 
-    const responseRows = await db
-        .select({
-            responseId: surveyResponseTable.id,
-            participantId: surveyResponseTable.participantId,
-            createdAt: surveyResponseTable.createdAt,
-            updatedAt: surveyResponseTable.updatedAt,
-            completedAt: surveyResponseTable.completedAt,
-            withdrawnAt: surveyResponseTable.withdrawnAt,
-        })
-        .from(surveyResponseTable)
-        .innerJoin(
-            userTable,
-            eq(surveyResponseTable.participantId, userTable.id),
-        )
-        .where(
-            and(
-                eq(surveyResponseTable.conversationId, conversationId),
-                eq(userTable.isDeleted, false),
-                inArray(
-                    surveyResponseTable.participantId,
-                    Array.from(countedParticipantIds),
+    const responseRows = await loadRowsInIdBatches({
+        ids: Array.from(countedParticipantIds),
+        loadBatch: async (participantIds) =>
+            await db
+                .select({
+                    responseId: surveyResponseTable.id,
+                    participantId: surveyResponseTable.participantId,
+                    createdAt: surveyResponseTable.createdAt,
+                    updatedAt: surveyResponseTable.updatedAt,
+                    completedAt: surveyResponseTable.completedAt,
+                    withdrawnAt: surveyResponseTable.withdrawnAt,
+                })
+                .from(surveyResponseTable)
+                .innerJoin(
+                    userTable,
+                    eq(surveyResponseTable.participantId, userTable.id),
+                )
+                .where(
+                    and(
+                        eq(surveyResponseTable.conversationId, conversationId),
+                        eq(userTable.isDeleted, false),
+                        inArray(surveyResponseTable.participantId, participantIds),
+                    ),
                 ),
-            ),
-        )
-        .orderBy(asc(surveyResponseTable.createdAt));
+    });
+    responseRows.sort(
+        (left, right) => left.createdAt.getTime() - right.createdAt.getTime(),
+    );
 
     const responseIds = responseRows.map((response) => response.responseId);
-    const answerRows =
-        responseIds.length === 0
-            ? []
-            : await db
-                  .select({
-                      surveyResponseId: surveyAnswerTable.surveyResponseId,
-                      answerId: surveyAnswerTable.id,
-                      surveyQuestionId: surveyAnswerTable.surveyQuestionId,
-                      answeredQuestionSemanticVersion:
-                          surveyAnswerTable.answeredQuestionSemanticVersion,
-                      textValueHtml: surveyAnswerTable.textValueHtml,
-                      textValuePlainText: surveyAnswerTable.textValuePlainText,
-                  })
-                  .from(surveyAnswerTable)
-                  .where(
-                      and(
-                          inArray(
-                              surveyAnswerTable.surveyResponseId,
-                              responseIds,
-                          ),
-                          isNull(surveyAnswerTable.deletedAt),
-                      ),
-                  );
+    const answerRows = await loadRowsInIdBatches({
+        ids: responseIds,
+        loadBatch: async (surveyResponseIds) =>
+            await db
+                .select({
+                    surveyResponseId: surveyAnswerTable.surveyResponseId,
+                    answerId: surveyAnswerTable.id,
+                    surveyQuestionId: surveyAnswerTable.surveyQuestionId,
+                    answeredQuestionSemanticVersion:
+                        surveyAnswerTable.answeredQuestionSemanticVersion,
+                    textValueHtml: surveyAnswerTable.textValueHtml,
+                    textValuePlainText: surveyAnswerTable.textValuePlainText,
+                })
+                .from(surveyAnswerTable)
+                .where(
+                    and(
+                        inArray(
+                            surveyAnswerTable.surveyResponseId,
+                            surveyResponseIds,
+                        ),
+                        isNull(surveyAnswerTable.deletedAt),
+                    ),
+                ),
+    });
 
     const answerIds = answerRows.map((answer) => answer.answerId);
-    const answerOptionRows =
-        answerIds.length === 0
-            ? []
-            : await db
-                  .select({
-                      surveyAnswerId: surveyAnswerOptionTable.surveyAnswerId,
-                      optionSlugId: surveyQuestionOptionTable.slugId,
-                  })
-                  .from(surveyAnswerOptionTable)
-                  .innerJoin(
-                      surveyQuestionOptionTable,
-                      eq(
-                          surveyAnswerOptionTable.surveyQuestionOptionId,
-                          surveyQuestionOptionTable.id,
-                      ),
-                  )
-                  .where(
-                      and(
-                          inArray(
-                              surveyAnswerOptionTable.surveyAnswerId,
-                              answerIds,
-                          ),
-                          isNull(surveyAnswerOptionTable.deletedAt),
-                      ),
-                  );
+    const answerOptionRows = await loadRowsInIdBatches({
+        ids: answerIds,
+        loadBatch: async (surveyAnswerIds) =>
+            await db
+                .select({
+                    surveyAnswerId: surveyAnswerOptionTable.surveyAnswerId,
+                    optionSlugId: surveyQuestionOptionTable.slugId,
+                })
+                .from(surveyAnswerOptionTable)
+                .innerJoin(
+                    surveyQuestionOptionTable,
+                    eq(
+                        surveyAnswerOptionTable.surveyQuestionOptionId,
+                        surveyQuestionOptionTable.id,
+                    ),
+                )
+                .where(
+                    and(
+                        inArray(
+                            surveyAnswerOptionTable.surveyAnswerId,
+                            surveyAnswerIds,
+                        ),
+                        isNull(surveyAnswerOptionTable.deletedAt),
+                    ),
+                ),
+    });
 
     const optionSlugIdsByAnswerId = new Map<number, string[]>();
     for (const answerOption of answerOptionRows) {
@@ -614,12 +650,13 @@ export async function loadSurveyExportContext({
     const participantIdsWithResponse = participantStates.map(
         (state) => state.participantId,
     );
-    const selectedGroupMemberships =
-        await getSelectedOpinionGroupMembershipsByParticipantId({
-            db,
-            conversationId,
-            participantIds: participantIdsWithResponse,
-        });
+    const selectedGroupMemberships = includeClusterMemberships
+        ? await getSelectedOpinionGroupMembershipsByParticipantId({
+              db,
+              conversationId,
+              participantIds: participantIdsWithResponse,
+          })
+        : new Map<string, SelectedOpinionGroupMembership>();
     const clusterMembershipByParticipantId = new Map(
         Array.from(selectedGroupMemberships.entries()).map(
             ([participantId, membership]) => [
@@ -648,15 +685,12 @@ interface SurveyAggregatePublicOptionCount {
 
 function shouldSuppressPublicSurveyAggregateBlock({
     optionCounts,
-    includeSuppression,
     isPublicAggregateSuppressionEnabled,
 }: {
     optionCounts: SurveyAggregatePublicOptionCount[];
-    includeSuppression: boolean;
     isPublicAggregateSuppressionEnabled: boolean;
 }): boolean {
     return (
-        includeSuppression &&
         isPublicAggregateSuppressionEnabled &&
         optionCounts.some(
             (optionCount) =>
@@ -708,16 +742,54 @@ function buildPublicSurveyAggregateBlockRows({
     }));
 }
 
-export function buildSurveyAggregateRows({
+interface SurveyChoiceParticipantAnswer {
+    participantId: string;
+    optionSlugIds: string[];
+}
+
+function buildSurveyOptionCounts({
+    options,
+    participantAnswers,
+}: {
+    options: ActiveSurveyConfigRecord["questions"][number]["options"];
+    participantAnswers: SurveyChoiceParticipantAnswer[];
+}): SurveyAggregatePublicOptionCount[] {
+    const countsByOptionSlugId = new Map(
+        options.map((option) => [option.slugId, 0]),
+    );
+    for (const participantAnswer of participantAnswers) {
+        for (const optionSlugId of participantAnswer.optionSlugIds) {
+            const currentCount = countsByOptionSlugId.get(optionSlugId);
+            if (currentCount !== undefined) {
+                countsByOptionSlugId.set(optionSlugId, currentCount + 1);
+            }
+        }
+    }
+    return options.map((option) => ({
+        optionId: option.slugId,
+        option: option.optionText,
+        count: countsByOptionSlugId.get(option.slugId) ?? 0,
+    }));
+}
+
+export function buildSurveyAggregateResultRows({
     context,
-    includeSuppression,
+    includeFullRows,
 }: {
     context: SurveyExportContext;
-    includeSuppression: boolean;
-}): PublicSurveyAggregateRow[] {
+    includeFullRows: boolean;
+}): {
+    suppressedRows: PublicSurveyAggregateRow[];
+    fullRows: PublicSurveyAggregateRow[];
+    hasPublicAggregateSuppressionEnabled: boolean;
+} {
     const activeSurveyConfig = context.activeSurveyConfig;
     if (activeSurveyConfig === undefined) {
-        return [];
+        return {
+            suppressedRows: [],
+            fullRows: [],
+            hasPublicAggregateSuppressionEnabled: false,
+        };
     }
     const exportMetadata = buildSurveyExportMetadata({ activeSurveyConfig });
 
@@ -728,47 +800,54 @@ export function buildSurveyAggregateRows({
               (participantState) =>
                   participantState.surveyGate.status === "complete_valid",
           );
-    const rows: PublicSurveyAggregateRow[] = [];
+    const suppressedRows: PublicSurveyAggregateRow[] = [];
+    const fullRows: PublicSurveyAggregateRow[] = [];
+    const clusterMembershipById = new Map(
+        Array.from(context.clusterMembershipByParticipantId.values()).map(
+            (membership) => [membership.clusterId, membership],
+        ),
+    );
+    let hasPublicAggregateSuppressionEnabled = false;
 
     for (const question of exportMetadata.questionsInExportOrder) {
         if (question.questionType === "free_text") {
             continue;
         }
 
-        const validOverallAnswerStates = countedParticipantStates
-            .map((participantState) => ({
-                participantId: participantState.participantId,
-                formItem: deriveSurveyQuestionFormItem({
+        const validOverallAnswerStates: SurveyChoiceParticipantAnswer[] = [];
+        for (const participantState of countedParticipantStates) {
+            const formItem = deriveSurveyQuestionFormItem({
                     question,
                     storedAnswer:
                         participantState.surveyState.answersByQuestionId.get(
                             question.id,
                         ),
                     surveyIsOptional: activeSurveyConfig.isOptional,
-                }),
-            }))
-            .filter(
-                (participantAnswer) =>
-                    participantAnswer.formItem.isCurrentAnswerValid,
-            );
+                });
+            if (
+                formItem.isCurrentAnswerValid &&
+                formItem.currentAnswer?.questionType === "choice"
+            ) {
+                validOverallAnswerStates.push({
+                    participantId: participantState.participantId,
+                    optionSlugIds: formItem.currentAnswer.optionSlugIds,
+                });
+            }
+        }
 
-        const overallOptionCounts = question.options.map((option) => ({
-            optionId: option.slugId,
-            option: option.optionText,
-            count: validOverallAnswerStates.filter((participantAnswer) => {
-                const currentAnswer = participantAnswer.formItem.currentAnswer;
-                if (
-                    currentAnswer === undefined ||
-                    currentAnswer.questionType === "free_text"
-                ) {
-                    return false;
-                }
+        const overallOptionCounts = buildSurveyOptionCounts({
+            options: question.options,
+            participantAnswers: validOverallAnswerStates,
+        });
 
-                return currentAnswer.optionSlugIds.includes(option.slugId);
-            }).length,
-        }));
-
-        rows.push(
+        hasPublicAggregateSuppressionEnabled ||=
+            question.isPublicAggregateSuppressionEnabled;
+        const isOverallSuppressed = shouldSuppressPublicSurveyAggregateBlock({
+            optionCounts: overallOptionCounts,
+            isPublicAggregateSuppressionEnabled:
+                question.isPublicAggregateSuppressionEnabled,
+        });
+        suppressedRows.push(
             ...buildPublicSurveyAggregateBlockRows({
                 scope: "overall",
                 clusterId: "",
@@ -776,65 +855,56 @@ export function buildSurveyAggregateRows({
                 question,
                 optionCounts: overallOptionCounts,
                 denominator: validOverallAnswerStates.length,
-                isSuppressed: shouldSuppressPublicSurveyAggregateBlock({
-                    optionCounts: overallOptionCounts,
-                    includeSuppression,
-                    isPublicAggregateSuppressionEnabled:
-                        question.isPublicAggregateSuppressionEnabled,
-                }),
+                isSuppressed: isOverallSuppressed,
                 suppressionReason: "count_below_threshold",
             }),
         );
+        if (includeFullRows) {
+            fullRows.push(
+                ...buildPublicSurveyAggregateBlockRows({
+                    scope: "overall",
+                    clusterId: "",
+                    clusterLabel: "",
+                    question,
+                    optionCounts: overallOptionCounts,
+                    denominator: validOverallAnswerStates.length,
+                    isSuppressed: false,
+                    suppressionReason: "count_below_threshold",
+                }),
+            );
+        }
 
-        const clusterIds = new Set(
-            countedParticipantStates
-                .map((participantState) =>
-                    context.clusterMembershipByParticipantId.get(
-                        participantState.participantId,
-                    ),
-                )
-                .filter(
-                    (
-                        clusterMembership,
-                    ): clusterMembership is SurveyClusterMembership =>
-                        clusterMembership !== undefined,
-                )
-                .map((clusterMembership) => clusterMembership.clusterId),
-        );
-
-        for (const clusterId of clusterIds) {
-            const clusterMembership = Array.from(
-                context.clusterMembershipByParticipantId.values(),
-            ).find((entry) => entry.clusterId === clusterId);
-            if (clusterMembership === undefined) {
+        const clusterAnswerStatesById = new Map<
+            string,
+            SurveyChoiceParticipantAnswer[]
+        >();
+        for (const participantAnswer of validOverallAnswerStates) {
+            const clusterId = context.clusterMembershipByParticipantId.get(
+                participantAnswer.participantId,
+            )?.clusterId;
+            if (clusterId === undefined) {
                 continue;
             }
+            const clusterAnswers = clusterAnswerStatesById.get(clusterId) ?? [];
+            clusterAnswers.push(participantAnswer);
+            clusterAnswerStatesById.set(clusterId, clusterAnswers);
+        }
 
-            const clusterAnswerStates = validOverallAnswerStates.filter(
-                (participantAnswer) =>
-                    context.clusterMembershipByParticipantId.get(
-                        participantAnswer.participantId,
-                    )?.clusterId === clusterId,
-            );
+        for (const [clusterId, clusterMembership] of clusterMembershipById) {
+            const clusterAnswerStates =
+                clusterAnswerStatesById.get(clusterId) ?? [];
+            const optionCounts = buildSurveyOptionCounts({
+                options: question.options,
+                participantAnswers: clusterAnswerStates,
+            });
 
-            const optionCounts = question.options.map((option) => ({
-                optionId: option.slugId,
-                option: option.optionText,
-                count: clusterAnswerStates.filter((participantAnswer) => {
-                    const currentAnswer =
-                        participantAnswer.formItem.currentAnswer;
-                    if (
-                        currentAnswer === undefined ||
-                        currentAnswer.questionType === "free_text"
-                    ) {
-                        return false;
-                    }
-
-                    return currentAnswer.optionSlugIds.includes(option.slugId);
-                }).length,
-            }));
-
-            rows.push(
+            const isClusterSuppressed =
+                shouldSuppressPublicSurveyAggregateBlock({
+                    optionCounts,
+                    isPublicAggregateSuppressionEnabled:
+                        question.isPublicAggregateSuppressionEnabled,
+                });
+            suppressedRows.push(
                 ...buildPublicSurveyAggregateBlockRows({
                     scope: "cluster",
                     clusterId: clusterMembership.clusterId,
@@ -842,19 +912,32 @@ export function buildSurveyAggregateRows({
                     question,
                     optionCounts,
                     denominator: clusterAnswerStates.length,
-                    isSuppressed: shouldSuppressPublicSurveyAggregateBlock({
-                        optionCounts,
-                        includeSuppression,
-                        isPublicAggregateSuppressionEnabled:
-                            question.isPublicAggregateSuppressionEnabled,
-                    }),
+                    isSuppressed: isClusterSuppressed,
                     suppressionReason: "cluster_deductive_disclosure",
                 }),
             );
+            if (includeFullRows) {
+                fullRows.push(
+                    ...buildPublicSurveyAggregateBlockRows({
+                        scope: "cluster",
+                        clusterId: clusterMembership.clusterId,
+                        clusterLabel: clusterMembership.clusterLabel,
+                        question,
+                        optionCounts,
+                        denominator: clusterAnswerStates.length,
+                        isSuppressed: false,
+                        suppressionReason: "cluster_deductive_disclosure",
+                    }),
+                );
+            }
         }
     }
 
-    return rows;
+    return {
+        suppressedRows,
+        fullRows,
+        hasPublicAggregateSuppressionEnabled,
+    };
 }
 
 export function buildSurveyAggregateCsvRows({

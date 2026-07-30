@@ -84,6 +84,11 @@ type ConversationSubscriptionEvent =
       }
     | {
           id: number | undefined;
+          event: "conversation_survey_updated";
+          data: SSEEventDataByType["conversation_survey_updated"];
+      }
+    | {
+          id: number | undefined;
           event: "new_opinion";
           data: SSEEventDataByType["new_opinion"];
       };

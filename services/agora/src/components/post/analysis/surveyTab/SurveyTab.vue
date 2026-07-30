@@ -28,7 +28,7 @@
             <AnalysisActionButton
               v-if="compactMode"
               type="viewMore"
-              @action-click="switchTab"
+              @action-click="emit('switchToSurvey')"
             />
             <div v-else class="header-actions">
               <SurveyVisibilityToggle
@@ -167,7 +167,6 @@ import type {
 } from "src/shared/types/zod";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { formatAmount, formatPercentage } from "src/utils/common";
-import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import { getHistoryPosition } from "src/utils/nav/historyBack";
 import {
   canViewFullSurveyResults,
@@ -210,7 +209,9 @@ const props = withDefaults(
   }
 );
 
-const currentTab = defineModel<ShortcutItem>({ required: true });
+const emit = defineEmits<{
+  switchToSurvey: [];
+}>();
 
 const { t } = useComponentI18n<SurveyTabTranslations>(surveyTabTranslations);
 
@@ -371,10 +372,6 @@ watch(
   },
   { immediate: true }
 );
-
-function switchTab(): void {
-  currentTab.value = "Survey";
-}
 
 async function handleOpenSurveyResponses(): Promise<void> {
   conversationOnboardingStore.startResumeEntry({

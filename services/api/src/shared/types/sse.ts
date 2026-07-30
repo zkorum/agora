@@ -232,6 +232,17 @@ export type SSEConversationSettingsUpdatedData = z.infer<
     typeof zodSSEConversationSettingsUpdatedData
 >;
 
+export const zodSSEConversationSurveyUpdatedData = z
+    .object({
+        conversationSlugId: zodSlugId,
+        configChanged: z.boolean(),
+        timestamp: z.number(),
+    })
+    .strict();
+export type SSEConversationSurveyUpdatedData = z.infer<
+    typeof zodSSEConversationSurveyUpdatedData
+>;
+
 const zodSSEContentTranslationSubject = z.discriminatedUnion("kind", [
     z
         .object({
@@ -317,6 +328,7 @@ export const zodSSEEventDataByType = {
     conversation_ranking_stats_updated:
         zodSSEConversationRankingStatsUpdatedData,
     conversation_settings_updated: zodSSEConversationSettingsUpdatedData,
+    conversation_survey_updated: zodSSEConversationSurveyUpdatedData,
     content_translation_updated: zodSSEContentTranslationUpdatedData,
     subscription_ready: zodSSESubscriptionReadyData,
     shutdown: zodSSEShutdownData,
@@ -352,6 +364,8 @@ export type SSEConversationRankingStatsUpdatedEvent =
     SSEEvent<"conversation_ranking_stats_updated">;
 export type SSEConversationSettingsUpdatedEvent =
     SSEEvent<"conversation_settings_updated">;
+export type SSEConversationSurveyUpdatedEvent =
+    SSEEvent<"conversation_survey_updated">;
 export type SSEContentTranslationUpdatedEvent =
     SSEEvent<"content_translation_updated">;
 export type SSESubscriptionReadyEvent = SSEEvent<"subscription_ready">;
@@ -370,6 +384,7 @@ export type AnySSEEvent =
     | SSEConversationCommentStatsUpdatedEvent
     | SSEConversationRankingStatsUpdatedEvent
     | SSEConversationSettingsUpdatedEvent
+    | SSEConversationSurveyUpdatedEvent
     | SSEContentTranslationUpdatedEvent
     | SSESubscriptionReadyEvent
     | SSEShutdownEvent;

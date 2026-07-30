@@ -35,6 +35,7 @@ import {
     zodSSEContentTranslationUpdatedData,
     zodSSEConversationAnalysisUpdatedData,
     zodSSEConversationRankingStatsUpdatedData,
+    zodSSEConversationSurveyUpdatedData,
 } from "@/shared/types/sse.js";
 import {
     zodEventSlug,
@@ -166,6 +167,11 @@ type RealtimeReplayEvent =
       }
     | {
           id: number;
+          event: "conversation_survey_updated";
+          data: SSEEventDataByType["conversation_survey_updated"];
+      }
+    | {
+          id: number;
           event: "content_translation_updated";
           data: SSEEventDataByType["content_translation_updated"];
       };
@@ -277,6 +283,12 @@ interface QueueConversationSettingsUpdatedEventProps {
     settings: SSEEventDataByType["conversation_settings_updated"]["settings"];
 }
 
+interface QueueConversationSurveyUpdatedEventProps {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    configChanged: boolean;
+}
+
 type LiveOpinionVoteCount =
     SSEEventDataByType["conversation_comment_stats_updated"]["opinionVoteCounts"][number];
 
@@ -325,6 +337,23 @@ export async function queueConversationSettingsUpdatedEvent({
 
     await primaryDb.insert(realtimeEventOutboxTable).values({
         eventType: "conversation_settings_updated",
+        payload,
+    });
+}
+
+export async function queueConversationSurveyUpdatedEvent({
+    db,
+    conversationSlugId,
+    configChanged,
+}: QueueConversationSurveyUpdatedEventProps): Promise<void> {
+    const payload: SSEEventDataByType["conversation_survey_updated"] = {
+        conversationSlugId,
+        configChanged,
+        timestamp: Date.now(),
+    };
+
+    await db.insert(realtimeEventOutboxTable).values({
+        eventType: "conversation_survey_updated",
         payload,
     });
 }
@@ -765,6 +794,17 @@ function parseRealtimeEventOutboxRow({
                 data: result.data,
             };
         }
+        case "conversation_survey_updated": {
+            const result = zodSSEConversationSurveyUpdatedData.safeParse(payload);
+            if (!result.success) {
+                return undefined;
+            }
+            return {
+                id,
+                event: eventType,
+                data: result.data,
+            };
+        }
         case "content_translation_updated": {
             const data = parseContentTranslationUpdatedData(payload);
             if (data === undefined) {
@@ -808,6 +848,7 @@ export async function fetchConversationRealtimeEventsAfterId({
                     "conversation_analysis_updated",
                     "conversation_ranking_stats_updated",
                     "conversation_settings_updated",
+                    "conversation_survey_updated",
                 ]),
                 sql`${realtimeEventOutboxTable.payload}->>'conversationSlugId' = ${conversationSlugId}`,
             ),
@@ -948,6 +989,15 @@ export function createRealtimeEventOutboxBridge({
                 break;
             }
             case "conversation_settings_updated": {
+                realtimeSSEManager.broadcastToConversationSubscribers({
+                    conversationSlugId: realtimeEvent.data.conversationSlugId,
+                    id: realtimeEvent.id,
+                    event: realtimeEvent.event,
+                    data: realtimeEvent.data,
+                });
+                break;
+            }
+            case "conversation_survey_updated": {
                 realtimeSSEManager.broadcastToConversationSubscribers({
                     conversationSlugId: realtimeEvent.data.conversationSlugId,
                     id: realtimeEvent.id,

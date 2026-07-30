@@ -25,6 +25,7 @@ import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
 import { updateConversationQueryCache } from "../post/useConversationQuery";
 import { useBackendSurveyApi } from "./survey";
+import { isLiveSurveyResultsQueryKey } from "./surveyQueryKeys";
 
 export type SurveyFormData = Extract<SurveyFormFetchResponse, { success: true }>;
 type SurveyFormQuestion = SurveyFormData["questions"][number];
@@ -282,7 +283,11 @@ async function markSurveyViewerQueriesStale({
         refetchType: "none",
       }),
       queryClient.invalidateQueries({
-        queryKey: ["survey-results-aggregated", conversationSlugId],
+        predicate: (query) =>
+          isLiveSurveyResultsQueryKey({
+            queryKey: query.queryKey,
+            conversationSlugId,
+          }),
         refetchType: "none",
       })
     );
@@ -463,6 +468,7 @@ export function useSurveyAnswerSaveMutation({
       await markSurveyViewerQueriesStale({
         queryClient,
         conversationSlugId: slugId,
+        includeDerivedSurveyQueries: true,
       });
     },
     retry: false,
@@ -509,6 +515,7 @@ export function useSurveyWithdrawMutation({
       await markSurveyViewerQueriesStale({
         queryClient,
         conversationSlugId: slugId,
+        includeDerivedSurveyQueries: true,
       });
     },
     retry: false,

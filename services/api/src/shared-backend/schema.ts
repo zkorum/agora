@@ -4616,7 +4616,7 @@ export const realtimeEventOutboxTable = pgTable(
         index("realtime_event_outbox_conversation_replay_idx")
             .using("btree", sql`(${t.payload}->>'conversationSlugId')`, t.id)
             .where(
-                sql`${t.eventType} IN ('conversation_analysis_updated', 'conversation_settings_updated')`,
+                sql`${t.eventType} IN ('conversation_analysis_updated', 'conversation_settings_updated', 'conversation_survey_updated')`,
             ),
         index("realtime_event_outbox_ranking_replay_idx")
             .using("btree", sql`(${t.payload}->>'conversationSlugId')`, t.id)

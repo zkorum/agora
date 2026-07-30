@@ -41,6 +41,7 @@ import {
   applyConversationRankingStatsUpdate,
   updateConversationQueryCache,
 } from "src/utils/api/post/useConversationQuery";
+import { isLiveSurveyResultsQueryKey } from "src/utils/api/survey/surveyQueryKeys";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { processEnv } from "src/utils/processEnv";
 import { abortIgnoringAbortError } from "src/utils/sse/abort";
@@ -71,6 +72,7 @@ const SSE_CONNECTION_TIMEOUT_MS = 15_000;
 const SSE_DEFAULT_RETRY_DELAY_MS = 1_000;
 const SSE_MAX_BUFFER_LENGTH = 1_000_000;
 const SSE_PROCESSED_ID_CACHE_SIZE = 1_000;
+const SURVEY_REFRESH_DEBOUNCE_MS = 300;
 // @fastify/sse sends comment heartbeats every 30s by default.
 // When the API stops ungracefully, reader.read() can hang indefinitely on a dead
 // TCP connection. This watchdog aborts the connection after 45s of silence (1.5x
@@ -337,6 +339,45 @@ export function useRealtimeSSE({
     string,
     number
   >();
+  const surveyRefreshTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+  function scheduleSurveyQueryRefresh(conversationSlugId: string): void {
+    void queryClient.invalidateQueries({
+      predicate: (query) =>
+        isLiveSurveyResultsQueryKey({
+          queryKey: query.queryKey,
+          conversationSlugId,
+        }),
+      refetchType: "none",
+    });
+    void queryClient.invalidateQueries({
+      queryKey: ["survey-completion-counts", conversationSlugId],
+      refetchType: "none",
+    });
+
+    const existingTimer = surveyRefreshTimers.get(conversationSlugId);
+    if (existingTimer !== undefined) {
+      return;
+    }
+    surveyRefreshTimers.set(
+      conversationSlugId,
+      setTimeout(() => {
+        surveyRefreshTimers.delete(conversationSlugId);
+        void queryClient.refetchQueries({
+          predicate: (query) =>
+            query.isActive() &&
+            isLiveSurveyResultsQueryKey({
+              queryKey: query.queryKey,
+              conversationSlugId,
+            }),
+        });
+        void queryClient.refetchQueries({
+          queryKey: ["survey-completion-counts", conversationSlugId],
+          type: "active",
+        });
+      }, SURVEY_REFRESH_DEBOUNCE_MS)
+    );
+  }
   const latestStatsEventTimestampByConversationSlugId = new Map<
     string,
     number
@@ -723,6 +764,18 @@ export function useRealtimeSSE({
           event: { event: frame.event, data: result.data },
         };
       }
+      case "conversation_survey_updated": {
+        const result =
+          zodSSEEventDataByType.conversation_survey_updated.safeParse(rawData);
+        if (!result.success) {
+          logInvalidSSEPayload({ event: frame.event, error: result.error });
+          return undefined;
+        }
+        return {
+          id: frame.id,
+          event: { event: frame.event, data: result.data },
+        };
+      }
       case "content_translation_updated": {
         const result =
           zodSSEEventDataByType.content_translation_updated.safeParse(rawData);
@@ -991,6 +1044,25 @@ export function useRealtimeSSE({
           updateRankingStatsFromEvent(sseEvent.data);
           break;
         }
+        case "conversation_survey_updated": {
+          const data = sseEvent.data;
+          scheduleSurveyQueryRefresh(data.conversationSlugId);
+          if (data.configChanged) {
+            void queryClient.invalidateQueries({
+              queryKey: ["conversation", data.conversationSlugId],
+              refetchType: "active",
+            });
+            void queryClient.invalidateQueries({
+              queryKey: ["survey-form", data.conversationSlugId],
+              refetchType: "active",
+            });
+            void queryClient.invalidateQueries({
+              queryKey: ["survey-status", data.conversationSlugId],
+              refetchType: "active",
+            });
+          }
+          break;
+        }
         case "popular_conversation": {
           const data = sseEvent.data;
           homeFeedStore.onPopularConversationUpdate(
@@ -1011,7 +1083,11 @@ export function useRealtimeSSE({
             refetchType: "none",
           });
           void queryClient.invalidateQueries({
-            queryKey: ["survey-results-aggregated", data.conversationSlugId],
+            predicate: (query) =>
+              isLiveSurveyResultsQueryKey({
+                queryKey: query.queryKey,
+                conversationSlugId: data.conversationSlugId,
+              }),
             refetchType: "active",
           });
           void queryClient.invalidateQueries({
@@ -1881,6 +1957,10 @@ export function useRealtimeSSE({
 
   // Cleanup on unmount
   onUnmounted(() => {
+    for (const timer of surveyRefreshTimers.values()) {
+      clearTimeout(timer);
+    }
+    surveyRefreshTimers.clear();
     cleanupRealtimeSSE();
   });
 

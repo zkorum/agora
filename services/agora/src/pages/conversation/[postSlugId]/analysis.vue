@@ -8,6 +8,7 @@
       "
       :conversation-data="props.conversationData"
       :navigate-to-voting-tab="props.navigateToDiscoverTab"
+      :conversation-scroll-context="props.conversationScrollContext"
       @analysis-live-pause-stats="emit('analysisLivePauseStats', $event)"
     />
     <ConversationAnalysisTab

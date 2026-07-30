@@ -1,16 +1,20 @@
 <template>
   <div class="container flexStyle">
     <PageLoadingSpinner
-      v-if="checkpointsQuery.isPending.value && !hasCheckpointData"
+      v-if="
+        currentTab !== 'Survey' &&
+        checkpointsQuery.isPending.value &&
+        !hasCheckpointData
+      "
     />
     <ErrorRetryBlock
-      v-else-if="hasBlockingCheckpointError"
+      v-else-if="currentTab !== 'Survey' && hasBlockingCheckpointError"
       :title="t('loadingError')"
       :retry-label="t('retryButton')"
       @retry="retryFetchCheckpoints"
     />
     <CheckpointTimeline
-      v-else
+      v-else-if="currentTab !== 'Survey'"
       :checkpoints="checkpointTimelineItems"
       :selected-checkpoint-id="selectedCheckpointId"
       :is-live-selected="selectedCheckpointId === undefined"
@@ -36,9 +40,19 @@
       @update:model-value="onTabChange"
     />
 
-    <!-- Loading (initial results fetch) -->
+    <div v-if="currentTab === 'Survey'" class="tabComponent">
+      <SurveyTab
+        :conversation-slug-id="conversationSlugId"
+        :survey-gate="props.conversationData.interaction.surveyGate"
+        :survey-query="surveyResultsQuery"
+        :clusters="{}"
+        :total-participant-count="props.conversationData.metadata.participantCount"
+        :conversation-scroll-context="props.conversationScrollContext"
+      />
+    </div>
+
     <PageLoadingSpinner
-      v-if="isInitialLoading && !hasBlockingCheckpointError"
+      v-else-if="isInitialLoading && !hasBlockingCheckpointError"
     />
 
     <!-- Error -->
@@ -84,6 +98,21 @@
           :on-click-item="openStatementDialog"
           :on-switch-tab="() => onTabChange('Results')"
           :on-learn-more="() => (learnMoreContext = 'community')"
+        />
+      </div>
+
+      <div v-if="hasSurvey && currentTab === 'Summary'" class="tabComponent">
+        <SurveyTab
+          :conversation-slug-id="conversationSlugId"
+          :survey-gate="props.conversationData.interaction.surveyGate"
+          :survey-query="surveyResultsQuery"
+          :clusters="{}"
+          :total-participant-count="
+            props.conversationData.metadata.participantCount
+          "
+          :compact-mode="true"
+          :conversation-scroll-context="props.conversationScrollContext"
+          @switch-to-survey="onTabChange('Survey')"
         />
       </div>
 
@@ -214,11 +243,19 @@ import {
 import type { CheckpointTimelineItem } from "src/components/post/analysis/CheckpointTimeline.types";
 import CheckpointTimeline from "src/components/post/analysis/CheckpointTimeline.vue";
 import ShortcutBar from "src/components/post/analysis/shortcutBar/ShortcutBar.vue";
+import {
+  type SurveyTabTranslations,
+  surveyTabTranslations,
+} from "src/components/post/analysis/surveyTab/SurveyTab.i18n";
+import SurveyTab from "src/components/post/analysis/surveyTab/SurveyTab.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import type { ConversationActionBarStats } from "src/composables/conversation/useConversationActionBarStats";
-import type { RegisterChildRefreshHandler } from "src/composables/conversation/useConversationParentState";
+import type {
+  ConversationScrollContext,
+  RegisterChildRefreshHandler,
+} from "src/composables/conversation/useConversationParentState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTabNavigation } from "src/composables/ui/useTabNavigation";
 import type {
@@ -241,8 +278,11 @@ import {
   useMaxDiffLoadQuery,
   useRankingStatsCheckpointsQuery,
 } from "src/utils/api/maxdiff/useMaxDiffQueries";
-import type { MaxDiffShortcutItem } from "src/utils/component/analysis/maxdiffShortcutBar";
-import { maxdiffShortcutItemSchema } from "src/utils/component/analysis/maxdiffShortcutBar";
+import { useSurveyResultsAggregatedQuery } from "src/utils/api/survey/useSurveyQueries";
+import {
+  type MaxDiffShortcutItem,
+  maxdiffShortcutItemSchema,
+} from "src/utils/component/analysis/maxdiffShortcutBar";
 import { subscribeToContentTranslationUpdated } from "src/utils/translation/contentTranslationEvents";
 import { getRankingItemDisplayText } from "src/utils/translation/rankingItemDisplayText";
 import {
@@ -270,6 +310,7 @@ import MaxDiffStatementDialog from "./MaxDiffStatementDialog.vue";
 const props = defineProps<{
   conversationData: ExtendedConversationDisplayData;
   navigateToVotingTab: () => void;
+  conversationScrollContext: ConversationScrollContext;
 }>();
 defineEmits<{
   analysisLivePauseStats: [stats: ConversationActionBarStats | undefined];
@@ -281,6 +322,8 @@ const { t } = useComponentI18n<MaxDiffResultsTabTranslations>(
 const { t: tAnalysis } = useComponentI18n<AnalysisPageTranslations>(
   analysisPageTranslations
 );
+const { t: tSurvey } =
+  useComponentI18n<SurveyTabTranslations>(surveyTabTranslations);
 
 const { getMaxDiffResults, fetchMaxDiffItems } = useMaxDiffApi();
 const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
@@ -310,13 +353,19 @@ function getMaxDiffTabRoute(item: string): RouteLocationRaw {
 const hasLifecycleTabs = computed(
   () => props.conversationData.metadata.externalSourceConfig !== null
 );
+const hasSurvey = computed(
+  () => props.conversationData.interaction.surveyGate?.hasSurvey === true
+);
 
 const maxdiffTabItems = computed<MaxDiffShortcutItem[]>(() => {
   const baseItems: MaxDiffShortcutItem[] = ["Summary", "Me", "Results"];
-  if (!hasLifecycleTabs.value) {
-    return baseItems;
+  if (hasSurvey.value) {
+    baseItems.push("Survey");
   }
-  return [...baseItems, "Completed", "Canceled"];
+  if (hasLifecycleTabs.value) {
+    baseItems.push("Completed", "Canceled");
+  }
+  return baseItems;
 });
 
 function isLifecycleTab(item: MaxDiffShortcutItem): boolean {
@@ -324,11 +373,15 @@ function isLifecycleTab(item: MaxDiffShortcutItem): boolean {
 }
 
 function isTabAvailable(item: MaxDiffShortcutItem): boolean {
+  if (item === "Survey") {
+    return hasSurvey.value;
+  }
   return hasLifecycleTabs.value || !isLifecycleTab(item);
 }
 
 if (!isTabAvailable(currentTab.value)) {
-  currentTab.value = "Summary";
+  setCurrentTabFromRoute("Summary");
+  void router.replace(getMaxDiffTabRoute("Summary"));
 }
 
 const tabTranslationKeys = {
@@ -337,12 +390,19 @@ const tabTranslationKeys = {
   Results: "tabResults",
   Completed: "tabCompleted",
   Canceled: "tabCanceled",
-} satisfies Record<MaxDiffShortcutItem, keyof MaxDiffResultsTabTranslations>;
+} satisfies Record<
+  Exclude<MaxDiffShortcutItem, "Survey">,
+  keyof MaxDiffResultsTabTranslations
+>;
 
 function getTabLabel(item: string): string {
   const parsed = maxdiffShortcutItemSchema.safeParse(item);
   if (!parsed.success) {
     return item;
+  }
+
+  if (parsed.data === "Survey") {
+    return tSurvey("surveyTitle");
   }
 
   return t(tabTranslationKeys[parsed.data]);
@@ -375,8 +435,18 @@ let unregisterChildRefreshHandler: (() => void) | undefined;
 let unregisterTranslationUpdateHandler: (() => void) | undefined;
 let translationRefreshTimeout: ReturnType<typeof setTimeout> | undefined;
 const isActive = ref(true);
+const isRankingContentVisible = computed(() => currentTab.value !== "Survey");
+const isSurveyContentVisible = computed(
+  () => currentTab.value === "Summary" || currentTab.value === "Survey"
+);
 
 const conversationSlugId = props.conversationData.metadata.conversationSlugId;
+const surveyResultsQuery = useSurveyResultsAggregatedQuery({
+  conversationSlugId,
+  enabled: computed(
+    () => hasSurvey.value && isActive.value && isSurveyContentVisible.value
+  ),
+});
 const selectedCheckpointId = computed(() =>
   parseCheckpointQuery({ query: route.query })
 );
@@ -402,7 +472,7 @@ const requestedRankingStatsSnapshotId = computed(
 const checkpointsQuery = useRankingStatsCheckpointsQuery({
   conversationSlugId,
   requestedRankingStatsSnapshotId,
-  enabled: isActive,
+  enabled: computed(() => isActive.value && isRankingContentVisible.value),
 });
 const rankingCheckpoints = computed<RankingStatsCheckpointsResponse>(
   () => checkpointsQuery.data.value ?? []
@@ -480,6 +550,15 @@ async function selectLive(): Promise<void> {
   });
 }
 
+async function normalizeCheckpointForCurrentTab(): Promise<boolean> {
+  if (currentTab.value === "Results" || route.query.checkpoint === undefined) {
+    return false;
+  }
+
+  await router.replace(getMaxDiffTabRoute(currentTab.value));
+  return true;
+}
+
 // Results data
 const isInitialLoading = ref(true);
 const hasError = ref(false);
@@ -493,7 +572,7 @@ let queuedResultsFetchShowsLoading = false;
 // Me tab: user's personal ranking (data passed to MaxDiffMeSection)
 const loadQuery = useMaxDiffLoadQuery({
   conversationSlugId,
-  enabled: true,
+  enabled: computed(() => isActive.value && isRankingContentVisible.value),
 });
 
 // Lifecycle data
@@ -642,7 +721,7 @@ async function fetchResults({
 }: {
   showLoading: boolean;
 }): Promise<void> {
-  if (!isActive.value) {
+  if (!isActive.value || !isRankingContentVisible.value) {
     return;
   }
   if (isResultsFetchInFlight) {
@@ -654,7 +733,7 @@ async function fetchResults({
   isResultsFetchInFlight = true;
   let nextFetchShowsLoading = showLoading;
   try {
-    while (isActive.value) {
+    while (isActive.value && isRankingContentVisible.value) {
       hasQueuedResultsFetch = false;
       queuedResultsFetchShowsLoading = false;
       await performResultsFetch({ showLoading: nextFetchShowsLoading });
@@ -700,7 +779,8 @@ async function performResultsFetch({
     requestedCheckpointId !== selectedCheckpointId.value ||
     (requestedCheckpointId === undefined &&
       requestedLiveSnapshotId !== liveRankingStatsSnapshotId.value) ||
-    !isActive.value
+    !isActive.value ||
+    !isRankingContentVisible.value
   ) {
     return;
   }
@@ -799,7 +879,14 @@ async function retryFetchCheckpoints(): Promise<void> {
 watch(
   () => route.query.checkpoint,
   async () => {
-    if (!isActive.value || !(await validateCheckpointRoute())) {
+    if (await normalizeCheckpointForCurrentTab()) {
+      return;
+    }
+    if (
+      !isActive.value ||
+      !isRankingContentVisible.value ||
+      !(await validateCheckpointRoute())
+    ) {
       return;
     }
     await fetchResults({ showLoading: true });
@@ -809,7 +896,11 @@ watch(liveRankingStatsSnapshotId, async (snapshotId, previousSnapshotId) => {
   if (snapshotId === previousSnapshotId) {
     return;
   }
-  if (isActive.value && selectedCheckpointId.value === undefined) {
+  if (
+    isActive.value &&
+    isRankingContentVisible.value &&
+    selectedCheckpointId.value === undefined
+  ) {
     await fetchResults({ showLoading: false });
   }
 });
@@ -846,6 +937,11 @@ async function handleChildRefresh({
 }: {
   refetchCheckpoints?: boolean;
 } = {}): Promise<void> {
+  if (currentTab.value === "Survey") {
+    await surveyResultsQuery.refetch();
+    return;
+  }
+
   let checkpoints = rankingCheckpoints.value;
   if (refetchCheckpoints) {
     const result = await checkpointsQuery.refetch();
@@ -866,6 +962,9 @@ async function handleChildRefresh({
   await Promise.all([
     loadQuery.refetch(),
     fetchAllLifecycleItems({ showLoading: false }),
+    ...(hasSurvey.value && isSurveyContentVisible.value
+      ? [surveyResultsQuery.refetch()]
+      : []),
   ]);
 }
 
@@ -921,11 +1020,22 @@ registerTranslationHandler();
 
 const hasInitiallyLoaded = ref(false);
 
-onMounted(async () => {
+async function loadRankingContent({
+  showLoading,
+}: {
+  showLoading: boolean;
+}): Promise<void> {
   if (await validateCheckpointRoute()) {
-    await fetchResults({ showLoading: true });
+    await fetchResults({ showLoading });
   }
-  await fetchAllLifecycleItems({ showLoading: true });
+  await fetchAllLifecycleItems({ showLoading });
+}
+
+onMounted(async () => {
+  await normalizeCheckpointForCurrentTab();
+  if (isRankingContentVisible.value) {
+    await loadRankingContent({ showLoading: true });
+  }
   hasInitiallyLoaded.value = true;
 });
 
@@ -936,6 +1046,7 @@ onActivated(async () => {
   registerRefreshHandler();
   registerTranslationHandler();
   if (!hasInitiallyLoaded.value) return;
+  await normalizeCheckpointForCurrentTab();
   await handleChildRefresh();
 });
 
@@ -953,6 +1064,12 @@ onUnmounted(() => {
 });
 
 watch(currentTab, async (newTab, oldTab) => {
+  await normalizeCheckpointForCurrentTab();
+  if (oldTab === "Survey" && newTab !== "Survey") {
+    await loadRankingContent({ showLoading: true });
+    return;
+  }
+
   if (oldTab === "Summary" && newTab !== "Summary") {
     const tabLifecycleMap: Partial<
       Record<
@@ -981,6 +1098,15 @@ watch(currentTab, async (newTab, oldTab) => {
       await fetchLifecycleItems({ ...config, showLoading: true });
     }
   }
+});
+
+watch(maxdiffTabItems, (availableTabs) => {
+  if (availableTabs.includes(currentTab.value)) {
+    return;
+  }
+
+  setCurrentTabFromRoute("Summary");
+  void router.replace(getMaxDiffTabRoute("Summary"));
 });
 
 watch(
