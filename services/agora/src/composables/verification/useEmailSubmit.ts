@@ -10,7 +10,6 @@ interface EmailSubmitTranslations {
   throttled: string;
   unreachable: string;
   disposable: string;
-  credentialAlreadyLinked: string;
   somethingWrong: string;
 }
 
@@ -86,9 +85,6 @@ export function useEmailSubmit({
               requestCodeThrottleUntil.value = null;
               requestGate.terminate();
               onAlreadyHasCredential();
-              break;
-            case "associated_with_another_user":
-              showNotifyMessage(translations.credentialAlreadyLinked);
               break;
             case "throttled":
               requestCodeThrottleUntil.value = new Date(data.nextCodeSoonestTime);

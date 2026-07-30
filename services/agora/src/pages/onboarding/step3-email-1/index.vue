@@ -36,6 +36,7 @@
               />
 
               <ZKGradientButton
+                v-if="phoneAuthAvailability.available"
                 :label="t('preferPhoneLogin')"
                 variant="text"
                 label-color="#6B4EFF"
@@ -50,6 +51,7 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
@@ -59,8 +61,13 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useEmailSubmit } from "src/composables/verification/useEmailSubmit";
 import { useVerificationComplete } from "src/composables/verification/useVerificationComplete";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import {
+  usePhoneAuthAvailability,
+} from "src/utils/auth/phoneAuthMode";
 import { useNotify } from "src/utils/ui/notify";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -75,6 +82,16 @@ const { t } = useComponentI18n<EmailOnboardingTranslations>(
 const router = useRouter();
 const { showNotifyMessage } = useNotify();
 const { completeVerification } = useVerificationComplete();
+const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+const { onboardingMode } = storeToRefs(onboardingFlowStore());
+const phoneAuthPurpose = computed(() =>
+  isLoggedIn.value
+    ? "credential"
+    : onboardingMode.value === "SIGNUP"
+      ? "registration"
+      : "login"
+);
+const phoneAuthAvailability = usePhoneAuthAvailability(phoneAuthPurpose);
 
 const { isLoading, submitEmail, nextCodeWaitSeconds } = useEmailSubmit({
   onNavigateToOtp: () => router.replace({ name: "/onboarding/step3-email-2/" }),
@@ -87,7 +104,6 @@ const { isLoading, submitEmail, nextCodeWaitSeconds } = useEmailSubmit({
     throttled: t("throttled"),
     unreachable: t("unreachable"),
     disposable: t("disposable"),
-    credentialAlreadyLinked: t("credentialAlreadyLinked"),
     somethingWrong: t("somethingWrong"),
   },
 });

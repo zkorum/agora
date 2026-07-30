@@ -26,10 +26,15 @@
           />
 
           <ZKGradientButton
+            v-if="phoneAuthAvailability.available"
             :label="t('verifyWithPhone')"
             gradient-background="#E7E7FF"
             label-color="#6B4EFF"
             @click="verifyPhone()"
+          />
+          <PhoneAuthUnavailableNotice
+            v-else
+            :reason="phoneAuthAvailability.reason"
           />
 
           <ZKGradientButton
@@ -54,8 +59,12 @@ import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import SignupAgreement from "src/components/onboarding/ui/SignupAgreement.vue";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
+import PhoneAuthUnavailableNotice from "src/components/verification/PhoneAuthUnavailableNotice.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
+import {
+  usePhoneAuthAvailability,
+} from "src/utils/auth/phoneAuthMode";
 import { useRouter } from "vue-router";
 
 import {
@@ -68,6 +77,7 @@ const { t } = useComponentI18n<Step2SignupOnboardingTranslations>(
 );
 
 const router = useRouter();
+const phoneAuthAvailability = usePhoneAuthAvailability("registration");
 
 async function goToNextRoute() {
   await router.push({ name: "/onboarding/step3-passport/" });

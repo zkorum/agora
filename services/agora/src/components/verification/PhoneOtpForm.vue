@@ -1,34 +1,38 @@
 <template>
   <div>
-    <div class="instructions">
-      {{ t("instructions") }}
-      <span class="phoneNumberStyle">{{ formattedPhoneNumber }}</span
-      >.
-    </div>
+    <PhoneAuthUnavailableNotice
+      v-if="!phoneAuthAvailability.available"
+      :reason="phoneAuthAvailability.reason"
+    />
 
-    <div class="otpDiv">
-      <div class="codeInput" @keydown.enter.prevent.stop="handleEnterKey">
-        <ZKInputOtp
-          v-model="verificationCode"
-          :length="6"
-          integer-only
-        />
+    <template v-else>
+      <div class="instructions">
+        {{ t("instructions") }}
+        <span class="phoneNumberStyle">{{ formattedPhoneNumber }}</span
+        >.
       </div>
 
-      <div
-        v-if="verificationCodeExpirySeconds > 0"
-        class="weakColor codeExpiry"
-      >
-        {{ t("expiresIn") }} {{ verificationCodeExpirySeconds }}s
+      <div class="otpDiv">
+        <div class="codeInput" @keydown.enter.prevent.stop="handleEnterKey">
+          <ZKInputOtp v-model="verificationCode" :length="6" integer-only />
+        </div>
+
+        <div
+          v-if="verificationCodeExpirySeconds > 0"
+          class="weakColor codeExpiry"
+        >
+          {{ t("expiresIn") }} {{ verificationCodeExpirySeconds }}s
+        </div>
+
+        <div
+          v-if="verificationCodeExpirySeconds <= 0"
+          class="weakColor codeExpiry"
+        >
+          {{ t("codeExpired") }}
+        </div>
       </div>
 
-      <div
-        v-if="verificationCodeExpirySeconds <= 0"
-        class="weakColor codeExpiry"
-      >
-        {{ t("codeExpired") }}
-      </div>
-    </div>
+    </template>
 
     <div class="optionButtons">
       <ZKButton
@@ -39,46 +43,57 @@
         @click="emit('changeIdentifier')"
       />
 
-      <ZKButton
-        button-type="largeButton"
-        :label="
-          verificationNextCodeSeconds > 0
-            ? t('resendCodeIn') +
-              ' ' +
-              verificationNextCodeSeconds +
-              's'
-            : t('resendCode')
-        "
-        :disable="verificationNextCodeSeconds > 0 || isInteractionLocked"
-        text-color="primary"
-        @click="clickedResendButton()"
-      />
+      <template v-if="phoneAuthAvailability.available">
+        <ZKButton
+          button-type="largeButton"
+          :label="
+            verificationNextCodeSeconds > 0
+              ? t('resendCodeIn') + ' ' + verificationNextCodeSeconds + 's'
+              : t('resendCode')
+          "
+          :disable="verificationNextCodeSeconds > 0 || isInteractionLocked"
+          text-color="primary"
+          @click="clickedResendButton()"
+        />
+      </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import {
+  type PhoneAuthUnavailableNoticeTranslations,
+  phoneAuthUnavailableNoticeTranslations,
+} from "src/components/verification/PhoneAuthUnavailableNotice.i18n";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { createRequestGate } from "src/composables/verification/createRequestGate";
 import { useOtpTimers } from "src/composables/verification/useOtpTimers";
 import { useVerificationComplete } from "src/composables/verification/useVerificationComplete";
-import {
-  authenticate200,
-  verifyOtp200,
-} from "src/shared/types/dto-auth";
+import { authenticate200, verifyPhoneOtp200 } from "src/shared/types/dto-auth";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import { useAuthPhoneApi } from "src/utils/api/auth-phone";
+import {
+  type PhoneAuthAvailability,
+  type PhoneAuthPurpose,
+  type PhoneAuthUnavailableReason,
+  restrictPhoneAuthMode,
+  usePhoneAuthAvailability,
+} from "src/utils/auth/phoneAuthMode";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, onMounted, onUnmounted, ref, watchEffect } from "vue";
+import { computed, onUnmounted, ref, watch, watchEffect } from "vue";
 
 import ZKButton from "../ui-library/ZKButton.vue";
 import ZKInputOtp from "../ui-library/ZKInputOtp.vue";
+import PhoneAuthUnavailableNotice from "./PhoneAuthUnavailableNotice.vue";
 import {
   type PhoneOtpFormTranslations,
   phoneOtpFormTranslations,
 } from "./PhoneOtpForm.i18n";
 
+const props = defineProps<{
+  purpose: PhoneAuthPurpose;
+}>();
 const emit = defineEmits<{
   verified: [accountMerged: boolean];
   changeIdentifier: [];
@@ -87,9 +102,24 @@ const emit = defineEmits<{
 const { t } = useComponentI18n<PhoneOtpFormTranslations>(
   phoneOtpFormTranslations
 );
+const { t: tPhoneAvailability } =
+  useComponentI18n<PhoneAuthUnavailableNoticeTranslations>(
+    phoneAuthUnavailableNoticeTranslations
+  );
 
 const phoneStore = phoneVerificationStore();
 const { verificationPhoneNumber, pendingOtpData } = storeToRefs(phoneStore);
+const modeAvailability = usePhoneAuthAvailability(() => props.purpose);
+const responseUnavailableReason = ref<PhoneAuthUnavailableReason>();
+const phoneAuthAvailability = computed<PhoneAuthAvailability>(() => {
+  if (responseUnavailableReason.value !== undefined) {
+    return {
+      available: false,
+      reason: responseUnavailableReason.value,
+    };
+  }
+  return modeAvailability.value;
+});
 
 const {
   verificationCode,
@@ -142,18 +172,32 @@ watchEffect(() => {
   })();
 });
 
-onMounted(async () => {
-  if (verificationPhoneNumber.value.internationalPhoneNumber == "") {
-    emit("changeIdentifier");
-  } else if (pendingOtpData.value !== null) {
-    processRequestCodeResponse(pendingOtpData.value);
-    pendingOtpData.value = null;
-  } else {
-    await requestCodeClicked(false);
-  }
-});
+let isInitialized = false;
+watch(
+  phoneAuthAvailability,
+  async (availability) => {
+    if (!availability.available || isInitialized) {
+      return;
+    }
+    isInitialized = true;
+
+    if (verificationPhoneNumber.value.internationalPhoneNumber === "") {
+      emit("changeIdentifier");
+    } else if (pendingOtpData.value !== null) {
+      processRequestCodeResponse(pendingOtpData.value);
+      pendingOtpData.value = null;
+    } else {
+      await requestCodeClicked(false);
+    }
+  },
+  { immediate: true }
+);
 
 async function clickedResendButton() {
+  if (!ensurePhoneAuthAvailable()) {
+    return;
+  }
+
   if (requestGate.isBusy.value || requestGate.isTerminated.value) {
     return;
   }
@@ -168,6 +212,10 @@ function handleEnterKey() {
 }
 
 async function nextButtonClicked() {
+  if (!ensurePhoneAuthAvailable()) {
+    return;
+  }
+
   const requestId = requestGate.start();
   if (requestId === null) {
     return;
@@ -195,7 +243,7 @@ async function nextButtonClicked() {
     }
 
     if (response.status == "success") {
-      const data = verifyOtp200.parse(response.data);
+      const data = verifyPhoneOtp200.parse(response.data);
       if (data.success) {
         requestGate.terminate();
         if (data.accountMerged) {
@@ -226,15 +274,17 @@ async function nextButtonClicked() {
             await completeVerification();
             break;
           }
-          case "associated_with_another_user": {
-            showNotifyMessage(t("credentialAlreadyLinked"));
-            break;
-          }
-          case "auth_state_changed": {
-            showNotifyMessage(t("authStateChanged"));
+          case "verification_failed": {
+            showNotifyMessage(t("somethingWrong"));
             codeExpired();
             break;
           }
+          case "phone_auth_unavailable":
+            handlePhoneAuthUnavailable("technical_unavailable");
+            break;
+          case "phone_registration_unavailable":
+            handlePhoneAuthUnavailable("registration_unavailable");
+            break;
         }
       }
     } else {
@@ -247,6 +297,10 @@ async function nextButtonClicked() {
 }
 
 async function requestCodeClicked(isRequestingNewCode: boolean) {
+  if (!ensurePhoneAuthAvailable()) {
+    return;
+  }
+
   const requestId = requestGate.start();
   if (requestId === null) {
     return;
@@ -274,9 +328,6 @@ async function requestCodeClicked(isRequestingNewCode: boolean) {
             await completeVerification();
             break;
           }
-          case "associated_with_another_user":
-            showNotifyMessage(t("credentialAlreadyLinked"));
-            break;
           case "throttled":
             setNextCodeSoonestTime(new Date(data.nextCodeSoonestTime));
             showNotifyMessage(t("tooManyAttempts"));
@@ -286,6 +337,9 @@ async function requestCodeClicked(isRequestingNewCode: boolean) {
             break;
           case "restricted_phone_type":
             showNotifyMessage(t("restrictedPhoneType"));
+            break;
+          case "phone_auth_unavailable":
+            handlePhoneAuthUnavailable("technical_unavailable");
             break;
         }
       }
@@ -298,10 +352,38 @@ async function requestCodeClicked(isRequestingNewCode: boolean) {
   }
 }
 
+function showPhoneAuthUnavailable(reason: PhoneAuthUnavailableReason) {
+  showNotifyMessage(
+    reason === "technical_unavailable"
+      ? tPhoneAvailability("technicalUnavailable")
+      : tPhoneAvailability("registrationUnavailable")
+  );
+}
+
+function handlePhoneAuthUnavailable(reason: PhoneAuthUnavailableReason): void {
+  restrictPhoneAuthMode(
+    reason === "technical_unavailable" ? "disabled" : "login_only"
+  );
+  responseUnavailableReason.value = reason;
+  showPhoneAuthUnavailable(reason);
+  requestGate.terminate();
+}
+
+function ensurePhoneAuthAvailable(): boolean {
+  if (phoneAuthAvailability.value.available) {
+    return true;
+  }
+
+  showPhoneAuthUnavailable(phoneAuthAvailability.value.reason);
+  return false;
+}
+
 defineExpose({
   nextButtonClicked,
   isSubmitButtonLoading,
-  isCodeComplete: () => verificationCode.value.length == 6,
+  isAvailable: computed(() => phoneAuthAvailability.value.available),
+  isCodeComplete: () =>
+    phoneAuthAvailability.value.available && verificationCode.value.length == 6,
 });
 </script>
 

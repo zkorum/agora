@@ -51,6 +51,7 @@ import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useUserStore } from "src/stores/user";
 import { useBackendAccountApi } from "src/utils/api/account";
 import { useBackendAuthApi } from "src/utils/api/auth";
+import { usePhoneAuthAvailability } from "src/utils/auth/phoneAuthMode";
 import { useAuthSetup } from "src/utils/auth/setup";
 import type { SettingsInterface } from "src/utils/component/settings/settings";
 import { processEnv } from "src/utils/processEnv";
@@ -59,9 +60,13 @@ import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
-import { type SettingsTranslations,settingsTranslations } from "./index.i18n";
+import { type SettingsTranslations, settingsTranslations } from "./index.i18n";
 
-const { isActive } = usePageLayout({ enableFooter: false, reducedWidth: true, addBottomPadding: true });
+const { isActive } = usePageLayout({
+  enableFooter: false,
+  reducedWidth: true,
+  addBottomPadding: true,
+});
 
 const authStore = useAuthenticationStore();
 const { isGuestOrLoggedIn, isLoggedIn, credentials } = storeToRefs(authStore);
@@ -91,9 +96,31 @@ const deleteAccountLabel = computed(() =>
 );
 
 const isDevelopment = process.env.DEV;
+const phoneAuthPurpose = computed(() =>
+  isLoggedIn.value ? "credential" : "login"
+);
+const phoneAuthAvailability = usePhoneAuthAvailability(phoneAuthPurpose);
 
 const credentialSettings = computed<SettingsInterface[]>(() => {
   const creds = credentials.value;
+  const phoneSettings: SettingsInterface[] =
+    creds.phone !== null || phoneAuthAvailability.value.available
+      ? [
+          {
+            type: "action",
+            label: t("phoneNumber"),
+            value:
+              creds.phone !== null
+                ? `+${creds.phone.countryCallingCode} ******${String(creds.phone.lastTwoDigits).padStart(2, "0")}`
+                : t("clickToAdd"),
+            action: () => {
+              if (creds.phone === null) {
+                navigateToVerify({ name: "/verify/phone/" });
+              }
+            },
+          },
+        ]
+      : [];
   const items: SettingsInterface[] = [
     {
       type: "action",
@@ -107,19 +134,7 @@ const credentialSettings = computed<SettingsInterface[]>(() => {
         }
       },
     },
-    {
-      type: "action",
-      label: t("phoneNumber"),
-      value:
-        creds.phone !== null
-          ? `+${creds.phone.countryCallingCode} ******${String(creds.phone.lastTwoDigits).padStart(2, "0")}`
-          : t("clickToAdd"),
-      action: () => {
-        if (creds.phone === null) {
-          navigateToVerify({ name: "/verify/phone/" });
-        }
-      },
-    },
+    ...phoneSettings,
     {
       type: "action",
       label: t("emailAddress"),

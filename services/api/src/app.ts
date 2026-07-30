@@ -2,13 +2,17 @@ import "dotenv/config"; // this loads .env values in process.env
 import { z } from "zod";
 import Fastify from "fastify";
 import { zodDidWeb } from "./shared/types/zod.js";
+import {
+    activePhoneAuthModeSchema,
+    phoneAuthModeSchema,
+} from "./shared/types/phone-auth.js";
 import { sharedConfigSchema } from "./shared-backend/config.js";
 
 export type Environment = "development" | "production" | "staging" | "test";
 
 const defaultPort = 8080;
 
-const configSchema = sharedConfigSchema.extend({
+const baseConfigSchema = sharedConfigSchema.extend({
     CORS_ORIGIN_LIST: z
         .string()
         .transform((value) =>
@@ -35,11 +39,12 @@ const configSchema = sharedConfigSchema.extend({
     EMAIL_OTP_MAX_ATTEMPT_AMOUNT: z.number().int().min(1).max(5).default(3),
     THROTTLE_SMS_SECONDS_INTERVAL: z.number().int().min(5).default(10),
     MINUTES_BEFORE_SMS_OTP_EXPIRY: z.number().int().min(3).max(60).default(10),
-    TWILIO_ACCOUNT_SID: z.string().optional(),
-    TWILIO_AUTH_TOKEN: z.string().optional(),
-    TWILIO_SERVICE_SID: z.string().optional(),
+    PHONE_AUTH_MODE: phoneAuthModeSchema.default("enabled"),
+    TWILIO_ACCOUNT_SID: z.string().min(1).optional(),
+    TWILIO_AUTH_TOKEN: z.string().min(1).optional(),
+    TWILIO_SERVICE_SID: z.string().min(1).optional(),
     TEST_CODE: z.coerce.number().int().min(0).max(999999).default(0),
-    SPECIALLY_AUTHORIZED_PHONES: z.string().optional(),
+    SPECIALLY_AUTHORIZED_PHONES: z.string().min(1).optional(),
     THROTTLE_EMAIL_SECONDS_INTERVAL: z.number().int().min(5).default(10),
     MINUTES_BEFORE_EMAIL_OTP_EXPIRY: z
         .number()
@@ -51,7 +56,7 @@ const configSchema = sharedConfigSchema.extend({
     EMAIL_FROM_ADDRESS: z
         .email()
         .default("noreply@notify.agoracitizen.network"),
-    SPECIALLY_AUTHORIZED_EMAILS: z.string().optional(),
+    SPECIALLY_AUTHORIZED_EMAILS: z.string().min(1).optional(),
     SESSION_LIFETIME_DAYS: z.coerce.number().int().min(1).default(90),
     SESSION_REFRESH_THRESHOLD_DAYS: z.coerce.number().int().min(1).default(45),
     PEPPERS: z
@@ -181,7 +186,106 @@ const configSchema = sharedConfigSchema.extend({
         .default(5000), // Max votes to fetch from Valkey per flush
 });
 
+const configSchema = baseConfigSchema.superRefine((value, ctx) => {
+    const hasTwilioAccountSid = value.TWILIO_ACCOUNT_SID !== undefined;
+    const hasTwilioAuthToken = value.TWILIO_AUTH_TOKEN !== undefined;
+    const hasTwilioServiceSid = value.TWILIO_SERVICE_SID !== undefined;
+    const hasAnyTwilioConfiguration =
+        hasTwilioAccountSid || hasTwilioAuthToken || hasTwilioServiceSid;
+    const hasCompleteTwilioConfiguration =
+        hasTwilioAccountSid && hasTwilioAuthToken && hasTwilioServiceSid;
+
+    if (hasAnyTwilioConfiguration && !hasCompleteTwilioConfiguration) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["TWILIO_ACCOUNT_SID"],
+            message:
+                "TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_SERVICE_SID must either all be set or all be unset",
+        });
+    } else if (
+        value.NODE_ENV === "production" &&
+        value.PHONE_AUTH_MODE !== "disabled" &&
+        !hasCompleteTwilioConfiguration
+    ) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["PHONE_AUTH_MODE"],
+            message: `Complete Twilio configuration is required when PHONE_AUTH_MODE is ${value.PHONE_AUTH_MODE} in production`,
+        });
+    }
+
+    if (
+        value.NODE_ENV === "production" &&
+        (value.SPECIALLY_AUTHORIZED_PHONES !== undefined ||
+            value.SPECIALLY_AUTHORIZED_EMAILS !== undefined ||
+            value.TEST_CODE !== 0)
+    ) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["TEST_CODE"],
+            message:
+                "TEST_CODE, SPECIALLY_AUTHORIZED_PHONES, and SPECIALLY_AUTHORIZED_EMAILS must not enable test authentication in production",
+        });
+    }
+});
+
 export const config = configSchema.parse(process.env);
+const phoneAuthConfigSchema = z.discriminatedUnion("mode", [
+    z.object({ mode: z.literal("disabled") }).strict(),
+    z
+        .object({
+            mode: activePhoneAuthModeSchema,
+            delivery: z.discriminatedUnion("type", [
+                z
+                    .object({
+                        type: z.literal("local"),
+                        testCode: z.number().int().min(0).max(999999),
+                        speciallyAuthorizedPhones: z.array(z.string()),
+                    })
+                    .strict(),
+                z
+                    .object({
+                        type: z.literal("twilio"),
+                        accountSid: z.string().min(1),
+                        authToken: z.string().min(1),
+                        serviceSid: z.string().min(1),
+                    })
+                    .strict(),
+            ]),
+        })
+        .strict(),
+]);
+
+export type PhoneAuthConfig = z.infer<typeof phoneAuthConfigSchema>;
+
+export const phoneAuthConfig = phoneAuthConfigSchema.parse(
+    config.PHONE_AUTH_MODE === "disabled"
+        ? { mode: "disabled" }
+        : config.NODE_ENV === "production"
+          ? {
+                mode: config.PHONE_AUTH_MODE,
+                delivery: {
+                    type: "twilio",
+                    accountSid: config.TWILIO_ACCOUNT_SID,
+                    authToken: config.TWILIO_AUTH_TOKEN,
+                    serviceSid: config.TWILIO_SERVICE_SID,
+                },
+            }
+          : {
+                mode: config.PHONE_AUTH_MODE,
+                delivery: {
+                    type: "local",
+                    testCode: config.TEST_CODE,
+                    speciallyAuthorizedPhones:
+                        config.SPECIALLY_AUTHORIZED_PHONES === undefined
+                            ? []
+                            : config.SPECIALLY_AUTHORIZED_PHONES.replace(
+                                  /\s/g,
+                                  "",
+                              ).split(","),
+                },
+            },
+);
 function envToLogger(env: Environment) {
     switch (env) {
         case "development":

@@ -1505,10 +1505,7 @@ export class Dto {
             .strict(),
         z.object({
             success: z.literal(false),
-            reason: z.enum([
-                "already_has_credential",
-                "associated_with_another_user",
-            ]),
+            reason: z.literal("already_has_credential"),
         }),
     ]);
     static updateUsernameRequest = z

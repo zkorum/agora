@@ -13,14 +13,16 @@ import {
     vi,
 } from "vitest";
 import { GenericContainer, type StartedTestContainer } from "testcontainers";
+import type { PhoneAuth } from "../src/service/auth.js";
 
 import { readDbFixtureSql } from "./dbFixture.js";
 
 process.env.NODE_ENV = "test";
 process.env.CORS_ORIGIN_LIST = "http://localhost:9000";
-process.env.PEPPERS = Buffer.from("0123456789abcdef0123456789abcdef").toString(
-    "base64",
-);
+const TEST_PEPPER = Buffer.from(
+    "0123456789abcdef0123456789abcdef",
+).toString("base64");
+process.env.PEPPERS = TEST_PEPPER;
 process.env.VERIFICATOR_SVC_BASE_URL = "http://localhost:3000";
 
 const authService = await import("../src/service/auth.js");
@@ -41,6 +43,20 @@ const {
 
 const SESSION_EXPIRY = new Date("2100-01-01T00:00:00.000Z");
 let currentNow = new Date("2026-01-01T00:00:00.000Z");
+
+const enabledPhoneAuth = {
+    mode: "enabled",
+    delivery: {
+        type: "local",
+        testCode: 0,
+        speciallyAuthorizedPhones: [],
+    },
+} satisfies PhoneAuth;
+const loginOnlyPhoneAuth = {
+    ...enabledPhoneAuth,
+    mode: "login_only",
+} satisfies PhoneAuth;
+const disabledPhoneAuth = { mode: "disabled" } satisfies PhoneAuth;
 
 function setCurrentNow(value: string | Date) {
     currentNow = value instanceof Date ? value : new Date(value);
@@ -150,7 +166,7 @@ describe("OTP destination throttling", () => {
         };
     }
 
-    it("returns auth_state_changed when email OTP ownership drifts to another verified user", async () => {
+    it("returns a generic error after OTP when email ownership conflicts", async () => {
         const didWrite = "did:test:email:drift";
         const email = "Alice@example.com";
 
@@ -203,6 +219,37 @@ describe("OTP destination throttling", () => {
             emailReachability: null,
         });
 
+        setCurrentNow("2026-01-01T00:00:06.000Z");
+        const retryResponse = await authService.authenticateEmailAttempt({
+            db,
+            axiosReacher: undefined,
+            email,
+            isRequestingNewCode: true,
+            minutesBeforeEmailCodeExpiry: 10,
+            didWrite,
+            userAgent: "test-agent",
+            throttleEmailSecondsInterval: 5,
+            testCode: 0,
+            doUseTestCode: false,
+            now: currentNow,
+        });
+        expect(retryResponse.success).toBe(true);
+
+        const wrongCodeResponse = await authService.verifyEmailOtp({
+            db,
+            maxAttempt: 3,
+            didWrite,
+            code: getWrongCode(authAttempt.code),
+            email,
+            sessionLifetimeDays: 90,
+            now: currentNow,
+            currentDisplayLanguage: "en",
+        });
+        expect(wrongCodeResponse).toEqual({
+            success: false,
+            reason: "wrong_guess",
+        });
+
         const verifyResponse = await authService.verifyEmailOtp({
             db,
             maxAttempt: 3,
@@ -216,11 +263,11 @@ describe("OTP destination throttling", () => {
 
         expect(verifyResponse).toEqual({
             success: false,
-            reason: "auth_state_changed",
+            reason: "verification_failed",
         });
     }, 30000);
 
-    it("returns auth_state_changed when phone OTP ownership drifts to another verified user", async () => {
+    it("returns a generic error after OTP when phone ownership conflicts", async () => {
         const didWrite = "did:test:phone:drift";
         const phoneNumber = "+14155552671";
 
@@ -237,9 +284,8 @@ describe("OTP destination throttling", () => {
             didWrite,
             userAgent: "test-agent",
             throttleSmsSecondsInterval: 5,
-            testCode: 0,
-            doUseTestCode: false,
-            peppers: [process.env.PEPPERS!],
+            phoneAuth: enabledPhoneAuth,
+            peppers: [TEST_PEPPER],
             now: currentNow,
         });
 
@@ -273,6 +319,42 @@ describe("OTP destination throttling", () => {
             isDeleted: false,
         });
 
+        setCurrentNow("2026-01-01T00:00:06.000Z");
+        const retryResponse = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber,
+                defaultCallingCode: "1",
+                isRequestingNewCode: true,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite,
+            userAgent: "test-agent",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth: enabledPhoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+        expect(retryResponse.success).toBe(true);
+
+        const wrongCodeResponse = await authService.verifyPhoneOtp({
+            db,
+            maxAttempt: 3,
+            didWrite,
+            code: getWrongCode(authAttempt.code),
+            phoneNumber,
+            defaultCallingCode: "1",
+            peppers: [TEST_PEPPER],
+            phoneAuth: enabledPhoneAuth,
+            sessionLifetimeDays: 90,
+            now: currentNow,
+            currentDisplayLanguage: "en",
+        });
+        expect(wrongCodeResponse).toEqual({
+            success: false,
+            reason: "wrong_guess",
+        });
+
         const verifyResponse = await authService.verifyPhoneOtp({
             db,
             maxAttempt: 3,
@@ -280,7 +362,8 @@ describe("OTP destination throttling", () => {
             code: authAttempt.code,
             phoneNumber,
             defaultCallingCode: "1",
-            peppers: [process.env.PEPPERS!],
+            peppers: [TEST_PEPPER],
+            phoneAuth: enabledPhoneAuth,
             sessionLifetimeDays: 90,
             now: currentNow,
             currentDisplayLanguage: "en",
@@ -288,7 +371,7 @@ describe("OTP destination throttling", () => {
 
         expect(verifyResponse).toEqual({
             success: false,
-            reason: "auth_state_changed",
+            reason: "verification_failed",
         });
     }, 30000);
 
@@ -633,9 +716,8 @@ describe("OTP destination throttling", () => {
             didWrite,
             userAgent: "test-agent",
             throttleSmsSecondsInterval: 5,
-            testCode: 0,
-            doUseTestCode: false,
-            peppers: [process.env.PEPPERS!],
+            phoneAuth: enabledPhoneAuth,
+            peppers: [TEST_PEPPER],
             now: currentNow,
         });
 
@@ -653,7 +735,8 @@ describe("OTP destination throttling", () => {
             code: getWrongCode(firstAttempt.code),
             phoneNumber,
             defaultCallingCode: "1",
-            peppers: [process.env.PEPPERS!],
+            peppers: [TEST_PEPPER],
+            phoneAuth: enabledPhoneAuth,
             sessionLifetimeDays: 90,
             now: currentNow,
             currentDisplayLanguage: "en",
@@ -678,9 +761,8 @@ describe("OTP destination throttling", () => {
             didWrite,
             userAgent: "test-agent",
             throttleSmsSecondsInterval: 5,
-            testCode: 0,
-            doUseTestCode: false,
-            peppers: [process.env.PEPPERS!],
+            phoneAuth: enabledPhoneAuth,
+            peppers: [TEST_PEPPER],
             now: currentNow,
         });
 
@@ -719,9 +801,8 @@ describe("OTP destination throttling", () => {
             didWrite,
             userAgent: "test-agent",
             throttleSmsSecondsInterval: 5,
-            testCode: 0,
-            doUseTestCode: false,
-            peppers: [process.env.PEPPERS!],
+            phoneAuth: enabledPhoneAuth,
+            peppers: [TEST_PEPPER],
             now: currentNow,
         });
 
@@ -743,9 +824,8 @@ describe("OTP destination throttling", () => {
             didWrite,
             userAgent: "test-agent",
             throttleSmsSecondsInterval: 5,
-            testCode: 0,
-            doUseTestCode: false,
-            peppers: [process.env.PEPPERS!],
+            phoneAuth: enabledPhoneAuth,
+            peppers: [TEST_PEPPER],
             now: currentNow,
         });
 
@@ -757,6 +837,192 @@ describe("OTP destination throttling", () => {
             .where(eq(authAttemptPhoneTable.didWrite, didWrite));
 
         expect(updatedAttempt.phoneHash).not.toBe(firstAttempt.phoneHash);
+    }, 30000);
+
+    it("allows an OTP request but refuses phone registration in login-only mode", async () => {
+        const didWrite = "did:test:phone:login-only";
+        const phoneNumber = "+14155552673";
+
+        await createGuestDevice(didWrite);
+
+        const authenticateResponse = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber,
+                defaultCallingCode: "1",
+                isRequestingNewCode: false,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite,
+            userAgent: "test-agent",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth: loginOnlyPhoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+
+        expect(authenticateResponse.success).toBe(true);
+
+        const [attempt] = await db
+            .select()
+            .from(authAttemptPhoneTable)
+            .where(eq(authAttemptPhoneTable.didWrite, didWrite));
+
+        const verifyResponse = await authService.verifyPhoneOtp({
+            db,
+            maxAttempt: 3,
+            didWrite,
+            code: attempt.code,
+            phoneNumber,
+            defaultCallingCode: "1",
+            peppers: [TEST_PEPPER],
+            phoneAuth: loginOnlyPhoneAuth,
+            sessionLifetimeDays: 90,
+            now: currentNow,
+            currentDisplayLanguage: "en",
+        });
+
+        expect(verifyResponse).toEqual({
+            success: false,
+            reason: "phone_registration_unavailable",
+        });
+
+        const registeredPhones = await db
+            .select({ id: phoneTable.id })
+            .from(phoneTable)
+            .where(eq(phoneTable.phoneHash, attempt.phoneHash));
+
+        expect(registeredPhones).toHaveLength(0);
+    }, 30000);
+
+    it("rejects phone verification before accessing an OTP when disabled", async () => {
+        const authenticateResponse = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber: "+14155552674",
+                defaultCallingCode: "1",
+                isRequestingNewCode: false,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite: "did:test:phone:disabled",
+            userAgent: "test-agent",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth: disabledPhoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+
+        expect(authenticateResponse).toEqual({
+            success: false,
+            reason: "phone_auth_unavailable",
+        });
+
+        const verifyResponse = await authService.verifyPhoneOtp({
+            db,
+            maxAttempt: 3,
+            didWrite: "did:test:phone:disabled",
+            code: 123456,
+            phoneNumber: "+14155552674",
+            defaultCallingCode: "1",
+            peppers: [TEST_PEPPER],
+            phoneAuth: disabledPhoneAuth,
+            sessionLifetimeDays: 90,
+            now: currentNow,
+            currentDisplayLanguage: "en",
+        });
+
+        expect(verifyResponse).toEqual({
+            success: false,
+            reason: "phone_auth_unavailable",
+        });
+    });
+
+    it("allows an existing phone account to log in in login-only mode", async () => {
+        const registeredDid = "did:test:phone:registered";
+        const loginDid = "did:test:phone:existing-login";
+        const phoneNumber = "+14155552675";
+
+        await createGuestDevice(registeredDid);
+        const registrationAttempt = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber,
+                defaultCallingCode: "1",
+                isRequestingNewCode: false,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite: registeredDid,
+            userAgent: "registered-device",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth: enabledPhoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+        expect(registrationAttempt.success).toBe(true);
+
+        const [registrationOtp] = await db
+            .select()
+            .from(authAttemptPhoneTable)
+            .where(eq(authAttemptPhoneTable.didWrite, registeredDid));
+        const registrationResponse = await authService.verifyPhoneOtp({
+            db,
+            maxAttempt: 3,
+            didWrite: registeredDid,
+            code: registrationOtp.code,
+            phoneNumber,
+            defaultCallingCode: "1",
+            peppers: [TEST_PEPPER],
+            phoneAuth: enabledPhoneAuth,
+            sessionLifetimeDays: 90,
+            now: currentNow,
+            currentDisplayLanguage: "en",
+        });
+        expect(registrationResponse.success).toBe(true);
+        if (!registrationResponse.success) {
+            throw new Error("Expected phone registration to succeed");
+        }
+
+        setCurrentNow("2026-01-01T00:00:06.000Z");
+        const loginAttempt = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber,
+                defaultCallingCode: "1",
+                isRequestingNewCode: false,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite: loginDid,
+            userAgent: "new-device",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth: loginOnlyPhoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+        expect(loginAttempt.success).toBe(true);
+
+        const [loginOtp] = await db
+            .select()
+            .from(authAttemptPhoneTable)
+            .where(eq(authAttemptPhoneTable.didWrite, loginDid));
+        const loginResponse = await authService.verifyPhoneOtp({
+            db,
+            maxAttempt: 3,
+            didWrite: loginDid,
+            code: loginOtp.code,
+            phoneNumber,
+            defaultCallingCode: "1",
+            peppers: [TEST_PEPPER],
+            phoneAuth: loginOnlyPhoneAuth,
+            sessionLifetimeDays: 90,
+            now: currentNow,
+            currentDisplayLanguage: "en",
+        });
+
+        expect(loginResponse).toEqual({
+            success: true,
+            accountMerged: false,
+            userId: registrationResponse.userId,
+        });
     }, 30000);
 
     it("applies phone backoff across devices and clears it after success", async () => {
@@ -778,9 +1044,8 @@ describe("OTP destination throttling", () => {
             didWrite: firstDid,
             userAgent: "test-agent",
             throttleSmsSecondsInterval: 5,
-            testCode: 0,
-            doUseTestCode: false,
-            peppers: [process.env.PEPPERS!],
+            phoneAuth: enabledPhoneAuth,
+            peppers: [TEST_PEPPER],
             now: currentNow,
         });
 
@@ -802,7 +1067,8 @@ describe("OTP destination throttling", () => {
                 code: getWrongCode(firstAttempt.code),
                 phoneNumber,
                 defaultCallingCode: "1",
-                peppers: [process.env.PEPPERS!],
+                peppers: [TEST_PEPPER],
+                phoneAuth: enabledPhoneAuth,
                 sessionLifetimeDays: 90,
                 now: currentNow,
                 currentDisplayLanguage: "en",
@@ -829,9 +1095,8 @@ describe("OTP destination throttling", () => {
             didWrite: secondDid,
             userAgent: "test-agent",
             throttleSmsSecondsInterval: 5,
-            testCode: 0,
-            doUseTestCode: false,
-            peppers: [process.env.PEPPERS!],
+            phoneAuth: enabledPhoneAuth,
+            peppers: [TEST_PEPPER],
             now: currentNow,
         });
 
@@ -859,9 +1124,8 @@ describe("OTP destination throttling", () => {
             didWrite: secondDid,
             userAgent: "test-agent",
             throttleSmsSecondsInterval: 5,
-            testCode: 0,
-            doUseTestCode: false,
-            peppers: [process.env.PEPPERS!],
+            phoneAuth: enabledPhoneAuth,
+            peppers: [TEST_PEPPER],
             now: currentNow,
         });
 
@@ -879,7 +1143,8 @@ describe("OTP destination throttling", () => {
             code: secondAttempt.code,
             phoneNumber,
             defaultCallingCode: "1",
-            peppers: [process.env.PEPPERS!],
+            peppers: [TEST_PEPPER],
+            phoneAuth: enabledPhoneAuth,
             sessionLifetimeDays: 90,
             now: currentNow,
             currentDisplayLanguage: "en",

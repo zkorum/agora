@@ -8,8 +8,12 @@
           :submit-call-back="onSubmit"
           :current-step="1"
           :total-steps="2"
-          :enable-next-button="!isLoading && nextCodeWaitSeconds === 0"
-          :show-next-button="true"
+          :enable-next-button="
+            phoneAuthAvailability.available &&
+            !isLoading &&
+            nextCodeWaitSeconds === 0
+          "
+          :show-next-button="phoneAuthAvailability.available"
           :show-loading-button="isLoading"
         >
           <template #header>
@@ -21,7 +25,11 @@
           </template>
 
           <template #body>
-            <PhoneInputForm ref="phoneInputFormRef" @submit="submitPhone" />
+            <PhoneInputForm
+              ref="phoneInputFormRef"
+              :purpose="phoneAuthPurpose"
+              @submit="submitPhone"
+            />
             <p v-if="!isLoggedIn"><SignupAgreement variant="verify" /></p>
           </template>
         </StepperLayout>
@@ -44,7 +52,7 @@ import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNotify } from "src/utils/ui/notify";
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -65,22 +73,26 @@ const router = useRouter();
 
 const loginIntentionStore = useLoginIntentionStore();
 const { activeUserIntention } = storeToRefs(loginIntentionStore);
+const phoneAuthPurpose = computed(() =>
+  !isAuthInitialized.value || isLoggedIn.value ? "credential" : "login"
+);
 
-const { isLoading, submitPhone, nextCodeWaitSeconds } = usePhoneSubmit({
-  onNavigateToOtp: () => router.replace({ name: "/verify/phone-code/" }),
-  onAlreadyHasCredential: () => {
-    showNotifyMessage(t("alreadyHasPhone"));
-    void completeVerification();
-  },
-  showNotifyMessage,
-  translations: {
-    throttled: t("throttled"),
-    invalidPhoneNumber: t("invalidPhoneNumber"),
-    restrictedPhoneType: t("restrictedPhoneType"),
-    credentialAlreadyLinked: t("credentialAlreadyLinked"),
-    somethingWrong: t("somethingWrong"),
-  },
-});
+const { isLoading, submitPhone, phoneAuthAvailability, nextCodeWaitSeconds } =
+  usePhoneSubmit({
+    purpose: phoneAuthPurpose,
+    onNavigateToOtp: () => router.replace({ name: "/verify/phone-code/" }),
+    onAlreadyHasCredential: () => {
+      showNotifyMessage(t("alreadyHasPhone"));
+      void completeVerification();
+    },
+    showNotifyMessage,
+    translations: {
+      throttled: t("throttled"),
+      invalidPhoneNumber: t("invalidPhoneNumber"),
+      restrictedPhoneType: t("restrictedPhoneType"),
+      somethingWrong: t("somethingWrong"),
+    },
+  });
 
 function backCallback() {
   if (activeUserIntention.value === "settings") {

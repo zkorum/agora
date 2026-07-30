@@ -34,6 +34,7 @@
 
             <div class="alternativeLogins">
               <ZKButton
+                v-if="phoneAuthAvailability.available"
                 button-type="largeButton"
                 :label="t('preferPhoneVerification')"
                 text-color="primary"
@@ -68,6 +69,9 @@ import {
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import {
+  usePhoneAuthAvailability,
+} from "src/utils/auth/phoneAuthMode";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import {
   getConversationSurveyOnboardingPath,
@@ -85,11 +89,16 @@ const { t } = useComponentI18n<VerifyPassportTranslations>(
 );
 
 const router = useRouter();
-const { routeConversationSlugId, routeContext } = useConversationOnboardingRoute();
+const { routeConversationSlugId, routeContext } =
+  useConversationOnboardingRoute();
 const conversationOnboardingStore = useConversationOnboardingStore();
-const { isAuthInitialized, credentials } = storeToRefs(
+const { isAuthInitialized, isLoggedIn, credentials } = storeToRefs(
   useAuthenticationStore()
 );
+const phoneAuthPurpose = computed(() =>
+  !isAuthInitialized.value || isLoggedIn.value ? "credential" : "login"
+);
+const phoneAuthAvailability = usePhoneAuthAvailability(phoneAuthPurpose);
 const { safeNavigateBack } = useGoBackButtonHandler();
 const { exitToConversation } = useConversationOnboardingExit();
 const { credentialUpgradeTarget } = storeToRefs(onboardingFlowStore());

@@ -46,10 +46,15 @@
             />
 
             <ZKGradientButton
+              v-if="phoneAuthAvailability.available"
               :label="t('verifyWithPhone')"
               gradient-background="#E7E7FF"
               label-color="#6b4eff"
               @click="goToPhone()"
+            />
+            <PhoneAuthUnavailableNotice
+              v-else
+              :reason="phoneAuthAvailability.reason"
             />
 
             <ZKGradientButton
@@ -76,6 +81,7 @@ import SignupAgreement from "src/components/onboarding/ui/SignupAgreement.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
+import PhoneAuthUnavailableNotice from "src/components/verification/PhoneAuthUnavailableNotice.vue";
 import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
 import { useConversationOnboardingRoute } from "src/composables/conversation/useConversationOnboardingRoute";
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
@@ -88,6 +94,9 @@ import {
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import {
+  usePhoneAuthAvailability,
+} from "src/utils/auth/phoneAuthMode";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import {
   getConversationSurveyOnboardingPath,
@@ -105,9 +114,14 @@ import {
 } from "../index.i18n";
 
 const router = useRouter();
-const { routeConversationSlugId, routeContext } = useConversationOnboardingRoute();
+const { routeConversationSlugId, routeContext } =
+  useConversationOnboardingRoute();
 const conversationOnboardingStore = useConversationOnboardingStore();
-const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+const { isAuthInitialized, isLoggedIn } = storeToRefs(useAuthenticationStore());
+const phoneAuthPurpose = computed(() =>
+  !isAuthInitialized.value || isLoggedIn.value ? "credential" : "login"
+);
+const phoneAuthAvailability = usePhoneAuthAvailability(phoneAuthPurpose);
 const { safeNavigateBack } = useGoBackButtonHandler();
 const { exitToConversation } = useConversationOnboardingExit();
 const { onboardingMode, credentialUpgradeTarget } = storeToRefs(

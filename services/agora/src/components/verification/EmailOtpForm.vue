@@ -202,12 +202,8 @@ async function nextButtonClicked() {
             await completeVerification();
             break;
           }
-          case "associated_with_another_user": {
-            showNotifyMessage(t("credentialAlreadyLinked"));
-            break;
-          }
-          case "auth_state_changed": {
-            showNotifyMessage(t("authStateChanged"));
+          case "verification_failed": {
+            showNotifyMessage(t("somethingWrong"));
             codeExpired();
             break;
           }
@@ -249,9 +245,6 @@ async function requestCodeClicked(isRequestingNewCode: boolean) {
             await completeVerification();
             break;
           }
-          case "associated_with_another_user":
-            showNotifyMessage(t("credentialAlreadyLinked"));
-            break;
           case "throttled":
             setNextCodeSoonestTime(new Date(data.nextCodeSoonestTime));
             showNotifyMessage(t("tooManyAttempts"));

@@ -11,6 +11,7 @@ services:
       CORS_ORIGIN_LIST: "https://www.agoracitizen.network,https://agoracitizen.network,https://agoracitizen.app,https://www.agoracitizen.app"
       PEPPERS: "fmgXvsChQsx9fAlq0DPiVg=="
       NODE_ENV: "production"
+      PHONE_AUTH_MODE: "enabled"
       VERIFICATOR_SVC_BASE_URL: "http://verificator-svc:8000"
       REACHER_BASE_URL: "http://reacher:8080"
       TWILIO_ACCOUNT_SID: "CHANGEME"

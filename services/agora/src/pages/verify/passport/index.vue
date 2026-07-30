@@ -27,6 +27,7 @@
 
             <div class="alternativeLogins">
               <ZKButton
+                v-if="phoneAuthAvailability.available"
                 button-type="largeButton"
                 :label="t('preferPhoneVerification')"
                 text-color="primary"
@@ -53,8 +54,11 @@ import { useVerificationComplete } from "src/composables/verification/useVerific
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import {
+  usePhoneAuthAvailability,
+} from "src/utils/auth/phoneAuthMode";
 import { useNotify } from "src/utils/ui/notify";
-import { onMounted, watch } from "vue";
+import { computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -66,9 +70,13 @@ const { t } = useComponentI18n<VerifyPassportTranslations>(
   verifyPassportTranslations
 );
 
-const { isAuthInitialized, credentials } = storeToRefs(
+const { isAuthInitialized, isLoggedIn, credentials } = storeToRefs(
   useAuthenticationStore()
 );
+const phoneAuthPurpose = computed(() =>
+  !isAuthInitialized.value || isLoggedIn.value ? "credential" : "login"
+);
+const phoneAuthAvailability = usePhoneAuthAvailability(phoneAuthPurpose);
 const { completeVerification } = useVerificationComplete();
 const { showNotifyMessage } = useNotify();
 const router = useRouter();

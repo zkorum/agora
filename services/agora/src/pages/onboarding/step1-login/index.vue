@@ -27,10 +27,15 @@
           />
 
           <ZKGradientButton
+            v-if="phoneAuthAvailability.available"
             :label="t('loginWithPhone')"
             gradient-background="#E7E7FF"
             label-color="#6b4eff"
             @click="goToPhoneLogin()"
+          />
+          <PhoneAuthUnavailableNotice
+            v-else
+            :reason="phoneAuthAvailability.reason"
           />
 
           <ZKGradientButton
@@ -55,9 +60,13 @@ import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import SignupAgreement from "src/components/onboarding/ui/SignupAgreement.vue";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
+import PhoneAuthUnavailableNotice from "src/components/verification/PhoneAuthUnavailableNotice.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import {
+  usePhoneAuthAvailability,
+} from "src/utils/auth/phoneAuthMode";
 import { useRouter } from "vue-router";
 
 import {
@@ -70,6 +79,7 @@ const { t } = useComponentI18n<LoginOnboardingTranslations>(
 );
 
 const { credentialUpgradeTarget } = storeToRefs(onboardingFlowStore());
+const phoneAuthAvailability = usePhoneAuthAvailability("login");
 
 const router = useRouter();
 

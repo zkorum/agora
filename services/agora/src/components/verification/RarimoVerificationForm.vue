@@ -257,10 +257,6 @@ async function generateVerificationLink() {
           terminateFlow();
           qrcodeVerificationStatus.value = "verified";
           break;
-        case "associated_with_another_user":
-          terminateFlow();
-          showNotifyMessage(t("credentialAlreadyLinked"));
-          break;
       }
     }
   } catch (e) {

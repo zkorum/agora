@@ -30,9 +30,11 @@ import type {
     AuthenticateRequestBody,
     AuthenticateResponse,
     AuthenticateEmailResponse,
+    VerifyPhoneOtp200,
     VerifyOtp200,
 } from "@/shared/types/dto-auth.js";
 import type { DeviceLoginStatusExtended } from "@/shared/types/zod.js";
+import type { ActivePhoneAuthMode } from "@/shared/types/phone-auth.js";
 import { normalizeEmail } from "@/shared/types/zod-email.js";
 import { eq, and, TransactionRollbackError, gt } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
@@ -45,18 +47,17 @@ import { httpErrors } from "@fastify/sensible";
 import { generateUnusedRandomUsername } from "./account.js";
 import * as authUtilService from "@/service/authUtil.js";
 import twilio from "twilio";
+import { z } from "zod";
 import { isPhoneNumberTypeSupported } from "@/shared-app-api/phone.js";
 import { base64Decode, base64Encode } from "@/shared-app-api/base64.js";
 import { mergeGuestIntoVerifiedUser } from "./merge.js";
 import { sendOtpEmail } from "./email.js";
-import {
-    type SupportedDisplayLanguageCodes,
-    ZodSupportedDisplayLanguageCodes,
-} from "@/shared/languages.js";
+import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 
 const OTP_DESTINATION_STREAK_RESET_MS = 24 * 60 * 60 * 1000;
 const OTP_MIN_BACKOFF_SECONDS = 30;
 const OTP_MAX_BACKOFF_SECONDS = 60 * 60;
+const UNUSED_TWILIO_LOCAL_CODE = 0;
 
 interface OtpDestinationStateRecord {
     lastOtpSentAt: Date;
@@ -174,7 +175,7 @@ function buildEmailAuthenticateThrottledResponse(
     };
 }
 
-type RegisterEmailDeliverabilityResult =
+type EmailOtpDeliverabilityResult =
     | {
           deliverable: true;
           emailReachability: ReacherIsReachable | null;
@@ -184,16 +185,14 @@ type RegisterEmailDeliverabilityResult =
           response: AuthenticateEmailResponse;
       };
 
-async function checkRegisterEmailDeliverability({
+async function checkEmailOtpDeliverability({
     axiosReacher,
     email,
-    type,
 }: {
     axiosReacher: AxiosInstance | undefined;
     email: string;
-    type: AuthResult["type"];
-}): Promise<RegisterEmailDeliverabilityResult> {
-    if (type !== "register" || axiosReacher === undefined) {
+}): Promise<EmailOtpDeliverabilityResult> {
+    if (axiosReacher === undefined) {
         return {
             deliverable: true,
             emailReachability: null,
@@ -223,7 +222,11 @@ async function checkRegisterEmailDeliverability({
 
 function buildTooManyWrongGuessResponse(
     nextCodeSoonestTime: Date,
-): VerifyOtp200 {
+): {
+    success: false;
+    reason: "too_many_wrong_guess";
+    nextCodeSoonestTime: Date;
+} {
     return {
         success: false,
         reason: "too_many_wrong_guess",
@@ -237,6 +240,7 @@ async function finalizePhoneOtpSuccess({
     didWrite,
     resultOtp,
     now,
+    phoneAuthMode,
     sessionLifetimeDays,
     currentDisplayLanguage,
 }: {
@@ -252,9 +256,10 @@ async function finalizePhoneOtpSuccess({
         userAgent: string;
     };
     now: Date;
+    phoneAuthMode: ActivePhoneAuthMode;
     sessionLifetimeDays: number;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
-}): Promise<VerifyOtp200> {
+}): Promise<VerifyPhoneOtp200> {
     return await db.transaction(async (tx) => {
         const verifyResult = await registerOrLoginWithPhoneNumber({
             ...authResult,
@@ -267,6 +272,7 @@ async function finalizePhoneOtpSuccess({
             pepperVersion: resultOtp.pepperVersion,
             userAgent: resultOtp.userAgent,
             now,
+            phoneAuthMode,
             sessionLifetimeDays,
             currentDisplayLanguage,
         });
@@ -276,6 +282,107 @@ async function finalizePhoneOtpSuccess({
             now,
         });
         return verifyResult;
+    });
+}
+
+async function finalizeVerifiedPhoneOtp({
+    db,
+    didWrite,
+    resultOtp,
+    now,
+    phoneAuthMode,
+    sessionLifetimeDays,
+    currentDisplayLanguage,
+}: {
+    db: PostgresDatabase;
+    didWrite: string;
+    resultOtp: {
+        userId: string;
+        lastTwoDigits: number;
+        phoneCountryCode: CountryCode | null;
+        countryCallingCode: string;
+        phoneHash: string;
+        pepperVersion: number;
+        userAgent: string;
+        authType: AuthenticateType;
+    };
+    now: Date;
+    phoneAuthMode: ActivePhoneAuthMode;
+    sessionLifetimeDays: number;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
+}): Promise<VerifyPhoneOtp200> {
+    const deviceStatus = await authUtilService.getDeviceStatus({
+        db,
+        didWrite,
+        now,
+    });
+    const authResult = await getPhoneAuthenticationTypeByHash({
+        db,
+        phoneHash: resultOtp.phoneHash,
+        didWrite,
+        deviceStatus,
+    });
+
+    if (authResult.type === "associated_with_another_user") {
+        return {
+            success: false,
+            reason: "verification_failed",
+        };
+    }
+
+    if (resultOtp.authType !== authResult.type) {
+        const currentUserId =
+            authResult.type === "merge"
+                ? authResult.toUserId
+                : authResult.userId;
+        log.error(
+            {
+                didWrite,
+                storedType: resultOtp.authType,
+                currentType: authResult.type,
+                storedUserId: resultOtp.userId,
+                currentUserId,
+            },
+            "[Phone] Authentication type changed during OTP flow - rejecting for safety",
+        );
+        return {
+            success: false,
+            reason: "verification_failed",
+        };
+    }
+
+    if (authResult.type === "register") {
+        authResult.userId = resultOtp.userId;
+    } else {
+        const currentUserId =
+            authResult.type === "merge"
+                ? authResult.toUserId
+                : authResult.userId;
+        if (resultOtp.userId !== currentUserId) {
+            log.error(
+                {
+                    didWrite,
+                    storedUserId: resultOtp.userId,
+                    currentUserId,
+                },
+                "[Phone] User ID changed during OTP flow - rejecting for safety",
+            );
+            return {
+                success: false,
+                reason: "verification_failed",
+            };
+        }
+    }
+
+    return await finalizePhoneOtpSuccess({
+        db,
+        authResult,
+        didWrite,
+        resultOtp,
+        now,
+        phoneAuthMode,
+        sessionLifetimeDays,
+        currentDisplayLanguage,
     });
 }
 
@@ -323,6 +430,95 @@ async function finalizeEmailOtpSuccess({
     });
 }
 
+async function finalizeVerifiedEmailOtp({
+    db,
+    didWrite,
+    resultOtp,
+    now,
+    sessionLifetimeDays,
+    currentDisplayLanguage,
+}: {
+    db: PostgresDatabase;
+    didWrite: string;
+    resultOtp: {
+        userId: string;
+        email: string;
+        userAgent: string;
+        authType: AuthenticateType;
+        emailReachability: ReacherIsReachable | null;
+    };
+    now: Date;
+    sessionLifetimeDays: number;
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
+}): Promise<VerifyOtp200> {
+    const deviceStatus = await authUtilService.getDeviceStatus({
+        db,
+        didWrite,
+        now,
+    });
+    const authResult = await getEmailAuthTypeWithDeviceStatus({
+        db,
+        email: resultOtp.email,
+        didWrite,
+        deviceStatus,
+    });
+
+    if (authResult.type === "associated_with_another_user") {
+        return { success: false, reason: "verification_failed" };
+    }
+
+    if (resultOtp.authType !== authResult.type) {
+        const currentUserId =
+            authResult.type === "merge"
+                ? authResult.toUserId
+                : authResult.userId;
+        log.error(
+            {
+                didWrite,
+                storedType: resultOtp.authType,
+                currentType: authResult.type,
+                storedUserId: resultOtp.userId,
+                currentUserId,
+            },
+            "[Email] Authentication type changed during OTP flow - rejecting for safety",
+        );
+        return { success: false, reason: "verification_failed" };
+    }
+
+    if (authResult.type === "register") {
+        authResult.userId = resultOtp.userId;
+    } else {
+        const currentUserId =
+            authResult.type === "merge"
+                ? authResult.toUserId
+                : authResult.userId;
+        if (resultOtp.userId !== currentUserId) {
+            log.error(
+                {
+                    didWrite,
+                    storedUserId: resultOtp.userId,
+                    currentUserId,
+                },
+                "[Email] User ID changed during OTP flow - rejecting for safety",
+            );
+            return { success: false, reason: "verification_failed" };
+        }
+    }
+
+    return await finalizeEmailOtpSuccess({
+        db,
+        authResult,
+        didWrite,
+        email: resultOtp.email,
+        canonicalEmail: resultOtp.email,
+        userAgent: resultOtp.userAgent,
+        now,
+        sessionLifetimeDays,
+        emailReachability: resultOtp.emailReachability,
+        currentDisplayLanguage,
+    });
+}
+
 interface VerifyOtpProps {
     db: PostgresDatabase;
     maxAttempt: number;
@@ -330,13 +526,33 @@ interface VerifyOtpProps {
     code: number;
     phoneNumber: string;
     defaultCallingCode: string;
-    twilioClient?: twilio.Twilio;
-    twilioServiceSid?: string;
+    phoneAuth: PhoneAuth;
     peppers: string[];
     sessionLifetimeDays: number;
     now: Date;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }
+
+interface LocalPhoneOtpDelivery {
+    type: "local";
+    testCode: number;
+    speciallyAuthorizedPhones: readonly string[];
+}
+
+interface TwilioPhoneOtpDelivery {
+    type: "twilio";
+    client: twilio.Twilio;
+    serviceSid: string;
+}
+
+type PhoneOtpDelivery = LocalPhoneOtpDelivery | TwilioPhoneOtpDelivery;
+
+export type PhoneAuth =
+    | { mode: "disabled" }
+    | {
+          mode: ActivePhoneAuthMode;
+          delivery: PhoneOtpDelivery;
+      };
 
 interface RegisterWithPhoneNumberProps {
     db: PostgresDatabase;
@@ -489,11 +705,8 @@ interface AuthenticateAttemptProps {
     didWrite: string;
     userAgent: string;
     throttleSmsSecondsInterval: number;
-    testCode: number;
-    doUseTestCode: boolean;
+    phoneAuth: PhoneAuth;
     peppers: string[];
-    twilioClient?: twilio.Twilio;
-    twilioServiceSid?: string;
     now: Date;
 }
 
@@ -506,11 +719,8 @@ interface UpdateAuthAttemptCodeProps {
     now: Date;
     authenticateRequestBody: AuthenticateRequestBody;
     throttleSmsSecondsInterval: number;
-    testCode: number;
-    doUseTestCode: boolean;
     peppers: string[];
-    twilioClient?: twilio.Twilio;
-    twilioServiceSid?: string;
+    delivery: PhoneOtpDelivery;
 }
 
 interface InsertAuthAttemptCodeProps {
@@ -523,17 +733,13 @@ interface InsertAuthAttemptCodeProps {
     userAgent: string;
     authenticateRequestBody: AuthenticateRequestBody;
     throttleSmsSecondsInterval: number;
-    testCode: number;
-    doUseTestCode: boolean;
     peppers: string[];
-    twilioClient?: twilio.Twilio;
-    twilioServiceSid?: string;
+    delivery: PhoneOtpDelivery;
 }
 
 interface SendOtpPhoneNumberProps {
     phoneNumber: string;
-    twilioClient: twilio.Twilio;
-    twilioServiceSid: string;
+    delivery: TwilioPhoneOtpDelivery;
 }
 
 interface RegisterOrLoginWithPhoneNumberBaseProps {
@@ -546,6 +752,7 @@ interface RegisterOrLoginWithPhoneNumberBaseProps {
     pepperVersion: number;
     userAgent: string;
     now: Date;
+    phoneAuthMode: ActivePhoneAuthMode;
     sessionLifetimeDays: number;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
 }
@@ -563,7 +770,7 @@ type RegisterOrLoginWithPhoneNumberProps =
 
 async function registerOrLoginWithPhoneNumber(
     props: RegisterOrLoginWithPhoneNumberProps,
-): Promise<VerifyOtp200> {
+): Promise<VerifyPhoneOtp200> {
     const {
         db,
         type,
@@ -611,6 +818,12 @@ async function registerOrLoginWithPhoneNumber(
 
     switch (type) {
         case "register": {
+            if (props.phoneAuthMode !== "enabled") {
+                return {
+                    success: false,
+                    reason: "phone_registration_unavailable",
+                };
+            }
             // Prevent duplicate credential: user must not already have an active phone
             const existingPhone = await db
                 .select({ id: phoneTable.id })
@@ -715,20 +928,19 @@ export async function verifyPhoneOtp({
     code,
     phoneNumber,
     defaultCallingCode,
-    twilioClient,
-    twilioServiceSid,
+    phoneAuth,
     peppers,
     sessionLifetimeDays,
     currentDisplayLanguage,
     now: providedNow,
-}: VerifyOtpProps): Promise<VerifyOtp200> {
-    if (
-        (twilioClient !== undefined && twilioServiceSid === undefined) ||
-        (twilioClient === undefined && twilioServiceSid !== undefined)
-    ) {
-        log.error("Twilio configuration error");
-        throw httpErrors.internalServerError("Internal Error");
+}: VerifyOtpProps): Promise<VerifyPhoneOtp200> {
+    if (phoneAuth.mode === "disabled") {
+        return {
+            success: false,
+            reason: "phone_auth_unavailable",
+        };
     }
+
     const now = providedNow;
     const resultOtp = await db
         .select({
@@ -751,6 +963,23 @@ export async function verifyPhoneOtp({
             "Device has never made an authentication attempt",
         );
     }
+    const phoneNumberObj = parsePhoneNumberFromString(phoneNumber, {
+        defaultCallingCode,
+    });
+    if (phoneNumberObj === undefined) {
+        throw httpErrors.badRequest("Phone number cannot be parsed correctly");
+    }
+    const submittedPhoneHash = await generatePhoneHash({
+        phoneNumber: phoneNumberObj.number,
+        peppers,
+        pepperVersion: PEPPER_VERSION,
+    });
+    if (submittedPhoneHash !== resultOtp[0].phoneHash) {
+        throw httpErrors.badRequest(
+            "The provided phone number is not associated with the user's ongoing device auth flow",
+        );
+    }
+
     const destinationState = getEffectiveOtpDestinationState({
         state: await getPhoneOtpDestinationState({
             db,
@@ -758,90 +987,11 @@ export async function verifyPhoneOtp({
         }),
         now,
     });
-    const deviceStatus = await authUtilService.getDeviceStatus({
-        db,
-        didWrite,
-        now,
-    });
-    const authResult = await getPhoneAuthenticationTypeByHash({
-        db,
-        phoneHash: resultOtp[0].phoneHash,
-        didWrite,
-        deviceStatus,
-    });
-
-    // CRITICAL: Reject if auth type changed during OTP flow to prevent unexpected behavior
-    // This prevents scenarios like: OTP sent for "register" but phone was taken by someone else
-    if (resultOtp[0].authType !== authResult.type) {
-        const currentUserId =
-            authResult.type === "merge"
-                ? authResult.toUserId
-                : authResult.userId;
-        log.error(
-            {
-                didWrite,
-                storedType: resultOtp[0].authType,
-                currentType: authResult.type,
-                storedUserId: resultOtp[0].userId,
-                currentUserId,
-            },
-            "[Phone] Authentication type changed during OTP flow - rejecting for safety",
-        );
-        return {
-            success: false,
-            reason: "auth_state_changed",
-        };
-    }
-
-    // For "register" type, reuse the stored userId instead of the freshly generated one
-    // This prevents false-positive "user changed" errors due to UUID regeneration
-    if (authResult.type === "register") {
-        authResult.userId = resultOtp[0].userId;
-    } else {
-        // For non-register types, check userId consistency (UUIDs are deterministic here)
-        const currentUserId =
-            authResult.type === "merge"
-                ? authResult.toUserId
-                : authResult.userId;
-        if (resultOtp[0].userId !== currentUserId) {
-            log.error(
-                {
-                    didWrite,
-                    storedUserId: resultOtp[0].userId,
-                    currentUserId,
-                },
-                "[Phone] User ID changed during OTP flow - rejecting for safety",
-            );
-            return {
-                success: false,
-                reason: "auth_state_changed",
-            };
-        }
-    }
-
     // if we use twilio, we don't use the local code at all.
     // will change when we migrate to another service
-    if (twilioServiceSid !== undefined && twilioClient !== undefined) {
-        const phoneNumberObj = parsePhoneNumberFromString(phoneNumber, {
-            defaultCallingCode: defaultCallingCode,
-        });
-        if (phoneNumberObj === undefined) {
-            throw httpErrors.badRequest(
-                "Phone number cannot be parsed correctly",
-            );
-        }
-        const phoneHash = await generatePhoneHash({
-            phoneNumber: phoneNumberObj.number,
-            peppers: peppers,
-            pepperVersion: PEPPER_VERSION,
-        });
-        if (phoneHash !== resultOtp[0].phoneHash) {
-            throw httpErrors.badRequest(
-                "The provided phone number is not associated with the user's ongoing device auth flow", // with the DID
-            );
-        }
-        const verificationCheck = await twilioClient.verify.v2
-            .services(twilioServiceSid)
+    if (phoneAuth.delivery.type === "twilio") {
+        const verificationCheck = await phoneAuth.delivery.client.verify.v2
+            .services(phoneAuth.delivery.serviceSid)
             .verificationChecks.create({
                 code: codeToString(code),
                 to: phoneNumberObj.number,
@@ -879,12 +1029,17 @@ export async function verifyPhoneOtp({
             case "expired":
                 return { success: false, reason: "expired_code" };
             case "approved":
-                return await finalizePhoneOtpSuccess({
+                return await finalizeVerifiedPhoneOtp({
                     db,
-                    authResult,
                     didWrite,
-                    resultOtp: resultOtp[0],
+                    resultOtp: {
+                        ...resultOtp[0],
+                        authType: authenticateTypeSchema.parse(
+                            resultOtp[0].authType,
+                        ),
+                    },
                     now,
+                    phoneAuthMode: phoneAuth.mode,
                     sessionLifetimeDays,
                     currentDisplayLanguage,
                 });
@@ -901,12 +1056,15 @@ export async function verifyPhoneOtp({
     } else if (resultOtp[0].codeExpiry <= now) {
         return { success: false, reason: "expired_code" };
     } else if (otpCodesEqual({ a: resultOtp[0].code, b: code })) {
-        return await finalizePhoneOtpSuccess({
+        return await finalizeVerifiedPhoneOtp({
             db,
-            authResult,
             didWrite,
-            resultOtp: resultOtp[0],
+            resultOtp: {
+                ...resultOtp[0],
+                authType: authenticateTypeSchema.parse(resultOtp[0].authType),
+            },
             now,
+            phoneAuthMode: phoneAuth.mode,
             sessionLifetimeDays,
             currentDisplayLanguage,
         });
@@ -964,7 +1122,7 @@ export async function updateCodeGuessAttemptAmount(
 }
 
 // WARN: we assume the OTP was verified AND EXPIRED at registerOrLoginWithPhoneNumber entry point
-export async function registerWithPhoneNumber({
+async function registerWithPhoneNumber({
     db,
     didWrite,
     now,
@@ -1225,11 +1383,13 @@ export async function loginKnownDeviceWithZKP({
 
 // !WARNING: manually update DB enum value if changing this
 // TODO: automatically sync them - use one type only
-export type AuthenticateType =
-    | "register"
-    | "login_known_device"
-    | "login_new_device"
-    | "merge";
+const authenticateTypeSchema = z.enum([
+    "register",
+    "login_known_device",
+    "login_new_device",
+    "merge",
+]);
+export type AuthenticateType = z.infer<typeof authenticateTypeSchema>;
 
 type DidAssociationStatus = "does_not_exist" | "associated" | "not_associated";
 
@@ -1589,13 +1749,17 @@ export async function authenticateAttempt({
     didWrite,
     userAgent,
     throttleSmsSecondsInterval,
-    testCode,
-    doUseTestCode,
+    phoneAuth,
     peppers,
-    twilioClient,
-    twilioServiceSid,
     now: providedNow,
 }: AuthenticateAttemptProps): Promise<AuthenticateResponse> {
+    if (phoneAuth.mode === "disabled") {
+        return {
+            success: false,
+            reason: "phone_auth_unavailable",
+        };
+    }
+
     const now = providedNow;
     const authResult = await getPhoneAuthenticationTypeByNumber({
         db,
@@ -1603,16 +1767,13 @@ export async function authenticateAttempt({
         didWrite,
         peppers,
     });
-    if (authResult.type === "associated_with_another_user") {
-        return {
-            success: false,
-            reason: authResult.type,
-        };
-    }
-    // Get userId - for merge type use toUserId (the device user)
+    // Never disclose credential ownership before the caller proves phone control.
+    const type: AuthenticateType =
+        authResult.type === "associated_with_another_user"
+            ? "register"
+            : authResult.type;
     const userId =
         authResult.type === "merge" ? authResult.toUserId : authResult.userId;
-    const type = authResult.type;
     const resultHasAttempted = await db
         .select({
             codeExpiry: authAttemptPhoneTable.codeExpiry,
@@ -1633,11 +1794,8 @@ export async function authenticateAttempt({
             userAgent,
             authenticateRequestBody,
             throttleSmsSecondsInterval,
-            doUseTestCode,
-            testCode,
             peppers,
-            twilioClient,
-            twilioServiceSid,
+            delivery: phoneAuth.delivery,
         });
     }
 
@@ -1660,11 +1818,8 @@ export async function authenticateAttempt({
             authenticateRequestBody,
             throttleSmsSecondsInterval,
             // awsMailConf,
-            doUseTestCode,
-            testCode,
             peppers,
-            twilioClient,
-            twilioServiceSid,
+            delivery: phoneAuth.delivery,
         });
     } else if (
         currentAttempt.codeExpiry > now &&
@@ -1694,23 +1849,19 @@ export async function authenticateAttempt({
             authenticateRequestBody,
             throttleSmsSecondsInterval,
             // awsMailConf,
-            doUseTestCode,
-            testCode,
             peppers,
-            twilioClient,
-            twilioServiceSid,
+            delivery: phoneAuth.delivery,
         });
     }
 }
 
-export async function sendOtpPhoneNumber({
+async function sendOtpPhoneNumber({
     phoneNumber,
-    twilioClient,
-    twilioServiceSid,
+    delivery,
 }: SendOtpPhoneNumberProps) {
     // TODO: verify phone number validity with Twilio before sending the SMS
-    const verification = await twilioClient.verify.v2
-        .services(twilioServiceSid)
+    const verification = await delivery.client.verify.v2
+        .services(delivery.serviceSid)
         .verifications.create({
             channel: "sms",
             to: phoneNumber,
@@ -2003,7 +2154,7 @@ async function resetEmailOtpDestinationState({
         .where(eq(otpEmailDestinationStateTable.email, canonicalEmail));
 }
 
-export async function insertAuthAttemptCode({
+async function insertAuthAttemptCode({
     db,
     type,
     userId,
@@ -2013,17 +2164,9 @@ export async function insertAuthAttemptCode({
     userAgent,
     authenticateRequestBody,
     throttleSmsSecondsInterval,
-    testCode,
-    doUseTestCode,
     peppers,
-    twilioClient,
-    twilioServiceSid,
+    delivery,
 }: InsertAuthAttemptCodeProps): Promise<AuthenticateResponse> {
-    const doSendViaSms =
-        twilioClient !== undefined && twilioServiceSid !== undefined;
-    if (doUseTestCode && doSendViaSms) {
-        throw httpErrors.badRequest("Test code shall not be sent via sms");
-    }
     const phoneHash = await generatePhoneHash({
         phoneNumber: authenticateRequestBody.phoneNumber,
         peppers: peppers,
@@ -2041,7 +2184,14 @@ export async function insertAuthAttemptCode({
     if (throttleUntil !== null) {
         return buildPhoneAuthenticateThrottledResponse(throttleUntil);
     }
-    const oneTimeCode = doUseTestCode ? testCode : generateOneTimeCode();
+    const oneTimeCode =
+        delivery.type === "twilio"
+            ? UNUSED_TWILIO_LOCAL_CODE
+            : delivery.speciallyAuthorizedPhones.includes(
+                    authenticateRequestBody.phoneNumber,
+                )
+              ? delivery.testCode
+              : generateOneTimeCode();
     const codeExpiry = new Date(now);
     codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeSmsCodeExpiry);
     const phoneNumber = parsePhoneNumberFromString(
@@ -2075,13 +2225,10 @@ export async function insertAuthAttemptCode({
             reason: "restricted_phone_type",
         };
     }
-    if (doSendViaSms) {
-        // may throw errors and return 500 :)
-        // TODO: migrate away from Twilio Verify to Pinpoint as currently the oneTimeCode we generate is unused
+    if (delivery.type === "twilio") {
         await sendOtpPhoneNumber({
             phoneNumber: phoneNumber.number,
-            twilioClient,
-            twilioServiceSid,
+            delivery,
         });
     } else {
         console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
@@ -2129,7 +2276,7 @@ export async function insertAuthAttemptCode({
     };
 }
 
-export async function updateAuthAttemptCode({
+async function updateAuthAttemptCode({
     db,
     type,
     userId,
@@ -2138,17 +2285,9 @@ export async function updateAuthAttemptCode({
     now,
     authenticateRequestBody,
     throttleSmsSecondsInterval,
-    doUseTestCode,
-    testCode,
     peppers,
-    twilioClient,
-    twilioServiceSid,
+    delivery,
 }: UpdateAuthAttemptCodeProps): Promise<AuthenticateResponse> {
-    const doSendViaSms =
-        twilioClient !== undefined && twilioServiceSid !== undefined;
-    if (doUseTestCode && doSendViaSms) {
-        throw httpErrors.badRequest("Test code shall not be sent via sms");
-    }
     const phoneHash = await generatePhoneHash({
         phoneNumber: authenticateRequestBody.phoneNumber,
         peppers,
@@ -2217,11 +2356,10 @@ export async function updateAuthAttemptCode({
         currentAttempt[0].codeExpiry.getTime() > now.getTime();
 
     if (canReuseExistingCode) {
-        if (doSendViaSms) {
+        if (delivery.type === "twilio") {
             await sendOtpPhoneNumber({
                 phoneNumber: phoneNumber.number,
-                twilioClient,
-                twilioServiceSid,
+                delivery,
             });
         } else {
             console.log(
@@ -2241,6 +2379,9 @@ export async function updateAuthAttemptCode({
                 phoneCountryCode: phoneCountryCode,
                 phoneHash: phoneHash,
                 pepperVersion: PEPPER_VERSION,
+                code: delivery.type === "twilio"
+                    ? UNUSED_TWILIO_LOCAL_CODE
+                    : currentAttempt[0].code,
                 lastOtpSentAt: now,
                 updatedAt: now,
             })
@@ -2261,14 +2402,20 @@ export async function updateAuthAttemptCode({
         };
     }
 
-    const oneTimeCode = doUseTestCode ? testCode : generateOneTimeCode();
+    const oneTimeCode =
+        delivery.type === "twilio"
+            ? UNUSED_TWILIO_LOCAL_CODE
+            : delivery.speciallyAuthorizedPhones.includes(
+                    authenticateRequestBody.phoneNumber,
+                )
+              ? delivery.testCode
+              : generateOneTimeCode();
     const codeExpiry = new Date(now);
     codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeSmsCodeExpiry);
-    if (doSendViaSms) {
+    if (delivery.type === "twilio") {
         await sendOtpPhoneNumber({
             phoneNumber: phoneNumber.number,
-            twilioClient,
-            twilioServiceSid,
+            delivery,
         });
     } else {
         console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
@@ -2514,37 +2661,13 @@ export async function authenticateEmailAttempt({
         email: canonicalEmail,
         didWrite,
     });
-    if (authResult.type === "associated_with_another_user") {
-        return {
-            success: false,
-            reason: authResult.type,
-        };
-    }
-    // Get userId - for merge type use toUserId (the device user)
+    // Never disclose credential ownership before the caller proves email control.
+    const type: AuthenticateType =
+        authResult.type === "associated_with_another_user"
+            ? "register"
+            : authResult.type;
     const userId =
         authResult.type === "merge" ? authResult.toUserId : authResult.userId;
-    const type = authResult.type;
-
-    // Resolve email language: for existing users (login/merge), prefer stored display language;
-    // for registration, the user has no preferences yet so use Accept-Language header
-    let emailLanguageCode: SupportedDisplayLanguageCodes = headerLanguageCode;
-    if (type !== "register") {
-        const storedDisplayLanguage = await db
-            .select({
-                languageCode: userDisplayLanguageTable.languageCode,
-            })
-            .from(userDisplayLanguageTable)
-            .where(eq(userDisplayLanguageTable.userId, userId))
-            .limit(1);
-        if (storedDisplayLanguage.length > 0) {
-            const parsed = ZodSupportedDisplayLanguageCodes.safeParse(
-                storedDisplayLanguage[0].languageCode,
-            );
-            if (parsed.success) {
-                emailLanguageCode = parsed.data;
-            }
-        }
-    }
 
     const resultHasAttempted = await db
         .select({
@@ -2569,7 +2692,7 @@ export async function authenticateEmailAttempt({
             throttleEmailSecondsInterval,
             doUseTestCode,
             testCode,
-            languageCode: emailLanguageCode,
+            languageCode: headerLanguageCode,
         });
     }
 
@@ -2590,7 +2713,7 @@ export async function authenticateEmailAttempt({
             throttleEmailSecondsInterval,
             doUseTestCode,
             testCode,
-            languageCode: emailLanguageCode,
+            languageCode: headerLanguageCode,
         });
     } else if (currentAttempt.codeExpiry > now && isSameEmailAttempt) {
         // code hasn't expired
@@ -2619,7 +2742,7 @@ export async function authenticateEmailAttempt({
             throttleEmailSecondsInterval,
             doUseTestCode,
             testCode,
-            languageCode: emailLanguageCode,
+            languageCode: headerLanguageCode,
         });
     }
 }
@@ -2669,10 +2792,9 @@ async function insertEmailAuthAttemptCode({
         return buildEmailAuthenticateThrottledResponse(throttleUntil);
     }
 
-    const deliverability = await checkRegisterEmailDeliverability({
+    const deliverability = await checkEmailOtpDeliverability({
         axiosReacher,
         email: canonicalEmail,
-        type,
     });
 
     if (!deliverability.deliverable) {
@@ -2824,10 +2946,9 @@ async function updateEmailAuthAttemptCode({
         };
     }
 
-    const deliverability = await checkRegisterEmailDeliverability({
+    const deliverability = await checkEmailOtpDeliverability({
         axiosReacher,
         email: canonicalEmail,
-        type,
     });
 
     if (!deliverability.deliverable) {
@@ -3195,81 +3316,19 @@ export async function verifyEmailOtp({
         );
     }
 
-    const deviceStatus = await authUtilService.getDeviceStatus({
-        db,
-        didWrite,
-        now,
-    });
-    const authResult = await getEmailAuthTypeWithDeviceStatus({
-        db,
-        email: resultOtp[0].email,
-        didWrite,
-        deviceStatus,
-    });
-
-    // CRITICAL: Reject if auth type changed during OTP flow to prevent unexpected behavior
-    // This prevents scenarios like: OTP sent for "register" but email was taken by someone else
-    if (resultOtp[0].authType !== authResult.type) {
-        const currentUserId =
-            authResult.type === "merge"
-                ? authResult.toUserId
-                : authResult.userId;
-        log.error(
-            {
-                didWrite,
-                storedType: resultOtp[0].authType,
-                currentType: authResult.type,
-                storedUserId: resultOtp[0].userId,
-                currentUserId,
-            },
-            "[Email] Authentication type changed during OTP flow - rejecting for safety",
-        );
-        return {
-            success: false,
-            reason: "auth_state_changed",
-        };
-    }
-
-    // For "register" type, reuse the stored userId instead of the freshly generated one
-    // This prevents false-positive "user changed" errors due to UUID regeneration
-    if (authResult.type === "register") {
-        authResult.userId = resultOtp[0].userId;
-    } else {
-        // For non-register types, check userId consistency (UUIDs are deterministic here)
-        const currentUserId =
-            authResult.type === "merge"
-                ? authResult.toUserId
-                : authResult.userId;
-        if (resultOtp[0].userId !== currentUserId) {
-            log.error(
-                {
-                    didWrite,
-                    storedUserId: resultOtp[0].userId,
-                    currentUserId,
-                },
-                "[Email] User ID changed during OTP flow - rejecting for safety",
-            );
-            return {
-                success: false,
-                reason: "auth_state_changed",
-            };
-        }
-    }
-
     // Direct code comparison (no Twilio involved for email)
     if (resultOtp[0].codeExpiry <= now) {
         return { success: false, reason: "expired_code" };
     } else if (otpCodesEqual({ a: resultOtp[0].code, b: code })) {
-        return await finalizeEmailOtpSuccess({
+        return await finalizeVerifiedEmailOtp({
             db,
-            authResult,
             didWrite,
-            email: resultOtp[0].email,
-            canonicalEmail,
-            userAgent: resultOtp[0].userAgent,
+            resultOtp: {
+                ...resultOtp[0],
+                authType: authenticateTypeSchema.parse(resultOtp[0].authType),
+            },
             now,
             sessionLifetimeDays,
-            emailReachability: resultOtp[0].emailReachability,
             currentDisplayLanguage,
         });
     } else {

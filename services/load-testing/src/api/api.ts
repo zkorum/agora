@@ -698,9 +698,9 @@ export interface ApiV1AuthAuthenticatePost200ResponseOneOf1OneOf1 {
 
 export const ApiV1AuthAuthenticatePost200ResponseOneOf1OneOf1ReasonEnum = {
     AlreadyHasCredential: 'already_has_credential',
-    AssociatedWithAnotherUser: 'associated_with_another_user',
     InvalidPhoneNumber: 'invalid_phone_number',
     RestrictedPhoneType: 'restricted_phone_type',
+    PhoneAuthUnavailable: 'phone_auth_unavailable',
 } as const;
 
 export type ApiV1AuthAuthenticatePost200ResponseOneOf1OneOf1ReasonEnum = typeof ApiV1AuthAuthenticatePost200ResponseOneOf1OneOf1ReasonEnum[keyof typeof ApiV1AuthAuthenticatePost200ResponseOneOf1OneOf1ReasonEnum];
@@ -941,7 +941,6 @@ export interface ApiV1AuthEmailAuthenticatePost200ResponseOneOfOneOf {
 
 export const ApiV1AuthEmailAuthenticatePost200ResponseOneOfOneOfReasonEnum = {
     AlreadyHasCredential: 'already_has_credential',
-    AssociatedWithAnotherUser: 'associated_with_another_user',
     Unreachable: 'unreachable',
     Disposable: 'disposable',
 } as const;
@@ -952,6 +951,30 @@ export interface ApiV1AuthEmailAuthenticatePostRequest {
     'email': string;
     'isRequestingNewCode': boolean;
 }
+/**
+ * @type ApiV1AuthEmailVerifyOtpPost200Response
+ */
+export type ApiV1AuthEmailVerifyOtpPost200Response = ApiV1AuthEmailVerifyOtpPost200ResponseOneOf | ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf;
+
+/**
+ * @type ApiV1AuthEmailVerifyOtpPost200ResponseOneOf
+ */
+export type ApiV1AuthEmailVerifyOtpPost200ResponseOneOf = ApiV1AuthEmailVerifyOtpPost200ResponseOneOfOneOf | ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOf;
+
+export interface ApiV1AuthEmailVerifyOtpPost200ResponseOneOfOneOf {
+    'success': boolean;
+    'reason': ApiV1AuthEmailVerifyOtpPost200ResponseOneOfOneOfReasonEnum;
+}
+
+export const ApiV1AuthEmailVerifyOtpPost200ResponseOneOfOneOfReasonEnum = {
+    ExpiredCode: 'expired_code',
+    WrongGuess: 'wrong_guess',
+    AlreadyHasCredential: 'already_has_credential',
+    VerificationFailed: 'verification_failed',
+} as const;
+
+export type ApiV1AuthEmailVerifyOtpPost200ResponseOneOfOneOfReasonEnum = typeof ApiV1AuthEmailVerifyOtpPost200ResponseOneOfOneOfReasonEnum[keyof typeof ApiV1AuthEmailVerifyOtpPost200ResponseOneOfOneOfReasonEnum];
+
 export interface ApiV1AuthEmailVerifyOtpPostRequest {
     'code': number;
     'email': string;
@@ -992,8 +1015,9 @@ export const ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOf1ReasonEnum = {
     ExpiredCode: 'expired_code',
     WrongGuess: 'wrong_guess',
     AlreadyHasCredential: 'already_has_credential',
-    AssociatedWithAnotherUser: 'associated_with_another_user',
-    AuthStateChanged: 'auth_state_changed',
+    VerificationFailed: 'verification_failed',
+    PhoneAuthUnavailable: 'phone_auth_unavailable',
+    PhoneRegistrationUnavailable: 'phone_registration_unavailable',
 } as const;
 
 export type ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOf1ReasonEnum = typeof ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOf1ReasonEnum[keyof typeof ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOf1ReasonEnum];
@@ -1167,14 +1191,19 @@ export type ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum = typeof Ap
 /**
  * @type ApiV1AuthTicketVerifyPost200Response
  */
-export type ApiV1AuthTicketVerifyPost200Response = ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf | ApiV1AuthTicketVerifyPost200ResponseOneOf;
+export type ApiV1AuthTicketVerifyPost200Response = ApiV1AuthTicketVerifyPost200ResponseOneOf | ApiV1AuthTicketVerifyPost200ResponseOneOf1;
 
 export interface ApiV1AuthTicketVerifyPost200ResponseOneOf {
     'success': boolean;
-    'reason': ApiV1AuthTicketVerifyPost200ResponseOneOfReasonEnum;
+    'accountMerged': boolean;
+    'userId': string;
+}
+export interface ApiV1AuthTicketVerifyPost200ResponseOneOf1 {
+    'success': boolean;
+    'reason': ApiV1AuthTicketVerifyPost200ResponseOneOf1ReasonEnum;
 }
 
-export const ApiV1AuthTicketVerifyPost200ResponseOneOfReasonEnum = {
+export const ApiV1AuthTicketVerifyPost200ResponseOneOf1ReasonEnum = {
     DeserializationError: 'deserialization_error',
     InvalidProof: 'invalid_proof',
     InvalidSigner: 'invalid_signer',
@@ -1182,7 +1211,7 @@ export const ApiV1AuthTicketVerifyPost200ResponseOneOfReasonEnum = {
     TicketAlreadyUsed: 'ticket_already_used',
 } as const;
 
-export type ApiV1AuthTicketVerifyPost200ResponseOneOfReasonEnum = typeof ApiV1AuthTicketVerifyPost200ResponseOneOfReasonEnum[keyof typeof ApiV1AuthTicketVerifyPost200ResponseOneOfReasonEnum];
+export type ApiV1AuthTicketVerifyPost200ResponseOneOf1ReasonEnum = typeof ApiV1AuthTicketVerifyPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1AuthTicketVerifyPost200ResponseOneOf1ReasonEnum];
 
 export interface ApiV1AuthTicketVerifyPostRequest {
     'proof': any;
@@ -1211,7 +1240,6 @@ export interface ApiV1AuthZkpGenerateVerificationLinkPost200ResponseOneOf1 {
 
 export const ApiV1AuthZkpGenerateVerificationLinkPost200ResponseOneOf1ReasonEnum = {
     AlreadyHasCredential: 'already_has_credential',
-    AssociatedWithAnotherUser: 'associated_with_another_user',
 } as const;
 
 export type ApiV1AuthZkpGenerateVerificationLinkPost200ResponseOneOf1ReasonEnum = typeof ApiV1AuthZkpGenerateVerificationLinkPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1AuthZkpGenerateVerificationLinkPost200ResponseOneOf1ReasonEnum];
@@ -1274,6 +1302,18 @@ export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1Rar
 } as const;
 
 export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1RarimoStatusEnum = typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1RarimoStatusEnum[keyof typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1RarimoStatusEnum];
+
+export interface ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf2 {
+    'success': boolean;
+    'reason': ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf2ReasonEnum;
+}
+
+export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf2ReasonEnum = {
+    AlreadyHasCredential: 'already_has_credential',
+    AssociatedWithAnotherUser: 'associated_with_another_user',
+} as const;
+
+export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf2ReasonEnum = typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf2ReasonEnum[keyof typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf2ReasonEnum];
 
 export interface ApiV1ContentTranslationRequestPost200Response {
     'success': boolean;
@@ -11523,7 +11563,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1AuthEmailVerifyOtpPost(apiV1AuthEmailVerifyOtpPostRequest: ApiV1AuthEmailVerifyOtpPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthPhoneVerifyOtpPost200Response>> {
+        async apiV1AuthEmailVerifyOtpPost(apiV1AuthEmailVerifyOtpPostRequest: ApiV1AuthEmailVerifyOtpPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthEmailVerifyOtpPost200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthEmailVerifyOtpPost(apiV1AuthEmailVerifyOtpPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AuthEmailVerifyOtpPost']?.[localVarOperationServerIndex]?.url;
@@ -12830,7 +12870,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AuthEmailVerifyOtpPost(apiV1AuthEmailVerifyOtpPostRequest: ApiV1AuthEmailVerifyOtpPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AuthPhoneVerifyOtpPost200Response> {
+        apiV1AuthEmailVerifyOtpPost(apiV1AuthEmailVerifyOtpPostRequest: ApiV1AuthEmailVerifyOtpPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AuthEmailVerifyOtpPost200Response> {
             return localVarFp.apiV1AuthEmailVerifyOtpPost(apiV1AuthEmailVerifyOtpPostRequest, options).then((request) => request(axios, basePath));
         },
         /**

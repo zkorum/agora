@@ -9,7 +9,7 @@
           :current-step="3.5"
           :total-steps="5"
           :enable-next-button="phoneOtpFormRef?.isCodeComplete?.() ?? false"
-          :show-next-button="true"
+          :show-next-button="phoneOtpFormRef?.isAvailable?.value ?? false"
           :show-loading-button="phoneOtpFormRef?.isSubmitButtonLoading?.value ?? false"
         >
           <template #header>
@@ -23,6 +23,7 @@
           <template #body>
             <PhoneOtpForm
               ref="phoneOtpFormRef"
+              :purpose="phoneAuthPurpose"
               @change-identifier="changePhoneNumber"
             />
           </template>
@@ -33,13 +34,15 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import PhoneOtpForm from "src/components/verification/PhoneOtpForm.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
-import { ref } from "vue";
+import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -52,10 +55,15 @@ const { t } = useComponentI18n<Step3Phone2Translations>(
 );
 
 const router = useRouter();
+const { onboardingMode } = storeToRefs(onboardingFlowStore());
+const phoneAuthPurpose = computed(() =>
+  onboardingMode.value === "SIGNUP" ? "registration" : "login"
+);
 
 const phoneOtpFormRef = ref<{
   nextButtonClicked: () => void;
   isSubmitButtonLoading: { value: boolean };
+  isAvailable: { value: boolean };
   isCodeComplete: () => boolean;
 } | null>(null);
 

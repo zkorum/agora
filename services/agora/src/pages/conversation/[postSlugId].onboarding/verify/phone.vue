@@ -26,8 +26,12 @@
           :submit-call-back="onSubmit"
           :current-step="2"
           :total-steps="surveyStepTotal"
-          :enable-next-button="!isLoading && nextCodeWaitSeconds === 0"
-          :show-next-button="true"
+          :enable-next-button="
+            phoneAuthAvailability.available &&
+            !isLoading &&
+            nextCodeWaitSeconds === 0
+          "
+          :show-next-button="phoneAuthAvailability.available"
           :show-loading-button="isLoading"
         >
           <template #header>
@@ -39,7 +43,11 @@
           </template>
 
           <template #body>
-            <PhoneInputForm ref="phoneInputFormRef" @submit="submitPhone" />
+            <PhoneInputForm
+              ref="phoneInputFormRef"
+              :purpose="phoneAuthPurpose"
+              @submit="submitPhone"
+            />
             <p v-if="!isLoggedIn"><SignupAgreement variant="verify" /></p>
           </template>
         </StepperLayout>
@@ -89,7 +97,8 @@ import {
 } from "../index.i18n";
 
 const router = useRouter();
-const { routeConversationSlugId, routeContext } = useConversationOnboardingRoute();
+const { routeConversationSlugId, routeContext } =
+  useConversationOnboardingRoute();
 const conversationOnboardingStore = useConversationOnboardingStore();
 const { isLoggedIn, isAuthInitialized, credentials } = storeToRefs(
   useAuthenticationStore()
@@ -99,6 +108,9 @@ const { exitToConversation } = useConversationOnboardingExit();
 const { credentialUpgradeTarget } = storeToRefs(onboardingFlowStore());
 const { completeVerification } = useVerificationComplete();
 const { showNotifyMessage } = useNotify();
+const phoneAuthPurpose = computed(() =>
+  !isAuthInitialized.value || isLoggedIn.value ? "credential" : "login"
+);
 const { t } = useComponentI18n<VerifyPhoneTranslations>(
   verifyPhoneTranslations
 );
@@ -161,27 +173,28 @@ const backPath = computed(() => {
   });
 });
 
-const { isLoading, submitPhone, nextCodeWaitSeconds } = usePhoneSubmit({
-  onNavigateToOtp: () =>
-    router.replace({
-      path: getConversationSurveyVerifyPhoneCodePath({
-        conversationSlugId: conversationSlugId.value,
-        routeContext: routeContext.value,
+const { isLoading, submitPhone, phoneAuthAvailability, nextCodeWaitSeconds } =
+  usePhoneSubmit({
+    purpose: phoneAuthPurpose,
+    onNavigateToOtp: () =>
+      router.replace({
+        path: getConversationSurveyVerifyPhoneCodePath({
+          conversationSlugId: conversationSlugId.value,
+          routeContext: routeContext.value,
+        }),
       }),
-    }),
-  onAlreadyHasCredential: () => {
-    showNotifyMessage(t("alreadyHasPhone"));
-    void completeVerification();
-  },
-  showNotifyMessage,
-  translations: {
-    throttled: t("throttled"),
-    invalidPhoneNumber: t("invalidPhoneNumber"),
-    restrictedPhoneType: t("restrictedPhoneType"),
-    credentialAlreadyLinked: t("credentialAlreadyLinked"),
-    somethingWrong: t("somethingWrong"),
-  },
-});
+    onAlreadyHasCredential: () => {
+      showNotifyMessage(t("alreadyHasPhone"));
+      void completeVerification();
+    },
+    showNotifyMessage,
+    translations: {
+      throttled: t("throttled"),
+      invalidPhoneNumber: t("invalidPhoneNumber"),
+      restrictedPhoneType: t("restrictedPhoneType"),
+      somethingWrong: t("somethingWrong"),
+    },
+  });
 
 watch(
   [isInitialLoading, requirementState],

@@ -81,7 +81,6 @@ const { isLoading, submitEmail, nextCodeWaitSeconds } = useEmailSubmit({
     throttled: t("throttled"),
     unreachable: t("unreachable"),
     disposable: t("disposable"),
-    credentialAlreadyLinked: t("credentialAlreadyLinked"),
     somethingWrong: t("somethingWrong"),
   },
 });

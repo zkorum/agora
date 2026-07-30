@@ -8,8 +8,12 @@
           :submit-call-back="onSubmit"
           :current-step="3"
           :total-steps="5"
-          :enable-next-button="!isLoading && nextCodeWaitSeconds === 0"
-          :show-next-button="true"
+          :enable-next-button="
+            phoneAuthAvailability.available &&
+            !isLoading &&
+            nextCodeWaitSeconds === 0
+          "
+          :show-next-button="phoneAuthAvailability.available"
           :show-loading-button="isLoading"
         >
           <template #header>
@@ -21,7 +25,11 @@
           </template>
 
           <template #body>
-            <PhoneInputForm ref="phoneInputFormRef" @submit="submitPhone" />
+            <PhoneInputForm
+              ref="phoneInputFormRef"
+              :purpose="phoneAuthPurpose"
+              @submit="submitPhone"
+            />
 
             <div class="alternativeLogins">
               <ZKGradientButton
@@ -59,7 +67,7 @@ import { useVerificationComplete } from "src/composables/verification/useVerific
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useNotify } from "src/utils/ui/notify";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -75,23 +83,30 @@ const router = useRouter();
 const { showNotifyMessage } = useNotify();
 const { completeVerification } = useVerificationComplete();
 
-const { credentialUpgradeTarget } = storeToRefs(onboardingFlowStore());
+const { credentialUpgradeTarget, onboardingMode } = storeToRefs(
+  onboardingFlowStore()
+);
+const phoneAuthPurpose = computed(() =>
+  onboardingMode.value === "SIGNUP" ? "registration" : "login"
+);
 
-const { isLoading, submitPhone, nextCodeWaitSeconds } = usePhoneSubmit({
-  onNavigateToOtp: () => router.replace({ name: "/onboarding/step3-phone-2/" }),
-  onAlreadyHasCredential: () => {
-    showNotifyMessage(t("alreadyHasPhone"));
-    void completeVerification();
-  },
-  showNotifyMessage,
-  translations: {
-    throttled: t("throttled"),
-    invalidPhoneNumber: t("invalidPhoneNumber"),
-    restrictedPhoneType: t("restrictedPhoneType"),
-    credentialAlreadyLinked: t("credentialAlreadyLinked"),
-    somethingWrong: t("somethingWrong"),
-  },
-});
+const { isLoading, submitPhone, phoneAuthAvailability, nextCodeWaitSeconds } =
+  usePhoneSubmit({
+    purpose: phoneAuthPurpose,
+    onNavigateToOtp: () =>
+      router.replace({ name: "/onboarding/step3-phone-2/" }),
+    onAlreadyHasCredential: () => {
+      showNotifyMessage(t("alreadyHasPhone"));
+      void completeVerification();
+    },
+    showNotifyMessage,
+    translations: {
+      throttled: t("throttled"),
+      invalidPhoneNumber: t("invalidPhoneNumber"),
+      restrictedPhoneType: t("restrictedPhoneType"),
+      somethingWrong: t("somethingWrong"),
+    },
+  });
 
 const phoneInputFormRef = ref<{
   submit: () => boolean;

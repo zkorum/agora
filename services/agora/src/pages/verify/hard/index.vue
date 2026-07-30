@@ -27,10 +27,15 @@
             />
 
             <ZKGradientButton
+              v-if="phoneAuthAvailability.available"
               :label="t('verifyWithPhone')"
               gradient-background="#E7E7FF"
               label-color="#6b4eff"
               @click="goToPhone()"
+            />
+            <PhoneAuthUnavailableNotice
+              v-else
+              :reason="phoneAuthAvailability.reason"
             />
 
             <ZKGradientButton
@@ -55,9 +60,14 @@ import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import SignupAgreement from "src/components/onboarding/ui/SignupAgreement.vue";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
+import PhoneAuthUnavailableNotice from "src/components/verification/PhoneAuthUnavailableNotice.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
+import {
+  usePhoneAuthAvailability,
+} from "src/utils/auth/phoneAuthMode";
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -65,11 +75,13 @@ import {
   verifyHardTranslations,
 } from "./index.i18n";
 
-const { t } = useComponentI18n<VerifyHardTranslations>(
-  verifyHardTranslations
-);
+const { t } = useComponentI18n<VerifyHardTranslations>(verifyHardTranslations);
 
-const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+const { isAuthInitialized, isLoggedIn } = storeToRefs(useAuthenticationStore());
+const phoneAuthPurpose = computed(() =>
+  !isAuthInitialized.value || isLoggedIn.value ? "credential" : "login"
+);
+const phoneAuthAvailability = usePhoneAuthAvailability(phoneAuthPurpose);
 const router = useRouter();
 
 async function goToPassport() {

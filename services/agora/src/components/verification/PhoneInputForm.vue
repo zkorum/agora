@@ -1,55 +1,62 @@
 <template>
   <div class="container">
-    <div>{{ t("smsDescription") }}</div>
-
-    <ZKPhoneNumberInput
-      v-model="phoneData.phoneNumber"
-      v-model:country-code="phoneData.countryCode"
-      :success="phoneData.isValid"
-      :error="phoneData.hasError"
-      show-code-in-list
-      :placeholder="t('phoneNumberPlaceholder')"
-      required
-      auto-format="blur"
-      :validation-error="false"
-      aria-describedby="phone-error"
-      :on-update="onPhoneUpdate"
-      :on-country-code="onCountryCodeUpdate"
-      :on-keydown-enter="submit"
+    <PhoneAuthUnavailableNotice
+      v-if="!phoneAuthAvailability.available"
+      :reason="phoneAuthAvailability.reason"
     />
 
-    <div
-      v-if="
-        phoneData.hasError &&
-        phoneData.errorMessage &&
-        phoneData.hasAttemptedSubmission
-      "
-      id="phone-error"
-      class="error-message"
-      role="alert"
-      aria-live="polite"
-    >
-      <q-icon name="mdi-alert-circle" class="error-icon" />
-      <span>{{ phoneData.errorMessage }}</span>
-    </div>
+    <template v-else>
+      <div>{{ t("smsDescription") }}</div>
 
-    <div v-if="devAuthorizedNumbers.length > 0">
-      <div class="developmentSection">
-        <div>{{ t("developmentNumbers") }}</div>
+      <ZKPhoneNumberInput
+        v-model="phoneData.phoneNumber"
+        v-model:country-code="phoneData.countryCode"
+        :success="phoneData.isValid"
+        :error="phoneData.hasError"
+        show-code-in-list
+        :placeholder="t('phoneNumberPlaceholder')"
+        required
+        auto-format="blur"
+        :validation-error="false"
+        aria-describedby="phone-error"
+        :on-update="onPhoneUpdate"
+        :on-country-code="onCountryCodeUpdate"
+        :on-keydown-enter="submit"
+      />
 
-        <div
-          v-for="authorizedNumber in devAuthorizedNumbers"
-          :key="authorizedNumber.fullNumber"
-        >
-          <ZKGradientButton
-            :label="authorizedNumber.fullNumber"
-            label-color="#FFFFFF"
-            :style="{ width: '100%' }"
-            @click="injectDevelopmentNumber(authorizedNumber)"
-          />
+      <div
+        v-if="
+          phoneData.hasError &&
+          phoneData.errorMessage &&
+          phoneData.hasAttemptedSubmission
+        "
+        id="phone-error"
+        class="error-message"
+        role="alert"
+        aria-live="polite"
+      >
+        <q-icon name="mdi-alert-circle" class="error-icon" />
+        <span>{{ phoneData.errorMessage }}</span>
+      </div>
+
+      <div v-if="devAuthorizedNumbers.length > 0">
+        <div class="developmentSection">
+          <div>{{ t("developmentNumbers") }}</div>
+
+          <div
+            v-for="authorizedNumber in devAuthorizedNumbers"
+            :key="authorizedNumber.fullNumber"
+          >
+            <ZKGradientButton
+              :label="authorizedNumber.fullNumber"
+              label-color="#FFFFFF"
+              :style="{ width: '100%' }"
+              @click="injectDevelopmentNumber(authorizedNumber)"
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
@@ -62,16 +69,24 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { zodSupportedCountryCallingCode } from "src/shared/types/zod";
 import { isPhoneNumberTypeSupported } from "src/shared-app-api/phone";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
+import {
+  type PhoneAuthPurpose,
+  usePhoneAuthAvailability,
+} from "src/utils/auth/phoneAuthMode";
 import { processEnv } from "src/utils/processEnv";
 import { reactive, ref } from "vue";
 
 import ZKGradientButton from "../ui-library/ZKGradientButton.vue";
 import ZKPhoneNumberInput from "../ui-library/ZKPhoneNumberInput.vue";
+import PhoneAuthUnavailableNotice from "./PhoneAuthUnavailableNotice.vue";
 import {
   type PhoneInputFormTranslations,
   phoneInputFormTranslations,
 } from "./PhoneInputForm.i18n";
 
+const props = defineProps<{
+  purpose: PhoneAuthPurpose;
+}>();
 const emit = defineEmits<{
   submit: [];
 }>();
@@ -90,6 +105,7 @@ const phoneData = reactive({
 });
 
 const { verificationPhoneNumber } = storeToRefs(phoneVerificationStore());
+const phoneAuthAvailability = usePhoneAuthAvailability(() => props.purpose);
 
 interface PhoneNumber {
   fullNumber: string;
@@ -178,6 +194,10 @@ function injectDevelopmentNumber(phoneItem: PhoneNumber) {
 }
 
 function submit(): boolean {
+  if (!phoneAuthAvailability.value.available) {
+    return false;
+  }
+
   phoneData.hasAttemptedSubmission = true;
 
   if (!lastMazResults.value || !phoneData.phoneNumber) {

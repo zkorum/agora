@@ -42,9 +42,9 @@ const authenticateFailure200 = z.discriminatedUnion("reason", [
             success: z.literal(false),
             reason: z.enum([
                 "already_has_credential",
-                "associated_with_another_user",
                 "invalid_phone_number",
                 "restricted_phone_type",
+                "phone_auth_unavailable",
             ]),
         })
         .strict(),
@@ -61,7 +61,43 @@ export const authenticate200 = z.discriminatedUnion("success", [
     authenticateFailure200,
 ]);
 
+const verifyOtpFailureReasons = [
+    "expired_code",
+    "wrong_guess",
+    "already_has_credential",
+    "verification_failed",
+] as const;
+
 const verifyOtpFailure200 = z.discriminatedUnion("reason", [
+    z
+        .object({
+            success: z.literal(false),
+            reason: z.literal("too_many_wrong_guess"),
+            nextCodeSoonestTime: zodDateTimeFlexible,
+        })
+        .strict(),
+    z
+        .object({
+            success: z.literal(false),
+            reason: z.enum(verifyOtpFailureReasons),
+        })
+        .strict(),
+]);
+
+const verifyOtpSuccess200 = z
+    .object({
+        success: z.literal(true),
+        accountMerged: z.boolean(),
+        userId: zodUserId,
+    })
+    .strict();
+
+export const verifyOtp200 = z.discriminatedUnion("success", [
+    verifyOtpSuccess200,
+    verifyOtpFailure200,
+]);
+
+const verifyPhoneOtpFailure200 = z.discriminatedUnion("reason", [
     z
         .object({
             success: z.literal(false),
@@ -76,22 +112,17 @@ const verifyOtpFailure200 = z.discriminatedUnion("reason", [
                 "expired_code",
                 "wrong_guess",
                 "already_has_credential",
-                "associated_with_another_user",
-                "auth_state_changed", // Added: auth type changed during OTP flow
+                "verification_failed",
+                "phone_auth_unavailable",
+                "phone_registration_unavailable",
             ]),
         })
         .strict(),
 ]);
 
-export const verifyOtp200 = z.discriminatedUnion("success", [
-    z
-        .object({
-            success: z.literal(true),
-            accountMerged: z.boolean(), // true when guest merged into verified, false otherwise
-            userId: z.string(), // User ID (for tracking account merges in frontend)
-        })
-        .strict(),
-    verifyOtpFailure200,
+export const verifyPhoneOtp200 = z.discriminatedUnion("success", [
+    verifyOtpSuccess200,
+    verifyPhoneOtpFailure200,
 ]);
 
 export const authenticateEmailRequestBody = z
@@ -119,7 +150,6 @@ const authenticateEmailFailure200 = z.discriminatedUnion("reason", [
             success: z.literal(false),
             reason: z.enum([
                 "already_has_credential",
-                "associated_with_another_user",
                 "unreachable",
                 "disposable",
             ]),
@@ -151,6 +181,7 @@ export type AuthenticateRequestBody = z.infer<typeof authenticateRequestBody>;
 export type VerifyOtpReqBody = z.infer<typeof verifyOtpReqBody>;
 export type AuthenticateResponse = z.infer<typeof authenticate200>;
 export type VerifyOtp200 = z.infer<typeof verifyOtp200>;
+export type VerifyPhoneOtp200 = z.infer<typeof verifyPhoneOtp200>;
 export type IsLoggedInResponse = z.infer<typeof isLoggedInResponse>;
 export type AuthenticateEmailRequestBody = z.infer<
     typeof authenticateEmailRequestBody

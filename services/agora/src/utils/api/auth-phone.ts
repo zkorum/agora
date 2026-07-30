@@ -7,8 +7,8 @@ import {
 import {
   authenticate200,
   type AuthenticateResponse,
-  type VerifyOtp200,
-  verifyOtp200,
+  type VerifyPhoneOtp200,
+  verifyPhoneOtp200,
 } from "src/shared/types/dto-auth";
 import type { SupportedCountryCallingCode } from "src/shared/types/zod";
 import { processEnv } from "src/utils/processEnv";
@@ -77,7 +77,7 @@ export function useAuthPhoneApi() {
     }
   }
 
-  type VerifyPhoneOtpSuccessResponse = AxiosSuccessResponse<VerifyOtp200>;
+  type VerifyPhoneOtpSuccessResponse = AxiosSuccessResponse<VerifyPhoneOtp200>;
 
   type VerifyPhoneOtpResponse =
     | VerifyPhoneOtpSuccessResponse
@@ -89,9 +89,8 @@ export function useAuthPhoneApi() {
     defaultCallingCode,
   }: VerifyPhoneOtpProps): Promise<VerifyPhoneOtpResponse> {
     const authorizedPhones =
-      processEnv.VITE_DEV_AUTHORIZED_PHONES?.split(",").map((p) =>
-        p.trim()
-      ) ?? [];
+      processEnv.VITE_DEV_AUTHORIZED_PHONES?.split(",").map((p) => p.trim()) ??
+      [];
     if (authorizedPhones.includes(phoneNumber)) {
       code = 0;
     }
@@ -115,7 +114,7 @@ export function useAuthPhoneApi() {
       );
       return {
         status: "success",
-        data: verifyOtp200.parse(response.data),
+        data: verifyPhoneOtp200.parse(response.data),
       };
     } catch (error) {
       return createAxiosErrorResponse(error);

@@ -2,15 +2,8 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface PhoneOnboardingTranslations {
   pageTitle: string;
-  smsDescription: string;
-  phoneNumberPlaceholder: string;
   preferPrivateLogin: string;
   preferEmailLogin: string;
-  developmentNumbers: string;
-  pleaseEnterValidPhone: string;
-  countryNotSupported: string;
-  phoneTypeNotSupported: string;
-  pleaseEnterPhoneNumber: string;
   alreadyHasPhone: string;
   throttled: string;
   invalidPhoneNumber: string;
@@ -25,15 +18,8 @@ export const phoneOnboardingTranslations: Record<
 > = {
   en: {
     pageTitle: "Verify with phone number",
-    smsDescription: "You will receive a 6-digit one-time code by SMS",
-    phoneNumberPlaceholder: "Phone number",
     preferPrivateLogin: "I'd prefer to login with complete privacy",
     preferEmailLogin: "I prefer to use my email address",
-    developmentNumbers: "Development Numbers:",
-    pleaseEnterValidPhone: "Please enter a valid phone number",
-    countryNotSupported: "This country is not supported yet",
-    phoneTypeNotSupported: "This phone number type is not supported",
-    pleaseEnterPhoneNumber: "Please enter a phone number",
     alreadyHasPhone: "You already have a phone number linked to your account",
     throttled: "Too many attempts—please wait before trying again",
     invalidPhoneNumber:
@@ -46,38 +32,22 @@ export const phoneOnboardingTranslations: Record<
   },
   ar: {
     pageTitle: "التحقق برقم الهاتف",
-    smsDescription: "ستتلقى رمزًا مكوّنًا من 6 أرقام لمرة واحدة عبر رسالة نصية",
-    phoneNumberPlaceholder: "رقم الهاتف",
     preferPrivateLogin: "أفضل تسجيل الدخول بخصوصية تامة",
     preferEmailLogin: "أفضل استخدام بريدي الإلكتروني",
-    developmentNumbers: "أرقام للاختبار:",
-    pleaseEnterValidPhone: "الرجاء إدخال رقم هاتف صالح",
-    countryNotSupported: "هذا البلد غير مدعوم بعد",
-    phoneTypeNotSupported: "نوع رقم الهاتف هذا غير مدعوم",
-    pleaseEnterPhoneNumber: "الرجاء إدخال رقم هاتف",
     alreadyHasPhone: "لديك بالفعل رقم هاتف مرتبط بحسابك",
     throttled: "محاولات كثيرة جداً—يرجى الانتظار قبل المحاولة مرة أخرى",
     invalidPhoneNumber:
       "عذراً، رقم الهاتف هذا غير صالح. يرجى التحقق والمحاولة مرة أخرى.",
     restrictedPhoneType:
       "عذراً، رقم الهاتف هذا غير مدعوم لأسباب أمنية. يرجى تجربة رقم آخر.",
-    credentialAlreadyLinked:
-      "رقم الهاتف هذا مرتبط بالفعل بحساب آخر",
+    credentialAlreadyLinked: "رقم الهاتف هذا مرتبط بالفعل بحساب آخر",
     somethingWrong: "عفواً! حدث خطأ—يرجى المحاولة مرة أخرى",
   },
   es: {
     pageTitle: "Verificar con número de teléfono",
-    smsDescription: "Recibirá un código de un solo uso de 6 dígitos por SMS",
-    phoneNumberPlaceholder: "Número de teléfono",
     preferPrivateLogin: "Prefiero iniciar sesión con privacidad completa",
     preferEmailLogin: "Prefiero usar mi correo electrónico",
-    developmentNumbers: "Números de desarrollo:",
-    pleaseEnterValidPhone: "Por favor, ingrese un número de teléfono válido",
-    countryNotSupported: "Este país aún no es compatible",
-    phoneTypeNotSupported: "Este tipo de número de teléfono no es compatible",
-    pleaseEnterPhoneNumber: "Por favor, ingrese un número de teléfono",
-    alreadyHasPhone:
-      "Ya tienes un número de teléfono vinculado a tu cuenta",
+    alreadyHasPhone: "Ya tienes un número de teléfono vinculado a tu cuenta",
     throttled:
       "Demasiados intentos—por favor, espere antes de intentar de nuevo",
     invalidPhoneNumber:
@@ -90,15 +60,8 @@ export const phoneOnboardingTranslations: Record<
   },
   fa: {
     pageTitle: "تأیید هویت با شماره تلفن",
-    smsDescription: "یک کد یک‌بار مصرف ۶ رقمی از طریق پیامک دریافت خواهید کرد",
-    phoneNumberPlaceholder: "شماره تلفن",
     preferPrivateLogin: "ترجیح می‌دهم با حریم خصوصی کامل وارد شوم",
     preferEmailLogin: "ترجیح می‌دهم از آدرس ایمیل خود استفاده کنم",
-    developmentNumbers: "شماره‌های توسعه:",
-    pleaseEnterValidPhone: "لطفاً یک شماره تلفن معتبر وارد کنید",
-    countryNotSupported: "این کشور هنوز پشتیبانی نمی‌شود",
-    phoneTypeNotSupported: "این نوع شماره تلفن پشتیبانی نمی‌شود",
-    pleaseEnterPhoneNumber: "لطفاً یک شماره تلفن وارد کنید",
     alreadyHasPhone: "قبلاً یک شماره تلفن به حساب شما متصل شده است",
     throttled: "تعداد تلاش‌ها بیش از حد—لطفاً قبل از تلاش مجدد صبر کنید",
     invalidPhoneNumber:
@@ -111,42 +74,24 @@ export const phoneOnboardingTranslations: Record<
   },
   he: {
     pageTitle: "אימות עם מספר טלפון",
-    smsDescription: "תקבלו קוד חד-פעמי בן 6 ספרות ב-SMS",
-    phoneNumberPlaceholder: "מספר טלפון",
     preferPrivateLogin: "אני מעדיף/ה להתחבר עם פרטיות מלאה",
     preferEmailLogin: "אני מעדיף/ה להשתמש בכתובת האימייל שלי",
-    developmentNumbers: "מספרי פיתוח:",
-    pleaseEnterValidPhone: "אנא הזינו מספר טלפון תקין",
-    countryNotSupported: "מדינה זו אינה נתמכת עדיין",
-    phoneTypeNotSupported: "סוג מספר טלפון זה אינו נתמך",
-    pleaseEnterPhoneNumber: "אנא הזינו מספר טלפון",
     alreadyHasPhone: "מספר טלפון כבר מקושר לחשבון שלכם",
     throttled: "יותר מדי ניסיונות—אנא המתינו לפני ניסיון נוסף",
     invalidPhoneNumber:
       "מצטערים, מספר טלפון זה אינו תקין. אנא בדקו ונסו שוב.",
     restrictedPhoneType:
       "מצטערים, מספר טלפון זה אינו נתמך מסיבות אבטחה. אנא נסו מספר אחר.",
-    credentialAlreadyLinked:
-      "מספר טלפון זה כבר מקושר לחשבון אחר",
+    credentialAlreadyLinked: "מספר טלפון זה כבר מקושר לחשבון אחר",
     somethingWrong: "אופס! משהו השתבש—אנא נסו שוב",
   },
   fr: {
     pageTitle: "Vérifier avec le numéro de téléphone",
-    smsDescription:
-      "Vous recevrez un code à usage unique de 6 chiffres par SMS",
-    phoneNumberPlaceholder: "Numéro de téléphone",
     preferPrivateLogin: "Je préfère me connecter en toute confidentialité",
     preferEmailLogin: "Je préfère utiliser mon adresse e-mail",
-    developmentNumbers: "Numéros de Développement :",
-    pleaseEnterValidPhone: "Veuillez saisir un numéro de téléphone valide",
-    countryNotSupported: "Ce pays n'est pas encore pris en charge",
-    phoneTypeNotSupported:
-      "Ce type de numéro de téléphone n'est pas pris en charge",
-    pleaseEnterPhoneNumber: "Veuillez saisir un numéro de téléphone",
     alreadyHasPhone:
       "Un numéro de téléphone est déjà associé à votre compte",
-    throttled:
-      "Trop de tentatives—veuillez attendre avant de réessayer",
+    throttled: "Trop de tentatives—veuillez attendre avant de réessayer",
     invalidPhoneNumber:
       "Désolé, ce numéro de téléphone est invalide. Veuillez vérifier et réessayer.",
     restrictedPhoneType:
@@ -157,15 +102,8 @@ export const phoneOnboardingTranslations: Record<
   },
   "zh-Hans": {
     pageTitle: "使用手机号验证",
-    smsDescription: "您将收到一个6位一次性验证码",
-    phoneNumberPlaceholder: "手机号",
     preferPrivateLogin: "我更喜欢完全私密的登录",
     preferEmailLogin: "我更想用邮箱",
-    developmentNumbers: "开发号码：",
-    pleaseEnterValidPhone: "请输入有效的手机号",
-    countryNotSupported: "此国家暂不支持",
-    phoneTypeNotSupported: "此手机号类型暂不支持",
-    pleaseEnterPhoneNumber: "请输入手机号",
     alreadyHasPhone: "您的账户已关联手机号码",
     throttled: "尝试次数过多—请稍后再试",
     invalidPhoneNumber: "抱歉，这个手机号无效。请检查并重试。",
@@ -175,15 +113,8 @@ export const phoneOnboardingTranslations: Record<
   },
   "zh-Hant": {
     pageTitle: "使用手機號驗證",
-    smsDescription: "您將收到一個6位一次性驗證碼",
-    phoneNumberPlaceholder: "手機號",
     preferPrivateLogin: "我更喜歡完全私密的登入",
     preferEmailLogin: "我更想用郵箱",
-    developmentNumbers: "開發號碼：",
-    pleaseEnterValidPhone: "請輸入有效的手機號",
-    countryNotSupported: "此國家暫不支持",
-    phoneTypeNotSupported: "此手機號類型暫不支持",
-    pleaseEnterPhoneNumber: "請輸入手機號",
     alreadyHasPhone: "您的帳戶已關聯手機號碼",
     throttled: "嘗試次數過多—請稍後再試",
     invalidPhoneNumber: "抱歉，這個手機號無效。請檢查後重試。",
@@ -193,15 +124,8 @@ export const phoneOnboardingTranslations: Record<
   },
   ja: {
     pageTitle: "携帯電話で検証",
-    smsDescription: "6桁の1回限りの検証コードをSMSで受信します",
-    phoneNumberPlaceholder: "携帯電話番号",
     preferPrivateLogin: "完全なプライバシーでログインしたい",
     preferEmailLogin: "メールアドレスを使いたい",
-    developmentNumbers: "開発番号：",
-    pleaseEnterValidPhone: "有効な電話番号を入力してください",
-    countryNotSupported: "この国はまだサポートされていません",
-    phoneTypeNotSupported: "この電話番号のタイプはまだサポートされていません",
-    pleaseEnterPhoneNumber: "電話番号を入力してください",
     alreadyHasPhone: "アカウントにはすでに電話番号がリンクされています",
     throttled: "試行回数が多すぎます—もう一度試す前にお待ちください",
     invalidPhoneNumber:
@@ -214,16 +138,10 @@ export const phoneOnboardingTranslations: Record<
   },
   ky: {
     pageTitle: "Телефон номери менен текшерүү",
-    smsDescription: "Сиз SMS аркылуу 6 орундуу бир жолку код аласыз",
-    phoneNumberPlaceholder: "Телефон номери",
     preferPrivateLogin: "Толук купуялуулук менен кирүүнү каалайм",
     preferEmailLogin: "Электрондук почтамды колдонгум келет",
-    developmentNumbers: "Иштеп чыгуу номерлери:",
-    pleaseEnterValidPhone: "Жарактуу телефон номерин киргизиңиз",
-    countryNotSupported: "Бул өлкө азырынча колдоого алынбайт",
-    phoneTypeNotSupported: "Бул телефон номеринин түрү колдоого алынбайт",
-    pleaseEnterPhoneNumber: "Телефон номерин киргизиңиз",
-    alreadyHasPhone: "Каттоо эсебиңизге телефон номери мурунтан эле байланышкан",
+    alreadyHasPhone:
+      "Каттоо эсебиңизге телефон номери мурунтан эле байланышкан",
     throttled: "Аракеттер өтө көп—кайра аракет кылуудан мурун күтүңүз",
     invalidPhoneNumber:
       "Кечиресиз, бул телефон номери жараксыз. Текшерип, кайра аракет кылыңыз.",
@@ -235,15 +153,8 @@ export const phoneOnboardingTranslations: Record<
   },
   ru: {
     pageTitle: "Верификация по номеру телефона",
-    smsDescription: "Вы получите одноразовый 6-значный код по SMS",
-    phoneNumberPlaceholder: "Номер телефона",
     preferPrivateLogin: "Предпочитаю вход с полной конфиденциальностью",
     preferEmailLogin: "Предпочитаю использовать электронную почту",
-    developmentNumbers: "Тестовые номера:",
-    pleaseEnterValidPhone: "Пожалуйста, введите корректный номер телефона",
-    countryNotSupported: "Эта страна пока не поддерживается",
-    phoneTypeNotSupported: "Этот тип номера телефона не поддерживается",
-    pleaseEnterPhoneNumber: "Пожалуйста, введите номер телефона",
     alreadyHasPhone: "К вашему аккаунту уже привязан номер телефона",
     throttled: "Слишком много попыток — подождите перед повторной попыткой",
     invalidPhoneNumber:

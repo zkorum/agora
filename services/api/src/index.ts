@@ -10,6 +10,7 @@ import {
     verifyOtpReqBody,
     authenticate200,
     verifyOtp200,
+    verifyPhoneOtp200,
     authenticateEmailRequestBody,
     authenticateEmail200,
     verifyEmailOtpReqBody,
@@ -17,6 +18,7 @@ import {
     type AuthenticateResponse,
     type AuthenticateEmailResponse,
     type VerifyOtp200,
+    type VerifyPhoneOtp200,
 } from "@/shared/types/dto-auth.js";
 import { normalizeEmail } from "@/shared/types/zod-email.js";
 import fastifyAuth from "@fastify/auth";
@@ -43,7 +45,13 @@ import {
 import fs from "fs";
 import { Transform } from "node:stream";
 import type { z } from "zod";
-import { config, log, server } from "./app.js";
+import {
+    config,
+    log,
+    phoneAuthConfig,
+    server,
+    type PhoneAuthConfig,
+} from "./app.js";
 import * as authService from "@/service/auth.js";
 import * as authUtilService from "@/service/authUtil.js";
 import * as csvImportService from "@/service/csvImport.js";
@@ -305,14 +313,6 @@ await server.register(fastifySSE as any);
 server.setValidatorCompiler(validatorCompiler);
 server.setSerializerCompiler(serializerCompiler);
 
-const speciallyAuthorizedPhones: string[] =
-    config.NODE_ENV === "production"
-        ? []
-        : config.SPECIALLY_AUTHORIZED_PHONES !== undefined &&
-            config.SPECIALLY_AUTHORIZED_PHONES.length !== 0
-          ? config.SPECIALLY_AUTHORIZED_PHONES.replace(/\s/g, "").split(",")
-          : [];
-
 const speciallyAuthorizedEmails: string[] =
     config.NODE_ENV === "production"
         ? []
@@ -338,7 +338,6 @@ log.info(
         : "[API] Reacher email verification disabled (REACHER_BASE_URL not set)",
 );
 
-const mustSendActualSms = config.NODE_ENV === "production";
 const isImportDisabled = config.IMPORT_BUFFER_MAX_BATCH_SIZE === 0;
 const maxdiffConnectorRateLimitConfig = {
     max: 10,
@@ -353,22 +352,27 @@ const githubWebhookRateLimitConfig = {
 const CONTENT_TRANSLATION_USER_RATE_LIMIT_MAX = 20;
 const CONTENT_TRANSLATION_USER_RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
-let twilioClient: twilio.Twilio | undefined;
-if (mustSendActualSms) {
-    if (
-        config.TWILIO_AUTH_TOKEN === undefined ||
-        config.TWILIO_ACCOUNT_SID === undefined ||
-        config.TWILIO_SERVICE_SID === undefined
-    ) {
-        log.error("Twilio configuration must be set for SMS to be sent");
-        process.exit(1);
-    } else {
-        twilioClient = twilio(
-            config.TWILIO_ACCOUNT_SID,
-            config.TWILIO_AUTH_TOKEN,
-        );
+function initializePhoneAuth(config: PhoneAuthConfig): authService.PhoneAuth {
+    if (config.mode === "disabled") {
+        return config;
     }
+    if (config.delivery.type === "local") {
+        return {
+            mode: config.mode,
+            delivery: config.delivery,
+        };
+    }
+    return {
+        mode: config.mode,
+        delivery: {
+            type: "twilio",
+            client: twilio(config.delivery.accountSid, config.delivery.authToken),
+            serviceSid: config.delivery.serviceSid,
+        },
+    };
 }
+
+const phoneAuth = initializePhoneAuth(phoneAuthConfig);
 
 // GitHub integration: webhook secret and access token must both be set or both unset
 const hasGitHubWebhookSecret = config.GITHUB_WEBHOOK_SECRET !== undefined;
@@ -1678,14 +1682,7 @@ server.after(() => {
                 return await authService.authenticateAttempt({
                     db,
                     now,
-                    twilioClient,
-                    twilioServiceSid: config.TWILIO_SERVICE_SID,
-                    doUseTestCode:
-                        !mustSendActualSms &&
-                        speciallyAuthorizedPhones.includes(
-                            request.body.phoneNumber,
-                        ),
-                    testCode: config.TEST_CODE,
+                    phoneAuth,
                     authenticateRequestBody: request.body,
                     minutesBeforeSmsCodeExpiry:
                         config.MINUTES_BEFORE_SMS_OTP_EXPIRY,
@@ -1709,7 +1706,7 @@ server.after(() => {
         schema: {
             body: verifyOtpReqBody,
             response: {
-                200: verifyOtp200,
+                200: verifyPhoneOtp200,
             },
         },
         handler: async (request) => {
@@ -1720,7 +1717,7 @@ server.after(() => {
                     expectedDeviceStatus: undefined,
                 },
             );
-            async function doVerifyPhoneOtp(): Promise<VerifyOtp200> {
+            async function doVerifyPhoneOtp(): Promise<VerifyPhoneOtp200> {
                 if (
                     deviceStatus.isLoggedIn &&
                     deviceStatus.credentials.phone !== null
@@ -1739,8 +1736,7 @@ server.after(() => {
                     code: request.body.code,
                     phoneNumber: request.body.phoneNumber,
                     defaultCallingCode: request.body.defaultCallingCode,
-                    twilioClient: twilioClient,
-                    twilioServiceSid: config.TWILIO_SERVICE_SID,
+                    phoneAuth,
                     peppers: config.PEPPERS,
                     sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
                     currentDisplayLanguage: getRequestDisplayLanguage({

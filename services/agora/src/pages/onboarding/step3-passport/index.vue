@@ -27,6 +27,7 @@
 
             <div class="alternativeLogins">
               <ZKButton
+                v-if="phoneAuthAvailability.available"
                 button-type="largeButton"
                 :label="t('preferPhoneVerification')"
                 text-color="primary"
@@ -58,7 +59,12 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import RarimoVerificationForm from "src/components/verification/RarimoVerificationForm.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import {
+  usePhoneAuthAvailability,
+} from "src/utils/auth/phoneAuthMode";
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -72,7 +78,18 @@ const { t } = useComponentI18n<PassportOnboardingTranslations>(
 
 const router = useRouter();
 
-const { credentialUpgradeTarget } = storeToRefs(onboardingFlowStore());
+const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+const { credentialUpgradeTarget, onboardingMode } = storeToRefs(
+  onboardingFlowStore()
+);
+const phoneAuthPurpose = computed(() =>
+  isLoggedIn.value
+    ? "credential"
+    : onboardingMode.value === "SIGNUP"
+      ? "registration"
+      : "login"
+);
+const phoneAuthAvailability = usePhoneAuthAvailability(phoneAuthPurpose);
 
 async function goToPhoneVerification() {
   await router.replace({ name: "/onboarding/step3-phone-1/" });
