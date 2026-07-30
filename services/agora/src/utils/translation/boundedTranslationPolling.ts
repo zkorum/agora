@@ -11,7 +11,7 @@ export function useBoundedTranslationPolling({
   maxDurationMs: number;
   maxConsecutiveRequestFailures?: number;
   onRequestFailureLimit?: () => void;
-  onTimeout: () => void;
+  onTimeout?: () => void;
 }) {
   const isActive = ref(false);
   let consecutiveRequestFailures = 0;
@@ -43,7 +43,7 @@ export function useBoundedTranslationPolling({
     stopTimeout = setTimeout(() => {
       stopTimeout = undefined;
       isActive.value = false;
-      onTimeout();
+      onTimeout?.();
     }, maxDurationMs);
   }
 

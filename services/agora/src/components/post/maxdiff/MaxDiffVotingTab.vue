@@ -708,22 +708,25 @@ watch(
   { immediate: true }
 );
 
-// Detect truncated candidate cards after DOM updates
+const canRefreshCandidateItemSnapshot = computed(
+  () =>
+    !isInitializingEngine.value &&
+    !isTransitioning.value &&
+    selectedBest.value === null &&
+    selectedWorst.value === null
+);
+
+// Keep wording stable during a choice, then apply current content before the next one.
 watch(
-  candidates,
-  () => {
-    updateCandidateItemSnapshot();
-    void nextTick(checkTruncation);
+  [candidates, itemBySlugId, canRefreshCandidateItemSnapshot],
+  ([, , canRefresh]) => {
+    if (canRefresh) {
+      updateCandidateItemSnapshot();
+      void nextTick(checkTruncation);
+    }
   },
   { immediate: true }
 );
-
-watch(itemBySlugId, () => {
-  if (candidateResolutionError.value && !isInitializingEngine.value) {
-    updateCandidateItemSnapshot();
-    void nextTick(checkTruncation);
-  }
-});
 
 async function retryInitialize(): Promise<void> {
   isInitializingEngine.value = true;

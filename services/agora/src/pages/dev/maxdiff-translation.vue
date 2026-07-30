@@ -8,9 +8,9 @@
       <q-card-section>
         <div class="section-title">Controls</div>
         <p class="section-copy">
-          Use this page to test per-item ranking translation display. Complete the
-          background translation and verify the active voting cards stay frozen
-          until you move to another candidate set.
+          Use this page to test per-item ranking translation display. Complete
+          the background translation and verify idle voting cards update
+          immediately.
         </p>
         <div class="control-row">
           <q-btn
@@ -19,12 +19,6 @@
             :label="translationCompleted ? 'Translation completed' : 'Complete background translation'"
             :disable="translationCompleted"
             @click="completeTranslation"
-          />
-          <q-btn
-            flat
-            color="primary"
-            label="Next / undo candidate set"
-            @click="refreshCandidateSet"
           />
           <q-btn flat label="Reset" @click="resetScenario" />
         </div>
@@ -35,9 +29,9 @@
       <q-card-section>
         <div class="section-title">Active MaxDiff round snapshot</div>
         <p class="section-copy">
-          These cards use the same snapshot helper as active MaxDiff voting. They
-          do not change when background translation completes; they refresh when
-          the candidate set changes.
+          These cards use the same snapshot helper as active MaxDiff voting.
+          They refresh when background translation completes while no choice is
+          active.
         </p>
         <div class="candidate-grid">
           <button
@@ -111,7 +105,7 @@ import {
   type MaxDiffCandidateDisplayItem,
 } from "src/utils/maxdiffCandidateDisplay";
 import { getRankingItemDisplayText } from "src/utils/translation/rankingItemDisplayText";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 
 const { isActive } = usePageLayout({
   enableFooter: false,
@@ -219,7 +213,7 @@ function getDisplayContent({
   };
 }
 
-function refreshCandidateSet(): void {
+function refreshCandidateSnapshot(): void {
   candidateSnapshot.value = createMaxDiffCandidateDisplaySnapshot({
     candidateSlugIds,
     itemBySlugId: liveItemBySlugId.value,
@@ -232,7 +226,6 @@ function completeTranslation(): void {
 
 function resetScenario(): void {
   translationCompleted.value = false;
-  refreshCandidateSet();
 }
 
 function openDialog(itemSlugId: string): void {
@@ -244,7 +237,7 @@ function noop(): void {
   // no-op for dev page callbacks
 }
 
-refreshCandidateSet();
+watch(liveItemBySlugId, refreshCandidateSnapshot, { immediate: true });
 </script>
 
 <style scoped lang="scss">

@@ -64,4 +64,23 @@ describe("useBoundedTranslationPolling", () => {
     expect(onRequestFailureLimit).not.toHaveBeenCalled();
     scope.stop();
   });
+
+  it("can stop at the duration bound without a timeout callback", () => {
+    vi.useFakeTimers();
+    const scope = effectScope();
+    const polling = scope.run(() =>
+      useBoundedTranslationPolling({
+        intervalMs: 500,
+        maxDurationMs: 30_000,
+      })
+    );
+
+    expect(polling).toBeDefined();
+    if (polling === undefined) return;
+    polling.start();
+
+    expect(() => vi.advanceTimersByTime(30_000)).not.toThrow();
+    expect(polling.isActive.value).toBe(false);
+    scope.stop();
+  });
 });
