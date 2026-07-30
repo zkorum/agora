@@ -183,6 +183,7 @@ const languageOptions = computed<readonly ProjectLanguageOption[]>(() => [
 
 const project = computed<ProjectPageData>(() => ({
   slug: "voices-for-change",
+  dynamicTranslationEnabled: true,
   displayContent: {
     sourceVersion: "00000000-0000-4000-8000-000000000201",
     status: "available",

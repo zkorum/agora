@@ -599,6 +599,7 @@ const baseAttributions = [
 
 const baseProject = {
   slug: "amplify-civil-society-kyrgyzstan",
+  dynamicTranslationEnabled: true,
   bannerVariant: "blue",
   bannerImageUrl: projectBannerImageUrlsByLanguage.en,
 } satisfies BaseDevProjectData;

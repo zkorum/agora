@@ -31,7 +31,6 @@ import { isNetworkOffline } from "./composables/useNetworkStatus";
 import { useRealtimeSSE } from "./composables/useRealtimeSSE";
 import { useZupassVerification } from "./composables/zupass/useZupassVerification";
 import PersistentLayout from "./layouts/PersistentLayout.vue";
-import { ZodSupportedDisplayLanguageCodes } from "./shared/languages";
 import {
   buildContentTranslationTopic,
   buildProjectContentTranslationTopic,
@@ -96,13 +95,10 @@ const realtimeTopics = computed(() => {
   const projectSlug = realtimeProjectSlug.value;
   if (projectSlug !== undefined) {
     topics.push(
-      ...ZodSupportedDisplayLanguageCodes.options.map(
-        (languageCode) =>
-          buildProjectContentTranslationTopic({
-            projectSlug,
-            targetLanguageCode: languageCode,
-          })
-      )
+      buildProjectContentTranslationTopic({
+        projectSlug,
+        targetLanguageCode: languageStore.displayLanguage,
+      })
     );
   }
 

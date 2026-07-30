@@ -33,6 +33,7 @@ export interface ProjectPageTranslations {
   languageSearchPlaceholder: string;
   languageNoResults: string;
   languageSupportedByProject: string;
+  languageSupportedByConversation: string;
   bannerImageAlt: string;
   liveConsultation: string;
   closedConsultation: string;
@@ -81,6 +82,7 @@ export const projectPageTranslations: Readonly<
     languageSearchPlaceholder: "Search languages",
     languageNoResults: "No matching languages",
     languageSupportedByProject: "Supported by this project",
+    languageSupportedByConversation: "Supported by this conversation",
     bannerImageAlt: "{title} banner",
     liveConsultation: "Live consultation",
     closedConsultation: "Closed consultation",
@@ -126,6 +128,7 @@ export const projectPageTranslations: Readonly<
     languageSearchPlaceholder: "Buscar idiomas",
     languageNoResults: "No hay idiomas coincidentes",
     languageSupportedByProject: "Compatible con este proyecto",
+    languageSupportedByConversation: "Compatible con esta conversación",
     bannerImageAlt: "Banner de {title}",
     liveConsultation: "Consulta en directo",
     closedConsultation: "Consulta cerrada",
@@ -171,6 +174,7 @@ export const projectPageTranslations: Readonly<
     languageSearchPlaceholder: "Rechercher des langues",
     languageNoResults: "Aucune langue correspondante",
     languageSupportedByProject: "Prise en charge par ce projet",
+    languageSupportedByConversation: "Prise en charge par cette conversation",
     bannerImageAlt: "Bannière de {title}",
     liveConsultation: "Consultation en direct",
     closedConsultation: "Consultation terminée",
@@ -216,6 +220,7 @@ export const projectPageTranslations: Readonly<
     languageSearchPlaceholder: "搜索语言",
     languageNoResults: "没有匹配的语言",
     languageSupportedByProject: "此项目支持",
+    languageSupportedByConversation: "此对话支持",
     bannerImageAlt: "{title} 横幅",
     liveConsultation: "进行中的咨询",
     closedConsultation: "已结束的咨询",
@@ -260,6 +265,7 @@ export const projectPageTranslations: Readonly<
     languageSearchPlaceholder: "搜尋語言",
     languageNoResults: "沒有相符的語言",
     languageSupportedByProject: "此專案支援",
+    languageSupportedByConversation: "此對話支援",
     bannerImageAlt: "{title} 橫幅",
     liveConsultation: "進行中的諮詢",
     closedConsultation: "已結束的諮詢",
@@ -304,6 +310,7 @@ export const projectPageTranslations: Readonly<
     languageSearchPlaceholder: "言語を検索",
     languageNoResults: "一致する言語はありません",
     languageSupportedByProject: "このプロジェクトで対応",
+    languageSupportedByConversation: "この会話で対応",
     bannerImageAlt: "{title} のバナー",
     liveConsultation: "進行中の協議",
     closedConsultation: "終了した協議",
@@ -349,6 +356,7 @@ export const projectPageTranslations: Readonly<
     languageSearchPlaceholder: "البحث عن اللغات",
     languageNoResults: "لا توجد لغات مطابقة",
     languageSupportedByProject: "مدعومة من هذا المشروع",
+    languageSupportedByConversation: "مدعومة من هذه المحادثة",
     bannerImageAlt: "لافتة {title}",
     liveConsultation: "استشارة مباشرة",
     closedConsultation: "استشارة مغلقة",
@@ -393,6 +401,7 @@ export const projectPageTranslations: Readonly<
     languageSearchPlaceholder: "جستجوی زبان‌ها",
     languageNoResults: "هیچ زبان مطابقی پیدا نشد",
     languageSupportedByProject: "پشتیبانی‌شده توسط این پروژه",
+    languageSupportedByConversation: "پشتیبانی‌شده توسط این گفت‌وگو",
     bannerImageAlt: "بنر {title}",
     liveConsultation: "مشاوره زنده",
     closedConsultation: "مشاوره بسته‌شده",
@@ -437,6 +446,7 @@ export const projectPageTranslations: Readonly<
     languageSearchPlaceholder: "חיפוש שפות",
     languageNoResults: "לא נמצאו שפות מתאימות",
     languageSupportedByProject: "נתמך על ידי הפרויקט הזה",
+    languageSupportedByConversation: "נתמך על ידי השיחה הזו",
     bannerImageAlt: "באנר של {title}",
     liveConsultation: "התייעצות פעילה",
     closedConsultation: "התייעצות סגורה",
@@ -481,6 +491,7 @@ export const projectPageTranslations: Readonly<
     languageSearchPlaceholder: "Тилдерди издөө",
     languageNoResults: "Дал келген тилдер жок",
     languageSupportedByProject: "Бул долбоор колдойт",
+    languageSupportedByConversation: "Бул талкуу колдойт",
     bannerImageAlt: "{title} баннери",
     liveConsultation: "Жандуу консультация",
     closedConsultation: "Жабылган консультация",
@@ -525,6 +536,7 @@ export const projectPageTranslations: Readonly<
     languageSearchPlaceholder: "Поиск языков",
     languageNoResults: "Подходящие языки не найдены",
     languageSupportedByProject: "Поддерживается этим проектом",
+    languageSupportedByConversation: "Поддерживается этим обсуждением",
     bannerImageAlt: "Баннер: {title}",
     liveConsultation: "Живая консультация",
     closedConsultation: "Закрытая консультация",

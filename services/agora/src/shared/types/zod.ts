@@ -352,6 +352,7 @@ export const zodContentTranslationSubject = z.discriminatedUnion("kind", [
         .object({
             kind: z.literal("project"),
             projectSlug: zodProjectSlug,
+            sourceVersion: z.uuid(),
         })
         .strict(),
     z

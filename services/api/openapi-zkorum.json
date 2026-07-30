@@ -3128,6 +3128,9 @@
                                                         }
                                                     ]
                                                 },
+                                                "dynamicTranslationEnabled": {
+                                                    "type": "boolean"
+                                                },
                                                 "bannerVariant": {
                                                     "type": "string",
                                                     "enum": [
@@ -3251,6 +3254,7 @@
                                             "required": [
                                                 "slug",
                                                 "displayContent",
+                                                "dynamicTranslationEnabled",
                                                 "bannerVariant",
                                                 "participantCount",
                                                 "voteCount",
@@ -4742,6 +4746,10 @@
                                         "maxLength": 65,
                                         "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                                     },
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    },
                                     "sourceVersion": {
                                         "type": "string",
                                         "format": "uuid",
@@ -5314,6 +5322,9 @@
                                                         }
                                                     ]
                                                 },
+                                                "dynamicTranslationEnabled": {
+                                                    "type": "boolean"
+                                                },
                                                 "bannerVariant": {
                                                     "type": "string",
                                                     "enum": [
@@ -5437,6 +5448,7 @@
                                             "required": [
                                                 "slug",
                                                 "displayContent",
+                                                "dynamicTranslationEnabled",
                                                 "bannerVariant",
                                                 "participantCount",
                                                 "voteCount",
@@ -27133,11 +27145,17 @@
                                                         "type": "string",
                                                         "maxLength": 65,
                                                         "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                    },
+                                                    "sourceVersion": {
+                                                        "type": "string",
+                                                        "format": "uuid",
+                                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                     }
                                                 },
                                                 "required": [
                                                     "kind",
-                                                    "projectSlug"
+                                                    "projectSlug",
+                                                    "sourceVersion"
                                                 ],
                                                 "additionalProperties": false
                                             },
@@ -30364,11 +30382,17 @@
                                                             "type": "string",
                                                             "maxLength": 65,
                                                             "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                        },
+                                                        "sourceVersion": {
+                                                            "type": "string",
+                                                            "format": "uuid",
+                                                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                         }
                                                     },
                                                     "required": [
                                                         "kind",
-                                                        "projectSlug"
+                                                        "projectSlug",
+                                                        "sourceVersion"
                                                     ],
                                                     "additionalProperties": false
                                                 },

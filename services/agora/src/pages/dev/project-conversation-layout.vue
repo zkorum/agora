@@ -356,6 +356,7 @@ const project = computed<ProjectPageData>(() => {
 
   return {
     slug: "voices-for-change",
+    dynamicTranslationEnabled: true,
     displayContent: {
       sourceVersion:
         projectSourceVersionByLanguage[activeScenarioLanguage.value],

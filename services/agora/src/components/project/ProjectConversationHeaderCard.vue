@@ -230,6 +230,7 @@ interface ProjectConversationStatusBadge {
 
 const props = defineProps<{
   project: ProjectPageData;
+  projectTitle: string;
   conversationData: ExtendedConversation | ExtendedConversationDisplayData;
   initialDisplayContent?: ConversationContentFetchResponse;
   selectedLanguage: SupportedDisplayLanguageCodes;
@@ -249,11 +250,6 @@ const userIdentityText = computed<UserIdentityCardTranslations>(
 const projectRoute = computed<RouteLocationRaw>(() => ({
   path: `/project/${props.project.slug}`,
 }));
-const projectTitle = computed(() =>
-  props.project.displayContent.status === "available"
-    ? props.project.displayContent.content.title
-    : ""
-);
 const projectTextDirection = computed(() =>
   getLanguageTextDirection(props.selectedLanguage)
 );

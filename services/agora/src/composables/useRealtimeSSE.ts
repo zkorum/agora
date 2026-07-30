@@ -29,10 +29,11 @@ import {
   type ProjectContentFetchResponse,
   useBackendContentTranslationApi,
 } from "src/utils/api/contentTranslation/contentTranslation";
+import { isProjectTranslatedContentQueryKey } from "src/utils/api/contentTranslation/projectContentQuery";
 import {
+  getContentTranslationQueryKey,
   getConversationContentQueryPrefix,
   getConversationDisplayContentQueryPrefix,
-  getProjectContentQueryKey,
 } from "src/utils/api/contentTranslation/useContentTranslationQueries";
 import { getErrorLogContext } from "src/utils/api/errorLog";
 import { retainConversationRankingStatsUpdate } from "src/utils/api/post/rankingStatsUpdate";
@@ -1173,9 +1174,39 @@ export function useRealtimeSSE({
     data: SSEContentTranslationUpdatedData
   ): Promise<void> {
     if (isProjectContentTranslationUpdatedData(data)) {
+      if (data.targetLanguageCode !== languageStore.displayLanguage) {
+        return;
+      }
       await updateProjectPageContentTranslation(data);
+      if (data.targetLanguageCode !== languageStore.displayLanguage) {
+        return;
+      }
       if (data.status === "failed") {
+        updateProjectContentQueryStatus({ data, status: "failed" });
         publishContentTranslationFailed(data);
+      } else {
+        void queryClient.invalidateQueries({
+          predicate: (query) =>
+            isProjectTranslatedContentQueryKey({
+              queryKey: query.queryKey,
+              projectSlug: data.subject.projectSlug,
+              sourceVersion: data.subject.sourceVersion,
+              targetLanguageCode: data.targetLanguageCode,
+            }),
+          refetchType: "active",
+        });
+        void queryClient.invalidateQueries({
+          queryKey: getContentTranslationQueryKey({
+            subject: {
+              kind: "project",
+              projectSlug: data.subject.projectSlug,
+              sourceVersion: data.subject.sourceVersion,
+            },
+            targetLanguageCode: data.targetLanguageCode,
+          }),
+          refetchType: "none",
+        });
+        publishContentTranslationUpdated(data);
       }
       return;
     }
@@ -1238,6 +1269,7 @@ export function useRealtimeSSE({
     try {
       response = await fetchProjectContent({
         projectSlug: data.subject.projectSlug,
+        conversationSlugId: undefined,
         sourceVersion: data.subject.sourceVersion,
         mode: "translated",
         requestMode: "read_existing",
@@ -1250,21 +1282,16 @@ export function useRealtimeSSE({
       return;
     }
 
+    if (data.targetLanguageCode !== languageStore.displayLanguage) {
+      return;
+    }
+    if (response.sourceVersion !== data.subject.sourceVersion) {
+      return;
+    }
     if (response.status !== "available") {
       updateProjectPageDisplayContentStatus({ data, status: response.status });
       return;
     }
-
-    queryClient.setQueryData<ProjectContentFetchResponse>(
-      getProjectContentQueryKey({
-        projectSlug: data.subject.projectSlug,
-        sourceVersion: data.subject.sourceVersion,
-        mode: "translated",
-        targetLanguageCode: data.targetLanguageCode,
-        spokenLanguages: languageStore.spokenLanguages,
-      }),
-      response
-    );
 
     queryClient.setQueriesData<FetchProjectPageResponse>(
       {
@@ -1275,6 +1302,12 @@ export function useRealtimeSSE({
         if (previousData === undefined) {
           return previousData;
         }
+        if (
+          previousData.project.displayContent.sourceVersion !==
+          data.subject.sourceVersion
+        ) {
+          return previousData;
+        }
         return {
           ...previousData,
           project: {
@@ -1282,6 +1315,42 @@ export function useRealtimeSSE({
             displayContent: response,
           },
         };
+      }
+    );
+  }
+
+  function updateProjectContentQueryStatus({
+    data,
+    status,
+  }: {
+    data: ProjectContentTranslationUpdatedData;
+    status: Exclude<ProjectContentFetchResponse["status"], "available">;
+  }): void {
+    queryClient.setQueriesData<ProjectContentFetchResponse>(
+      {
+        predicate: (query) =>
+          isProjectTranslatedContentQueryKey({
+            queryKey: query.queryKey,
+            projectSlug: data.subject.projectSlug,
+            sourceVersion: data.subject.sourceVersion,
+            targetLanguageCode: data.targetLanguageCode,
+          }),
+      },
+      (displayContent) => {
+        if (
+          displayContent === undefined ||
+          displayContent.sourceVersion !== data.subject.sourceVersion ||
+          displayContent.translationControl === null
+        ) {
+          return displayContent;
+        }
+        const translationControl = {
+          ...displayContent.translationControl,
+          status,
+        };
+        return displayContent.status === "available"
+          ? { ...displayContent, translationControl }
+          : { ...displayContent, status, translationControl };
       }
     );
   }

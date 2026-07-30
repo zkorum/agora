@@ -6,11 +6,13 @@ import type { SSEContentTranslationUpdatedData } from "src/shared/types/sse";
 import type {
   ContentTranslationSubject,
   LocalizedContentTranslationStatus,
+  ProjectContentVariant,
   TitleBodyContentVariant,
 } from "src/shared/types/zod";
 import {
   zodConversationContentVariant,
   zodOpinionContentVariant,
+  zodProjectContentVariant,
   zodSurveyQuestionContentVariant,
   zodTitleBodyContentVariant,
 } from "src/shared/types/zod";
@@ -128,6 +130,14 @@ export interface RankingItemContentTranslationPreview {
   translatedContent: TitleBodyContentVariant | undefined;
 }
 
+export interface ProjectContentTranslationPreview {
+  mode: ContentTranslationDisplayMode;
+  sourceLanguageLabel: string | undefined;
+  translationStatus: LocalizedContentTranslationStatus;
+  originalContent: ProjectContentVariant | undefined;
+  translatedContent: ProjectContentVariant | undefined;
+}
+
 interface ContentTranslationController {
   mode: Readonly<{ value: ContentTranslationDisplayMode }>;
   sourceLanguageLabel: Readonly<{ value: string | undefined }>;
@@ -203,6 +213,13 @@ function useContentTranslationController({
       return undefined;
     }
     return content.variants.translated;
+  });
+
+  const originalVariant = computed(() => {
+    const response = query.data.value;
+    return response?.success === true
+      ? response.content.variants.original
+      : undefined;
   });
 
   const pollingOutcome = computed(() => {
@@ -322,7 +339,26 @@ function useContentTranslationController({
       }
       return;
     }
-    resetToOriginal();
+    if (originalVariant.value !== undefined) {
+      resetToOriginal();
+      return;
+    }
+
+    const previousModePreference = modePreference.value;
+    translationPolling.stop();
+    requestMode.value = "read_existing";
+    modePreference.value = "original";
+    requestState.value = "submitting";
+    const activeRequestGeneration = requestGeneration;
+    const result = await query.refetch();
+    if (activeRequestGeneration !== requestGeneration) {
+      return;
+    }
+    requestState.value = "idle";
+    if (result.isError || originalVariant.value === undefined) {
+      modePreference.value = previousModePreference;
+      showQueryFailureToast();
+    }
   }
 
   function resetToOriginal(): void {
@@ -748,6 +784,66 @@ export function useRankingItemContentTranslationPreview({
       };
     }
   );
+
+  return {
+    preview,
+    setMode: controller.setMode,
+  };
+}
+
+export function useProjectContentTranslationPreview({
+  subject,
+  enabled,
+  initialModePreference,
+}: {
+  subject: MaybeRefOrGetter<
+    Extract<ContentTranslationSubject, { kind: "project" }>
+  >;
+  enabled: MaybeRefOrGetter<boolean>;
+  initialModePreference?: MaybeRefOrGetter<
+    ContentTranslationDisplayMode | undefined
+  >;
+}) {
+  const controller = useContentTranslationController({
+    subject,
+    sourceLanguageCode: undefined,
+    enabled,
+    initialModePreference,
+  });
+
+  const preview = computed<ProjectContentTranslationPreview | undefined>(() => {
+    if (!controller.isAvailable.value) {
+      return undefined;
+    }
+    const response = controller.query.data.value;
+    const isCurrentProjectResponse =
+      response?.success === true &&
+      response.subject.kind === "project" &&
+      response.subject.sourceVersion === toValue(subject).sourceVersion &&
+      response.content.sourceVersion === toValue(subject).sourceVersion;
+    const rawOriginalVariant = isCurrentProjectResponse
+      ? response.content.variants.original
+      : undefined;
+    const rawTranslatedVariant =
+      isCurrentProjectResponse && response.content.kind === "translatable"
+        ? response.content.variants.translated
+        : undefined;
+    const originalVariant =
+      zodProjectContentVariant.safeParse(rawOriginalVariant);
+    const translatedVariant =
+      zodProjectContentVariant.safeParse(rawTranslatedVariant);
+    return {
+      mode: controller.mode.value,
+      sourceLanguageLabel: controller.sourceLanguageLabel.value,
+      translationStatus: controller.translationStatus.value,
+      originalContent: originalVariant.success
+        ? originalVariant.data
+        : undefined,
+      translatedContent: translatedVariant.success
+        ? translatedVariant.data
+        : undefined,
+    };
+  });
 
   return {
     preview,

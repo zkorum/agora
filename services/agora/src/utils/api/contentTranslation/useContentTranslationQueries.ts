@@ -13,8 +13,14 @@ import {
   type ProjectContentFetchResponse,
   useBackendContentTranslationApi,
 } from "./contentTranslation";
+import {
+  getProjectContentQueryKey,
+  getProjectContentStaleTime,
+} from "./projectContentQuery";
 
-export type ContentTranslationRequestMode = "read_existing" | "queue_if_missing";
+export type ContentTranslationRequestMode =
+  | "read_existing"
+  | "queue_if_missing";
 export type ConversationContentMode = "original" | "translated";
 
 export function getContentTranslationQueryKey({
@@ -56,29 +62,6 @@ export function getConversationContentQueryPrefix({
   conversationSlugId: string;
 }) {
   return ["conversationContent", conversationSlugId] as const;
-}
-
-export function getProjectContentQueryKey({
-  projectSlug,
-  sourceVersion,
-  mode,
-  targetLanguageCode,
-  spokenLanguages,
-}: {
-  projectSlug: string;
-  sourceVersion: string;
-  mode: ConversationContentMode;
-  targetLanguageCode: SupportedDisplayLanguageCodes;
-  spokenLanguages: readonly string[];
-}) {
-  return [
-    "projectContent",
-    projectSlug,
-    sourceVersion,
-    mode,
-    targetLanguageCode,
-    [...spokenLanguages].sort(),
-  ] as const;
 }
 
 export function getConversationDisplayContentQueryKey({
@@ -216,7 +199,9 @@ export function useConversationContentQuery({
       void updateAuthState({ partialLoginStatus: { isKnown: true } });
       return response;
     },
-    enabled: computed(() => toValue(enabled) && toValue(sourceVersion) !== undefined),
+    enabled: computed(
+      () => toValue(enabled) && toValue(sourceVersion) !== undefined
+    ),
     refetchInterval: computed(() => toValue(refetchInterval)),
     retry: false,
   });
@@ -224,12 +209,14 @@ export function useConversationContentQuery({
 
 export function useProjectContentQuery({
   projectSlug,
+  conversationSlugId,
   sourceVersion,
   mode,
   requestMode,
   enabled = true,
 }: {
   projectSlug: MaybeRefOrGetter<string>;
+  conversationSlugId: MaybeRefOrGetter<string | undefined>;
   sourceVersion: MaybeRefOrGetter<string | undefined>;
   mode: MaybeRefOrGetter<ConversationContentMode>;
   requestMode: MaybeRefOrGetter<ContentTranslationRequestMode>;
@@ -243,6 +230,7 @@ export function useProjectContentQuery({
     queryKey: computed(() =>
       getProjectContentQueryKey({
         projectSlug: toValue(projectSlug),
+        conversationSlugId: toValue(conversationSlugId),
         sourceVersion: toValue(sourceVersion) ?? "",
         mode: toValue(mode),
         targetLanguageCode: displayLanguage.value,
@@ -252,6 +240,7 @@ export function useProjectContentQuery({
     queryFn: async () => {
       const response = await fetchProjectContent({
         projectSlug: toValue(projectSlug),
+        conversationSlugId: toValue(conversationSlugId),
         sourceVersion: toValue(sourceVersion) ?? "",
         mode: toValue(mode),
         requestMode: toValue(requestMode),
@@ -259,7 +248,10 @@ export function useProjectContentQuery({
       void updateAuthState({ partialLoginStatus: { isKnown: true } });
       return response;
     },
-    enabled: computed(() => toValue(enabled) && toValue(sourceVersion) !== undefined),
+    enabled: computed(
+      () => toValue(enabled) && toValue(sourceVersion) !== undefined
+    ),
+    staleTime: (query) => getProjectContentStaleTime(query.state.data?.status),
     retry: false,
   });
 }

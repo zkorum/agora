@@ -34,6 +34,9 @@
             v-if="hasMultipleLanguageOptions"
             v-model:selected-language="selectedLanguage"
             :language-options="languageOptions"
+            :conversation-supported-language-codes="
+              conversationSupportedLanguageCodes
+            "
             :text-direction="projectTextDirection"
           />
 
@@ -62,6 +65,7 @@
         <div class="project-conversation-view__content-grid">
           <ProjectConversationHeaderCard
             :project="project"
+            :project-title="projectTitle"
             :conversation-data="conversationData"
             :initial-display-content="initialDisplayContent"
             :selected-language="selectedLanguage"
@@ -105,10 +109,17 @@ import {
 } from "src/shared/languages";
 import type { ConversationContentFetchResponse } from "src/shared/types/dto";
 import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
+import { useProjectContentQuery } from "src/utils/api/contentTranslation/useContentTranslationQueries";
+import { getConversationLanguageSettingSourceLanguageCode } from "src/utils/translation/contentTranslation";
 import { computed } from "vue";
 
 import ProjectConversationHeaderCard from "./ProjectConversationHeaderCard.vue";
 import ProjectDetailsAside from "./ProjectDetailsAside.vue";
+import {
+  getConversationSourceDisplayLanguageCode,
+  getConversationSupportedLanguageCodes,
+  shouldTranslateProjectForConversation,
+} from "./projectLanguageOptions";
 import ProjectLanguageSelect from "./ProjectLanguageSelect.vue";
 import ProjectPageFooter from "./ProjectPageFooter.vue";
 import {
@@ -144,14 +155,59 @@ const projectTextDirection = computed(() =>
 const effectiveBannerImageUrl = computed(
   () => props.bannerImageUrl ?? props.project.bannerImageUrl
 );
-const projectTitle = computed(() =>
-  props.project.displayContent.status === "available"
-    ? props.project.displayContent.content.title
-    : ""
-);
 const hasMultipleLanguageOptions = computed(
   () => new Set(props.languageOptions.map((option) => option.value)).size > 1
 );
+const conversationSupportedLanguageCodes = computed(() => {
+  const metadata = props.conversationData.metadata;
+  return getConversationSupportedLanguageCodes({
+    sourceLanguageCode: getConversationSourceDisplayLanguageCode({
+      detectedDisplayLanguageCode:
+        metadata.contentLanguageMetadata.detectedDisplayLanguageCode,
+      sourceLanguageCode: getConversationLanguageSettingSourceLanguageCode({
+        contentLanguageMetadata: metadata.contentLanguageMetadata,
+        languageSetting: metadata.languageSetting,
+      }),
+    }),
+    configuredLanguageCodes:
+      metadata.multilingualSetting.additionalLanguageCodes,
+    dynamicTranslationEnabled:
+      metadata.multilingualSetting.dynamicTranslationEnabled,
+  });
+});
+const translateProjectToSelectedLanguage = computed(() =>
+  shouldTranslateProjectForConversation({
+    selectedLanguageCode: selectedLanguage.value,
+    languageOptions: props.languageOptions,
+    conversationSupportedLanguageCodes:
+      conversationSupportedLanguageCodes.value,
+    dynamicTranslationEnabled:
+      props.conversationData.metadata.multilingualSetting
+        .dynamicTranslationEnabled,
+    projectDynamicTranslationEnabled: props.project.dynamicTranslationEnabled,
+  })
+);
+const translatedProjectContentQuery = useProjectContentQuery({
+  projectSlug: computed(() => props.project.slug),
+  conversationSlugId: computed(
+    () => props.conversationData.metadata.conversationSlugId
+  ),
+  sourceVersion: computed(() => props.project.displayContent.sourceVersion),
+  mode: "translated",
+  requestMode: "queue_if_missing",
+  enabled: translateProjectToSelectedLanguage,
+});
+const projectTitle = computed(() => {
+  const translatedContent = translatedProjectContentQuery.data.value;
+  const displayContent =
+    translateProjectToSelectedLanguage.value &&
+    translatedContent?.status === "available"
+      ? translatedContent
+      : props.project.displayContent;
+  return displayContent.status === "available"
+    ? displayContent.content.title
+    : "";
+});
 function t(
   key: keyof ProjectPageTranslations,
   params?: Readonly<Record<string, string | number>>

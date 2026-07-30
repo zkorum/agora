@@ -2026,6 +2026,7 @@ async function buildProjectShellPayload({
             displayLanguage: currentDisplayLanguage,
             spokenLanguages: [],
         }),
+        dynamicTranslationEnabled: project.dynamicTranslationEnabled,
         bannerVariant: "blue",
         bannerImageUrl,
         participantCount: aggregateCounts.participantCount,

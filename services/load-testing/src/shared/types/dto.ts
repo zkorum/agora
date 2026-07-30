@@ -217,6 +217,7 @@ const zodContentTranslationProjectResponse = z
             .object({
                 kind: z.literal("project"),
                 projectSlug: zodProjectSlug,
+                sourceVersion: z.uuid(),
             })
             .strict(),
         content: zodLocalizedProjectContent,
@@ -558,6 +559,7 @@ const zodProjectPageProject = z
     .object({
         slug: zodProjectSlug,
         displayContent: zodProjectDisplayedContent,
+        dynamicTranslationEnabled: z.boolean(),
         bannerVariant: z.enum(["blue", "purple", "green"]),
         bannerImageUrl: z.url().optional(),
         participantCount: z.number().int().nonnegative(),
@@ -1982,6 +1984,7 @@ export class Dto {
     static projectContentFetchRequest = z
         .object({
             projectSlug: zodProjectSlug,
+            conversationSlugId: zodSlugId.optional(),
             sourceVersion: z.uuid(),
             mode: zodConversationContentMode,
             requestMode: zodConversationContentRequestMode,

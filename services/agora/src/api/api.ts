@@ -2426,6 +2426,7 @@ export type ApiV1ContentTranslationRequestPostRequestSubjectOneOf2KindEnum = typ
 export interface ApiV1ContentTranslationRequestPostRequestSubjectOneOf3 {
     'kind': ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum;
     'projectSlug': string;
+    'sourceVersion': string;
 }
 
 export const ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum = {
@@ -5293,6 +5294,7 @@ export type ApiV1PremiumFeatureAccessCheckPostRequestFeatureEnum = typeof ApiV1P
 
 export interface ApiV1ProjectContentFetchPostRequest {
     'projectSlug': string;
+    'conversationSlugId'?: string;
     'sourceVersion': string;
     'mode': ApiV1ProjectContentFetchPostRequestModeEnum;
     'requestMode': ApiV1ProjectContentFetchPostRequestRequestModeEnum;
@@ -5552,6 +5554,7 @@ export interface ApiV1ProjectPageFetchPost200ResponseNextActivityCursor {
 export interface ApiV1ProjectPageFetchPost200ResponseProject {
     'slug': string;
     'displayContent': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContent;
+    'dynamicTranslationEnabled': boolean;
     'bannerVariant': ApiV1ProjectPageFetchPost200ResponseProjectBannerVariantEnum;
     'bannerImageUrl'?: string;
     'participantCount': number;

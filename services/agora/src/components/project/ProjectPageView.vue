@@ -31,6 +31,7 @@
             v-model:selected-language="selectedLanguage"
             class="project-page-view__language"
             :language-options="languageOptions"
+            :conversation-supported-language-codes="[]"
             :text-direction="projectTextDirection"
           />
 
@@ -59,13 +60,12 @@
             {{ displayedProjectContent.subtitle }}
           </p>
           <ContentTranslationControl
-            v-if="projectTranslationControl !== undefined"
-            v-model="projectTranslationMode"
+            v-if="translationPreview !== undefined"
+            :model-value="translationPreview.mode"
             class="project-page-view__translation-control"
-            :source-language-label="
-              projectTranslationControl.sourceLanguageLabel
-            "
-            :translation-status="projectTranslationControl.status"
+            :source-language-label="translationPreview.sourceLanguageLabel"
+            :translation-status="translationPreview.translationStatus"
+            @update:model-value="setTranslationMode"
           />
           <ZKHtmlContent
             v-if="displayedProjectContent.bodyHtml !== undefined"
@@ -179,10 +179,8 @@ import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import ZKLiveStatusDot from "src/components/ui-library/ZKLiveStatusDot.vue";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { getLanguageTextDirection } from "src/shared/languages";
-import type { LocalizedContentTranslationStatus } from "src/shared/types/zod";
-import { useProjectContentQuery } from "src/utils/api/contentTranslation/useContentTranslationQueries";
-import { type ContentTranslationDisplayMode } from "src/utils/translation/contentTranslation";
-import { computed, ref, watch } from "vue";
+import { useProjectDisplayContent } from "src/utils/translation/useProjectDisplayContent";
+import { computed } from "vue";
 
 import ProjectActivityCard from "./ProjectActivityCard.vue";
 import ProjectDetailsAside from "./ProjectDetailsAside.vue";
@@ -212,10 +210,6 @@ const emit = defineEmits<{
   loadMoreActivities: [done: () => void];
 }>();
 
-const projectTranslationModePreference = ref<
-  ContentTranslationDisplayMode | undefined
->();
-
 const selectedLanguage = defineModel<SupportedDisplayLanguageCodes>(
   "selectedLanguage",
   { required: true }
@@ -228,73 +222,13 @@ const projectTextDirection = computed(() =>
 const selectedBannerImageUrl = computed(() => {
   return props.project.bannerImageUrl;
 });
-
-const requestedProjectContentMode = computed<ContentTranslationDisplayMode>(
-  () =>
-    projectTranslationModePreference.value ??
-    (props.project.displayContent.status === "available"
-      ? props.project.displayContent.mode
-      : "original")
-);
-const requestedProjectContentQuery = useProjectContentQuery({
+const {
+  displayedContent: displayedProjectContent,
+  translationPreview,
+  setTranslationMode,
+} = useProjectDisplayContent({
   projectSlug: computed(() => props.project.slug),
-  sourceVersion: computed(() => props.project.displayContent.sourceVersion),
-  mode: requestedProjectContentMode,
-  requestMode: computed(() =>
-    requestedProjectContentMode.value === "translated"
-      ? "queue_if_missing"
-      : "read_existing"
-  ),
-  enabled: computed(() => projectTranslationModePreference.value !== undefined),
-});
-const activeProjectDisplayContent = computed(() => {
-  if (
-    projectTranslationModePreference.value !== undefined &&
-    requestedProjectContentQuery.data.value !== undefined
-  ) {
-    return requestedProjectContentQuery.data.value;
-  }
-
-  return props.project.displayContent;
-});
-const projectTranslationMode = computed<ContentTranslationDisplayMode>({
-  get: () =>
-    activeProjectDisplayContent.value.status === "available"
-      ? activeProjectDisplayContent.value.mode
-      : requestedProjectContentMode.value,
-  set: (mode) => {
-    projectTranslationModePreference.value = mode;
-  },
-});
-const projectTranslationControl = computed<
-  | {
-      sourceLanguageLabel: string | undefined;
-      status: LocalizedContentTranslationStatus;
-    }
-  | undefined
->(() => {
-  const translationControl =
-    activeProjectDisplayContent.value.translationControl;
-  if (translationControl === null) {
-    return undefined;
-  }
-
-  return {
-    sourceLanguageLabel: translationControl.sourceLanguageLabel,
-    status: requestedProjectContentQuery.isFetching.value
-      ? "pending"
-      : translationControl.status,
-  };
-});
-const displayedProjectContent = computed(() => {
-  const displayContent = activeProjectDisplayContent.value;
-  if (displayContent.status === "available") {
-    return displayContent.content;
-  }
-
-  return props.project.displayContent.status === "available"
-    ? props.project.displayContent.content
-    : { title: "" };
+  displayContent: computed(() => props.project.displayContent),
 });
 
 const consultationStatus = computed<ConsultationStatus>(() => {
@@ -340,17 +274,6 @@ const activityListKey = computed(() => {
       : getProjectActivityIdentity(lastActivity),
   ].join(":");
 });
-
-watch(
-  () => [
-    props.project.slug,
-    props.project.displayContent.sourceVersion,
-    props.project.displayContent.status,
-  ],
-  () => {
-    projectTranslationModePreference.value = undefined;
-  }
-);
 
 function t(
   key: keyof ProjectPageTranslations,

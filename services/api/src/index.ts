@@ -243,7 +243,7 @@ import {
     type SupportedDisplayLanguageCodes,
     type SupportedSpokenLanguageCodes,
 } from "./shared/languages.js";
-import { createDb } from "./shared-backend/db.js";
+import { createDb, getPrimaryDatabase } from "./shared-backend/db.js";
 import {
     conversationContentTable,
     conversationTable,
@@ -552,10 +552,12 @@ async function getContentTranslationAvailabilityForConversation({
     database = db,
     conversationSlugId,
     targetLanguageCode,
+    expectedProjectId,
 }: {
     database?: PostgresDatabase;
     conversationSlugId: string;
     targetLanguageCode: SupportedDisplayLanguageCodes;
+    expectedProjectId?: number;
 }): Promise<{
     isAllowed: boolean;
     multilingualSetting: ConversationMultilingualSetting;
@@ -589,6 +591,9 @@ async function getContentTranslationAvailabilityForConversation({
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
+                expectedProjectId === undefined
+                    ? undefined
+                    : eq(conversationTable.projectId, expectedProjectId),
                 eq(conversationTable.isImporting, false),
                 isNotNull(conversationTable.currentContentId),
             ),
@@ -717,17 +722,22 @@ async function getOpinionDisplayContentPreferencesForConversation({
 }
 
 async function getContentTranslationAvailabilityForProject({
+    database = db,
     projectSlug,
     targetLanguageCode,
+    conversationSlugId,
 }: {
+    database?: PostgresDatabase;
     projectSlug: string;
     targetLanguageCode: SupportedDisplayLanguageCodes;
+    conversationSlugId?: string;
 }): Promise<{
     isAllowed: boolean;
     multilingualSetting: ConversationMultilingualSetting;
 }> {
-    const rows = await db
+    const rows = await database
         .select({
+            projectId: projectTable.id,
             dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
             sourceLanguageCode: projectContentTable.sourceLanguageCode,
             targetLanguageCode:
@@ -779,13 +789,36 @@ async function getContentTranslationAvailabilityForProject({
             targetLanguageCodes: multilingualSetting.additionalLanguageCodes,
         },
     });
-    const translationAllowed =
+    const projectTranslationAllowed =
         targetLanguagePolicy.dynamicTranslationEnabled &&
         isConfiguredTranslationTargetLanguage({
             policy: targetLanguagePolicy,
             targetLanguageCode,
         });
-    return { isAllowed: translationAllowed, multilingualSetting };
+    if (
+        projectTranslationAllowed ||
+        conversationSlugId === undefined ||
+        !firstRow.dynamicTranslationEnabled
+    ) {
+        return {
+            isAllowed: projectTranslationAllowed,
+            multilingualSetting,
+        };
+    }
+
+    const conversationAvailability =
+        await getContentTranslationAvailabilityForConversation({
+            database,
+            conversationSlugId,
+            targetLanguageCode,
+            expectedProjectId: firstRow.projectId,
+        });
+    return {
+        isAllowed: conversationAvailability.isAllowed,
+        multilingualSetting: conversationAvailability.isAllowed
+            ? conversationAvailability.multilingualSetting
+            : multilingualSetting,
+    };
 }
 
 // Validate S3 configuration if export feature is enabled
@@ -1992,8 +2025,12 @@ server.after(() => {
                           currentDisplayLanguage: headerDisplayLanguage,
                       })
                   ).userId;
+            const projectContentDatabase =
+                request.body.conversationSlugId === undefined
+                    ? db
+                    : getPrimaryDatabase(db);
             const languagePreferences = await getLanguagePreferences({
-                db,
+                db: projectContentDatabase,
                 userId: requesterUserId,
                 request: {
                     currentDisplayLanguage: headerDisplayLanguage,
@@ -2001,14 +2038,16 @@ server.after(() => {
             });
             const availability =
                 await getContentTranslationAvailabilityForProject({
+                    database: projectContentDatabase,
                     projectSlug: request.body.projectSlug,
                     targetLanguageCode: languagePreferences.displayLanguage,
+                    conversationSlugId: request.body.conversationSlugId,
                 });
             const queueValkey = queueValkeyRef.current;
             const content =
                 await contentTranslationService.requestProjectContentTranslation(
                     {
-                        db,
+                        db: projectContentDatabase,
                         valkey: queueValkey,
                         queueScript: contentTranslationQueueScript,
                         projectSlug: request.body.projectSlug,

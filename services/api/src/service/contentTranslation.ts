@@ -2552,6 +2552,7 @@ async function buildProjectResponse({
     const subject = {
         kind: "project" as const,
         projectSlug: source.projectSlug,
+        sourceVersion: source.publicId,
     };
     const sourceVersion = source.publicId;
 
@@ -2842,6 +2843,7 @@ export async function requestContentTranslation({
             valkey,
             queueScript,
             projectSlug: subject.projectSlug,
+            sourceVersion: subject.sourceVersion,
             targetLanguageCode,
             requestMode,
             now,
