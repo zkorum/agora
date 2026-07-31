@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createExclusiveStoreManager } from "./store";
+import {
+  clearStoreWithVerification,
+  createExclusiveStoreManager,
+} from "./store";
 
 function createDeferred(): {
   promise: Promise<void>;
@@ -151,5 +154,50 @@ describe("createExclusiveStoreManager", () => {
     );
     await expect(retriedOperation).resolves.toBe("store");
     expect(initializeStore).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("clearStoreWithVerification", () => {
+  it("retries when clearing fails and verifies the retry", async () => {
+    const clearStore = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValueOnce(new Error("transient failure"))
+      .mockResolvedValueOnce();
+    const isStoreEmpty = vi
+      .fn<() => Promise<boolean>>()
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(true);
+
+    await expect(
+      clearStoreWithVerification({ clearStore, isStoreEmpty })
+    ).resolves.toBeUndefined();
+
+    expect(clearStore).toHaveBeenCalledTimes(2);
+    expect(isStoreEmpty).toHaveBeenCalledTimes(2);
+  });
+
+  it("retries when verification finds records after a successful clear", async () => {
+    const clearStore = vi.fn(() => Promise.resolve());
+    const isStoreEmpty = vi
+      .fn<() => Promise<boolean>>()
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(true);
+
+    await expect(
+      clearStoreWithVerification({ clearStore, isStoreEmpty })
+    ).resolves.toBeUndefined();
+
+    expect(clearStore).toHaveBeenCalledTimes(2);
+  });
+
+  it("rejects when the store remains non-empty", async () => {
+    const clearStore = vi.fn(() => Promise.resolve());
+    const isStoreEmpty = vi.fn(() => Promise.resolve(false));
+
+    await expect(
+      clearStoreWithVerification({ clearStore, isStoreEmpty, maxAttempts: 2 })
+    ).rejects.toThrow("Failed to clear browser crypto store");
+    expect(clearStore).toHaveBeenCalledTimes(2);
+    expect(isStoreEmpty).toHaveBeenCalledTimes(2);
   });
 });

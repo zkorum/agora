@@ -20,10 +20,13 @@ export const useTopicStore = defineStore("topic", () => {
     userUnfollowTopicCode,
   } = useBackendTopicApi();
   const { handleAxiosErrorStatusCodes } = useCommonApi();
-  const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+  const authStore = useAuthenticationStore();
+  const { isLoggedIn } = storeToRefs(authStore);
 
   const { showNotifyMessage } = useNotify();
-  const { t } = useComponentI18n<TopicStoreTranslations>(topicStoreTranslations);
+  const { t } = useComponentI18n<TopicStoreTranslations>(
+    topicStoreTranslations
+  );
 
   const fullTopicList = ref<ZodTopicObject[]>([]);
   const followedTopicCodeSet = ref(new Set<string>());
@@ -76,7 +79,11 @@ export const useTopicStore = defineStore("topic", () => {
   }
 
   async function loadUserFollowedTopics() {
+    const requestUserId = authStore.userId;
     const response = await getUserFollowedTopics();
+    if (authStore.userId !== requestUserId) {
+      return;
+    }
 
     if (response.status == "success") {
       followedTopicCodeSet.value = new Set(response.data.followedTopicCodeList);

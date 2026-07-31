@@ -11,7 +11,7 @@ import {
   buildUcanForRequest,
 } from "src/utils/crypto/ucan/operation";
 
-import { resetLocalAuthState } from "./localAuthState";
+import { clearAccountScopedState, resetLocalAuthState } from "./localAuthState";
 
 export interface AuthStateRefreshResult {
   authStateChanged: boolean;
@@ -75,6 +75,12 @@ async function applyRefreshedAuthState({
   const newUserId = newLoginStatus.isKnown ? newLoginStatus.userId : undefined;
   const authStateChanged =
     oldIsGuestOrLoggedIn !== newIsGuestOrLoggedIn || oldUserId !== newUserId;
+  const knownUserChanged =
+    oldLoginStatus.isKnown && newLoginStatus.isKnown && oldUserId !== newUserId;
+
+  if (knownUserChanged) {
+    clearAccountScopedState();
+  }
 
   if (!newLoginStatus.isKnown) {
     await resetLocalAuthState({

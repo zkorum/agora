@@ -64,6 +64,7 @@ export type Implementation = {
 
   keystore: {
     clearStore: () => Promise<void>;
+    isStoreEmpty: () => Promise<boolean>;
     decrypt: (
       encrypted: Uint8Array,
       emailOrUserId: string

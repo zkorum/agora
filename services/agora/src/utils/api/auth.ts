@@ -9,7 +9,10 @@ import { useTopicStore } from "src/stores/topic";
 import { useUserStore } from "src/stores/user";
 import { useRoute, useRouter } from "vue-router";
 
-import { resetLocalAuthState } from "../auth/localAuthState";
+import {
+  clearAccountScopedState,
+  resetLocalAuthState,
+} from "../auth/localAuthState";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { queryClient } from "../query/client";
 import { useRouterGuard } from "../router/guard";
@@ -118,6 +121,20 @@ export function useBackendAuthApi() {
         oldIsGuestOrLoggedIn,
         newIsGuestOrLoggedIn,
       } = authStore.setLoginStatus(partialLoginStatus);
+      const oldUserId = oldLoginStatus.isKnown
+        ? oldLoginStatus.userId
+        : undefined;
+      const newUserId = newLoginStatus.isKnown
+        ? newLoginStatus.userId
+        : undefined;
+      const userIdChanged = oldUserId !== newUserId;
+      const knownUserChanged =
+        oldLoginStatus.isKnown && newLoginStatus.isKnown && userIdChanged;
+
+      if (knownUserChanged) {
+        clearAccountScopedState();
+      }
+
       if (
         (oldLoginStatus.isKnown !== newLoginStatus.isKnown || forceRefresh) &&
         newLoginStatus.isKnown == false
@@ -131,15 +148,6 @@ export function useBackendAuthApi() {
         }
         return { authStateChanged: true, needsCacheRefresh: false };
       }
-
-      // Extract userId from old and new status for comparison
-      const oldUserId = oldLoginStatus.isKnown
-        ? oldLoginStatus.userId
-        : undefined;
-      const newUserId = newLoginStatus.isKnown
-        ? newLoginStatus.userId
-        : undefined;
-      const userIdChanged = oldUserId !== newUserId;
 
       const authStateChanged =
         oldIsGuestOrLoggedIn !== newIsGuestOrLoggedIn || userIdChanged;
@@ -175,7 +183,7 @@ export function useBackendAuthApi() {
                   return true;
                 },
               });
-            } else {
+            } else if (!knownUserChanged) {
               // For other transitions (login, logout, account switch): clear everything
               queryClient.clear();
             }
@@ -197,7 +205,7 @@ export function useBackendAuthApi() {
       return { authStateChanged: false, needsCacheRefresh: false };
     } catch (e) {
       console.error("Failed to update authentication state", e);
-      return { authStateChanged: false, needsCacheRefresh: false };
+      throw e;
     }
   }
 

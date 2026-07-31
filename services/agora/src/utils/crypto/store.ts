@@ -6,6 +6,7 @@ import { type Implementation } from "./ucan/implementation.js";
 const WEB_CRYPTO_STORE_NAME = "agora-keys";
 const WEB_CRYPTO_STORE_LOCK_NAME = "agora-web-crypto-store";
 const CROSS_CONTEXT_LOCK_TIMEOUT_MS = 60_000;
+const WEB_CRYPTO_CLEAR_ATTEMPTS = 3;
 
 interface CrossContextLockManager {
   request: <Result>(
@@ -24,6 +25,44 @@ interface ExclusiveStoreManager<Store> {
   runExclusive: <Result>(
     operation: (store: Store) => Promise<Result>
   ) => Promise<Result>;
+}
+
+interface ClearStoreWithVerificationParams {
+  clearStore: () => Promise<void>;
+  isStoreEmpty: () => Promise<boolean>;
+  maxAttempts?: number;
+}
+
+export async function clearStoreWithVerification({
+  clearStore,
+  isStoreEmpty,
+  maxAttempts = WEB_CRYPTO_CLEAR_ATTEMPTS,
+}: ClearStoreWithVerificationParams): Promise<void> {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    let clearError: unknown;
+    try {
+      await clearStore();
+    } catch (error) {
+      clearError = error;
+    }
+
+    try {
+      if (await isStoreEmpty()) {
+        return;
+      }
+      lastError =
+        clearError ??
+        new Error("Crypto store remained non-empty after clearing");
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw new Error("Failed to clear browser crypto store", {
+    cause: lastError,
+  });
 }
 
 // Key creation spans multiple IndexedDB transactions, so initialization,
@@ -95,6 +134,9 @@ export async function withWebCryptoStore<Result>(
 
 export async function clearWebCryptoStore(): Promise<void> {
   await withWebCryptoStore(async (store) => {
-    await store.keystore.clearStore();
+    await clearStoreWithVerification({
+      clearStore: store.keystore.clearStore,
+      isStoreEmpty: store.keystore.isStoreEmpty,
+    });
   });
 }

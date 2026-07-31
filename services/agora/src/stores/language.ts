@@ -79,10 +79,14 @@ export const useLanguageStore = defineStore("language", () => {
 
   async function loadLanguagePreferencesFromBackend(): Promise<LanguagePreferences | null> {
     const requestDisplayLanguage = displayLanguage.value;
+    const requestUserId = authStore.userId;
     try {
       const response = await getLanguagePreferences({
         currentDisplayLanguage: requestDisplayLanguage,
       });
+      if (authStore.userId !== requestUserId) {
+        return null;
+      }
 
       if (response.status === "success") {
         const validationResult = zodLanguagePreferences.safeParse(
@@ -91,7 +95,10 @@ export const useLanguageStore = defineStore("language", () => {
 
         if (!validationResult.success) {
           showNotifyMessage(t("failedToFetchLanguagePreferences"));
-          console.error("Invalid language preferences data:", validationResult.error);
+          console.error(
+            "Invalid language preferences data:",
+            validationResult.error
+          );
           return null;
         }
 
@@ -101,18 +108,28 @@ export const useLanguageStore = defineStore("language", () => {
           return validated;
         }
 
-        // Update spoken languages from backend
-        spokenLanguages.value = validated.spokenLanguages;
+        await loadLocaleMessages(validated.displayLanguage);
+        if (
+          authStore.userId !== requestUserId ||
+          displayLanguage.value !== requestDisplayLanguage
+        ) {
+          return null;
+        }
 
-        // Update display language from backend
-        await updateLocale(validated.displayLanguage);
+        spokenLanguages.value = validated.spokenLanguages;
+        displayLanguage.value = validated.displayLanguage;
+        setI18nLanguage(validated.displayLanguage);
 
         return validated;
       } else {
         // Network errors are covered by the "Connection lost" notification
         if (!isNetworkError(response.code)) {
           showNotifyMessage(t("failedToFetchLanguagePreferences"));
-          console.error("Failed to fetch language preferences from backend:", response.code, response.message);
+          console.error(
+            "Failed to fetch language preferences from backend:",
+            response.code,
+            response.message
+          );
         }
         return null;
       }

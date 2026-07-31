@@ -8,9 +8,12 @@ import type {
 import { useBackendUserApi } from "src/utils/api/user";
 import { computed, reactive, ref } from "vue";
 
+import { useAuthenticationStore } from "./authentication";
+
 export const useUserStore = defineStore("user", () => {
   const { fetchUserProfile, fetchUserPosts, fetchUserComments } =
     useBackendUserApi();
+  const authStore = useAuthenticationStore();
 
   interface UserProfile {
     activePostCount: number;
@@ -49,11 +52,15 @@ export const useUserStore = defineStore("user", () => {
   }
 
   async function loadUserProfile() {
+    const requestUserId = authStore.userId;
     const [userProfile, userPosts, userComments] = await Promise.all([
       fetchUserProfile(),
       fetchUserPosts(undefined),
       fetchUserComments(undefined),
     ]);
+    if (authStore.userId !== requestUserId) {
+      return;
+    }
 
     if (userProfile) {
       profileData.value = {
@@ -74,7 +81,11 @@ export const useUserStore = defineStore("user", () => {
   }
 
   async function retryUserPosts() {
+    const requestUserId = authStore.userId;
     const userPosts = await fetchUserPosts(undefined);
+    if (authStore.userId !== requestUserId) {
+      return;
+    }
     if (userPosts) {
       profileData.value.userPostList = userPosts;
       profileData.value.postsLoadFailed = false;
@@ -82,7 +93,11 @@ export const useUserStore = defineStore("user", () => {
   }
 
   async function retryUserComments() {
+    const requestUserId = authStore.userId;
     const userComments = await fetchUserComments(undefined);
+    if (authStore.userId !== requestUserId) {
+      return;
+    }
     if (userComments) {
       profileData.value.userCommentList = userComments;
       profileData.value.commentsLoadFailed = false;
@@ -102,7 +117,11 @@ export const useUserStore = defineStore("user", () => {
       }
     }
 
+    const requestUserId = authStore.userId;
     const userPosts = await fetchUserPosts(lastPostSlugId);
+    if (authStore.userId !== requestUserId) {
+      return { reachedEndOfFeed: true };
+    }
     if (userPosts) {
       profileData.value.userPostList.push(...userPosts);
       return { reachedEndOfFeed: userPosts.length == 0 };
@@ -122,7 +141,11 @@ export const useUserStore = defineStore("user", () => {
       }
     }
 
+    const requestUserId = authStore.userId;
     const userComments = await fetchUserComments(lastCommentSlugId);
+    if (authStore.userId !== requestUserId) {
+      return { reachedEndOfFeed: true };
+    }
     if (userComments) {
       profileData.value.userCommentList.push(...userComments);
       return { reachedEndOfFeed: userComments.length == 0 };

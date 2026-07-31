@@ -13,31 +13,66 @@ interface ResetLocalAuthStateParams {
   shouldClearLanguagePreferences?: boolean;
 }
 
-export async function resetLocalAuthState({
-  shouldClearLanguagePreferences = false,
-}: ResetLocalAuthStateParams = {}): Promise<void> {
-  const authStore = useAuthenticationStore();
+async function clearLanguagePreferencesIfRequested({
+  shouldClearLanguagePreferences,
+  clearLanguagePreferences,
+}: {
+  shouldClearLanguagePreferences: boolean;
+  clearLanguagePreferences: () => Promise<boolean>;
+}): Promise<void> {
+  if (!shouldClearLanguagePreferences) {
+    return;
+  }
+
+  const didClearLanguagePreferences = await clearLanguagePreferences();
+  if (!didClearLanguagePreferences) {
+    throw new Error("Failed to clear language preferences");
+  }
+}
+
+export function clearAccountScopedState(): void {
   const { clearProfileData } = useUserStore();
   const { resetDraft } = useNewPostDraftsStore();
   const { clearOpinionDrafts } = useNewOpinionDraftsStore();
   const { clearNotificationData } = useNotificationStore();
   const { clearTopicsData } = useTopicStore();
-  const { clearLanguagePreferences } = useLanguageStore();
 
   queryClient.clear();
-
-  await deleteDid();
   resetDraft();
   clearOpinionDrafts();
-
-  authStore.setLoginStatus({ isKnown: false });
-
   clearProfileData();
   clearNotificationData();
   clearTopicsData();
   resetZupassModuleState();
+}
 
-  if (shouldClearLanguagePreferences) {
-    await clearLanguagePreferences();
+export async function resetLocalAuthState({
+  shouldClearLanguagePreferences = false,
+}: ResetLocalAuthStateParams = {}): Promise<void> {
+  const authStore = useAuthenticationStore();
+  const { clearLanguagePreferences } = useLanguageStore();
+
+  clearAccountScopedState();
+  authStore.setLoginStatus({ isKnown: false });
+
+  const cleanupResults = await Promise.allSettled([
+    deleteDid(),
+    clearLanguagePreferencesIfRequested({
+      shouldClearLanguagePreferences,
+      clearLanguagePreferences,
+    }),
+  ]);
+  const cleanupErrors: unknown[] = [];
+  for (const result of cleanupResults) {
+    if (result.status === "rejected") {
+      cleanupErrors.push(result.reason);
+    }
+  }
+
+  if (cleanupErrors.length === 1) {
+    throw cleanupErrors[0];
+  }
+  if (cleanupErrors.length > 1) {
+    throw new AggregateError(cleanupErrors, "Failed to clear local auth state");
   }
 }

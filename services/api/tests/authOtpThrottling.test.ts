@@ -462,6 +462,386 @@ describe("OTP destination throttling", () => {
         ).toHaveLength(1);
     }, 30000);
 
+    it("atomically counts concurrent wrong phone guesses", async () => {
+        const didWrite = "did:test:phone:concurrent-wrong";
+        const phoneNumber = "+14155552676";
+
+        await createGuestDevice(didWrite);
+        await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber,
+                defaultCallingCode: "1",
+                isRequestingNewCode: false,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite,
+            userAgent: "test-agent",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth: enabledPhoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+        const [attempt] = await db
+            .select()
+            .from(authAttemptPhoneTable)
+            .where(eq(authAttemptPhoneTable.didWrite, didWrite));
+
+        const verifyWrongCode = async () =>
+            await authService.verifyPhoneOtp({
+                db,
+                maxAttempt: 3,
+                didWrite,
+                code: getWrongCode(attempt.code),
+                phoneNumber,
+                defaultCallingCode: "1",
+                peppers: [TEST_PEPPER],
+                phoneAuth: enabledPhoneAuth,
+                sessionLifetimeDays: 90,
+                now: currentNow,
+                currentDisplayLanguage: "en",
+            });
+        const responses = await Promise.all([
+            verifyWrongCode(),
+            verifyWrongCode(),
+            verifyWrongCode(),
+        ]);
+
+        expect(
+            responses.filter(
+                (response) =>
+                    !response.success && response.reason === "wrong_guess",
+            ),
+        ).toHaveLength(2);
+        expect(
+            responses.filter(
+                (response) =>
+                    !response.success &&
+                    response.reason === "too_many_wrong_guess",
+            ),
+        ).toHaveLength(1);
+
+        const [updatedAttempt] = await db
+            .select()
+            .from(authAttemptPhoneTable)
+            .where(eq(authAttemptPhoneTable.didWrite, didWrite));
+        expect(updatedAttempt.guessAttemptAmount).toBe(3);
+
+        const successfulGuess = await authService.verifyPhoneOtp({
+            db,
+            maxAttempt: 3,
+            didWrite,
+            code: attempt.code,
+            phoneNumber,
+            defaultCallingCode: "1",
+            peppers: [TEST_PEPPER],
+            phoneAuth: enabledPhoneAuth,
+            sessionLifetimeDays: 90,
+            now: currentNow,
+            currentDisplayLanguage: "en",
+        });
+        expect(successfulGuess).toEqual({
+            success: false,
+            reason: "expired_code",
+        });
+    }, 30000);
+
+    it("increments Twilio exhaustion backoff once per challenge", async () => {
+        const didWrite = "did:test:phone:twilio-exhausted";
+        const phoneNumber = "+14155552680";
+        let verificationCheckCount = 0;
+        let releaseVerificationChecks: (() => void) | undefined;
+        const bothVerificationChecksStarted = new Promise<void>((resolve) => {
+            releaseVerificationChecks = resolve;
+        });
+        const twilioPhoneAuth = {
+            mode: "enabled",
+            delivery: {
+                type: "twilio",
+                serviceSid: "VA-test",
+                client: {
+                    verify: {
+                        v2: {
+                            services: () => ({
+                                verifications: {
+                                    create: async () => ({
+                                        status: "pending",
+                                        toJSON: () => ({}),
+                                    }),
+                                },
+                                verificationChecks: {
+                                    create: async () => {
+                                        verificationCheckCount += 1;
+                                        if (verificationCheckCount === 2) {
+                                            releaseVerificationChecks?.();
+                                        }
+                                        await bothVerificationChecksStarted;
+                                        return {
+                                            status: "max_attempts_reached",
+                                            toJSON: () => ({}),
+                                        };
+                                    },
+                                },
+                            }),
+                        },
+                    },
+                },
+            },
+        } satisfies PhoneAuth;
+
+        await createGuestDevice(didWrite);
+        const authenticateResponse = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber,
+                defaultCallingCode: "1",
+                isRequestingNewCode: false,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite,
+            userAgent: "test-agent",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth: twilioPhoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+        expect(authenticateResponse.success).toBe(true);
+
+        const verify = async () =>
+            await authService.verifyPhoneOtp({
+                db,
+                maxAttempt: 3,
+                didWrite,
+                code: 123456,
+                phoneNumber,
+                defaultCallingCode: "1",
+                peppers: [TEST_PEPPER],
+                phoneAuth: twilioPhoneAuth,
+                sessionLifetimeDays: 90,
+                now: currentNow,
+                currentDisplayLanguage: "en",
+            });
+        const responses = await Promise.all([verify(), verify()]);
+
+        expect(responses[0]).toEqual(responses[1]);
+        expect(responses[0].success).toBe(false);
+        if (responses[0].success) {
+            throw new Error("Expected exhausted Twilio challenge");
+        }
+        expect(responses[0].reason).toBe("too_many_wrong_guess");
+
+        const [destinationState] = await db
+            .select()
+            .from(otpPhoneDestinationStateTable);
+        expect(destinationState.consecutiveFailedVerifyAttempts).toBe(1);
+
+        const [attempt] = await db
+            .select()
+            .from(authAttemptPhoneTable)
+            .where(eq(authAttemptPhoneTable.didWrite, didWrite));
+        expect(attempt.codeExpiry.getTime()).toBe(currentNow.getTime());
+    }, 30000);
+
+    it("atomically counts concurrent wrong email guesses", async () => {
+        const didWrite = "did:test:email:concurrent-wrong";
+        const email = "concurrent@example.com";
+
+        await createGuestDevice(didWrite);
+        await authService.authenticateEmailAttempt({
+            db,
+            axiosReacher: undefined,
+            email,
+            isRequestingNewCode: false,
+            minutesBeforeEmailCodeExpiry: 10,
+            didWrite,
+            userAgent: "test-agent",
+            throttleEmailSecondsInterval: 5,
+            testCode: 0,
+            doUseTestCode: false,
+            now: currentNow,
+        });
+        const [attempt] = await db
+            .select()
+            .from(authAttemptEmailTable)
+            .where(eq(authAttemptEmailTable.didWrite, didWrite));
+
+        const verifyWrongCode = async () =>
+            await authService.verifyEmailOtp({
+                db,
+                maxAttempt: 3,
+                didWrite,
+                code: getWrongCode(attempt.code),
+                email,
+                sessionLifetimeDays: 90,
+                now: currentNow,
+                currentDisplayLanguage: "en",
+            });
+        const responses = await Promise.all([
+            verifyWrongCode(),
+            verifyWrongCode(),
+            verifyWrongCode(),
+        ]);
+
+        expect(
+            responses.filter(
+                (response) =>
+                    !response.success && response.reason === "wrong_guess",
+            ),
+        ).toHaveLength(2);
+        expect(
+            responses.filter(
+                (response) =>
+                    !response.success &&
+                    response.reason === "too_many_wrong_guess",
+            ),
+        ).toHaveLength(1);
+
+        const [updatedAttempt] = await db
+            .select()
+            .from(authAttemptEmailTable)
+            .where(eq(authAttemptEmailTable.didWrite, didWrite));
+        expect(updatedAttempt.guessAttemptAmount).toBe(3);
+
+        const successfulGuess = await authService.verifyEmailOtp({
+            db,
+            maxAttempt: 3,
+            didWrite,
+            code: attempt.code,
+            email,
+            sessionLifetimeDays: 90,
+            now: currentNow,
+            currentDisplayLanguage: "en",
+        });
+        expect(successfulGuess).toEqual({
+            success: false,
+            reason: "expired_code",
+        });
+    }, 30000);
+
+    it("atomically reserves concurrent phone sends per destination", async () => {
+        const firstDid = "did:test:phone:reservation:1";
+        const secondDid = "did:test:phone:reservation:2";
+        const phoneNumber = "+14155552677";
+        await createGuestDevice(firstDid);
+        await createGuestDevice(secondDid);
+
+        const authenticate = async (didWrite: string) =>
+            await authService.authenticateAttempt({
+                db,
+                authenticateRequestBody: {
+                    phoneNumber,
+                    defaultCallingCode: "1",
+                    isRequestingNewCode: false,
+                },
+                minutesBeforeSmsCodeExpiry: 10,
+                didWrite,
+                userAgent: "test-agent",
+                throttleSmsSecondsInterval: 5,
+                phoneAuth: enabledPhoneAuth,
+                peppers: [TEST_PEPPER],
+                now: currentNow,
+            });
+        const responses = await Promise.all([
+            authenticate(firstDid),
+            authenticate(secondDid),
+        ]);
+
+        expect(responses.filter((response) => response.success)).toHaveLength(
+            1,
+        );
+        expect(
+            responses.filter(
+                (response) =>
+                    !response.success && response.reason === "throttled",
+            ),
+        ).toHaveLength(1);
+        expect(await db.select().from(authAttemptPhoneTable)).toHaveLength(1);
+    }, 30000);
+
+    it("atomically reserves concurrent email sends per destination", async () => {
+        const firstDid = "did:test:email:reservation:1";
+        const secondDid = "did:test:email:reservation:2";
+        const email = "reservation@example.com";
+        await createGuestDevice(firstDid);
+        await createGuestDevice(secondDid);
+
+        const authenticate = async (didWrite: string) =>
+            await authService.authenticateEmailAttempt({
+                db,
+                axiosReacher: undefined,
+                email,
+                isRequestingNewCode: false,
+                minutesBeforeEmailCodeExpiry: 10,
+                didWrite,
+                userAgent: "test-agent",
+                throttleEmailSecondsInterval: 5,
+                testCode: 0,
+                doUseTestCode: false,
+                now: currentNow,
+            });
+        const responses = await Promise.all([
+            authenticate(firstDid),
+            authenticate(secondDid),
+        ]);
+
+        expect(responses.filter((response) => response.success)).toHaveLength(
+            1,
+        );
+        expect(
+            responses.filter(
+                (response) =>
+                    !response.success && response.reason === "throttled",
+            ),
+        ).toHaveLength(1);
+        expect(await db.select().from(authAttemptEmailTable)).toHaveLength(1);
+    }, 30000);
+
+    it("canonicalizes phone aliases for allowlisting and verification", async () => {
+        const didWrite = "did:test:phone:canonical";
+        const canonicalPhoneNumber = "+14155552678";
+        const phoneAuth = {
+            mode: "enabled",
+            delivery: {
+                type: "local",
+                testCode: 654321,
+                speciallyAuthorizedPhones: [canonicalPhoneNumber],
+            },
+        } satisfies PhoneAuth;
+        await createGuestDevice(didWrite);
+
+        const authenticateResponse = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber: "+1 (415) 555-2678",
+                defaultCallingCode: "1",
+                isRequestingNewCode: false,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite,
+            userAgent: "test-agent",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+        expect(authenticateResponse.success).toBe(true);
+
+        const verifyResponse = await authService.verifyPhoneOtp({
+            db,
+            maxAttempt: 3,
+            didWrite,
+            code: 654321,
+            phoneNumber: "+1 415 555 2678",
+            defaultCallingCode: "1",
+            peppers: [TEST_PEPPER],
+            phoneAuth,
+            sessionLifetimeDays: 90,
+            now: currentNow,
+            currentDisplayLanguage: "en",
+        });
+        expect(verifyResponse.success).toBe(true);
+    }, 30000);
+
     it("reuses the same email OTP on resend and preserves wrong-guess count", async () => {
         const didWrite = "did:test:email:1";
         const email = "Alice@example.com";
@@ -926,60 +1306,80 @@ describe("OTP destination throttling", () => {
         expect(updatedAttempt.phoneHash).not.toBe(firstAttempt.phoneHash);
     }, 30000);
 
-    it("allows an OTP request but refuses phone registration in login-only mode", async () => {
-        const didWrite = "did:test:phone:login-only";
+    it("throttles synthetic login-only attempts without a challenge", async () => {
+        const firstDid = "did:test:phone:login-only:1";
+        const secondDid = "did:test:phone:login-only:2";
+        const thirdDid = "did:test:phone:login-only:3";
         const phoneNumber = "+14155552673";
 
-        await createGuestDevice(didWrite);
+        await createGuestDevice(firstDid);
+        await createGuestDevice(secondDid);
+        await createGuestDevice(thirdDid);
 
-        const authenticateResponse = await authService.authenticateAttempt({
-            db,
-            authenticateRequestBody: {
-                phoneNumber,
-                defaultCallingCode: "1",
-                isRequestingNewCode: false,
-            },
-            minutesBeforeSmsCodeExpiry: 10,
+        const authenticateSynthetic = async ({
             didWrite,
-            userAgent: "test-agent",
-            throttleSmsSecondsInterval: 5,
-            phoneAuth: loginOnlyPhoneAuth,
-            peppers: [TEST_PEPPER],
-            now: currentNow,
+            submittedPhoneNumber,
+        }: {
+            didWrite: string;
+            submittedPhoneNumber: string;
+        }) =>
+            await authService.authenticateAttempt({
+                db,
+                authenticateRequestBody: {
+                    phoneNumber: submittedPhoneNumber,
+                    defaultCallingCode: "1",
+                    isRequestingNewCode: false,
+                },
+                minutesBeforeSmsCodeExpiry: 10,
+                didWrite,
+                userAgent: "test-agent",
+                throttleSmsSecondsInterval: 5,
+                phoneAuth: loginOnlyPhoneAuth,
+                peppers: [TEST_PEPPER],
+                now: currentNow,
+            });
+        const authenticateResponse = await authenticateSynthetic({
+            didWrite: firstDid,
+            submittedPhoneNumber: phoneNumber,
         });
 
         expect(authenticateResponse.success).toBe(true);
+        expect(await db.select().from(authAttemptPhoneTable)).toHaveLength(0);
+        expect(
+            await db.select().from(otpPhoneDestinationStateTable),
+        ).toHaveLength(1);
 
-        const [attempt] = await db
-            .select()
-            .from(authAttemptPhoneTable)
-            .where(eq(authAttemptPhoneTable.didWrite, didWrite));
-
-        const verifyResponse = await authService.verifyPhoneOtp({
-            db,
-            maxAttempt: 3,
-            didWrite,
-            code: attempt.code,
-            phoneNumber,
-            defaultCallingCode: "1",
-            peppers: [TEST_PEPPER],
-            phoneAuth: loginOnlyPhoneAuth,
-            sessionLifetimeDays: 90,
-            now: currentNow,
-            currentDisplayLanguage: "en",
+        const repeatedResponse = await authenticateSynthetic({
+            didWrite: firstDid,
+            submittedPhoneNumber: "+1 (415) 555-2673",
         });
+        expect(repeatedResponse.success).toBe(false);
+        if (repeatedResponse.success) {
+            throw new Error("Expected synthetic attempt to be throttled");
+        }
+        expect(repeatedResponse.reason).toBe("throttled");
 
-        expect(verifyResponse).toEqual({
-            success: false,
-            reason: "phone_registration_unavailable",
-        });
-
-        const registeredPhones = await db
-            .select({ id: phoneTable.id })
-            .from(phoneTable)
-            .where(eq(phoneTable.phoneHash, attempt.phoneHash));
-
-        expect(registeredPhones).toHaveLength(0);
+        setCurrentNow("2026-01-01T00:00:06.000Z");
+        const concurrentResponses = await Promise.all([
+            authenticateSynthetic({
+                didWrite: secondDid,
+                submittedPhoneNumber: "+1 (415) 555-2673",
+            }),
+            authenticateSynthetic({
+                didWrite: thirdDid,
+                submittedPhoneNumber: phoneNumber,
+            }),
+        ]);
+        expect(
+            concurrentResponses.filter((response) => response.success),
+        ).toHaveLength(1);
+        expect(
+            concurrentResponses.filter(
+                (response) =>
+                    !response.success && response.reason === "throttled",
+            ),
+        ).toHaveLength(1);
+        expect(await db.select().from(authAttemptPhoneTable)).toHaveLength(0);
     }, 30000);
 
     it("rejects phone verification before accessing an OTP when disabled", async () => {
@@ -1027,7 +1427,9 @@ describe("OTP destination throttling", () => {
     it("allows an existing phone account to log in in login-only mode", async () => {
         const registeredDid = "did:test:phone:registered";
         const loginDid = "did:test:phone:existing-login";
+        const syntheticDid = "did:test:phone:synthetic-login";
         const phoneNumber = "+14155552675";
+        const unregisteredPhoneNumber = "+14155552679";
 
         await createGuestDevice(registeredDid);
         const registrationAttempt = await authService.authenticateAttempt({
@@ -1070,7 +1472,42 @@ describe("OTP destination throttling", () => {
         }
 
         setCurrentNow("2026-01-01T00:00:06.000Z");
+        await createGuestDevice(syntheticDid);
         const loginAttempt = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber: "(415) 555-2675",
+                defaultCallingCode: "1",
+                isRequestingNewCode: false,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite: loginDid,
+            userAgent: "new-device",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth: loginOnlyPhoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+        expect(loginAttempt.success).toBe(true);
+
+        const syntheticAttempt = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber: unregisteredPhoneNumber,
+                defaultCallingCode: "1",
+                isRequestingNewCode: false,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite: syntheticDid,
+            userAgent: "synthetic-device",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth: loginOnlyPhoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+        expect(syntheticAttempt).toEqual(loginAttempt);
+
+        const repeatedLoginAttempt = await authService.authenticateAttempt({
             db,
             authenticateRequestBody: {
                 phoneNumber,
@@ -1085,7 +1522,29 @@ describe("OTP destination throttling", () => {
             peppers: [TEST_PEPPER],
             now: currentNow,
         });
-        expect(loginAttempt.success).toBe(true);
+        const repeatedSyntheticAttempt = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber: unregisteredPhoneNumber,
+                defaultCallingCode: "1",
+                isRequestingNewCode: false,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite: syntheticDid,
+            userAgent: "synthetic-device",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth: loginOnlyPhoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+        expect(repeatedSyntheticAttempt).toEqual(repeatedLoginAttempt);
+        expect(repeatedLoginAttempt.success).toBe(false);
+
+        const syntheticChallenges = await db
+            .select()
+            .from(authAttemptPhoneTable)
+            .where(eq(authAttemptPhoneTable.didWrite, syntheticDid));
+        expect(syntheticChallenges).toHaveLength(0);
 
         const [loginOtp] = await db
             .select()
@@ -1096,7 +1555,7 @@ describe("OTP destination throttling", () => {
             maxAttempt: 3,
             didWrite: loginDid,
             code: loginOtp.code,
-            phoneNumber,
+            phoneNumber: "+1 415 555 2675",
             defaultCallingCode: "1",
             peppers: [TEST_PEPPER],
             phoneAuth: loginOnlyPhoneAuth,

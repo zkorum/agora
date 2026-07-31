@@ -46,6 +46,10 @@ import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { processEnv } from "src/utils/processEnv";
 import { abortIgnoringAbortError } from "src/utils/sse/abort";
 import {
+  createSSEConnectionGeneration,
+  type SSEConnectionAttempt,
+} from "src/utils/sse/connectionGeneration";
+import {
   type ParsedSSEFrame,
   parseRawSSEFrame,
   splitCompleteSSEFrames,
@@ -321,10 +325,9 @@ export function useRealtimeSSE({
 
   const isConnected = ref(false);
   const isConnecting = ref(false);
-  let abortController: AbortController | null = null;
+  const connectionGeneration = createSSEConnectionGeneration();
   let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   let shouldReconnect = true;
-  let connectionId = 0;
   let lastEventId: string | null = null;
   let reconnectDelayMs = SSE_DEFAULT_RETRY_DELAY_MS;
   let offlineTimer: ReturnType<typeof setTimeout> | null = null;
@@ -431,23 +434,18 @@ export function useRealtimeSSE({
       return;
     }
 
-    // Claim a new generation — all prior connections are now stale.
-    // Placed AFTER the guard so a blocked connect() doesn't invalidate the active connection.
-    connectionId++;
-    const thisConnectionId = connectionId;
+    const connectionAttempt = connectionGeneration.start();
+    const { abortController: connectionAbortController } = connectionAttempt;
 
     let connectionTimeout: ReturnType<typeof setTimeout> | null = null;
 
     try {
       isConnecting.value = true;
 
-      abortController = new AbortController();
-
       // Abort if connection doesn't establish within timeout
       connectionTimeout = setTimeout(() => {
-        if (thisConnectionId !== connectionId) return;
-        if (abortController !== null) {
-          abortIgnoringAbortError(abortController);
+        if (connectionGeneration.isCurrent(connectionAttempt)) {
+          abortIgnoringAbortError(connectionAbortController);
         }
       }, SSE_CONNECTION_TIMEOUT_MS);
 
@@ -465,6 +463,9 @@ export function useRealtimeSSE({
         const encodedUcan = await buildEncodedUcan("/api/v1/realtime/stream", {
           method: "GET",
         });
+        if (!connectionGeneration.isCurrent(connectionAttempt)) {
+          return;
+        }
         const authHeader = buildAuthorizationHeader(encodedUcan);
         Object.assign(headers, authHeader);
       }
@@ -472,8 +473,11 @@ export function useRealtimeSSE({
       const response = await fetch(url, {
         method: "GET",
         headers,
-        signal: abortController.signal,
+        signal: connectionAbortController.signal,
       });
+      if (!connectionGeneration.isCurrent(connectionAttempt)) {
+        return;
+      }
 
       clearTimeout(connectionTimeout);
       connectionTimeout = null;
@@ -482,15 +486,14 @@ export function useRealtimeSSE({
         if (response.status === 401) {
           const didRefreshAuthState =
             await refreshAuthStateAfterSSEUnauthorized();
+          if (!connectionGeneration.isCurrent(connectionAttempt)) {
+            return;
+          }
           if (didRefreshAuthState) {
             isConnecting.value = false;
             isConnected.value = false;
             setNetworkOffline(false);
-            if (
-              thisConnectionId === connectionId &&
-              shouldReconnect &&
-              shouldMaintainConnection()
-            ) {
+            if (shouldReconnect && shouldMaintainConnection()) {
               scheduleReconnect();
             }
             return;
@@ -505,7 +508,7 @@ export function useRealtimeSSE({
 
       isConnected.value = true;
       isConnecting.value = false;
-      resetHeartbeatWatchdog();
+      resetHeartbeatWatchdog(connectionAttempt);
 
       // Clear offline timer if SSE reconnected quickly (< 3s)
       if (offlineTimer) {
@@ -525,8 +528,11 @@ export function useRealtimeSSE({
 
       while (true) {
         const { done, value } = await reader.read();
+        if (!connectionGeneration.isCurrent(connectionAttempt)) {
+          return;
+        }
         if (done) break;
-        resetHeartbeatWatchdog();
+        resetHeartbeatWatchdog(connectionAttempt);
 
         buffer += decoder.decode(value, { stream: true });
         if (buffer.length > SSE_MAX_BUFFER_LENGTH) {
@@ -546,8 +552,8 @@ export function useRealtimeSSE({
       }
 
       // Stream ended normally — check staleness before touching shared state
+      if (!connectionGeneration.isCurrent(connectionAttempt)) return;
       clearHeartbeatWatchdog();
-      if (thisConnectionId !== connectionId) return;
 
       isConnected.value = false;
       scheduleOfflineTimer();
@@ -555,21 +561,25 @@ export function useRealtimeSSE({
         scheduleReconnect();
       }
     } catch {
-      clearHeartbeatWatchdog();
       if (connectionTimeout) {
         clearTimeout(connectionTimeout);
       }
 
       // Stale connection — a newer connect() has taken over.
       // Don't touch shared state or schedule reconnects.
-      if (thisConnectionId !== connectionId) return;
+      if (!connectionGeneration.isCurrent(connectionAttempt)) return;
 
+      clearHeartbeatWatchdog();
       isConnected.value = false;
       isConnecting.value = false;
       scheduleOfflineTimer();
 
       if (shouldReconnect && shouldMaintainConnection()) {
         scheduleReconnect();
+      }
+    } finally {
+      if (connectionTimeout !== null) {
+        clearTimeout(connectionTimeout);
       }
     }
   }
@@ -1768,12 +1778,14 @@ export function useRealtimeSSE({
     });
   }
 
-  function resetHeartbeatWatchdog() {
+  function resetHeartbeatWatchdog(
+    connectionAttempt: SSEConnectionAttempt
+  ): void {
     if (heartbeatWatchdog) clearTimeout(heartbeatWatchdog);
     heartbeatWatchdog = setTimeout(() => {
       heartbeatWatchdog = null;
-      if (abortController) {
-        abortIgnoringAbortError(abortController);
+      if (connectionGeneration.isCurrent(connectionAttempt)) {
+        abortIgnoringAbortError(connectionAttempt.abortController);
       }
     }, SSE_HEARTBEAT_TIMEOUT_MS);
   }
@@ -1825,18 +1837,13 @@ export function useRealtimeSSE({
   }
 
   function disconnect() {
-    connectionId++; // Invalidate any in-flight connect() catch handler
+    connectionGeneration.invalidate();
     shouldReconnect = false;
     clearHeartbeatWatchdog();
 
     if (reconnectTimeout) {
       clearTimeout(reconnectTimeout);
       reconnectTimeout = null;
-    }
-
-    if (abortController) {
-      abortIgnoringAbortError(abortController);
-      abortController = null;
     }
 
     // Only clear the pending offline timer — don't touch global offline state.
@@ -1854,8 +1861,8 @@ export function useRealtimeSSE({
   // hidden. On resume, stale timers and reader.read() rejections fire at once,
   // causing false offline detection. The standard pattern (Socket.IO, Pusher):
   // disconnect proactively on hide, reconnect cleanly on show.
-  // disconnect() increments connectionId, making any in-flight catch handler
-  // stale — it can never schedule an offline timer or touch shared state.
+  // disconnect() invalidates the connection generation, so in-flight handlers
+  // cannot schedule an offline timer or touch shared state.
   function onVisibilityChange() {
     if (document.hidden) {
       disconnectAndAllowLaterReconnect();
@@ -1933,10 +1940,16 @@ export function useRealtimeSSE({
   // Wait for auth initialization first so check-login-status is never queued
   // behind long-lived SSE connections.
   watch(
-    () => [authStore.isAuthInitialized, authStore.isGuestOrLoggedIn] as const,
-    async ([isAuthInitialized, isAuthenticated], previousState) => {
+    () =>
+      [
+        authStore.isAuthInitialized,
+        authStore.isGuestOrLoggedIn,
+        authStore.userId,
+      ] as const,
+    async ([isAuthInitialized, isAuthenticated, userId], previousState) => {
       const wasAuthInitialized = previousState?.[0];
       const wasAuthenticated = previousState?.[1];
+      const previousUserId = previousState?.[2];
       if (!isAuthInitialized) {
         disconnectAndAllowLaterReconnect();
         return;
@@ -1944,8 +1957,12 @@ export function useRealtimeSSE({
 
       if (
         isAuthInitialized !== wasAuthInitialized ||
-        isAuthenticated !== wasAuthenticated
+        isAuthenticated !== wasAuthenticated ||
+        userId !== previousUserId
       ) {
+        if (userId !== previousUserId) {
+          lastEventId = null;
+        }
         disconnectAndAllowLaterReconnect();
         if (shouldMaintainConnection()) {
           await connect();

@@ -171,6 +171,10 @@ function ksClearStore(store: LocalForage): Promise<void> {
   return store.clear();
 }
 
+async function ksIsStoreEmpty(store: LocalForage): Promise<boolean> {
+  return (await store.length()) === 0;
+}
+
 export async function ksDecrypt(
   ks: RSAKeyStore,
   cipherText: Uint8Array,
@@ -439,6 +443,7 @@ export async function implementation({
 
     keystore: {
       clearStore: () => ksClearStore(store),
+      isStoreEmpty: () => ksIsStoreEmpty(store),
       decrypt: (...args) => ksDecrypt(ks, ...args),
       exportSymmKey: (...args) => ksExportSymmKey(ks, ...args),
       getAlgorithm: (...args) => ksGetAlgorithm(ks, ...args),
