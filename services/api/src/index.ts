@@ -15,6 +15,10 @@ import {
     authenticateEmail200,
     verifyEmailOtpReqBody,
     checkLoginStatusResponse,
+    listAuthSessionsResponse,
+    revokeAuthSessionRequest,
+    revokeAuthSessionResponse,
+    logoutAllAuthSessionsResponse,
     type AuthenticateResponse,
     type AuthenticateEmailResponse,
     type VerifyOtp200,
@@ -191,10 +195,20 @@ import {
 } from "./service/realtimeEventOutbox.js";
 import { createUcanReplayGuard } from "./service/ucanReplayGuard.js";
 import {
+    createRealtimeRequestClosePromise,
+    getRealtimeStreamAccess,
     parseRealtimeSubscriptionRequest,
     type RealtimeSubscriptionRequest,
     RealtimeSSEManager,
 } from "./service/realtimeSSE.js";
+import {
+    decideSessionRefresh,
+    listActiveSessions,
+    refreshSessionIfCurrent,
+    revokeAllSessions,
+    revokeCurrentSession,
+    revokeSession,
+} from "./service/authSession.js";
 import {
     addUserOrganizationMapping,
     createOrganization,
@@ -248,7 +262,6 @@ import {
     conversationContentTable,
     conversationTable,
     conversationTranslationTargetLanguageTable,
-    deviceTable,
     organizationTable,
     projectContentTable,
     projectOrganizationOwnershipTable,
@@ -277,6 +290,7 @@ server.register(fastifyRateLimit, {
     hook: "preHandler",
 });
 server.register(fastifyCors, {
+    exposedHeaders: ["Retry-After"],
     origin: (origin, cb) => {
         if (config.NODE_ENV === "development") {
             cb(null, true);
@@ -371,7 +385,10 @@ function initializePhoneAuth(config: PhoneAuthConfig): authService.PhoneAuth {
         mode: config.mode,
         delivery: {
             type: "twilio",
-            client: twilio(config.delivery.accountSid, config.delivery.authToken),
+            client: twilio(
+                config.delivery.accountSid,
+                config.delivery.authToken,
+            ),
             serviceSid: config.delivery.serviceSid,
         },
     };
@@ -999,6 +1016,7 @@ try {
     await realtimeEventOutboxBridge.start();
 } catch (error) {
     log.error(error, "[RealtimeOutbox] Failed to start realtime DB listener");
+    throw error;
 }
 
 // Periodic engagement ranking check for "Following" tab.
@@ -1075,6 +1093,7 @@ interface ExpectedDeviceStatus {
 
 interface OptionsVerifyUcan {
     expectedDeviceStatus?: ExpectedDeviceStatus;
+    refreshSession?: boolean;
 }
 
 interface ExpectedKnownDeviceStatus {
@@ -1086,6 +1105,7 @@ interface ExpectedKnownDeviceStatus {
 
 interface OptionsVerifyUcanKnownDevice {
     expectedKnownDeviceStatus?: ExpectedKnownDeviceStatus;
+    refreshSession?: boolean;
 }
 
 const SERVER_URL =
@@ -1203,16 +1223,50 @@ async function verifyUcanAndDeviceStatus(
             isRegistered: true,
             isGuestOrLoggedIn: false,
         },
+        refreshSession: true,
     };
     let actualOptions = options;
     actualOptions ??= defaultOptions;
     const { didWrite } = await verifyUcan(request);
     const now = nowZeroMs();
-    const deviceStatus = await authUtilService.getDeviceStatus({
-        db,
+    const primaryDb = getPrimaryDatabase(db);
+    let deviceStatus = await authUtilService.getDeviceStatus({
+        db: primaryDb,
         didWrite,
         now,
     });
+
+    // Sliding refresh happens before authorization checks so a concurrent
+    // revocation cannot be accepted from stale session state.
+    if (deviceStatus.isLoggedIn && actualOptions.refreshSession !== false) {
+        const decision = decideSessionRefresh({
+            now,
+            currentExpiry: deviceStatus.sessionExpiry,
+            refreshThresholdDays: config.SESSION_REFRESH_THRESHOLD_DAYS,
+            sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
+        });
+        if (decision.type === "refresh") {
+            const refreshedExpiry = await refreshSessionIfCurrent({
+                db: primaryDb,
+                didWrite,
+                now,
+                decision,
+            });
+            if (refreshedExpiry === undefined) {
+                deviceStatus = await authUtilService.getDeviceStatus({
+                    db: primaryDb,
+                    didWrite,
+                    now,
+                });
+            } else {
+                deviceStatus = {
+                    ...deviceStatus,
+                    sessionExpiry: refreshedExpiry,
+                };
+                log.info({ didWrite }, "[Session] Refreshed session expiry");
+            }
+        }
+    }
     if (
         actualOptions.expectedDeviceStatus?.isKnown !== undefined &&
         actualOptions.expectedDeviceStatus.isKnown !== deviceStatus.isKnown
@@ -1262,38 +1316,6 @@ async function verifyUcanAndDeviceStatus(
         );
     }
 
-    // Sliding window session refresh for registered users only.
-    // Guests (isLoggedIn always false) are excluded — their identity is
-    // tied to didWrite, not session expiry, so consultations lasting months are safe.
-    // No extra DB read: sessionExpiry comes from getDeviceStatus() which already fetches it.
-    if (deviceStatus.isLoggedIn) {
-        const daysUntilExpiry =
-            (deviceStatus.sessionExpiry.getTime() - now.getTime()) /
-            (1000 * 60 * 60 * 24);
-        if (daysUntilExpiry < config.SESSION_REFRESH_THRESHOLD_DAYS) {
-            const newExpiry = new Date(now);
-            newExpiry.setDate(
-                newExpiry.getDate() + config.SESSION_LIFETIME_DAYS,
-            );
-            // Fire-and-forget: non-blocking write, ~once per 45 days per user
-            db.update(deviceTable)
-                .set({ sessionExpiry: newExpiry, updatedAt: now })
-                .where(eq(deviceTable.didWrite, didWrite))
-                .then(() => {
-                    log.info(
-                        { didWrite },
-                        "[Session] Refreshed session expiry",
-                    );
-                })
-                .catch((err: unknown) => {
-                    log.error(
-                        err,
-                        "[Session] Failed to refresh session expiry",
-                    );
-                });
-        }
-    }
-
     return {
         didWrite: didWrite,
         deviceStatus: deviceStatus,
@@ -1314,15 +1336,6 @@ type VerifyUcanOptionalAuthReturn =
           didWrite: undefined;
           deviceStatus: Extract<DeviceLoginStatusInternal, { isKnown: false }>;
       };
-
-function canUseAuthenticatedRealtimeStream(
-    deviceStatus: DeviceLoginStatusInternal,
-): deviceStatus is Extract<DeviceLoginStatusInternal, { isKnown: true }> {
-    return (
-        deviceStatus.isKnown &&
-        (!deviceStatus.isRegistered || deviceStatus.isLoggedIn)
-    );
-}
 
 async function verifyUcanOptionalAuth(
     db: PostgresDatabase,
@@ -1538,9 +1551,13 @@ async function verifyUcanAndKnownDeviceStatus(
                 isKnown: true,
                 ...options.expectedKnownDeviceStatus,
             },
+            refreshSession: options.refreshSession,
         };
     } else {
-        actualOptions = defaultOptions;
+        actualOptions = {
+            ...defaultOptions,
+            refreshSession: options?.refreshSession,
+        };
     }
     const { didWrite, deviceStatus } = await verifyUcanAndDeviceStatus(
         db,
@@ -1893,6 +1910,78 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
+        url: `/api/${apiVersion}/auth/sessions/list`,
+        schema: {
+            response: { 200: listAuthSessionsResponse },
+        },
+        handler: async (request) => {
+            const { didWrite, deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request);
+            const result = await listActiveSessions({
+                db,
+                userId: deviceStatus.userId,
+                currentDidWrite: didWrite,
+                now: nowZeroMs(),
+            });
+            if (result.type === "current_session_revoked") {
+                throw server.httpErrors.unauthorized(
+                    "Session is no longer active",
+                );
+            }
+            return {
+                currentSession: result.currentSession,
+                otherSessions: result.otherSessions,
+            };
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/auth/sessions/revoke`,
+        schema: {
+            body: revokeAuthSessionRequest,
+            response: { 200: revokeAuthSessionResponse },
+        },
+        handler: async (request) => {
+            const { didWrite, deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request);
+            return {
+                revoked:
+                    (await revokeSession({
+                        db,
+                        userId: deviceStatus.userId,
+                        currentDidWrite: didWrite,
+                        didWrite: request.body.didWrite,
+                        now: nowZeroMs(),
+                    })) === 1,
+            };
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/auth/sessions/logout-all`,
+        schema: {
+            response: { 200: logoutAllAuthSessionsResponse },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                { refreshSession: false },
+            );
+            return {
+                revokedSessionCount: await revokeAllSessions({
+                    db,
+                    userId: deviceStatus.userId,
+                    now: nowZeroMs(),
+                }),
+            };
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
         url: `/api/${apiVersion}/auth/logout`,
         handler: async (request) => {
             const { didWrite } = await verifyUcanAndKnownDeviceStatus(
@@ -1903,9 +1992,10 @@ server.after(() => {
                         isLoggedIn: true,
                         isRegistered: true,
                     },
+                    refreshSession: false,
                 },
             );
-            await authService.logout(db, didWrite);
+            await revokeCurrentSession({ db, didWrite, now: nowZeroMs() });
         },
     });
 
@@ -5542,6 +5632,9 @@ server.after(() => {
         url: `/api/${apiVersion}/realtime/stream`,
         sse: true, // Enable SSE mode - provides reply.sse.* methods
         handler: async (request, reply) => {
+            const rawRequestClosePromise = createRealtimeRequestClosePromise({
+                requestRaw: request.raw,
+            });
             let subscription: RealtimeSubscriptionRequest;
             try {
                 subscription = parseRealtimeSubscriptionRequest(request.query);
@@ -5557,14 +5650,43 @@ server.after(() => {
                 return reply.code(401).send("Authentication failed");
             }
 
-            if (canUseAuthenticatedRealtimeStream(authResult.deviceStatus)) {
+            const streamAccess = getRealtimeStreamAccess(
+                authResult.deviceStatus,
+            );
+
+            if (streamAccess.kind === "retired_registered") {
+                return reply.code(401).send("Authentication failed");
+            }
+
+            if (
+                authResult.didWrite !== undefined &&
+                (streamAccess.kind === "guest" ||
+                    streamAccess.kind === "registered")
+            ) {
                 try {
                     reply.sse.keepAlive();
-                    realtimeSSEManager.connect({
-                        userId: authResult.deviceStatus.userId,
+                    await realtimeSSEManager.connect({
+                        access: streamAccess,
                         reply,
                         subscribedTopics: subscription.topics,
                     });
+                    const currentDeviceStatus =
+                        await authUtilService.getDeviceStatus({
+                            db: getPrimaryDatabase(db),
+                            didWrite: authResult.didWrite,
+                            now: new Date(),
+                        });
+                    const currentStreamAccess =
+                        getRealtimeStreamAccess(currentDeviceStatus);
+                    if (
+                        currentStreamAccess.kind === "anonymous" ||
+                        currentStreamAccess.kind === "retired_registered" ||
+                        currentStreamAccess.userId !== streamAccess.userId ||
+                        currentStreamAccess.kind !== streamAccess.kind
+                    ) {
+                        realtimeSSEManager.close(reply);
+                        return;
+                    }
                     await replaySubscribedRealtimeEvents({
                         reply,
                         subscription,
@@ -5574,22 +5696,20 @@ server.after(() => {
                         conversationSlugId: subscription.conversationSlugId,
                     });
 
-                    await new Promise<void>((resolve) => {
-                        request.raw.on("close", () => {
-                            resolve();
-                        });
-                    });
+                    await rawRequestClosePromise;
+                    realtimeSSEManager.close(reply);
                 } catch (error) {
+                    realtimeSSEManager.close(reply);
                     log.error(
                         error,
                         "Error during authenticated realtime stream connection",
                     );
                 }
             } else {
-                // Unknown or logged-out devices still get the public stream.
+                // Requests without a known identity still get the public stream.
                 try {
                     reply.sse.keepAlive();
-                    realtimeSSEManager.connectAnonymous({
+                    await realtimeSSEManager.connectAnonymous({
                         reply,
                         subscribedTopics: subscription.topics,
                     });
@@ -5602,12 +5722,10 @@ server.after(() => {
                         conversationSlugId: subscription.conversationSlugId,
                     });
 
-                    await new Promise<void>((resolve) => {
-                        request.raw.on("close", () => {
-                            resolve();
-                        });
-                    });
+                    await rawRequestClosePromise;
+                    realtimeSSEManager.close(reply);
                 } catch (error) {
+                    realtimeSSEManager.close(reply);
                     log.error(
                         error,
                         "Error during anonymous realtime stream connection",

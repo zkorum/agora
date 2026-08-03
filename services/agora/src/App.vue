@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, watch } from "vue";
+import { computed, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
 
 import { type AppTranslations, appTranslations } from "./App.i18n";
@@ -35,8 +35,10 @@ import {
   buildContentTranslationTopic,
   buildProjectContentTranslationTopic,
 } from "./shared/types/dto";
+import { useAuthenticationStore } from "./stores/authentication";
 import { useLanguageStore } from "./stores/language";
 import { useBackendAuthApi } from "./utils/api/auth";
+import { createAuthInitializationController } from "./utils/auth/authInitialization";
 import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
 import {
   isConversationRouteName,
@@ -49,8 +51,19 @@ const { t } = useComponentI18n<AppTranslations>(appTranslations);
 
 const keepAliveRoutes = ["HomePage", "NotificationPage", "UserProfilePage"];
 
-const authenticationStore = useBackendAuthApi();
+const authenticationApi = useBackendAuthApi();
+const authenticationStore = useAuthenticationStore();
 const languageStore = useLanguageStore();
+
+const authInitializationController = createAuthInitializationController({
+  refreshAuthState: authenticationApi.refreshAuthState,
+  markInitialized: () => {
+    authenticationStore.isAuthInitialized = true;
+  },
+  onError: (error) => {
+    console.error("Error while trying to get logged-in status", error);
+  },
+});
 
 useHtmlNodeCssPatch();
 
@@ -159,28 +172,54 @@ const offlineController = createOfflineNotificationController({
   },
 });
 
-watch(isNetworkOffline, (offline) => {
-  if (offline) {
-    offlineController.onWentOffline();
-  } else {
-    offlineController.onWentOnline();
+function retryAuthInitialization(): void {
+  void authInitializationController.retryNow();
+}
+
+function retryAuthInitializationWhenVisible(): void {
+  if (!document.hidden) {
+    retryAuthInitialization();
   }
-}, { flush: 'sync' });
+}
+
+watch(
+  isNetworkOffline,
+  (offline) => {
+    if (offline) {
+      offlineController.onWentOffline();
+    } else {
+      offlineController.onWentOnline();
+    }
+  },
+  { flush: "sync" }
+);
 
 onMounted(async () => {
+  window.addEventListener("online", retryAuthInitialization);
+  document.addEventListener(
+    "visibilitychange",
+    retryAuthInitializationWhenVisible
+  );
   // Remove SPA splash screen (only present in SPA builds, see index.html)
   const splash = document.getElementById("app-loading");
   if (splash) {
     splash.classList.add("fade-out");
-    splash.addEventListener("transitionend", () => splash.remove(), { once: true });
+    splash.addEventListener("transitionend", () => splash.remove(), {
+      once: true,
+    });
     setTimeout(() => splash.remove(), 500);
   }
 
-  try {
-    await authenticationStore.initializeAuthState();
-  } catch (e) {
-    console.error("Error while trying to get logged-in status", e);
-  }
+  await authInitializationController.initialize();
+});
+
+onUnmounted(() => {
+  window.removeEventListener("online", retryAuthInitialization);
+  document.removeEventListener(
+    "visibilitychange",
+    retryAuthInitializationWhenVisible
+  );
+  authInitializationController.stop();
 });
 </script>
 

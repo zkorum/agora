@@ -162,7 +162,10 @@ export async function createDb(
         useReadReplica: false,
     });
     const primaryDb = drizzle(primaryClient, {
-        logger: new DrizzleFastifyLogger(log),
+        logger: new DrizzleFastifyLogger({
+            fastifyLogger: log,
+            includeParams: config.NODE_ENV === "development",
+        }),
     });
 
     // Check if read replica config exists
@@ -180,7 +183,10 @@ export async function createDb(
             useReadReplica: true,
         });
         const readDb = drizzle(readClient, {
-            logger: new DrizzleFastifyLogger(log),
+            logger: new DrizzleFastifyLogger({
+                fastifyLogger: log,
+                includeParams: config.NODE_ENV === "development",
+            }),
         });
 
         log.info(

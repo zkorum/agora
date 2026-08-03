@@ -1,6 +1,9 @@
-import { isAxiosError } from "axios";
-import { storeToRefs } from "pinia";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
+import {
+  listAuthSessionsResponse,
+  logoutAllAuthSessionsResponse,
+  revokeAuthSessionResponse,
+} from "src/shared/types/dto-auth";
 import type { DeviceLoginStatus } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
@@ -10,9 +13,17 @@ import { useUserStore } from "src/stores/user";
 import { useRoute, useRouter } from "vue-router";
 
 import {
+  applyBackendAuthStatus,
+  type AuthStatusTransition,
+} from "../auth/backendAuthState";
+import {
   clearAccountScopedState,
   resetLocalAuthState,
 } from "../auth/localAuthState";
+import {
+  requestBackendAuthStatus,
+  requestBackendDeviceLoginStatus,
+} from "../auth/refreshAuthState";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { queryClient } from "../query/client";
 import { useRouterGuard } from "../router/guard";
@@ -26,21 +37,9 @@ export interface AuthStateUpdateResult {
   needsCacheRefresh: boolean;
 }
 
-const unknownDeviceLoginStatus = {
-  isKnown: false,
-  isLoggedIn: false,
-  isRegistered: false,
-  credentials: { email: null, phone: null, rarimo: null },
-} satisfies DeviceLoginStatus;
-
-function isUnauthorizedResponse(error: unknown): boolean {
-  return isAxiosError(error) && error.response?.status === 401;
-}
-
 export function useBackendAuthApi() {
   const { buildEncodedUcan } = useCommonApi();
   const authStore = useAuthenticationStore();
-  const { isAuthInitialized } = storeToRefs(authStore);
 
   const { loadUserProfile } = useUserStore();
   const { loadTopicsData } = useTopicStore();
@@ -53,20 +52,8 @@ export function useBackendAuthApi() {
   const { firstLoadGuard } = useRouterGuard();
 
   async function getDeviceLoginStatus(): Promise<DeviceLoginStatus> {
-    const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1AuthCheckLoginStatusPost();
-    const encodedUcan = await buildEncodedUcan(url, options);
-    const resp = await DefaultApiFactory(
-      undefined,
-      undefined,
-      api
-    ).apiV1AuthCheckLoginStatusPost({
-      headers: {
-        ...buildAuthorizationHeader(encodedUcan),
-      },
-    });
-    return resp.data.loggedInStatus as DeviceLoginStatus;
-    //NOTE: DO NOT return false on error! You would wipe out the user session at the first backend interruption.
+    const { loginStatus } = await requestBackendDeviceLoginStatus();
+    return loginStatus;
   }
 
   async function logoutFromServer() {
@@ -83,6 +70,49 @@ export function useBackendAuthApi() {
       },
     });
     return { data: otpDetails.data };
+  }
+
+  async function listAuthSessions() {
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1AuthSessionsListPost();
+    const encodedUcan = await buildEncodedUcan(url, options);
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1AuthSessionsListPost({
+      headers: buildAuthorizationHeader(encodedUcan),
+    });
+    return listAuthSessionsResponse.parse(response.data);
+  }
+
+  async function revokeAuthSession(didWrite: string) {
+    const request = { didWrite };
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1AuthSessionsRevokePost(request);
+    const encodedUcan = await buildEncodedUcan(url, options);
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1AuthSessionsRevokePost(request, {
+      headers: buildAuthorizationHeader(encodedUcan),
+    });
+    return revokeAuthSessionResponse.parse(response.data);
+  }
+
+  async function logoutAllAuthSessions() {
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1AuthSessionsLogoutAllPost();
+    const encodedUcan = await buildEncodedUcan(url, options);
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1AuthSessionsLogoutAllPost({
+      headers: buildAuthorizationHeader(encodedUcan),
+    });
+    return logoutAllAuthSessionsResponse.parse(response.data);
   }
 
   async function loadAuthenticatedModules() {
@@ -104,7 +134,95 @@ export function useBackendAuthApi() {
     })();
   }
 
-  // update the global state according to the change in login status
+  async function processAuthStatusTransition({
+    statusTransition,
+    forceRefresh = false,
+    deferCacheOperations = false,
+  }: {
+    statusTransition: AuthStatusTransition;
+    forceRefresh?: boolean;
+    deferCacheOperations?: boolean;
+  }): Promise<AuthStateUpdateResult> {
+    const {
+      oldLoginStatus,
+      newLoginStatus,
+      oldIsGuestOrLoggedIn,
+      newIsGuestOrLoggedIn,
+    } = statusTransition;
+    const oldUserId = oldLoginStatus.isKnown
+      ? oldLoginStatus.userId
+      : undefined;
+    const newUserId = newLoginStatus.isKnown
+      ? newLoginStatus.userId
+      : undefined;
+    const userIdChanged = oldUserId !== newUserId;
+    const knownUserChanged =
+      oldLoginStatus.isKnown && newLoginStatus.isKnown && userIdChanged;
+
+    if (knownUserChanged) {
+      clearAccountScopedState();
+    }
+
+    if (
+      (oldLoginStatus.isKnown !== newLoginStatus.isKnown || forceRefresh) &&
+      !newLoginStatus.isKnown
+    ) {
+      await logoutDataCleanup({
+        shouldClearLanguagePreferences:
+          oldIsGuestOrLoggedIn && !newIsGuestOrLoggedIn,
+      });
+      if (route.name) {
+        await firstLoadGuard({ toName: route.name, router });
+      }
+      return { authStateChanged: true, needsCacheRefresh: false };
+    }
+
+    const authStateChanged =
+      oldIsGuestOrLoggedIn !== newIsGuestOrLoggedIn || userIdChanged;
+    if (!forceRefresh && !authStateChanged) {
+      return { authStateChanged: false, needsCacheRefresh: false };
+    }
+    if (!newIsGuestOrLoggedIn) {
+      await logoutDataCleanup({
+        shouldClearLanguagePreferences:
+          oldIsGuestOrLoggedIn && !newIsGuestOrLoggedIn,
+      });
+      if (route.name) {
+        await firstLoadGuard({ toName: route.name, router });
+      }
+      return { authStateChanged: true, needsCacheRefresh: false };
+    }
+    if (deferCacheOperations) {
+      return { authStateChanged: true, needsCacheRefresh: true };
+    }
+
+    if (authStateChanged) {
+      const isNewGuestCreation =
+        !oldIsGuestOrLoggedIn &&
+        newLoginStatus.isKnown &&
+        !newLoginStatus.isRegistered;
+      if (isNewGuestCreation) {
+        await queryClient.invalidateQueries({
+          predicate: (query) => {
+            const queryKey = query.queryKey[0];
+            return ![
+              "userVotes",
+              "comments",
+              "maxdiff-items",
+              "maxdiff-load",
+            ].includes(String(queryKey));
+          },
+        });
+      } else if (!knownUserChanged) {
+        queryClient.clear();
+      }
+    }
+
+    await loadAuthenticatedModules();
+    return { authStateChanged: true, needsCacheRefresh: false };
+  }
+
+  // Apply trusted local state changes that are not tied to a backend status request.
   async function updateAuthState({
     partialLoginStatus,
     forceRefresh = false,
@@ -115,125 +233,43 @@ export function useBackendAuthApi() {
     deferCacheOperations?: boolean;
   }): Promise<AuthStateUpdateResult> {
     try {
-      const {
-        oldLoginStatus,
-        newLoginStatus,
-        oldIsGuestOrLoggedIn,
-        newIsGuestOrLoggedIn,
-      } = authStore.setLoginStatus(partialLoginStatus);
-      const oldUserId = oldLoginStatus.isKnown
-        ? oldLoginStatus.userId
-        : undefined;
-      const newUserId = newLoginStatus.isKnown
-        ? newLoginStatus.userId
-        : undefined;
-      const userIdChanged = oldUserId !== newUserId;
-      const knownUserChanged =
-        oldLoginStatus.isKnown && newLoginStatus.isKnown && userIdChanged;
-
-      if (knownUserChanged) {
-        clearAccountScopedState();
-      }
-
-      if (
-        (oldLoginStatus.isKnown !== newLoginStatus.isKnown || forceRefresh) &&
-        newLoginStatus.isKnown == false
-      ) {
-        await logoutDataCleanup({
-          shouldClearLanguagePreferences:
-            oldIsGuestOrLoggedIn && !newIsGuestOrLoggedIn,
-        });
-        if (route.name) {
-          await firstLoadGuard({ toName: route.name, router });
-        }
-        return { authStateChanged: true, needsCacheRefresh: false };
-      }
-
-      const authStateChanged =
-        oldIsGuestOrLoggedIn !== newIsGuestOrLoggedIn || userIdChanged;
-
-      if (forceRefresh || authStateChanged)
-        if (newIsGuestOrLoggedIn) {
-          // Check if we should defer cache operations
-          if (deferCacheOperations) {
-            return { authStateChanged: true, needsCacheRefresh: true };
-          }
-
-          // Only clear/invalidate cache when auth actually changed.
-          // On HMR remounts, forceRefresh is true but Pinia state persists
-          // (oldIsGuestOrLoggedIn === newIsGuestOrLoggedIn), so we skip cache
-          // clearing to avoid wiping the feed and causing a "..." spinner.
-          if (authStateChanged) {
-            // Detect if this is a new guest creation (anonymous → guest)
-            const newIsGuest =
-              newLoginStatus.isKnown && !newLoginStatus.isRegistered;
-            const isNewGuestCreation = !oldIsGuestOrLoggedIn && newIsGuest;
-
-            if (isNewGuestCreation) {
-              // For new guests: preserve in-flight caches, invalidate everything else
-              await queryClient.invalidateQueries({
-                predicate: (query) => {
-                  const queryKey = query.queryKey[0];
-                  // Preserve caches with in-flight optimistic updates
-                  if (queryKey === "userVotes") return false;
-                  if (queryKey === "comments") return false;
-                  if (queryKey === "maxdiff-items") return false;
-                  if (queryKey === "maxdiff-load") return false;
-                  // Invalidate everything else (user profile, etc.)
-                  return true;
-                },
-              });
-            } else if (!knownUserChanged) {
-              // For other transitions (login, logout, account switch): clear everything
-              queryClient.clear();
-            }
-          }
-
-          await loadAuthenticatedModules();
-          return { authStateChanged: true, needsCacheRefresh: false };
-        } else {
-          await logoutDataCleanup({
-            shouldClearLanguagePreferences:
-              oldIsGuestOrLoggedIn && !newIsGuestOrLoggedIn,
-          });
-          if (route.name) {
-            await firstLoadGuard({ toName: route.name, router });
-          }
-          return { authStateChanged: true, needsCacheRefresh: false };
-        }
-
-      return { authStateChanged: false, needsCacheRefresh: false };
-    } catch (e) {
-      console.error("Failed to update authentication state", e);
-      throw e;
-    }
-  }
-
-  async function refreshAuthState(): Promise<AuthStateUpdateResult> {
-    try {
-      const deviceLoginStatus = await getDeviceLoginStatus();
-      return await updateAuthState({
-        partialLoginStatus: deviceLoginStatus,
-        forceRefresh: true,
+      return await processAuthStatusTransition({
+        statusTransition: authStore.setLoginStatus(partialLoginStatus),
+        forceRefresh,
+        deferCacheOperations,
       });
     } catch (error) {
-      if (isUnauthorizedResponse(error)) {
-        return await updateAuthState({
-          partialLoginStatus: unknownDeviceLoginStatus,
-          forceRefresh: true,
-        });
-      }
-
+      console.error("Failed to update authentication state", error);
       throw error;
     }
   }
 
-  async function initializeAuthState() {
-    try {
-      await refreshAuthState();
-    } finally {
-      isAuthInitialized.value = true;
+  async function updateAuthStateFromBackend({
+    loginStatus,
+    didWrite,
+  }: {
+    loginStatus: DeviceLoginStatus;
+    didWrite: string;
+  }): Promise<AuthStateUpdateResult> {
+    const application = await applyBackendAuthStatus({ loginStatus, didWrite });
+    if (application.type === "ignored") {
+      return { authStateChanged: false, needsCacheRefresh: false };
     }
+    if (application.type === "reset") {
+      if (route.name) {
+        await firstLoadGuard({ toName: route.name, router });
+      }
+      return { authStateChanged: true, needsCacheRefresh: false };
+    }
+    return await processAuthStatusTransition({
+      statusTransition: application.transition,
+      forceRefresh: true,
+    });
+  }
+
+  async function refreshAuthState(): Promise<AuthStateUpdateResult> {
+    const { loginStatus, didWrite } = await requestBackendAuthStatus();
+    return await updateAuthStateFromBackend({ loginStatus, didWrite });
   }
 
   async function logoutDataCleanup({
@@ -246,10 +282,12 @@ export function useBackendAuthApi() {
 
   return {
     logoutFromServer,
+    listAuthSessions,
+    revokeAuthSession,
+    logoutAllAuthSessions,
     getDeviceLoginStatus,
     updateAuthState,
     refreshAuthState,
-    initializeAuthState,
     loadAuthenticatedModules,
   };
 }

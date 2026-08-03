@@ -46,6 +46,11 @@ import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { processEnv } from "src/utils/processEnv";
 import { abortIgnoringAbortError } from "src/utils/sse/abort";
 import {
+  getExponentialBackoffDelayMs,
+  parseRetryAfterMs,
+  shouldRetrySSEStatus,
+} from "src/utils/sse/backoff";
+import {
   createSSEConnectionGeneration,
   type SSEConnectionAttempt,
 } from "src/utils/sse/connectionGeneration";
@@ -73,7 +78,9 @@ import {
 } from "./useRealtimeSSE.i18n";
 
 const SSE_CONNECTION_TIMEOUT_MS = 15_000;
-const SSE_DEFAULT_RETRY_DELAY_MS = 1_000;
+const SSE_INITIAL_RETRY_DELAY_MS = 1_000;
+const SSE_MAX_RETRY_DELAY_MS = 30_000;
+const SSE_MAX_SERVER_RETRY_HINT_MS = 300_000;
 const SSE_MAX_BUFFER_LENGTH = 1_000_000;
 const SSE_PROCESSED_ID_CACHE_SIZE = 1_000;
 const SURVEY_REFRESH_DEBOUNCE_MS = 300;
@@ -329,7 +336,8 @@ export function useRealtimeSSE({
   let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   let shouldReconnect = true;
   let lastEventId: string | null = null;
-  let reconnectDelayMs = SSE_DEFAULT_RETRY_DELAY_MS;
+  let reconnectFailureCount = 0;
+  let sseRetryHintMs = 0;
   let offlineTimer: ReturnType<typeof setTimeout> | null = null;
   let heartbeatWatchdog: ReturnType<typeof setTimeout> | null = null;
   const processedSSEEventIds = new Set<string>();
@@ -438,6 +446,7 @@ export function useRealtimeSSE({
     const { abortController: connectionAbortController } = connectionAttempt;
 
     let connectionTimeout: ReturnType<typeof setTimeout> | null = null;
+    let responseRetryAfterMs = 0;
 
     try {
       isConnecting.value = true;
@@ -482,22 +491,36 @@ export function useRealtimeSSE({
       clearTimeout(connectionTimeout);
       connectionTimeout = null;
 
+      responseRetryAfterMs =
+        parseRetryAfterMs({
+          value: response.headers.get("Retry-After"),
+          nowMs: Date.now(),
+          maximumDelayMs: SSE_MAX_SERVER_RETRY_HINT_MS,
+        }) ?? 0;
+
+      if (response.status === 204) {
+        isConnecting.value = false;
+        isConnected.value = false;
+        return;
+      }
+
       if (!response.ok) {
         if (response.status === 401) {
-          const didRefreshAuthState =
-            await refreshAuthStateAfterSSEUnauthorized();
+          await refreshAuthStateAfterSSEUnauthorized();
           if (!connectionGeneration.isCurrent(connectionAttempt)) {
             return;
           }
-          if (didRefreshAuthState) {
-            isConnecting.value = false;
-            isConnected.value = false;
-            setNetworkOffline(false);
-            if (shouldReconnect && shouldMaintainConnection()) {
-              scheduleReconnect();
-            }
-            return;
+          isConnecting.value = false;
+          isConnected.value = false;
+          if (shouldReconnect && shouldMaintainConnection()) {
+            scheduleReconnect({ minimumDelayMs: responseRetryAfterMs });
           }
+          return;
+        }
+        if (!shouldRetrySSEStatus(response.status)) {
+          isConnecting.value = false;
+          isConnected.value = false;
+          return;
         }
         throw new Error(`SSE connection failed: ${String(response.status)}`);
       }
@@ -558,7 +581,7 @@ export function useRealtimeSSE({
       isConnected.value = false;
       scheduleOfflineTimer();
       if (shouldReconnect && shouldMaintainConnection()) {
-        scheduleReconnect();
+        scheduleReconnect({ minimumDelayMs: 0 });
       }
     } catch {
       if (connectionTimeout) {
@@ -575,7 +598,7 @@ export function useRealtimeSSE({
       scheduleOfflineTimer();
 
       if (shouldReconnect && shouldMaintainConnection()) {
-        scheduleReconnect();
+        scheduleReconnect({ minimumDelayMs: responseRetryAfterMs });
       }
     } finally {
       if (connectionTimeout !== null) {
@@ -635,6 +658,10 @@ export function useRealtimeSSE({
 
   function parseSSEEvent(raw: string): ParsedRealtimeSSEEvent | undefined {
     const frame = parseRawSSEFrame(raw);
+    if (frame.kind === "retry") {
+      sseRetryHintMs = Math.min(frame.retry, SSE_MAX_SERVER_RETRY_HINT_MS);
+      return undefined;
+    }
     if (frame.kind === "comment") {
       return undefined;
     }
@@ -643,7 +670,7 @@ export function useRealtimeSSE({
       updateLastEventId(frame.id);
     }
     if (frame.retry !== null) {
-      reconnectDelayMs = frame.retry;
+      sseRetryHintMs = Math.min(frame.retry, SSE_MAX_SERVER_RETRY_HINT_MS);
     }
 
     const data = frame.data.trim();
@@ -1018,6 +1045,7 @@ export function useRealtimeSSE({
     try {
       switch (sseEvent.event) {
         case "connected": {
+          reconnectFailureCount = 0;
           break;
         }
         case "notification": {
@@ -1675,7 +1703,6 @@ export function useRealtimeSSE({
         queryKey: ["ranking-stats-checkpoints", data.conversationSlugId],
       });
     }
-
   }
 
   function updateVotedVisibleOpinionCountsFromEvent(
@@ -1764,9 +1791,9 @@ export function useRealtimeSSE({
           conversationSlugId,
         }) ||
           isAnalysisCheckpointsQueryKey({
-          queryKey: query.queryKey,
-          conversationSlugId,
-        }) ||
+            queryKey: query.queryKey,
+            conversationSlugId,
+          }) ||
           isCommentStatsQueryKey({
             queryKey: query.queryKey,
             conversationSlugId,
@@ -1797,7 +1824,11 @@ export function useRealtimeSSE({
     }
   }
 
-  function scheduleReconnect() {
+  function scheduleReconnect({
+    minimumDelayMs,
+  }: {
+    minimumDelayMs: number;
+  }): void {
     if (!shouldMaintainConnection()) {
       return;
     }
@@ -1806,11 +1837,18 @@ export function useRealtimeSSE({
       clearTimeout(reconnectTimeout);
     }
 
-    // Fixed 1s retry with small jitter (0-250ms) to avoid thundering herd
-    const jitter = Math.random() * 250;
-    const delay = reconnectDelayMs + jitter;
+    const delay = getExponentialBackoffDelayMs({
+      failureCount: reconnectFailureCount,
+      initialDelayMs: SSE_INITIAL_RETRY_DELAY_MS,
+      maximumDelayMs: SSE_MAX_RETRY_DELAY_MS,
+      minimumDelayMs: Math.max(minimumDelayMs, sseRetryHintMs),
+      multiplier: 2,
+      randomUnitInterval: Math.random(),
+    });
+    reconnectFailureCount += 1;
 
     reconnectTimeout = setTimeout(() => {
+      reconnectTimeout = null;
       if (shouldReconnect && shouldMaintainConnection()) {
         void connect();
       }
@@ -1829,6 +1867,7 @@ export function useRealtimeSSE({
   }
 
   function forceReconnect() {
+    reconnectFailureCount = 0;
     disconnectAndAllowLaterReconnect();
 
     if (shouldMaintainConnection()) {
@@ -1868,6 +1907,7 @@ export function useRealtimeSSE({
       disconnectAndAllowLaterReconnect();
     } else {
       if (shouldMaintainConnection()) {
+        reconnectFailureCount = 0;
         void connect();
       }
     }
@@ -1963,6 +2003,7 @@ export function useRealtimeSSE({
         if (userId !== previousUserId) {
           lastEventId = null;
         }
+        reconnectFailureCount = 0;
         disconnectAndAllowLaterReconnect();
         if (shouldMaintainConnection()) {
           await connect();

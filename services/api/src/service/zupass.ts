@@ -12,7 +12,7 @@ import type {
 } from "@/shared/types/zod.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { determineAuthType } from "./auth/core/stateHelpers.js";
 import type { CredentialAuthState, AuthResult } from "./auth/core/types.js";
 // Types only - no runtime import to avoid broken ESM
@@ -23,6 +23,8 @@ import { getZupassEventId, getZupassSignerPublicKey } from "./zupassConfig.js";
 import * as authUtilService from "./authUtil.js";
 import { mergeGuestIntoVerifiedUser } from "./merge.js";
 import { createUserWithInitialLanguagePreferencesIfMissing } from "./auth.js";
+import { getPrimaryDatabase } from "@/shared-backend/db.js";
+import { startGuestSessionAfterMerge } from "./authSession.js";
 
 // Dynamic import wrapper for gpcVerify to work around broken ESM in @pcd/gpc
 async function gpcVerify(
@@ -63,6 +65,7 @@ export async function verifyEventTicket({
     currentDisplayLanguage,
 }: VerifyEventTicketProps): Promise<VerifyEventTicket200> {
     try {
+        const primaryDb = getPrimaryDatabase(db);
         // Step 0: Parse and validate proof data structure
         log.info({ eventSlug }, "[Zupass] Parsing GPC proof data");
 
@@ -436,14 +439,14 @@ export async function verifyEventTicket({
 
         // Step 5: Get device status (may be guest, verified, or non-existent)
         const deviceStatus = await authUtilService.getDeviceStatus({
-            db,
+            db: primaryDb,
             didWrite,
             now,
         });
 
         // Step 6: Determine authentication type
         const authResult = await getZupassAuthenticationType({
-            db,
+            db: primaryDb,
             nullifier,
             didWrite,
             deviceStatus,
@@ -465,8 +468,36 @@ export async function verifyEventTicket({
         const sessionExpiry = new Date(now);
         sessionExpiry.setDate(sessionExpiry.getDate() + sessionLifetimeDays);
 
+        const existingUserIds =
+            authResult.type === "merge"
+                ? [authResult.toUserId, authResult.fromUserId]
+                : authResult.type === "register" && !deviceStatus.isKnown
+                  ? []
+                  : [authResult.userId];
+
         // Step 9: Execute appropriate action
-        await db.transaction(async (tx) => {
+        await primaryDb.transaction(async (tx) => {
+            if (existingUserIds.length > 0) {
+                // Match deletion/merge ordering: lock parents before credentials or devices.
+                const lockedUsers = await tx
+                    .select({
+                        id: userTable.id,
+                        isDeleted: userTable.isDeleted,
+                    })
+                    .from(userTable)
+                    .where(inArray(userTable.id, existingUserIds))
+                    .orderBy(userTable.id)
+                    .for("update");
+                if (
+                    lockedUsers.length !== existingUserIds.length ||
+                    lockedUsers.some((user) => user.isDeleted)
+                ) {
+                    throw new Error(
+                        "Cannot authenticate inactive Zupass users",
+                    );
+                }
+            }
+
             switch (authResult.type) {
                 case "register":
                     // Create new user and link nullifier (or link nullifier to existing user)
@@ -512,6 +543,7 @@ export async function verifyEventTicket({
                         userId: authResult.userId,
                         userAgent,
                         sessionExpiry,
+                        now,
                     });
                     log.info(
                         { userId: authResult.userId, nullifier, eventSlug },
@@ -532,15 +564,20 @@ export async function verifyEventTicket({
                         db: tx,
                         verifiedUserId: authResult.toUserId,
                         guestUserId: authResult.fromUserId,
+                        now,
                     });
-                    await tx
-                        .update(deviceTable)
-                        .set({
+                    if (
+                        deviceStatus.isKnown &&
+                        authResult.fromUserId === deviceStatus.userId
+                    ) {
+                        await startGuestSessionAfterMerge({
+                            db: tx,
                             userId: authResult.toUserId,
-                            sessionExpiry: sessionExpiry,
-                            updatedAt: now,
-                        })
-                        .where(eq(deviceTable.didWrite, didWrite));
+                            didWrite,
+                            now,
+                            sessionExpiry,
+                        });
+                    }
                     log.info(
                         {
                             toUserId: authResult.toUserId,
@@ -812,13 +849,7 @@ interface LoginNewDeviceWithZupassProps {
     userAgent: string;
     userId: string;
     sessionExpiry: Date;
-}
-
-interface LoginKnownDeviceWithZupassProps {
-    db: PostgresDatabase;
-    didWrite: string;
     now: Date;
-    sessionExpiry: Date;
 }
 
 /**
@@ -846,22 +877,16 @@ export async function registerWithZupass({
                 now,
             });
 
-        if (wasUserCreated) {
-            await tx.insert(deviceTable).values({
-                userId: userId,
-                didWrite: didWrite,
-                userAgent: userAgent,
-                sessionExpiry: sessionExpiry,
-            });
-        } else {
-            await tx
-                .update(deviceTable)
-                .set({
-                    sessionExpiry,
-                    updatedAt: now,
-                })
-                .where(eq(deviceTable.didWrite, didWrite));
+        if (!wasUserCreated) {
+            throw new Error("Cannot register an existing user with Zupass");
         }
+        await tx.insert(deviceTable).values({
+            userId: userId,
+            didWrite: didWrite,
+            userAgent: userAgent,
+            sessionStartedAt: now,
+            sessionExpiry: sessionExpiry,
+        });
         await tx.insert(eventTicketTable).values({
             userId: userId,
             provider: "zupass",
@@ -883,32 +908,14 @@ export async function loginNewDeviceWithZupass({
     userId,
     userAgent,
     sessionExpiry,
+    now,
 }: LoginNewDeviceWithZupassProps): Promise<void> {
     log.info("[Zupass] Logging-in new device with Zupass");
     await db.insert(deviceTable).values({
         userId: userId,
         didWrite: didWrite,
         userAgent: userAgent,
+        sessionStartedAt: now,
         sessionExpiry: sessionExpiry,
     });
-}
-
-/**
- * Log in a known device with Zupass
- * Follows EXACT pattern from loginKnownDeviceWithZKP (auth.ts:666)
- */
-export async function loginKnownDeviceWithZupass({
-    db,
-    didWrite,
-    now,
-    sessionExpiry,
-}: LoginKnownDeviceWithZupassProps): Promise<void> {
-    log.info("[Zupass] Logging-in known device with Zupass");
-    await db
-        .update(deviceTable)
-        .set({
-            sessionExpiry: sessionExpiry,
-            updatedAt: now,
-        })
-        .where(eq(deviceTable.didWrite, didWrite));
 }

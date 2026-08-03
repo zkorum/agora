@@ -245,12 +245,19 @@ export type AuthResult = z.infer<typeof zodAuthResult>;
  * - isRegistered: User has hard credentials (phone OR Rarimo)
  * - userId: User associated with device (if isKnown)
  */
-export interface DeviceStatus {
-    isKnown: boolean;
-    isLoggedIn: boolean;
-    isRegistered: boolean;
-    userId?: string;
-}
+export type DeviceStatus =
+    | {
+          isKnown: false;
+          isLoggedIn: false;
+          isRegistered: false;
+          userId?: never;
+      }
+    | {
+          isKnown: true;
+          isLoggedIn: boolean;
+          isRegistered: boolean;
+          userId: string;
+      };
 
 // ============================================================================
 // Authentication Strategy Interface (for future extensibility)

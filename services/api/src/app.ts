@@ -37,6 +37,12 @@ const baseConfigSchema = sharedConfigSchema.extend({
     SERVER_DID_STAGING: zodDidWeb.default(`did:web:staging.agoracitizen.app`),
     SERVER_DID_PROD: zodDidWeb.default(`did:web:agoracitizen.app`),
     EMAIL_OTP_MAX_ATTEMPT_AMOUNT: z.number().int().min(1).max(5).default(3),
+    EMAIL_OTP_DESTINATION_MAX_WRONG_GUESSES: z.coerce
+        .number()
+        .int()
+        .min(5)
+        .max(100)
+        .default(10),
     THROTTLE_SMS_SECONDS_INTERVAL: z.number().int().min(5).default(10),
     MINUTES_BEFORE_SMS_OTP_EXPIRY: z.number().int().min(3).max(60).default(10),
     PHONE_AUTH_MODE: phoneAuthModeSchema.default("enabled"),
@@ -225,6 +231,17 @@ const configSchema = baseConfigSchema.superRefine((value, ctx) => {
             path: ["TEST_CODE"],
             message:
                 "TEST_CODE, SPECIALLY_AUTHORIZED_PHONES, and SPECIALLY_AUTHORIZED_EMAILS must not enable test authentication in production",
+        });
+    }
+
+    if (
+        value.SESSION_REFRESH_THRESHOLD_DAYS >= value.SESSION_LIFETIME_DAYS
+    ) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["SESSION_REFRESH_THRESHOLD_DAYS"],
+            message:
+                "SESSION_REFRESH_THRESHOLD_DAYS must be less than SESSION_LIFETIME_DAYS",
         });
     }
 });

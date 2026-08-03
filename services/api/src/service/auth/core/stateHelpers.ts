@@ -50,7 +50,8 @@ import { AUTH_METHOD_STRENGTH } from "./types.js";
  *    - Credential has soft user → Login to existing user (ZK proof = ownership)
  *
  * 2. Device Owns Credential (re-authentication):
- *    - Always → Login known device
+ *    - Active/guest device → Login known device
+ *    - Expired registered device → Reject; login requires a fresh DID
  *
  * 3. Device Missing Credential (device exists but doesn't own this credential):
  *    - Credential available → Register (add credential to device user)
@@ -72,6 +73,14 @@ export function determineAuthType({
     authMethod: AuthMethod;
 }): AuthResult {
     const credentialStrength = AUTH_METHOD_STRENGTH[authMethod];
+
+    // Registered DIDs are retired permanently when their session expires.
+    if (deviceStatus.isRegistered && !deviceStatus.isLoggedIn) {
+        return {
+            type: "associated_with_another_user",
+            userId: deviceStatus.userId,
+        };
+    }
 
     switch (credentialAuthState.deviceCredentialAssociation) {
         case "device_unknown_credential_available": {
@@ -119,23 +128,22 @@ export function determineAuthType({
 
         case "device_missing_credential_available": {
             // Known device + unclaimed credential → device user claims it
-            const deviceUserId = deviceStatus.userId;
-            if (!deviceUserId) {
+            if (!deviceStatus.isKnown) {
                 throw new Error(
                     "Device exists but userId is missing - data integrity issue",
                 );
             }
-            return { type: "register", userId: deviceUserId };
+            return { type: "register", userId: deviceStatus.userId };
         }
 
         case "device_missing_credential_owned": {
             // Known device + credential has different owner
-            const deviceUserId = deviceStatus.userId;
-            if (!deviceUserId) {
+            if (!deviceStatus.isKnown) {
                 throw new Error(
                     "Device exists but userId is missing - data integrity issue",
                 );
             }
+            const deviceUserId = deviceStatus.userId;
 
             // MERGE RULES:
             // 1. Guest device + Hard credential (verified) → Merge guest INTO hard ✅

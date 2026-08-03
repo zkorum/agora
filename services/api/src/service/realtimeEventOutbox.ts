@@ -3,7 +3,6 @@ import {
     desc,
     eq,
     gt,
-    gte,
     inArray,
     isNotNull,
     isNull,
@@ -47,10 +46,11 @@ import {
     buildProjectContentTranslationTopic,
     type RealtimeSSEManager,
 } from "./realtimeSSE.js";
+import { authStateChangedPayload } from "./authSession.js";
 
 const REALTIME_EVENT_OUTBOX_CHANNEL = "realtime_event_outbox";
-const RECENT_EVENT_CATCHUP_MS = 5 * 60 * 1000;
-const RECENT_EVENT_CATCHUP_INTERVAL_MS = 30 * 1000;
+const EVENT_CATCHUP_INTERVAL_MS = 30 * 1000;
+const EVENT_CATCHUP_BATCH_SIZE = 1_000;
 
 const zodConversationCommentStatsUpdatedData = z.object({
     conversationSlugId: z.string().min(1),
@@ -115,11 +115,57 @@ interface RealtimeEventOutboxBridge {
 }
 
 type ListenerClient = Awaited<ReturnType<typeof createPostgresClient>>;
+type ListenerSubscription = Awaited<ReturnType<ListenerClient["listen"]>>;
 
-interface RealtimeEventOutboxRow {
-    id: number;
-    eventType: string;
-    payload: unknown;
+interface CatchupRequestQueue {
+    request: () => void;
+    waitForIdle: () => Promise<void>;
+}
+
+export function createCatchupRequestQueue({
+    task,
+    onError,
+}: {
+    task: () => Promise<void>;
+    onError: (error: unknown) => void;
+}): CatchupRequestQueue {
+    let isRequested = false;
+    let runningTask: Promise<void> | undefined;
+
+    const run = async (): Promise<void> => {
+        try {
+            while (isRequested) {
+                isRequested = false;
+                try {
+                    await task();
+                } catch (error: unknown) {
+                    isRequested = false;
+                    onError(error);
+                    return;
+                }
+            }
+        } finally {
+            runningTask = undefined;
+        }
+    };
+
+    const request = (): void => {
+        isRequested = true;
+        if (runningTask !== undefined) {
+            return;
+        }
+        runningTask = run();
+        void runningTask;
+    };
+
+    return {
+        request,
+        waitForIdle: async (): Promise<void> => {
+            while (runningTask !== undefined) {
+                await runningTask;
+            }
+        },
+    };
 }
 
 function parseContentTranslationUpdatedData(payload: unknown) {
@@ -175,6 +221,20 @@ type RealtimeReplayEvent =
           event: "content_translation_updated";
           data: SSEEventDataByType["content_translation_updated"];
       };
+
+type ParsedRealtimeOutboxEvent =
+    | RealtimeReplayEvent
+    | {
+          id: number;
+          event: "auth_state_changed";
+          data: z.infer<typeof authStateChangedPayload>;
+      };
+
+function isRealtimeReplayEvent(
+    event: ParsedRealtimeOutboxEvent,
+): event is RealtimeReplayEvent {
+    return event.event !== "auth_state_changed";
+}
 
 async function fetchDisplayableGroupCountsByViewSnapshotId({
     db,
@@ -745,7 +805,7 @@ function parseRealtimeEventOutboxRow({
     id: number;
     eventType: string;
     payload: unknown;
-}): RealtimeReplayEvent | undefined {
+}): ParsedRealtimeOutboxEvent | undefined {
     switch (eventType) {
         case "conversation_analysis_updated": {
             try {
@@ -795,7 +855,8 @@ function parseRealtimeEventOutboxRow({
             };
         }
         case "conversation_survey_updated": {
-            const result = zodSSEConversationSurveyUpdatedData.safeParse(payload);
+            const result =
+                zodSSEConversationSurveyUpdatedData.safeParse(payload);
             if (!result.success) {
                 return undefined;
             }
@@ -814,6 +875,17 @@ function parseRealtimeEventOutboxRow({
                 id,
                 event: eventType,
                 data,
+            };
+        }
+        case "auth_state_changed": {
+            const result = authStateChangedPayload.safeParse(payload);
+            if (!result.success) {
+                return undefined;
+            }
+            return {
+                id,
+                event: eventType,
+                data: result.data,
             };
         }
         default: {
@@ -859,7 +931,7 @@ export async function fetchConversationRealtimeEventsAfterId({
     const events: RealtimeReplayEvent[] = [];
     for (const row of rows) {
         const event = parseRealtimeEventOutboxRow(row);
-        if (event !== undefined) {
+        if (event !== undefined && isRealtimeReplayEvent(event)) {
             events.push(event);
         }
     }
@@ -913,11 +985,32 @@ export async function fetchRealtimeTopicEventsAfterId({
         }
         seenEventIds.add(row.id);
         const event = parseRealtimeEventOutboxRow(row);
-        if (event !== undefined) {
+        if (event !== undefined && isRealtimeReplayEvent(event)) {
             events.push(event);
         }
     }
     return events;
+}
+
+export async function fetchSafeOutboxUpperBound({
+    db,
+}: {
+    db: PostgresJsDatabase;
+}): Promise<number> {
+    const primaryDb = getPrimaryDatabase(db);
+    return primaryDb.transaction(async (transaction) => {
+        // INSERT takes ROW EXCLUSIVE, so this waits for prior inserts to commit
+        // or roll back and briefly prevents new IDs from being allocated.
+        await transaction.execute(
+            sql`LOCK TABLE ${realtimeEventOutboxTable} IN SHARE MODE`,
+        );
+        const rows = await transaction
+            .select({ id: realtimeEventOutboxTable.id })
+            .from(realtimeEventOutboxTable)
+            .orderBy(desc(realtimeEventOutboxTable.id))
+            .limit(1);
+        return rows.at(0)?.id ?? 0;
+    });
 }
 
 export function createRealtimeEventOutboxBridge({
@@ -932,11 +1025,13 @@ export function createRealtimeEventOutboxBridge({
     realtimeSSEManager: RealtimeSSEManager;
 }): RealtimeEventOutboxBridge {
     let listenerClient: ListenerClient | undefined;
+    let listenerSubscription: ListenerSubscription | undefined;
     let isStarted = false;
+    let isAcceptingNotifications = false;
+    let isCatchupInitialized = false;
+    let catchupRequestedDuringInitialization = false;
     let catchupInterval: NodeJS.Timeout | undefined;
-    let highestProcessedOutboxId = 0;
-    let outboxTaskQueue: Promise<void> = Promise.resolve();
-    const failedOutboxIds = new Set<number>();
+    let lastCaughtUpOutboxId = 0;
     const primaryDb = getPrimaryDatabase(db);
 
     const broadcastOutboxRow = ({
@@ -1033,44 +1128,41 @@ export function createRealtimeEventOutboxBridge({
                 });
                 break;
             }
+            case "auth_state_changed": {
+                realtimeSSEManager.closeUsers({
+                    userIds: realtimeEvent.data.userIds,
+                });
+                break;
+            }
         }
     };
 
-    const processOutboxRow = (row: RealtimeEventOutboxRow): void => {
-        if (
-            row.id <= highestProcessedOutboxId &&
-            !failedOutboxIds.has(row.id)
-        ) {
-            return;
-        }
-
-        broadcastOutboxRow(row);
-        failedOutboxIds.delete(row.id);
-        highestProcessedOutboxId = Math.max(highestProcessedOutboxId, row.id);
-    };
-
-    const processNotification = async ({
+    const validateNotification = ({
         payload,
     }: {
         payload: string;
-    }): Promise<void> => {
-        const parsedJson: unknown = JSON.parse(payload);
-        const parsedPayload =
-            zodRealtimeEventOutboxNotification.safeParse(parsedJson);
-        if (!parsedPayload.success) {
-            log.warn("[RealtimeOutbox] Ignoring invalid notification payload");
-            return;
-        }
-
-        const outboxId = parsedPayload.data.id;
-        if (
-            outboxId <= highestProcessedOutboxId &&
-            !failedOutboxIds.has(outboxId)
-        ) {
-            return;
-        }
-
+    }): boolean => {
         try {
+            const parsedJson: unknown = JSON.parse(payload);
+            const parsedPayload =
+                zodRealtimeEventOutboxNotification.safeParse(parsedJson);
+            if (parsedPayload.success) {
+                return true;
+            }
+        } catch (_error: unknown) {
+            // Invalid notifications are untrusted wake-up hints, not events.
+        }
+
+        log.warn("[RealtimeOutbox] Ignoring invalid notification payload");
+        return false;
+    };
+
+    const processPendingEvents = async (): Promise<void> => {
+        const safeUpperBound = await fetchSafeOutboxUpperBound({
+            db: primaryDb,
+        });
+
+        while (lastCaughtUpOutboxId < safeUpperBound) {
             const rows = await primaryDb
                 .select({
                     id: realtimeEventOutboxTable.id,
@@ -1082,132 +1174,61 @@ export function createRealtimeEventOutboxBridge({
                     and(
                         gt(
                             realtimeEventOutboxTable.id,
-                            highestProcessedOutboxId,
+                            lastCaughtUpOutboxId,
                         ),
-                        lte(realtimeEventOutboxTable.id, outboxId),
+                        lte(realtimeEventOutboxTable.id, safeUpperBound),
                     ),
                 )
-                .orderBy(realtimeEventOutboxTable.id);
+                .orderBy(realtimeEventOutboxTable.id)
+                .limit(EVENT_CATCHUP_BATCH_SIZE);
+
             if (rows.length === 0) {
-                log.warn(
-                    `[RealtimeOutbox] Missing outbox row ${String(outboxId)}`,
-                );
+                // The lock proves any missing IDs through the bound rolled back.
+                lastCaughtUpOutboxId = safeUpperBound;
                 return;
             }
 
-            processOutboxRows({ rows, failureContext: "notification" });
-        } catch (error: unknown) {
-            failedOutboxIds.add(outboxId);
-            throw error;
-        }
-    };
-
-    const processOutboxRows = ({
-        rows,
-        failureContext,
-    }: {
-        rows: RealtimeEventOutboxRow[];
-        failureContext: string;
-    }): void => {
-        for (const row of rows) {
-            try {
-                processOutboxRow(row);
-            } catch (error: unknown) {
-                failedOutboxIds.add(row.id);
-                log.error(
-                    error,
-                    `[RealtimeOutbox] Failed to process ${failureContext} row ${String(row.id)}`,
-                );
+            for (const row of rows) {
+                try {
+                    broadcastOutboxRow(row);
+                } catch (error: unknown) {
+                    throw new Error(
+                        `[RealtimeOutbox] Failed to process catch-up row ${String(row.id)}`,
+                        { cause: error },
+                    );
+                }
+                lastCaughtUpOutboxId = row.id;
             }
         }
     };
 
-    const processRecentEvents = async (): Promise<void> => {
-        const since = new Date(Date.now() - RECENT_EVENT_CATCHUP_MS);
-        const rows = await primaryDb
-            .select({
-                id: realtimeEventOutboxTable.id,
-                eventType: realtimeEventOutboxTable.eventType,
-                payload: realtimeEventOutboxTable.payload,
-            })
-            .from(realtimeEventOutboxTable)
-            .where(
-                and(
-                    gte(realtimeEventOutboxTable.createdAt, since),
-                    gt(realtimeEventOutboxTable.id, highestProcessedOutboxId),
-                ),
-            )
-            .orderBy(realtimeEventOutboxTable.id);
+    const catchupRequestQueue = createCatchupRequestQueue({
+        task: processPendingEvents,
+        onError: (error): void => {
+            log.error(error, "[RealtimeOutbox] Failed to catch up events");
+        },
+    });
 
-        processOutboxRows({ rows, failureContext: "catch-up" });
-
-        if (failedOutboxIds.size === 0) {
-            return;
-        }
-
-        const failedRows = await primaryDb
-            .select({
-                id: realtimeEventOutboxTable.id,
-                eventType: realtimeEventOutboxTable.eventType,
-                payload: realtimeEventOutboxTable.payload,
-            })
-            .from(realtimeEventOutboxTable)
-            .where(
-                inArray(
-                    realtimeEventOutboxTable.id,
-                    Array.from(failedOutboxIds),
-                ),
-            )
-            .orderBy(realtimeEventOutboxTable.id);
-
-        processOutboxRows({ rows: failedRows, failureContext: "retry" });
-
-        const foundFailedIds = new Set(failedRows.map((row) => row.id));
-        for (const failedOutboxId of failedOutboxIds) {
-            if (!foundFailedIds.has(failedOutboxId)) {
-                failedOutboxIds.delete(failedOutboxId);
-            }
-        }
-    };
-
-    const processNotificationSafely = async ({
+    const requestCatchupForNotification = ({
         payload,
     }: {
         payload: string;
-    }): Promise<void> => {
-        try {
-            await processNotification({ payload });
-        } catch (error: unknown) {
-            log.error(error, "[RealtimeOutbox] Failed to process notification");
-        }
-    };
-
-    const processRecentEventsSafely = async (): Promise<void> => {
-        try {
-            await processRecentEvents();
-        } catch (error: unknown) {
-            log.error(
-                error,
-                "[RealtimeOutbox] Failed to catch up recent events",
-            );
-        }
-    };
-
-    const enqueueOutboxTask = ({
-        task,
-    }: {
-        task: () => Promise<void>;
     }): void => {
-        const previousTask = outboxTaskQueue;
-        outboxTaskQueue = (async (): Promise<void> => {
-            try {
-                await previousTask;
-            } catch (error: unknown) {
-                log.error(error, "[RealtimeOutbox] Previous task failed");
-            }
-            await task();
-        })();
-        void outboxTaskQueue;
+        if (!validateNotification({ payload })) {
+            return;
+        }
+        if (!isCatchupInitialized) {
+            catchupRequestedDuringInitialization = true;
+            return;
+        }
+        catchupRequestQueue.request();
+    };
+
+    const requestPeriodicCatchup = (): void => {
+        if (!isCatchupInitialized) {
+            return;
+        }
+        catchupRequestQueue.request();
     };
 
     return {
@@ -1216,38 +1237,77 @@ export function createRealtimeEventOutboxBridge({
                 return;
             }
 
-            await processRecentEvents();
             listenerClient = await createPostgresClient(config, log, false);
-            await listenerClient.listen(
-                REALTIME_EVENT_OUTBOX_CHANNEL,
-                (payload) => {
-                    enqueueOutboxTask({
-                        task: async (): Promise<void> => {
-                            await processNotificationSafely({ payload });
-                        },
-                    });
-                },
-            );
-            isStarted = true;
-            catchupInterval = setInterval(() => {
-                enqueueOutboxTask({ task: processRecentEventsSafely });
-            }, RECENT_EVENT_CATCHUP_INTERVAL_MS);
-            catchupInterval.unref();
-            log.info("[RealtimeOutbox] Listening for realtime DB events");
+            isAcceptingNotifications = true;
+            try {
+                listenerSubscription = await listenerClient.listen(
+                    REALTIME_EVENT_OUTBOX_CHANNEL,
+                    (payload) => {
+                        if (!isAcceptingNotifications) {
+                            return;
+                        }
+                        requestCatchupForNotification({ payload });
+                    },
+                );
+                lastCaughtUpOutboxId = await fetchSafeOutboxUpperBound({
+                    db: primaryDb,
+                });
+                isCatchupInitialized = true;
+                isStarted = true;
+                if (catchupRequestedDuringInitialization) {
+                    catchupRequestedDuringInitialization = false;
+                    catchupRequestQueue.request();
+                }
+                catchupInterval = setInterval(() => {
+                    requestPeriodicCatchup();
+                }, EVENT_CATCHUP_INTERVAL_MS);
+                catchupInterval.unref();
+                log.info("[RealtimeOutbox] Listening for realtime DB events");
+            } catch (error: unknown) {
+                isAcceptingNotifications = false;
+                isCatchupInitialized = false;
+                catchupRequestedDuringInitialization = false;
+                if (listenerSubscription !== undefined) {
+                    await listenerSubscription.unlisten();
+                    listenerSubscription = undefined;
+                }
+                await listenerClient.end({ timeout: 5 });
+                listenerClient = undefined;
+                throw error;
+            }
         },
         shutdown: async (): Promise<void> => {
+            isAcceptingNotifications = false;
+            isCatchupInitialized = false;
+            catchupRequestedDuringInitialization = false;
             if (catchupInterval !== undefined) {
                 clearInterval(catchupInterval);
                 catchupInterval = undefined;
             }
 
-            if (listenerClient === undefined) {
-                return;
+            if (listenerSubscription !== undefined) {
+                try {
+                    await listenerSubscription.unlisten();
+                } catch (error: unknown) {
+                    log.error(
+                        error,
+                        "[RealtimeOutbox] Failed to stop realtime DB intake",
+                    );
+                }
+                listenerSubscription = undefined;
             }
 
-            await listenerClient.end({ timeout: 5 });
-            listenerClient = undefined;
-            isStarted = false;
+            await catchupRequestQueue.waitForIdle();
+
+            const client = listenerClient;
+            try {
+                if (client !== undefined) {
+                    await client.end({ timeout: 5 });
+                }
+            } finally {
+                listenerClient = undefined;
+                isStarted = false;
+            }
         },
     };
 }

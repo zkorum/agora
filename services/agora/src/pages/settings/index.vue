@@ -150,20 +150,31 @@ const credentialSettings = computed<SettingsInterface[]>(() => {
   return items;
 });
 
-const accountSettings: SettingsInterface[] = [
-  {
-    type: "navigation",
-    label: t("profile"),
-    to: "/settings/account/profile/",
-    style: "none",
-  },
-  {
-    type: "navigation",
-    label: t("contentPreference"),
-    to: "/settings/account/content-preference/",
-    style: "none",
-  },
-];
+const accountSettings = computed<SettingsInterface[]>(() => {
+  const settings: SettingsInterface[] = [
+    {
+      type: "navigation",
+      label: t("profile"),
+      to: "/settings/account/profile/",
+      style: "none",
+    },
+    {
+      type: "navigation",
+      label: t("contentPreference"),
+      to: "/settings/account/content-preference/",
+      style: "none",
+    },
+  ];
+  if (isLoggedIn.value) {
+    settings.push({
+      type: "navigation",
+      label: t("sessions"),
+      to: "/settings/account/sessions/",
+      style: "none",
+    });
+  }
+  return settings;
+});
 
 const featuredSlug = processEnv.VITE_FEATURED_CONVERSATION_SLUG;
 const { hasCompletedRanking } = useFeaturedBannerVisibility();

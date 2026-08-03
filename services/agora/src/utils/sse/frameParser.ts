@@ -3,6 +3,7 @@
 
 export type ParsedSSEFrame =
   | { kind: "comment" }
+  | { kind: "retry"; retry: number }
   | {
       kind: "event";
       event: string;
@@ -116,6 +117,9 @@ export function parseRawSSEFrame(raw: string): ParsedSSEFrame {
     }
   }
 
+  if (event === "" && dataLines.length === 0 && retry !== null) {
+    return { kind: "retry", retry };
+  }
   if (event === "" && dataLines.length === 0) {
     return { kind: "comment" };
   }

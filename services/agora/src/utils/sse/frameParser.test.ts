@@ -157,4 +157,11 @@ describe("parseRawSSEFrame", () => {
       retry: 5000,
     });
   });
+
+  it("preserves retry-only control frames", () => {
+    expect(parseRawSSEFrame("retry: 5000")).toEqual({
+      kind: "retry",
+      retry: 5000,
+    });
+  });
 });

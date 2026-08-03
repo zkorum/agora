@@ -1188,6 +1188,24 @@ export const ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum = {
 
 export type ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum = typeof ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum[keyof typeof ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum];
 
+export interface ApiV1AuthSessionsListPost200Response {
+    'currentSession': ApiV1AuthSessionsListPost200ResponseCurrentSession;
+    'otherSessions': Array<ApiV1AuthSessionsListPost200ResponseCurrentSession>;
+}
+export interface ApiV1AuthSessionsListPost200ResponseCurrentSession {
+    'didWrite': string;
+    'startedAt': string;
+    'expiresAt': string;
+}
+export interface ApiV1AuthSessionsLogoutAllPost200Response {
+    'revokedSessionCount': number;
+}
+export interface ApiV1AuthSessionsRevokePost200Response {
+    'revoked': boolean;
+}
+export interface ApiV1AuthSessionsRevokePostRequest {
+    'didWrite': string;
+}
 /**
  * @type ApiV1AuthTicketVerifyPost200Response
  */
@@ -8059,6 +8077,110 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AuthSessionsListPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/auth/sessions/list`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AuthSessionsLogoutAllPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/auth/sessions/logout-all`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1AuthSessionsRevokePostRequest} apiV1AuthSessionsRevokePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AuthSessionsRevokePost: async (apiV1AuthSessionsRevokePostRequest: ApiV1AuthSessionsRevokePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AuthSessionsRevokePostRequest' is not null or undefined
+            assertParamExists('apiV1AuthSessionsRevokePost', 'apiV1AuthSessionsRevokePostRequest', apiV1AuthSessionsRevokePostRequest)
+            const localVarPath = `/api/v1/auth/sessions/revoke`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AuthSessionsRevokePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1AuthTicketVerifyPostRequest} apiV1AuthTicketVerifyPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -11597,6 +11719,40 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AuthSessionsListPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthSessionsListPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthSessionsListPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AuthSessionsListPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AuthSessionsLogoutAllPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthSessionsLogoutAllPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthSessionsLogoutAllPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AuthSessionsLogoutAllPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1AuthSessionsRevokePostRequest} apiV1AuthSessionsRevokePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AuthSessionsRevokePost(apiV1AuthSessionsRevokePostRequest: ApiV1AuthSessionsRevokePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthSessionsRevokePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthSessionsRevokePost(apiV1AuthSessionsRevokePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AuthSessionsRevokePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1AuthTicketVerifyPostRequest} apiV1AuthTicketVerifyPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -12895,6 +13051,31 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AuthSessionsListPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AuthSessionsListPost200Response> {
+            return localVarFp.apiV1AuthSessionsListPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AuthSessionsLogoutAllPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AuthSessionsLogoutAllPost200Response> {
+            return localVarFp.apiV1AuthSessionsLogoutAllPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1AuthSessionsRevokePostRequest} apiV1AuthSessionsRevokePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AuthSessionsRevokePost(apiV1AuthSessionsRevokePostRequest: ApiV1AuthSessionsRevokePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AuthSessionsRevokePost200Response> {
+            return localVarFp.apiV1AuthSessionsRevokePost(apiV1AuthSessionsRevokePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1AuthTicketVerifyPostRequest} apiV1AuthTicketVerifyPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -13964,6 +14145,34 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1AuthPhoneVerifyOtpPost(apiV1AuthPhoneVerifyOtpPostRequest: ApiV1AuthPhoneVerifyOtpPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1AuthPhoneVerifyOtpPost(apiV1AuthPhoneVerifyOtpPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AuthSessionsListPost(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AuthSessionsListPost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AuthSessionsLogoutAllPost(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AuthSessionsLogoutAllPost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1AuthSessionsRevokePostRequest} apiV1AuthSessionsRevokePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AuthSessionsRevokePost(apiV1AuthSessionsRevokePostRequest: ApiV1AuthSessionsRevokePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AuthSessionsRevokePost(apiV1AuthSessionsRevokePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

@@ -1,3 +1,4 @@
+import type { DeviceLoginStatus } from "src/shared/types/zod";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -8,7 +9,16 @@ const mocks = vi.hoisted(() => ({
   clearQueries: vi.fn(),
   clearTopicsData: vi.fn(),
   deleteDid: vi.fn(() => Promise.resolve()),
+  deleteDidIfCurrent: vi.fn(
+    (_params: {
+      didWrite: string;
+      onDeleted: () => void;
+      onDeleteFailed: () => void;
+    }) => Promise.resolve(true)
+  ),
   resetDraft: vi.fn(),
+  resetEmailVerification: vi.fn(),
+  resetPhoneVerification: vi.fn(),
   resetZupassModuleState: vi.fn(),
   setLoginStatus: vi.fn(),
 }));
@@ -37,6 +47,12 @@ vi.mock("src/stores/notification", () => ({
     clearNotificationData: mocks.clearNotificationData,
   }),
 }));
+vi.mock("src/stores/onboarding/email", () => ({
+  emailVerificationStore: () => ({ reset: mocks.resetEmailVerification }),
+}));
+vi.mock("src/stores/onboarding/phone", () => ({
+  phoneVerificationStore: () => ({ reset: mocks.resetPhoneVerification }),
+}));
 vi.mock("src/stores/topic", () => ({
   useTopicStore: () => ({ clearTopicsData: mocks.clearTopicsData }),
 }));
@@ -45,12 +61,16 @@ vi.mock("src/stores/user", () => ({
 }));
 vi.mock("src/utils/crypto/ucan/operation", () => ({
   deleteDid: mocks.deleteDid,
+  deleteDidIfCurrent: mocks.deleteDidIfCurrent,
 }));
 vi.mock("src/utils/query/client", () => ({
   queryClient: { clear: mocks.clearQueries },
 }));
 
-import { resetLocalAuthState } from "./localAuthState";
+import {
+  resetLocalAuthState,
+  resetLocalAuthStateIfDidMatches,
+} from "./localAuthState";
 
 function createDeferred<Result>(): {
   promise: Promise<Result>;
@@ -70,6 +90,7 @@ describe("resetLocalAuthState", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.deleteDid.mockResolvedValue();
+    mocks.deleteDidIfCurrent.mockResolvedValue(true);
     mocks.clearLanguagePreferences.mockResolvedValue(true);
   });
 
@@ -84,8 +105,10 @@ describe("resetLocalAuthState", () => {
     expect(mocks.clearOpinionDrafts).toHaveBeenCalledOnce();
     expect(mocks.clearNotificationData).toHaveBeenCalledOnce();
     expect(mocks.clearTopicsData).toHaveBeenCalledOnce();
+    expect(mocks.resetEmailVerification).toHaveBeenCalledOnce();
+    expect(mocks.resetPhoneVerification).toHaveBeenCalledOnce();
     expect(mocks.resetZupassModuleState).toHaveBeenCalledOnce();
-    expect(mocks.setLoginStatus).toHaveBeenCalledWith({ isKnown: false });
+    expect(mocks.setLoginStatus).not.toHaveBeenCalled();
   });
 
   it("waits for language cleanup after DID deletion fails", async () => {
@@ -121,5 +144,50 @@ describe("resetLocalAuthState", () => {
       resetLocalAuthState({ shouldClearLanguagePreferences: true })
     ).rejects.toThrow("Failed to clear language preferences");
     expect(mocks.deleteDid).toHaveBeenCalledOnce();
+  });
+
+  it("does not clear state for a stale DID response", async () => {
+    mocks.deleteDidIfCurrent.mockResolvedValueOnce(false);
+
+    await expect(
+      resetLocalAuthStateIfDidMatches({
+        didWrite: "did:key:old",
+        loginStatusOnDeletionFailure: {
+          isKnown: false,
+          isLoggedIn: false,
+          isRegistered: false,
+          credentials: { email: null, phone: null, rarimo: null },
+        },
+      })
+    ).resolves.toBe(false);
+
+    expect(mocks.clearQueries).not.toHaveBeenCalled();
+    expect(mocks.setLoginStatus).not.toHaveBeenCalled();
+  });
+
+  it("preserves the backend status when conditional DID deletion fails", async () => {
+    const loggedOutStatus = {
+      isKnown: true,
+      isLoggedIn: false,
+      isRegistered: true,
+      userId: "user-a",
+      credentials: { email: null, phone: null, rarimo: null },
+    } satisfies DeviceLoginStatus;
+    mocks.deleteDidIfCurrent.mockImplementationOnce(
+      ({ onDeleteFailed }: { onDeleteFailed: () => void }) => {
+        onDeleteFailed();
+        return Promise.reject(new Error("keystore failure"));
+      }
+    );
+
+    await expect(
+      resetLocalAuthStateIfDidMatches({
+        didWrite: "did:key:retired",
+        loginStatusOnDeletionFailure: loggedOutStatus,
+      })
+    ).rejects.toThrow("keystore failure");
+
+    expect(mocks.setLoginStatus).toHaveBeenCalledWith(loggedOutStatus);
+    expect(mocks.clearQueries).not.toHaveBeenCalled();
   });
 });

@@ -7,8 +7,10 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { createRequestGate } from "src/composables/verification/createRequestGate";
 import { useOtpTimers } from "src/composables/verification/useOtpTimers";
 import { authenticate200 } from "src/shared/types/dto-auth";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import { useAuthPhoneApi } from "src/utils/api/auth-phone";
+import { getAuthenticationStartKeyAction } from "src/utils/auth/authKeyAction";
 import {
   type PhoneAuthPurpose,
   type PhoneAuthUnavailableReason,
@@ -40,6 +42,9 @@ export function usePhoneSubmit({
   translations,
 }: UsePhoneSubmitParams) {
   const store = phoneVerificationStore();
+  const { isKnown, isRegistered, isLoggedIn } = storeToRefs(
+    useAuthenticationStore()
+  );
   const { verificationPhoneNumber, requestCodeThrottleUntil, pendingOtpData } =
     storeToRefs(store);
   const { sendSmsCode } = useAuthPhoneApi();
@@ -97,6 +102,11 @@ export function usePhoneSubmit({
         phoneNumber,
         defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
         isRequestingNewCode: false,
+        keyAction: getAuthenticationStartKeyAction({
+          isKnown: isKnown.value,
+          isRegistered: isRegistered.value,
+          isLoggedIn: isLoggedIn.value,
+        }),
       });
       if (!requestGate.isCurrent(requestId)) {
         return;

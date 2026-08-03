@@ -1795,27 +1795,41 @@ export const emailTable = pgTable(
     ],
 );
 
-export const deviceTable = pgTable("device", {
-    didWrite: varchar("did_write", { length: 1000 }).primaryKey(), // TODO: make sure of length
-    userId: uuid("user_id")
-        .references(() => userTable.id)
-        .notNull(),
-    userAgent: text("user_agent").notNull(), // user-agent length is not fixed
-    // TODO: isTrusted: boolean("is_trusted").notNull(), // if set to true by user then, device should stay logged-in indefinitely until log out action
-    sessionExpiry: timestamp("session_expiry").notNull(), // on register, a new login session is always started, hence the notNull. This column is updated to now + 15 minutes at each request when isTrusted == false. Otherwise, expiry will be now + 1000 years - meaning no expiry.
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const deviceTable = pgTable(
+    "device",
+    {
+        didWrite: varchar("did_write", { length: 1000 }).primaryKey(), // TODO: make sure of length
+        userId: uuid("user_id")
+            .references(() => userTable.id)
+            .notNull(),
+        userAgent: text("user_agent").notNull(), // Retained for legacy rows; never expose it through session APIs.
+        sessionStartedAt: timestamp("session_started_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        sessionExpiry: timestamp("session_expiry").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        index("device_user_session_expiry_idx").on(
+            table.userId,
+            table.sessionExpiry,
+        ),
+    ],
+);
 
 // !WARNING: this contains a tuple that cannot easily be mapped to enum AuthenticateType. Change both manually.
 // TODO: use zod or something to maintain one set of type only
@@ -1848,6 +1862,7 @@ export const authAttemptPhoneTable = pgTable(
         guessAttemptAmount: integer("guess_attempt_amount")
             .default(0)
             .notNull(),
+        isSynthetic: boolean("is_synthetic").default(false).notNull(),
         lastOtpSentAt: timestamp("last_otp_sent_at").notNull(),
         createdAt: timestamp("created_at", {
             mode: "date",
@@ -1915,6 +1930,9 @@ export const otpPhoneDestinationStateTable = pgTable(
         )
             .notNull()
             .default(0),
+        wrongGuessAttemptAmount: integer("wrong_guess_attempt_amount")
+            .notNull()
+            .default(0),
         backoffUntil: timestamp("backoff_until"),
         createdAt: timestamp("created_at", {
             mode: "date",
@@ -1929,7 +1947,13 @@ export const otpPhoneDestinationStateTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (table) => [index("otp_phone_destination_updated_idx").on(table.updatedAt)],
+    (table) => [
+        check(
+            "otp_phone_wrong_guess_attempt_amount_nonnegative_check",
+            sql`${table.wrongGuessAttemptAmount} >= 0`,
+        ),
+        index("otp_phone_destination_updated_idx").on(table.updatedAt),
+    ],
 );
 
 // Tracks OTP send/backoff state per canonical email destination across devices/challenges.
@@ -1941,6 +1965,9 @@ export const otpEmailDestinationStateTable = pgTable(
         consecutiveFailedVerifyAttempts: integer(
             "consecutive_failed_verify_attempts",
         )
+            .notNull()
+            .default(0),
+        wrongGuessAttemptAmount: integer("wrong_guess_attempt_amount")
             .notNull()
             .default(0),
         backoffUntil: timestamp("backoff_until"),
@@ -1961,6 +1988,10 @@ export const otpEmailDestinationStateTable = pgTable(
         check(
             "otp_email_destination_canonical_check",
             sql`${table.email} = lower(btrim(${table.email}))`,
+        ),
+        check(
+            "otp_email_wrong_guess_attempt_amount_nonnegative_check",
+            sql`${table.wrongGuessAttemptAmount} >= 0`,
         ),
         index("otp_email_destination_updated_idx").on(table.updatedAt),
     ],

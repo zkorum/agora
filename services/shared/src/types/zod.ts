@@ -290,13 +290,6 @@ export const zodModerationExplanation = z.string().max(MAX_LENGTH_BODY);
 export const zodCode = z.coerce.number().min(0).max(999999);
 export const zodDigit = z.coerce.number().int().nonnegative().lte(9);
 export const zodUserId = z.uuid().min(1);
-export const zodDevice = z
-    .object({
-        didWrite: zodDidKey,
-        userAgent: z.string(),
-    })
-    .strict();
-export const zodDevices = z.array(zodDevice); // list of didWrite of all the devices belonging to a user
 export const zodConversationTitle = z.string().max(MAX_LENGTH_TITLE).min(1);
 export const zodRichTextValidationFailureReason = z.enum(
     richTextValidationFailureReasons,
@@ -2062,8 +2055,6 @@ export const zodPolisUrl = z
             message: "Please use valid polis url",
         },
     );
-export type Device = z.infer<typeof zodDevice>;
-export type Devices = z.infer<typeof zodDevices>;
 export type ExtendedConversation = z.infer<typeof zodExtendedConversationData>;
 export type ExtendedConversationDisplayData = z.infer<
     typeof zodExtendedConversationDisplayData

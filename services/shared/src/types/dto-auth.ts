@@ -15,6 +15,39 @@ export const checkLoginStatusResponse = z
     })
     .strict();
 
+export const authSession = z
+    .object({
+        didWrite: z.string().min(1).max(1000),
+        startedAt: zodDateTimeFlexible,
+        expiresAt: zodDateTimeFlexible,
+    })
+    .strict();
+
+export const listAuthSessionsResponse = z
+    .object({
+        currentSession: authSession,
+        otherSessions: z.array(authSession),
+    })
+    .strict();
+
+export const revokeAuthSessionRequest = z
+    .object({
+        didWrite: z.string().min(1).max(1000),
+    })
+    .strict();
+
+export const revokeAuthSessionResponse = z
+    .object({
+        revoked: z.boolean(),
+    })
+    .strict();
+
+export const logoutAllAuthSessionsResponse = z
+    .object({
+        revokedSessionCount: z.number().int().nonnegative(),
+    })
+    .strict();
+
 export const authenticateRequestBody = z
     .object({
         phoneNumber: zodPhoneNumber,
@@ -188,3 +221,4 @@ export type AuthenticateEmailRequestBody = z.infer<
 >;
 export type VerifyEmailOtpReqBody = z.infer<typeof verifyEmailOtpReqBody>;
 export type AuthenticateEmailResponse = z.infer<typeof authenticateEmail200>;
+export type AuthSession = z.infer<typeof authSession>;

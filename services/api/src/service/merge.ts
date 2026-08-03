@@ -15,16 +15,17 @@ import {
     voteTable,
     zkPassportTable,
 } from "@/shared-backend/schema.js";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { nowZeroMs } from "@/shared/util.js";
 import { log } from "@/app.js";
 import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
+import { recordIdentityChangedUsers } from "./authSession.js";
 
 interface MergeGuestIntoVerifiedUserProps {
     db: PostgresDatabase;
     verifiedUserId: string;
     guestUserId: string;
+    now: Date;
 }
 
 /**
@@ -41,8 +42,56 @@ export async function mergeGuestIntoVerifiedUser({
     db,
     verifiedUserId,
     guestUserId,
+    now,
 }: MergeGuestIntoVerifiedUserProps): Promise<void> {
-    const now = nowZeroMs();
+    if (verifiedUserId === guestUserId) {
+        throw new Error("Cannot merge a user into itself");
+    }
+    const lockedUsers = await db
+        .select({ id: userTable.id, isDeleted: userTable.isDeleted })
+        .from(userTable)
+        .where(inArray(userTable.id, [verifiedUserId, guestUserId]))
+        .orderBy(userTable.id)
+        .for("update");
+    if (
+        lockedUsers.length !== 2 ||
+        lockedUsers.some((user) => user.isDeleted)
+    ) {
+        throw new Error("Cannot merge inactive users");
+    }
+
+    const sourcePhones = await db
+        .select({ id: phoneTable.id })
+        .from(phoneTable)
+        .where(
+            and(
+                eq(phoneTable.userId, guestUserId),
+                eq(phoneTable.isDeleted, false),
+            ),
+        )
+        .limit(1);
+    const sourceEmails = await db
+        .select({ id: emailTable.id })
+        .from(emailTable)
+        .where(
+            and(
+                eq(emailTable.userId, guestUserId),
+                eq(emailTable.isDeleted, false),
+            ),
+        )
+        .limit(1);
+    const sourcePassports = await db
+        .select({ id: zkPassportTable.id })
+        .from(zkPassportTable)
+        .where(eq(zkPassportTable.userId, guestUserId))
+        .limit(1);
+    if (
+        sourcePhones.length > 0 ||
+        sourceEmails.length > 0 ||
+        sourcePassports.length > 0
+    ) {
+        throw new Error("Cannot merge a registered source user");
+    }
 
     log.info(
         { verifiedUserId, guestUserId },
@@ -50,10 +99,22 @@ export async function mergeGuestIntoVerifiedUser({
     );
 
     // 1. Transfer devices (no unique constraint on userId)
-    await db
+    const movedSessions = await db
         .update(deviceTable)
-        .set({ userId: verifiedUserId })
-        .where(eq(deviceTable.userId, guestUserId));
+        .set({
+            userId: verifiedUserId,
+            sessionExpiry: now,
+            updatedAt: now,
+        })
+        .where(eq(deviceTable.userId, guestUserId))
+        .returning({ didWrite: deviceTable.didWrite });
+    await recordIdentityChangedUsers({
+        db,
+        userIds:
+            movedSessions.length === 0
+                ? []
+                : [guestUserId, verifiedUserId],
+    });
 
     // 2. Transfer emails
     await db

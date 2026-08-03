@@ -42,6 +42,7 @@ CREATE TABLE "auth_attempt_phone" (
 	"code" integer NOT NULL,
 	"code_expiry" timestamp NOT NULL,
 	"guess_attempt_amount" integer DEFAULT 0 NOT NULL,
+	"is_synthetic" boolean DEFAULT false NOT NULL,
 	"last_otp_sent_at" timestamp NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
@@ -52,6 +53,7 @@ CREATE TABLE "device" (
 	"did_write" varchar(1000) PRIMARY KEY NOT NULL,
 	"user_id" uuid NOT NULL,
 	"user_agent" text NOT NULL,
+	"session_started_at" timestamp (0) DEFAULT now() NOT NULL,
 	"session_expiry" timestamp NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL
@@ -73,19 +75,23 @@ CREATE TABLE "otp_email_destination_state" (
 	"email" varchar(254) PRIMARY KEY NOT NULL,
 	"last_otp_sent_at" timestamp NOT NULL,
 	"consecutive_failed_verify_attempts" integer DEFAULT 0 NOT NULL,
+	"wrong_guess_attempt_amount" integer DEFAULT 0 NOT NULL,
 	"backoff_until" timestamp,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "otp_email_destination_canonical_check" CHECK ("otp_email_destination_state"."email" = lower(btrim("otp_email_destination_state"."email")))
+	CONSTRAINT "otp_email_destination_canonical_check" CHECK ("otp_email_destination_state"."email" = lower(btrim("otp_email_destination_state"."email"))),
+	CONSTRAINT "otp_email_wrong_guess_attempt_amount_nonnegative_check" CHECK ("otp_email_destination_state"."wrong_guess_attempt_amount" >= 0)
 );
 
 CREATE TABLE "otp_phone_destination_state" (
 	"phone_hash" text PRIMARY KEY NOT NULL,
 	"last_otp_sent_at" timestamp NOT NULL,
 	"consecutive_failed_verify_attempts" integer DEFAULT 0 NOT NULL,
+	"wrong_guess_attempt_amount" integer DEFAULT 0 NOT NULL,
 	"backoff_until" timestamp,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "otp_phone_wrong_guess_attempt_amount_nonnegative_check" CHECK ("otp_phone_destination_state"."wrong_guess_attempt_amount" >= 0)
 );
 
 CREATE TABLE "phone" (
@@ -100,6 +106,13 @@ CREATE TABLE "phone" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "check_two_digits" CHECK ("phone"."last_two_digits" BETWEEN 0 and 99)
+);
+
+CREATE TABLE "realtime_event_outbox" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "realtime_event_outbox_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"event_type" varchar(100) NOT NULL,
+	"payload" jsonb NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 
 CREATE TABLE "user_display_language" (
@@ -137,6 +150,8 @@ CREATE TABLE "zk_passport" (
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL
 );
 
+CREATE INDEX "device_user_session_expiry_idx" ON "device" USING btree ("user_id","session_expiry");
+
 CREATE UNIQUE INDEX "email_active_unique" ON "email" USING btree ("email") WHERE "email"."is_deleted" = false;
 
 CREATE INDEX "email_idx" ON "email" USING btree ("email");
@@ -148,6 +163,12 @@ CREATE INDEX "otp_phone_destination_updated_idx" ON "otp_phone_destination_state
 CREATE UNIQUE INDEX "phone_hash_active_unique" ON "phone" USING btree ("phone_hash") WHERE "phone"."is_deleted" = false;
 
 CREATE INDEX "phone_hash_idx" ON "phone" USING btree ("phone_hash");
+
+CREATE INDEX "realtime_event_outbox_created_at_idx" ON "realtime_event_outbox" USING btree ("created_at");
+
+CREATE INDEX "realtime_event_outbox_conversation_replay_idx" ON "realtime_event_outbox" USING btree (("payload"->>'conversationSlugId'),"id") WHERE "realtime_event_outbox"."event_type" IN ('conversation_analysis_updated', 'conversation_settings_updated', 'conversation_survey_updated');
+
+CREATE INDEX "realtime_event_outbox_ranking_replay_idx" ON "realtime_event_outbox" USING btree (("payload"->>'conversationSlugId'),"id") WHERE "realtime_event_outbox"."event_type" = 'conversation_ranking_stats_updated';
 
 CREATE UNIQUE INDEX "zk_passport_nullifier_active_unique" ON "zk_passport" USING btree ("nullifier") WHERE "zk_passport"."is_deleted" = false;
 

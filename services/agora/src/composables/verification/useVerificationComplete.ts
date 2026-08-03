@@ -1,6 +1,8 @@
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { emailVerificationStore } from "src/stores/onboarding/email";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useRouter } from "vue-router";
 
@@ -10,6 +12,8 @@ export function useVerificationComplete() {
   const { onboardingMode } = onboardingFlowStore();
   const { routeUserAfterLogin } = useLoginIntentionStore();
   const conversationOnboardingStore = useConversationOnboardingStore();
+  const { reset: resetEmailVerification } = emailVerificationStore();
+  const { reset: resetPhoneVerification } = phoneVerificationStore();
 
   async function completeVerification() {
     const freshStatus = await getDeviceLoginStatus();
@@ -17,6 +21,8 @@ export function useVerificationComplete() {
       partialLoginStatus: freshStatus,
       forceRefresh: true,
     });
+    resetEmailVerification();
+    resetPhoneVerification();
 
     if (onboardingMode == "LOGIN") {
       if (conversationOnboardingStore.conversationSlugId !== null) {

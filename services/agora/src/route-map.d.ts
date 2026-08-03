@@ -602,6 +602,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/settings/account/sessions/': RouteRecordInfo<
+      '/settings/account/sessions/',
+      '/settings/account/sessions',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/settings/languages/': RouteRecordInfo<
       '/settings/languages/',
       '/settings/languages',
@@ -1232,6 +1239,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/settings/account/profile/index.vue': {
       routes:
         | '/settings/account/profile/'
+      views:
+        | never
+    }
+    'src/pages/settings/account/sessions/index.vue': {
+      routes:
+        | '/settings/account/sessions/'
       views:
         | never
     }

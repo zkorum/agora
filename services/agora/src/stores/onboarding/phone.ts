@@ -20,5 +20,16 @@ export const phoneVerificationStore = defineStore("phoneVerification", () => {
     nextCodeSoonestTime: Date;
   } | null>(null);
 
-  return { verificationPhoneNumber, requestCodeThrottleUntil, pendingOtpData };
+  function reset(): void {
+    verificationPhoneNumber.value = { ...EMPTY_NUMBER };
+    requestCodeThrottleUntil.value = null;
+    pendingOtpData.value = null;
+  }
+
+  return {
+    verificationPhoneNumber,
+    requestCodeThrottleUntil,
+    pendingOtpData,
+    reset,
+  };
 });

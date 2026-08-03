@@ -14,7 +14,7 @@ import {
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { and, eq, isNull } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/util.js";
-import { logoutAllDevicesForUser } from "./auth.js";
+import { revokeAllSessionsWithinTransaction } from "./authSession.js";
 import { httpErrors } from "@fastify/sensible";
 import { MAX_LENGTH_USERNAME } from "@/shared/shared.js";
 import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
@@ -759,6 +759,11 @@ export async function deleteUserAccount({ db, userId }: DeleteAccountProps) {
             `[Account] Completed counter reconciliation for user: ${userId}`,
         );
 
-        await logoutAllDevicesForUser(tx, userId);
+        await revokeAllSessionsWithinTransaction({
+            db: tx,
+            userId,
+            now,
+            reason: "account_deleted",
+        });
     });
 }

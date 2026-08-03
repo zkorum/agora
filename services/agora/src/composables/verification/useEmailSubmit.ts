@@ -2,8 +2,10 @@ import { storeToRefs } from "pinia";
 import { createRequestGate } from "src/composables/verification/createRequestGate";
 import { useOtpTimers } from "src/composables/verification/useOtpTimers";
 import { authenticateEmail200 } from "src/shared/types/dto-auth";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { emailVerificationStore } from "src/stores/onboarding/email";
 import { useAuthEmailApi } from "src/utils/api/auth-email";
+import { getAuthenticationStartKeyAction } from "src/utils/auth/authKeyAction";
 import { onMounted, onUnmounted } from "vue";
 
 interface EmailSubmitTranslations {
@@ -27,6 +29,9 @@ export function useEmailSubmit({
   translations,
 }: UseEmailSubmitParams) {
   const emailStore = emailVerificationStore();
+  const { isKnown, isRegistered, isLoggedIn } = storeToRefs(
+    useAuthenticationStore()
+  );
   const { verificationEmail, requestCodeThrottleUntil, pendingOtpData } =
     storeToRefs(emailStore);
   const { sendEmailCode } = useAuthEmailApi();
@@ -65,6 +70,11 @@ export function useEmailSubmit({
       const response = await sendEmailCode({
         email,
         isRequestingNewCode: false,
+        keyAction: getAuthenticationStartKeyAction({
+          isKnown: isKnown.value,
+          isRegistered: isRegistered.value,
+          isLoggedIn: isLoggedIn.value,
+        }),
       });
       if (!requestGate.isCurrent(requestId)) {
         return;

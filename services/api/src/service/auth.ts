@@ -63,6 +63,8 @@ import { base64Decode, base64Encode } from "@/shared-app-api/base64.js";
 import { mergeGuestIntoVerifiedUser } from "./merge.js";
 import { sendOtpEmail } from "./email.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
+import { startHardAuthSession } from "./authSession.js";
+import { decideDestinationWrongGuess } from "./auth/otpPolicy.js";
 
 const OTP_DESTINATION_STREAK_RESET_MS = 24 * 60 * 60 * 1000;
 const OTP_MIN_BACKOFF_SECONDS = 30;
@@ -181,27 +183,6 @@ function buildEmailAuthenticateThrottledResponse(
         success: false,
         reason: "throttled",
         nextCodeSoonestTime,
-    };
-}
-
-function buildSyntheticAuthenticateResponse({
-    now,
-    minutesBeforeCodeExpiry,
-    throttleSecondsInterval,
-}: {
-    now: Date;
-    minutesBeforeCodeExpiry: number;
-    throttleSecondsInterval: number;
-}): AuthenticateResponse {
-    const codeExpiry = new Date(now);
-    codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeCodeExpiry);
-    return {
-        success: true,
-        codeExpiry,
-        nextCodeSoonestTime: buildNextCodeSoonestTime({
-            now,
-            throttleSecondsInterval,
-        }),
     };
 }
 
@@ -606,6 +587,7 @@ interface RegisterWithZKPProps {
 interface LoginProps {
     db: PostgresDatabase;
     didWrite: string;
+    userId: string;
     now: Date;
     sessionExpiry: Date;
 }
@@ -624,6 +606,7 @@ interface LoginNewDeviceWithZKPProps {
     didWrite: string;
     userAgent: string;
     userId: string;
+    now: Date;
     sessionExpiry: Date;
 }
 
@@ -783,6 +766,7 @@ async function recordWrongPhoneOtpGuess({
     challenge,
     maxAttempt,
     now,
+    throttleSecondsInterval,
 }: {
     db: PostgresDatabase;
     didWrite: string;
@@ -793,29 +777,83 @@ async function recordWrongPhoneOtpGuess({
     };
     maxAttempt: number;
     now: Date;
-}): Promise<number | null> {
-    const encodedNow = sql.param(now, authAttemptPhoneTable.codeExpiry);
-    const updated = await db
-        .update(authAttemptPhoneTable)
-        .set({
-            guessAttemptAmount: sql<number>`${authAttemptPhoneTable.guessAttemptAmount} + 1`,
-            codeExpiry: sql<Date>`CASE WHEN ${authAttemptPhoneTable.guessAttemptAmount} + 1 >= ${maxAttempt} THEN ${encodedNow} ELSE ${authAttemptPhoneTable.codeExpiry} END`,
-            updatedAt: now,
-        })
-        .where(
-            and(
-                eq(authAttemptPhoneTable.didWrite, didWrite),
-                eq(authAttemptPhoneTable.phoneHash, challenge.phoneHash),
-                eq(authAttemptPhoneTable.code, challenge.code),
-                eq(authAttemptPhoneTable.codeExpiry, challenge.codeExpiry),
-                gt(authAttemptPhoneTable.codeExpiry, now),
-                lt(authAttemptPhoneTable.guessAttemptAmount, maxAttempt),
-            ),
-        )
-        .returning({
-            guessAttemptAmount: authAttemptPhoneTable.guessAttemptAmount,
+    throttleSecondsInterval: number;
+}): Promise<
+    | { type: "expired" }
+    | { type: "wrong_guess" }
+    | { type: "throttled"; nextCodeSoonestTime: Date }
+> {
+    return await db.transaction(async (tx) => {
+        const encodedNow = sql.param(now, authAttemptPhoneTable.codeExpiry);
+        const updated = await tx
+            .update(authAttemptPhoneTable)
+            .set({
+                guessAttemptAmount: sql<number>`${authAttemptPhoneTable.guessAttemptAmount} + 1`,
+                codeExpiry: sql<Date>`CASE WHEN ${authAttemptPhoneTable.guessAttemptAmount} + 1 >= ${maxAttempt} THEN ${encodedNow} ELSE ${authAttemptPhoneTable.codeExpiry} END`,
+                updatedAt: now,
+            })
+            .where(
+                and(
+                    eq(authAttemptPhoneTable.didWrite, didWrite),
+                    eq(authAttemptPhoneTable.phoneHash, challenge.phoneHash),
+                    eq(authAttemptPhoneTable.code, challenge.code),
+                    eq(authAttemptPhoneTable.codeExpiry, challenge.codeExpiry),
+                    gt(authAttemptPhoneTable.codeExpiry, now),
+                    lt(authAttemptPhoneTable.guessAttemptAmount, maxAttempt),
+                ),
+            )
+            .returning({
+                guessAttemptAmount: authAttemptPhoneTable.guessAttemptAmount,
+            });
+        if (updated.length !== 1) {
+            return { type: "expired" };
+        }
+
+        const destinationRows = await tx
+            .select({
+                lastOtpSentAt: otpPhoneDestinationStateTable.lastOtpSentAt,
+                wrongGuessAttemptAmount:
+                    otpPhoneDestinationStateTable.wrongGuessAttemptAmount,
+                consecutiveFailedVerifyAttempts:
+                    otpPhoneDestinationStateTable.consecutiveFailedVerifyAttempts,
+                backoffUntil: otpPhoneDestinationStateTable.backoffUntil,
+                updatedAt: otpPhoneDestinationStateTable.updatedAt,
+            })
+            .from(otpPhoneDestinationStateTable)
+            .where(
+                eq(otpPhoneDestinationStateTable.phoneHash, challenge.phoneHash),
+            )
+            .for("update");
+        const destinationState = destinationRows.at(0);
+        const decision = decideDestinationWrongGuess({
+            state: destinationState ?? {
+                wrongGuessAttemptAmount: 0,
+                consecutiveFailedVerifyAttempts: 0,
+                backoffUntil: null,
+                updatedAt: now,
+            },
+            now,
+            maxWrongGuesses: maxAttempt,
+            throttleSecondsInterval,
         });
-    return updated[0]?.guessAttemptAmount ?? null;
+        await tx
+            .insert(otpPhoneDestinationStateTable)
+            .values({
+                phoneHash: challenge.phoneHash,
+                lastOtpSentAt: destinationState?.lastOtpSentAt ?? now,
+                ...decision.state,
+            })
+            .onConflictDoUpdate({
+                target: otpPhoneDestinationStateTable.phoneHash,
+                set: decision.state,
+            });
+        return decision.type === "throttled"
+            ? {
+                  type: "throttled",
+                  nextCodeSoonestTime: decision.nextCodeSoonestTime,
+              }
+            : { type: "wrong_guess" };
+    });
 }
 
 async function registerOrLoginWithPhoneNumber(
@@ -891,6 +929,7 @@ async function registerOrLoginWithPhoneNumber(
             await loginKnownDevice({
                 db,
                 didWrite,
+                userId: props.userId,
                 now,
                 sessionExpiry: loginSessionExpiry,
             });
@@ -922,14 +961,18 @@ async function registerOrLoginWithPhoneNumber(
                 db,
                 verifiedUserId: toUserId,
                 guestUserId: fromUserId,
+                now,
             });
-            await db
-                .update(deviceTable)
-                .set({
-                    sessionExpiry: loginSessionExpiry,
-                    updatedAt: now,
-                })
-                .where(eq(deviceTable.didWrite, didWrite));
+            await startHardAuthSession({
+                db,
+                userId: toUserId,
+                didWrite,
+                transition: {
+                    type: "guest_merge",
+                },
+                now,
+                sessionExpiry: loginSessionExpiry,
+            });
             log.info(
                 { verifiedUserId: toUserId, guestUserId: fromUserId },
                 "[Phone] Merged guest into verified user",
@@ -978,13 +1021,12 @@ export async function verifyPhoneOtp({
             guessAttemptAmount: authAttemptPhoneTable.guessAttemptAmount,
             code: authAttemptPhoneTable.code,
             codeExpiry: authAttemptPhoneTable.codeExpiry,
+            isSynthetic: authAttemptPhoneTable.isSynthetic,
         })
         .from(authAttemptPhoneTable)
         .where(eq(authAttemptPhoneTable.didWrite, didWrite));
     if (resultOtp.length === 0) {
-        throw httpErrors.badRequest(
-            "Device has never made an authentication attempt",
-        );
+        return { success: false, reason: "wrong_guess" };
     }
     const phoneNumberObj = parsePhoneNumberFromString(phoneNumber, {
         defaultCallingCode,
@@ -998,9 +1040,27 @@ export async function verifyPhoneOtp({
         pepperVersion: PEPPER_VERSION,
     });
     if (submittedPhoneHash !== resultOtp[0].phoneHash) {
-        throw httpErrors.badRequest(
-            "The provided phone number is not associated with the user's ongoing device auth flow",
-        );
+        return { success: false, reason: "wrong_guess" };
+    }
+
+    if (resultOtp[0].isSynthetic) {
+        const wrongGuessResult = await recordWrongPhoneOtpGuess({
+            db: primaryDb,
+            didWrite,
+            challenge: resultOtp[0],
+            maxAttempt,
+            now,
+            throttleSecondsInterval: config.THROTTLE_SMS_SECONDS_INTERVAL,
+        });
+        if (wrongGuessResult.type === "expired") {
+            return { success: false, reason: "expired_code" };
+        }
+        if (wrongGuessResult.type === "throttled") {
+            return buildTooManyWrongGuessResponse(
+                wrongGuessResult.nextCodeSoonestTime,
+            );
+        }
+        return { success: false, reason: "wrong_guess" };
     }
 
     // if we use twilio, we don't use the local code at all.
@@ -1014,6 +1074,25 @@ export async function verifyPhoneOtp({
             });
         switch (verificationCheck.status) {
             case "pending":
+                {
+                    const wrongGuessResult = await recordWrongPhoneOtpGuess({
+                        db: primaryDb,
+                        didWrite,
+                        challenge: resultOtp[0],
+                        maxAttempt,
+                        now,
+                        throttleSecondsInterval:
+                            config.THROTTLE_SMS_SECONDS_INTERVAL,
+                    });
+                    if (wrongGuessResult.type === "expired") {
+                        return { success: false, reason: "expired_code" };
+                    }
+                    if (wrongGuessResult.type === "throttled") {
+                        return buildTooManyWrongGuessResponse(
+                            wrongGuessResult.nextCodeSoonestTime,
+                        );
+                    }
+                }
                 return {
                     success: false,
                     reason: "wrong_guess",
@@ -1087,25 +1166,20 @@ export async function verifyPhoneOtp({
             currentDisplayLanguage,
         });
     } else {
-        const guessAttemptAmount = await recordWrongPhoneOtpGuess({
+        const wrongGuessResult = await recordWrongPhoneOtpGuess({
             db: primaryDb,
             didWrite,
             challenge: resultOtp[0],
             maxAttempt,
             now,
+            throttleSecondsInterval: config.THROTTLE_SMS_SECONDS_INTERVAL,
         });
-        if (guessAttemptAmount === null) {
+        if (wrongGuessResult.type === "expired") {
             return { success: false, reason: "expired_code" };
         }
-        if (guessAttemptAmount >= maxAttempt) {
+        if (wrongGuessResult.type === "throttled") {
             return buildTooManyWrongGuessResponse(
-                await recordPhoneOtpChallengeExhausted({
-                    db: primaryDb,
-                    phoneHash: resultOtp[0].phoneHash,
-                    now,
-                    throttleSecondsInterval:
-                        config.THROTTLE_SMS_SECONDS_INTERVAL,
-                }),
+                wrongGuessResult.nextCodeSoonestTime,
             );
         }
         return {
@@ -1143,21 +1217,28 @@ async function registerWithPhoneNumber({
             });
 
         if (wasUserCreated) {
-            await tx.insert(deviceTable).values({
-                userId: userId,
-                didWrite: didWrite,
-                userAgent: userAgent,
-                sessionExpiry: sessionExpiry,
+            await startHardAuthSession({
+                db: tx,
+                userId,
+                didWrite,
+                transition: {
+                    type: "new_device",
+                    userAgent,
+                },
+                now,
+                sessionExpiry,
             });
         } else {
-            // Credential upgrade — user + device already exist, extend session
-            await tx
-                .update(deviceTable)
-                .set({
-                    sessionExpiry: sessionExpiry,
-                    updatedAt: now,
-                })
-                .where(eq(deviceTable.didWrite, didWrite));
+            await startHardAuthSession({
+                db: tx,
+                userId,
+                didWrite,
+                transition: {
+                    type: "credential_upgrade",
+                },
+                now,
+                sessionExpiry,
+            });
         }
 
         await tx.insert(phoneTable).values({
@@ -1261,21 +1342,28 @@ export async function registerWithZKP({
             });
 
         if (wasUserCreated) {
-            await tx.insert(deviceTable).values({
-                userId: userId,
-                didWrite: didWrite,
-                userAgent: userAgent,
-                sessionExpiry: sessionExpiry,
+            await startHardAuthSession({
+                db: tx,
+                userId,
+                didWrite,
+                transition: {
+                    type: "new_device",
+                    userAgent,
+                },
+                now,
+                sessionExpiry,
             });
         } else {
-            // Credential upgrade — user + device already exist, extend session
-            await tx
-                .update(deviceTable)
-                .set({
-                    sessionExpiry: sessionExpiry,
-                    updatedAt: now,
-                })
-                .where(eq(deviceTable.didWrite, didWrite));
+            await startHardAuthSession({
+                db: tx,
+                userId,
+                didWrite,
+                transition: {
+                    type: "credential_upgrade",
+                },
+                now,
+                sessionExpiry,
+            });
         }
 
         await tx.insert(zkPassportTable).values({
@@ -1305,11 +1393,16 @@ export async function loginNewDevice({
                 updatedAt: now,
             })
             .where(eq(authAttemptPhoneTable.didWrite, didWrite));
-        await tx.insert(deviceTable).values({
-            userId: userId,
-            didWrite: didWrite,
-            userAgent: userAgent,
-            sessionExpiry: sessionExpiry,
+        await startHardAuthSession({
+            db: tx,
+            userId,
+            didWrite,
+            transition: {
+                type: "new_device",
+                userAgent,
+            },
+            now,
+            sessionExpiry,
         });
     });
 }
@@ -1320,14 +1413,20 @@ export async function loginNewDeviceWithZKP({
     didWrite,
     userId,
     userAgent,
+    now,
     sessionExpiry,
 }: LoginNewDeviceWithZKPProps) {
     log.info("Logging-in new device with ZKP");
-    await db.insert(deviceTable).values({
-        userId: userId,
-        didWrite: didWrite,
-        userAgent: userAgent,
-        sessionExpiry: sessionExpiry,
+    await startHardAuthSession({
+        db,
+        userId,
+        didWrite,
+        transition: {
+            type: "new_device",
+            userAgent,
+        },
+        now,
+        sessionExpiry,
     });
 }
 
@@ -1335,6 +1434,7 @@ export async function loginNewDeviceWithZKP({
 export async function loginKnownDevice({
     db,
     didWrite,
+    userId,
     now,
     sessionExpiry,
 }: LoginProps) {
@@ -1347,13 +1447,16 @@ export async function loginKnownDevice({
                 updatedAt: now,
             })
             .where(eq(authAttemptPhoneTable.didWrite, didWrite));
-        await tx
-            .update(deviceTable)
-            .set({
-                sessionExpiry: sessionExpiry,
-                updatedAt: now,
-            })
-            .where(eq(deviceTable.didWrite, didWrite));
+        await startHardAuthSession({
+            db: tx,
+            userId,
+            didWrite,
+            transition: {
+                type: "reauthentication",
+            },
+            now,
+            sessionExpiry,
+        });
     });
 }
 
@@ -1361,17 +1464,21 @@ export async function loginKnownDevice({
 export async function loginKnownDeviceWithZKP({
     db,
     didWrite,
+    userId,
     now,
     sessionExpiry,
 }: LoginProps) {
     log.info("Logging-in known device with ZKP");
-    await db
-        .update(deviceTable)
-        .set({
-            sessionExpiry: sessionExpiry,
-            updatedAt: now,
-        })
-        .where(eq(deviceTable.didWrite, didWrite));
+    await startHardAuthSession({
+        db,
+        userId,
+        didWrite,
+        transition: {
+            type: "reauthentication",
+        },
+        now,
+        sessionExpiry,
+    });
 }
 
 // !WARNING: manually update DB enum value if changing this
@@ -1788,19 +1895,17 @@ export async function authenticateAttempt({
         pepperVersion: PEPPER_VERSION,
     });
     if (phoneAuth.mode === "login_only" && type === "register") {
-        const throttleUntil = await reservePhoneOtpSend({
+        return await upsertSyntheticPhoneAuthAttempt({
             db: primaryDb,
-            phoneHash: requestedPhoneHash,
+            type,
+            userId,
+            didWrite,
             now,
-            throttleSecondsInterval: throttleSmsSecondsInterval,
-        });
-        if (throttleUntil !== null) {
-            return buildPhoneAuthenticateThrottledResponse(throttleUntil);
-        }
-        return buildSyntheticAuthenticateResponse({
-            now,
+            userAgent,
+            authenticateRequestBody: canonicalRequestBody,
             minutesBeforeCodeExpiry: minutesBeforeSmsCodeExpiry,
             throttleSecondsInterval: throttleSmsSecondsInterval,
+            phoneHash: requestedPhoneHash,
         });
     }
     const resultHasAttempted = await primaryDb
@@ -1848,19 +1953,12 @@ export async function authenticateAttempt({
         currentAttempt.codeExpiry > now &&
         currentAttempt.phoneHash === requestedPhoneHash
     ) {
-        const throttleUntil = await reservePhoneOtpSend({
-            db: primaryDb,
-            phoneHash: requestedPhoneHash,
-            now,
-            throttleSecondsInterval: throttleSmsSecondsInterval,
-        });
-        if (throttleUntil !== null) {
-            return buildPhoneAuthenticateThrottledResponse(throttleUntil);
-        }
         return {
             success: true,
             codeExpiry: currentAttempt.codeExpiry,
-            nextCodeSoonestTime: buildNextCodeSoonestTime({
+            nextCodeSoonestTime: await getPhoneOtpNextSendTime({
+                db: primaryDb,
+                phoneHash: requestedPhoneHash,
                 now,
                 throttleSecondsInterval: throttleSmsSecondsInterval,
             }),
@@ -2025,6 +2123,7 @@ async function persistPhoneOtpDestinationState({
     phoneHash,
     lastOtpSentAt,
     consecutiveFailedVerifyAttempts,
+    wrongGuessAttemptAmount,
     backoffUntil,
     now,
 }: {
@@ -2032,6 +2131,7 @@ async function persistPhoneOtpDestinationState({
     phoneHash: string;
     lastOtpSentAt: Date;
     consecutiveFailedVerifyAttempts: number;
+    wrongGuessAttemptAmount: number;
     backoffUntil: Date | null;
     now: Date;
 }) {
@@ -2041,6 +2141,7 @@ async function persistPhoneOtpDestinationState({
             phoneHash,
             lastOtpSentAt,
             consecutiveFailedVerifyAttempts,
+            wrongGuessAttemptAmount,
             backoffUntil,
             createdAt: now,
             updatedAt: now,
@@ -2050,42 +2151,7 @@ async function persistPhoneOtpDestinationState({
             set: {
                 lastOtpSentAt,
                 consecutiveFailedVerifyAttempts,
-                backoffUntil,
-                updatedAt: now,
-            },
-        });
-}
-
-async function persistEmailOtpDestinationState({
-    db,
-    canonicalEmail,
-    lastOtpSentAt,
-    consecutiveFailedVerifyAttempts,
-    backoffUntil,
-    now,
-}: {
-    db: PostgresDatabase;
-    canonicalEmail: string;
-    lastOtpSentAt: Date;
-    consecutiveFailedVerifyAttempts: number;
-    backoffUntil: Date | null;
-    now: Date;
-}) {
-    await db
-        .insert(otpEmailDestinationStateTable)
-        .values({
-            email: canonicalEmail,
-            lastOtpSentAt,
-            consecutiveFailedVerifyAttempts,
-            backoffUntil,
-            createdAt: now,
-            updatedAt: now,
-        })
-        .onConflictDoUpdate({
-            target: otpEmailDestinationStateTable.email,
-            set: {
-                lastOtpSentAt,
-                consecutiveFailedVerifyAttempts,
+                wrongGuessAttemptAmount,
                 backoffUntil,
                 updatedAt: now,
             },
@@ -2128,6 +2194,7 @@ async function reservePhoneOtpSend({
             set: {
                 lastOtpSentAt: now,
                 consecutiveFailedVerifyAttempts: sql<number>`CASE WHEN ${otpPhoneDestinationStateTable.updatedAt} <= ${encodedStreakResetBefore} THEN 0 ELSE ${otpPhoneDestinationStateTable.consecutiveFailedVerifyAttempts} END`,
+                wrongGuessAttemptAmount: sql<number>`CASE WHEN ${otpPhoneDestinationStateTable.updatedAt} <= ${encodedStreakResetBefore} THEN 0 ELSE ${otpPhoneDestinationStateTable.wrongGuessAttemptAmount} END`,
                 backoffUntil: sql<Date | null>`CASE WHEN ${otpPhoneDestinationStateTable.updatedAt} <= ${encodedStreakResetBefore} THEN NULL ELSE ${otpPhoneDestinationStateTable.backoffUntil} END`,
                 updatedAt: now,
             },
@@ -2151,6 +2218,30 @@ async function reservePhoneOtpSend({
         return null;
     }
 
+    const state = getEffectiveOtpDestinationState({
+        state: await getPhoneOtpDestinationState({ db, phoneHash }),
+        now,
+    });
+    return (
+        getOtpDestinationThrottleUntil({
+            state,
+            now,
+            throttleSecondsInterval,
+        }) ?? buildNextCodeSoonestTime({ now, throttleSecondsInterval })
+    );
+}
+
+async function getPhoneOtpNextSendTime({
+    db,
+    phoneHash,
+    now,
+    throttleSecondsInterval,
+}: {
+    db: PostgresDatabase;
+    phoneHash: string;
+    now: Date;
+    throttleSecondsInterval: number;
+}): Promise<Date> {
     const state = getEffectiveOtpDestinationState({
         state: await getPhoneOtpDestinationState({ db, phoneHash }),
         now,
@@ -2200,6 +2291,7 @@ async function reserveEmailOtpSend({
             set: {
                 lastOtpSentAt: now,
                 consecutiveFailedVerifyAttempts: sql<number>`CASE WHEN ${otpEmailDestinationStateTable.updatedAt} <= ${encodedStreakResetBefore} THEN 0 ELSE ${otpEmailDestinationStateTable.consecutiveFailedVerifyAttempts} END`,
+                wrongGuessAttemptAmount: sql<number>`CASE WHEN ${otpEmailDestinationStateTable.updatedAt} <= ${encodedStreakResetBefore} THEN 0 ELSE ${otpEmailDestinationStateTable.wrongGuessAttemptAmount} END`,
                 backoffUntil: sql<Date | null>`CASE WHEN ${otpEmailDestinationStateTable.updatedAt} <= ${encodedStreakResetBefore} THEN NULL ELSE ${otpEmailDestinationStateTable.backoffUntil} END`,
                 updatedAt: now,
             },
@@ -2274,31 +2366,11 @@ async function incrementPhoneOtpDestinationBackoff({
         phoneHash,
         lastOtpSentAt: state?.lastOtpSentAt ?? now,
         consecutiveFailedVerifyAttempts,
+        wrongGuessAttemptAmount: 0,
         backoffUntil,
         now,
     });
     return backoffUntil;
-}
-
-async function recordPhoneOtpChallengeExhausted({
-    db,
-    phoneHash,
-    now,
-    throttleSecondsInterval,
-}: {
-    db: PostgresDatabase;
-    phoneHash: string;
-    now: Date;
-    throttleSecondsInterval: number;
-}): Promise<Date> {
-    return await db.transaction(async (tx) => {
-        return await incrementPhoneOtpDestinationBackoff({
-            db: tx,
-            phoneHash,
-            now,
-            throttleSecondsInterval,
-        });
-    });
 }
 
 async function claimTwilioExhaustedPhoneOtpChallenge({
@@ -2358,52 +2430,6 @@ async function claimTwilioExhaustedPhoneOtpChallenge({
     });
 }
 
-async function recordEmailOtpChallengeExhausted({
-    db,
-    canonicalEmail,
-    now,
-    throttleSecondsInterval,
-}: {
-    db: PostgresDatabase;
-    canonicalEmail: string;
-    now: Date;
-    throttleSecondsInterval: number;
-}): Promise<Date> {
-    return await db.transaction(async (tx) => {
-        const rows = await tx
-            .select({
-                lastOtpSentAt: otpEmailDestinationStateTable.lastOtpSentAt,
-                consecutiveFailedVerifyAttempts:
-                    otpEmailDestinationStateTable.consecutiveFailedVerifyAttempts,
-                backoffUntil: otpEmailDestinationStateTable.backoffUntil,
-                updatedAt: otpEmailDestinationStateTable.updatedAt,
-            })
-            .from(otpEmailDestinationStateTable)
-            .where(eq(otpEmailDestinationStateTable.email, canonicalEmail))
-            .for("update");
-        const state = getEffectiveOtpDestinationState({
-            state: rows[0] ?? null,
-            now,
-        });
-        const consecutiveFailedVerifyAttempts =
-            (state?.consecutiveFailedVerifyAttempts ?? 0) + 1;
-        const backoffUntil = getOtpDestinationBackoffUntil({
-            now,
-            consecutiveFailedVerifyAttempts,
-            throttleSecondsInterval,
-        });
-        await persistEmailOtpDestinationState({
-            db: tx,
-            canonicalEmail,
-            lastOtpSentAt: state?.lastOtpSentAt ?? now,
-            consecutiveFailedVerifyAttempts,
-            backoffUntil,
-            now,
-        });
-        return backoffUntil;
-    });
-}
-
 async function resetPhoneOtpDestinationState({
     db,
     phoneHash,
@@ -2417,6 +2443,7 @@ async function resetPhoneOtpDestinationState({
         .update(otpPhoneDestinationStateTable)
         .set({
             consecutiveFailedVerifyAttempts: 0,
+            wrongGuessAttemptAmount: 0,
             backoffUntil: null,
             updatedAt: now,
         })
@@ -2436,6 +2463,7 @@ async function resetEmailOtpDestinationState({
         .update(otpEmailDestinationStateTable)
         .set({
             consecutiveFailedVerifyAttempts: 0,
+            wrongGuessAttemptAmount: 0,
             backoffUntil: null,
             updatedAt: now,
         })
@@ -2555,6 +2583,111 @@ async function insertAuthAttemptCode({
     };
 }
 
+async function upsertSyntheticPhoneAuthAttempt({
+    db,
+    type,
+    userId,
+    didWrite,
+    now,
+    userAgent,
+    authenticateRequestBody,
+    minutesBeforeCodeExpiry,
+    throttleSecondsInterval,
+    phoneHash,
+}: {
+    db: PostgresDatabase;
+    type: AuthenticateType;
+    userId: string;
+    didWrite: string;
+    now: Date;
+    userAgent: string;
+    authenticateRequestBody: AuthenticateRequestBody;
+    minutesBeforeCodeExpiry: number;
+    throttleSecondsInterval: number;
+    phoneHash: string;
+}): Promise<AuthenticateResponse> {
+    const currentAttempts = await db
+        .select({
+            phoneHash: authAttemptPhoneTable.phoneHash,
+            codeExpiry: authAttemptPhoneTable.codeExpiry,
+            isSynthetic: authAttemptPhoneTable.isSynthetic,
+        })
+        .from(authAttemptPhoneTable)
+        .where(eq(authAttemptPhoneTable.didWrite, didWrite))
+        .limit(1);
+    const currentAttempt = currentAttempts.at(0);
+    if (
+        !authenticateRequestBody.isRequestingNewCode &&
+        currentAttempt?.isSynthetic &&
+        currentAttempt.phoneHash === phoneHash &&
+        currentAttempt.codeExpiry > now
+    ) {
+        return {
+            success: true,
+            codeExpiry: currentAttempt.codeExpiry,
+            nextCodeSoonestTime: await getPhoneOtpNextSendTime({
+                db,
+                phoneHash,
+                now,
+                throttleSecondsInterval,
+            }),
+        };
+    }
+
+    const throttleUntil = await reservePhoneOtpSend({
+        db,
+        phoneHash,
+        now,
+        throttleSecondsInterval,
+    });
+    if (throttleUntil !== null) {
+        return buildPhoneAuthenticateThrottledResponse(throttleUntil);
+    }
+
+    const phoneNumber = parsePhoneNumberFromString(
+        authenticateRequestBody.phoneNumber,
+        { defaultCallingCode: authenticateRequestBody.defaultCallingCode },
+    );
+    if (!phoneNumber?.isValid()) {
+        return { success: false, reason: "invalid_phone_number" };
+    }
+    const possibleCountries = phoneNumber.getPossibleCountries();
+    const phoneCountryCode = phoneNumber.country ?? possibleCountries[0];
+    const codeExpiry = new Date(now);
+    codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeCodeExpiry);
+    const challengeValues = {
+        type,
+        lastTwoDigits: Number(phoneNumber.number.slice(-2)),
+        countryCallingCode: phoneNumber.countryCallingCode,
+        phoneCountryCode,
+        phoneHash,
+        pepperVersion: PEPPER_VERSION,
+        userId,
+        userAgent,
+        code: generateOneTimeCode(),
+        codeExpiry,
+        guessAttemptAmount: 0,
+        isSynthetic: true,
+        lastOtpSentAt: now,
+        updatedAt: now,
+    };
+    await db
+        .insert(authAttemptPhoneTable)
+        .values({ didWrite, ...challengeValues })
+        .onConflictDoUpdate({
+            target: authAttemptPhoneTable.didWrite,
+            set: challengeValues,
+        });
+    return {
+        success: true,
+        codeExpiry,
+        nextCodeSoonestTime: buildNextCodeSoonestTime({
+            now,
+            throttleSecondsInterval,
+        }),
+    };
+}
+
 async function updateAuthAttemptCode({
     db,
     type,
@@ -2659,6 +2792,7 @@ async function updateAuthAttemptCode({
                     delivery.type === "twilio"
                         ? generateOneTimeCode()
                         : currentAttempt[0].code,
+                isSynthetic: false,
                 lastOtpSentAt: now,
                 updatedAt: now,
             })
@@ -2704,6 +2838,7 @@ async function updateAuthAttemptCode({
             code: oneTimeCode,
             codeExpiry: codeExpiry,
             guessAttemptAmount: 0,
+            isSynthetic: false,
             lastOtpSentAt: now,
             updatedAt: now,
         })
@@ -3269,29 +3404,116 @@ async function recordWrongEmailOtpGuess({
     };
     maxAttempt: number;
     now: Date;
-}): Promise<number | null> {
-    const encodedNow = sql.param(now, authAttemptEmailTable.codeExpiry);
-    const updated = await db
-        .update(authAttemptEmailTable)
-        .set({
-            guessAttemptAmount: sql<number>`${authAttemptEmailTable.guessAttemptAmount} + 1`,
-            codeExpiry: sql<Date>`CASE WHEN ${authAttemptEmailTable.guessAttemptAmount} + 1 >= ${maxAttempt} THEN ${encodedNow} ELSE ${authAttemptEmailTable.codeExpiry} END`,
-            updatedAt: now,
-        })
-        .where(
-            and(
-                eq(authAttemptEmailTable.didWrite, didWrite),
-                eq(authAttemptEmailTable.email, challenge.email),
-                eq(authAttemptEmailTable.code, challenge.code),
-                eq(authAttemptEmailTable.codeExpiry, challenge.codeExpiry),
-                gt(authAttemptEmailTable.codeExpiry, now),
-                lt(authAttemptEmailTable.guessAttemptAmount, maxAttempt),
-            ),
-        )
-        .returning({
-            guessAttemptAmount: authAttemptEmailTable.guessAttemptAmount,
+}): Promise<
+    | { type: "expired" }
+    | { type: "wrong_guess"; challengeGuessAttemptAmount: number }
+    | { type: "throttled"; nextCodeSoonestTime: Date }
+> {
+    return await db.transaction(async (tx) => {
+        // Success and failure paths lock the challenge before the destination.
+        // A consistent order prevents concurrent correct/wrong submissions from
+        // deadlocking while preserving destination-wide throttling.
+        const activeChallenges = await tx
+            .select({ didWrite: authAttemptEmailTable.didWrite })
+            .from(authAttemptEmailTable)
+            .where(
+                and(
+                    eq(authAttemptEmailTable.didWrite, didWrite),
+                    eq(authAttemptEmailTable.email, challenge.email),
+                    eq(authAttemptEmailTable.code, challenge.code),
+                    eq(authAttemptEmailTable.codeExpiry, challenge.codeExpiry),
+                    gt(authAttemptEmailTable.codeExpiry, now),
+                    lt(authAttemptEmailTable.guessAttemptAmount, maxAttempt),
+                ),
+            )
+            .for("update");
+        if (activeChallenges.length !== 1) {
+            return { type: "expired" };
+        }
+
+        const destinationRows = await tx
+            .select({
+                wrongGuessAttemptAmount:
+                    otpEmailDestinationStateTable.wrongGuessAttemptAmount,
+                consecutiveFailedVerifyAttempts:
+                    otpEmailDestinationStateTable.consecutiveFailedVerifyAttempts,
+                backoffUntil: otpEmailDestinationStateTable.backoffUntil,
+                updatedAt: otpEmailDestinationStateTable.updatedAt,
+            })
+            .from(otpEmailDestinationStateTable)
+            .where(eq(otpEmailDestinationStateTable.email, challenge.email))
+            .for("update");
+        const destinationState = destinationRows.at(0);
+        if (
+            destinationState !== undefined &&
+            destinationState.backoffUntil !== null &&
+            destinationState.backoffUntil > now
+        ) {
+            return {
+                type: "throttled",
+                nextCodeSoonestTime: destinationState.backoffUntil,
+            };
+        }
+
+        const encodedNow = sql.param(now, authAttemptEmailTable.codeExpiry);
+        const updated = await tx
+            .update(authAttemptEmailTable)
+            .set({
+                guessAttemptAmount: sql<number>`${authAttemptEmailTable.guessAttemptAmount} + 1`,
+                codeExpiry: sql<Date>`CASE WHEN ${authAttemptEmailTable.guessAttemptAmount} + 1 >= ${maxAttempt} THEN ${encodedNow} ELSE ${authAttemptEmailTable.codeExpiry} END`,
+                updatedAt: now,
+            })
+            .where(
+                and(
+                    eq(authAttemptEmailTable.didWrite, didWrite),
+                    eq(authAttemptEmailTable.email, challenge.email),
+                    eq(authAttemptEmailTable.code, challenge.code),
+                    eq(authAttemptEmailTable.codeExpiry, challenge.codeExpiry),
+                    gt(authAttemptEmailTable.codeExpiry, now),
+                    lt(authAttemptEmailTable.guessAttemptAmount, maxAttempt),
+                ),
+            )
+            .returning({
+                guessAttemptAmount: authAttemptEmailTable.guessAttemptAmount,
+            });
+        const challengeGuessAttemptAmount = updated.at(0)?.guessAttemptAmount;
+        if (challengeGuessAttemptAmount === undefined) {
+            return { type: "expired" };
+        }
+
+        const decision = decideDestinationWrongGuess({
+            state: destinationState ?? {
+                wrongGuessAttemptAmount: 0,
+                consecutiveFailedVerifyAttempts: 0,
+                backoffUntil: null,
+                updatedAt: now,
+            },
+            now,
+            maxWrongGuesses: config.EMAIL_OTP_DESTINATION_MAX_WRONG_GUESSES,
+            throttleSecondsInterval: config.THROTTLE_EMAIL_SECONDS_INTERVAL,
         });
-    return updated[0]?.guessAttemptAmount ?? null;
+        await tx
+            .insert(otpEmailDestinationStateTable)
+            .values({
+                email: challenge.email,
+                lastOtpSentAt: now,
+                ...decision.state,
+            })
+            .onConflictDoUpdate({
+                target: otpEmailDestinationStateTable.email,
+                set: decision.state,
+            });
+        if (decision.type === "throttled") {
+            return {
+                type: "throttled",
+                nextCodeSoonestTime: decision.nextCodeSoonestTime,
+            };
+        }
+        return {
+            type: "wrong_guess",
+            challengeGuessAttemptAmount,
+        };
+    });
 }
 
 interface RegisterWithEmailProps {
@@ -3333,21 +3555,28 @@ async function registerWithEmail({
             });
 
         if (wasUserCreated) {
-            await tx.insert(deviceTable).values({
-                userId: userId,
-                didWrite: didWrite,
-                userAgent: userAgent,
-                sessionExpiry: sessionExpiry,
+            await startHardAuthSession({
+                db: tx,
+                userId,
+                didWrite,
+                transition: {
+                    type: "new_device",
+                    userAgent,
+                },
+                now,
+                sessionExpiry,
             });
         } else {
-            // Credential upgrade — user + device already exist, extend session
-            await tx
-                .update(deviceTable)
-                .set({
-                    sessionExpiry: sessionExpiry,
-                    updatedAt: now,
-                })
-                .where(eq(deviceTable.didWrite, didWrite));
+            await startHardAuthSession({
+                db: tx,
+                userId,
+                didWrite,
+                transition: {
+                    type: "credential_upgrade",
+                },
+                now,
+                sessionExpiry,
+            });
         }
 
         await tx.insert(emailTable).values({
@@ -3433,13 +3662,16 @@ async function registerOrLoginWithEmail(
         }
         case "login_known_device": {
             // OTP was already claimed by the caller; just update the session.
-            await db
-                .update(deviceTable)
-                .set({
-                    sessionExpiry: loginSessionExpiry,
-                    updatedAt: now,
-                })
-                .where(eq(deviceTable.didWrite, didWrite));
+            await startHardAuthSession({
+                db,
+                userId: props.userId,
+                didWrite,
+                transition: {
+                    type: "reauthentication",
+                },
+                now,
+                sessionExpiry: loginSessionExpiry,
+            });
             return {
                 success: true,
                 accountMerged: false,
@@ -3447,10 +3679,15 @@ async function registerOrLoginWithEmail(
             };
         }
         case "login_new_device": {
-            await db.insert(deviceTable).values({
+            await startHardAuthSession({
+                db,
                 userId: props.userId,
-                didWrite: didWrite,
-                userAgent: userAgent,
+                didWrite,
+                transition: {
+                    type: "new_device",
+                    userAgent,
+                },
+                now,
                 sessionExpiry: loginSessionExpiry,
             });
             return {
@@ -3466,14 +3703,18 @@ async function registerOrLoginWithEmail(
                 db,
                 verifiedUserId: toUserId,
                 guestUserId: fromUserId,
+                now,
             });
-            await db
-                .update(deviceTable)
-                .set({
-                    sessionExpiry: loginSessionExpiry,
-                    updatedAt: now,
-                })
-                .where(eq(deviceTable.didWrite, didWrite));
+            await startHardAuthSession({
+                db,
+                userId: toUserId,
+                didWrite,
+                transition: {
+                    type: "guest_merge",
+                },
+                now,
+                sessionExpiry: loginSessionExpiry,
+            });
             log.info(
                 { verifiedUserId: toUserId, guestUserId: fromUserId },
                 "[Email] Merged guest into verified user",
@@ -3553,25 +3794,34 @@ export async function verifyEmailOtp({
             currentDisplayLanguage,
         });
     } else {
-        const guessAttemptAmount = await recordWrongEmailOtpGuess({
+        const wrongGuessResult = await recordWrongEmailOtpGuess({
             db: primaryDb,
             didWrite,
             challenge: resultOtp[0],
             maxAttempt,
             now,
         });
-        if (guessAttemptAmount === null) {
+        if (wrongGuessResult.type === "expired") {
             return { success: false, reason: "expired_code" };
         }
-        if (guessAttemptAmount >= maxAttempt) {
+        if (wrongGuessResult.type === "throttled") {
             return buildTooManyWrongGuessResponse(
-                await recordEmailOtpChallengeExhausted({
-                    db: primaryDb,
-                    canonicalEmail,
-                    now,
-                    throttleSecondsInterval:
-                        config.THROTTLE_EMAIL_SECONDS_INTERVAL,
-                }),
+                wrongGuessResult.nextCodeSoonestTime,
+            );
+        }
+        if (wrongGuessResult.challengeGuessAttemptAmount >= maxAttempt) {
+            return buildTooManyWrongGuessResponse(
+                (
+                    await getEmailOtpDestinationState({
+                        db: primaryDb,
+                        canonicalEmail,
+                    })
+                )?.backoffUntil ??
+                    buildNextCodeSoonestTime({
+                        now,
+                        throttleSecondsInterval:
+                            config.THROTTLE_EMAIL_SECONDS_INTERVAL,
+                    }),
             );
         }
         return {
@@ -3579,35 +3829,4 @@ export async function verifyEmailOtp({
             reason: "wrong_guess",
         };
     }
-}
-
-// !WARNING: check should already been done that the device exists and is logged in
-// TODO: make sure the key cannot be reused, since we delete the key in our front? probably not
-export async function logout(db: PostgresDatabase, didWrite: string) {
-    const now = nowZeroMs();
-    return await db
-        .update(deviceTable)
-        .set({
-            sessionExpiry: now,
-            updatedAt: now,
-        })
-        .where(eq(deviceTable.didWrite, didWrite));
-}
-
-/**
- * Logout all devices for a user (set session expiry to now)
- * Used when user deletes their account
- */
-export async function logoutAllDevicesForUser(
-    db: PostgresDatabase,
-    userId: string,
-) {
-    const now = nowZeroMs();
-    return await db
-        .update(deviceTable)
-        .set({
-            sessionExpiry: now,
-            updatedAt: now,
-        })
-        .where(eq(deviceTable.userId, userId));
 }

@@ -5,7 +5,11 @@ import {
 } from "src/shared-app-api/ucan/ucan";
 import { processEnv } from "src/utils/processEnv";
 
-import { clearWebCryptoStore, withWebCryptoStore } from "../store";
+import {
+  clearStoreWithVerification,
+  clearWebCryptoStore,
+  withWebCryptoStore,
+} from "../store";
 import * as DID from "./did/index";
 import type { Implementation } from "./implementation";
 
@@ -53,6 +57,61 @@ export async function createDidIfDoesNotExist(): Promise<CreateDidReturn> {
 
 export async function deleteDid(): Promise<void> {
   await clearWebCryptoStore();
+}
+
+async function hasExpectedDid({
+  cryptoStore,
+  didWrite,
+}: {
+  cryptoStore: Implementation;
+  didWrite: string;
+}): Promise<boolean> {
+  if (!(await cryptoStore.keystore.writeKeyExists(PREFIXED_KEY))) {
+    return false;
+  }
+  return (await DID.write(cryptoStore, PREFIXED_KEY)) === didWrite;
+}
+
+export async function runIfCurrentDid<Result>({
+  didWrite,
+  operation,
+}: {
+  didWrite: string;
+  operation: () => Result;
+}): Promise<{ matched: false } | { matched: true; result: Result }> {
+  return await withWebCryptoStore(async (cryptoStore) => {
+    if (!(await hasExpectedDid({ cryptoStore, didWrite }))) {
+      return { matched: false };
+    }
+    return { matched: true, result: operation() };
+  });
+}
+
+export async function deleteDidIfCurrent({
+  didWrite,
+  onDeleted,
+  onDeleteFailed,
+}: {
+  didWrite: string;
+  onDeleted: () => void;
+  onDeleteFailed: () => void;
+}): Promise<boolean> {
+  return await withWebCryptoStore(async (cryptoStore) => {
+    if (!(await hasExpectedDid({ cryptoStore, didWrite }))) {
+      return false;
+    }
+    try {
+      await clearStoreWithVerification({
+        clearStore: cryptoStore.keystore.clearStore,
+        isStoreEmpty: cryptoStore.keystore.isStoreEmpty,
+      });
+    } catch (error) {
+      onDeleteFailed();
+      throw error;
+    }
+    onDeleted();
+    return true;
+  });
 }
 
 // Default UCAN lifetime for standard API calls (30 seconds)
@@ -107,12 +166,30 @@ export async function buildUcanForRequest({
   method,
   lifetimeInSeconds = DEFAULT_UCAN_LIFETIME_SECONDS,
 }: BuildUcanForRequestProps): Promise<string> {
+  const { encodedUcan } = await buildUcanForRequestWithDid({
+    keyAction,
+    pathname,
+    method,
+    lifetimeInSeconds,
+  });
+  return encodedUcan;
+}
+
+export async function buildUcanForRequestWithDid({
+  keyAction = "create",
+  pathname,
+  method,
+  lifetimeInSeconds = DEFAULT_UCAN_LIFETIME_SECONDS,
+}: BuildUcanForRequestProps): Promise<{
+  didWrite: string;
+  encodedUcan: string;
+}> {
   return await withWebCryptoStore(async (cryptoStore) => {
     const { did, prefixedKey } = await getDidForKeyAction({
       cryptoStore,
       keyAction,
     });
-    return await buildUcan({
+    const encodedUcan = await buildUcan({
       cryptoStore,
       did,
       prefixedKey,
@@ -120,6 +197,7 @@ export async function buildUcanForRequest({
       method,
       lifetimeInSeconds,
     });
+    return { didWrite: did, encodedUcan };
   });
 }
 

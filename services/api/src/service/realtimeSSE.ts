@@ -1,4 +1,5 @@
-import type { FastifyReply } from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
+import type { DeviceLoginStatusInternal } from "@/service/authUtil.js";
 import type { NotificationItem } from "@/shared/types/zod.js";
 import { zodSlugId } from "@/shared/types/zod.js";
 import type {
@@ -34,6 +35,54 @@ const zodRealtimeStreamQuery = z
 export interface RealtimeSubscriptionRequest {
     conversationSlugId: string | undefined;
     topics: string[];
+}
+
+export type RealtimeStreamAccess =
+    | { kind: "anonymous" }
+    | { kind: "guest"; userId: string }
+    | { kind: "registered"; userId: string; sessionExpiry: Date }
+    | { kind: "retired_registered" };
+
+type AuthenticatedRealtimeStreamAccess = Extract<
+    RealtimeStreamAccess,
+    { kind: "guest" | "registered" }
+>;
+
+export function getRealtimeStreamAccess(
+    deviceStatus: DeviceLoginStatusInternal,
+): RealtimeStreamAccess {
+    if (!deviceStatus.isKnown) {
+        return { kind: "anonymous" };
+    }
+    if (!deviceStatus.isRegistered) {
+        return { kind: "guest", userId: deviceStatus.userId };
+    }
+    if (!deviceStatus.isLoggedIn) {
+        return { kind: "retired_registered" };
+    }
+    return {
+        kind: "registered",
+        userId: deviceStatus.userId,
+        sessionExpiry: deviceStatus.sessionExpiry,
+    };
+}
+
+export function createRealtimeRequestClosePromise({
+    requestRaw,
+}: {
+    requestRaw: FastifyRequest["raw"];
+}): Promise<void> {
+    return new Promise<void>((resolve) => {
+        const handleClose = (): void => {
+            resolve();
+        };
+
+        requestRaw.once("close", handleClose);
+        if (requestRaw.closed || requestRaw.destroyed) {
+            requestRaw.removeListener("close", handleClose);
+            resolve();
+        }
+    });
 }
 
 export function parseRealtimeSubscriptionRequest(
@@ -97,6 +146,19 @@ interface RealtimeConnectionOptions {
     subscribedTopics: readonly string[];
 }
 
+type InitialConnection =
+    | {
+          kind: "authenticated";
+          reply: FastifyReply;
+          subscribedTopics: readonly string[];
+          userId: string;
+      }
+    | {
+          kind: "anonymous";
+          reply: FastifyReply;
+          subscribedTopics: readonly string[];
+      };
+
 /**
  * Server-Sent Events (SSE) Connection Manager for real-time events.
  * Manages both authenticated (by userId) and anonymous SSE connections.
@@ -106,18 +168,26 @@ interface RealtimeConnectionOptions {
 export class RealtimeSSEManager {
     // Authenticated connections: userId → Set of reply streams
     private connections: Map<string, Set<FastifyReply>>;
+    private authenticatedConnectionUserIds: Map<FastifyReply, string>;
     // Anonymous connections (no userId)
     private anonymousConnections: Set<FastifyReply>;
     private connectionTimestamps: Map<FastifyReply, number>;
+    private authenticatedConnectionExpiryTimers: Map<
+        FastifyReply,
+        NodeJS.Timeout
+    >;
     private connectionTopicSubscriptions: Map<FastifyReply, Set<string>>;
     private cleanupInterval: NodeJS.Timeout | null;
     private isShuttingDown: boolean;
     private readonly CONNECTION_TIMEOUT_MS = 3600000; // 1 hour
+    private readonly SHUTDOWN_SEND_TIMEOUT_MS = 1000;
 
     constructor() {
         this.connections = new Map();
+        this.authenticatedConnectionUserIds = new Map();
         this.anonymousConnections = new Set();
         this.connectionTimestamps = new Map();
+        this.authenticatedConnectionExpiryTimers = new Map();
         this.connectionTopicSubscriptions = new Map();
         this.cleanupInterval = null;
         this.isShuttingDown = false;
@@ -139,30 +209,41 @@ export class RealtimeSSEManager {
     /**
      * Register a new authenticated SSE connection for a user
      */
-    public connect({
-        userId,
+    public async connect({
+        access,
         reply,
         subscribedTopics,
     }: {
-        userId: string;
+        access: AuthenticatedRealtimeStreamAccess;
         reply: FastifyReply;
-    } & RealtimeConnectionOptions): void {
+    } & RealtimeConnectionOptions): Promise<void> {
         if (this.isShuttingDown) {
             reply.code(503).send({ error: "Server is shutting down" });
             return;
         }
 
-        // Get or create connection set for this user
-        if (!this.connections.has(userId)) {
-            this.connections.set(userId, new Set());
-        }
-        const userConnections = this.connections.get(userId);
-        if (!userConnections) {
-            log.error(`Failed to get realtime connections for user ${userId}`);
-            return;
-        }
+        const userConnections =
+            this.connections.get(access.userId) ?? new Set();
         userConnections.add(reply);
+        this.connections.set(access.userId, userConnections);
+        this.authenticatedConnectionUserIds.set(reply, access.userId);
         this.connectionTimestamps.set(reply, Date.now());
+        if (access.kind === "registered") {
+            const expiryTimer = setTimeout(
+                () => {
+                    this.closeAuthenticatedConnection(reply);
+                },
+                Math.max(
+                    0,
+                    Math.min(
+                        access.sessionExpiry.getTime() - Date.now(),
+                        this.CONNECTION_TIMEOUT_MS,
+                    ),
+                ),
+            );
+            expiryTimer.unref();
+            this.authenticatedConnectionExpiryTimers.set(reply, expiryTimer);
+        }
         this.setConnectionTopicSubscriptions({
             reply,
             subscribedTopics,
@@ -170,44 +251,26 @@ export class RealtimeSSEManager {
 
         // Setup cleanup on connection close using @fastify/sse plugin's onClose method
         reply.sse.onClose(() => {
-            this.disconnect({ userId, reply });
+            this.disconnect(reply);
         });
 
-        // Send initial connection confirmation using plugin
-        const connectedData: SSEConnectedData = {
-            userId,
-            timestamp: Date.now(),
-        };
-        void reply.sse
-            .send({
-                event: "connected",
-                data: connectedData,
-            })
-            .catch((error: unknown) => {
-                log.error(
-                    error,
-                    `Failed to send realtime connection event to user ${userId}`,
-                );
-            });
-        void this.sendSubscriptionReady({ reply, subscribedTopics }).catch(
-            (error: unknown) => {
-                log.error(
-                    error,
-                    `Failed to send realtime subscription ready event to user ${userId}`,
-                );
-            },
-        );
+        await this.sendInitialConnectionEvents({
+            kind: "authenticated",
+            reply,
+            subscribedTopics,
+            userId: access.userId,
+        });
     }
 
     /**
      * Register a new anonymous SSE connection (no userId)
      */
-    public connectAnonymous({
+    public async connectAnonymous({
         reply,
         subscribedTopics,
     }: {
         reply: FastifyReply;
-    } & RealtimeConnectionOptions): void {
+    } & RealtimeConnectionOptions): Promise<void> {
         if (this.isShuttingDown) {
             reply.code(503).send({ error: "Server is shutting down" });
             return;
@@ -224,48 +287,57 @@ export class RealtimeSSEManager {
             this.disconnectAnonymous(reply);
         });
 
-        void reply.sse
-            .send({
-                event: "connected",
-                data: { timestamp: Date.now() },
-            })
-            .catch((error: unknown) => {
-                log.error(
-                    error,
-                    "Failed to send realtime connection event to anonymous client",
-                );
-            });
-        void this.sendSubscriptionReady({ reply, subscribedTopics }).catch(
-            (error: unknown) => {
-                log.error(
-                    error,
-                    "Failed to send realtime subscription ready event to anonymous client",
-                );
-            },
-        );
+        await this.sendInitialConnectionEvents({
+            kind: "anonymous",
+            reply,
+            subscribedTopics,
+        });
     }
 
     /**
      * Unregister an authenticated SSE connection for a user
      */
-    public disconnect({
-        userId,
-        reply,
-    }: {
-        userId: string;
-        reply: FastifyReply;
-    }): void {
-        const userConnections = this.connections.get(userId);
-        if (userConnections) {
-            userConnections.delete(reply);
-
-            // Clean up empty connection sets
-            if (userConnections.size === 0) {
-                this.connections.delete(userId);
+    public disconnect(reply: FastifyReply): void {
+        const userId = this.authenticatedConnectionUserIds.get(reply);
+        if (userId !== undefined) {
+            const userConnections = this.connections.get(userId);
+            if (userConnections !== undefined) {
+                userConnections.delete(reply);
+                if (userConnections.size === 0) {
+                    this.connections.delete(userId);
+                }
             }
+        }
+        this.authenticatedConnectionUserIds.delete(reply);
+        const expiryTimer = this.authenticatedConnectionExpiryTimers.get(reply);
+        if (expiryTimer !== undefined) {
+            clearTimeout(expiryTimer);
+            this.authenticatedConnectionExpiryTimers.delete(reply);
         }
         this.connectionTimestamps.delete(reply);
         this.connectionTopicSubscriptions.delete(reply);
+    }
+
+    public closeUsers({ userIds }: { userIds: readonly string[] }): void {
+        const replies = new Set<FastifyReply>();
+        for (const userId of userIds) {
+            for (const reply of this.connections.get(userId) ?? []) {
+                replies.add(reply);
+            }
+        }
+        for (const reply of replies) {
+            this.closeAuthenticatedConnection(reply);
+        }
+    }
+
+    public close(reply: FastifyReply): void {
+        if (this.authenticatedConnectionUserIds.has(reply)) {
+            this.closeAuthenticatedConnection(reply);
+            return;
+        }
+        if (this.anonymousConnections.has(reply)) {
+            this.closeAnonymousConnection(reply);
+        }
     }
 
     /**
@@ -318,10 +390,7 @@ export class RealtimeSSEManager {
         event: TEvent;
         data: SSEEventDataByType[TEvent];
     }): void {
-        const deadAuthenticated: { userId: string; reply: FastifyReply }[] = [];
-        const deadAnonymous: FastifyReply[] = [];
-
-        for (const [userId, userConnections] of this.connections) {
+        for (const userConnections of this.connections.values()) {
             for (const reply of userConnections) {
                 if (!this.isSubscribedToTopic({ reply, topic })) {
                     continue;
@@ -329,7 +398,7 @@ export class RealtimeSSEManager {
                 reply.sse
                     .send({ id: id?.toString(), event, data })
                     .catch(() => {
-                        deadAuthenticated.push({ userId, reply });
+                        this.closeAuthenticatedConnection(reply);
                     });
             }
         }
@@ -339,15 +408,8 @@ export class RealtimeSSEManager {
                 continue;
             }
             reply.sse.send({ id: id?.toString(), event, data }).catch(() => {
-                deadAnonymous.push(reply);
+                this.closeAnonymousConnection(reply);
             });
-        }
-
-        for (const { userId, reply } of deadAuthenticated) {
-            this.disconnect({ userId, reply });
-        }
-        for (const deadReply of deadAnonymous) {
-            this.disconnectAnonymous(deadReply);
         }
     }
 
@@ -361,9 +423,6 @@ export class RealtimeSSEManager {
         conversationSlugId: string;
         excludeUserId: string;
     }): void {
-        const deadAuthenticated: { userId: string; reply: FastifyReply }[] = [];
-        const deadAnonymous: FastifyReply[] = [];
-
         for (const [userId, userConnections] of this.connections) {
             if (userId === excludeUserId) {
                 continue;
@@ -382,7 +441,7 @@ export class RealtimeSSEManager {
                 reply.sse
                     .send({ id: id?.toString(), event, data })
                     .catch(() => {
-                        deadAuthenticated.push({ userId, reply });
+                        this.closeAuthenticatedConnection(reply);
                     });
             }
         }
@@ -399,15 +458,8 @@ export class RealtimeSSEManager {
                 continue;
             }
             reply.sse.send({ id: id?.toString(), event, data }).catch(() => {
-                deadAnonymous.push(reply);
+                this.closeAnonymousConnection(reply);
             });
-        }
-
-        for (const { userId, reply } of deadAuthenticated) {
-            this.disconnect({ userId, reply });
-        }
-        for (const deadReply of deadAnonymous) {
-            this.disconnectAnonymous(deadReply);
         }
     }
 
@@ -424,8 +476,6 @@ export class RealtimeSSEManager {
             return;
         }
 
-        const deadConnections: FastifyReply[] = [];
-
         const notificationData: SSENotificationData = {
             notification: notification,
         };
@@ -441,13 +491,8 @@ export class RealtimeSSEManager {
                         error,
                         `Failed to send realtime notification to user ${userId}`,
                     );
-                    deadConnections.push(reply);
+                    this.closeAuthenticatedConnection(reply);
                 });
-        }
-
-        // Clean up dead connections
-        for (const deadReply of deadConnections) {
-            this.disconnect({ userId, reply: deadReply });
         }
     }
 
@@ -461,14 +506,11 @@ export class RealtimeSSEManager {
         event: TEvent;
         data: SSEEventDataByType[TEvent];
     }): void {
-        const deadAuthenticated: { userId: string; reply: FastifyReply }[] = [];
-        const deadAnonymous: FastifyReply[] = [];
-
         // Send to all authenticated connections
-        for (const [userId, userConnections] of this.connections) {
+        for (const userConnections of this.connections.values()) {
             for (const reply of userConnections) {
                 reply.sse.send({ event, data }).catch(() => {
-                    deadAuthenticated.push({ userId, reply });
+                    this.closeAuthenticatedConnection(reply);
                 });
             }
         }
@@ -476,16 +518,8 @@ export class RealtimeSSEManager {
         // Send to all anonymous connections
         for (const reply of this.anonymousConnections) {
             reply.sse.send({ event, data }).catch(() => {
-                deadAnonymous.push(reply);
+                this.closeAnonymousConnection(reply);
             });
-        }
-
-        // Clean up dead connections
-        for (const { userId, reply } of deadAuthenticated) {
-            this.disconnect({ userId, reply });
-        }
-        for (const deadReply of deadAnonymous) {
-            this.disconnectAnonymous(deadReply);
         }
     }
 
@@ -501,9 +535,6 @@ export class RealtimeSSEManager {
         data: SSEEventDataByType[TEvent];
         excludeUserId: string;
     }): void {
-        const deadAuthenticated: { userId: string; reply: FastifyReply }[] = [];
-        const deadAnonymous: FastifyReply[] = [];
-
         // Send to all authenticated connections except the excluded user
         for (const [userId, userConnections] of this.connections) {
             if (userId === excludeUserId) {
@@ -511,7 +542,7 @@ export class RealtimeSSEManager {
             }
             for (const reply of userConnections) {
                 reply.sse.send({ event, data }).catch(() => {
-                    deadAuthenticated.push({ userId, reply });
+                    this.closeAuthenticatedConnection(reply);
                 });
             }
         }
@@ -519,16 +550,8 @@ export class RealtimeSSEManager {
         // Send to all anonymous connections
         for (const reply of this.anonymousConnections) {
             reply.sse.send({ event, data }).catch(() => {
-                deadAnonymous.push(reply);
+                this.closeAnonymousConnection(reply);
             });
-        }
-
-        // Clean up dead connections
-        for (const { userId, reply } of deadAuthenticated) {
-            this.disconnect({ userId, reply });
-        }
-        for (const deadReply of deadAnonymous) {
-            this.disconnectAnonymous(deadReply);
         }
     }
 
@@ -537,48 +560,37 @@ export class RealtimeSSEManager {
      */
     private cleanupStaleConnections(): void {
         const now = Date.now();
-        const staleAuthenticated: { userId: string; reply: FastifyReply }[] =
-            [];
+        const staleAuthenticated: FastifyReply[] = [];
         const staleAnonymous: FastifyReply[] = [];
 
-        for (const [userId, userConnections] of this.connections.entries()) {
+        for (const userConnections of this.connections.values()) {
             for (const reply of userConnections) {
                 const timestamp = this.connectionTimestamps.get(reply);
-                if (timestamp && now - timestamp > this.CONNECTION_TIMEOUT_MS) {
-                    staleAuthenticated.push({ userId, reply });
+                if (
+                    timestamp !== undefined &&
+                    now - timestamp > this.CONNECTION_TIMEOUT_MS
+                ) {
+                    staleAuthenticated.push(reply);
                 }
             }
         }
 
         for (const reply of this.anonymousConnections) {
             const timestamp = this.connectionTimestamps.get(reply);
-            if (timestamp && now - timestamp > this.CONNECTION_TIMEOUT_MS) {
+            if (
+                timestamp !== undefined &&
+                now - timestamp > this.CONNECTION_TIMEOUT_MS
+            ) {
                 staleAnonymous.push(reply);
             }
         }
 
-        for (const { userId, reply } of staleAuthenticated) {
-            this.disconnect({ userId, reply });
-            try {
-                reply.sse.close();
-            } catch (error: unknown) {
-                log.error(
-                    error,
-                    `Error closing stale realtime connection for user ${userId}`,
-                );
-            }
+        for (const reply of staleAuthenticated) {
+            this.closeAuthenticatedConnection(reply);
         }
 
         for (const reply of staleAnonymous) {
-            this.disconnectAnonymous(reply);
-            try {
-                reply.sse.close();
-            } catch (error: unknown) {
-                log.error(
-                    error,
-                    "Error closing stale anonymous realtime connection",
-                );
-            }
+            this.closeAnonymousConnection(reply);
         }
     }
 
@@ -621,33 +633,99 @@ export class RealtimeSSEManager {
             this.cleanupInterval = null;
         }
 
-        // Close all connections
-        const allConnections: FastifyReply[] = [];
+        const allConnections = new Set<FastifyReply>();
         for (const userConnections of this.connections.values()) {
-            allConnections.push(...userConnections);
-        }
-        allConnections.push(...this.anonymousConnections);
-
-        for (const reply of allConnections) {
-            try {
-                const shutdownData: SSEShutdownData = {
-                    message: "Server is shutting down",
-                };
-                await reply.sse.send({
-                    event: "shutdown",
-                    data: shutdownData,
-                });
-                // Close the SSE stream using plugin's close method
-                reply.sse.close();
-            } catch (_error) {
-                // Ignore errors during shutdown
+            for (const reply of userConnections) {
+                allConnections.add(reply);
             }
+        }
+        for (const reply of this.anonymousConnections) {
+            allConnections.add(reply);
         }
 
         this.connections.clear();
+        this.authenticatedConnectionUserIds.clear();
+        for (const expiryTimer of this.authenticatedConnectionExpiryTimers.values()) {
+            clearTimeout(expiryTimer);
+        }
+        this.authenticatedConnectionExpiryTimers.clear();
         this.anonymousConnections.clear();
         this.connectionTimestamps.clear();
         this.connectionTopicSubscriptions.clear();
+
+        await Promise.allSettled(
+            Array.from(allConnections, async (reply) => {
+                await this.sendShutdownAndClose(reply);
+            }),
+        );
+    }
+
+    private async sendInitialConnectionEvents(
+        connection: InitialConnection,
+    ): Promise<void> {
+        const connectedData: SSEConnectedData = {
+            timestamp: Date.now(),
+            ...(connection.kind === "authenticated"
+                ? { userId: connection.userId }
+                : {}),
+        };
+
+        try {
+            await connection.reply.sse.send({
+                event: "connected",
+                data: connectedData,
+            });
+            await this.sendSubscriptionReady(connection);
+        } catch (error: unknown) {
+            if (connection.kind === "authenticated") {
+                log.error(
+                    error,
+                    `Failed to initialize realtime connection for user ${connection.userId}`,
+                );
+                this.closeAuthenticatedConnection(connection.reply);
+            } else {
+                log.error(
+                    error,
+                    "Failed to initialize anonymous realtime connection",
+                );
+                this.closeAnonymousConnection(connection.reply);
+            }
+            throw error;
+        }
+    }
+
+    private async sendShutdownAndClose(reply: FastifyReply): Promise<void> {
+        let timeout: NodeJS.Timeout | undefined;
+        const shutdownData: SSEShutdownData = {
+            message: "Server is shutting down",
+        };
+
+        try {
+            await Promise.race([
+                reply.sse.send({
+                    event: "shutdown",
+                    data: shutdownData,
+                }),
+                new Promise<void>((resolve) => {
+                    timeout = setTimeout(
+                        resolve,
+                        this.SHUTDOWN_SEND_TIMEOUT_MS,
+                    );
+                    timeout.unref();
+                }),
+            ]);
+        } catch (_error: unknown) {
+            // Closing the stream is the required shutdown fallback.
+        } finally {
+            if (timeout !== undefined) {
+                clearTimeout(timeout);
+            }
+            try {
+                reply.sse.close();
+            } catch (_error: unknown) {
+                // The peer may already have closed the stream.
+            }
+        }
     }
 
     private async sendSubscriptionReady({
@@ -688,5 +766,29 @@ export class RealtimeSSEManager {
         return (
             this.connectionTopicSubscriptions.get(reply)?.has(topic) ?? false
         );
+    }
+
+    private closeAuthenticatedConnection(reply: FastifyReply): void {
+        const userId = this.authenticatedConnectionUserIds.get(reply);
+        this.disconnect(reply);
+        try {
+            reply.sse.close();
+        } catch (error: unknown) {
+            log.error(
+                error,
+                userId === undefined
+                    ? "Error closing authenticated realtime connection"
+                    : `Error closing realtime connection for user ${userId}`,
+            );
+        }
+    }
+
+    private closeAnonymousConnection(reply: FastifyReply): void {
+        this.disconnectAnonymous(reply);
+        try {
+            reply.sse.close();
+        } catch (error: unknown) {
+            log.error(error, "Error closing anonymous realtime connection");
+        }
     }
 }

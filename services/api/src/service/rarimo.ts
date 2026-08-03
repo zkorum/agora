@@ -26,8 +26,10 @@ import * as authUtilService from "@/service/authUtil.js";
 import { decimalToHex, hexToUtf8 } from "@/utils/dataStructure.js";
 import { log } from "@/app.js";
 import { mergeGuestIntoVerifiedUser } from "./merge.js";
+import { startHardAuthSession } from "./authSession.js";
 import { httpErrors } from "@fastify/sensible";
 import { isUserLoggedIn } from "@/shared-backend/util.js";
+import { getPrimaryDatabase } from "@/shared-backend/db.js";
 
 interface IsLoggedInOrExistsAndAssociatedWithNoNullifierProps {
     db: PostgresDatabase;
@@ -284,10 +286,11 @@ export async function verifyUserStatusAndAuthenticate({
     currentDisplayLanguage,
 }: VerifyUserStatusProps): Promise<VerifyUserStatusAndAuthenticate200> {
     const now = nowZeroMs();
+    const primaryDb = getPrimaryDatabase(db);
     // TODO: move this check to verifyUCAN directly in the controller:
     const badStatusReason =
         await isLoggedInOrExistsAndAssociatedWithNoNullifier({
-            db,
+            db: primaryDb,
             didWrite,
             now,
         });
@@ -326,12 +329,12 @@ export async function verifyUserStatusAndAuthenticate({
         axiosVerificatorSvc,
     });
     const deviceStatus = await authUtilService.getDeviceStatus({
-        db,
+        db: primaryDb,
         didWrite,
         now,
     });
     const authResult = await getZKPAuthenticationType({
-        db,
+        db: primaryDb,
         nullifier,
         didWrite,
         deviceStatus,
@@ -346,7 +349,7 @@ export async function verifyUserStatusAndAuthenticate({
     // Prevent duplicate credential: if auth type is "register", check user doesn't already
     // have an active Rarimo passport before proceeding with the transaction
     if (authResult.type === "register") {
-        const existingPassport = await db
+        const existingPassport = await primaryDb
             .select({ id: zkPassportTable.id })
             .from(zkPassportTable)
             .where(
@@ -367,7 +370,7 @@ export async function verifyUserStatusAndAuthenticate({
 
     // Wrap all operations in transaction to ensure atomicity
     // This prevents session corruption if device update fails after merge
-    await db.transaction(async (tx) => {
+    await primaryDb.transaction(async (tx) => {
         switch (authResult.type) {
             case "associated_with_another_user":
                 // No database operations needed, handled outside transaction
@@ -390,6 +393,7 @@ export async function verifyUserStatusAndAuthenticate({
                 await loginKnownDeviceWithZKP({
                     db: tx,
                     didWrite,
+                    userId: authResult.userId,
                     now,
                     sessionExpiry: loginSessionExpiry,
                 });
@@ -400,6 +404,7 @@ export async function verifyUserStatusAndAuthenticate({
                     didWrite,
                     userId: authResult.userId,
                     userAgent,
+                    now,
                     sessionExpiry: loginSessionExpiry,
                 });
                 break;
@@ -408,15 +413,18 @@ export async function verifyUserStatusAndAuthenticate({
                     db: tx,
                     verifiedUserId: authResult.toUserId,
                     guestUserId: authResult.fromUserId,
+                    now,
                 });
-                await tx
-                    .update(deviceTable)
-                    .set({
-                        userId: authResult.toUserId,
-                        sessionExpiry: loginSessionExpiry,
-                        updatedAt: now,
-                    })
-                    .where(eq(deviceTable.didWrite, didWrite));
+                await startHardAuthSession({
+                    db: tx,
+                    userId: authResult.toUserId,
+                    didWrite,
+                    transition: {
+                        type: "guest_merge",
+                    },
+                    now,
+                    sessionExpiry: loginSessionExpiry,
+                });
                 log.info(
                     {
                         toUserId: authResult.toUserId,

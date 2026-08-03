@@ -9,5 +9,11 @@ export const emailVerificationStore = defineStore("emailVerification", () => {
     nextCodeSoonestTime: Date;
   } | null>(null);
 
-  return { verificationEmail, requestCodeThrottleUntil, pendingOtpData };
+  function reset(): void {
+    verificationEmail.value = "";
+    requestCodeThrottleUntil.value = null;
+    pendingOtpData.value = null;
+  }
+
+  return { verificationEmail, requestCodeThrottleUntil, pendingOtpData, reset };
 });
