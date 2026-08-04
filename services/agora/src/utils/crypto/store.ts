@@ -1,4 +1,4 @@
-import BrowserTabsLock from "browser-tabs-lock";
+import { getNewInstance as createBrowserTabsLock } from "browser-tabs-lock/bundleEntry.js";
 
 import * as BrowserCrypto from "../crypto/ucan/implementation/browser.js";
 import { type Implementation } from "./ucan/implementation.js";
@@ -74,7 +74,7 @@ export function createExclusiveStoreManager<Store>({
 }: CreateExclusiveStoreManagerParams<Store>): ExclusiveStoreManager<Store> {
   let store: Store | undefined = undefined;
   let operationQueue = Promise.resolve();
-  const fallbackLock = new BrowserTabsLock();
+  const fallbackLock = createBrowserTabsLock();
 
   async function runExclusive<Result>(
     operation: (store: Store) => Promise<Result>
