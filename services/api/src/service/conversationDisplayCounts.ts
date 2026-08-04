@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     conversationTable,
@@ -52,7 +52,10 @@ export async function fetchConversationDisplayCountsByConversationId({
         .from(conversationViewSnapshotTable)
         .where(
             and(
-                sql`${conversationViewSnapshotTable.conversationId} = ANY(${uniqueConversationIds})`,
+                inArray(
+                    conversationViewSnapshotTable.conversationId,
+                    uniqueConversationIds,
+                ),
                 isNotNull(conversationViewSnapshotTable.activatedAt),
             ),
         )
@@ -74,7 +77,10 @@ export async function fetchConversationDisplayCountsByConversationId({
         )
         .from(rankingConversationStatsSnapshotTable)
         .where(
-            sql`${rankingConversationStatsSnapshotTable.conversationId} = ANY(${uniqueConversationIds})`,
+            inArray(
+                rankingConversationStatsSnapshotTable.conversationId,
+                uniqueConversationIds,
+            ),
         )
         .orderBy(
             rankingConversationStatsSnapshotTable.conversationId,
@@ -127,7 +133,7 @@ export async function fetchConversationDisplayCountsByConversationId({
             latestRankingSnapshot,
             eq(latestRankingSnapshot.conversationId, conversationTable.id),
         )
-        .where(sql`${conversationTable.id} = ANY(${uniqueConversationIds})`);
+        .where(inArray(conversationTable.id, uniqueConversationIds));
 
     const countsByConversationId = new Map<number, ConversationDisplayCounts>();
     for (const row of rows) {
