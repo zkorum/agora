@@ -495,4 +495,3 @@ describe("estimateRemainingVotes", () => {
         expect(result).toBeGreaterThanOrEqual(1);
     });
 });
-
