@@ -2,7 +2,7 @@
   <Teleport to="body">
     <Transition name="action-dialog">
       <div v-if="showDialog" class="action-dialog-overlay" @click.self="showDialog = false">
-        <div class="action-dialog-sheet">
+        <div class="action-dialog-sheet" @click.self="showDialog = false">
           <ZKBottomDialogContainer>
           <div class="action-dialog">
             <div v-if="title || message" class="dialog-header">
