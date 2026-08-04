@@ -96,6 +96,8 @@ const handleClick = (event: Event) => {
 
 :deep(p) {
   margin-bottom: 0.5rem;
+  tab-size: 2;
+  white-space: pre-wrap;
 }
 
 :deep(p:empty) {
