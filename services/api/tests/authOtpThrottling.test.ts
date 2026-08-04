@@ -60,6 +60,8 @@ const enabledPhoneAuth = {
 const loginOnlyPhoneAuth = {
     ...enabledPhoneAuth,
     mode: "login_only",
+    minimumResponseTimeMs: 0,
+    responseJitterMs: 0,
 } satisfies PhoneAuth;
 const disabledPhoneAuth = { mode: "disabled" } satisfies PhoneAuth;
 
@@ -1554,6 +1556,42 @@ describe("OTP destination throttling", () => {
         const syntheticDid = "did:test:phone:synthetic-login";
         const phoneNumber = "+14155552675";
         const unregisteredPhoneNumber = "+14155552679";
+        const deliveryStarted = createLatch();
+        const deliveryBlocked = createLatch();
+        const loginOnlyTwilioPhoneAuth = {
+            mode: "login_only",
+            minimumResponseTimeMs: 0,
+            responseJitterMs: 0,
+            delivery: {
+                type: "twilio",
+                serviceSid: "VA-test",
+                client: {
+                    verify: {
+                        v2: {
+                            services: () => ({
+                                verifications: {
+                                    create: async () => {
+                                        deliveryStarted.release();
+                                        await deliveryBlocked.promise;
+                                        return {
+                                            status: "pending",
+                                            toJSON: () => ({}),
+                                        };
+                                    },
+                                },
+                                verificationChecks: {
+                                    create: async () => {
+                                        throw new Error(
+                                            "Simulated Twilio verification failure",
+                                        );
+                                    },
+                                },
+                            }),
+                        },
+                    },
+                },
+            },
+        } satisfies PhoneAuth;
 
         await createGuestDevice(registeredDid);
         const registrationAttempt = await authService.authenticateAttempt({
@@ -1608,11 +1646,13 @@ describe("OTP destination throttling", () => {
             didWrite: loginDid,
             userAgent: "new-device",
             throttleSmsSecondsInterval: 5,
-            phoneAuth: loginOnlyPhoneAuth,
+            phoneAuth: loginOnlyTwilioPhoneAuth,
             peppers: [TEST_PEPPER],
             now: currentNow,
         });
         expect(loginAttempt.success).toBe(true);
+        await deliveryStarted.promise;
+        deliveryBlocked.release();
 
         const syntheticAttempt = await authService.authenticateAttempt({
             db,
@@ -1625,7 +1665,7 @@ describe("OTP destination throttling", () => {
             didWrite: syntheticDid,
             userAgent: "synthetic-device",
             throttleSmsSecondsInterval: 5,
-            phoneAuth: loginOnlyPhoneAuth,
+            phoneAuth: loginOnlyTwilioPhoneAuth,
             peppers: [TEST_PEPPER],
             now: currentNow,
         });
@@ -1642,7 +1682,7 @@ describe("OTP destination throttling", () => {
             didWrite: loginDid,
             userAgent: "new-device",
             throttleSmsSecondsInterval: 5,
-            phoneAuth: loginOnlyPhoneAuth,
+            phoneAuth: loginOnlyTwilioPhoneAuth,
             peppers: [TEST_PEPPER],
             now: currentNow,
         });
@@ -1657,7 +1697,7 @@ describe("OTP destination throttling", () => {
             didWrite: syntheticDid,
             userAgent: "synthetic-device",
             throttleSmsSecondsInterval: 5,
-            phoneAuth: loginOnlyPhoneAuth,
+            phoneAuth: loginOnlyTwilioPhoneAuth,
             peppers: [TEST_PEPPER],
             now: currentNow,
         });
@@ -1685,7 +1725,7 @@ describe("OTP destination throttling", () => {
                 phoneNumber,
                 defaultCallingCode: "1",
                 peppers: [TEST_PEPPER],
-                phoneAuth: loginOnlyPhoneAuth,
+                phoneAuth: loginOnlyTwilioPhoneAuth,
                 sessionLifetimeDays: 90,
                 now: currentNow,
                 currentDisplayLanguage: "en",
@@ -1698,7 +1738,7 @@ describe("OTP destination throttling", () => {
                 phoneNumber: unregisteredPhoneNumber,
                 defaultCallingCode: "1",
                 peppers: [TEST_PEPPER],
-                phoneAuth: loginOnlyPhoneAuth,
+                phoneAuth: loginOnlyTwilioPhoneAuth,
                 sessionLifetimeDays: 90,
                 now: currentNow,
                 currentDisplayLanguage: "en",

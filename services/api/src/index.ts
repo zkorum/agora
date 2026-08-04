@@ -371,26 +371,34 @@ const surveyResultsRateLimitConfig = {
 const CONTENT_TRANSLATION_USER_RATE_LIMIT_MAX = 20;
 const CONTENT_TRANSLATION_USER_RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
-function initializePhoneAuth(config: PhoneAuthConfig): authService.PhoneAuth {
-    if (config.mode === "disabled") {
-        return config;
+function initializePhoneAuth(
+    phoneAuthConfig: PhoneAuthConfig,
+): authService.PhoneAuth {
+    if (phoneAuthConfig.mode === "disabled") {
+        return phoneAuthConfig;
     }
-    if (config.delivery.type === "local") {
+    const delivery: authService.PhoneOtpDelivery =
+        phoneAuthConfig.delivery.type === "local"
+            ? phoneAuthConfig.delivery
+            : {
+                  type: "twilio",
+                  client: twilio(
+                      phoneAuthConfig.delivery.accountSid,
+                      phoneAuthConfig.delivery.authToken,
+                  ),
+                  serviceSid: phoneAuthConfig.delivery.serviceSid,
+              };
+    if (phoneAuthConfig.mode === "login_only") {
         return {
-            mode: config.mode,
-            delivery: config.delivery,
+            mode: "login_only",
+            delivery,
+            minimumResponseTimeMs: config.PHONE_LOGIN_ONLY_RESPONSE_MIN_MS,
+            responseJitterMs: config.PHONE_LOGIN_ONLY_RESPONSE_JITTER_MS,
         };
     }
     return {
-        mode: config.mode,
-        delivery: {
-            type: "twilio",
-            client: twilio(
-                config.delivery.accountSid,
-                config.delivery.authToken,
-            ),
-            serviceSid: config.delivery.serviceSid,
-        },
+        mode: "enabled",
+        delivery,
     };
 }
 

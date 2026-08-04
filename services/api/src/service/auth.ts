@@ -65,6 +65,8 @@ import { sendOtpEmail } from "./email.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { startHardAuthSession } from "./authSession.js";
 import { decideDestinationWrongGuess } from "./auth/otpPolicy.js";
+import { randomInt } from "node:crypto";
+import { setTimeout as sleep } from "node:timers/promises";
 
 const OTP_DESTINATION_STREAK_RESET_MS = 24 * 60 * 60 * 1000;
 const OTP_MIN_BACKOFF_SECONDS = 30;
@@ -539,14 +541,38 @@ interface TwilioPhoneOtpDelivery {
     serviceSid: string;
 }
 
-type PhoneOtpDelivery = LocalPhoneOtpDelivery | TwilioPhoneOtpDelivery;
+export type PhoneOtpDelivery = LocalPhoneOtpDelivery | TwilioPhoneOtpDelivery;
 
 export type PhoneAuth =
     | { mode: "disabled" }
+    | { mode: "enabled"; delivery: PhoneOtpDelivery }
     | {
-          mode: ActivePhoneAuthMode;
+          mode: "login_only";
           delivery: PhoneOtpDelivery;
+          minimumResponseTimeMs: number;
+          responseJitterMs: number;
       };
+
+async function applyLoginOnlyTimingProtection({
+    phoneAuth,
+    startedAt,
+}: {
+    phoneAuth: PhoneAuth;
+    startedAt: number;
+}): Promise<void> {
+    if (phoneAuth.mode !== "login_only") {
+        return;
+    }
+    const jitter =
+        phoneAuth.responseJitterMs === 0
+            ? 0
+            : randomInt(phoneAuth.responseJitterMs + 1);
+    const remainingDelay =
+        phoneAuth.minimumResponseTimeMs + jitter - (Date.now() - startedAt);
+    if (remainingDelay > 0) {
+        await sleep(remainingDelay);
+    }
+}
 
 interface RegisterWithPhoneNumberProps {
     db: PostgresDatabase;
@@ -713,6 +739,7 @@ interface UpdateAuthAttemptCodeProps {
     throttleSmsSecondsInterval: number;
     peppers: string[];
     delivery: PhoneOtpDelivery;
+    phoneAuthMode: ActivePhoneAuthMode;
 }
 
 interface InsertAuthAttemptCodeProps {
@@ -727,6 +754,7 @@ interface InsertAuthAttemptCodeProps {
     throttleSmsSecondsInterval: number;
     peppers: string[];
     delivery: PhoneOtpDelivery;
+    phoneAuthMode: ActivePhoneAuthMode;
 }
 
 interface SendOtpPhoneNumberProps {
@@ -821,7 +849,10 @@ async function recordWrongPhoneOtpGuess({
             })
             .from(otpPhoneDestinationStateTable)
             .where(
-                eq(otpPhoneDestinationStateTable.phoneHash, challenge.phoneHash),
+                eq(
+                    otpPhoneDestinationStateTable.phoneHash,
+                    challenge.phoneHash,
+                ),
             )
             .for("update");
         const destinationState = destinationRows.at(0);
@@ -854,6 +885,42 @@ async function recordWrongPhoneOtpGuess({
               }
             : { type: "wrong_guess" };
     });
+}
+
+async function handleWrongPhoneOtpGuess({
+    db,
+    didWrite,
+    challenge,
+    maxAttempt,
+    now,
+}: {
+    db: PostgresDatabase;
+    didWrite: string;
+    challenge: {
+        phoneHash: string;
+        code: number;
+        codeExpiry: Date;
+    };
+    maxAttempt: number;
+    now: Date;
+}): Promise<VerifyPhoneOtp200> {
+    const wrongGuessResult = await recordWrongPhoneOtpGuess({
+        db,
+        didWrite,
+        challenge,
+        maxAttempt,
+        now,
+        throttleSecondsInterval: config.THROTTLE_SMS_SECONDS_INTERVAL,
+    });
+    if (wrongGuessResult.type === "expired") {
+        return { success: false, reason: "expired_code" };
+    }
+    if (wrongGuessResult.type === "throttled") {
+        return buildTooManyWrongGuessResponse(
+            wrongGuessResult.nextCodeSoonestTime,
+        );
+    }
+    return { success: false, reason: "wrong_guess" };
 }
 
 async function registerOrLoginWithPhoneNumber(
@@ -986,7 +1053,21 @@ async function registerOrLoginWithPhoneNumber(
     }
 }
 
-export async function verifyPhoneOtp({
+export async function verifyPhoneOtp(
+    props: VerifyOtpProps,
+): Promise<VerifyPhoneOtp200> {
+    const startedAt = Date.now();
+    try {
+        return await verifyPhoneOtpWithoutTimingProtection(props);
+    } finally {
+        await applyLoginOnlyTimingProtection({
+            phoneAuth: props.phoneAuth,
+            startedAt,
+        });
+    }
+}
+
+async function verifyPhoneOtpWithoutTimingProtection({
     db,
     maxAttempt,
     didWrite,
@@ -1044,60 +1125,68 @@ export async function verifyPhoneOtp({
     }
 
     if (resultOtp[0].isSynthetic) {
-        const wrongGuessResult = await recordWrongPhoneOtpGuess({
+        if (phoneAuth.delivery.type === "twilio") {
+            await checkSyntheticOtpPhoneNumber({
+                code,
+                phoneNumber: phoneNumberObj.number,
+                delivery: phoneAuth.delivery,
+            });
+        }
+        return await handleWrongPhoneOtpGuess({
             db: primaryDb,
             didWrite,
             challenge: resultOtp[0],
             maxAttempt,
             now,
-            throttleSecondsInterval: config.THROTTLE_SMS_SECONDS_INTERVAL,
         });
-        if (wrongGuessResult.type === "expired") {
-            return { success: false, reason: "expired_code" };
-        }
-        if (wrongGuessResult.type === "throttled") {
-            return buildTooManyWrongGuessResponse(
-                wrongGuessResult.nextCodeSoonestTime,
-            );
-        }
-        return { success: false, reason: "wrong_guess" };
     }
 
     // if we use twilio, we don't use the local code at all.
     // will change when we migrate to another service
     if (phoneAuth.delivery.type === "twilio") {
-        const verificationCheck = await phoneAuth.delivery.client.verify.v2
-            .services(phoneAuth.delivery.serviceSid)
-            .verificationChecks.create({
-                code: codeToString(code),
-                to: phoneNumberObj.number,
+        const verificationCheckPromise = checkOtpPhoneNumber({
+            code,
+            phoneNumber: phoneNumberObj.number,
+            delivery: phoneAuth.delivery,
+        });
+        let verificationCheck: Awaited<typeof verificationCheckPromise>;
+        try {
+            verificationCheck = await verificationCheckPromise;
+        } catch (error) {
+            if (phoneAuth.mode === "enabled") {
+                throw error;
+            }
+            log.error(
+                error,
+                "[Phone] Concealed login-only Twilio verification failure",
+            );
+            return await handleWrongPhoneOtpGuess({
+                db: primaryDb,
+                didWrite,
+                challenge: resultOtp[0],
+                maxAttempt,
+                now,
             });
+        }
         switch (verificationCheck.status) {
             case "pending":
-                {
-                    const wrongGuessResult = await recordWrongPhoneOtpGuess({
+                return await handleWrongPhoneOtpGuess({
+                    db: primaryDb,
+                    didWrite,
+                    challenge: resultOtp[0],
+                    maxAttempt,
+                    now,
+                });
+            case "canceled":
+                if (phoneAuth.mode === "login_only") {
+                    return await handleWrongPhoneOtpGuess({
                         db: primaryDb,
                         didWrite,
                         challenge: resultOtp[0],
                         maxAttempt,
                         now,
-                        throttleSecondsInterval:
-                            config.THROTTLE_SMS_SECONDS_INTERVAL,
                     });
-                    if (wrongGuessResult.type === "expired") {
-                        return { success: false, reason: "expired_code" };
-                    }
-                    if (wrongGuessResult.type === "throttled") {
-                        return buildTooManyWrongGuessResponse(
-                            wrongGuessResult.nextCodeSoonestTime,
-                        );
-                    }
                 }
-                return {
-                    success: false,
-                    reason: "wrong_guess",
-                };
-            case "canceled":
                 throw httpErrors.badRequest(
                     "This phone number verification was canceled",
                 );
@@ -1113,11 +1202,29 @@ export async function verifyPhoneOtp({
                     }),
                 );
             case "deleted":
+                if (phoneAuth.mode === "login_only") {
+                    return await handleWrongPhoneOtpGuess({
+                        db: primaryDb,
+                        didWrite,
+                        challenge: resultOtp[0],
+                        maxAttempt,
+                        now,
+                    });
+                }
                 throw httpErrors.badRequest(
                     "This phone number verification was deleted",
                 );
             case "failed":
                 log.error(`Unexpected "failed" status received by Twilio`);
+                if (phoneAuth.mode === "login_only") {
+                    return await handleWrongPhoneOtpGuess({
+                        db: primaryDb,
+                        didWrite,
+                        challenge: resultOtp[0],
+                        maxAttempt,
+                        now,
+                    });
+                }
                 throw httpErrors.internalServerError(
                     "Unexpected error from phone number verification",
                 );
@@ -1166,26 +1273,13 @@ export async function verifyPhoneOtp({
             currentDisplayLanguage,
         });
     } else {
-        const wrongGuessResult = await recordWrongPhoneOtpGuess({
+        return await handleWrongPhoneOtpGuess({
             db: primaryDb,
             didWrite,
             challenge: resultOtp[0],
             maxAttempt,
             now,
-            throttleSecondsInterval: config.THROTTLE_SMS_SECONDS_INTERVAL,
         });
-        if (wrongGuessResult.type === "expired") {
-            return { success: false, reason: "expired_code" };
-        }
-        if (wrongGuessResult.type === "throttled") {
-            return buildTooManyWrongGuessResponse(
-                wrongGuessResult.nextCodeSoonestTime,
-            );
-        }
-        return {
-            success: false,
-            reason: "wrong_guess",
-        };
     }
 }
 
@@ -1845,7 +1939,21 @@ export async function getZKPAuthenticationType({
     });
 }
 
-export async function authenticateAttempt({
+export async function authenticateAttempt(
+    props: AuthenticateAttemptProps,
+): Promise<AuthenticateResponse> {
+    const startedAt = Date.now();
+    try {
+        return await authenticateAttemptWithoutTimingProtection(props);
+    } finally {
+        await applyLoginOnlyTimingProtection({
+            phoneAuth: props.phoneAuth,
+            startedAt,
+        });
+    }
+}
+
+async function authenticateAttemptWithoutTimingProtection({
     db,
     authenticateRequestBody,
     minutesBeforeSmsCodeExpiry,
@@ -1929,6 +2037,7 @@ export async function authenticateAttempt({
             throttleSmsSecondsInterval,
             peppers,
             delivery: phoneAuth.delivery,
+            phoneAuthMode: phoneAuth.mode,
         });
     }
 
@@ -1948,6 +2057,7 @@ export async function authenticateAttempt({
             // awsMailConf,
             peppers,
             delivery: phoneAuth.delivery,
+            phoneAuthMode: phoneAuth.mode,
         });
     } else if (
         currentAttempt.codeExpiry > now &&
@@ -1979,6 +2089,7 @@ export async function authenticateAttempt({
             // awsMailConf,
             peppers,
             delivery: phoneAuth.delivery,
+            phoneAuthMode: phoneAuth.mode,
         });
     }
 }
@@ -1986,7 +2097,7 @@ export async function authenticateAttempt({
 async function sendOtpPhoneNumber({
     phoneNumber,
     delivery,
-}: SendOtpPhoneNumberProps) {
+}: SendOtpPhoneNumberProps): Promise<void> {
     // TODO: verify phone number validity with Twilio before sending the SMS
     const verification = await delivery.client.verify.v2
         .services(delivery.serviceSid)
@@ -2001,6 +2112,56 @@ async function sendOtpPhoneNumber({
             )} `,
         );
         throw httpErrors.internalServerError("Error while sending SMS");
+    }
+}
+
+async function sendOtpPhoneNumberWithoutDisclosingFailure(
+    props: SendOtpPhoneNumberProps,
+): Promise<void> {
+    try {
+        await sendOtpPhoneNumber(props);
+    } catch (error) {
+        log.error(
+            error,
+            "[Phone] Login-only OTP delivery failed after the authentication response was detached",
+        );
+    }
+}
+
+function dispatchOtpPhoneNumber(props: SendOtpPhoneNumberProps): void {
+    void sendOtpPhoneNumberWithoutDisclosingFailure(props);
+}
+
+async function checkOtpPhoneNumber({
+    code,
+    phoneNumber,
+    delivery,
+}: {
+    code: number;
+    phoneNumber: string;
+    delivery: TwilioPhoneOtpDelivery;
+}) {
+    return await delivery.client.verify.v2
+        .services(delivery.serviceSid)
+        .verificationChecks.create({
+            code: codeToString(code),
+            to: phoneNumber,
+        });
+}
+
+async function checkSyntheticOtpPhoneNumber({
+    code,
+    phoneNumber,
+    delivery,
+}: {
+    code: number;
+    phoneNumber: string;
+    delivery: TwilioPhoneOtpDelivery;
+}): Promise<void> {
+    try {
+        await checkOtpPhoneNumber({ code, phoneNumber, delivery });
+    } catch {
+        // No Twilio challenge exists for a synthetic attempt; only its latency is needed.
     }
 }
 
@@ -2482,6 +2643,7 @@ async function insertAuthAttemptCode({
     throttleSmsSecondsInterval,
     peppers,
     delivery,
+    phoneAuthMode,
 }: InsertAuthAttemptCodeProps): Promise<AuthenticateResponse> {
     const phoneHash = await generatePhoneHash({
         phoneNumber: authenticateRequestBody.phoneNumber,
@@ -2538,12 +2700,12 @@ async function insertAuthAttemptCode({
             reason: "restricted_phone_type",
         };
     }
-    if (delivery.type === "twilio") {
+    if (delivery.type === "twilio" && phoneAuthMode === "enabled") {
         await sendOtpPhoneNumber({
             phoneNumber: phoneNumber.number,
             delivery,
         });
-    } else {
+    } else if (delivery.type === "local") {
         console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
     }
     if (
@@ -2572,6 +2734,12 @@ async function insertAuthAttemptCode({
         codeExpiry: codeExpiry,
         lastOtpSentAt: now,
     });
+    if (delivery.type === "twilio" && phoneAuthMode === "login_only") {
+        dispatchOtpPhoneNumber({
+            phoneNumber: phoneNumber.number,
+            delivery,
+        });
+    }
     const nextCodeSoonestTime = buildNextCodeSoonestTime({
         now,
         throttleSecondsInterval: throttleSmsSecondsInterval,
@@ -2699,6 +2867,7 @@ async function updateAuthAttemptCode({
     throttleSmsSecondsInterval,
     peppers,
     delivery,
+    phoneAuthMode,
 }: UpdateAuthAttemptCodeProps): Promise<AuthenticateResponse> {
     const phoneHash = await generatePhoneHash({
         phoneNumber: authenticateRequestBody.phoneNumber,
@@ -2765,12 +2934,12 @@ async function updateAuthAttemptCode({
         currentAttempt[0].codeExpiry.getTime() > now.getTime();
 
     if (canReuseExistingCode) {
-        if (delivery.type === "twilio") {
+        if (delivery.type === "twilio" && phoneAuthMode === "enabled") {
             await sendOtpPhoneNumber({
                 phoneNumber: phoneNumber.number,
                 delivery,
             });
-        } else {
+        } else if (delivery.type === "local") {
             console.log(
                 "\n\nCode:",
                 codeToString(currentAttempt[0].code),
@@ -2797,6 +2966,12 @@ async function updateAuthAttemptCode({
                 updatedAt: now,
             })
             .where(eq(authAttemptPhoneTable.didWrite, didWrite));
+        if (delivery.type === "twilio" && phoneAuthMode === "login_only") {
+            dispatchOtpPhoneNumber({
+                phoneNumber: phoneNumber.number,
+                delivery,
+            });
+        }
         return {
             success: true,
             codeExpiry: currentAttempt[0].codeExpiry,
@@ -2817,12 +2992,12 @@ async function updateAuthAttemptCode({
             : generateOneTimeCode();
     const codeExpiry = new Date(now);
     codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeSmsCodeExpiry);
-    if (delivery.type === "twilio") {
+    if (delivery.type === "twilio" && phoneAuthMode === "enabled") {
         await sendOtpPhoneNumber({
             phoneNumber: phoneNumber.number,
             delivery,
         });
-    } else {
+    } else if (delivery.type === "local") {
         console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
     }
     await db
@@ -2843,6 +3018,12 @@ async function updateAuthAttemptCode({
             updatedAt: now,
         })
         .where(eq(authAttemptPhoneTable.didWrite, didWrite));
+    if (delivery.type === "twilio" && phoneAuthMode === "login_only") {
+        dispatchOtpPhoneNumber({
+            phoneNumber: phoneNumber.number,
+            delivery,
+        });
+    }
     const nextCodeSoonestTime = buildNextCodeSoonestTime({
         now,
         throttleSecondsInterval: throttleSmsSecondsInterval,

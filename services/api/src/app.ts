@@ -46,6 +46,18 @@ const baseConfigSchema = sharedConfigSchema.extend({
     THROTTLE_SMS_SECONDS_INTERVAL: z.number().int().min(5).default(10),
     MINUTES_BEFORE_SMS_OTP_EXPIRY: z.number().int().min(3).max(60).default(10),
     PHONE_AUTH_MODE: phoneAuthModeSchema.default("enabled"),
+    PHONE_LOGIN_ONLY_RESPONSE_MIN_MS: z.coerce
+        .number()
+        .int()
+        .min(0)
+        .max(10000)
+        .default(2000),
+    PHONE_LOGIN_ONLY_RESPONSE_JITTER_MS: z.coerce
+        .number()
+        .int()
+        .min(0)
+        .max(5000)
+        .default(500),
     TWILIO_ACCOUNT_SID: z.string().min(1).optional(),
     TWILIO_AUTH_TOKEN: z.string().min(1).optional(),
     TWILIO_SERVICE_SID: z.string().min(1).optional(),
