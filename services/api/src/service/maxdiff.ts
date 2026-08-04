@@ -16,7 +16,16 @@ import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgre
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 
-import { eq, and, desc, exists, inArray, isNotNull, sql } from "drizzle-orm";
+import {
+    eq,
+    and,
+    desc,
+    exists,
+    inArray,
+    isNotNull,
+    isNull,
+    sql,
+} from "drizzle-orm";
 import {
     Dto,
     type MaxDiffResultsResponse,
@@ -235,7 +244,7 @@ export async function saveMaxdiffResult({
             .where(
                 and(
                     eq(maxdiffComparisonTable.maxdiffResultId, result.id),
-                    sql`${maxdiffComparisonTable.deletedAt} IS NULL`,
+                    isNull(maxdiffComparisonTable.deletedAt),
                 ),
             );
         if (comparisons.length > 0) {
@@ -341,7 +350,7 @@ export async function loadMaxdiffResult({
         })
         .from(maxdiffUserEntityScoreTable)
         .where(eq(maxdiffUserEntityScoreTable.maxdiffResultId, row.id))
-        .orderBy(sql`${maxdiffUserEntityScoreTable.score} DESC`);
+        .orderBy(desc(maxdiffUserEntityScoreTable.score));
 
     return {
         ranking,

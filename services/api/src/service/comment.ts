@@ -581,7 +581,7 @@ export async function fetchOpinionsByPostId({
             if (personalizationUserId) {
                 shouldJoinVoteTable = true;
                 orderByClause = [
-                    sql`CASE WHEN ${voteTable.id} IS NOT NULL THEN 1 ELSE 0 END ASC`,
+                    asc(isNotNull(voteTable.id)),
                     ...discoverOrderClause,
                 ];
             } else {

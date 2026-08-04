@@ -69,7 +69,7 @@
  */
 
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { eq, and, sql, inArray, type SQL } from "drizzle-orm";
+import { eq, and, or, sql, inArray, type SQL } from "drizzle-orm";
 import {
     voteTable,
     voteContentTable,
@@ -513,7 +513,7 @@ export function createVoteBuffer({
                                     voteTable.currentContentId,
                                 ),
                             )
-                            .where(sql`${sql.join(orConditions, sql` OR `)}`);
+                            .where(or(...orConditions));
 
                         for (const row of existingVotesResult) {
                             const key = getVoteKey(row.userId, row.opinionId);
@@ -716,18 +716,12 @@ export function createVoteBuffer({
 
                         // Only execute UPDATE if we have case statements
                         if (caseStatements.length > 0 && voteIds.length > 0) {
-                            // Single UPDATE with CASE WHEN using Drizzle
-                            const inClause = sql.join(
-                                voteIds.map((id) => sql`${id}`),
-                                sql`, `,
-                            );
-
                             await tx
                                 .update(voteTable)
                                 .set({
                                     currentContentId: sql`(CASE ${sql.join(caseStatements, sql` `)} END)::int`,
                                 })
-                                .where(sql`${voteTable.id} IN (${inClause})`);
+                                .where(inArray(voteTable.id, voteIds));
                         }
                     }
 

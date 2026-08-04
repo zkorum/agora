@@ -130,7 +130,7 @@ export async function calculateConversationCounters({
                                         voteTable.authorId,
                                         analysisEligibleParticipantIds,
                                     )
-                                  : sql`true`,
+                                  : undefined,
                           ),
                       )
               )[0]?.voteCount ?? 0);
@@ -189,13 +189,11 @@ export async function calculateConversationCounters({
                 isNotNull(voteTable.currentContentId),
                 eq(userTable.isDeleted, false),
                 shouldFilterAnalysisVotes
-                    ? analysisEligibleParticipantIds.length === 0
-                        ? sql`false`
-                        : inArray(
-                              voteTable.authorId,
-                              analysisEligibleParticipantIds,
-                          )
-                    : sql`true`,
+                    ? inArray(
+                          voteTable.authorId,
+                          analysisEligibleParticipantIds,
+                      )
+                    : undefined,
             ),
         )
         .groupBy(voteTable.authorId);

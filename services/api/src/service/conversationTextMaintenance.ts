@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { and, count, gt, isNotNull, sql } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { log } from "@/app.js";
 import { conversationContentTable } from "@/shared-backend/schema.js";
@@ -27,10 +27,16 @@ export async function logConversationBodyLimitCompatibility({
 }): Promise<void> {
     try {
         const rows = await db
-            .select({ count: sql<number>`count(*)::int` })
+            .select({ count: count() })
             .from(conversationContentTable)
             .where(
-                sql`${conversationContentTable.body} IS NOT NULL AND length(${conversationContentTable.body}) > ${MAX_LENGTH_CONVERSATION_BODY_HTML}`,
+                and(
+                    isNotNull(conversationContentTable.body),
+                    gt(
+                        sql<number>`length(${conversationContentTable.body})`,
+                        MAX_LENGTH_CONVERSATION_BODY_HTML,
+                    ),
+                ),
             );
 
         log.info(
