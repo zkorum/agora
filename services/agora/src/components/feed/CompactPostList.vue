@@ -87,7 +87,7 @@
     </WidthWrapper>
 
     <NewContentPill
-      v-if="hasPendingCurrentTab && !showLoading"
+      v-if="isActive && hasPendingCurrentTab && !showLoading"
       :label="t('newConversationsButton')"
       @click="refreshPage(() => {})"
     />
