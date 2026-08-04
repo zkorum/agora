@@ -121,4 +121,20 @@ describe("language store account switching", () => {
     expect(languageStore.spokenLanguages).toEqual(originalSpokenLanguages);
     expect(mocks.setI18nLanguage).not.toHaveBeenCalled();
   });
+
+  it("clears local preferences without updating the logged-out account", async () => {
+    const authStore = useAuthenticationStore();
+    authStore.setLoginStatus({
+      isKnown: true,
+      isLoggedIn: true,
+      isRegistered: true,
+      userId: "user-a",
+      credentials,
+    });
+    const languageStore = useLanguageStore();
+
+    await expect(languageStore.clearLanguagePreferences()).resolves.toBe(true);
+
+    expect(mocks.updateLanguagePreferences).not.toHaveBeenCalled();
+  });
 });

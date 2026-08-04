@@ -248,18 +248,6 @@ export const useLanguageStore = defineStore("language", () => {
       await updateLocale(browserDefaultDisplayLanguage);
       spokenLanguages.value = browserDefaultSpokenLanguages;
 
-      // Save to backend if user is authenticated (in background)
-      if (authStore.isGuestOrLoggedIn) {
-        await Promise.all([
-          saveDisplayLanguageToBackend({
-            newDisplayLanguage: browserDefaultDisplayLanguage,
-          }),
-          saveSpokenLanguagesToBackend({
-            newSpokenLanguages: browserDefaultSpokenLanguages,
-          }),
-        ]);
-      }
-
       return true;
     } catch (err) {
       // Revert on failure
