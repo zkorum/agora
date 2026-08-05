@@ -7,8 +7,7 @@
     <p class="description">{{ t("description") }}</p>
     <div v-if="logoutFailure === 'local-cleanup'" class="state-message">
       <p>{{ t("localCleanupFailed") }}</p>
-      <q-btn
-        color="primary"
+      <PrimeButton
         :label="t('retryLocalCleanup')"
         :loading="isLoggingOutAll"
         @click="clearThisDeviceOnly"
@@ -16,40 +15,46 @@
     </div>
     <div v-else-if="logoutFailure === 'navigation'" class="state-message">
       <p>{{ t("navigationFailed") }}</p>
-      <q-btn
-        color="primary"
+      <PrimeButton
         :label="t('retryNavigation')"
         :loading="isLoggingOutAll"
         @click="retryNavigation"
       />
     </div>
-    <PageLoadingSpinner v-else-if="sessionsState.status === 'loading'" />
-    <div v-else-if="sessionsState.status === 'error'" class="state-message">
-      <p>{{ t("loadFailed") }}</p>
-      <q-btn color="primary" :label="t('retry')" @click="loadSessions" />
-    </div>
-    <template v-else>
+    <template v-else-if="sessions !== undefined">
       <AuthSessionList
-        :current-session="sessionsState.currentSession"
-        :other-sessions="sessionsState.otherSessions"
+        :current-session="sessions.currentSession"
+        :other-sessions="sessions.otherSessions"
         :busy-did-write="busyDidWrite"
+        :current-session-busy="isLoggingOutCurrent"
+        :actions-disabled="sessionActionsDisabled"
         :current-label="t('currentSession')"
         :other-label="t('otherSession')"
         :started-label="t('started')"
         :expires-label="t('expires')"
+        :logout-current-label="t('logoutCurrent')"
         :revoke-label="t('revoke')"
+        @logout-current="logoutCurrentSession"
         @revoke="requestSessionRevocation"
       />
-      <q-btn
+      <PrimeButton
         class="logout-all"
-        outline
-        color="negative"
+        severity="warn"
         :label="t('logoutAll')"
         :loading="isLoggingOutAll"
-        :disable="busyDidWrite !== undefined"
+        :disabled="busyDidWrite !== undefined"
         @click="showLogoutAllDialog = true"
       />
     </template>
+    <div v-else-if="sessionsQuery.isError.value" class="state-message">
+      <p>{{ t("loadFailed") }}</p>
+      <PrimeButton
+        :label="t('retry')"
+        :loading="sessionsQuery.isFetching.value"
+        @click="refreshSessions"
+      />
+    </div>
+    <PageLoadingSpinner v-else />
   </main>
 
   <ZKConfirmDialog
@@ -58,7 +63,7 @@
     :message="revokeMessage"
     :confirm-text="t('confirm')"
     :cancel-text="t('cancel')"
-    variant="destructive"
+    variant="warning"
     @confirm="confirmSessionRevocation"
   />
   <ZKConfirmDialog
@@ -67,7 +72,7 @@
     :message="t('logoutAllMessage')"
     :confirm-text="t('confirm')"
     :cancel-text="t('cancel')"
-    variant="destructive"
+    variant="warning"
     @confirm="logoutAllSessions"
   />
   <ZKConfirmDialog
@@ -83,13 +88,18 @@
 </template>
 
 <script setup lang="ts">
+import { useQuery, useQueryClient } from "@tanstack/vue-query";
+import Button from "primevue/button";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import AuthSessionList from "src/components/settings/AuthSessionList.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useLocalizedDateTimeFormatter } from "src/composables/ui/useLocalizedDateTime";
+import {
+  localizedDateTimeFormatOptions,
+  useLocalizedDateTimeFormatter,
+} from "src/composables/ui/useLocalizedDateTime";
 import type { AuthSession } from "src/shared/types/dto-auth";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendAuthApi } from "src/utils/api/auth";
@@ -99,14 +109,23 @@ import {
   runLogoutFlow,
 } from "src/utils/auth/logoutFlow";
 import { navigateHomeAfterLogout } from "src/utils/auth/logoutNavigation";
+import { useAuthSetup } from "src/utils/auth/setup";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, onMounted, ref } from "vue";
+import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import {
   type SessionSettingsTranslations,
   sessionSettingsTranslations,
 } from "./index.i18n";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
+
+const authSessionsQueryKey = ["authSessions"] as const;
 
 const { isActive } = usePageLayout({
   enableFooter: false,
@@ -118,21 +137,23 @@ const { t } = useComponentI18n<SessionSettingsTranslations>(
 );
 const { listAuthSessions, revokeAuthSession, logoutAllAuthSessions } =
   useBackendAuthApi();
+type AuthSessionsResponse = Awaited<ReturnType<typeof listAuthSessions>>;
+const queryClient = useQueryClient();
+const sessionsQuery = useQuery({
+  queryKey: authSessionsQueryKey,
+  queryFn: listAuthSessions,
+  staleTime: 0,
+  retry: false,
+});
+const sessions = computed(() => sessionsQuery.data.value);
 const { showNotifyMessage } = useNotify();
-const formatDateTime = useLocalizedDateTimeFormatter();
+const formatDateTime = useLocalizedDateTimeFormatter({
+  options: localizedDateTimeFormatOptions.dateTimeWithTimeZone,
+});
 const { setActiveUserIntention } = useLoginIntentionStore();
+const { logoutRequested } = useAuthSetup();
 const router = useRouter();
 
-type SessionsState =
-  | { status: "loading" }
-  | { status: "error" }
-  | {
-      status: "loaded";
-      currentSession: AuthSession;
-      otherSessions: AuthSession[];
-    };
-
-const sessionsState = ref<SessionsState>({ status: "loading" });
 const busyDidWrite = ref<string>();
 const sessionToRevoke = ref<AuthSession>();
 const showRevokeDialog = computed({
@@ -145,8 +166,15 @@ const showRevokeDialog = computed({
 });
 const showLogoutAllDialog = ref(false);
 const showLocalOnlyDialog = ref(false);
+const isLoggingOutCurrent = ref(false);
 const isLoggingOutAll = ref(false);
 const logoutFailure = ref<"local-cleanup" | "navigation">();
+const sessionActionsDisabled = computed(
+  () =>
+    busyDidWrite.value !== undefined ||
+    isLoggingOutCurrent.value ||
+    isLoggingOutAll.value
+);
 const revokeMessage = computed(() => {
   const session = sessionToRevoke.value;
   return session === undefined
@@ -154,32 +182,21 @@ const revokeMessage = computed(() => {
     : t("revokeMessage", { startedAt: formatDateTime(session.startedAt) });
 });
 
-onMounted(() => {
-  void loadSessions();
-});
-
-async function loadSessions(): Promise<void> {
-  const hasCachedSessions = sessionsState.value.status === "loaded";
-  if (!hasCachedSessions) {
-    sessionsState.value = { status: "loading" };
-  }
-  try {
-    const result = await listAuthSessions();
-    sessionsState.value = {
-      status: "loaded",
-      currentSession: result.currentSession,
-      otherSessions: result.otherSessions,
-    };
-  } catch (error) {
-    console.error("Failed to load sessions", error);
-    if (!hasCachedSessions) {
-      sessionsState.value = { status: "error" };
-    }
-  }
+function refreshSessions(): void {
+  void sessionsQuery.refetch();
 }
 
 function requestSessionRevocation(session: AuthSession): void {
   sessionToRevoke.value = session;
+}
+
+async function logoutCurrentSession(): Promise<void> {
+  isLoggingOutCurrent.value = true;
+  try {
+    await logoutRequested(true);
+  } finally {
+    isLoggingOutCurrent.value = false;
+  }
 }
 
 async function confirmSessionRevocation(): Promise<void> {
@@ -189,15 +206,21 @@ async function confirmSessionRevocation(): Promise<void> {
   busyDidWrite.value = didWrite;
   try {
     const result = await revokeAuthSession(didWrite);
-    if (result.revoked && sessionsState.value.status === "loaded") {
-      sessionsState.value = {
-        ...sessionsState.value,
-        otherSessions: sessionsState.value.otherSessions.filter(
-          (otherSession) => otherSession.didWrite !== didWrite
-        ),
-      };
+    if (result.revoked) {
+      queryClient.setQueryData<AuthSessionsResponse>(
+        authSessionsQueryKey,
+        (cachedSessions) =>
+          cachedSessions === undefined
+            ? undefined
+            : {
+                ...cachedSessions,
+                otherSessions: cachedSessions.otherSessions.filter(
+                  (otherSession) => otherSession.didWrite !== didWrite
+                ),
+              }
+      );
     } else {
-      await loadSessions();
+      await sessionsQuery.refetch();
     }
   } catch (error) {
     console.error("Failed to revoke session", error);
@@ -298,7 +321,17 @@ async function navigateHome(): Promise<void> {
   text-align: center;
 }
 
-.logout-all {
+.sessions-page .logout-all.p-button.p-button-warn {
   align-self: stretch;
+  color: white;
+  background-color: $warning;
+  border-color: $warning;
+
+  &:not(:disabled):hover {
+    color: white;
+    background-color: $warning;
+    border-color: $warning;
+    filter: brightness(0.96);
+  }
 }
 </style>

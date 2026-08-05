@@ -23,6 +23,14 @@ export const localizedDateTimeFormatOptions = {
     hour: "numeric",
     minute: "2-digit",
   } satisfies Intl.DateTimeFormatOptions,
+  dateTimeWithTimeZone: {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  } satisfies Intl.DateTimeFormatOptions,
   time: {
     hour: "numeric",
     minute: "2-digit",

@@ -150,31 +150,20 @@ const credentialSettings = computed<SettingsInterface[]>(() => {
   return items;
 });
 
-const accountSettings = computed<SettingsInterface[]>(() => {
-  const settings: SettingsInterface[] = [
-    {
-      type: "navigation",
-      label: t("profile"),
-      to: "/settings/account/profile/",
-      style: "none",
-    },
-    {
-      type: "navigation",
-      label: t("contentPreference"),
-      to: "/settings/account/content-preference/",
-      style: "none",
-    },
-  ];
-  if (isLoggedIn.value) {
-    settings.push({
-      type: "navigation",
-      label: t("sessions"),
-      to: "/settings/account/sessions/",
-      style: "none",
-    });
-  }
-  return settings;
-});
+const accountSettings = computed<SettingsInterface[]>(() => [
+  {
+    type: "navigation",
+    label: t("profile"),
+    to: "/settings/account/profile/",
+    style: "none",
+  },
+  {
+    type: "navigation",
+    label: t("contentPreference"),
+    to: "/settings/account/content-preference/",
+    style: "none",
+  },
+]);
 
 const featuredSlug = processEnv.VITE_FEATURED_CONVERSATION_SLUG;
 const { hasCompletedRanking } = useFeaturedBannerVisibility();
@@ -230,7 +219,13 @@ const aboutSettings: SettingsInterface[] = [
   },
 ];
 
-const logoutSettings: SettingsInterface[] = [
+const logoutSettings = computed<SettingsInterface[]>(() => [
+  {
+    type: "navigation",
+    label: t("sessions"),
+    to: "/settings/account/sessions/",
+    style: "none",
+  },
   {
     type: "action",
     label: t("logOut"),
@@ -239,7 +234,7 @@ const logoutSettings: SettingsInterface[] = [
     },
     style: "warning",
   },
-];
+]);
 
 const moderatorSettings: SettingsInterface[] = [
   {

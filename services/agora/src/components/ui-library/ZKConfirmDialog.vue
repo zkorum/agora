@@ -19,8 +19,9 @@
           />
           <PrimeButton
             :label="confirmText"
-            :severity="variant === 'destructive' ? 'danger' : 'primary'"
+            :severity="confirmSeverity"
             class="confirm-button"
+            :class="{ 'confirm-button--warning': variant === 'warning' }"
             @click="handleConfirm"
           />
         </div>
@@ -31,7 +32,7 @@
 
 <script setup lang="ts">
 import Button from "primevue/button";
-import { watch } from "vue";
+import { computed, watch } from "vue";
 
 import ZKBottomDialogContainer from "./ZKBottomDialogContainer.vue";
 
@@ -41,7 +42,7 @@ defineOptions({
   },
 });
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   title: undefined,
   message: undefined,
   confirmText: "Confirm",
@@ -56,7 +57,7 @@ interface Props {
   message?: string;
   confirmText?: string;
   cancelText?: string;
-  variant?: "default" | "destructive";
+  variant?: "default" | "destructive" | "warning";
 }
 
 interface Emits {
@@ -66,6 +67,17 @@ interface Emits {
 }
 
 const showDialog = defineModel<boolean>({ required: true });
+const confirmSeverityByVariant = {
+  default: "primary",
+  destructive: "danger",
+  warning: "warn",
+} satisfies Record<
+  NonNullable<Props["variant"]>,
+  "primary" | "danger" | "warn"
+>;
+const confirmSeverity = computed(
+  () => confirmSeverityByVariant[props.variant]
+);
 
 /**
  * Handle confirm button click
@@ -133,6 +145,19 @@ watch(showDialog, (newValue) => {
   .cancel-button,
   .confirm-button {
     flex: 1;
+  }
+
+  .confirm-button--warning.p-button.p-button-warn {
+    color: white;
+    background-color: $warning;
+    border-color: $warning;
+
+    &:not(:disabled):hover {
+      color: white;
+      background-color: $warning;
+      border-color: $warning;
+      filter: brightness(0.96);
+    }
   }
 }
 </style>
