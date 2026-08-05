@@ -26,7 +26,7 @@ import PostContent from "./PostContent.vue";
 const props = defineProps<{
   extendedPostData: ExtendedConversation | ExtendedConversationDisplayData;
   compactMode: boolean;
-  initialDisplayContent?: ConversationContentFetchResponse;
+  initialDisplayContent: ConversationContentFetchResponse | undefined;
 }>();
 
 const emit = defineEmits<{

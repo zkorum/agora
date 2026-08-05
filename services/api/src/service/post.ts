@@ -585,7 +585,7 @@ export async function fetchPostBySlugId({
     currentDisplayLanguage,
 }: FetchPostBySlugIdProps): Promise<ExtendedConversation> {
     const { fetchPostItems } = useCommonPost();
-    const postData = await fetchPostItems({
+    const postItems = await fetchPostItems({
         db: db,
         where: eq(conversationTable.slugId, conversationSlugId),
         enableCompactBody: false,
@@ -597,15 +597,16 @@ export async function fetchPostBySlugId({
         currentDisplayLanguage: currentDisplayLanguage ?? "en",
     });
 
-    if (postData.size === 0) {
+    if (postItems.size === 0) {
         throw httpErrors.notFound(
             "Failed to locate conversation slug ID in the database: " +
                 conversationSlugId,
         );
     }
 
-    const [firstPost] = postData.values();
-    if (postData.size > 1) {
+    const [firstPostItem] = postItems.values();
+    const firstPost = firstPostItem.conversationData;
+    if (postItems.size > 1) {
         log.warn(
             `Multiple conversations hold the same slugId: ${firstPost.metadata.conversationSlugId}`,
         );

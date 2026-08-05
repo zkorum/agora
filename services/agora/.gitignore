@@ -76,6 +76,7 @@ typed-router.d.ts
 
 # Sentry Config File
 .env.sentry-build-plugin
+podman-build-secret*
 
 # Chunk visualizer
 stats.html

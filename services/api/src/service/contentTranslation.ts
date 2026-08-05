@@ -64,9 +64,11 @@ import type {
     SupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
 import {
+    buildLocalizedConversationContent,
     buildLocalizedRankingItemContent,
     buildLocalizedSurveyQuestionContent,
     buildTranslationMetadata,
+    type ConversationTranslationSource,
     hasCompleteSurveyQuestionTranslation,
     shouldQueueTranslationWork,
     toMissingContentTranslationStatus,
@@ -171,6 +173,10 @@ export interface ConversationContentSource {
     sourceRawLanguageCode: string | null;
     sourceLanguageProvider: LanguageDetectionProvider | null;
     sourceLanguageConfidence: number | null;
+}
+
+interface ConversationContentTranslationData extends ConversationTranslationSource {
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
 }
 
 export interface OpinionContentSource {
@@ -2384,6 +2390,22 @@ async function buildSurveyQuestionResponse({
     });
 }
 
+function getFreshConversationTranslation({
+    source,
+    translation,
+}: {
+    source: ConversationContentSource;
+    translation: ConversationContentTranslationData | undefined;
+}): ConversationContentTranslationData | undefined {
+    return translation !== undefined &&
+        translationSourceMatchesCurrentSource({
+            translationSourceLanguageCode: translation.sourceLanguageCode,
+            currentSourceLanguageCode: source.sourceLanguageCode,
+        })
+        ? translation
+        : undefined;
+}
+
 async function buildConversationResponse({
     db,
     source,
@@ -2405,12 +2427,6 @@ async function buildConversationResponse({
             translatedBody: conversationContentTranslationTable.translatedBody,
             sourceLanguageCode:
                 conversationContentTranslationTable.sourceLanguageCode,
-            sourceRawLanguageCode:
-                conversationContentTranslationTable.sourceRawLanguageCode,
-            sourceLanguageProvider:
-                conversationContentTranslationTable.sourceLanguageProvider,
-            sourceLanguageConfidence:
-                conversationContentTranslationTable.sourceLanguageConfidence,
         })
         .from(conversationContentTranslationTable)
         .where(
@@ -2427,74 +2443,36 @@ async function buildConversationResponse({
         )
         .limit(1);
     const translation = translationRows.at(0);
-    const freshTranslation =
-        translation !== undefined &&
-        translationSourceMatchesCurrentSource({
-            translationSourceLanguageCode: translation.sourceLanguageCode,
-            currentSourceLanguageCode: source.sourceLanguageCode,
-        })
-            ? translation
-            : undefined;
-    const original = { title: source.title, body: source.body ?? undefined };
-
-    if (freshTranslation !== undefined) {
-        return {
-            subject: {
-                kind: "conversation",
-                conversationSlugId: source.conversationSlugId,
-            },
-            content: {
-                kind: "translatable",
-                sourceVersion: source.publicId,
-                initialMode: "translated",
-                translation: {
-                    ...buildTranslationMetadata({
-                        targetLanguageCode,
-                        sourceMetadata: source,
-                        status: "completed",
-                    }),
-                },
-                variants: {
-                    original,
-                    translated: {
-                        title: freshTranslation.translatedTitle,
-                        body: freshTranslation.translatedBody ?? undefined,
-                    },
-                },
-            },
-        };
-    }
+    const freshTranslation = getFreshConversationTranslation({
+        source,
+        translation,
+    });
+    const missingTranslationStatus =
+        freshTranslation === undefined
+            ? await resolveMissingContentTranslationStatus({
+                  db,
+                  input: {
+                      conversationId: source.conversationId,
+                      sourceKind: "conversation",
+                      sourceContentId: source.contentId,
+                      targetLanguageCode,
+                  },
+                  translationExists: false,
+                  requestMode,
+              })
+            : "not_requested";
 
     return {
         subject: {
             kind: "conversation",
             conversationSlugId: source.conversationSlugId,
         },
-        content: {
-            kind: "translatable",
-            sourceVersion: source.publicId,
-            initialMode: "original",
-            translation: {
-                ...buildTranslationMetadata({
-                    targetLanguageCode,
-                    sourceMetadata: source,
-                    status: await resolveMissingContentTranslationStatus({
-                        db,
-                        input: {
-                            conversationId: source.conversationId,
-                            sourceKind: "conversation",
-                            sourceContentId: source.contentId,
-                            targetLanguageCode,
-                        },
-                        translationExists: false,
-                        requestMode,
-                    }),
-                }),
-            },
-            variants: {
-                original,
-            },
-        },
+        content: buildLocalizedConversationContent({
+            source,
+            translation: freshTranslation,
+            targetLanguageCode,
+            missingTranslationStatus,
+        }),
     };
 }
 

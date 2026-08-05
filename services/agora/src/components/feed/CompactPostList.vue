@@ -64,9 +64,10 @@
             :class="{ 'loading-overlay': showLoading }"
           >
             <PostListItem
-              v-for="postData in partialHomeFeedList"
-              :key="postData.metadata.conversationSlugId"
-              :conversation-data="postData"
+              v-for="feedItem in partialHomeFeedList"
+              :key="feedItem.conversationData.metadata.conversationSlugId"
+              :conversation-data="feedItem.conversationData"
+              :initial-display-content="feedItem.displayContent"
             />
           </div>
         </div>

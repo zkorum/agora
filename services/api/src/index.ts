@@ -2018,6 +2018,22 @@ server.after(() => {
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+            const headerDisplayLanguage = getRequestDisplayLanguage({
+                request,
+            });
+            const languagePreferences =
+                deviceStatus.isKnown && request.body.includeDisplayContent
+                    ? await getLanguagePreferences({
+                          db,
+                          userId: deviceStatus.userId,
+                          request: {
+                              currentDisplayLanguage: headerDisplayLanguage,
+                          },
+                      })
+                    : {
+                          displayLanguage: headerDisplayLanguage,
+                          spokenLanguages: [headerDisplayLanguage],
+                      };
             return await feedService.fetchFeed({
                 db: db,
                 personalizationUserId: deviceStatus.isKnown
@@ -2025,7 +2041,9 @@ server.after(() => {
                     : undefined,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                 sortAlgorithm: request.body.sortAlgorithm,
-                currentDisplayLanguage: getRequestDisplayLanguage({ request }),
+                currentDisplayLanguage: languagePreferences.displayLanguage,
+                spokenLanguages: languagePreferences.spokenLanguages,
+                includeDisplayContent: request.body.includeDisplayContent,
             });
         },
     });

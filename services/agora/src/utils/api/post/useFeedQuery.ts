@@ -16,20 +16,27 @@ export function useFeedQuery({
   enabled?: MaybeRefOrGetter<boolean>;
 } = {}) {
   const { fetchRecentPost } = useBackendPostApi();
-  const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
+  const { isGuestOrLoggedIn, userId } = storeToRefs(useAuthenticationStore());
   const { currentHomeFeedTab } = storeToRefs(useHomeFeedStore());
-  const { displayLanguage } = storeToRefs(useLanguageStore());
+  const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
+  const sortedSpokenLanguages = computed(() =>
+    [...spokenLanguages.value].sort()
+  );
 
   return useQuery({
     queryKey: [
       "feed",
       computed(() => currentHomeFeedTab.value),
       computed(() => displayLanguage.value),
+      sortedSpokenLanguages,
+      userId,
+      isGuestOrLoggedIn,
     ],
     queryFn: async () => {
       const response = await fetchRecentPost({
         loadPersonalizedData: isGuestOrLoggedIn.value,
         sortAlgorithm: currentHomeFeedTab.value,
+        includeDisplayContent: true,
       });
       if (response.status !== "success") {
         throw new Error("Failed to fetch feed");

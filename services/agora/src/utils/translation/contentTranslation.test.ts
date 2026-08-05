@@ -1,3 +1,4 @@
+import type { ConversationContentFetchResponse } from "src/shared/types/dto";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -9,7 +10,56 @@ import {
   resolveContentTranslationPollingOutcome,
   resolveContentTranslationState,
   type ResolveContentTranslationStateParams,
+  selectConversationInitialDisplayContent,
 } from "./contentTranslation";
+
+function unavailableDisplayContent(
+  sourceVersion: string
+): ConversationContentFetchResponse {
+  return {
+    sourceVersion,
+    status: "not_requested",
+    translationControl: null,
+  };
+}
+
+describe("selectConversationInitialDisplayContent", () => {
+  it("treats provided content as authoritative for its conversation item", () => {
+    const sourceVersion = "00000000-0000-4000-8000-000000000001";
+    const cachedDisplayContent = unavailableDisplayContent(sourceVersion);
+    const providedDisplayContent = {
+      sourceVersion,
+      status: "available",
+      mode: "translated",
+      content: { title: "Translated title" },
+      translationControl: {
+        status: "completed",
+        alternateMode: "original",
+        canRequestAlternate: true,
+      },
+    } satisfies ConversationContentFetchResponse;
+
+    expect(
+      selectConversationInitialDisplayContent({
+        cachedDisplayContent,
+        providedDisplayContent,
+      })
+    ).toBe(providedDisplayContent);
+  });
+
+  it("uses cached content when no content was provided", () => {
+    const cachedDisplayContent = unavailableDisplayContent(
+      "00000000-0000-4000-8000-000000000001"
+    );
+
+    expect(
+      selectConversationInitialDisplayContent({
+        cachedDisplayContent,
+        providedDisplayContent: undefined,
+      })
+    ).toBe(cachedDisplayContent);
+  });
+});
 
 const defaultResolveStateParams: ResolveContentTranslationStateParams = {
   dynamicTranslationEnabled: true,

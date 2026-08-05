@@ -69,6 +69,40 @@ CREATE TABLE "content_translation_work" (
 	CONSTRAINT "content_translation_work_priority_rank_check" CHECK ("content_translation_work"."priority_rank" >= 0 AND "content_translation_work"."priority_rank" <= 2)
 );
 
+CREATE TABLE "conversation_content" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"public_id" uuid DEFAULT gen_random_uuid() NOT NULL,
+	"conversation_id" integer NOT NULL,
+	"title" varchar(140) NOT NULL,
+	"body" text,
+	"body_plain_text" text,
+	"source_language_code" "spoken_language_code",
+	"source_raw_language_code" varchar(35),
+	"source_language_provider" "language_detection_provider",
+	"source_language_confidence" real,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "conversation_content_public_id_unique" UNIQUE("public_id"),
+	CONSTRAINT "conversation_content_source_metadata_check" CHECK ((("conversation_content"."source_language_provider" IS NULL AND "conversation_content"."source_raw_language_code" IS NULL) OR ("conversation_content"."source_language_provider" IS NOT NULL AND "conversation_content"."source_raw_language_code" IS NOT NULL)))
+);
+
+CREATE TABLE "conversation_content_translation" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_content_translation_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"conversation_content_id" integer NOT NULL,
+	"display_language_code" "display_language_code" NOT NULL,
+	"translated_title" text NOT NULL,
+	"translated_body" text,
+	"translated_body_plain_text" text,
+	"source_language_code" "spoken_language_code",
+	"source_raw_language_code" varchar(35),
+	"source_language_provider" "language_detection_provider",
+	"source_language_confidence" real,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "conversation_content_translation_unique" UNIQUE("conversation_content_id","display_language_code"),
+	CONSTRAINT "conversation_content_translation_source_metadata_check" CHECK ((("conversation_content_translation"."source_language_provider" IS NULL AND "conversation_content_translation"."source_raw_language_code" IS NULL) OR ("conversation_content_translation"."source_language_provider" IS NOT NULL AND "conversation_content_translation"."source_raw_language_code" IS NOT NULL))),
+	CONSTRAINT "conversation_content_translation_body_plain_text_pair_check" CHECK ((("conversation_content_translation"."translated_body" IS NULL AND "conversation_content_translation"."translated_body_plain_text" IS NULL) OR ("conversation_content_translation"."translated_body" IS NOT NULL AND "conversation_content_translation"."translated_body_plain_text" IS NOT NULL)))
+);
+
 CREATE TABLE "conversation" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"slug_id" varchar(8) NOT NULL,
@@ -93,6 +127,14 @@ CREATE TABLE "conversation" (
 	CONSTRAINT "conversation_polis_config_id_unique" UNIQUE("polis_config_id"),
 	CONSTRAINT "conversation_ranking_config_id_unique" UNIQUE("ranking_config_id"),
 	CONSTRAINT "conversation_subtype_config_check" CHECK ((("conversation"."conversation_type" = 'polis' AND "conversation"."polis_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL) OR ("conversation"."conversation_type" = 'ranking' AND "conversation"."ranking_config_id" IS NOT NULL AND "conversation"."polis_config_id" IS NULL)))
+);
+
+CREATE TABLE "conversation_translation_target_language" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_translation_target_language_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"conversation_id" integer NOT NULL,
+	"language_code" "display_language_code" NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"deleted_at" timestamp (0)
 );
 
 CREATE TABLE "conversation_view_snapshot" (
@@ -218,6 +260,8 @@ CREATE INDEX "conversation_type_importing_idx" ON "conversation" USING btree ("i
 CREATE INDEX "conversation_project_id_idx" ON "conversation" USING btree ("project_id");
 
 CREATE INDEX "conversation_project_timeline_idx" ON "conversation" USING btree ("project_id","is_importing","created_at" DESC,"id" DESC) WHERE "conversation"."current_content_id" is not null;
+
+CREATE UNIQUE INDEX "conversation_translation_target_language_active_unique" ON "conversation_translation_target_language" USING btree ("conversation_id","language_code") WHERE "conversation_translation_target_language"."deleted_at" is null;
 
 CREATE INDEX "conversation_view_snapshot_latest_idx" ON "conversation_view_snapshot" USING btree ("conversation_id","created_at" DESC,"id" DESC);
 

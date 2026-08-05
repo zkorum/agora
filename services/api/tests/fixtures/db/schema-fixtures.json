@@ -30,6 +30,9 @@
     "content-translation": [
         "user",
         "conversation",
+        "conversation_content",
+        "conversation_content_translation",
+        "conversation_translation_target_language",
         "opinion",
         "opinion_content",
         "opinion_content_translation",

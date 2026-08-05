@@ -23,6 +23,7 @@ import {
   getContentTranslationSourceLanguageLabel,
   getConversationLanguageSettingSourceLanguageCode,
   isSameContentLanguage,
+  selectConversationInitialDisplayContent,
 } from "./contentTranslation";
 import {
   subscribeToContentTranslationFailed,
@@ -73,8 +74,11 @@ export function useConversationDisplayContent({
   const initialDisplayContentQuery = useConversationDisplayContentCache({
     conversationSlugId,
   });
-  const effectiveInitialDisplayContent = computed(
-    () => initialDisplayContentQuery.data.value ?? toValue(initialDisplayContent)
+  const effectiveInitialDisplayContent = computed(() =>
+    selectConversationInitialDisplayContent({
+      cachedDisplayContent: initialDisplayContentQuery.data.value,
+      providedDisplayContent: toValue(initialDisplayContent),
+    })
   );
   const sourceVersion = computed(
     () => effectiveInitialDisplayContent.value?.sourceVersion

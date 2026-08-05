@@ -1,6 +1,5 @@
 import { defineStore, storeToRefs } from "pinia";
 import type { FetchFeedResponse } from "src/shared/types/dto";
-import type { ExtendedConversation } from "src/shared/types/zod";
 import { useBackendPostApi } from "src/utils/api/post/post";
 import { computed, ref } from "vue";
 
@@ -9,6 +8,7 @@ import { useAuthenticationStore } from "./authentication";
 const POSTS_PER_PAGE = 10;
 
 export type HomeFeedSortOption = "following" | "new";
+type HomeFeedItem = FetchFeedResponse["feedItemList"][number];
 
 export const useHomeFeedStore = defineStore("homeFeed", () => {
   const { fetchRecentPost } = useBackendPostApi();
@@ -33,67 +33,11 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     following: [],
   };
 
-  const emptyPost: ExtendedConversation = {
-    metadata: {
-      createdAt: new Date(),
-      opinionCount: 0,
-      voteCount: 0,
-      participantCount: 0,
-      totalOpinionCount: 0,
-      totalVoteCount: 0,
-      totalParticipantCount: 0,
-      moderatedOpinionCount: 0,
-      hiddenOpinionCount: 0,
-      authorUsername: "",
-      lastReactedAt: new Date(),
-      participationMode: "account_required",
-      conversationType: "polis",
-      aiLabelingEnabled: false,
-      preferredOpinionGroupCount: null,
-      isIndexed: true,
-      conversationSlugId: "",
-      isClosed: false,
-      isEdited: false,
-      moderation: {
-        status: "unmoderated",
-      },
-      contentLanguageMetadata: {
-        detectedDisplayLanguageCode: null,
-        detectedSourceLanguageCode: null,
-        detectedRawLanguageCode: null,
-        detectionConfidence: null,
-        autoDetectionStatus: "not_attempted",
-      },
-      languageSetting: {
-        mode: "auto",
-        languageCode: null,
-        detectedLanguageCode: null,
-        detectedSourceLanguageCode: null,
-        detectedRawLanguageCode: null,
-        detectionConfidence: null,
-        autoDetectionStatus: "not_attempted",
-      },
-      multilingualSetting: {
-        additionalLanguageCodes: [],
-        dynamicTranslationEnabled: false,
-      },
-      externalSourceConfig: null,
-    },
-    payload: {
-      title: "",
-      body: "",
-    },
-    interaction: {
-      hasVoted: false,
-      votedIndex: 0,
-    },
-  };
-
-  let fullHomeFeedList: ExtendedConversation[] = [];
-  const partialHomeFeedList = ref<ExtendedConversation[]>([]);
+  let fullHomeFeedList: HomeFeedItem[] = [];
+  const partialHomeFeedList = ref<HomeFeedItem[]>([]);
 
   function setFeedData(data: FetchFeedResponse) {
-    fullHomeFeedList = [...data.conversationDataList];
+    fullHomeFeedList = [...data.feedItemList];
     partialHomeFeedList.value = [];
     if (currentHomeFeedTab.value === "new") {
       hasPendingNewTab.value = false;
@@ -123,6 +67,7 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       const response = await fetchRecentPost({
         loadPersonalizedData: isGuestOrLoggedIn.value,
         sortAlgorithm: tab,
+        includeDisplayContent: false,
       });
 
       if (
@@ -150,7 +95,7 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
 
   function loadMore(): boolean {
     if (fullHomeFeedList.length > 0) {
-      const itemsToLoad: ExtendedConversation[] = fullHomeFeedList.splice(
+      const itemsToLoad: HomeFeedItem[] = fullHomeFeedList.splice(
         0,
         Math.min(POSTS_PER_PAGE, fullHomeFeedList.length)
       );
@@ -201,7 +146,6 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     onPopularConversationUpdate,
     loadMore,
     partialHomeFeedList,
-    emptyPost,
     hasPendingNewTab,
     hasPendingFollowingTab,
     hasPendingCurrentTab,

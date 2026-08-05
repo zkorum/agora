@@ -2,6 +2,7 @@ import type {
     ContentTranslationSubject,
     ContentTranslationSourceLanguage,
     LanguageDetectionProvider,
+    LocalizedConversationContent,
     LocalizedRankingItemContent,
     LocalizedContentTranslationStatus,
     LocalizedSurveyQuestionContent,
@@ -46,6 +47,21 @@ export interface SurveyQuestionLocalizedContentSource {
         sourceLanguageProvider: LanguageDetectionProvider | null;
         sourceLanguageConfidence: number | null;
     }[];
+}
+
+export interface ConversationLocalizedContentSource {
+    publicId: string;
+    title: string;
+    body: string | null;
+    sourceLanguageCode: SupportedSpokenLanguageCodes | null;
+    sourceRawLanguageCode: string | null;
+    sourceLanguageProvider: LanguageDetectionProvider | null;
+    sourceLanguageConfidence: number | null;
+}
+
+export interface ConversationTranslationSource {
+    translatedTitle: string;
+    translatedBody: string | null;
 }
 
 export interface SurveyQuestionTranslationSource {
@@ -183,6 +199,52 @@ export function buildTranslationMetadata<
         ...(sourceLanguageLabel === undefined ? {} : { sourceLanguageLabel }),
         sourceLanguage,
         status,
+    };
+}
+
+export function buildLocalizedConversationContent({
+    source,
+    translation,
+    targetLanguageCode,
+    missingTranslationStatus,
+}: {
+    source: ConversationLocalizedContentSource;
+    translation: ConversationTranslationSource | undefined;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+    missingTranslationStatus: MissingContentTranslationStatus;
+}): LocalizedConversationContent {
+    const original = { title: source.title, body: source.body ?? undefined };
+
+    if (translation !== undefined) {
+        return {
+            kind: "translatable",
+            sourceVersion: source.publicId,
+            initialMode: "translated",
+            translation: buildTranslationMetadata({
+                targetLanguageCode,
+                sourceMetadata: source,
+                status: "completed",
+            }),
+            variants: {
+                original,
+                translated: {
+                    title: translation.translatedTitle,
+                    body: translation.translatedBody ?? undefined,
+                },
+            },
+        };
+    }
+
+    return {
+        kind: "translatable",
+        sourceVersion: source.publicId,
+        initialMode: "original",
+        translation: buildTranslationMetadata({
+            targetLanguageCode,
+            sourceMetadata: source,
+            status: missingTranslationStatus,
+        }),
+        variants: { original },
     };
 }
 

@@ -15,6 +15,7 @@
             v-for="postData in profileData.userPostList"
             :key="postData.metadata.conversationSlugId"
             :conversation-data="postData"
+            :initial-display-content="undefined"
           />
         </div>
       </q-infinite-scroll>

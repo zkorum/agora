@@ -5,6 +5,9 @@ import {
 } from "src/shared/languages";
 import { toUnionUndefined } from "src/shared/shared";
 import type {
+  ConversationContentFetchResponse,
+} from "src/shared/types/dto";
+import type {
   ContentLanguageMetadataOutput,
   ContentTranslationSourceLanguage,
   ConversationLanguageSettingOutput,
@@ -33,6 +36,16 @@ export type ContentTranslationPollingOutcome =
   | "completed"
   | "pending"
   | "terminal_failure";
+
+export function selectConversationInitialDisplayContent({
+  cachedDisplayContent,
+  providedDisplayContent,
+}: {
+  cachedDisplayContent: ConversationContentFetchResponse | undefined;
+  providedDisplayContent: ConversationContentFetchResponse | undefined;
+}): ConversationContentFetchResponse | undefined {
+  return providedDisplayContent ?? cachedDisplayContent;
+}
 
 export function resolveContentTranslationPollingOutcome({
   responseSuccess,

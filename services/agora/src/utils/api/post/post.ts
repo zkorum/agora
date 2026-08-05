@@ -24,12 +24,10 @@ import { Dto } from "src/shared/types/dto";
 import type {
   ConversationMultilingualSetting,
   EventSlug,
-  ExtendedConversation,
   FeedSortAlgorithm,
   ParticipationMode,
   PreferredOpinionGroupCount,
 } from "src/shared/types/zod";
-import { zodExtendedConversationData } from "src/shared/types/zod";
 import { CSV_UPLOAD_FIELD_NAMES } from "src/shared-app-api/csvUpload";
 import { useRouter } from "vue-router";
 
@@ -130,15 +128,18 @@ export function useBackendPostApi() {
   interface FetchRecentPostProps {
     loadPersonalizedData: boolean;
     sortAlgorithm: FeedSortAlgorithm;
+    includeDisplayContent: boolean;
   }
 
   async function fetchRecentPost({
     loadPersonalizedData,
     sortAlgorithm,
+    includeDisplayContent,
   }: FetchRecentPostProps): Promise<FetchRecentPostResponse> {
     try {
       const params: ApiV1ConversationFetchRecentPostRequest = {
         sortAlgorithm: sortAlgorithm,
+        includeDisplayContent,
       };
 
       if (!loadPersonalizedData) {
@@ -150,12 +151,7 @@ export function useBackendPostApi() {
 
         return {
           status: "success",
-          data: {
-            conversationDataList: composeInternalPostList(
-              response.data.conversationDataList
-            ),
-            topConversationSlugIdList: response.data.topConversationSlugIdList,
-          },
+          data: Dto.fetchFeedResponse.parse(response.data),
         };
       } else {
         const { url, options } =
@@ -175,12 +171,7 @@ export function useBackendPostApi() {
 
         return {
           status: "success",
-          data: {
-            conversationDataList: composeInternalPostList(
-              response.data.conversationDataList
-            ),
-            topConversationSlugIdList: response.data.topConversationSlugIdList,
-          },
+          data: Dto.fetchFeedResponse.parse(response.data),
         };
       }
     } catch (e) {
@@ -369,26 +360,6 @@ export function useBackendPostApi() {
     } catch (e) {
       return createAxiosErrorResponse(e);
     }
-  }
-
-  function composeInternalPostList(
-    incomingPostList: unknown[]
-  ): ExtendedConversation[] {
-    // Use zod to parse and validate - zodDateTimeFlexible handles date conversion automatically
-    const conversationListResult = zodExtendedConversationData
-      .array()
-      .safeParse(incomingPostList);
-
-    if (!conversationListResult.success) {
-      console.error(
-        "Failed to parse conversation data with zod:",
-        conversationListResult.error
-      );
-      showNotifyMessage(t("invalidConversationData"));
-      return [];
-    }
-
-    return conversationListResult.data;
   }
 
   async function deletePostBySlugId(postSlugId: string) {

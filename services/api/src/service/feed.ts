@@ -1,15 +1,41 @@
 import { conversationTable } from "@/shared-backend/schema.js";
+import type { FeedSortAlgorithm } from "@/shared/types/zod.js";
 import type {
-    ExtendedConversationPerSlugId,
-    FeedSortAlgorithm,
-} from "@/shared/types/zod.js";
-import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
+    SupportedDisplayLanguageCodes,
+    SupportedSpokenLanguageCodes,
+} from "@/shared/languages.js";
 import { and, eq, isNotNull, SQL } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
+import { fetchConversationFeedDisplayContentBySlugId } from "./conversationFeedDisplayContent.js";
 import { getConversationEngagementScore } from "./recommendationSystem.js";
-import type { FetchFeedResponse } from "@/shared/types/dto.js";
+import type {
+    ConversationContentFetchResponse,
+    FetchFeedResponse,
+} from "@/shared/types/dto.js";
 import { fetchConversationDisplayCountsByConversationId } from "./conversationDisplayCounts.js";
+
+function compactFeedDisplayContent({
+    displayContent,
+    createCompactHtmlBody,
+}: {
+    displayContent: ConversationContentFetchResponse;
+    createCompactHtmlBody: (htmlString: string) => string;
+}): ConversationContentFetchResponse {
+    if (
+        displayContent.status !== "available" ||
+        displayContent.content.body === undefined
+    ) {
+        return displayContent;
+    }
+    return {
+        ...displayContent,
+        content: {
+            ...displayContent.content,
+            body: createCompactHtmlBody(displayContent.content.body),
+        },
+    };
+}
 
 interface GetPostSlugIdLastCursorProps {
     lastSlugId: string | undefined;
@@ -57,6 +83,8 @@ interface FetchFeedProps {
     baseImageServiceUrl: string;
     sortAlgorithm: FeedSortAlgorithm;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
+    spokenLanguages: SupportedSpokenLanguageCodes[];
+    includeDisplayContent: boolean;
 }
 
 export async function fetchFeed({
@@ -65,6 +93,8 @@ export async function fetchFeed({
     baseImageServiceUrl,
     sortAlgorithm,
     currentDisplayLanguage,
+    spokenLanguages,
+    includeDisplayContent,
 }: FetchFeedProps): Promise<FetchFeedResponse> {
     const targetFetchLimit = 1000;
 
@@ -75,9 +105,9 @@ export async function fetchFeed({
         isNotNull(conversationTable.currentContentId),
     );
 
-    const { fetchPostItems } = useCommonPost();
+    const { createCompactHtmlBody, fetchPostItems } = useCommonPost();
 
-    const conversations: ExtendedConversationPerSlugId = await fetchPostItems({
+    const postItems = await fetchPostItems({
         db: db,
         limit: targetFetchLimit,
         where: whereClause,
@@ -90,13 +120,42 @@ export async function fetchFeed({
         currentDisplayLanguage,
     });
 
-    const topSlugIdList = Array.from(conversations.keys()).slice(
+    const topSlugIdList = Array.from(postItems.keys()).slice(
         0,
-        Math.min(10, conversations.size),
+        Math.min(10, postItems.size),
+    );
+    const displayContentBySlugId = includeDisplayContent
+        ? await fetchConversationFeedDisplayContentBySlugId({
+              db,
+              conversationContentIds: Array.from(
+                  postItems.values(),
+                  (postItem) => postItem.conversationContentId,
+              ),
+              displayLanguage: currentDisplayLanguage,
+              spokenLanguages,
+          })
+        : new Map<string, ConversationContentFetchResponse>();
+    const feedItemList = Array.from(
+        postItems,
+        ([conversationSlugId, postItem]) => {
+            const displayContent =
+                displayContentBySlugId.get(conversationSlugId);
+            return {
+                conversationData: postItem.conversationData,
+                ...(displayContent === undefined
+                    ? {}
+                    : {
+                          displayContent: compactFeedDisplayContent({
+                              displayContent,
+                              createCompactHtmlBody,
+                          }),
+                      }),
+            };
+        },
     );
 
     return {
-        conversationDataList: Array.from(conversations.values()),
+        feedItemList,
         topConversationSlugIdList: topSlugIdList,
     };
 }

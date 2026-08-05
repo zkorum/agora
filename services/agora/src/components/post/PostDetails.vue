@@ -8,6 +8,7 @@
       <div class="container standardStyle">
         <TranslatedPostContent
           :extended-post-data="conversationData"
+          :initial-display-content="initialDisplayContent"
           :compact-mode="compactMode"
           @open-moderation-history="openModerationHistory()"
           @verified="(payload) => handleTicketVerified(payload)"
@@ -113,6 +114,7 @@ import {
   useConversationActionBarStats,
 } from "src/composables/conversation/useConversationActionBarStats";
 import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
+import type { ConversationContentFetchResponse } from "src/shared/types/dto";
 import type { ExtendedConversation, OpinionItem } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
@@ -143,6 +145,7 @@ import PostActionBar from "./interactionBar/PostActionBar.vue";
 
 const props = defineProps<{
   conversationData: ExtendedConversation;
+  initialDisplayContent: ConversationContentFetchResponse | undefined;
   compactMode: boolean;
 }>();
 

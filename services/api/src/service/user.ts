@@ -341,21 +341,25 @@ export async function getUserPosts({
                       isNotNull(conversationTable.currentContentId),
                   );
 
-        const conversations: ExtendedConversationPerSlugId =
-            await fetchPostItems({
-                db: db,
-                limit: limit,
-                where: whereClause,
-                enableCompactBody: true,
-                personalizedUserId: userId,
-                excludeLockedPosts: false,
-                removeMutedAuthors: false,
-                baseImageServiceUrl,
-                sortAlgorithm: "new",
-                currentDisplayLanguage,
-            });
+        const postItems = await fetchPostItems({
+            db: db,
+            limit: limit,
+            where: whereClause,
+            enableCompactBody: true,
+            personalizedUserId: userId,
+            excludeLockedPosts: false,
+            removeMutedAuthors: false,
+            baseImageServiceUrl,
+            sortAlgorithm: "new",
+            currentDisplayLanguage,
+        });
 
-        return conversations;
+        return new Map(
+            Array.from(postItems, ([conversationSlugId, postItem]) => [
+                conversationSlugId,
+                postItem.conversationData,
+            ]),
+        );
     } catch (err: unknown) {
         log.error(err);
         throw httpErrors.internalServerError(

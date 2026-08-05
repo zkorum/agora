@@ -15,7 +15,6 @@ import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import type {
     ConversationMetadata,
     ExtendedConversationPayload,
-    ExtendedConversationPerSlugId,
     ExtendedConversation,
     ConversationType,
     RankingMode,
@@ -48,6 +47,13 @@ import {
     fetchConversationDisplayCountsByConversationId,
     type ConversationDisplayCounts,
 } from "./conversationDisplayCounts.js";
+
+interface FetchedPostItem {
+    conversationData: ExtendedConversation;
+    conversationContentId: number;
+}
+
+type FetchedPostItemPerSlugId = Map<string, FetchedPostItem>;
 
 function requireJoinedRankingMode({
     conversationId,
@@ -199,7 +205,7 @@ export function useCommonPost() {
         baseImageServiceUrl,
         sortAlgorithm,
         currentDisplayLanguage,
-    }: FetchPostItemsProps): Promise<ExtendedConversationPerSlugId> {
+    }: FetchPostItemsProps): Promise<FetchedPostItemPerSlugId> {
         let postItems;
 
         const personalOrganizationUserTable = alias(
@@ -211,6 +217,7 @@ export function useCommonPost() {
             .select({
                 title: conversationContentTable.title,
                 body: conversationContentTable.body,
+                conversationContentId: conversationContentTable.id,
                 // metadata
                 conversationId: conversationTable.id,
                 slugId: conversationTable.slugId,
@@ -400,10 +407,7 @@ export function useCommonPost() {
             });
         }
 
-        const extendedConversationMap: ExtendedConversationPerSlugId = new Map<
-            string,
-            ExtendedConversation
-        >();
+        const postItemMap: FetchedPostItemPerSlugId = new Map();
 
         for (const postItem of postItems) {
             if (enableCompactBody && postItem.body != null) {
@@ -561,12 +565,15 @@ export function useCommonPost() {
             if (excludeLockedPosts && postItem.moderationAction == "lock") {
                 // Skip
             } else {
-                extendedConversationMap.set(postItem.slugId, {
-                    metadata: metadata,
-                    payload: payload,
-                    interaction: {
-                        hasVoted: false,
-                        votedIndex: 0,
+                postItemMap.set(postItem.slugId, {
+                    conversationContentId: postItem.conversationContentId,
+                    conversationData: {
+                        metadata: metadata,
+                        payload: payload,
+                        interaction: {
+                            hasVoted: false,
+                            votedIndex: 0,
+                        },
                     },
                 });
             }
@@ -579,13 +586,14 @@ export function useCommonPost() {
                     db: db,
                     userId: personalizedUserId,
                 });
-                extendedConversationMap.forEach(
+                postItemMap.forEach(
                     (postItem, conversationSlugId, map) => {
                         if (
                             mutedUserItems.some(
                                 (muteItem) =>
                                     muteItem.username ===
-                                    postItem.metadata.authorUsername,
+                                    postItem.conversationData.metadata
+                                        .authorUsername,
                             )
                         ) {
                             map.delete(conversationSlugId);
@@ -595,7 +603,7 @@ export function useCommonPost() {
             }
         }
 
-        return extendedConversationMap;
+        return postItemMap;
     }
 
     function createCompactHtmlBody(htmlString: string) {

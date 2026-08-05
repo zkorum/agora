@@ -575,10 +575,18 @@ export class Dto {
     static fetchFeedRequest = z
         .object({
             sortAlgorithm: zodFeedSortAlgorithm,
+            includeDisplayContent: z.boolean(),
         })
         .strict();
     static fetchFeedResponse = z.object({
-        conversationDataList: z.array(zodExtendedConversationData),
+        feedItemList: z.array(
+            z
+                .object({
+                    conversationData: zodExtendedConversationData,
+                    displayContent: zodConversationDisplayedContent.optional(),
+                })
+                .strict(),
+        ),
         topConversationSlugIdList: z.array(zodSlugId), // used to determine if the feed is stale
     });
     static postFetchRequest = z

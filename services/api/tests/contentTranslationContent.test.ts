@@ -1,14 +1,26 @@
 import { describe, expect, it } from "vitest";
 import {
+    buildLocalizedConversationContent,
     buildLocalizedRankingItemContent,
     buildLocalizedSurveyQuestionContent,
     hasCompleteSurveyQuestionTranslation,
     shouldQueueTranslationWork,
     toMissingContentTranslationStatus,
+    type ConversationLocalizedContentSource,
     type RankingItemLocalizedContentSource,
     type RankingItemTranslationSource,
     type SurveyQuestionLocalizedContentSource,
 } from "../src/service/contentTranslationContent.js";
+
+const conversationSource = {
+    publicId: "00000000-0000-4000-8000-000000000009",
+    title: "Source title",
+    body: "<p>Source body</p>",
+    sourceLanguageCode: "ky",
+    sourceRawLanguageCode: "ky",
+    sourceLanguageProvider: "lingua",
+    sourceLanguageConfidence: 0.99,
+} satisfies ConversationLocalizedContentSource;
 
 const surveyQuestionSource: SurveyQuestionLocalizedContentSource = {
     conversationSlugId: "conv1234",
@@ -67,6 +79,58 @@ const rankingItemTranslation = {
 } satisfies RankingItemTranslationSource;
 
 describe("content translation pure content helpers", () => {
+    it("preserves missing conversation translation status", () => {
+        expect(
+            buildLocalizedConversationContent({
+                source: conversationSource,
+                translation: undefined,
+                targetLanguageCode: "en",
+                missingTranslationStatus: "running",
+            }),
+        ).toMatchObject({
+            kind: "translatable",
+            sourceVersion: conversationSource.publicId,
+            initialMode: "original",
+            translation: {
+                targetLanguageCode: "en",
+                sourceLanguageCode: "ky",
+                status: "running",
+            },
+            variants: {
+                original: {
+                    title: "Source title",
+                    body: "<p>Source body</p>",
+                },
+            },
+        });
+    });
+
+    it("builds completed translated conversation content", () => {
+        expect(
+            buildLocalizedConversationContent({
+                source: conversationSource,
+                translation: {
+                    translatedTitle: "Translated title",
+                    translatedBody: "<p>Translated body</p>",
+                },
+                targetLanguageCode: "en",
+                missingTranslationStatus: "not_requested",
+            }),
+        ).toMatchObject({
+            kind: "translatable",
+            sourceVersion: conversationSource.publicId,
+            initialMode: "translated",
+            translation: { status: "completed" },
+            variants: {
+                original: { title: "Source title" },
+                translated: {
+                    title: "Translated title",
+                    body: "<p>Translated body</p>",
+                },
+            },
+        });
+    });
+
     it("queues only when missing content is explicitly requested", () => {
         expect(
             shouldQueueTranslationWork({
