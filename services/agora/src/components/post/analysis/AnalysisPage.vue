@@ -59,19 +59,14 @@
             />
           </div>
 
-          <button
+          <AnalysisPlaybackButton
             v-if="showAnalysisPlaybackButton"
-            type="button"
-            class="analysis-playback-button"
-            :class="{
-              'analysis-playback-button--play': isLivePaused || !isLiveAnalysis,
-            }"
-            :aria-label="analysisPlaybackLabel"
-            :title="analysisPlaybackLabel"
+            :is-playing="isLiveAnalysis && !isLivePaused"
+            :disabled="false"
+            :pause-label="t('pauseAtLatestCheckpoint')"
+            :play-label="t('returnToLiveAnalysis')"
             @click="toggleAnalysisPlayback()"
-          >
-            <q-icon :name="analysisPlaybackIcon" size="1.3rem" />
-          </button>
+          />
         </div>
 
         <div
@@ -363,6 +358,7 @@
 
 <script setup lang="ts">
 import type { UseQueryReturnType } from "@tanstack/vue-query";
+import AnalysisPlaybackButton from "src/components/post/analysis/common/AnalysisPlaybackButton.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import SpaLink from "src/components/ui-library/SpaLink.vue";
@@ -658,18 +654,6 @@ const timelineLiveLabel = computed(() =>
   props.isConversationClosed
     ? t("checkpointReasonConversationClosed")
     : t("checkpointTimelineNow")
-);
-
-const analysisPlaybackIcon = computed(() =>
-  isLiveAnalysis.value && !isLivePaused.value
-    ? "mdi-pause-circle-outline"
-    : "mdi-play-circle-outline"
-);
-
-const analysisPlaybackLabel = computed(() =>
-  isLiveAnalysis.value && !isLivePaused.value
-    ? t("pauseAtLatestCheckpoint")
-    : t("returnToLiveAnalysis")
 );
 
 const analysisViewState = computed(
@@ -1667,35 +1651,6 @@ defineExpose({
 .analysis-view-selector {
   min-width: 8rem;
   max-width: 14rem;
-}
-
-.analysis-playback-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 2rem;
-  height: 2rem;
-  border: 1px solid #d8d6de;
-  border-radius: 8px;
-  background: white;
-  color: #6d6a74;
-  cursor: pointer;
-
-  &:hover,
-  &:focus-visible {
-    background: #f5f5f7;
-  }
-}
-
-.analysis-playback-button--play {
-  border-color: #24966d;
-  color: #137a55;
-
-  &:hover,
-  &:focus-visible {
-    background: #edf8f4;
-  }
 }
 
 .report-button {

@@ -1,35 +1,50 @@
 <template>
   <div class="container flexStyle">
-    <PageLoadingSpinner
-      v-if="
-        currentTab !== 'Survey' &&
-        checkpointsQuery.isPending.value &&
-        !hasCheckpointData
-      "
-    />
-    <ErrorRetryBlock
-      v-else-if="currentTab !== 'Survey' && hasBlockingCheckpointError"
-      :title="t('loadingError')"
-      :retry-label="t('retryButton')"
-      @retry="retryFetchCheckpoints"
-    />
-    <CheckpointTimeline
-      v-else-if="currentTab !== 'Survey'"
-      :checkpoints="checkpointTimelineItems"
-      :selected-checkpoint-id="selectedCheckpointId"
-      :is-live-selected="selectedCheckpointId === undefined"
-      :is-live-paused="selectedCheckpointId !== undefined"
-      :is-latest-checkpoint-live="isLatestCheckpointLive"
-      :is-live-closed="props.conversationData.metadata.isClosed"
-      :title="tAnalysis('checkpointTimelineLabel')"
-      :start-label="tAnalysis('checkpointTimelineStart')"
-      :now-label="timelineLiveLabel"
-      :previous-label="tAnalysis('previousCheckpoint')"
-      :next-label="tAnalysis('nextCheckpoint')"
-      :format-reason="formatCheckpointReason"
-      @select-checkpoint="selectCheckpoint"
-      @select-live="selectLive"
-    />
+    <div v-if="currentTab !== 'Survey'" class="checkpoint-section">
+      <PageLoadingSpinner
+        v-if="checkpointsQuery.isPending.value && !hasCheckpointData"
+      />
+      <ErrorRetryBlock
+        v-else-if="hasBlockingCheckpointError"
+        :title="t('loadingError')"
+        :retry-label="t('retryButton')"
+        @retry="retryFetchCheckpoints"
+      />
+      <CheckpointTimeline
+        v-else
+        :checkpoints="checkpointTimelineItems"
+        :selected-checkpoint-id="selectedCheckpointId"
+        :is-live-selected="selectedCheckpointId === undefined"
+        :is-live-paused="isLivePaused"
+        :is-latest-checkpoint-live="isLatestCheckpointLive"
+        :is-live-closed="props.conversationData.metadata.isClosed"
+        :title="tAnalysis('checkpointTimelineLabel')"
+        :start-label="tAnalysis('checkpointTimelineStart')"
+        :now-label="timelineLiveLabel"
+        :previous-label="tAnalysis('previousCheckpoint')"
+        :next-label="tAnalysis('nextCheckpoint')"
+        :format-reason="formatCheckpointReason"
+        @select-checkpoint="selectCheckpoint"
+        @select-live="selectLive"
+      />
+
+      <div
+        v-if="
+          hasCheckpointData &&
+          !hasBlockingCheckpointError &&
+          !props.conversationData.metadata.isClosed
+        "
+        class="analysis-controls"
+      >
+        <AnalysisPlaybackButton
+          :is-playing="selectedCheckpointId === undefined && !isLivePaused"
+          :disabled="selectedCheckpointId === undefined && !canPauseLiveFrame"
+          :pause-label="tAnalysis('pauseAtLatestCheckpoint')"
+          :play-label="tAnalysis('returnToLiveAnalysis')"
+          @click="toggleAnalysisPlayback()"
+        />
+      </div>
+    </div>
 
     <ShortcutBar
       :model-value="currentTab"
@@ -46,7 +61,7 @@
         :survey-gate="props.conversationData.interaction.surveyGate"
         :survey-query="surveyResultsQuery"
         :clusters="{}"
-        :total-participant-count="props.conversationData.metadata.participantCount"
+        :total-participant-count="activeParticipantCount"
         :conversation-scroll-context="props.conversationScrollContext"
       />
     </div>
@@ -71,8 +86,8 @@
       >
         <MaxDiffMeSection
           :conversation-slug-id="conversationSlugId"
-          :load-data="loadQuery.data.value"
-          :all-items="resultItems"
+          :load-data="activeLoadData"
+          :all-items="activeResultItems"
           :compact-mode="currentTab === 'Summary'"
           :on-click-item="openStatementDialog"
           :on-switch-tab="() => onTabChange('Me')"
@@ -90,7 +105,7 @@
           :conversation-slug-id="conversationSlugId"
           :section-title="t('title')"
           :subtitle="t('subtitle')"
-          :items="resultItems"
+          :items="activeResultItems"
           :is-loading="false"
           :no-items-message="t('noResults')"
           :score-label="t('score')"
@@ -106,10 +121,9 @@
           :conversation-slug-id="conversationSlugId"
           :survey-gate="props.conversationData.interaction.surveyGate"
           :survey-query="surveyResultsQuery"
+          :survey-results-override="pausedLiveFrame?.surveyResults"
           :clusters="{}"
-          :total-participant-count="
-            props.conversationData.metadata.participantCount
-          "
+          :total-participant-count="activeParticipantCount"
           :compact-mode="true"
           :conversation-scroll-context="props.conversationScrollContext"
           @switch-to-survey="onTabChange('Survey')"
@@ -128,7 +142,7 @@
           :conversation-slug-id="conversationSlugId"
           :section-title="t('tabCompleted')"
           :subtitle="null"
-          :items="completedItems"
+          :items="activeCompletedItems"
           :is-loading="isCompletedLoading"
           :no-items-message="t('noItems')"
           :score-label="t('score')"
@@ -151,7 +165,7 @@
           :conversation-slug-id="conversationSlugId"
           :section-title="t('tabCanceled')"
           :subtitle="null"
-          :items="canceledItems"
+          :items="activeCanceledItems"
           :is-loading="isCanceledLoading"
           :no-items-message="t('noItems')"
           :score-label="t('score')"
@@ -242,6 +256,7 @@ import {
 } from "src/components/post/analysis/AnalysisPage.i18n";
 import type { CheckpointTimelineItem } from "src/components/post/analysis/CheckpointTimeline.types";
 import CheckpointTimeline from "src/components/post/analysis/CheckpointTimeline.vue";
+import AnalysisPlaybackButton from "src/components/post/analysis/common/AnalysisPlaybackButton.vue";
 import ShortcutBar from "src/components/post/analysis/shortcutBar/ShortcutBar.vue";
 import {
   type SurveyTabTranslations,
@@ -260,9 +275,11 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTabNavigation } from "src/composables/ui/useTabNavigation";
 import type {
   MaxDiffItem,
+  MaxDiffLoadResponse,
   MaxDiffResultItem,
   RankingStatsCheckpointReason,
   RankingStatsCheckpointsResponse,
+  SurveyResultsAggregatedResponse,
 } from "src/shared/types/dto";
 import type {
   ExtendedConversationDisplayData,
@@ -288,6 +305,7 @@ import { getRankingItemDisplayText } from "src/utils/translation/rankingItemDisp
 import {
   computed,
   inject,
+  nextTick,
   onActivated,
   onDeactivated,
   onMounted,
@@ -312,7 +330,7 @@ const props = defineProps<{
   navigateToVotingTab: () => void;
   conversationScrollContext: ConversationScrollContext;
 }>();
-defineEmits<{
+const emit = defineEmits<{
   analysisLivePauseStats: [stats: ConversationActionBarStats | undefined];
 }>();
 
@@ -322,8 +340,9 @@ const { t } = useComponentI18n<MaxDiffResultsTabTranslations>(
 const { t: tAnalysis } = useComponentI18n<AnalysisPageTranslations>(
   analysisPageTranslations
 );
-const { t: tSurvey } =
-  useComponentI18n<SurveyTabTranslations>(surveyTabTranslations);
+const { t: tSurvey } = useComponentI18n<SurveyTabTranslations>(
+  surveyTabTranslations
+);
 
 const { getMaxDiffResults, fetchMaxDiffItems } = useMaxDiffApi();
 const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
@@ -435,6 +454,24 @@ let unregisterChildRefreshHandler: (() => void) | undefined;
 let unregisterTranslationUpdateHandler: (() => void) | undefined;
 let translationRefreshTimeout: ReturnType<typeof setTimeout> | undefined;
 const isActive = ref(true);
+
+interface LoadedLiveRankingFrame {
+  rankingStatsSnapshotId: number | undefined;
+  resultItems: MaxDiffListItem[];
+  actionBarStats: ConversationActionBarStats;
+}
+
+interface PausedRankingFrame extends LoadedLiveRankingFrame {
+  checkpoints: RankingStatsCheckpointsResponse;
+  surveyResults: SurveyResultsAggregatedResponse | undefined;
+  loadData: MaxDiffLoadResponse | undefined;
+  completedItems: MaxDiffListItem[];
+  canceledItems: MaxDiffListItem[];
+}
+
+const loadedLiveRankingFrame = ref<LoadedLiveRankingFrame | undefined>();
+const pausedLiveFrame = ref<PausedRankingFrame | undefined>();
+const isLivePaused = computed(() => pausedLiveFrame.value !== undefined);
 const isRankingContentVisible = computed(() => currentTab.value !== "Survey");
 const isSurveyContentVisible = computed(
   () => currentTab.value === "Summary" || currentTab.value === "Survey"
@@ -444,7 +481,11 @@ const conversationSlugId = props.conversationData.metadata.conversationSlugId;
 const surveyResultsQuery = useSurveyResultsAggregatedQuery({
   conversationSlugId,
   enabled: computed(
-    () => hasSurvey.value && isActive.value && isSurveyContentVisible.value
+    () =>
+      hasSurvey.value &&
+      isActive.value &&
+      isSurveyContentVisible.value &&
+      !isLivePaused.value
   ),
 });
 const selectedCheckpointId = computed(() =>
@@ -456,26 +497,29 @@ const liveRankingStatsSnapshotId = computed(() => {
     ? metadata.rankingStatsSnapshotId
     : undefined;
 });
-const requestedRankingStatsSnapshotId = computed(
-  () => {
-    const selectedSnapshotId = selectedCheckpointId.value;
-    const liveSnapshotId = liveRankingStatsSnapshotId.value;
-    if (selectedSnapshotId === undefined) {
-      return liveSnapshotId;
-    }
-    if (liveSnapshotId === undefined) {
-      return selectedSnapshotId;
-    }
-    return Math.max(selectedSnapshotId, liveSnapshotId);
+const requestedRankingStatsSnapshotId = computed(() => {
+  const selectedSnapshotId = selectedCheckpointId.value;
+  const liveSnapshotId = liveRankingStatsSnapshotId.value;
+  if (selectedSnapshotId === undefined) {
+    return liveSnapshotId;
   }
-);
+  if (liveSnapshotId === undefined) {
+    return selectedSnapshotId;
+  }
+  return Math.max(selectedSnapshotId, liveSnapshotId);
+});
 const checkpointsQuery = useRankingStatsCheckpointsQuery({
   conversationSlugId,
   requestedRankingStatsSnapshotId,
-  enabled: computed(() => isActive.value && isRankingContentVisible.value),
+  enabled: computed(
+    () => isActive.value && isRankingContentVisible.value && !isLivePaused.value
+  ),
 });
 const rankingCheckpoints = computed<RankingStatsCheckpointsResponse>(
   () => checkpointsQuery.data.value ?? []
+);
+const activeRankingCheckpoints = computed<RankingStatsCheckpointsResponse>(
+  () => pausedLiveFrame.value?.checkpoints ?? rankingCheckpoints.value
 );
 const hasCheckpointData = computed(
   () => checkpointsQuery.data.value !== undefined
@@ -486,19 +530,24 @@ const hasBlockingCheckpointError = computed(
 const checkpointTimelineItems = computed<
   CheckpointTimelineItem<RankingStatsCheckpointReason>[]
 >(() =>
-  rankingCheckpoints.value.map((checkpoint) => ({
+  activeRankingCheckpoints.value.map((checkpoint) => ({
     checkpointId: checkpoint.rankingStatsSnapshotId,
     activatedAt: checkpoint.createdAt,
     reasons: checkpoint.reasons,
   }))
 );
 const latestCheckpointId = computed(
-  () => rankingCheckpoints.value.at(-1)?.rankingStatsSnapshotId
+  () => activeRankingCheckpoints.value.at(-1)?.rankingStatsSnapshotId
+);
+const activeLiveRankingStatsSnapshotId = computed(() =>
+  pausedLiveFrame.value === undefined
+    ? liveRankingStatsSnapshotId.value
+    : pausedLiveFrame.value.rankingStatsSnapshotId
 );
 const isLatestCheckpointLive = computed(
   () =>
     latestCheckpointId.value !== undefined &&
-    latestCheckpointId.value === liveRankingStatsSnapshotId.value
+    latestCheckpointId.value === activeLiveRankingStatsSnapshotId.value
 );
 const timelineLiveLabel = computed(() =>
   props.conversationData.metadata.isClosed
@@ -528,6 +577,7 @@ function formatCheckpointReason(
 }
 
 async function selectCheckpoint(checkpointId: number): Promise<void> {
+  clearLivePause();
   setCurrentTabFromRoute("Results");
   const query = getUpdatedAnalysisRouteQuery({
     query: route.query,
@@ -541,6 +591,7 @@ async function selectCheckpoint(checkpointId: number): Promise<void> {
 }
 
 async function selectLive(): Promise<void> {
+  const resumedPlayback = clearLivePause();
   await router.replace({
     path: route.path,
     query: getUpdatedAnalysisRouteQuery({
@@ -548,6 +599,63 @@ async function selectLive(): Promise<void> {
       checkpointViewSnapshotId: undefined,
     }),
   });
+
+  if (resumedPlayback) {
+    await nextTick();
+    await handleChildRefresh();
+  }
+}
+
+async function toggleAnalysisPlayback(): Promise<void> {
+  if (isLivePaused.value) {
+    await selectLive();
+    return;
+  }
+
+  if (selectedCheckpointId.value !== undefined) {
+    await selectLive();
+    return;
+  }
+
+  pauseLiveAtCurrentFrame();
+}
+
+function pauseLiveAtCurrentFrame(): void {
+  const liveFrame = loadedLiveRankingFrame.value;
+  if (!canPauseLiveFrame.value || liveFrame === undefined) {
+    return;
+  }
+
+  pausedLiveFrame.value = {
+    ...liveFrame,
+    checkpoints: rankingCheckpoints.value,
+    surveyResults: surveyResultsQuery.data.value,
+    loadData: loadQuery.data.value,
+    completedItems: completedItems.value,
+    canceledItems: canceledItems.value,
+  };
+  emit("analysisLivePauseStats", liveFrame.actionBarStats);
+}
+
+function clearLivePause(): boolean {
+  if (pausedLiveFrame.value === undefined) {
+    return false;
+  }
+
+  pausedLiveFrame.value = undefined;
+  emit("analysisLivePauseStats", undefined);
+  return true;
+}
+
+function getActionBarStatsFromMetadata(): ConversationActionBarStats {
+  const metadata = props.conversationData.metadata;
+  return {
+    opinionCount: metadata.opinionCount,
+    participantCount: metadata.participantCount,
+    voteCount: metadata.voteCount,
+    totalParticipantCount: metadata.totalParticipantCount,
+    totalVoteCount: metadata.totalVoteCount,
+  };
 }
 
 async function normalizeCheckpointForCurrentTab(): Promise<boolean> {
@@ -563,6 +671,14 @@ async function normalizeCheckpointForCurrentTab(): Promise<boolean> {
 const isInitialLoading = ref(true);
 const hasError = ref(false);
 const resultItems = ref<MaxDiffListItem[]>([]);
+const activeResultItems = computed(
+  () => pausedLiveFrame.value?.resultItems ?? resultItems.value
+);
+const activeParticipantCount = computed(
+  () =>
+    pausedLiveFrame.value?.actionBarStats.participantCount ??
+    props.conversationData.metadata.participantCount
+);
 let latestResultsRequestId = 0;
 let latestCheckpointValidationId = 0;
 let isResultsFetchInFlight = false;
@@ -572,18 +688,65 @@ let queuedResultsFetchShowsLoading = false;
 // Me tab: user's personal ranking (data passed to MaxDiffMeSection)
 const loadQuery = useMaxDiffLoadQuery({
   conversationSlugId,
-  enabled: computed(() => isActive.value && isRankingContentVisible.value),
+  enabled: computed(
+    () => isActive.value && isRankingContentVisible.value && !isLivePaused.value
+  ),
 });
+const activeLoadData = computed(() =>
+  pausedLiveFrame.value === undefined
+    ? loadQuery.data.value
+    : pausedLiveFrame.value.loadData
+);
 
 // Lifecycle data
 const completedItems = ref<MaxDiffListItem[]>([]);
 const isCompletedLoading = ref(true);
 const canceledItems = ref<MaxDiffListItem[]>([]);
 const isCanceledLoading = ref(true);
+const activeCompletedItems = computed(
+  () => pausedLiveFrame.value?.completedItems ?? completedItems.value
+);
+const activeCanceledItems = computed(
+  () => pausedLiveFrame.value?.canceledItems ?? canceledItems.value
+);
 const lifecycleRequestIds = {
   completed: 0,
   canceled: 0,
 };
+
+const canPauseLiveFrame = computed(() => {
+  const liveFrame = loadedLiveRankingFrame.value;
+  if (
+    liveFrame === undefined ||
+    liveFrame.rankingStatsSnapshotId !== liveRankingStatsSnapshotId.value ||
+    isInitialLoading.value ||
+    hasError.value
+  ) {
+    return false;
+  }
+
+  switch (currentTab.value) {
+    case "Summary":
+      return (
+        loadQuery.data.value !== undefined &&
+        (!hasSurvey.value || surveyResultsQuery.data.value !== undefined) &&
+        (!hasLifecycleTabs.value ||
+          (!isCompletedLoading.value && !isCanceledLoading.value))
+      );
+    case "Me":
+      return loadQuery.data.value !== undefined;
+    case "Results":
+      return true;
+    case "Completed":
+      return !isCompletedLoading.value;
+    case "Canceled":
+      return !isCanceledLoading.value;
+    case "Survey":
+      return false;
+  }
+
+  return false;
+});
 
 // Dialog state
 const learnMoreContext = ref<"community" | "me" | null>(null);
@@ -721,7 +884,7 @@ async function fetchResults({
 }: {
   showLoading: boolean;
 }): Promise<void> {
-  if (!isActive.value || !isRankingContentVisible.value) {
+  if (!isActive.value || !isRankingContentVisible.value || isLivePaused.value) {
     return;
   }
   if (isResultsFetchInFlight) {
@@ -733,7 +896,11 @@ async function fetchResults({
   isResultsFetchInFlight = true;
   let nextFetchShowsLoading = showLoading;
   try {
-    while (isActive.value && isRankingContentVisible.value) {
+    while (
+      isActive.value &&
+      isRankingContentVisible.value &&
+      !isLivePaused.value
+    ) {
       hasQueuedResultsFetch = false;
       queuedResultsFetchShowsLoading = false;
       await performResultsFetch({ showLoading: nextFetchShowsLoading });
@@ -780,15 +947,24 @@ async function performResultsFetch({
     (requestedCheckpointId === undefined &&
       requestedLiveSnapshotId !== liveRankingStatsSnapshotId.value) ||
     !isActive.value ||
-    !isRankingContentVisible.value
+    !isRankingContentVisible.value ||
+    isLivePaused.value
   ) {
     return;
   }
 
   if (response.status === "success") {
-    resultItems.value = mapApiResultItemsToListItems({
+    const loadedResultItems = mapApiResultItemsToListItems({
       apiItems: response.data.rankings,
     });
+    resultItems.value = loadedResultItems;
+    if (requestedCheckpointId === undefined) {
+      loadedLiveRankingFrame.value = {
+        rankingStatsSnapshotId: requestedLiveSnapshotId,
+        resultItems: loadedResultItems,
+        actionBarStats: getActionBarStatsFromMetadata(),
+      };
+    }
     hasError.value = false;
   } else if (showLoading || resultItems.value.length === 0) {
     hasError.value = true;
@@ -879,6 +1055,7 @@ async function retryFetchCheckpoints(): Promise<void> {
 watch(
   () => route.query.checkpoint,
   async () => {
+    clearLivePause();
     if (await normalizeCheckpointForCurrentTab()) {
       return;
     }
@@ -899,11 +1076,21 @@ watch(liveRankingStatsSnapshotId, async (snapshotId, previousSnapshotId) => {
   if (
     isActive.value &&
     isRankingContentVisible.value &&
+    !isLivePaused.value &&
     selectedCheckpointId.value === undefined
   ) {
     await fetchResults({ showLoading: false });
   }
 });
+
+watch(
+  () => props.conversationData.metadata.isClosed,
+  (isClosed) => {
+    if (isClosed && isLivePaused.value) {
+      void selectLive();
+    }
+  }
+);
 
 async function fetchAllLifecycleItems({
   showLoading,
@@ -937,6 +1124,10 @@ async function handleChildRefresh({
 }: {
   refetchCheckpoints?: boolean;
 } = {}): Promise<void> {
+  if (isLivePaused.value) {
+    return;
+  }
+
   if (currentTab.value === "Survey") {
     await surveyResultsQuery.refetch();
     return;
@@ -981,8 +1172,14 @@ function queueTranslationRefresh(): void {
 
 function registerRefreshHandler(): void {
   unregisterChildRefreshHandler?.();
-  unregisterChildRefreshHandler =
-    registerChildRefreshHandler(handleChildRefresh);
+  unregisterChildRefreshHandler = registerChildRefreshHandler(async () => {
+    if (isLivePaused.value) {
+      await selectLive();
+      return;
+    }
+
+    await handleChildRefresh();
+  });
 }
 
 function unregisterRefreshHandler(): void {
@@ -1052,6 +1249,7 @@ onActivated(async () => {
 
 onDeactivated(() => {
   isActive.value = false;
+  clearLivePause();
   latestResultsRequestId += 1;
   latestCheckpointValidationId += 1;
   unregisterRefreshHandler();
@@ -1059,12 +1257,20 @@ onDeactivated(() => {
 });
 
 onUnmounted(() => {
+  isActive.value = false;
+  clearLivePause();
   unregisterRefreshHandler();
   unregisterTranslationHandler();
 });
 
 watch(currentTab, async (newTab, oldTab) => {
+  const resumedPlayback = clearLivePause();
   await normalizeCheckpointForCurrentTab();
+  if (resumedPlayback) {
+    await nextTick();
+    await handleChildRefresh();
+    return;
+  }
   if (oldTab === "Survey" && newTab !== "Survey") {
     await loadRankingContent({ showLoading: true });
     return;
@@ -1113,6 +1319,11 @@ watch(
   computed(() => `${displayLanguage.value}:${spokenLanguages.value.join(",")}`),
   async () => {
     if (!isActive.value) return;
+    loadedLiveRankingFrame.value = undefined;
+    if (isLivePaused.value) {
+      await selectLive();
+      return;
+    }
     await handleChildRefresh({ refetchCheckpoints: false });
   }
 );
@@ -1138,6 +1349,17 @@ watch(
 .tabComponent {
   border-radius: 12px;
   padding: 0.5rem;
+}
+
+.checkpoint-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.analysis-controls {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .learn-more-content {
