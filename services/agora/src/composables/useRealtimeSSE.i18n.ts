@@ -1,6 +1,7 @@
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface RealtimeSSETranslations {
+  sessionEnded: string;
   conversationClosed: string;
   conversationOpened: string;
   conversationSettingsUpdated: string;
@@ -22,6 +23,7 @@ export const realtimeSSETranslations: Record<
   RealtimeSSETranslations
 > = {
   en: {
+    sessionEnded: "Session ended",
     conversationClosed: "This conversation was closed by the facilitator",
     conversationOpened: "This conversation was reopened by the facilitator",
     conversationSettingsUpdated: "Conversation settings updated",
@@ -41,6 +43,7 @@ export const realtimeSSETranslations: Record<
       "Facilitator group count preference changed",
   },
   ar: {
+    sessionEnded: "انتهت الجلسة",
     conversationClosed: "تم إغلاق هذه المحادثة",
     conversationOpened: "تمت إعادة فتح هذه المحادثة",
     conversationSettingsUpdated: "تم تحديث إعدادات المحادثة",
@@ -59,6 +62,7 @@ export const realtimeSSETranslations: Record<
       "تم تغيير تفضيل الميسر لعدد المجموعات",
   },
   es: {
+    sessionEnded: "Sesión finalizada",
     conversationClosed: "Esta conversación fue cerrada",
     conversationOpened: "Esta conversación fue reabierta",
     conversationSettingsUpdated: "Configuración de conversación actualizada",
@@ -78,6 +82,7 @@ export const realtimeSSETranslations: Record<
       "Preferencia del facilitador para el número de grupos cambiada",
   },
   fa: {
+    sessionEnded: "نشست پایان یافت",
     conversationClosed: "این گفتگو بسته شد",
     conversationOpened: "این گفتگو دوباره باز شد",
     conversationSettingsUpdated: "تنظیمات گفتگو به‌روزرسانی شد",
@@ -97,6 +102,7 @@ export const realtimeSSETranslations: Record<
       "ترجیح تسهیل‌گر برای تعداد گروه‌ها تغییر کرد",
   },
   fr: {
+    sessionEnded: "Session terminée",
     conversationClosed: "Cette conversation a été fermée",
     conversationOpened: "Cette conversation a été rouverte",
     conversationSettingsUpdated: "Paramètres de conversation mis à jour",
@@ -117,6 +123,7 @@ export const realtimeSSETranslations: Record<
       "Préférence du facilitateur pour le nombre de groupes modifiée",
   },
   "zh-Hans": {
+    sessionEnded: "会话已结束",
     conversationClosed: "此对话已关闭",
     conversationOpened: "此对话已重新打开",
     conversationSettingsUpdated: "对话设置已更新",
@@ -133,6 +140,7 @@ export const realtimeSSETranslations: Record<
     facilitatorGroupCountPreferenceChanged: "主持人的分组数量偏好已更改",
   },
   "zh-Hant": {
+    sessionEnded: "工作階段已結束",
     conversationClosed: "此對話已關閉",
     conversationOpened: "此對話已重新打開",
     conversationSettingsUpdated: "對話設定已更新",
@@ -149,6 +157,7 @@ export const realtimeSSETranslations: Record<
     facilitatorGroupCountPreferenceChanged: "主持人的分組數量偏好已變更",
   },
   he: {
+    sessionEnded: "ההפעלה הסתיימה",
     conversationClosed: "השיחה הזו נסגרה",
     conversationOpened: "השיחה הזו נפתחה מחדש",
     conversationSettingsUpdated: "הגדרות השיחה עודכנו",
@@ -166,6 +175,7 @@ export const realtimeSSETranslations: Record<
       "העדפת המנחה למספר הקבוצות השתנתה",
   },
   ja: {
+    sessionEnded: "セッションが終了しました",
     conversationClosed: "この会話は閉じられました",
     conversationOpened: "この会話は再開されました",
     conversationSettingsUpdated: "会話設定が更新されました",
@@ -184,6 +194,7 @@ export const realtimeSSETranslations: Record<
       "ファシリテーターのグループ数設定が変更されました",
   },
   ky: {
+    sessionEnded: "Сессия аяктады",
     conversationClosed: "Бул талкуу жабылды",
     conversationOpened: "Бул талкуу кайра ачылды",
     conversationSettingsUpdated: "Талкуунун жөндөөлөрү жаңыртылды",
@@ -203,6 +214,7 @@ export const realtimeSSETranslations: Record<
       "Фасилитатордун топ саны боюнча тандоосу өзгөрдү",
   },
   ru: {
+    sessionEnded: "Сеанс завершён",
     conversationClosed: "Это обсуждение закрыто",
     conversationOpened: "Это обсуждение снова открыто",
     conversationSettingsUpdated: "Настройки обсуждения обновлены",

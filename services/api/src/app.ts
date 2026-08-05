@@ -75,8 +75,8 @@ const baseConfigSchema = sharedConfigSchema.extend({
         .email()
         .default("noreply@notify.agoracitizen.network"),
     SPECIALLY_AUTHORIZED_EMAILS: z.string().min(1).optional(),
-    SESSION_LIFETIME_DAYS: z.coerce.number().int().min(1).default(90),
-    SESSION_REFRESH_THRESHOLD_DAYS: z.coerce.number().int().min(1).default(45),
+    SESSION_LIFETIME_DAYS: z.coerce.number().int().min(1).default(30),
+    SESSION_REFRESH_THRESHOLD_DAYS: z.coerce.number().int().min(1).default(7),
     PEPPERS: z
         .string()
         .transform((value) =>

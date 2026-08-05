@@ -23,20 +23,15 @@
         @click="retryNavigation"
       />
     </div>
-    <div v-else-if="isLoading" class="state-message">
-      <q-spinner size="2rem" />
-    </div>
-    <div
-      v-else-if="loadFailed || currentSession === undefined"
-      class="state-message"
-    >
+    <PageLoadingSpinner v-else-if="sessionsState.status === 'loading'" />
+    <div v-else-if="sessionsState.status === 'error'" class="state-message">
       <p>{{ t("loadFailed") }}</p>
       <q-btn color="primary" :label="t('retry')" @click="loadSessions" />
     </div>
     <template v-else>
       <AuthSessionList
-        :current-session="currentSession"
-        :other-sessions="otherSessions"
+        :current-session="sessionsState.currentSession"
+        :other-sessions="sessionsState.otherSessions"
         :busy-did-write="busyDidWrite"
         :current-label="t('currentSession')"
         :other-label="t('otherSession')"
@@ -60,7 +55,7 @@
   <ZKConfirmDialog
     v-model="showRevokeDialog"
     :title="t('revokeTitle')"
-    :message="t('revokeMessage')"
+    :message="revokeMessage"
     :confirm-text="t('confirm')"
     :cancel-text="t('cancel')"
     variant="destructive"
@@ -90,9 +85,11 @@
 <script setup lang="ts">
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import AuthSessionList from "src/components/settings/AuthSessionList.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useLocalizedDateTimeFormatter } from "src/composables/ui/useLocalizedDateTime";
 import type { AuthSession } from "src/shared/types/dto-auth";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendAuthApi } from "src/utils/api/auth";
@@ -103,7 +100,7 @@ import {
 } from "src/utils/auth/logoutFlow";
 import { navigateHomeAfterLogout } from "src/utils/auth/logoutNavigation";
 import { useNotify } from "src/utils/ui/notify";
-import { onActivated, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -122,58 +119,83 @@ const { t } = useComponentI18n<SessionSettingsTranslations>(
 const { listAuthSessions, revokeAuthSession, logoutAllAuthSessions } =
   useBackendAuthApi();
 const { showNotifyMessage } = useNotify();
+const formatDateTime = useLocalizedDateTimeFormatter();
 const { setActiveUserIntention } = useLoginIntentionStore();
 const router = useRouter();
 
-const currentSession = ref<AuthSession>();
-const otherSessions = ref<AuthSession[]>([]);
-const isLoading = ref(true);
-const loadFailed = ref(false);
+type SessionsState =
+  | { status: "loading" }
+  | { status: "error" }
+  | {
+      status: "loaded";
+      currentSession: AuthSession;
+      otherSessions: AuthSession[];
+    };
+
+const sessionsState = ref<SessionsState>({ status: "loading" });
 const busyDidWrite = ref<string>();
-const didWriteToRevoke = ref<string>();
-const showRevokeDialog = ref(false);
+const sessionToRevoke = ref<AuthSession>();
+const showRevokeDialog = computed({
+  get: () => sessionToRevoke.value !== undefined,
+  set: (isOpen: boolean) => {
+    if (!isOpen) {
+      sessionToRevoke.value = undefined;
+    }
+  },
+});
 const showLogoutAllDialog = ref(false);
 const showLocalOnlyDialog = ref(false);
 const isLoggingOutAll = ref(false);
 const logoutFailure = ref<"local-cleanup" | "navigation">();
+const revokeMessage = computed(() => {
+  const session = sessionToRevoke.value;
+  return session === undefined
+    ? ""
+    : t("revokeMessage", { startedAt: formatDateTime(session.startedAt) });
+});
 
-onActivated(loadSessions);
+onMounted(() => {
+  void loadSessions();
+});
 
 async function loadSessions(): Promise<void> {
-  const hasCachedSessions = currentSession.value !== undefined;
+  const hasCachedSessions = sessionsState.value.status === "loaded";
   if (!hasCachedSessions) {
-    isLoading.value = true;
-    loadFailed.value = false;
+    sessionsState.value = { status: "loading" };
   }
   try {
     const result = await listAuthSessions();
-    currentSession.value = result.currentSession;
-    otherSessions.value = result.otherSessions;
+    sessionsState.value = {
+      status: "loaded",
+      currentSession: result.currentSession,
+      otherSessions: result.otherSessions,
+    };
   } catch (error) {
     console.error("Failed to load sessions", error);
     if (!hasCachedSessions) {
-      loadFailed.value = true;
+      sessionsState.value = { status: "error" };
     }
-  } finally {
-    isLoading.value = false;
   }
 }
 
-function requestSessionRevocation(didWrite: string): void {
-  didWriteToRevoke.value = didWrite;
-  showRevokeDialog.value = true;
+function requestSessionRevocation(session: AuthSession): void {
+  sessionToRevoke.value = session;
 }
 
 async function confirmSessionRevocation(): Promise<void> {
-  const didWrite = didWriteToRevoke.value;
-  if (didWrite === undefined) return;
+  const session = sessionToRevoke.value;
+  if (session === undefined) return;
+  const didWrite = session.didWrite;
   busyDidWrite.value = didWrite;
   try {
     const result = await revokeAuthSession(didWrite);
-    if (result.revoked) {
-      otherSessions.value = otherSessions.value.filter(
-        (session) => session.didWrite !== didWrite
-      );
+    if (result.revoked && sessionsState.value.status === "loaded") {
+      sessionsState.value = {
+        ...sessionsState.value,
+        otherSessions: sessionsState.value.otherSessions.filter(
+          (otherSession) => otherSession.didWrite !== didWrite
+        ),
+      };
     } else {
       await loadSessions();
     }
@@ -182,7 +204,6 @@ async function confirmSessionRevocation(): Promise<void> {
     showNotifyMessage(t("revokeFailed"));
   } finally {
     busyDidWrite.value = undefined;
-    didWriteToRevoke.value = undefined;
   }
 }
 

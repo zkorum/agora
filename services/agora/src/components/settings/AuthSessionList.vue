@@ -19,7 +19,7 @@
           :label="revokeLabel"
           :loading="busyDidWrite === session.didWrite"
           :disable="busyDidWrite !== undefined"
-          @click="emit('revoke', session.didWrite)"
+          @click="emit('revoke', session)"
         />
       </q-item-section>
     </q-item>
@@ -43,7 +43,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  revoke: [didWrite: string];
+  revoke: [session: AuthSession];
 }>();
 
 type DisplaySession = AuthSession & { kind: "current" | "other" };

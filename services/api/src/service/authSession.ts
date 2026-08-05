@@ -25,15 +25,15 @@ export const authStateChangedPayload = z
     })
     .strict();
 
-type SessionRefreshDecision =
+type SessionExpiryUpdateDecision =
     | { type: "not_needed" }
     | {
-          type: "refresh";
+          type: "update";
           expectedExpiry: Date;
-          refreshedExpiry: Date;
+          nextExpiry: Date;
       };
 
-export function decideSessionRefresh({
+export function decideSessionExpiryUpdate({
     now,
     currentExpiry,
     refreshThresholdDays,
@@ -43,21 +43,24 @@ export function decideSessionRefresh({
     currentExpiry: Date;
     refreshThresholdDays: number;
     sessionLifetimeDays: number;
-}): SessionRefreshDecision {
+}): SessionExpiryUpdateDecision {
     const millisecondsPerDay = 24 * 60 * 60 * 1000;
     const daysUntilExpiry =
         (currentExpiry.getTime() - now.getTime()) / millisecondsPerDay;
-    if (daysUntilExpiry >= refreshThresholdDays) {
+    const nextExpiry = new Date(
+        now.getTime() + sessionLifetimeDays * millisecondsPerDay,
+    );
+    if (
+        daysUntilExpiry >= refreshThresholdDays &&
+        currentExpiry <= nextExpiry
+    ) {
         return { type: "not_needed" };
     }
 
-    const refreshedExpiry = new Date(
-        now.getTime() + sessionLifetimeDays * millisecondsPerDay,
-    );
     return {
-        type: "refresh",
+        type: "update",
         expectedExpiry: currentExpiry,
-        refreshedExpiry,
+        nextExpiry,
     };
 }
 
@@ -75,7 +78,7 @@ function createNewSessionStart({
     };
 }
 
-export async function refreshSessionIfCurrent({
+export async function updateSessionExpiryIfCurrent({
     db,
     didWrite,
     now,
@@ -84,13 +87,13 @@ export async function refreshSessionIfCurrent({
     db: PostgresJsDatabase;
     didWrite: string;
     now: Date;
-    decision: Extract<SessionRefreshDecision, { type: "refresh" }>;
+    decision: Extract<SessionExpiryUpdateDecision, { type: "update" }>;
 }): Promise<Date | undefined> {
     const primaryDb = getPrimaryDatabase(db);
-    const refreshed = await primaryDb
+    const updated = await primaryDb
         .update(deviceTable)
         .set({
-            sessionExpiry: decision.refreshedExpiry,
+            sessionExpiry: decision.nextExpiry,
             updatedAt: now,
         })
         .where(
@@ -101,7 +104,7 @@ export async function refreshSessionIfCurrent({
             ),
         )
         .returning({ sessionExpiry: deviceTable.sessionExpiry });
-    return refreshed.at(0)?.sessionExpiry;
+    return updated.at(0)?.sessionExpiry;
 }
 
 interface SessionRow {

@@ -909,16 +909,18 @@ export function useRealtimeSSE({
     console.error(`Invalid SSE payload for event ${event}`, error);
   }
 
-  async function refreshAuthStateAfterSSEUnauthorized(): Promise<boolean> {
+  async function refreshAuthStateAfterSSEUnauthorized(): Promise<void> {
     try {
-      const result = await refreshAuthState();
-      return result.authStateChanged || result.needsCacheRefresh;
+      const wasLoggedIn = authStore.isLoggedIn;
+      await refreshAuthState();
+      if (wasLoggedIn && !authStore.isLoggedIn) {
+        showNotifyMessage(t("sessionEnded"));
+      }
     } catch (error) {
       console.error(
         "Failed to refresh auth state after SSE 401",
         getErrorLogContext(error)
       );
-      return false;
     }
   }
 

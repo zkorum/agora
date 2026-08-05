@@ -37,7 +37,8 @@ export const sessionSettingsTranslations = {
     expires: "Expires:",
     revoke: "Log out",
     revokeTitle: "Log out this session?",
-    revokeMessage: "That session will lose access immediately.",
+    revokeMessage:
+      "The selected session, started {startedAt}, will lose access immediately.",
     logoutAll: "Log out all devices",
     logoutAllTitle: "Log out all devices?",
     logoutAllMessage:

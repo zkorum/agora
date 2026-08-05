@@ -202,9 +202,9 @@ import {
     RealtimeSSEManager,
 } from "./service/realtimeSSE.js";
 import {
-    decideSessionRefresh,
+    decideSessionExpiryUpdate,
     listActiveSessions,
-    refreshSessionIfCurrent,
+    updateSessionExpiryIfCurrent,
     revokeAllSessions,
     revokeCurrentSession,
     revokeSession,
@@ -1244,23 +1244,23 @@ async function verifyUcanAndDeviceStatus(
         now,
     });
 
-    // Sliding refresh happens before authorization checks so a concurrent
+    // Expiry updates happen before authorization checks so a concurrent
     // revocation cannot be accepted from stale session state.
     if (deviceStatus.isLoggedIn && actualOptions.refreshSession !== false) {
-        const decision = decideSessionRefresh({
+        const decision = decideSessionExpiryUpdate({
             now,
             currentExpiry: deviceStatus.sessionExpiry,
             refreshThresholdDays: config.SESSION_REFRESH_THRESHOLD_DAYS,
             sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
         });
-        if (decision.type === "refresh") {
-            const refreshedExpiry = await refreshSessionIfCurrent({
+        if (decision.type === "update") {
+            const updatedExpiry = await updateSessionExpiryIfCurrent({
                 db: primaryDb,
                 didWrite,
                 now,
                 decision,
             });
-            if (refreshedExpiry === undefined) {
+            if (updatedExpiry === undefined) {
                 deviceStatus = await authUtilService.getDeviceStatus({
                     db: primaryDb,
                     didWrite,
@@ -1269,9 +1269,9 @@ async function verifyUcanAndDeviceStatus(
             } else {
                 deviceStatus = {
                     ...deviceStatus,
-                    sessionExpiry: refreshedExpiry,
+                    sessionExpiry: updatedExpiry,
                 };
-                log.info({ didWrite }, "[Session] Refreshed session expiry");
+                log.info({ didWrite }, "[Session] Updated session expiry");
             }
         }
     }
