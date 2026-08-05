@@ -2121,17 +2121,17 @@ describe("OTP destination throttling", () => {
         );
     });
 
-    it("does not refresh a session after its observed expiry was revoked", async () => {
+    it("does not update a session after its observed expiry was revoked", async () => {
         const didWrite = "did:test:session:refresh-race";
         await createGuestDevice(didWrite);
-        const decision = authSessionService.decideSessionRefresh({
+        const decision = authSessionService.decideSessionExpiryUpdate({
             now: currentNow,
             currentExpiry: SESSION_EXPIRY,
             refreshThresholdDays: 36500,
             sessionLifetimeDays: 90,
         });
-        if (decision.type !== "refresh") {
-            throw new Error("Expected a refresh decision");
+        if (decision.type !== "update") {
+            throw new Error("Expected an expiry update decision");
         }
         await db
             .update(deviceTable)
@@ -2139,7 +2139,7 @@ describe("OTP destination throttling", () => {
             .where(eq(deviceTable.didWrite, didWrite));
 
         expect(
-            await authSessionService.refreshSessionIfCurrent({
+            await authSessionService.updateSessionExpiryIfCurrent({
                 db,
                 didWrite,
                 now: currentNow,
@@ -2153,28 +2153,28 @@ describe("OTP destination throttling", () => {
         expect(device.sessionExpiry).toEqual(currentNow);
     });
 
-    it("refreshes the observed expiry and returns its effective expiry", async () => {
+    it("updates the observed expiry and returns its effective expiry", async () => {
         const didWrite = "did:test:session:refresh-current";
         await createGuestDevice(didWrite);
-        const decision = authSessionService.decideSessionRefresh({
+        const decision = authSessionService.decideSessionExpiryUpdate({
             now: currentNow,
             currentExpiry: SESSION_EXPIRY,
             refreshThresholdDays: 36500,
             sessionLifetimeDays: 90,
         });
-        if (decision.type !== "refresh") {
-            throw new Error("Expected a refresh decision");
+        if (decision.type !== "update") {
+            throw new Error("Expected an expiry update decision");
         }
 
         const effectiveExpiry =
-            await authSessionService.refreshSessionIfCurrent({
+            await authSessionService.updateSessionExpiryIfCurrent({
                 db,
                 didWrite,
                 now: currentNow,
                 decision,
             });
 
-        expect(effectiveExpiry).toEqual(decision.refreshedExpiry);
+        expect(effectiveExpiry).toEqual(decision.nextExpiry);
     });
 
     it("revokes inherited guest sessions before starting one hard session", async () => {
