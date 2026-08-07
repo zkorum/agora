@@ -14,6 +14,11 @@ import {
   useBackendContentTranslationApi,
 } from "./contentTranslation";
 import {
+  type ConversationContentMode,
+  getConversationContentQueryKey,
+  getConversationDisplayContentQueryKey,
+} from "./conversationContentQuery";
+import {
   getProjectContentQueryKey,
   getProjectContentStaleTime,
 } from "./projectContentQuery";
@@ -21,7 +26,6 @@ import {
 export type ContentTranslationRequestMode =
   | "read_existing"
   | "queue_if_missing";
-export type ConversationContentMode = "original" | "translated";
 
 export function getContentTranslationQueryKey({
   subject,
@@ -31,62 +35,6 @@ export function getContentTranslationQueryKey({
   targetLanguageCode: SupportedDisplayLanguageCodes;
 }) {
   return ["contentTranslation", subject, targetLanguageCode] as const;
-}
-
-export function getConversationContentQueryKey({
-  conversationSlugId,
-  sourceVersion,
-  mode,
-  targetLanguageCode,
-  spokenLanguages,
-}: {
-  conversationSlugId: string;
-  sourceVersion: string;
-  mode: ConversationContentMode;
-  targetLanguageCode: SupportedDisplayLanguageCodes;
-  spokenLanguages: readonly string[];
-}) {
-  return [
-    "conversationContent",
-    conversationSlugId,
-    sourceVersion,
-    mode,
-    targetLanguageCode,
-    [...spokenLanguages].sort(),
-  ] as const;
-}
-
-export function getConversationContentQueryPrefix({
-  conversationSlugId,
-}: {
-  conversationSlugId: string;
-}) {
-  return ["conversationContent", conversationSlugId] as const;
-}
-
-export function getConversationDisplayContentQueryKey({
-  conversationSlugId,
-  targetLanguageCode,
-  spokenLanguages,
-}: {
-  conversationSlugId: string;
-  targetLanguageCode: SupportedDisplayLanguageCodes;
-  spokenLanguages: readonly string[];
-}) {
-  return [
-    "conversationDisplayContent",
-    conversationSlugId,
-    targetLanguageCode,
-    [...spokenLanguages].sort(),
-  ] as const;
-}
-
-export function getConversationDisplayContentQueryPrefix({
-  conversationSlugId,
-}: {
-  conversationSlugId: string;
-}) {
-  return ["conversationDisplayContent", conversationSlugId] as const;
 }
 
 export function useConversationDisplayContentCache({

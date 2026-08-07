@@ -98,7 +98,10 @@
             :clickable="false"
           >
             <template #actions>
-              <q-toggle v-model="overrideMultilingualSetting.dynamicTranslationEnabled" />
+              <q-toggle
+                :model-value="overrideMultilingualSetting.dynamicTranslationEnabled"
+                @update:model-value="setOverrideDynamicTranslation"
+              />
             </template>
           </ConversationLanguageSettingsRow>
         </template>
@@ -143,6 +146,7 @@ import type {
   ConversationMultilingualSetting,
   ProjectLanguageSettings,
 } from "src/shared/types/zod";
+import { setConversationDynamicTranslation } from "src/utils/translation/conversationMultilingualSetting";
 import { computed, ref, watch } from "vue";
 
 import {
@@ -428,10 +432,14 @@ function setInheritProjectLanguages(value: boolean): void {
 function startDynamicTranslationOverride(value: boolean): void {
   copySelectedProjectSettingsToOverride();
   inheritProjectLanguages.value = false;
-  overrideMultilingualSetting.value = {
-    ...overrideMultilingualSetting.value,
-    dynamicTranslationEnabled: value,
-  };
+  setOverrideDynamicTranslation(value);
+}
+
+function setOverrideDynamicTranslation(value: boolean): void {
+  overrideMultilingualSetting.value = setConversationDynamicTranslation({
+    setting: overrideMultilingualSetting.value,
+    enabled: value,
+  });
 }
 
 function copySelectedProjectSettingsToOverride(): void {

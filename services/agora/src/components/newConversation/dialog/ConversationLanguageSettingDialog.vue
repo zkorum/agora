@@ -66,6 +66,10 @@ import type {
   AutoLanguageDetectionStatus,
   ConversationMultilingualSetting,
 } from "src/shared/types/zod";
+import {
+  removeConversationAdditionalLanguage,
+  setConversationDynamicTranslation,
+} from "src/utils/translation/conversationMultilingualSetting";
 import { computed, ref, watch } from "vue";
 
 import ConversationAdditionalLanguagesDialog from "./ConversationAdditionalLanguagesDialog.vue";
@@ -262,27 +266,15 @@ function openAdditionalLanguagesPage(): void {
   showLanguagePickerDialog.value = true;
 }
 
-function removeAdditionalLanguage(
-  languageCode: SupportedDisplayLanguageCodes
-): void {
-  multilingualSetting.value = {
-    ...multilingualSetting.value,
-    additionalLanguageCodes:
-      multilingualSetting.value.additionalLanguageCodes.filter(
-        (candidate) => candidate !== languageCode
-      ),
-  };
-}
-
 function setDynamicTranslation(value: boolean): void {
   if (!props.canUseDynamicTranslation) {
     return;
   }
 
-  multilingualSetting.value = {
-    ...multilingualSetting.value,
-    dynamicTranslationEnabled: value,
-  };
+  multilingualSetting.value = setConversationDynamicTranslation({
+    setting: multilingualSetting.value,
+    enabled: value,
+  });
 }
 
 function goBackFromLanguagePicker(): void {
@@ -294,7 +286,10 @@ watch(
   () => props.detectedLanguageCode,
   (detectedLanguageCode) => {
     if (detectedLanguageCode !== null && detectedLanguageCode !== undefined) {
-      removeAdditionalLanguage(detectedLanguageCode);
+      multilingualSetting.value = removeConversationAdditionalLanguage({
+        setting: multilingualSetting.value,
+        languageCode: detectedLanguageCode,
+      });
     }
   },
   { immediate: true }

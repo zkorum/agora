@@ -29,12 +29,9 @@ import {
   type ProjectContentFetchResponse,
   useBackendContentTranslationApi,
 } from "src/utils/api/contentTranslation/contentTranslation";
+import { invalidateConversationContentQueries } from "src/utils/api/contentTranslation/conversationContentQuery";
 import { isProjectTranslatedContentQueryKey } from "src/utils/api/contentTranslation/projectContentQuery";
-import {
-  getContentTranslationQueryKey,
-  getConversationContentQueryPrefix,
-  getConversationDisplayContentQueryPrefix,
-} from "src/utils/api/contentTranslation/useContentTranslationQueries";
+import { getContentTranslationQueryKey } from "src/utils/api/contentTranslation/useContentTranslationQueries";
 import { getErrorLogContext } from "src/utils/api/errorLog";
 import { retainConversationRankingStatsUpdate } from "src/utils/api/post/rankingStatsUpdate";
 import {
@@ -1333,21 +1330,9 @@ export function useRealtimeSSE({
       refetchType: "none",
     });
     if (data.subject.kind === "conversation") {
-      void queryClient.invalidateQueries({
-        queryKey: ["conversation", data.subject.conversationSlugId],
-        refetchType: "none",
-      });
-      void queryClient.invalidateQueries({
-        queryKey: getConversationContentQueryPrefix({
-          conversationSlugId: data.subject.conversationSlugId,
-        }),
-        refetchType: "none",
-      });
-      void queryClient.invalidateQueries({
-        queryKey: getConversationDisplayContentQueryPrefix({
-          conversationSlugId: data.subject.conversationSlugId,
-        }),
-        refetchType: "none",
+      void invalidateConversationContentQueries({
+        queryClient,
+        conversationSlugId: data.subject.conversationSlugId,
       });
       publishContentTranslationEvent(data);
       return;

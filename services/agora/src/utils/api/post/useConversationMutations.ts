@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/vue-query";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { UpdateConversationRequest } from "src/shared/types/dto";
+import { invalidateConversationContentQueries } from "src/utils/api/contentTranslation/conversationContentQuery";
 import { useBackendPostApi } from "src/utils/api/post/post";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
 import {
@@ -222,8 +223,12 @@ export function useUpdateConversationMutation() {
       return { previousConversations };
     },
 
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
       if (data.success) {
+        await invalidateConversationContentQueries({
+          queryClient,
+          conversationSlugId: variables.conversationSlugId,
+        });
         void queryClient.invalidateQueries({
           queryKey: ["feed"],
           refetchType: "none",

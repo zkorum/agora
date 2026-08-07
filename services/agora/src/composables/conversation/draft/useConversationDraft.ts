@@ -25,6 +25,10 @@ import type {
 import { isValidPolisUrl } from "src/shared/utils/polis";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { areSurveyConfigsEqual } from "src/utils/survey/config";
+import {
+  areConversationMultilingualSettingsEqual,
+  cloneConversationMultilingualSetting,
+} from "src/utils/translation/conversationMultilingualSetting";
 import { computed, type ComputedRef, type Ref, ref, watch } from "vue";
 
 import { zodPolisUrlValidation, zodTitleValidation } from "./conversationDraft.schema";
@@ -38,10 +42,7 @@ import type {
   ValidationResult,
   ValidationState,
 } from "./conversationDraft.types";
-import {
-  areConversationMultilingualSettingsEqual,
-  createEmptyDraft,
-} from "./conversationDraft.utils";
+import { createEmptyDraft } from "./conversationDraft.utils";
 import { useConversationDraftTranslations } from "./useConversationDraft.i18n";
 
 // ============================================================================
@@ -535,7 +536,9 @@ export function useConversationDraft(
   function initializeFromData(data: ConversationFormState): void {
     title.value = data.title;
     content.value = data.content;
-    multilingualSetting.value = data.multilingualSetting;
+    multilingualSetting.value = cloneConversationMultilingualSetting(
+      data.multilingualSetting
+    );
     selectedProjectSlug.value = data.selectedProjectSlug;
     inheritProjectLanguages.value = data.inheritProjectLanguages;
     isPrivate.value = data.isPrivate;

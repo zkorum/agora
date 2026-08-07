@@ -82,6 +82,7 @@ import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogCon
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type { ConversationMultilingualSetting } from "src/shared/types/zod";
+import { removeConversationAdditionalLanguage } from "src/utils/translation/conversationMultilingualSetting";
 import { computed, ref, watch } from "vue";
 
 import {
@@ -167,7 +168,10 @@ function selectLanguage(languageCode: SupportedDisplayLanguageCodes): void {
   if (
     multilingualSetting.value.additionalLanguageCodes.includes(languageCode)
   ) {
-    removeAdditionalLanguage(languageCode);
+    multilingualSetting.value = removeConversationAdditionalLanguage({
+      setting: multilingualSetting.value,
+      languageCode,
+    });
     return;
   }
 
@@ -177,18 +181,6 @@ function selectLanguage(languageCode: SupportedDisplayLanguageCodes): void {
       ...multilingualSetting.value.additionalLanguageCodes,
       languageCode,
     ].slice(0, 2),
-  };
-}
-
-function removeAdditionalLanguage(
-  languageCode: SupportedDisplayLanguageCodes
-): void {
-  multilingualSetting.value = {
-    ...multilingualSetting.value,
-    additionalLanguageCodes:
-      multilingualSetting.value.additionalLanguageCodes.filter(
-        (candidate) => candidate !== languageCode
-      ),
   };
 }
 
@@ -212,7 +204,10 @@ watch(
   () => props.detectedLanguageCode,
   (detectedLanguageCode) => {
     if (detectedLanguageCode !== null && detectedLanguageCode !== undefined) {
-      removeAdditionalLanguage(detectedLanguageCode);
+      multilingualSetting.value = removeConversationAdditionalLanguage({
+        setting: multilingualSetting.value,
+        languageCode: detectedLanguageCode,
+      });
     }
   },
   { immediate: true }

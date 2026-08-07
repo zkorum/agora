@@ -19,7 +19,7 @@ import { useLanguageStore } from "src/stores/language";
 import {
   getConversationContentQueryKey,
   getConversationDisplayContentQueryKey,
-} from "src/utils/api/contentTranslation/useContentTranslationQueries";
+} from "src/utils/api/contentTranslation/conversationContentQuery";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
 import { useBackendPostApi } from "./post";

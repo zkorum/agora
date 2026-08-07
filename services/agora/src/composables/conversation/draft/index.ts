@@ -23,7 +23,6 @@ export type {
 
 // Utility functions
 export {
-  areConversationMultilingualSettingsEqual,
   createEmptyDraft,
   hasContentThatWouldBeCleared,
   resolveSelectedOrganizationSlug,

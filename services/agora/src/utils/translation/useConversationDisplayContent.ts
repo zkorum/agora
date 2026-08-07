@@ -7,9 +7,9 @@ import type {
   LocalizedContentTranslationStatus,
 } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
+import type { ConversationContentMode } from "src/utils/api/contentTranslation/conversationContentQuery";
 import {
   type ContentTranslationRequestMode,
-  type ConversationContentMode,
   useConversationContentQuery,
   useConversationDisplayContentCache,
 } from "src/utils/api/contentTranslation/useContentTranslationQueries";

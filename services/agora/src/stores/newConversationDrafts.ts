@@ -8,10 +8,7 @@ import type {
   ConversationDraft,
   ConversationImportType,
 } from "src/composables/conversation/draft/conversationDraft.types";
-import {
-  areConversationMultilingualSettingsEqual,
-  createEmptyDraft,
-} from "src/composables/conversation/draft/conversationDraft.utils";
+import { createEmptyDraft } from "src/composables/conversation/draft/conversationDraft.utils";
 import {
   checkFeatureAccess,
   DEFAULT_FEATURE_ALLOWED_ORGS,
@@ -20,6 +17,7 @@ import {
 import { useAuthenticationStore } from "src/stores/authentication";
 import { processEnv } from "src/utils/processEnv";
 import { areSurveyConfigsEqual } from "src/utils/survey/config";
+import { areConversationMultilingualSettingsEqual } from "src/utils/translation/conversationMultilingualSetting";
 import { watch } from "vue";
 
 export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {

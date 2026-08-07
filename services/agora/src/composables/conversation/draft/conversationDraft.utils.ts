@@ -3,10 +3,7 @@
  * Extracted to avoid duplication between composable and store
  */
 
-import type {
-  ConversationMultilingualSetting,
-  OrganizationProperties,
-} from "src/shared/types/zod";
+import type { OrganizationProperties } from "src/shared/types/zod";
 
 import type {
   ConversationDraft,
@@ -21,28 +18,6 @@ export type DraftPublicationIdentityResolution =
 interface DraftPublicationProfile {
   dataLoaded: boolean;
   organizationList: readonly OrganizationProperties[];
-}
-
-export function areConversationMultilingualSettingsEqual({
-  left,
-  right,
-}: {
-  left: ConversationMultilingualSetting;
-  right: ConversationMultilingualSetting;
-}): boolean {
-  if (left.dynamicTranslationEnabled !== right.dynamicTranslationEnabled) {
-    return false;
-  }
-
-  if (
-    left.additionalLanguageCodes.length !== right.additionalLanguageCodes.length
-  ) {
-    return false;
-  }
-
-  return left.additionalLanguageCodes.every((languageCode) =>
-    right.additionalLanguageCodes.includes(languageCode)
-  );
 }
 
 export function resolveSelectedOrganizationSlug({
